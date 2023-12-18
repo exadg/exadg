@@ -108,85 +108,92 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;exadg/acoustic_conservation_equations/postprocessor/output_generator.h&gt;</span></div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;exadg/acoustic_conservation_equations/postprocessor/pointwise_output_generator.h&gt;</span></div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &lt;exadg/acoustic_conservation_equations/postprocessor/postprocessor_base.h&gt;</span></div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &lt;exadg/postprocessor/error_calculation.h&gt;</span></div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span> </div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &lt;exadg/acoustic_conservation_equations/postprocessor/sound_energy_calculator.h&gt;</span></div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#include &lt;exadg/postprocessor/error_calculation.h&gt;</span></div>
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespaceExaDG.html">ExaDG</a></div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>{</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="keyword">namespace </span>Acoustics</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>{</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim&gt;</div>
-<div class="foldopen" id="foldopen00036" data-start="{" data-end="};">
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno"><a class="line" href="structExaDG_1_1Acoustics_1_1PostProcessorData.html">   36</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structExaDG_1_1Acoustics_1_1PostProcessorData.html">PostProcessorData</a></div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>{</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <a class="code hl_struct" href="structExaDG_1_1Acoustics_1_1PostProcessorData.html">PostProcessorData</a>() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <a class="code hl_struct" href="structExaDG_1_1Acoustics_1_1OutputData.html">OutputData</a>                output_data;</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <a class="code hl_struct" href="structExaDG_1_1Acoustics_1_1PointwiseOutputData.html">PointwiseOutputData&lt;dim&gt;</a>  pointwise_output_data;</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <a class="code hl_struct" href="structExaDG_1_1ErrorCalculationData.html">ErrorCalculationData&lt;dim&gt;</a> error_data_p;</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <a class="code hl_struct" href="structExaDG_1_1ErrorCalculationData.html">ErrorCalculationData&lt;dim&gt;</a> error_data_u;</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>};</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespaceExaDG.html">ExaDG</a></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>{</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="keyword">namespace </span>Acoustics</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>{</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim&gt;</div>
+<div class="foldopen" id="foldopen00037" data-start="{" data-end="};">
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno"><a class="line" href="structExaDG_1_1Acoustics_1_1PostProcessorData.html">   37</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structExaDG_1_1Acoustics_1_1PostProcessorData.html">PostProcessorData</a></div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>{</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <a class="code hl_struct" href="structExaDG_1_1Acoustics_1_1PostProcessorData.html">PostProcessorData</a>() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <a class="code hl_struct" href="structExaDG_1_1Acoustics_1_1OutputData.html">OutputData</a>                output_data;</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <a class="code hl_struct" href="structExaDG_1_1Acoustics_1_1PointwiseOutputData.html">PointwiseOutputData&lt;dim&gt;</a>  pointwise_output_data;</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <a class="code hl_struct" href="structExaDG_1_1ErrorCalculationData.html">ErrorCalculationData&lt;dim&gt;</a> error_data_p;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <a class="code hl_struct" href="structExaDG_1_1ErrorCalculationData.html">ErrorCalculationData&lt;dim&gt;</a> error_data_u;</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <a class="code hl_struct" href="structExaDG_1_1Acoustics_1_1SoundEnergyCalculatorData.html">SoundEnergyCalculatorData</a> sound_energy_data;</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>};</div>
 </div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
-<div class="foldopen" id="foldopen00047" data-start="{" data-end="};">
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno"><a class="line" href="classExaDG_1_1Acoustics_1_1PostProcessor.html">   47</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1Acoustics_1_1PostProcessor.html">PostProcessor</a> : <span class="keyword">public</span> <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1PostProcessorBase.html">PostProcessorBase</a>&lt;dim, Number&gt;</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>{</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="keyword">using </span><a class="code hl_class" href="classExaDG_1_1Acoustics_1_1PostProcessorBase.html">Base</a> = <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1PostProcessorBase.html">PostProcessorBase&lt;dim, Number&gt;</a>;</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keyword">using </span>BlockVectorType = <span class="keyword">typename</span> Base::BlockVectorType;</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
+<div class="foldopen" id="foldopen00049" data-start="{" data-end="};">
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno"><a class="line" href="classExaDG_1_1Acoustics_1_1PostProcessor.html">   49</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1Acoustics_1_1PostProcessor.html">PostProcessor</a> : <span class="keyword">public</span> <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1PostProcessorBase.html">PostProcessorBase</a>&lt;dim, Number&gt;</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>{</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keyword">using </span><a class="code hl_class" href="classExaDG_1_1Acoustics_1_1PostProcessorBase.html">Base</a> = <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1PostProcessorBase.html">PostProcessorBase&lt;dim, Number&gt;</a>;</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keyword">using </span>AcousticsOperator = <span class="keyword">typename</span> <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1SpatialOperator.html">Base::AcousticsOperator</a>;</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keyword">using </span>BlockVectorType = <span class="keyword">typename</span> Base::BlockVectorType;</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keyword">static</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> block_index_pressure = AcousticsOperator::block_index_pressure;</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keyword">static</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> block_index_velocity = AcousticsOperator::block_index_velocity;</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1PostProcessor.html">PostProcessor</a>(<a class="code hl_struct" href="structExaDG_1_1Acoustics_1_1PostProcessorData.html">PostProcessorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp; postprocessor_data, MPI_Comm <span class="keyword">const</span> &amp; mpi_comm);</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keyword">using </span>AcousticsOperator = <span class="keyword">typename</span> <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1SpatialOperator.html">Base::AcousticsOperator</a>;</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keyword">static</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> block_index_pressure = AcousticsOperator::block_index_pressure;</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keyword">static</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> block_index_velocity = AcousticsOperator::block_index_velocity;</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  setup(AcousticsOperator <span class="keyword">const</span> &amp; pde_operator) <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  do_postprocessing(BlockVectorType <span class="keyword">const</span> &amp; solution,</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>                    <span class="keywordtype">double</span> <span class="keyword">const</span>            time             = 0.0,</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>                    types::time_step <span class="keyword">const</span>  time_step_number = numbers::steady_timestep) <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span><span class="keyword">protected</span>:</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  <a class="code hl_struct" href="structExaDG_1_1Acoustics_1_1PostProcessorData.html">PostProcessorData&lt;dim&gt;</a> pp_data;</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span> </div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="comment">// write output for visualization of results (e.g., using paraview)</span></div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1OutputGenerator.html">OutputGenerator&lt;dim, Number&gt;</a> output_generator;</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span> </div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  <span class="comment">// writes output at certain points in space</span></div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1PointwiseOutputGenerator.html">PointwiseOutputGenerator&lt;dim, Number&gt;</a> pointwise_output_generator;</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span> </div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  <span class="comment">// calculate errors for verification purposes for problems with known analytical solution</span></div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  <a class="code hl_class" href="classExaDG_1_1ErrorCalculator.html">ErrorCalculator&lt;dim, Number&gt;</a> error_calculator_p;</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  <a class="code hl_class" href="classExaDG_1_1ErrorCalculator.html">ErrorCalculator&lt;dim, Number&gt;</a> error_calculator_u;</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>};</div>
-</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1PostProcessor.html">PostProcessor</a>(<a class="code hl_struct" href="structExaDG_1_1Acoustics_1_1PostProcessorData.html">PostProcessorData&lt;dim&gt;</a> <span class="keyword">const</span> &amp; postprocessor_data, MPI_Comm <span class="keyword">const</span> &amp; mpi_comm);</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  setup(AcousticsOperator <span class="keyword">const</span> &amp; pde_operator) <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  do_postprocessing(BlockVectorType <span class="keyword">const</span> &amp; solution,</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>                    <span class="keywordtype">double</span> <span class="keyword">const</span>            time             = 0.0,</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>                    types::time_step <span class="keyword">const</span>  time_step_number = numbers::steady_timestep) <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span><span class="keyword">protected</span>:</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <a class="code hl_struct" href="structExaDG_1_1Acoustics_1_1PostProcessorData.html">PostProcessorData&lt;dim&gt;</a> pp_data;</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span> </div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  <span class="comment">// write output for visualization of results (e.g., using paraview)</span></div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1OutputGenerator.html">OutputGenerator&lt;dim, Number&gt;</a> output_generator;</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span> </div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <span class="comment">// writes output at certain points in space</span></div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1PointwiseOutputGenerator.html">PointwiseOutputGenerator&lt;dim, Number&gt;</a> pointwise_output_generator;</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span> </div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  <span class="comment">// calculate errors for verification purposes for problems with known analytical solution</span></div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  <a class="code hl_class" href="classExaDG_1_1ErrorCalculator.html">ErrorCalculator&lt;dim, Number&gt;</a> error_calculator_p;</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  <a class="code hl_class" href="classExaDG_1_1ErrorCalculator.html">ErrorCalculator&lt;dim, Number&gt;</a> error_calculator_u;</div>
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>} <span class="comment">// namespace Acoustics</span></div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  <span class="comment">// calculates the sound energy in the computational domain</span></div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <a class="code hl_class" href="classExaDG_1_1Acoustics_1_1SoundEnergyCalculator.html">SoundEnergyCalculator&lt;dim, Number&gt;</a> sound_energy_calculator;</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>};</div>
+</div>
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span><span class="preprocessor">#endif </span><span class="comment">/*EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_H_*/</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>} <span class="comment">// namespace Acoustics</span></div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span> </div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span> </div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span><span class="preprocessor">#endif </span><span class="comment">/*EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_H_*/</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1Acoustics_1_1OutputGenerator_html"><div class="ttname"><a href="classExaDG_1_1Acoustics_1_1OutputGenerator.html">ExaDG::Acoustics::OutputGenerator</a></div><div class="ttdef"><b>Definition</b> output_generator.h:54</div></div>
 <div class="ttc" id="aclassExaDG_1_1Acoustics_1_1PointwiseOutputGenerator_html"><div class="ttname"><a href="classExaDG_1_1Acoustics_1_1PointwiseOutputGenerator.html">ExaDG::Acoustics::PointwiseOutputGenerator</a></div><div class="ttdef"><b>Definition</b> pointwise_output_generator.h:47</div></div>
 <div class="ttc" id="aclassExaDG_1_1Acoustics_1_1PostProcessorBase_html"><div class="ttname"><a href="classExaDG_1_1Acoustics_1_1PostProcessorBase.html">ExaDG::Acoustics::PostProcessorBase</a></div><div class="ttdef"><b>Definition</b> postprocessor_base.h:40</div></div>
-<div class="ttc" id="aclassExaDG_1_1Acoustics_1_1PostProcessor_html"><div class="ttname"><a href="classExaDG_1_1Acoustics_1_1PostProcessor.html">ExaDG::Acoustics::PostProcessor</a></div><div class="ttdef"><b>Definition</b> postprocessor.h:48</div></div>
+<div class="ttc" id="aclassExaDG_1_1Acoustics_1_1PostProcessor_html"><div class="ttname"><a href="classExaDG_1_1Acoustics_1_1PostProcessor.html">ExaDG::Acoustics::PostProcessor</a></div><div class="ttdef"><b>Definition</b> postprocessor.h:50</div></div>
+<div class="ttc" id="aclassExaDG_1_1Acoustics_1_1SoundEnergyCalculator_html"><div class="ttname"><a href="classExaDG_1_1Acoustics_1_1SoundEnergyCalculator.html">ExaDG::Acoustics::SoundEnergyCalculator</a></div><div class="ttdef"><b>Definition</b> sound_energy_calculator.h:77</div></div>
 <div class="ttc" id="aclassExaDG_1_1Acoustics_1_1SpatialOperator_html"><div class="ttname"><a href="classExaDG_1_1Acoustics_1_1SpatialOperator.html">ExaDG::Acoustics::SpatialOperator</a></div><div class="ttdef"><b>Definition</b> spatial_operator.h:46</div></div>
 <div class="ttc" id="aclassExaDG_1_1ErrorCalculator_html"><div class="ttname"><a href="classExaDG_1_1ErrorCalculator.html">ExaDG::ErrorCalculator</a></div><div class="ttdef"><b>Definition</b> error_calculation.h:95</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 <div class="ttc" id="astructExaDG_1_1Acoustics_1_1OutputData_html"><div class="ttname"><a href="structExaDG_1_1Acoustics_1_1OutputData.html">ExaDG::Acoustics::OutputData</a></div><div class="ttdef"><b>Definition</b> output_generator.h:34</div></div>
 <div class="ttc" id="astructExaDG_1_1Acoustics_1_1PointwiseOutputData_html"><div class="ttname"><a href="structExaDG_1_1Acoustics_1_1PointwiseOutputData.html">ExaDG::Acoustics::PointwiseOutputData</a></div><div class="ttdef"><b>Definition</b> pointwise_output_generator.h:35</div></div>
-<div class="ttc" id="astructExaDG_1_1Acoustics_1_1PostProcessorData_html"><div class="ttname"><a href="structExaDG_1_1Acoustics_1_1PostProcessorData.html">ExaDG::Acoustics::PostProcessorData</a></div><div class="ttdef"><b>Definition</b> postprocessor.h:37</div></div>
+<div class="ttc" id="astructExaDG_1_1Acoustics_1_1PostProcessorData_html"><div class="ttname"><a href="structExaDG_1_1Acoustics_1_1PostProcessorData.html">ExaDG::Acoustics::PostProcessorData</a></div><div class="ttdef"><b>Definition</b> postprocessor.h:38</div></div>
+<div class="ttc" id="astructExaDG_1_1Acoustics_1_1SoundEnergyCalculatorData_html"><div class="ttname"><a href="structExaDG_1_1Acoustics_1_1SoundEnergyCalculatorData.html">ExaDG::Acoustics::SoundEnergyCalculatorData</a></div><div class="ttdef"><b>Definition</b> sound_energy_calculator.h:39</div></div>
 <div class="ttc" id="astructExaDG_1_1ErrorCalculationData_html"><div class="ttname"><a href="structExaDG_1_1ErrorCalculationData.html">ExaDG::ErrorCalculationData</a></div><div class="ttdef"><b>Definition</b> error_calculation.h:39</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
