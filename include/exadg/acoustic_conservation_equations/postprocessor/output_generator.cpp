@@ -60,7 +60,7 @@ write_output(OutputData const &                                         output_d
 
   if(output_data.write_velocity)
   {
-    std::vector<std::string> velocity_names(dim, "velocity");
+    std::vector<std::string> velocity_names(dim, "velocity_times_density");
     std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
       velocity_component_interpretation(
         dim, dealii::DataComponentInterpretation::component_is_part_of_vector);

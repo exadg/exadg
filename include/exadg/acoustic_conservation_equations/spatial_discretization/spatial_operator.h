@@ -41,6 +41,15 @@ namespace ExaDG
 {
 namespace Acoustics
 {
+/**
+ * Spatial operator to solve for the acoustic conservation equations:
+ *
+ * 1/c^2 * dp/dt + div (rho * u) = f
+ *  (rho * u)/dt + grad p = 0
+ *
+ * This operator solves for the pressure p as well as the velocity that is
+ * already scaled by the density rho * u.
+ */
 template<int dim, typename Number>
 class SpatialOperator : public Interface::SpatialOperator<Number>
 {
@@ -163,9 +172,15 @@ public:
                              BlockVectorType const & src,
                              double const            time) const;
 
-  // inverse mass operator
+  /**
+   * This function applies the inverse mass matrix and scales the pressure by c^2. This is because
+   * the PDE we are solving for reads as
+   *
+   * 1/c^2 dp/dt + div  u = f
+   *       du/dt + grad p = 0
+   */
   void
-  apply_inverse_mass_operator(BlockVectorType & dst, BlockVectorType const & src) const;
+  apply_scaled_inverse_mass_operator(BlockVectorType & dst, BlockVectorType const & src) const;
 
   // Calculate time step size according to local CFL criterion
   double

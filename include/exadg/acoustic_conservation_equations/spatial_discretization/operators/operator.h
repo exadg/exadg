@@ -112,14 +112,14 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    calculate_lax_friedrichs_flux_momentum(vector const & um,
-                                           vector const & up,
+    calculate_lax_friedrichs_flux_momentum(vector const & rho_um,
+                                           vector const & rho_up,
                                            Number const & gamma,
                                            scalar const & pm,
                                            scalar const & pp,
                                            vector const & n) const
   {
-    return Number{0.5} * (um + up) + gamma * (pm - pp) * n;
+    return Number{0.5} * (rho_um + rho_up) + gamma * (pm - pp) * n;
   }
 
   /*
@@ -130,11 +130,11 @@ public:
     calculate_lax_friedrichs_flux_mass(scalar const & pm,
                                        scalar const & pp,
                                        Number const & tau,
-                                       vector const & um,
-                                       vector const & up,
+                                       vector const & rho_um,
+                                       vector const & rho_up,
                                        vector const & n) const
   {
-    return Number{0.5} * (pm + pp) + tau * (um - up) * n;
+    return Number{0.5} * (pm + pp) + tau * (rho_um - rho_up) * n;
   }
 };
 
@@ -151,7 +151,6 @@ struct OperatorData
       block_index_velocity(1),
       formulation(Formulation::SkewSymmetric),
       bc(nullptr),
-      density(-1.0),
       speed_of_sound(-1.0)
   {
   }
@@ -168,7 +167,6 @@ struct OperatorData
 
   std::shared_ptr<BoundaryDescriptor<dim> const> bc;
 
-  double density;
   double speed_of_sound;
 };
 
@@ -191,12 +189,7 @@ class Operator
   using FaceIntegratorP = FaceIntegrator<dim, 1, Number>;
 
 public:
-  Operator()
-    : evaluation_time(Number{0.0}),
-      rhocc(Number{0.0}),
-      rho_inv(Number{0.0}),
-      tau(Number{0.0}),
-      gamma(Number{0.0})
+  Operator() : evaluation_time(Number{0.0}), tau(Number{0.0}), gamma(Number{0.0})
   {
   }
 
@@ -209,10 +202,8 @@ public:
     data        = data_in;
 
     // Precompute numbers that are needed in kernels.
-    rhocc   = (Number)(data_in.density * data_in.speed_of_sound * data_in.speed_of_sound);
-    rho_inv = (Number)(1.0 / data_in.density);
-    tau     = (Number)(0.5 * data_in.speed_of_sound * data_in.density);
-    gamma   = (Number)(0.5 / (data_in.speed_of_sound * data_in.density));
+    tau   = (Number)(0.5 * data_in.speed_of_sound);
+    gamma = (Number)(0.5 / data_in.speed_of_sound);
 
     // Set integration flags.
     if(data_in.formulation == Formulation::Weak)
@@ -299,8 +290,8 @@ private:
         vector const flux_momentum = kernel.get_volume_flux_weak_momentum(velocity, q);
         scalar const flux_mass     = kernel.get_volume_flux_weak_mass(pressure, q);
 
-        pressure.submit_gradient(rhocc * flux_momentum, q);
-        velocity.submit_divergence(rho_inv * flux_mass, q);
+        pressure.submit_gradient(flux_momentum, q);
+        velocity.submit_divergence(flux_mass, q);
       }
     }
     else if(data.formulation == Formulation::Strong)
@@ -310,8 +301,8 @@ private:
         scalar const flux_momentum = kernel.get_volume_flux_strong_momentum(velocity, q);
         vector const flux_mass     = kernel.get_volume_flux_strong_mass(pressure, q);
 
-        pressure.submit_value(rhocc * flux_momentum, q);
-        velocity.submit_value(rho_inv * flux_mass, q);
+        pressure.submit_value(flux_momentum, q);
+        velocity.submit_value(flux_mass, q);
       }
     }
     else if(data.formulation == Formulation::SkewSymmetric)
@@ -321,8 +312,8 @@ private:
         vector const flux_momentum = kernel.get_volume_flux_weak_momentum(velocity, q);
         vector const flux_mass     = kernel.get_volume_flux_strong_mass(pressure, q);
 
-        pressure.submit_gradient(rhocc * flux_momentum, q);
-        velocity.submit_value(rho_inv * flux_mass, q);
+        pressure.submit_gradient(flux_momentum, q);
+        velocity.submit_value(flux_mass, q);
       }
     }
     else
@@ -343,21 +334,22 @@ private:
   {
     for(unsigned int q : pressure_m.quadrature_point_indices())
     {
-      scalar const pm = pressure_m.get_value(q);
-      scalar const pp = pressure_p.get_value(q);
-      vector const um = velocity_m.get_value(q);
-      vector const up = velocity_p.get_value(q);
-      vector const n  = pressure_m.normal_vector(q);
+      scalar const pm     = pressure_m.get_value(q);
+      scalar const pp     = pressure_p.get_value(q);
+      vector const rho_um = velocity_m.get_value(q);
+      vector const rho_up = velocity_p.get_value(q);
+      vector const n      = pressure_m.normal_vector(q);
 
       vector const flux_momentum =
-        kernel.calculate_lax_friedrichs_flux_momentum(um, up, gamma, pm, pp, n);
+        kernel.calculate_lax_friedrichs_flux_momentum(rho_um, rho_up, gamma, pm, pp, n);
 
-      scalar const flux_mass = kernel.calculate_lax_friedrichs_flux_mass(pm, pp, tau, um, up, n);
+      scalar const flux_mass =
+        kernel.calculate_lax_friedrichs_flux_mass(pm, pp, tau, rho_um, rho_up, n);
 
       if(data.formulation == Formulation::Weak)
       {
-        scalar const flux_momentum_weak = rhocc * flux_momentum * n;
-        vector const flux_mass_weak     = rho_inv * flux_mass * n;
+        scalar const flux_momentum_weak = flux_momentum * n;
+        vector const flux_mass_weak     = flux_mass * n;
 
         pressure_m.submit_value(flux_momentum_weak, q);
         velocity_m.submit_value(flux_mass_weak, q);
@@ -371,28 +363,28 @@ private:
       }
       else if(data.formulation == Formulation::Strong)
       {
-        pressure_m.submit_value(rhocc * (flux_momentum - um) * n, q);
-        velocity_m.submit_value(rho_inv * (flux_mass - pm) * n, q);
+        pressure_m.submit_value((flux_momentum - rho_um) * n, q);
+        velocity_m.submit_value((flux_mass - pm) * n, q);
 
         if constexpr(weight_neighbor)
         {
           // minus signs since n⁺ = - n⁻
-          pressure_p.submit_value(-rhocc * (flux_momentum - up) * n, q);
-          velocity_p.submit_value(-rho_inv * (flux_mass - pp) * n, q);
+          pressure_p.submit_value((rho_up - flux_momentum) * n, q);
+          velocity_p.submit_value((pp - flux_mass) * n, q);
         }
       }
       else if(data.formulation == Formulation::SkewSymmetric)
       {
-        scalar const flux_momentum_weak = rhocc * flux_momentum * n;
+        scalar const flux_momentum_weak = flux_momentum * n;
 
         pressure_m.submit_value(flux_momentum_weak, q);
-        velocity_m.submit_value(rho_inv * (flux_mass - pm) * n, q);
+        velocity_m.submit_value((flux_mass - pm) * n, q);
 
         if constexpr(weight_neighbor)
         {
           // minus signs since n⁺ = - n⁻
           pressure_p.submit_value(-flux_momentum_weak, q);
-          velocity_p.submit_value(-rho_inv * (flux_mass - pp) * n, q);
+          velocity_p.submit_value((pp - flux_mass) * n, q);
         }
       }
       else
@@ -512,8 +504,6 @@ private:
   dealii::SmartPointer<dealii::MatrixFree<dim, Number> const> matrix_free;
   OperatorData<dim>                                           data;
 
-  Number rhocc;
-  Number rho_inv;
   Number tau;
   Number gamma;
 

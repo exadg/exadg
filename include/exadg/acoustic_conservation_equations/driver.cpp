@@ -152,8 +152,8 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
   const std::function<void(void)> operator_evaluation = [&](void) {
     if(operator_type == OperatorType::AcousticOperator)
       pde_operator->evaluate_acoustic_operator(dst, src, 0.0);
-    else if(operator_type == OperatorType::InverseMassOperator)
-      pde_operator->apply_inverse_mass_operator(dst, src);
+    else if(operator_type == OperatorType::ScaledInverseMassOperator)
+      pde_operator->apply_scaled_inverse_mass_operator(dst, src);
     else
       AssertThrow(false, dealii::ExcMessage("Not implemented."));
   };
