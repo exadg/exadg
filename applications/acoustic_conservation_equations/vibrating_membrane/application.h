@@ -276,6 +276,14 @@ private:
     pp_data.error_data_u.calculate_relative_errors = false; // at some times the solution is 0
     pp_data.error_data_u.name                      = "velocity";
 
+    // sound energy calculation
+    pp_data.sound_energy_data.time_control_data.is_active  = false;
+    pp_data.sound_energy_data.time_control_data.start_time = this->param.start_time;
+    pp_data.sound_energy_data.density                      = this->param.density;
+    pp_data.sound_energy_data.speed_of_sound               = this->param.speed_of_sound;
+    pp_data.sound_energy_data.time_control_data.trigger_every_time_steps = 1;
+    pp_data.sound_energy_data.directory = this->output_parameters.directory + "sound_energy/";
+
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
