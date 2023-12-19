@@ -93,7 +93,6 @@ public:
     param.print(pcout, "List of parameters:");
 
     // grid
-    GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
     grid = std::make_shared<Grid<dim>>();
     create_grid(*grid, mapping);
     print_grid_info(pcout, *grid);
