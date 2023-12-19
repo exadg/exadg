@@ -138,7 +138,8 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
     AssertThrow(false, dealii::ExcMessage("not implemented."));
   }
 
-  ale_multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(ale_mapping);
+  ale_multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(
+    ale_mapping, application->get_parameters().mapping_degree_coarse_grids);
 
   // initialize pde_operator
   pde_operator = IncNS::create_operator<dim, Number>(grid,

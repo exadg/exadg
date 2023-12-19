@@ -235,13 +235,14 @@ public:
 
     std::shared_ptr<dealii::FEValues<dim>> fe_values;
 
+    // Set up dealii::FEValues with FE_Nothing and the Gauss-Lobatto quadrature to
+    // reduce setup cost, as we only use the geometry information (this means
+    // we need to call fe_values.reinit(cell) with Triangulation::cell_iterator
+    // rather than dealii::DoFHandler::cell_iterator).
+    dealii::FE_Nothing<dim> fe_nothing;
+
     if(mapping.get() != 0)
     {
-      // Set up dealii::FEValues with FE_Nothing and the Gauss-Lobatto quadrature to
-      // reduce setup cost, as we only use the geometry information (this means
-      // we need to call fe_values.reinit(cell) with Triangulation::cell_iterator
-      // rather than dealii::DoFHandler::cell_iterator).
-      dealii::FE_Nothing<dim> fe_nothing;
       fe_values = std::make_shared<dealii::FEValues<dim>>(*mapping,
                                                           fe_nothing,
                                                           dealii::QGaussLobatto<dim>(

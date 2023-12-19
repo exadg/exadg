@@ -96,7 +96,8 @@ Driver<dim, Number>::setup()
       AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
-    ale_multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(ale_mapping);
+    ale_multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(
+      ale_mapping, application->get_parameters().mapping_degree_coarse_grids);
 
     helpers_ale = std::make_shared<HelpersALE<dim, Number>>();
 

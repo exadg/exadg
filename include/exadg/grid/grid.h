@@ -88,15 +88,19 @@ public:
    */
   MultigridMappings(std::shared_ptr<dealii::Mapping<dim>> mapping,
                     std::shared_ptr<dealii::Mapping<dim>> mapping_coarse_levels)
-    : mapping_fine_level(mapping), mapping_coarse_levels(mapping_coarse_levels)
+    : mapping_fine_level(mapping),
+      mapping_coarse_levels(mapping_coarse_levels),
+      degree_coarse_mappings(1)
   {
   }
 
   /**
    * Use this constructor if the fine-level mapping is of type ExaDG::MappingDoFVector.
    */
-  MultigridMappings(std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector)
-    : mapping_dof_vector_fine_level(mapping_dof_vector)
+  MultigridMappings(std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector,
+                    unsigned int const                             degree_coarse_mappings)
+    : mapping_dof_vector_fine_level(mapping_dof_vector),
+      degree_coarse_mappings(degree_coarse_mappings)
   {
   }
 
@@ -190,9 +194,6 @@ public:
           dealii::ExcMessage(
             "Coarse mappings can not be initialized because fine level mapping is invalid."));
 
-        // TODO
-        unsigned int const degree_coarse_mappings = 1;
-
         MappingTools::initialize_coarse_mappings<dim, Number>(mapping_dof_vector_coarse_levels,
                                                               degree_coarse_mappings,
                                                               mapping_dof_vector_fine_level,
@@ -223,6 +224,12 @@ private:
    * the fine triangulation. The first entry corresponds to the coarsest triangulation.
    */
   std::vector<std::shared_ptr<MappingDoFVector<dim, Number>>> mapping_dof_vector_coarse_levels;
+
+  /**
+   * Degree for coarse-grid mappings. This variable is only relevant for mappigns of type
+   * MappingDoFVector.
+   */
+  unsigned int const degree_coarse_mappings;
 };
 
 } // namespace ExaDG
