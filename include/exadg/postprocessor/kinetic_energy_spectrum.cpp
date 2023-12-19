@@ -593,15 +593,13 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
   dealii::DoFHandler<dim> const &         dof_handler_in,
   KineticEnergySpectrumData const &       data_in)
 {
-  data        = data_in;
-  dof_handler = &dof_handler_in;
-
-  clear_files = data.clear_file;
-
-  time_control.setup(data_in.time_control_data);
-
   if(data_in.time_control_data.is_active)
   {
+    data        = data_in;
+    clear_files = data.clear_file;
+    time_control.setup(data_in.time_control_data);
+
+    dof_handler = &dof_handler_in;
     AssertThrow(
       dof_handler->get_triangulation().all_reference_cells_are_hyper_cube(),
       dealii::ExcMessage(

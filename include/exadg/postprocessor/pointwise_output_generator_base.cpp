@@ -98,24 +98,23 @@ PointwiseOutputGeneratorBase<dim, Number>::setup_base(
   dealii::Mapping<dim> const &         mapping_in,
   PointwiseOutputDataBase<dim> const & pointwise_output_data_in)
 {
-#ifdef DEAL_II_WITH_HDF5
-  triangulation         = &triangulation_in;
-  pointwise_output_data = pointwise_output_data_in;
-
-
-  AssertThrow(
-    (get_unsteady_evaluation_type(pointwise_output_data_in.time_control_data) ==
-     TimeControlData::UnsteadyEvalType::Interval) or
-      (get_unsteady_evaluation_type(pointwise_output_data_in.time_control_data) ==
-       TimeControlData::UnsteadyEvalType::None),
-    dealii::ExcMessage(
-      "This module can currently only be used with time TimeControlData::UnsteadyEvalType::Interval"));
-
-  time_control.setup(pointwise_output_data_in.time_control_data);
-
-  if(pointwise_output_data.time_control_data.is_active and
-     pointwise_output_data.evaluation_points.size() > 0)
+  if(pointwise_output_data_in.time_control_data.is_active and
+     pointwise_output_data_in.evaluation_points.size() > 0)
   {
+#ifdef DEAL_II_WITH_HDF5
+    triangulation         = &triangulation_in;
+    pointwise_output_data = pointwise_output_data_in;
+
+    AssertThrow(
+      (get_unsteady_evaluation_type(pointwise_output_data_in.time_control_data) ==
+       TimeControlData::UnsteadyEvalType::Interval) or
+        (get_unsteady_evaluation_type(pointwise_output_data_in.time_control_data) ==
+         TimeControlData::UnsteadyEvalType::None),
+      dealii::ExcMessage(
+        "This module can currently only be used with time TimeControlData::UnsteadyEvalType::Interval"));
+
+    time_control.setup(pointwise_output_data_in.time_control_data);
+
     mapping = &mapping_in;
 
     // allocate memory for hyperslab
@@ -141,15 +140,13 @@ PointwiseOutputGeneratorBase<dim, Number>::setup_base(
       auto group = hdf5_file->create_group("PhysicalInformation");
       add_time_dataset(group, "Time");
     }
-  }
+
 #else
-  (void)triangulation_in;
-  (void)mapping_in;
-  if(pointwise_output_data_in.time_control_data.is_active)
-  {
+    (void)triangulation_in;
+    (void)mapping_in;
     AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with HDF5!"));
-  }
 #endif
+  }
 }
 
 template<int dim, typename Number>
