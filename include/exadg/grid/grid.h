@@ -86,15 +86,21 @@ public:
   /**
    * Use this constructor if the fine-level mapping is a "normal" dealii::Mapping.
    */
-  MultigridMappings(std::shared_ptr<dealii::Mapping<dim>> mapping) : mapping_fine_level(mapping)
+  MultigridMappings(std::shared_ptr<dealii::Mapping<dim>> mapping,
+                    std::shared_ptr<dealii::Mapping<dim>> mapping_coarse_levels)
+    : mapping_fine_level(mapping),
+      mapping_coarse_levels(mapping_coarse_levels),
+      degree_coarse_mappings(1)
   {
   }
 
   /**
    * Use this constructor if the fine-level mapping is of type ExaDG::MappingDoFVector.
    */
-  MultigridMappings(std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector)
-    : mapping_dof_vector_fine_level(mapping_dof_vector)
+  MultigridMappings(std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector,
+                    unsigned int const                             degree_coarse_mappings)
+    : mapping_dof_vector_fine_level(mapping_dof_vector),
+      degree_coarse_mappings(degree_coarse_mappings)
   {
   }
 
@@ -115,6 +121,14 @@ public:
         lambda_initialize_coarse_mappings(grid.triangulation, grid.coarse_triangulations);
       }
     }
+    else // standard dealii::Mapping
+    {
+      AssertThrow(mapping_fine_level.get(),
+                  dealii::ExcMessage("Fine-level mapping is uninitialized."));
+
+      // when using standard dealii::Mapping's, there is nothing to do, i.e. we assume that all the
+      // mappings have been set up prior to calling the constructor of this class.
+    }
   }
 
   /**
@@ -123,7 +137,7 @@ public:
   dealii::Mapping<dim> const &
   get_mapping(unsigned int const h_level, unsigned int const n_h_levels) const
   {
-    if(mapping_dof_vector_fine_level.get())
+    if(mapping_dof_vector_fine_level.get()) // ExaDG::MappingDoFVector
     {
       // fine level
       if(h_level == n_h_levels - 1)
@@ -138,12 +152,24 @@ public:
         return *(mapping_dof_vector_coarse_levels[h_level]->get_mapping());
       }
     }
-    else
+    else // standard dealii::Mapping
     {
-      AssertThrow(mapping_fine_level.get(),
-                  dealii::ExcMessage("Fine-level mapping is uninitialized."));
+      // use mapping_fine_level on the fine level or on all levels if mapping_coarse_levels is
+      // uninitialized
+      if(h_level == n_h_levels - 1 or not(mapping_coarse_levels.get()))
+      {
+        AssertThrow(mapping_fine_level.get(),
+                    dealii::ExcMessage("Fine-level mapping is uninitialized."));
 
-      return *mapping_fine_level;
+        return *mapping_fine_level;
+      }
+      else // coarse levels
+      {
+        AssertThrow(mapping_coarse_levels.get(),
+                    dealii::ExcMessage("mapping_coarse_levels is uninitialized."));
+
+        return *mapping_coarse_levels;
+      }
     }
   }
 
@@ -169,6 +195,7 @@ public:
             "Coarse mappings can not be initialized because fine level mapping is invalid."));
 
         MappingTools::initialize_coarse_mappings<dim, Number>(mapping_dof_vector_coarse_levels,
+                                                              degree_coarse_mappings,
                                                               mapping_dof_vector_fine_level,
                                                               fine_triangulation,
                                                               coarse_triangulations);
@@ -181,10 +208,11 @@ private:
   std::shared_ptr<dealii::Mapping<dim>> mapping_fine_level;
 
   /**
-   * dealii::Mapping on coarse levels
+   * dealii::Mapping on coarse levels. This shared pointer is allowed to be un-initialized when
+   * calling the constructor of this class. In this case, mapping_fine_level is taken as the mapping
+   * for all multigrid h-levels.
    */
-  // TODO
-  //  std::vector<std::shared_ptr<dealii::Mapping<dim>>> mapping_coarse_levels;
+  std::shared_ptr<dealii::Mapping<dim>> mapping_coarse_levels;
 
   /**
    * MappingDoFVector object on fine triangulation level.
@@ -196,6 +224,12 @@ private:
    * the fine triangulation. The first entry corresponds to the coarsest triangulation.
    */
   std::vector<std::shared_ptr<MappingDoFVector<dim, Number>>> mapping_dof_vector_coarse_levels;
+
+  /**
+   * Degree for coarse-grid mappings. This variable is only relevant for mappigns of type
+   * MappingDoFVector.
+   */
+  unsigned int const degree_coarse_mappings;
 };
 
 } // namespace ExaDG

@@ -68,6 +68,33 @@ create_mapping(std::shared_ptr<dealii::Mapping<dim>> & mapping,
 }
 
 /**
+ * This function creates mapping and multigrid_mappings (while the mapping for coarse multigrid
+ * h-levels is created only if involves_h_multigrid is true and if mapping_degree_fine is
+ * unequal mapping_degree_coarse). Internally, the above function is called, creating a
+ * dealii::Mapping depending on the element type and the mapping_degree.
+ */
+template<int dim, typename Number>
+void
+create_mapping_with_multigrid(std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+                              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings,
+                              ElementType const &                               element_type,
+                              unsigned int const &                              mapping_degree_fine,
+                              unsigned int const & mapping_degree_coarse,
+                              bool const           involves_h_multigrid)
+{
+  // create fine mapping
+  create_mapping(mapping, element_type, mapping_degree_fine);
+
+  // create coarse mappings if needed
+  std::shared_ptr<dealii::Mapping<dim>> coarse_mapping;
+  if(involves_h_multigrid and (mapping_degree_coarse != mapping_degree_fine))
+  {
+    create_mapping(coarse_mapping, element_type, mapping_degree_coarse);
+  }
+  multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping, coarse_mapping);
+}
+
+/**
  * This function can be seen as some form of "copy constructor" for periodic face pairs,
  * transforming the template argument of dealii::GridTools::PeriodicFacePair from
  * Triangulation::cell_iterator to DoFHandler::cell_iterator.

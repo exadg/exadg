@@ -64,6 +64,7 @@ Spatial discretization:
   Number of global refinements:              0
   Create coarse triangulations:              false
   Mapping degree:                            2
+  Mapping degree coarse grids:               2
   FE space:                                  L2
   Polynomial degree velocity:                2
   Polynomial degree pressure:                MixedOrder

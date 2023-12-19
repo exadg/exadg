@@ -417,8 +417,6 @@ private:
   void
   create_grid(Grid<dim> & grid, std::shared_ptr<dealii::Mapping<dim>> & mapping) final
   {
-    (void)mapping;
-
     auto const lambda_create_triangulation = [&](dealii::Triangulation<dim, dim> & tria,
                                                  std::vector<dealii::GridTools::PeriodicFacePair<
                                                    typename dealii::Triangulation<
@@ -464,6 +462,10 @@ private:
                                              this->param.grid,
                                              lambda_create_triangulation,
                                              {} /* no local refinements */);
+
+    GridUtilities::create_mapping(mapping,
+                                  this->param.grid.element_type,
+                                  this->param.mapping_degree);
   }
 
   void

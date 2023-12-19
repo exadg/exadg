@@ -208,9 +208,10 @@ private:
 
 
     // SPATIAL DISCRETIZATION
-    param.grid.triangulation_type = TriangulationType::Distributed;
-    param.mapping_degree          = param.degree_u;
-    param.degree_p                = DegreePressure::MixedOrder;
+    param.grid.triangulation_type     = TriangulationType::Distributed;
+    param.mapping_degree              = param.degree_u;
+    param.mapping_degree_coarse_grids = param.mapping_degree;
+    param.degree_p                    = DegreePressure::MixedOrder;
 
     // convective term
     param.upwind_factor = 1.0;
@@ -410,9 +411,6 @@ private:
               std::shared_ptr<dealii::Mapping<dim>> &           mapping,
               std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
-    (void)mapping;
-    (void)multigrid_mappings;
-
     auto const lambda_create_triangulation = [&](dealii::Triangulation<dim, dim> & tria,
                                                  std::vector<dealii::GridTools::PeriodicFacePair<
                                                    typename dealii::Triangulation<
@@ -533,6 +531,14 @@ private:
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
+
+    // mappings
+    GridUtilities::create_mapping_with_multigrid(mapping,
+                                                 multigrid_mappings,
+                                                 this->param.grid.element_type,
+                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree_coarse_grids,
+                                                 this->param.involves_h_multigrid());
   }
 
   void
@@ -795,8 +801,9 @@ private:
     param.spectral_radius                      = 0.8;
     param.solver_info_data.interval_time_steps = OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS;
 
-    param.grid.triangulation_type = TriangulationType::Distributed;
-    param.mapping_degree          = param.degree;
+    param.grid.triangulation_type     = TriangulationType::Distributed;
+    param.mapping_degree              = param.degree;
+    param.mapping_degree_coarse_grids = param.mapping_degree;
 
     param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
     param.solver             = Structure::Solver::FGMRES;
@@ -958,9 +965,6 @@ private:
               std::shared_ptr<dealii::Mapping<dim>> &           mapping,
               std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
-    (void)mapping;
-    (void)multigrid_mappings;
-
     auto const lambda_create_triangulation = [&](dealii::Triangulation<dim, dim> & tria,
                                                  std::vector<dealii::GridTools::PeriodicFacePair<
                                                    typename dealii::Triangulation<
@@ -1077,6 +1081,14 @@ private:
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
+
+    // mappings
+    GridUtilities::create_mapping_with_multigrid(mapping,
+                                                 multigrid_mappings,
+                                                 this->param.grid.element_type,
+                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree_coarse_grids,
+                                                 this->param.involves_h_multigrid());
   }
 
   void

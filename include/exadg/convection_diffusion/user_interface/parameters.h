@@ -231,6 +231,9 @@ public:
   // Mapping
   unsigned int mapping_degree;
 
+  // mapping degree for coarser grids in h-multigrid
+  unsigned int mapping_degree_coarse_grids;
+
   // polynomial degree of shape functions
   unsigned int degree;
 

@@ -67,6 +67,7 @@ Parameters::Parameters()
     // SPATIAL DISCRETIZATION
     grid(GridData()),
     mapping_degree(1),
+    mapping_degree_coarse_grids(1),
     degree(1),
     enable_adaptivity(false),
     numerical_flux_convective_operator(NumericalFluxConvectiveOperator::Undefined),
@@ -521,6 +522,9 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
   grid.print(pcout);
 
   print_parameter(pcout, "Mapping degree", mapping_degree);
+
+  if(involves_h_multigrid())
+    print_parameter(pcout, "Mapping degree coarse grids", mapping_degree_coarse_grids);
 
   print_parameter(pcout, "Polynomial degree", degree);
 

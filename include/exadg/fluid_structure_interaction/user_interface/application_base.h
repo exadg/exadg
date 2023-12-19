@@ -107,9 +107,6 @@ public:
     param.print(pcout, "List of parameters for structure:");
 
     // grid
-    GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
-    multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping);
-
     grid = std::make_shared<Grid<dim>>();
     create_grid(*grid, mapping, multigrid_mappings);
     print_grid_info(pcout, *grid);
@@ -252,9 +249,6 @@ public:
                 dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
     // grid
-    GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
-    multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping);
-
     grid = std::make_shared<Grid<dim>>();
     create_grid(*grid, mapping, multigrid_mappings);
     print_grid_info(pcout, *grid);

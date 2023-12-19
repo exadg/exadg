@@ -49,6 +49,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         3
 
 Solver:
@@ -165,6 +166,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         3
 
 Solver:
@@ -281,6 +283,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         3
 
 Solver:
@@ -397,6 +400,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         3
 
 Solver:
@@ -513,6 +517,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         3
 
 Solver:
@@ -629,6 +634,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         3
 
 Solver:
@@ -745,6 +751,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         3
 
 Solver:
@@ -861,6 +868,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         3
 
 Solver:
@@ -977,6 +985,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         3
 
 Solver:
