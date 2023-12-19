@@ -85,10 +85,10 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a91b5d70cafd1bb0f13eba6beebb091fb" id="r_a91b5d70cafd1bb0f13eba6beebb091fb"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridMappings.html#a91b5d70cafd1bb0f13eba6beebb091fb">MultigridMappings</a> (std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; &gt; mapping)</td></tr>
-<tr class="separator:a91b5d70cafd1bb0f13eba6beebb091fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7bdf3f64cca6fcfaaf5782ca569e7479" id="r_a7bdf3f64cca6fcfaaf5782ca569e7479"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridMappings.html#a7bdf3f64cca6fcfaaf5782ca569e7479">MultigridMappings</a> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MappingDoFVector.html">MappingDoFVector</a>&lt; dim, Number &gt; &gt; mapping_dof_vector)</td></tr>
-<tr class="separator:a7bdf3f64cca6fcfaaf5782ca569e7479"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a12caf180ce7d4acfb717bb7d3805ee41" id="r_a12caf180ce7d4acfb717bb7d3805ee41"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridMappings.html#a12caf180ce7d4acfb717bb7d3805ee41">MultigridMappings</a> (std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; &gt; mapping, std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; &gt; mapping_coarse_levels)</td></tr>
+<tr class="separator:a12caf180ce7d4acfb717bb7d3805ee41"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3862742826dee41822efd2757b5582dc" id="r_a3862742826dee41822efd2757b5582dc"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridMappings.html#a3862742826dee41822efd2757b5582dc">MultigridMappings</a> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MappingDoFVector.html">MappingDoFVector</a>&lt; dim, Number &gt; &gt; mapping_dof_vector, unsigned int const degree_coarse_mappings)</td></tr>
+<tr class="separator:a3862742826dee41822efd2757b5582dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a039fa2ac0c625b3f58f3dc7a333bf23f" id="r_a039fa2ac0c625b3f58f3dc7a333bf23f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridMappings.html#a039fa2ac0c625b3f58f3dc7a333bf23f">initialize_coarse_mappings</a> (<a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &amp;grid, unsigned int const n_h_levels)</td></tr>
 <tr class="separator:a039fa2ac0c625b3f58f3dc7a333bf23f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acae1fc28a4159f40652d1e56be532eb7" id="r_acae1fc28a4159f40652d1e56be532eb7"><td class="memItemLeft" align="right" valign="top">dealii::Mapping&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridMappings.html#acae1fc28a4159f40652d1e56be532eb7">get_mapping</a> (unsigned int const h_level, unsigned int const n_h_levels) const</td></tr>
@@ -104,8 +104,8 @@ Public Attributes</h2></td></tr>
 class ExaDG::MultigridMappings&lt; dim, Number &gt;</div><p>This class handles mappings for use in multigrid.</p>
 <p>The lambda function <a class="el" href="classExaDG_1_1MultigridMappings.html#a039fa2ac0c625b3f58f3dc7a333bf23f">initialize_coarse_mappings()</a> can be overwritten in order to realize a user-specific construction of the mapping on coarser grids. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a91b5d70cafd1bb0f13eba6beebb091fb" name="a91b5d70cafd1bb0f13eba6beebb091fb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a91b5d70cafd1bb0f13eba6beebb091fb">&#9670;&#160;</a></span>MultigridMappings() <span class="overload">[1/2]</span></h2>
+<a id="a12caf180ce7d4acfb717bb7d3805ee41" name="a12caf180ce7d4acfb717bb7d3805ee41"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a12caf180ce7d4acfb717bb7d3805ee41">&#9670;&#160;</a></span>MultigridMappings() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -119,8 +119,18 @@ template&lt;int dim, typename Number &gt; </div>
           <td class="memname"><a class="el" href="classExaDG_1_1MultigridMappings.html">ExaDG::MultigridMappings</a>&lt; dim, Number &gt;::MultigridMappings </td>
           <td>(</td>
           <td class="paramtype">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; &gt;&#160;</td>
-          <td class="paramname"><em>mapping</em></td><td>)</td>
+          <td class="paramname"><em>mapping</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; &gt;&#160;</td>
+          <td class="paramname"><em>mapping_coarse_levels</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -133,8 +143,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a7bdf3f64cca6fcfaaf5782ca569e7479" name="a7bdf3f64cca6fcfaaf5782ca569e7479"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7bdf3f64cca6fcfaaf5782ca569e7479">&#9670;&#160;</a></span>MultigridMappings() <span class="overload">[2/2]</span></h2>
+<a id="a3862742826dee41822efd2757b5582dc" name="a3862742826dee41822efd2757b5582dc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3862742826dee41822efd2757b5582dc">&#9670;&#160;</a></span>MultigridMappings() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -148,8 +158,18 @@ template&lt;int dim, typename Number &gt; </div>
           <td class="memname"><a class="el" href="classExaDG_1_1MultigridMappings.html">ExaDG::MultigridMappings</a>&lt; dim, Number &gt;::MultigridMappings </td>
           <td>(</td>
           <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MappingDoFVector.html">MappingDoFVector</a>&lt; dim, Number &gt; &gt;&#160;</td>
-          <td class="paramname"><em>mapping_dof_vector</em></td><td>)</td>
+          <td class="paramname"><em>mapping_dof_vector</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>degree_coarse_mappings</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -265,6 +285,7 @@ template&lt;int dim, typename Number &gt; </div>
 <div class="line">            <span class="stringliteral">&quot;Coarse mappings can not be initialized because fine level mapping is invalid.&quot;</span>));</div>
 <div class="line"> </div>
 <div class="line">        MappingTools::initialize_coarse_mappings&lt;dim, Number&gt;(mapping_dof_vector_coarse_levels,</div>
+<div class="line">                                                              degree_coarse_mappings,</div>
 <div class="line">                                                              mapping_dof_vector_fine_level,</div>
 <div class="line">                                                              fine_triangulation,</div>
 <div class="line">                                                              coarse_triangulations);</div>
