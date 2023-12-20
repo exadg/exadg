@@ -578,9 +578,8 @@ initialize_coarse_mappings_from_mapping_dof_vector(
   {
     AssertThrow(false,
                 dealii::ExcMessage(
-                        dealii::ExcMessage(
-                                "The function initialize_coarse_mappings_from_mapping_dof_vector() "
-                        		"is currently not implemented for the given ElementType."));
+                  "The function initialize_coarse_mappings_from_mapping_dof_vector() "
+                  "is currently not implemented for the given ElementType."));
   }
 }
 
