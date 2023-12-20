@@ -36,6 +36,7 @@
 #include <exadg/grid/grid.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
+#include <exadg/operators/rhs_operator.h>
 
 namespace ExaDG
 {
@@ -255,6 +256,11 @@ private:
    */
   InverseMassOperator<dim, 1, Number>   inverse_mass_pressure;
   InverseMassOperator<dim, dim, Number> inverse_mass_velocity;
+
+  /*
+   * RHS operator that acts on the pressure DoFs
+   */
+  RHSOperator<dim, Number, 1> rhs_operator;
 
   MPI_Comm const mpi_comm;
 

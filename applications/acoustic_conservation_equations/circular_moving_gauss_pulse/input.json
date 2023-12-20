@@ -1,0 +1,25 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "5",
+        "DegreeMax": "5",
+        "RefineSpaceMin": "3",
+        "RefineSpaceMax": "3"
+    },
+    "TemporalResolution": {
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+        "RuntimeInNumberOfPulseRotations": "1.0"
+    },
+    "Output": {
+        "OutputDirectory": "output/circular_moving_gauss_pulse/",
+        "OutputName": "circular_moving_gauss_pulse",
+        "WriteOutput": "false"
+    }
+}

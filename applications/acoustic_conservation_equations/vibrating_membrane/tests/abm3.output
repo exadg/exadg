@@ -23,6 +23,7 @@ List of parameters:
 
 Mathematical model:
   Formulation:                               SkewSymmetric
+  Right-hand side:                           false
 
 Physical quantities:
   Start time:                                0.0000e+00
@@ -124,7 +125,8 @@ List of parameters:
 
 Mathematical model:
   Formulation:                               SkewSymmetric
-
+  Right-hand side:                           false
+  
 Physical quantities:
   Start time:                                0.0000e+00
   End time:                                  2.5254e-02
