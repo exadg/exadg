@@ -44,6 +44,9 @@ namespace Acoustics
  * | prescribe velocity values |                         | Dirichlet:              |
  * |                           | no BCs to be prescribed | prescribe g_u           |
  * +---------------------------+-------------------------+-------------------------+
+ * | admittance BC             |                         | Admittance:             |
+ * |                           | no BCs to be prescribed | prescribe Y             |
+ * +---------------------------+-------------------------+-------------------------+
  */
 
 enum class BoundaryType
@@ -51,6 +54,7 @@ enum class BoundaryType
   Undefined,
   PressureDirichlet,
   VelocityDirichlet,
+  Admittance
 };
 
 template<int dim>
@@ -66,6 +70,12 @@ struct BoundaryDescriptor
   // Dirichlet: prescribe velocity
   std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> velocity_dbc;
 
+  // BC for Admittance Y:
+  // Special cases are:
+  // Y = 0: sound hard (perfectly reflecting)
+  // Y = 1: first order ABC
+  std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> admittance_bc;
+
   // return the boundary type
   inline DEAL_II_ALWAYS_INLINE //
     BoundaryType
@@ -76,6 +86,9 @@ struct BoundaryDescriptor
 
     if(this->velocity_dbc.find(boundary_id) != this->velocity_dbc.end())
       return BoundaryType::VelocityDirichlet;
+
+    if(this->admittance_bc.find(boundary_id) != this->admittance_bc.end())
+      return BoundaryType::Admittance;
 
     AssertThrow(false, dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
 
@@ -93,6 +106,9 @@ struct BoundaryDescriptor
       counter++;
 
     if(this->velocity_dbc.find(boundary_id) != this->velocity_dbc.end())
+      counter++;
+
+    if(this->admittance_bc.find(boundary_id) != this->admittance_bc.end())
       counter++;
 
     if(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())

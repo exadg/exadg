@@ -36,7 +36,7 @@ template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
   calculate_exterior_value_pressure(unsigned int const                     q,
-                                    FaceIntegrator<dim, 1, Number> const & integrator_m,
+                                    FaceIntegrator<dim, 1, Number> const & pressure_m,
                                     BoundaryType const &                   boundary_type,
                                     dealii::types::boundary_id const       boundary_id,
                                     BoundaryDescriptor<dim> const &        boundary_descriptor,
@@ -46,13 +46,14 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     auto const g = FunctionEvaluator<0, dim, Number>::value(
       *boundary_descriptor.pressure_dbc.find(boundary_id)->second,
-      integrator_m.quadrature_point(q),
+      pressure_m.quadrature_point(q),
       time);
-    return -integrator_m.get_value(q) + Number{2.0} * g;
+    return -pressure_m.get_value(q) + Number{2.0} * g;
   }
-  else if(boundary_type == BoundaryType::VelocityDirichlet)
+  else if(boundary_type == BoundaryType::VelocityDirichlet ||
+          boundary_type == BoundaryType::Admittance)
   {
-    return integrator_m.get_value(q);
+    return pressure_m.get_value(q);
   }
   else
   {
@@ -65,27 +66,45 @@ template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
   calculate_exterior_value_velocity(unsigned int const                       q,
-                                    FaceIntegrator<dim, dim, Number> const & integrator_m,
+                                    FaceIntegrator<dim, dim, Number> const & velocity_m,
+                                    FaceIntegrator<dim, 1, Number> const &   pressure_m,
+                                    double const                             c,
                                     BoundaryType const &                     boundary_type,
                                     dealii::types::boundary_id const         boundary_id,
                                     BoundaryDescriptor<dim> const &          boundary_descriptor,
                                     Number const                             time)
 {
-  (void)boundary_id;
-  (void)boundary_descriptor;
-  (void)time;
-
   if(boundary_type == BoundaryType::VelocityDirichlet)
   {
     auto const g = FunctionEvaluator<1, dim, Number>::value(
       *boundary_descriptor.velocity_dbc.find(boundary_id)->second,
-      integrator_m.quadrature_point(q),
+      velocity_m.quadrature_point(q),
       time);
-    return -integrator_m.get_value(q) + Number{2.0} * g;
+    return -velocity_m.get_value(q) + Number{2.0} * g;
   }
   else if(boundary_type == BoundaryType::PressureDirichlet)
   {
-    return integrator_m.get_value(q);
+    return velocity_m.get_value(q);
+  }
+  else if(boundary_type == BoundaryType::Admittance)
+  {
+    auto const Y = FunctionEvaluator<0, dim, Number>::value(
+      *boundary_descriptor.admittance_bc.find(boundary_id)->second,
+      velocity_m.quadrature_point(q),
+      time);
+
+    auto const n      = velocity_m.normal_vector(q);
+    auto const rho_um = velocity_m.get_value(q);
+    auto const pm     = pressure_m.get_value(q);
+
+    auto const rho_um_normal     = (rho_um * n) * n;
+    auto const rho_um_tangential = rho_um - rho_um_normal;
+
+    // normal share of velocty
+    auto const rho_u_n = (Number{2.0} * Y * pm / c) * n - rho_um_normal;
+
+    // tangential share of velocity stays the same
+    return rho_u_n + rho_um_tangential;
   }
   else
   {
@@ -134,13 +153,19 @@ template<int dim, typename Number>
 class BoundaryFaceIntegratorU : public BoundaryFaceIntegratorBase<BoundaryDescriptor<dim>, Number>
 {
   using FaceIntegratorU = FaceIntegrator<dim, dim, Number>;
+  using FaceIntegratorP = FaceIntegrator<dim, 1, Number>;
 
 public:
-  BoundaryFaceIntegratorU(FaceIntegratorU const &         integrator_m_in,
+  BoundaryFaceIntegratorU(FaceIntegratorU const &         integrator_velocity_m_in,
+                          FaceIntegratorP const &         integrator_pressure_m_in,
+                          double const                    speed_of_sound,
                           BoundaryDescriptor<dim> const & boundary_descriptor_in)
-    : BoundaryFaceIntegratorBase<BoundaryDescriptor<dim>, Number>(integrator_m_in.get_matrix_free(),
-                                                                  boundary_descriptor_in),
-      integrator_m(integrator_m_in)
+    : BoundaryFaceIntegratorBase<BoundaryDescriptor<dim>, Number>(
+        integrator_velocity_m_in.get_matrix_free(),
+        boundary_descriptor_in),
+      integrator_velocity_m(integrator_velocity_m_in),
+      integrator_pressure_m(integrator_pressure_m_in),
+      c(speed_of_sound)
   {
   }
 
@@ -149,7 +174,9 @@ public:
     get_value(unsigned int const q) const
   {
     return calculate_exterior_value_velocity(q,
-                                             integrator_m,
+                                             integrator_velocity_m,
+                                             integrator_pressure_m,
+                                             c,
                                              this->boundary_type,
                                              this->boundary_id,
                                              this->boundary_descriptor,
@@ -157,7 +184,9 @@ public:
   }
 
 private:
-  FaceIntegratorU const & integrator_m;
+  FaceIntegratorU const & integrator_velocity_m;
+  FaceIntegratorP const & integrator_pressure_m;
+  double const            c;
 };
 
 } // namespace Acoustics
