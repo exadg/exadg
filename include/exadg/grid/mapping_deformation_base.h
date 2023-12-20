@@ -60,7 +60,8 @@ public:
   DeformedMappingBase(std::shared_ptr<dealii::Mapping<dim> const> mapping_undeformed,
                       unsigned int const                          mapping_degree_deformed,
                       dealii::Triangulation<dim> const &          triangulation)
-    : MappingDoFVector<dim, Number>(mapping_degree_deformed), mapping_undeformed(mapping_undeformed)
+    : MappingDoFVector<dim, Number>(triangulation, mapping_degree_deformed),
+      mapping_undeformed(mapping_undeformed)
   {
     // Make sure that dealii::MappingQCache is initialized correctly. We use an empty
     // dof-vector so that no displacements are added to the reference configuration
