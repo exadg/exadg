@@ -106,14 +106,14 @@ PointwiseOutputGeneratorBase<dim, Number>::setup_base(
     pointwise_output_data = pointwise_output_data_in;
 
     AssertThrow(
-      (get_unsteady_evaluation_type(pointwise_output_data_in.time_control_data) ==
+      (get_unsteady_evaluation_type(pointwise_output_data.time_control_data) ==
        TimeControlData::UnsteadyEvalType::Interval) or
-        (get_unsteady_evaluation_type(pointwise_output_data_in.time_control_data) ==
+        (get_unsteady_evaluation_type(pointwise_output_data.time_control_data) ==
          TimeControlData::UnsteadyEvalType::None),
       dealii::ExcMessage(
         "This module can currently only be used with time TimeControlData::UnsteadyEvalType::Interval"));
 
-    time_control.setup(pointwise_output_data_in.time_control_data);
+    time_control.setup(pointwise_output_data.time_control_data);
 
     mapping = &mapping_in;
 

@@ -597,7 +597,7 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
   {
     data        = data_in;
     clear_files = data.clear_file;
-    time_control.setup(data_in.time_control_data);
+    time_control.setup(data.time_control_data);
 
     dof_handler = &dof_handler_in;
     AssertThrow(
