@@ -45,7 +45,7 @@ namespace Acoustics
  * Spatial operator to solve for the acoustic conservation equations:
  *
  * 1/c^2 * dp/dt + div (rho * u) = f
- *  (rho * u)/dt + grad p = 0
+ * d(rho * u)/dt + grad p = 0
  *
  * This operator solves for the pressure p as well as the velocity that is
  * already scaled by the density rho * u.
