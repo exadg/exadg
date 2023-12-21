@@ -93,19 +93,25 @@ private:
                                                                1),
                                     dealii::update_quadrature_points);
 
+    std::vector<unsigned int> hierarchic_to_lexicographic_numbering =
+      dealii::FETools::hierarchic_to_lexicographic_numbering<dim>(
+        this->mapping_q_cache->get_degree());
+
     this->mapping_q_cache->initialize(
       triangulation,
       [&](typename dealii::Triangulation<dim>::cell_iterator const & cell)
         -> std::vector<dealii::Point<dim>> {
         fe_values.reinit(cell);
 
-        // compute displacement and add to original position
+        // dealii::MappingQCache::initialize() expects vector of points in hierarchical ordering
         std::vector<dealii::Point<dim>> points_moved(fe_values.n_quadrature_points);
+
+        // compute displacement and add to original position
         for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
         {
-          // need to adjust for hierarchic numbering of dealii::MappingQCache
+          // access fe_values->quadrature_point() by lexicographic index
           dealii::Point<dim> const point =
-            fe_values.quadrature_point(this->hierarchic_to_lexicographic_numbering[i]);
+            fe_values.quadrature_point(hierarchic_to_lexicographic_numbering[i]);
           dealii::Point<dim> displacement;
           for(unsigned int d = 0; d < dim; ++d)
             displacement[d] = displacement_function->value(point, d);

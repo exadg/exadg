@@ -66,11 +66,6 @@ public:
     if(element_type == ElementType::Hypercube)
     {
       mapping_q_cache = std::make_shared<dealii::MappingQCache<dim>>(mapping_degree);
-
-      hierarchic_to_lexicographic_numbering =
-        dealii::FETools::hierarchic_to_lexicographic_numbering<dim>(mapping_degree);
-      lexicographic_to_hierarchic_numbering =
-        dealii::Utilities::invert_permutation(hierarchic_to_lexicographic_numbering);
     }
     else if(element_type == ElementType::Simplex)
     {
@@ -207,11 +202,16 @@ public:
     {
       dealii::FiniteElement<dim> const & fe = dof_handler.get_fe();
 
-      std::vector<std::array<unsigned int, dim>> component_to_system_index(
-        fe.base_element(0).dofs_per_cell);
+      unsigned int dofs_per_cell = fe.base_element(0).dofs_per_cell;
+
+      // The elements of this vector need to be in lexicographic ordering.
+      std::vector<std::array<unsigned int, dim>> component_to_system_index(dofs_per_cell);
 
       if(fe.dofs_per_vertex > 0) // dealii::FE_Q
       {
+        std::vector<unsigned int> hierarchic_to_lexicographic_numbering =
+          dealii::FETools::hierarchic_to_lexicographic_numbering<dim>(fe.degree);
+
         for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
         {
           component_to_system_index
@@ -335,6 +335,11 @@ public:
                                                             dealii::update_quadrature_points);
       }
 
+      std::vector<unsigned int> hierarchic_to_lexicographic_numbering =
+        dealii::FETools::hierarchic_to_lexicographic_numbering<dim>(mapping_q_cache->get_degree());
+      std::vector<unsigned int> lexicographic_to_hierarchic_numbering =
+        dealii::Utilities::invert_permutation(hierarchic_to_lexicographic_numbering);
+
       // take the grid coordinates described by mapping and add deformation described by
       // displacement vector
       mapping_q_cache->initialize(
@@ -344,6 +349,7 @@ public:
           unsigned int const scalar_dofs_per_cell =
             dealii::Utilities::pow(mapping_q_cache->get_degree() + 1, dim);
 
+          // dealii::MappingQCache::initialize() expects vector of points in hierarchical ordering
           std::vector<dealii::Point<dim>> grid_coordinates(scalar_dofs_per_cell);
 
           if(mapping.get() != 0)
@@ -352,8 +358,9 @@ public:
             // extract displacement and add to original position
             for(unsigned int i = 0; i < scalar_dofs_per_cell; ++i)
             {
+              // access fe_values->quadrature_point() by lexicographic index
               grid_coordinates[i] =
-                fe_values->quadrature_point(this->hierarchic_to_lexicographic_numbering[i]);
+                fe_values->quadrature_point(hierarchic_to_lexicographic_numbering[i]);
             }
           }
 
@@ -385,8 +392,8 @@ public:
               }
               else // dealii::FE_DGQ
               {
-                grid_coordinates[this->lexicographic_to_hierarchic_numbering[id.second]]
-                                [id.first] += displacement_vector_ghosted(dof_indices[i]);
+                grid_coordinates[lexicographic_to_hierarchic_numbering[id.second]][id.first] +=
+                  displacement_vector_ghosted(dof_indices[i]);
               }
             }
           }
@@ -409,9 +416,6 @@ public:
                     "MappingDoFVector is currently not implemented for the given ElementType."));
     }
   }
-
-  std::vector<unsigned int> hierarchic_to_lexicographic_numbering;
-  std::vector<unsigned int> lexicographic_to_hierarchic_numbering;
 
 protected:
   /**
@@ -504,6 +508,11 @@ initialize_coarse_mappings_from_mapping_dof_vector(
       grid_coordinates_all_levels_ghosted[level].update_ghost_values();
     }
 
+    std::vector<unsigned int> hierarchic_to_lexicographic_numbering =
+      dealii::FETools::hierarchic_to_lexicographic_numbering<dim>(degree_coarse_mappings);
+    std::vector<unsigned int> lexicographic_to_hierarchic_numbering =
+      dealii::Utilities::invert_permutation(hierarchic_to_lexicographic_numbering);
+
     // Call the initialize() function of dealii::MappingQCache, which initializes the mapping for
     // all levels according to grid_coordinates_all_levels_ghosted.
     mapping_dof_vector_all_levels->get_mapping_q_cache()->initialize(
@@ -540,8 +549,7 @@ initialize_coarse_mappings_from_mapping_dof_vector(
             }
             else // dealii::FE_DGQ
             {
-              grid_coordinates[mapping_dof_vector_all_levels
-                                 ->lexicographic_to_hierarchic_numbering[id.second]][id.first] =
+              grid_coordinates[lexicographic_to_hierarchic_numbering[id.second]][id.first] =
                 grid_coordinates_all_levels_ghosted[level](dof_indices[i]);
             }
           }
