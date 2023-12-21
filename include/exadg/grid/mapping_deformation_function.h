@@ -47,10 +47,12 @@ public:
                           dealii::Triangulation<dim> const &           triangulation,
                           std::shared_ptr<dealii::Function<dim>> const mesh_deformation_function,
                           double const                                 start_time)
-    : DeformedMappingBase<dim, Number>(mapping_undeformed, mapping_degree_q_cache, triangulation),
+    : DeformedMappingBase<dim, Number>(mapping_undeformed, triangulation),
       mesh_deformation_function(mesh_deformation_function),
       triangulation(triangulation)
   {
+    this->mapping_q_cache = std::make_shared<dealii::MappingQCache<dim>>(mapping_degree_q_cache);
+
     update(start_time, false, dealii::numbers::invalid_unsigned_int);
   }
 

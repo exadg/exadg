@@ -58,14 +58,13 @@ public:
   /**
    * Constructor.
    */
-  MappingDoFVector(dealii::Triangulation<dim> const & triangulation,
-                   unsigned int const                 mapping_degree)
+  MappingDoFVector(dealii::Triangulation<dim> const & triangulation)
   {
     element_type = get_element_type(triangulation);
 
     if(element_type == ElementType::Hypercube)
     {
-      mapping_q_cache = std::make_shared<dealii::MappingQCache<dim>>(mapping_degree);
+      // TODO
     }
     else if(element_type == ElementType::Simplex)
     {
@@ -137,6 +136,22 @@ public:
           "The function get_mapping_q_cache() may only be called for ElementType::Hypercube."));
 
       return mapping_q_cache;
+    }
+  }
+
+  void
+  create_mapping_q_cache(unsigned int const degree)
+  {
+    if(not mapping_q_cache.get())
+    {
+      mapping_q_cache = std::make_shared<dealii::MappingQCache<dim>>(degree);
+    }
+    else
+    {
+      AssertThrow(
+        mapping_q_cache->get_degree() == degree,
+        dealii::ExcMessage(
+          "Cannot create MappingQCache(degree) because the object already exists with another degree."));
     }
   }
 
@@ -283,13 +298,10 @@ public:
    * Initializes the dealii::MappingQCache object by providing a mapping that describes an
    * undeformed reference configuration and a displacement dof-vector (with a corresponding
    * dealii::DoFHandler object) that describes the displacement of the mesh compared to that
-   * reference configuration. There are two special cases:
+   * reference configuration.
    *
    * If the mapping pointer is invalid, this implies that the reference coordinates are interpreted
    * as zero, i.e., the displacement vector describes the absolute coordinates of the grid points.
-   *
-   * If the displacement_vector is empty or uninitialized, this implies that no displacements will
-   * be added to the grid coordinates of the reference configuration described by mapping.
    */
   void
   initialize_mapping_from_dof_vector(std::shared_ptr<dealii::Mapping<dim> const> mapping,
@@ -299,15 +311,28 @@ public:
     AssertThrow(get_element_type(dof_handler.get_triangulation()) == element_type,
                 dealii::ExcMessage("MappingDoFVector detected inconsistent element types."));
 
+    AssertThrow(dof_handler.n_dofs() > 0 and displacement_vector.size() == dof_handler.n_dofs(),
+                dealii::ExcMessage("Unitialized parameters displacement_vector or dof_handler."));
+
     if(element_type == ElementType::Hypercube)
     {
-      AssertThrow(mapping_q_cache.get(),
-                  dealii::ExcMessage("Mapping object mapping_q_cache is not initialized."));
+      unsigned int const degree = dof_handler.get_fe().degree;
+
+      if(mapping_q_cache.get())
+      {
+        AssertThrow(
+          degree == mapping_q_cache->get_degree(),
+          dealii::ExcMessage(
+            "Degree of finite element of dof_handler does not fit to the degree used to initialize MappingQCache."));
+      }
+      else
+      {
+        mapping_q_cache = std::make_shared<dealii::MappingQCache<dim>>(degree);
+      }
 
       AssertThrow(dealii::MultithreadInfo::n_threads() == 1, dealii::ExcNotImplemented());
 
       VectorType displacement_vector_ghosted;
-      if(dof_handler.n_dofs() > 0 and displacement_vector.size() == dof_handler.n_dofs())
       {
         dealii::IndexSet locally_relevant_dofs;
         dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
@@ -330,13 +355,12 @@ public:
       {
         fe_values = std::make_shared<dealii::FEValues<dim>>(*mapping,
                                                             fe_nothing,
-                                                            dealii::QGaussLobatto<dim>(
-                                                              mapping_q_cache->get_degree() + 1),
+                                                            dealii::QGaussLobatto<dim>(degree + 1),
                                                             dealii::update_quadrature_points);
       }
 
       std::vector<unsigned int> hierarchic_to_lexicographic_numbering =
-        dealii::FETools::hierarchic_to_lexicographic_numbering<dim>(mapping_q_cache->get_degree());
+        dealii::FETools::hierarchic_to_lexicographic_numbering<dim>(degree);
       std::vector<unsigned int> lexicographic_to_hierarchic_numbering =
         dealii::Utilities::invert_permutation(hierarchic_to_lexicographic_numbering);
 
@@ -346,17 +370,16 @@ public:
         dof_handler.get_triangulation(),
         [&](const typename dealii::Triangulation<dim>::cell_iterator & cell_tria)
           -> std::vector<dealii::Point<dim>> {
-          unsigned int const scalar_dofs_per_cell =
-            dealii::Utilities::pow(mapping_q_cache->get_degree() + 1, dim);
+          unsigned int dofs_per_cell = dof_handler.get_fe().base_element(0).dofs_per_cell;
 
           // dealii::MappingQCache::initialize() expects vector of points in hierarchical ordering
-          std::vector<dealii::Point<dim>> grid_coordinates(scalar_dofs_per_cell);
+          std::vector<dealii::Point<dim>> grid_coordinates(dofs_per_cell);
 
           if(mapping.get() != 0)
           {
             fe_values->reinit(cell_tria);
             // extract displacement and add to original position
-            for(unsigned int i = 0; i < scalar_dofs_per_cell; ++i)
+            for(unsigned int i = 0; i < dofs_per_cell; ++i)
             {
               // access fe_values->quadrature_point() by lexicographic index
               grid_coordinates[i] =
@@ -364,10 +387,7 @@ public:
             }
           }
 
-          // if this function is called with an empty dof-vector, this indicates that the
-          // displacements are zero and the points do not have to be moved
-          if(dof_handler.n_dofs() > 0 and displacement_vector.size() > 0 and
-             cell_tria->is_active() and not(cell_tria->is_artificial()))
+          if(cell_tria->is_active() and not(cell_tria->is_artificial()))
           {
             typename dealii::DoFHandler<dim>::cell_iterator cell(&cell_tria->get_triangulation(),
                                                                  cell_tria->level(),
@@ -466,7 +486,7 @@ initialize_coarse_mappings_from_mapping_dof_vector(
     dof_handler.distribute_mg_dofs();
 
     std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector_all_levels =
-      std::make_shared<MappingDoFVector<dim, Number>>(triangulation, degree_coarse_mappings);
+      std::make_shared<MappingDoFVector<dim, Number>>(triangulation);
 
     // fill a dof vector with grid coordinates of the fine level using degree_coarse_mappings
     typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -515,6 +535,7 @@ initialize_coarse_mappings_from_mapping_dof_vector(
 
     // Call the initialize() function of dealii::MappingQCache, which initializes the mapping for
     // all levels according to grid_coordinates_all_levels_ghosted.
+    mapping_dof_vector_all_levels->create_mapping_q_cache(fe.degree);
     mapping_dof_vector_all_levels->get_mapping_q_cache()->initialize(
       dof_handler.get_triangulation(),
       [&](const typename dealii::Triangulation<dim>::cell_iterator & cell_tria)
@@ -644,8 +665,7 @@ initialize_coarse_mappings_from_mapping_dof_vector(
 
     {
       std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector_fine_level =
-        std::make_shared<MappingDoFVector<dim, Number>>(*fine_triangulation,
-                                                        degree_coarse_mappings);
+        std::make_shared<MappingDoFVector<dim, Number>>(*fine_triangulation);
 
       auto const & dof_handler_fine_level = dof_handlers_all_levels[n_h_levels - 1];
       mapping_dof_vector_fine_level->fill_grid_coordinates_vector(*fine_mapping->get_mapping(),
@@ -693,8 +713,7 @@ initialize_coarse_mappings_from_mapping_dof_vector(
     for(unsigned int h_level = 0; h_level < coarse_mappings.size(); ++h_level)
     {
       coarse_mappings[h_level] =
-        std::make_shared<MappingDoFVector<dim, Number>>(*coarse_triangulations[h_level],
-                                                        degree_coarse_mappings);
+        std::make_shared<MappingDoFVector<dim, Number>>(*coarse_triangulations[h_level]);
 
       // grid_coordinates_all_levels describes absolute coordinates -> use an uninitialized mapping
       // in order to interpret the grid coordinates vector as absolute coordinates and not as

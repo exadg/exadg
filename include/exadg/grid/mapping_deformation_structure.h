@@ -58,7 +58,7 @@ public:
     Parameters const &                                    param,
     std::string const &                                   field,
     MPI_Comm const &                                      mpi_comm)
-    : DeformedMappingBase<dim, Number>(mapping_undeformed, param.degree, *grid->triangulation),
+    : DeformedMappingBase<dim, Number>(mapping_undeformed, *grid->triangulation),
       param(param),
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       iterations({0, {0, 0}})
@@ -79,6 +79,10 @@ public:
 
     // finally, initialize dof vector
     pde_operator->initialize_dof_vector(displacement);
+
+    this->initialize_mapping_from_dof_vector(this->mapping_undeformed,
+                                             displacement,
+                                             pde_operator->get_dof_handler());
   }
 
   std::shared_ptr<Operator<dim, Number> const>

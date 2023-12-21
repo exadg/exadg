@@ -58,17 +58,9 @@ public:
    * absolute coordinates of the grid.
    */
   DeformedMappingBase(std::shared_ptr<dealii::Mapping<dim> const> mapping_undeformed,
-                      unsigned int const                          mapping_degree_deformed,
                       dealii::Triangulation<dim> const &          triangulation)
-    : MappingDoFVector<dim, Number>(triangulation, mapping_degree_deformed),
-      mapping_undeformed(mapping_undeformed)
+    : MappingDoFVector<dim, Number>(triangulation), mapping_undeformed(mapping_undeformed)
   {
-    // Make sure that dealii::MappingQCache is initialized correctly. We use an empty
-    // dof-vector so that no displacements are added to the reference configuration
-    // described by mapping_undeformed.
-    dealii::DoFHandler<dim> dof_handler(triangulation);
-    VectorType              displacement_vector;
-    this->initialize_mapping_from_dof_vector(mapping_undeformed, displacement_vector, dof_handler);
   }
 
   /**
