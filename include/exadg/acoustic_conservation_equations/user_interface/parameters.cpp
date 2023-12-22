@@ -34,6 +34,7 @@ namespace Acoustics
 Parameters::Parameters()
   : // MATHEMATICAL MODEL
     formulation(Formulation::Undefined),
+    right_hand_side(false),
 
     // PHYSICAL QUANTITIES
     start_time(0.),
@@ -119,6 +120,7 @@ Parameters::print_parameters_mathematical_model(dealii::ConditionalOStream const
   pcout << std::endl << "Mathematical model:" << std::endl;
 
   print_parameter(pcout, "Formulation", formulation);
+  print_parameter(pcout, "Right-hand side", right_hand_side);
 }
 
 
@@ -131,7 +133,7 @@ Parameters::print_parameters_physical_quantities(dealii::ConditionalOStream cons
   print_parameter(pcout, "Start time", start_time);
   print_parameter(pcout, "End time", end_time);
 
-  // viscosity
+  // speed of sound
   print_parameter(pcout, "Speed of sound", speed_of_sound);
 
   // mean density

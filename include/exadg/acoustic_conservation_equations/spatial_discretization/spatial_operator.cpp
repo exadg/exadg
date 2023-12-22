@@ -72,6 +72,10 @@ SpatialOperator<dim, Number>::fill_matrix_free_data(
   // append mapping flags
   matrix_free_data.append_mapping_flags(Operators::Kernel<dim, Number>::get_mapping_flags());
 
+  if(param.right_hand_side)
+    matrix_free_data.append_mapping_flags(
+      ExaDG::Operators::RHSKernel<dim, Number>::get_mapping_flags());
+
   // mapping flags required for CFL condition
   if(param.calculation_of_time_step_size == TimeStepCalculation::CFL)
   {
@@ -314,6 +318,9 @@ SpatialOperator<dim, Number>::evaluate(BlockVectorType &       dst,
   // shift to the right-hand side of the equation
   dst *= -1.0;
 
+  if(param.right_hand_side)
+    rhs_operator.evaluate_add(dst.block(block_index_pressure), time);
+
   apply_scaled_inverse_mass_operator(dst, dst);
 }
 
@@ -427,6 +434,16 @@ SpatialOperator<dim, Number>::initialize_operators()
     data.formulation          = param.formulation;
     data.bc                   = boundary_descriptor;
     acoustic_operator.initialize(*matrix_free, data);
+  }
+
+  // rhs operator
+  if(param.right_hand_side)
+  {
+    RHSOperatorData<dim> data;
+    data.dof_index     = get_dof_index_pressure();
+    data.quad_index    = get_quad_index_pressure();
+    data.kernel_data.f = field_functions->right_hand_side;
+    rhs_operator.initialize(*matrix_free, data);
   }
 }
 

@@ -72,6 +72,10 @@ public:
   // description: see enum declaration
   Formulation formulation;
 
+  // if there are acoustic source terms, set right_hand_side = true
+  bool right_hand_side;
+
+
   /**************************************************************************************/
   /*                                                                                    */
   /*                                 PHYSICAL QUANTITIES                                */

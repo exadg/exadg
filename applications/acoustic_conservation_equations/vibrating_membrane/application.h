@@ -224,6 +224,8 @@ private:
       std::make_shared<AnalyticalSolutionVelocity<dim>>(modes,
                                                         this->param.speed_of_sound,
                                                         this->param.density);
+    this->field_functions->right_hand_side =
+      std::make_shared<dealii::Functions::ZeroFunction<dim>>(1);
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
