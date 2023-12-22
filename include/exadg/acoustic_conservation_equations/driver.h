@@ -37,10 +37,11 @@ namespace Acoustics
 {
 enum class OperatorType
 {
-  AcousticOperator,   // gradient operator for scalar pressure and divergence operator for
-                      // vectorial velocity
-  InverseMassOperator // inverse mass operator: vectorial quantity (velocity) and scalar quantity
-                      // (pressure)
+  AcousticOperator,         // gradient operator for scalar pressure and divergence operator for
+                            // vectorial velocity
+  ScaledInverseMassOperator // scaled inverse mass operator: vectorial quantity (velocity) and
+                            // scalar quantity (pressure). The pressure is scaled by
+                            // speed_of_sound^2 in the evaluation of the operator
 };
 
 inline unsigned int

@@ -314,7 +314,7 @@ SpatialOperator<dim, Number>::evaluate(BlockVectorType &       dst,
   // shift to the right-hand side of the equation
   dst *= -1.0;
 
-  apply_inverse_mass_operator(dst, dst);
+  apply_scaled_inverse_mass_operator(dst, dst);
 }
 
 template<int dim, typename Number>
@@ -328,10 +328,12 @@ SpatialOperator<dim, Number>::evaluate_acoustic_operator(BlockVectorType &      
 
 template<int dim, typename Number>
 void
-SpatialOperator<dim, Number>::apply_inverse_mass_operator(BlockVectorType &       dst,
-                                                          BlockVectorType const & src) const
+SpatialOperator<dim, Number>::apply_scaled_inverse_mass_operator(BlockVectorType &       dst,
+                                                                 BlockVectorType const & src) const
 {
-  inverse_mass_pressure.apply(dst.block(block_index_pressure), src.block(block_index_pressure));
+  inverse_mass_pressure.apply_scale(dst.block(block_index_pressure),
+                                    param.speed_of_sound * param.speed_of_sound,
+                                    src.block(block_index_pressure));
   inverse_mass_velocity.apply(dst.block(block_index_velocity), src.block(block_index_velocity));
 }
 
@@ -422,7 +424,6 @@ SpatialOperator<dim, Number>::initialize_operators()
     data.block_index_pressure = block_index_pressure;
     data.block_index_velocity = block_index_velocity;
     data.speed_of_sound       = param.speed_of_sound;
-    data.density              = param.density;
     data.formulation          = param.formulation;
     data.bc                   = boundary_descriptor;
     acoustic_operator.initialize(*matrix_free, data);

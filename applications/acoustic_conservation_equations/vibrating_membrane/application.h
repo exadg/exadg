@@ -97,7 +97,7 @@ public:
         result *= std::sin(M * pi * p[0]) * std::sin(M * pi * p[1]) * std::cos(M * pi * p[2]);
     }
 
-    return result;
+    return rho * result;
   }
 
 private:
