@@ -42,6 +42,116 @@
 
 namespace ExaDG
 {
+namespace MappingTools
+{
+/**
+ * Extract the grid coordinates for a given external mapping and fill a
+ * dof-vector given a corresponding dealii::DoFHandler object.
+ */
+template<int dim, typename Number>
+void
+fill_grid_coordinates_vector(dealii::Mapping<dim> const &                         mapping,
+                             dealii::LinearAlgebra::distributed::Vector<Number> & grid_coordinates,
+                             dealii::DoFHandler<dim> const &                      dof_handler)
+{
+  ElementType element_type = get_element_type(dof_handler.get_triangulation());
+
+  if(grid_coordinates.size() != dof_handler.n_dofs())
+  {
+    dealii::IndexSet relevant_dofs_grid;
+    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs_grid);
+    grid_coordinates.reinit(dof_handler.locally_owned_dofs(),
+                            relevant_dofs_grid,
+                            dof_handler.get_communicator());
+  }
+  else
+  {
+    grid_coordinates = 0;
+  }
+
+  if(element_type == ElementType::Hypercube)
+  {
+    dealii::FiniteElement<dim> const & fe = dof_handler.get_fe();
+
+    unsigned int dofs_per_cell = fe.base_element(0).dofs_per_cell;
+
+    // The elements of this vector need to be in lexicographic ordering.
+    std::vector<std::array<unsigned int, dim>> component_to_system_index(dofs_per_cell);
+
+    if(fe.dofs_per_vertex > 0) // dealii::FE_Q
+    {
+      std::vector<unsigned int> hierarchic_to_lexicographic_numbering =
+        dealii::FETools::hierarchic_to_lexicographic_numbering<dim>(fe.degree);
+
+      for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
+      {
+        component_to_system_index
+          [hierarchic_to_lexicographic_numbering[fe.system_to_component_index(i).second]]
+          [fe.system_to_component_index(i).first] = i;
+      }
+    }
+    else // dealii::FE_DGQ
+    {
+      for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
+      {
+        component_to_system_index[fe.system_to_component_index(i).second]
+                                 [fe.system_to_component_index(i).first] = i;
+      }
+    }
+
+    // Set up dealii::FEValues with FE_Nothing and the Gauss-Lobatto quadrature to
+    // reduce setup cost, as we only use the geometry information (this means
+    // we need to call fe_values.reinit(cell) with Triangulation::cell_iterator
+    // rather than dealii::DoFHandler::cell_iterator).
+    dealii::FE_Nothing<dim> fe_nothing;
+    dealii::FEValues<dim>   fe_values(mapping,
+                                    fe_nothing,
+                                    dealii::QGaussLobatto<dim>(fe.degree + 1),
+                                    dealii::update_quadrature_points);
+
+    std::vector<dealii::types::global_dof_index> dof_indices(fe.dofs_per_cell);
+
+    for(auto const & cell : dof_handler.active_cell_iterators())
+    {
+      if(not cell->is_artificial())
+      {
+        fe_values.reinit(typename dealii::Triangulation<dim>::cell_iterator(cell));
+        cell->get_dof_indices(dof_indices);
+        for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
+        {
+          dealii::Point<dim> const point = fe_values.quadrature_point(i);
+          for(unsigned int d = 0; d < dim; ++d)
+          {
+            if(grid_coordinates.get_partitioner()->in_local_range(
+                 dof_indices[component_to_system_index[i][d]]))
+            {
+              grid_coordinates(dof_indices[component_to_system_index[i][d]]) = point[d];
+            }
+          }
+        }
+      }
+    }
+  }
+  else if(element_type == ElementType::Simplex)
+  {
+    // TODO
+
+    AssertThrow(false,
+                dealii::ExcMessage(
+                  "MappingDoFVector is currently not implemented for ElementType::Simplex."));
+  }
+  else
+  {
+    AssertThrow(false,
+                dealii::ExcMessage(
+                  "MappingDoFVector is currently not implemented for the given ElementType."));
+  }
+
+  grid_coordinates.update_ghost_values();
+}
+
+} // namespace MappingTools
+
 /**
  * A mapping class based on dealii::MappingQCache equipped with practical interfaces that can be
  * used to initialize the mapping.
@@ -170,7 +280,7 @@ public:
                   dealii::ExcMessage("Mapping object mapping_q_cache is not initialized."));
 
       // use the deformed state described by the dealii::MappingQCache object
-      fill_grid_coordinates_vector(*mapping_q_cache, grid_coordinates, dof_handler);
+      MappingTools::fill_grid_coordinates_vector(*mapping_q_cache, grid_coordinates, dof_handler);
     }
     else if(element_type == ElementType::Simplex)
     {
@@ -186,112 +296,6 @@ public:
                   dealii::ExcMessage(
                     "MappingDoFVector is currently not implemented for the given ElementType."));
     }
-  }
-
-  /**
-   * Extract the grid coordinates for a given external mapping and fill a
-   * dof-vector given a corresponding dealii::DoFHandler object.
-   */
-  void
-  fill_grid_coordinates_vector(dealii::Mapping<dim> const &    mapping,
-                               VectorType &                    grid_coordinates,
-                               dealii::DoFHandler<dim> const & dof_handler) const
-  {
-    AssertThrow(get_element_type(dof_handler.get_triangulation()) == element_type,
-                dealii::ExcMessage("MappingDoFVector detected inconsistent element types."));
-
-    if(grid_coordinates.size() != dof_handler.n_dofs())
-    {
-      dealii::IndexSet relevant_dofs_grid;
-      dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs_grid);
-      grid_coordinates.reinit(dof_handler.locally_owned_dofs(),
-                              relevant_dofs_grid,
-                              dof_handler.get_communicator());
-    }
-    else
-    {
-      grid_coordinates = 0;
-    }
-
-    if(element_type == ElementType::Hypercube)
-    {
-      dealii::FiniteElement<dim> const & fe = dof_handler.get_fe();
-
-      unsigned int dofs_per_cell = fe.base_element(0).dofs_per_cell;
-
-      // The elements of this vector need to be in lexicographic ordering.
-      std::vector<std::array<unsigned int, dim>> component_to_system_index(dofs_per_cell);
-
-      if(fe.dofs_per_vertex > 0) // dealii::FE_Q
-      {
-        std::vector<unsigned int> hierarchic_to_lexicographic_numbering =
-          dealii::FETools::hierarchic_to_lexicographic_numbering<dim>(fe.degree);
-
-        for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
-        {
-          component_to_system_index
-            [hierarchic_to_lexicographic_numbering[fe.system_to_component_index(i).second]]
-            [fe.system_to_component_index(i).first] = i;
-        }
-      }
-      else // dealii::FE_DGQ
-      {
-        for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
-        {
-          component_to_system_index[fe.system_to_component_index(i).second]
-                                   [fe.system_to_component_index(i).first] = i;
-        }
-      }
-
-      // Set up dealii::FEValues with FE_Nothing and the Gauss-Lobatto quadrature to
-      // reduce setup cost, as we only use the geometry information (this means
-      // we need to call fe_values.reinit(cell) with Triangulation::cell_iterator
-      // rather than dealii::DoFHandler::cell_iterator).
-      dealii::FE_Nothing<dim> fe_nothing;
-      dealii::FEValues<dim>   fe_values(mapping,
-                                      fe_nothing,
-                                      dealii::QGaussLobatto<dim>(fe.degree + 1),
-                                      dealii::update_quadrature_points);
-
-      std::vector<dealii::types::global_dof_index> dof_indices(fe.dofs_per_cell);
-
-      for(auto const & cell : dof_handler.active_cell_iterators())
-      {
-        if(not cell->is_artificial())
-        {
-          fe_values.reinit(typename dealii::Triangulation<dim>::cell_iterator(cell));
-          cell->get_dof_indices(dof_indices);
-          for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
-          {
-            dealii::Point<dim> const point = fe_values.quadrature_point(i);
-            for(unsigned int d = 0; d < dim; ++d)
-            {
-              if(grid_coordinates.get_partitioner()->in_local_range(
-                   dof_indices[component_to_system_index[i][d]]))
-              {
-                grid_coordinates(dof_indices[component_to_system_index[i][d]]) = point[d];
-              }
-            }
-          }
-        }
-      }
-    }
-    else if(element_type == ElementType::Simplex)
-    {
-      // TODO
-
-      AssertThrow(false,
-                  dealii::ExcMessage(
-                    "MappingDoFVector is currently not implemented for ElementType::Simplex."));
-    }
-    else
-    {
-      AssertThrow(false,
-                  dealii::ExcMessage(
-                    "MappingDoFVector is currently not implemented for the given ElementType."));
-    }
-
-    grid_coordinates.update_ghost_values();
   }
 
   /**
@@ -493,9 +497,9 @@ initialize_coarse_mappings_from_mapping_dof_vector(
     VectorType                                                 grid_coordinates_fine_level;
 
     {
-      mapping_dof_vector_all_levels->fill_grid_coordinates_vector(*fine_mapping->get_mapping(),
-                                                                  grid_coordinates_fine_level,
-                                                                  dof_handler);
+      MappingTools::fill_grid_coordinates_vector(*fine_mapping->get_mapping(),
+                                                 grid_coordinates_fine_level,
+                                                 dof_handler);
     }
 
     // project the solution onto all coarse levels of the triangulation using degree_coarse_mappings
@@ -668,9 +672,9 @@ initialize_coarse_mappings_from_mapping_dof_vector(
         std::make_shared<MappingDoFVector<dim, Number>>(*fine_triangulation);
 
       auto const & dof_handler_fine_level = dof_handlers_all_levels[n_h_levels - 1];
-      mapping_dof_vector_fine_level->fill_grid_coordinates_vector(*fine_mapping->get_mapping(),
-                                                                  grid_coordinates_fine_level,
-                                                                  dof_handler_fine_level);
+      MappingTools::fill_grid_coordinates_vector(*fine_mapping->get_mapping(),
+                                                 grid_coordinates_fine_level,
+                                                 dof_handler_fine_level);
     }
 
     // create transfer objects
