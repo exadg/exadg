@@ -29,7 +29,6 @@ Physical quantities:
   Start time:                                0.0000e+00
   End time:                                  1.5708e-06
   Speed of sound:                            1.5000e+03
-  Density:                                   1.0000e+03
 
 Temporal discretization:
   Calculation of time step size:             CFL

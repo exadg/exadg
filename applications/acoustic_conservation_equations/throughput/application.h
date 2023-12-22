@@ -66,7 +66,6 @@ private:
     this->param.start_time     = 0.0;
     this->param.end_time       = 1.0;
     this->param.speed_of_sound = 1.0;
-    this->param.density        = 1.0;
 
     // TEMPORAL DISCRETIZATION
     this->param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;

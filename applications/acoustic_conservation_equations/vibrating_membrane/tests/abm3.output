@@ -29,7 +29,6 @@ Physical quantities:
   Start time:                                0.0000e+00
   End time:                                  2.5254e-02
   Speed of sound:                            7.0000e+00
-  Density:                                   3.0000e+00
 
 Temporal discretization:
   Calculation of time step size:             UserSpecified
@@ -131,7 +130,6 @@ Physical quantities:
   Start time:                                0.0000e+00
   End time:                                  2.5254e-02
   Speed of sound:                            7.0000e+00
-  Density:                                   3.0000e+00
 
 Temporal discretization:
   Calculation of time step size:             UserSpecified

@@ -91,9 +91,6 @@ public:
   // speed_of_sound of underlying fluid
   double speed_of_sound;
 
-  // mean density of underlying fluid
-  double density;
-
   /**************************************************************************************/
   /*                                                                                    */
   /*                             TEMPORAL DISCRETIZATION                                */

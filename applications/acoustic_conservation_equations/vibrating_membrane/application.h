@@ -129,7 +129,7 @@ public:
                         "Speed of sound.",
                         dealii::Patterns::Double());
 
-      prm.add_parameter("Density", this->param.density, "Density.", dealii::Patterns::Double());
+      prm.add_parameter("Density", density, "Density.", dealii::Patterns::Double());
 
 
       // TEMPORAL DISCRETIZATION
@@ -221,9 +221,8 @@ private:
       std::make_shared<AnalyticalSolutionPressure<dim>>(modes, this->param.speed_of_sound);
 
     this->field_functions->initial_solution_velocity =
-      std::make_shared<AnalyticalSolutionVelocity<dim>>(modes,
-                                                        this->param.speed_of_sound,
-                                                        this->param.density);
+      std::make_shared<AnalyticalSolutionVelocity<dim>>(modes, this->param.speed_of_sound, density);
+
     this->field_functions->right_hand_side =
       std::make_shared<dealii::Functions::ZeroFunction<dim>>(1);
   }
@@ -274,16 +273,14 @@ private:
     pp_data.error_data_u.time_control_data.start_time       = start_time;
     pp_data.error_data_u.time_control_data.trigger_interval = (this->param.end_time - start_time);
     pp_data.error_data_u.analytical_solution =
-      std::make_shared<AnalyticalSolutionVelocity<dim>>(modes,
-                                                        this->param.speed_of_sound,
-                                                        this->param.density);
+      std::make_shared<AnalyticalSolutionVelocity<dim>>(modes, this->param.speed_of_sound, density);
     pp_data.error_data_u.calculate_relative_errors = false; // at some times the solution is 0
     pp_data.error_data_u.name                      = "velocity";
 
     // sound energy calculation
     pp_data.sound_energy_data.time_control_data.is_active  = false;
     pp_data.sound_energy_data.time_control_data.start_time = this->param.start_time;
-    pp_data.sound_energy_data.density                      = this->param.density;
+    pp_data.sound_energy_data.density                      = density;
     pp_data.sound_energy_data.speed_of_sound               = this->param.speed_of_sound;
     pp_data.sound_energy_data.time_control_data.trigger_every_time_steps = 1;
     pp_data.sound_energy_data.directory = this->output_parameters.directory + "sound_energy/";
@@ -297,6 +294,7 @@ private:
   // problem specific parameters like physical dimensions, etc.
   double modes             = 2.0;
   double number_of_periods = 1.0;
+  double density           = 1.0;
 
   double
   compute_period_duration()
