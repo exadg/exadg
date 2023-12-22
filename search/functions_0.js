@@ -12,5 +12,6 @@ var searchData=
   ['any_5fcells_5fflagged_5ffor_5fcoarsening_5for_5frefinement_9',['any_cells_flagged_for_coarsening_or_refinement',['../namespaceExaDG.html#a7ad0dd14d5eb44311cfea44a89a0fbc3',1,'ExaDG']]],
   ['append_10',['append',['../structExaDG_1_1MatrixFreeData.html#a15b02474ce4649e175295fa32d583336',1,'ExaDG::MatrixFreeData::append()'],['../classdealspectrum_1_1DealSpectrumTimer.html#a955a9687b62bfce50d5c1ffb2cb1ddf1',1,'dealspectrum::DealSpectrumTimer::append()']]],
   ['apply_11',['apply',['../classExaDG_1_1InverseMassOperatorHdiv.html#a02ff700d6e5dfc1b99acf3708bf5d6dd',1,'ExaDG::InverseMassOperatorHdiv']]],
-  ['apply_5finverse_5fblock_5fdiagonal_12',['apply_inverse_block_diagonal',['../classExaDG_1_1OperatorBase.html#a0d06a2e9ec836a9b7fa412c079c62dfa',1,'ExaDG::OperatorBase']]]
+  ['apply_5finverse_5fblock_5fdiagonal_12',['apply_inverse_block_diagonal',['../classExaDG_1_1OperatorBase.html#a0d06a2e9ec836a9b7fa412c079c62dfa',1,'ExaDG::OperatorBase']]],
+  ['apply_5fscaled_5finverse_5fmass_5foperator_13',['apply_scaled_inverse_mass_operator',['../classExaDG_1_1Acoustics_1_1SpatialOperator.html#a98900019ced48a0b76aee94fbf2eeeab',1,'ExaDG::Acoustics::SpatialOperator']]]
 ];

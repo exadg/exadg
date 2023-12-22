@@ -80,6 +80,8 @@ $(function() {
   <div class="headertitle"><div class="title">ExaDG::Acoustics::SpatialOperator&lt; dim, Number &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p><code>#include &lt;<a class="el" href="spatial__operator_8h_source.html">spatial_operator.h</a>&gt;</code></p>
 <div class="dynheader">
 Inheritance diagram for ExaDG::Acoustics::SpatialOperator&lt; dim, Number &gt;:</div>
 <div class="dyncontent">
@@ -159,9 +161,8 @@ dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="botto
 <tr class="memitem:a17dd13697574eabecd16a4a0d9c56138" id="r_a17dd13697574eabecd16a4a0d9c56138"><td class="memItemLeft" align="right" valign="top"><a id="a17dd13697574eabecd16a4a0d9c56138" name="a17dd13697574eabecd16a4a0d9c56138"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_acoustic_operator</b> (BlockVectorType &amp;dst, BlockVectorType const &amp;src, double const time) const</td></tr>
 <tr class="separator:a17dd13697574eabecd16a4a0d9c56138"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa31e041f34a69649e98760143d990318" id="r_aa31e041f34a69649e98760143d990318"><td class="memItemLeft" align="right" valign="top"><a id="aa31e041f34a69649e98760143d990318" name="aa31e041f34a69649e98760143d990318"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_inverse_mass_operator</b> (BlockVectorType &amp;dst, BlockVectorType const &amp;src) const</td></tr>
-<tr class="separator:aa31e041f34a69649e98760143d990318"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a98900019ced48a0b76aee94fbf2eeeab" id="r_a98900019ced48a0b76aee94fbf2eeeab"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Acoustics_1_1SpatialOperator.html#a98900019ced48a0b76aee94fbf2eeeab">apply_scaled_inverse_mass_operator</a> (BlockVectorType &amp;dst, BlockVectorType const &amp;src) const</td></tr>
+<tr class="separator:a98900019ced48a0b76aee94fbf2eeeab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8f948bd95ff6cf67e267cd9e42c3074c" id="r_a8f948bd95ff6cf67e267cd9e42c3074c"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Acoustics_1_1SpatialOperator.html#a8f948bd95ff6cf67e267cd9e42c3074c">calculate_time_step_cfl</a> () const final</td></tr>
 <tr class="separator:a8f948bd95ff6cf67e267cd9e42c3074c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -181,7 +182,44 @@ Additional Inherited Members</h2></td></tr>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>BlockVectorType</b> = dealii::LinearAlgebra::distributed::BlockVector&lt; Number &gt;</td></tr>
 <tr class="separator:adddfdef83ae180eba856d08fd32e0879 inherit pub_types_classExaDG_1_1Acoustics_1_1Interface_1_1SpatialOperator"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Member Function Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><div class="compoundTemplParams">template&lt;int dim, typename Number&gt;<br />
+class ExaDG::Acoustics::SpatialOperator&lt; dim, Number &gt;</div><p>Spatial operator to solve for the acoustic conservation equations:</p>
+<p>1/c^2 * dp/dt + div (rho * u) = f d(rho * u)/dt + grad p = 0</p>
+<p>This operator solves for the pressure p as well as the velocity that is already scaled by the density rho * u. </p>
+</div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a98900019ced48a0b76aee94fbf2eeeab" name="a98900019ced48a0b76aee94fbf2eeeab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a98900019ced48a0b76aee94fbf2eeeab">&#9670;&#160;</a></span>apply_scaled_inverse_mass_operator()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1Acoustics_1_1SpatialOperator.html">ExaDG::Acoustics::SpatialOperator</a>&lt; dim, Number &gt;::apply_scaled_inverse_mass_operator </td>
+          <td>(</td>
+          <td class="paramtype">BlockVectorType &amp;&#160;</td>
+          <td class="paramname"><em>dst</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">BlockVectorType const &amp;&#160;</td>
+          <td class="paramname"><em>src</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>This function applies the inverse mass matrix and scales the pressure by c^2. This is because the PDE we are solving for reads as</p>
+<p>1/c^2 dp/dt + div u = f du/dt + grad p = 0 </p>
+
+</div>
+</div>
 <a id="a8f948bd95ff6cf67e267cd9e42c3074c" name="a8f948bd95ff6cf67e267cd9e42c3074c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8f948bd95ff6cf67e267cd9e42c3074c">&#9670;&#160;</a></span>calculate_time_step_cfl()</h2>
 
