@@ -122,16 +122,16 @@ private:
     // TEMPORAL DISCRETIZATION
     this->param.start_with_low_order = false;
     if(use_explicit_time_integration)
-	{
-	  this->param.temporal_discretization = TemporalDiscretization::ExplRK;
-	  this->param.time_integrator_rk      = TimeIntegratorRK::ExplRK3Stage7Reg2;
-	}
-	else
-	{
-	  this->param.temporal_discretization      = TemporalDiscretization::BDF;
-	  this->param.order_time_integrator        = 2; // instabilities for BDF 3 and 4
-	  this->param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
-	}
+    {
+      this->param.temporal_discretization = TemporalDiscretization::ExplRK;
+      this->param.time_integrator_rk      = TimeIntegratorRK::ExplRK3Stage7Reg2;
+    }
+    else
+    {
+      this->param.temporal_discretization      = TemporalDiscretization::BDF;
+      this->param.order_time_integrator        = 2; // instabilities for BDF 3 and 4
+      this->param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+    }
 
     this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
     this->param.adaptive_time_stepping        = false;
@@ -297,7 +297,7 @@ private:
   double const left  = -1.0;
   double const right = +1.0;
 
-  bool enable_adaptivity = false;
+  bool enable_adaptivity             = false;
   bool use_explicit_time_integration = false;
 };
 
