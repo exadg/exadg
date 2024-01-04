@@ -49,6 +49,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         3
 
 Solver:
@@ -99,10 +100,6 @@ Setup elasticity operator ...
 ... done!
 
 Setup elasticity time integrator ...
-
-... done!
-
-Setup elasticity solver ...
 
 ... done!
 
@@ -169,6 +166,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         3
 
 Solver:
@@ -219,10 +217,6 @@ Setup elasticity operator ...
 ... done!
 
 Setup elasticity time integrator ...
-
-... done!
-
-Setup elasticity solver ...
 
 ... done!
 
@@ -289,6 +283,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         3
 
 Solver:
@@ -339,10 +334,6 @@ Setup elasticity operator ...
 ... done!
 
 Setup elasticity time integrator ...
-
-... done!
-
-Setup elasticity solver ...
 
 ... done!
 
@@ -409,6 +400,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         3
 
 Solver:
@@ -459,10 +451,6 @@ Setup elasticity operator ...
 ... done!
 
 Setup elasticity time integrator ...
-
-... done!
-
-Setup elasticity solver ...
 
 ... done!
 
@@ -529,6 +517,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         3
 
 Solver:
@@ -579,10 +568,6 @@ Setup elasticity operator ...
 ... done!
 
 Setup elasticity time integrator ...
-
-... done!
-
-Setup elasticity solver ...
 
 ... done!
 
@@ -649,6 +634,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         3
 
 Solver:
@@ -699,10 +685,6 @@ Setup elasticity operator ...
 ... done!
 
 Setup elasticity time integrator ...
-
-... done!
-
-Setup elasticity solver ...
 
 ... done!
 
@@ -769,6 +751,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         3
 
 Solver:
@@ -819,10 +802,6 @@ Setup elasticity operator ...
 ... done!
 
 Setup elasticity time integrator ...
-
-... done!
-
-Setup elasticity solver ...
 
 ... done!
 
@@ -889,6 +868,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         3
 
 Solver:
@@ -939,10 +919,6 @@ Setup elasticity operator ...
 ... done!
 
 Setup elasticity time integrator ...
-
-... done!
-
-Setup elasticity solver ...
 
 ... done!
 
@@ -1009,6 +985,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         3
 
 Solver:
@@ -1059,10 +1036,6 @@ Setup elasticity operator ...
 ... done!
 
 Setup elasticity time integrator ...
-
-... done!
-
-Setup elasticity solver ...
 
 ... done!
 

@@ -41,17 +41,19 @@ namespace Structure
 {
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
-  std::shared_ptr<Grid<dim> const>               grid_in,
-  std::shared_ptr<dealii::Mapping<dim> const>    mapping_in,
-  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
-  std::shared_ptr<MaterialDescriptor const>      material_descriptor_in,
-  Parameters const &                             param_in,
-  std::string const &                            field_in,
-  MPI_Comm const &                               mpi_comm_in)
+  std::shared_ptr<Grid<dim> const>                      grid_in,
+  std::shared_ptr<dealii::Mapping<dim> const>           mapping_in,
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings_in,
+  std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim> const>            field_functions_in,
+  std::shared_ptr<MaterialDescriptor const>             material_descriptor_in,
+  Parameters const &                                    param_in,
+  std::string const &                                   field_in,
+  MPI_Comm const &                                      mpi_comm_in)
   : dealii::Subscriptor(),
     grid(grid_in),
     mapping(mapping_in),
+    multigrid_mappings(multigrid_mappings_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     material_descriptor(material_descriptor_in),
@@ -140,8 +142,12 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
     matrix_free_data.append_mapping_flags(BodyForceOperator<dim, Number>::get_mapping_flags());
 
   if(param.problem_type == ProblemType::Unsteady)
+  {
+    // The boundary mass operator is only required, if we have damping terms from the Robin
+    // condition, i.e., in the unsteady case.
     matrix_free_data.append_mapping_flags(
       BoundaryMassOperator<dim, Number, dim /* n_components */>::get_mapping_flags());
+  }
 
   // dealii::DoFHandler, dealii::AffineConstraints
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
@@ -260,36 +266,6 @@ Operator<dim, Number>::setup_operators()
 
     mass_operator.set_scaling_factor(param.density);
 
-    // preconditioner and solver for mass operator have to be initialized in
-    // setup_operators() since the mass solver is already needed in
-    // setup() function of time integration scheme.
-
-    // preconditioner
-    mass_preconditioner =
-      std::make_shared<JacobiPreconditioner<Structure::MassOperator<dim, Number>>>(mass_operator);
-
-    // initialize solver
-    Krylov::SolverDataCG solver_data;
-    solver_data.use_preconditioner = true;
-    // use the same solver tolerances as for solving the momentum equation
-    if(param.large_deformation)
-    {
-      solver_data.solver_tolerance_abs = param.newton_solver_data.abs_tol;
-      solver_data.solver_tolerance_rel = param.newton_solver_data.rel_tol;
-      solver_data.max_iter             = param.newton_solver_data.max_iter;
-    }
-    else
-    {
-      solver_data.solver_tolerance_abs = param.solver_data.abs_tol;
-      solver_data.solver_tolerance_rel = param.solver_data.rel_tol;
-      solver_data.max_iter             = param.solver_data.max_iter;
-    }
-
-    typedef Krylov::
-      SolverCG<Structure::MassOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
-        CG;
-    mass_solver = std::make_shared<CG>(mass_operator, *mass_preconditioner, solver_data);
-
     // setup boundary mass operator
     BoundaryMassOperatorData<dim, Number> boundary_mass_data;
     boundary_mass_data.dof_index  = get_dof_index();
@@ -347,46 +323,24 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> con
 
   setup_operators();
 
+  setup_preconditioner();
+
+  setup_solver();
+
   pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::setup_solver(double const & scaling_factor_acceleration,
-                                    double const & scaling_factor_velocity)
+Operator<dim, Number>::setup_preconditioner()
 {
-  pcout << std::endl << "Setup elasticity solver ..." << std::endl;
-
-  double const scaling_factor_mass =
-    compute_scaling_factor_mass(scaling_factor_acceleration, scaling_factor_velocity);
-  if(param.large_deformation)
-  {
-    elasticity_operator_nonlinear.set_scaling_factor_mass_operator(scaling_factor_mass);
-    elasticity_operator_nonlinear.set_scaling_factor_mass_boundary_operator(
-      scaling_factor_velocity);
-  }
-  else
-  {
-    elasticity_operator_linear.set_scaling_factor_mass_operator(scaling_factor_mass);
-    elasticity_operator_linear.set_scaling_factor_mass_boundary_operator(scaling_factor_velocity);
-  }
-
   if(param.problem_type == ProblemType::Unsteady)
   {
-    update_boundary_mass_operator(1.0);
+    mass_preconditioner =
+      std::make_shared<JacobiPreconditioner<Structure::MassOperator<dim, Number>>>(mass_operator,
+                                                                                   true);
   }
 
-  initialize_preconditioner();
-
-  initialize_solver();
-
-  pcout << std::endl << "... done!" << std::endl;
-}
-
-template<int dim, typename Number>
-void
-Operator<dim, Number>::initialize_preconditioner()
-{
   if(param.preconditioner == Preconditioner::None)
   {
     // do nothing
@@ -396,12 +350,26 @@ Operator<dim, Number>::initialize_preconditioner()
     if(param.large_deformation)
     {
       preconditioner = std::make_shared<JacobiPreconditioner<NonLinearOperator<dim, Number>>>(
-        elasticity_operator_nonlinear);
+        elasticity_operator_nonlinear, false);
     }
     else
     {
       preconditioner = std::make_shared<JacobiPreconditioner<LinearOperator<dim, Number>>>(
-        elasticity_operator_linear);
+        elasticity_operator_linear, false);
+    }
+  }
+  else if(param.preconditioner == Preconditioner::AdditiveSchwarz)
+  {
+    if(param.large_deformation)
+    {
+      preconditioner =
+        std::make_shared<AdditiveSchwarzPreconditioner<NonLinearOperator<dim, Number>>>(
+          elasticity_operator_nonlinear, false);
+    }
+    else
+    {
+      preconditioner = std::make_shared<AdditiveSchwarzPreconditioner<LinearOperator<dim, Number>>>(
+        elasticity_operator_linear, false);
     }
   }
   else if(param.preconditioner == Preconditioner::Multigrid)
@@ -443,7 +411,7 @@ Operator<dim, Number>::initialize_preconditioner()
 
       mg_preconditioner->initialize(param.multigrid_data,
                                     grid,
-                                    mapping,
+                                    multigrid_mappings,
                                     dof_handler.get_fe(),
                                     elasticity_operator_nonlinear,
                                     param.large_deformation,
@@ -487,7 +455,7 @@ Operator<dim, Number>::initialize_preconditioner()
 
       mg_preconditioner->initialize(param.multigrid_data,
                                     grid,
-                                    mapping,
+                                    multigrid_mappings,
                                     dof_handler.get_fe(),
                                     elasticity_operator_linear,
                                     param.large_deformation,
@@ -501,12 +469,14 @@ Operator<dim, Number>::initialize_preconditioner()
     {
       typedef PreconditionerAMG<NonLinearOperator<dim, Number>, Number> AMG;
       preconditioner = std::make_shared<AMG>(elasticity_operator_nonlinear,
+                                             false,
                                              param.multigrid_data.coarse_problem.amg_data);
     }
     else
     {
       typedef PreconditionerAMG<LinearOperator<dim, Number>, Number> AMG;
       preconditioner = std::make_shared<AMG>(elasticity_operator_linear,
+                                             false,
                                              param.multigrid_data.coarse_problem.amg_data);
     }
   }
@@ -518,8 +488,33 @@ Operator<dim, Number>::initialize_preconditioner()
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::initialize_solver()
+Operator<dim, Number>::setup_solver()
 {
+  if(param.problem_type == ProblemType::Unsteady)
+  {
+    // initialize solver
+    Krylov::SolverDataCG solver_data;
+    solver_data.use_preconditioner = true;
+    // use the same solver tolerances as for solving the momentum equation
+    if(param.large_deformation)
+    {
+      solver_data.solver_tolerance_abs = param.newton_solver_data.abs_tol;
+      solver_data.solver_tolerance_rel = param.newton_solver_data.rel_tol;
+      solver_data.max_iter             = param.newton_solver_data.max_iter;
+    }
+    else
+    {
+      solver_data.solver_tolerance_abs = param.solver_data.abs_tol;
+      solver_data.solver_tolerance_rel = param.solver_data.rel_tol;
+      solver_data.max_iter             = param.solver_data.max_iter;
+    }
+
+    typedef Krylov::
+      SolverCG<Structure::MassOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
+        CG;
+    mass_solver = std::make_shared<CG>(mass_operator, *mass_preconditioner, solver_data);
+  }
+
   // initialize linear solver
   if(param.solver == Solver::CG)
   {

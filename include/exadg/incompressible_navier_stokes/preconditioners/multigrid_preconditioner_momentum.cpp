@@ -38,15 +38,15 @@ MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & c
 template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize(
-  MultigridData const &                       mg_data,
-  std::shared_ptr<Grid<dim> const>            grid,
-  std::shared_ptr<dealii::Mapping<dim> const> mapping,
-  dealii::FiniteElement<dim> const &          fe,
-  PDEOperator const &                         pde_operator,
-  MultigridOperatorType const &               mg_operator_type,
-  bool const                                  mesh_is_moving,
-  Map_DBC const &                             dirichlet_bc,
-  Map_DBC_ComponentMask const &               dirichlet_bc_component_mask)
+  MultigridData const &                                 mg_data,
+  std::shared_ptr<Grid<dim> const>                      grid,
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+  dealii::FiniteElement<dim> const &                    fe,
+  PDEOperator const &                                   pde_operator,
+  MultigridOperatorType const &                         mg_operator_type,
+  bool const                                            mesh_is_moving,
+  Map_DBC const &                                       dirichlet_bc,
+  Map_DBC_ComponentMask const &                         dirichlet_bc_component_mask)
 {
   this->pde_operator = &pde_operator;
 
@@ -81,11 +81,12 @@ MultigridPreconditioner<dim, Number>::initialize(
 
   Base::initialize(mg_data,
                    grid,
-                   mapping,
+                   multigrid_mappings,
                    fe,
                    false /*operator_is_singular*/,
                    dirichlet_bc,
-                   dirichlet_bc_component_mask);
+                   dirichlet_bc_component_mask,
+                   false /*initialize_preconditioners*/);
 }
 
 
@@ -152,11 +153,14 @@ MultigridPreconditioner<dim, Number>::update()
   // In case the operators have been updated, we also need to update the smoothers and the coarse
   // grid solver. This is generic functionality implemented in the base class.
   if(mesh_is_moving or data.unsteady_problem or
-     (mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion))
+     (mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion) or
+     this->update_needed)
   {
     this->update_smoothers();
     this->update_coarse_solver();
   }
+
+  this->update_needed = false;
 }
 
 template<int dim, typename Number>
@@ -208,6 +212,10 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
                                  *this->constraints[level],
                                  data);
 
+  // The operator also depends on the time. This is due to the fact that the linearized
+  // convective term does not only depend on the linearized velocity field but also on Dirichlet
+  // boundary data which itself depends on the current time.
+  pde_operator_level->set_time(pde_operator->get_time());
   // make sure that scaling factor of time derivative term has been set before the smoothers are
   // initialized
   pde_operator_level->set_scaling_factor_mass_operator(

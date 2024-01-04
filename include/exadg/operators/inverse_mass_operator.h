@@ -136,7 +136,7 @@ public:
 
       block_jacobi_preconditioner =
         std::make_shared<BlockJacobiPreconditioner<MassOperator<dim, n_components, Number>>>(
-          mass_operator);
+          mass_operator, true /* initialize_preconditioner */);
     }
     else
     {
@@ -144,6 +144,34 @@ public:
     }
   }
 
+  /**
+   * Updates the inverse mass operator. This function recomputes the diagonal/block-diagonal in case
+   * the geometry has changed (e.g. the mesh has been deformed).
+   */
+  void
+  update()
+  {
+    if(data.implementation_type == InverseMassType::MatrixfreeOperator)
+    {
+      // no updates needed as long as the MatrixFree object is up-to-date (which is not the
+      // responsibility of the present class).
+    }
+    else if(data.implementation_type == InverseMassType::ElementwiseKrylovSolver or
+            data.implementation_type == InverseMassType::BlockMatrices)
+    {
+      // the mass operator does not need to be updated as long as the MatrixFree object is
+      // up-to-date (which is not the responsibility of the present class).
+
+      // update the matrix-based components of the block-Jacobi preconditioner
+      block_jacobi_preconditioner->update();
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("The specified InverseMassType is not implemented."));
+    }
+  }
+
+  // dst = M^-1 * src
   void
   apply(VectorType & dst, VectorType const & src) const
   {
@@ -158,6 +186,38 @@ public:
       block_jacobi_preconditioner->vmult(dst, src);
     }
   }
+
+  // dst = scaling_factor * (M^-1 * src)
+  void
+  apply_scale(VectorType & dst, double const scaling_factor, VectorType const & src) const
+  {
+    if(data.implementation_type == InverseMassType::MatrixfreeOperator)
+    {
+      // In the InverseMassType::MatrixfreeOperator case we can avoid
+      // streaming the vector from memory twice.
+
+      // ghost have to be zeroed out before MatrixFree::cell_loop().
+      dst.zero_out_ghost_values();
+
+      matrix_free->cell_loop(
+        &This::cell_loop_matrix_free_operator,
+        this,
+        dst,
+        src,
+        /*operation before cell operation*/ {}, /*operation after cell operation*/
+        [&](const unsigned int start_range, const unsigned int end_range) {
+          for(unsigned int i = start_range; i < end_range; ++i)
+            dst.local_element(i) *= scaling_factor;
+        },
+        dof_index);
+    }
+    else
+    {
+      apply(dst, src);
+      dst *= scaling_factor;
+    }
+  }
+
 
 private:
   void
@@ -250,7 +310,8 @@ public:
     {
       preconditioner =
         std::make_shared<JacobiPreconditioner<MassOperator<dim, n_components, Number>>>(
-          mass_operator);
+          mass_operator, true /* initialize_preconditioner */);
+
       solver_data.use_preconditioner = true;
     }
     else

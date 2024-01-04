@@ -370,6 +370,7 @@ enum class PreconditionerPressurePoisson
 {
   None,
   PointJacobi,
+  BlockJacobi,
   Multigrid
 };
 

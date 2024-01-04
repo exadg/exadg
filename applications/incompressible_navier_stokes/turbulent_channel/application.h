@@ -23,6 +23,7 @@
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TURBULENT_CHANNEL_H_
 
 // ExaDG
+#include <exadg/grid/boundary_layer_manifold.h>
 #include <exadg/postprocessor/statistics_manager.h>
 #include <exadg/utilities/numbers.h>
 
@@ -76,81 +77,6 @@ grid_transform_y(double const & eta)
 
   return y;
 }
-
-/*
- * inverse mapping:
- *
- *  maps y in [-1,1]*length_y/2.0 --> eta in [0,1]
- */
-double
-inverse_grid_transform_y(double const & y)
-{
-  double eta = 0.0;
-
-  if(GRID_STRETCH_FAC >= 0)
-    eta =
-      (std::atanh(y * std::tanh(GRID_STRETCH_FAC) * 2.0 / DIMENSIONS_X2) / GRID_STRETCH_FAC + 1.0) /
-      2.0;
-  else // use a negative GRID_STRETCH_FACTOR deactivate grid stretching
-    eta = (2. * y / DIMENSIONS_X2 + 1.) / 2.0;
-
-  return eta;
-}
-
-template<int dim>
-class ManifoldTurbulentChannel : public dealii::ChartManifold<dim, dim, dim>
-{
-public:
-  ManifoldTurbulentChannel(dealii::Tensor<1, dim> const & dimensions_in)
-  {
-    dimensions = dimensions_in;
-  }
-
-  /*
-   *  push_forward operation that maps point xi in reference coordinates [0,1]^d to
-   *  point x in physical coordinates
-   */
-  dealii::Point<dim>
-  push_forward(dealii::Point<dim> const & xi) const final
-  {
-    dealii::Point<dim> x;
-
-    x[0] = xi[0] * dimensions[0] - dimensions[0] / 2.0;
-    x[1] = grid_transform_y(xi[1]);
-
-    if(dim == 3)
-      x[2] = xi[2] * dimensions[2] - dimensions[2] / 2.0;
-
-    return x;
-  }
-
-  /*
-   *  pull_back operation that maps point x in physical coordinates
-   *  to point xi in reference coordinates [0,1]^d
-   */
-  dealii::Point<dim>
-  pull_back(dealii::Point<dim> const & x) const final
-  {
-    dealii::Point<dim> xi;
-
-    xi[0] = x[0] / dimensions[0] + 0.5;
-    xi[1] = inverse_grid_transform_y(x[1]);
-
-    if(dim == 3)
-      xi[2] = x[2] / dimensions[2] + 0.5;
-
-    return xi;
-  }
-
-  std::unique_ptr<dealii::Manifold<dim>>
-  clone() const final
-  {
-    return std::make_unique<ManifoldTurbulentChannel<dim>>(dimensions);
-  }
-
-private:
-  dealii::Tensor<1, dim> dimensions;
-};
 
 template<int dim>
 class InitialSolutionVelocity : public dealii::Function<dim>
@@ -287,9 +213,10 @@ private:
     this->param.solver_info_data.interval_time_steps = 1;
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.mapping_degree          = this->param.degree_u;
-    this->param.degree_p                = DegreePressure::MixedOrder;
+    this->param.grid.triangulation_type     = TriangulationType::Distributed;
+    this->param.mapping_degree              = this->param.degree_u;
+    this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
+    this->param.degree_p                    = DegreePressure::MixedOrder;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -391,64 +318,87 @@ private:
   }
 
   void
-  create_grid() final
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
-    auto const lambda_create_triangulation =
-      [&](dealii::Triangulation<dim, dim> &                        tria,
-          std::vector<dealii::GridTools::PeriodicFacePair<
-            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
-          unsigned int const                                       global_refinements,
-          std::vector<unsigned int> const &                        vector_local_refinements) {
-        (void)vector_local_refinements;
+    auto const lambda_create_triangulation = [&](dealii::Triangulation<dim, dim> & tria,
+                                                 std::vector<dealii::GridTools::PeriodicFacePair<
+                                                   typename dealii::Triangulation<
+                                                     dim>::cell_iterator>> & periodic_face_pairs,
+                                                 unsigned int const          global_refinements,
+                                                 std::vector<unsigned int> const &
+                                                   vector_local_refinements) {
+      (void)vector_local_refinements;
 
-        dealii::Tensor<1, dim> dimensions;
-        dimensions[0] = DIMENSIONS_X1;
-        dimensions[1] = DIMENSIONS_X2;
-        if(dim == 3)
-          dimensions[2] = DIMENSIONS_X3;
+      dealii::Tensor<1, dim> dimensions;
+      dimensions[0] = DIMENSIONS_X1;
+      dimensions[1] = DIMENSIONS_X2;
+      if(dim == 3)
+        dimensions[2] = DIMENSIONS_X3;
 
-        dealii::GridGenerator::hyper_rectangle(tria,
-                                               dealii::Point<dim>(-dimensions / 2.0),
-                                               dealii::Point<dim>(dimensions / 2.0));
+      dealii::GridGenerator::hyper_rectangle(tria,
+                                             dealii::Point<dim>(-dimensions / 2.0),
+                                             dealii::Point<dim>(dimensions / 2.0));
 
-        // manifold
-        unsigned int manifold_id = 1;
-        for(auto cell : tria.cell_iterators())
-        {
-          cell->set_all_manifold_ids(manifold_id);
-        }
+      AssertThrow(
+        this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+        dealii::ExcMessage(
+          "Manifolds might not be applied correctly for TriangulationType::FullyDistributed. "
+          "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
 
-        // apply mesh stretching towards no-slip boundaries in y-direction
-        static const ManifoldTurbulentChannel<dim> manifold(dimensions);
-        tria.set_manifold(manifold_id, manifold);
+      // manifold
+      unsigned int manifold_id = 1;
+      for(auto cell : tria.cell_iterators())
+      {
+        cell->set_all_manifold_ids(manifold_id);
+      }
 
-        // periodicity in x--direction
-        tria.begin()->face(0)->set_all_boundary_ids(0 + 10);
-        tria.begin()->face(1)->set_all_boundary_ids(1 + 10);
-        // periodicity in z-direction
-        if(dim == 3)
-        {
-          tria.begin()->face(4)->set_all_boundary_ids(2 + 10);
-          tria.begin()->face(5)->set_all_boundary_ids(3 + 10);
-        }
+      // apply mesh stretching towards no-slip boundaries in y-direction
+      const BoundaryLayerManifold<dim> manifold(dimensions, GRID_STRETCH_FAC);
+      tria.set_manifold(manifold_id, manifold);
 
-        dealii::GridTools::collect_periodic_faces(tria, 0 + 10, 1 + 10, 0, periodic_face_pairs);
-        if(dim == 3)
-        {
-          dealii::GridTools::collect_periodic_faces(tria, 2 + 10, 3 + 10, 2, periodic_face_pairs);
-        }
+      AssertThrow(
+        this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+        dealii::ExcMessage(
+          "Periodic faces might not be applied correctly for TriangulationType::FullyDistributed. "
+          "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
 
-        tria.add_periodicity(periodic_face_pairs);
+      // periodicity in x--direction
+      tria.begin()->face(0)->set_all_boundary_ids(0 + 10);
+      tria.begin()->face(1)->set_all_boundary_ids(1 + 10);
+      // periodicity in z-direction
+      if(dim == 3)
+      {
+        tria.begin()->face(4)->set_all_boundary_ids(2 + 10);
+        tria.begin()->face(5)->set_all_boundary_ids(3 + 10);
+      }
 
-        tria.refine_global(global_refinements);
-      };
+      dealii::GridTools::collect_periodic_faces(tria, 0 + 10, 1 + 10, 0, periodic_face_pairs);
+      if(dim == 3)
+      {
+        dealii::GridTools::collect_periodic_faces(tria, 2 + 10, 3 + 10, 2, periodic_face_pairs);
+      }
 
-    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+      tria.add_periodicity(periodic_face_pairs);
+
+      tria.refine_global(global_refinements);
+    };
+
+    GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
                                                             this->param.grid,
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
+
+    // mappings
+    GridUtilities::create_mapping_with_multigrid(mapping,
+                                                 multigrid_mappings,
+                                                 this->param.grid.element_type,
+                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree_coarse_grids,
+                                                 this->param.involves_h_multigrid());
   }
 
   void

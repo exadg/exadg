@@ -139,8 +139,9 @@ public:
     this->param.grid.triangulation_type           = TriangulationType::Distributed;
     this->param.grid.create_coarse_triangulations = true;
 
-    this->param.mapping_degree = this->param.degree_u;
-    this->param.degree_p       = DegreePressure::MixedOrder;
+    this->param.mapping_degree              = this->param.degree_u;
+    this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
+    this->param.degree_p                    = DegreePressure::MixedOrder;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -267,7 +268,9 @@ public:
 
 
   void
-  create_grid() final
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
     auto const lambda_create_triangulation =
       [&](dealii::Triangulation<dim, dim> &                        tria,
@@ -277,15 +280,23 @@ public:
           std::vector<unsigned int> const &                        vector_local_refinements) {
         (void)periodic_face_pairs;
         (void)vector_local_refinements;
-        create_sphere_grid<dim>(tria, global_refinements);
+        create_sphere_grid<dim>(tria, global_refinements, this->param.grid.triangulation_type);
       };
 
-    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+    GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
                                                             this->param.grid,
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {});
+
+    // mappings
+    GridUtilities::create_mapping_with_multigrid(mapping,
+                                                 multigrid_mappings,
+                                                 this->param.grid.element_type,
+                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree_coarse_grids,
+                                                 this->param.involves_h_multigrid());
   }
 
   void

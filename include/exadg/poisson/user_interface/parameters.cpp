@@ -36,6 +36,7 @@ Parameters::Parameters()
     // SPATIAL DISCRETIZATION
     grid(GridData()),
     mapping_degree(1),
+    mapping_degree_coarse_grids(1),
     spatial_discretization(SpatialDiscretization::Undefined),
     degree(1),
     IP_factor(1.0),
@@ -112,6 +113,9 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
   grid.print(pcout);
 
   print_parameter(pcout, "Mapping degree", mapping_degree);
+
+  if(involves_h_multigrid())
+    print_parameter(pcout, "Mapping degree coarse grids", mapping_degree_coarse_grids);
 
   print_parameter(pcout, "FE space", spatial_discretization);
 

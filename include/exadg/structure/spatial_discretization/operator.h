@@ -192,14 +192,15 @@ public:
   /*
    * Constructor.
    */
-  Operator(std::shared_ptr<Grid<dim> const>               grid,
-           std::shared_ptr<dealii::Mapping<dim> const>    mapping,
-           std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
-           std::shared_ptr<FieldFunctions<dim> const>     field_functions,
-           std::shared_ptr<MaterialDescriptor const>      material_descriptor,
-           Parameters const &                             param,
-           std::string const &                            field,
-           MPI_Comm const &                               mpi_comm);
+  Operator(std::shared_ptr<Grid<dim> const>                      grid,
+           std::shared_ptr<dealii::Mapping<dim> const>           mapping,
+           std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+           std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor,
+           std::shared_ptr<FieldFunctions<dim> const>            field_functions,
+           std::shared_ptr<MaterialDescriptor const>             material_descriptor,
+           Parameters const &                                    param,
+           std::string const &                                   field,
+           MPI_Comm const &                                      mpi_comm);
 
   void
   fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
@@ -218,13 +219,6 @@ public:
   void
   setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
         std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data);
-
-  /*
-   * This function initializes operators, preconditioners, and solvers related to the solution of
-   * (non-)linear systems of equations.
-   */
-  void
-  setup_solver(double const & scaling_factor_acceleration, double const & scaling_factor_velocity);
 
   /*
    * Initialization of dof-vector.
@@ -416,13 +410,13 @@ private:
    * Initializes preconditioner.
    */
   void
-  initialize_preconditioner();
+  setup_preconditioner();
 
   /**
    * Initializes solver.
    */
   void
-  initialize_solver();
+  setup_solver();
 
   /*
    * Grid
@@ -433,6 +427,8 @@ private:
    * Mapping
    */
   std::shared_ptr<dealii::Mapping<dim> const> mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings;
 
   /*
    * User interface.

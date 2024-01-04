@@ -43,6 +43,15 @@ enum class Formulation
   SkewSymmetric
 };
 
+/*
+ * calculation of time step size
+ */
+enum class TimeStepCalculation
+{
+  Undefined,
+  UserSpecified,
+  CFL
+};
 
 } // namespace Acoustics
 } // namespace ExaDG

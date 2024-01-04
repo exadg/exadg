@@ -115,8 +115,16 @@ private:
 
 template<int dim>
 void
-create_sphere_grid(dealii::Triangulation<dim> & tria, unsigned int const n_refinements)
+create_sphere_grid(dealii::Triangulation<dim> & tria,
+                   unsigned int const           n_refinements,
+                   TriangulationType const &    triangulation_type)
 {
+  AssertThrow(
+    triangulation_type != TriangulationType::FullyDistributed,
+    dealii::ExcMessage(
+      "Manifolds might not be applied correctly for TriangulationType::FullyDistributed. "
+      "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
+
   dealii::Triangulation<dim> tria1, tria2, tria3, tria4, tria_ser;
   dealii::GridGenerator::hyper_shell(tria1, dealii::Point<dim>(), radius, radius_next, 6);
   dealii::GridGenerator::hyper_shell(

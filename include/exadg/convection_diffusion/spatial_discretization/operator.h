@@ -37,6 +37,7 @@
 #include <exadg/operators/inverse_mass_operator.h>
 #include <exadg/operators/mass_operator.h>
 #include <exadg/operators/rhs_operator.h>
+#include <exadg/operators/solution_transfer.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 
 namespace ExaDG
@@ -53,13 +54,14 @@ public:
   /*
    * Constructor.
    */
-  Operator(std::shared_ptr<Grid<dim> const>               grid,
-           std::shared_ptr<dealii::Mapping<dim> const>    mapping,
-           std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
-           std::shared_ptr<FieldFunctions<dim> const>     field_functions,
-           Parameters const &                             param,
-           std::string const &                            field,
-           MPI_Comm const &                               mpi_comm);
+  Operator(std::shared_ptr<Grid<dim> const>                      grid,
+           std::shared_ptr<dealii::Mapping<dim> const>           mapping,
+           std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+           std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor,
+           std::shared_ptr<FieldFunctions<dim> const>            field_functions,
+           Parameters const &                                    param,
+           std::string const &                                   field,
+           MPI_Comm const &                                      mpi_comm);
 
 
   void
@@ -75,7 +77,9 @@ public:
    * Call this setup() function if the dealii::MatrixFree object needs to be created outside this
    * class. The typical use case would be multiphysics-coupling with one MatrixFree object handed
    * over to several single-field solvers. Another typical use case is the use of an ALE
-   * formulation.
+   * formulation. Note that you need to call the function fill_matrix_free_data() beforehand in
+   * order to correctly initialize dealii::MatrixFree, which is then handed over to this setup()
+   * function.
    */
   void
   setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
@@ -83,11 +87,10 @@ public:
         std::string const &                                    dof_index_velocity_external_in = "");
 
   /*
-   * This function initializes operators, preconditioners, and solvers related to the solution of
-   * linear systems of equation required for implicit formulations.
+   * Call this setup() function for setup after adaptive mesh refinement.
    */
   void
-  setup_solver(double const scaling_factor_mass = -1.0, VectorType const * velocity = nullptr);
+  setup_after_coarsening_and_refinement();
 
   /*
    * Initialization of dof-vector.
@@ -208,10 +211,13 @@ public:
   update_after_grid_motion(bool const update_matrix_free);
 
   /*
-   * Fills a dof-vector with grid coordinates for ALE-type problems.
+   * Prepare and interpolation in adaptive mesh refinement.
    */
   void
-  fill_grid_coordinates_vector(VectorType & vector) const final;
+  prepare_coarsening_and_refinement(std::vector<VectorType *> & vectors);
+
+  void
+  interpolate_after_coarsening_and_refinement(std::vector<VectorType *> & vectors);
 
   /*
    * This function solves the linear system of equations in case of implicit time integration or
@@ -282,7 +288,13 @@ public:
   std::shared_ptr<dealii::Mapping<dim> const>
   get_mapping() const;
 
+  dealii::AffineConstraints<Number> const &
+  get_constraints() const;
+
 private:
+  void
+  do_setup();
+
   /**
    * Initializes dealii::DoFHandlers and dealii::AffineConstraints.
    */
@@ -332,13 +344,13 @@ private:
    * Initializes the preconditioner.
    */
   void
-  initialize_preconditioner();
+  setup_preconditioner();
 
   /*
    * Initializes the solver.
    */
   void
-  initialize_solver();
+  setup_solver();
 
   /*
    * Grid
@@ -346,9 +358,16 @@ private:
   std::shared_ptr<Grid<dim> const> grid;
 
   /*
+   * SolutionTransfer for adaptive mesh refinement.
+   */
+  std::shared_ptr<ExaDG::SolutionTransfer<dim, VectorType>> solution_transfer;
+
+  /*
    * Grid motion for ALE formulations
    */
   std::shared_ptr<dealii::Mapping<dim> const> mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings;
 
   /*
    * User interface: Boundary conditions and field functions.

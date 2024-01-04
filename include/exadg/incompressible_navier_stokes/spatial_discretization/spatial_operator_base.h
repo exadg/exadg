@@ -87,13 +87,14 @@ public:
   /*
    * Constructor.
    */
-  SpatialOperatorBase(std::shared_ptr<Grid<dim> const>               grid,
-                      std::shared_ptr<dealii::Mapping<dim> const>    mapping,
-                      std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
-                      std::shared_ptr<FieldFunctions<dim> const>     field_functions,
-                      Parameters const &                             parameters,
-                      std::string const &                            field,
-                      MPI_Comm const &                               mpi_comm);
+  SpatialOperatorBase(std::shared_ptr<Grid<dim> const>                      grid,
+                      std::shared_ptr<dealii::Mapping<dim> const>           mapping,
+                      std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+                      std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor,
+                      std::shared_ptr<FieldFunctions<dim> const>            field_functions,
+                      Parameters const &                                    parameters,
+                      std::string const &                                   field,
+                      MPI_Comm const &                                      mpi_comm);
 
   /*
    * Destructor.
@@ -120,6 +121,17 @@ public:
         std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
         std::string const &                                    dof_index_temperature = "");
 
+protected:
+  /*
+   * This function initializes operators, preconditioners, and solvers related to the solution of
+   * (non-)linear systems of equation required for implicit formulations. It has to be extended
+   * by derived classes if necessary.
+   */
+  virtual void
+  setup_preconditioners_and_solvers()
+  {
+  }
+
 private:
   /**
    * Additional setup to be done by derived classes.
@@ -128,14 +140,6 @@ private:
   setup_derived() = 0;
 
 public:
-  /*
-   * This function initializes operators, preconditioners, and solvers related to the solution of
-   * (non-)linear systems of equation required for implicit formulations. It has to be extended
-   * by derived classes if necessary.
-   */
-  virtual void
-  setup_solvers(double const & scaling_factor_mass, VectorType const & velocity);
-
   /*
    * Getters and setters.
    */
@@ -406,12 +410,6 @@ public:
   update_after_grid_motion(bool const update_matrix_free);
 
   /*
-   * Fills a dof-vector with grid coordinates for ALE-type problems.
-   */
-  void
-  fill_grid_coordinates_vector(VectorType & vector) const;
-
-  /*
    * Sets the grid velocity.
    */
   void
@@ -443,6 +441,8 @@ protected:
    * deformed configuration.)
    */
   std::shared_ptr<dealii::Mapping<dim> const> mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings;
 
   /*
    * User interface: Boundary conditions and field functions.

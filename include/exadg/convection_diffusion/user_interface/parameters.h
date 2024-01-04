@@ -28,6 +28,7 @@
 // ExaDG
 #include <exadg/convection_diffusion/user_interface/enum_types.h>
 #include <exadg/grid/grid_data.h>
+#include <exadg/operators/adaptive_mesh_refinement.h>
 #include <exadg/operators/inverse_mass_parameters.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/enum_types.h>
@@ -230,8 +231,15 @@ public:
   // Mapping
   unsigned int mapping_degree;
 
+  // mapping degree for coarser grids in h-multigrid
+  unsigned int mapping_degree_coarse_grids;
+
   // polynomial degree of shape functions
   unsigned int degree;
+
+  // enable adaptive mesh refinement
+  bool                       enable_adaptivity;
+  AdaptiveMeshRefinementData amr_data;
 
   // description: see enum declaration
   NumericalFluxConvectiveOperator numerical_flux_convective_operator;

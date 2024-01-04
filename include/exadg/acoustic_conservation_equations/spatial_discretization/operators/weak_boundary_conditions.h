@@ -37,18 +37,22 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
   calculate_exterior_value_pressure(unsigned int const                     q,
                                     FaceIntegrator<dim, 1, Number> const & integrator_m,
-                                    BoundaryTypeP const &                  boundary_type,
+                                    BoundaryType const &                   boundary_type,
                                     dealii::types::boundary_id const       boundary_id,
-                                    BoundaryDescriptorP<dim> const &       boundary_descriptor,
+                                    BoundaryDescriptor<dim> const &        boundary_descriptor,
                                     Number const                           time)
 {
-  if(boundary_type == BoundaryTypeP::Dirichlet)
+  if(boundary_type == BoundaryType::PressureDirichlet)
   {
     auto const g = FunctionEvaluator<0, dim, Number>::value(
-      *boundary_descriptor.dirichlet_bc.find(boundary_id)->second,
+      *boundary_descriptor.pressure_dbc.find(boundary_id)->second,
       integrator_m.quadrature_point(q),
       time);
     return -integrator_m.get_value(q) + Number{2.0} * g;
+  }
+  else if(boundary_type == BoundaryType::VelocityDirichlet)
+  {
+    return integrator_m.get_value(q);
   }
   else
   {
@@ -62,16 +66,24 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
   calculate_exterior_value_velocity(unsigned int const                       q,
                                     FaceIntegrator<dim, dim, Number> const & integrator_m,
-                                    BoundaryTypeU const &                    boundary_type,
+                                    BoundaryType const &                     boundary_type,
                                     dealii::types::boundary_id const         boundary_id,
-                                    BoundaryDescriptorU<dim> const &         boundary_descriptor,
+                                    BoundaryDescriptor<dim> const &          boundary_descriptor,
                                     Number const                             time)
 {
   (void)boundary_id;
   (void)boundary_descriptor;
   (void)time;
 
-  if(boundary_type == BoundaryTypeU::Neumann)
+  if(boundary_type == BoundaryType::VelocityDirichlet)
+  {
+    auto const g = FunctionEvaluator<1, dim, Number>::value(
+      *boundary_descriptor.velocity_dbc.find(boundary_id)->second,
+      integrator_m.quadrature_point(q),
+      time);
+    return -integrator_m.get_value(q) + Number{2.0} * g;
+  }
+  else if(boundary_type == BoundaryType::PressureDirichlet)
   {
     return integrator_m.get_value(q);
   }
@@ -86,16 +98,15 @@ inline DEAL_II_ALWAYS_INLINE //
  * Class to access values of pressure at boundaries similar to FaceIntegrators.
  */
 template<int dim, typename Number>
-class BoundaryFaceIntegratorP : public BoundaryFaceIntegratorBase<BoundaryDescriptorP<dim>, Number>
+class BoundaryFaceIntegratorP : public BoundaryFaceIntegratorBase<BoundaryDescriptor<dim>, Number>
 {
   using FaceIntegratorP = FaceIntegrator<dim, 1, Number>;
 
 public:
-  BoundaryFaceIntegratorP(FaceIntegratorP const &          integrator_m_in,
-                          BoundaryDescriptorP<dim> const & boundary_descriptor_in)
-    : BoundaryFaceIntegratorBase<BoundaryDescriptorP<dim>, Number>(
-        integrator_m_in.get_matrix_free(),
-        boundary_descriptor_in),
+  BoundaryFaceIntegratorP(FaceIntegratorP const &         integrator_m_in,
+                          BoundaryDescriptor<dim> const & boundary_descriptor_in)
+    : BoundaryFaceIntegratorBase<BoundaryDescriptor<dim>, Number>(integrator_m_in.get_matrix_free(),
+                                                                  boundary_descriptor_in),
       integrator_m(integrator_m_in)
   {
   }
@@ -120,16 +131,15 @@ private:
  * Same as above for the velocity.
  */
 template<int dim, typename Number>
-class BoundaryFaceIntegratorU : public BoundaryFaceIntegratorBase<BoundaryDescriptorU<dim>, Number>
+class BoundaryFaceIntegratorU : public BoundaryFaceIntegratorBase<BoundaryDescriptor<dim>, Number>
 {
   using FaceIntegratorU = FaceIntegrator<dim, dim, Number>;
 
 public:
-  BoundaryFaceIntegratorU(FaceIntegratorU const &          integrator_m_in,
-                          BoundaryDescriptorU<dim> const & boundary_descriptor_in)
-    : BoundaryFaceIntegratorBase<BoundaryDescriptorU<dim>, Number>(
-        integrator_m_in.get_matrix_free(),
-        boundary_descriptor_in),
+  BoundaryFaceIntegratorU(FaceIntegratorU const &         integrator_m_in,
+                          BoundaryDescriptor<dim> const & boundary_descriptor_in)
+    : BoundaryFaceIntegratorBase<BoundaryDescriptor<dim>, Number>(integrator_m_in.get_matrix_free(),
+                                                                  boundary_descriptor_in),
       integrator_m(integrator_m_in)
   {
   }

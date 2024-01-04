@@ -106,6 +106,16 @@ public:
   reset_time(double const & current_time);
 
   /*
+   * In case of adaptive mesh refinement, the driver requests preparing the owned vectors
+   * for refinement and interpolation afterwards.
+   */
+  virtual void
+  prepare_coarsening_and_refinement();
+
+  virtual void
+  interpolate_after_coarsening_and_refinement();
+
+  /*
    * Get the time step size.
    */
   virtual double

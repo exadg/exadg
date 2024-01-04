@@ -34,7 +34,7 @@ namespace ConvDiff
 template<int dim, typename Number>
 TimeIntBDF<dim, Number>::TimeIntBDF(
   std::shared_ptr<Operator<dim, Number>>          operator_in,
-  std::shared_ptr<HelpersALE<Number> const>       helpers_ale_in,
+  std::shared_ptr<HelpersALE<dim, Number> const>  helpers_ale_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
   Parameters const &                              param_in,
   MPI_Comm const &                                mpi_comm_in,
@@ -72,7 +72,8 @@ TimeIntBDF<dim, Number>::setup_derived()
     // start_with_low_order == false)
 
     helpers_ale->move_grid(this->get_time());
-    pde_operator->fill_grid_coordinates_vector(vec_grid_coordinates[0]);
+    helpers_ale->fill_grid_coordinates_vector(vec_grid_coordinates[0],
+                                              pde_operator->get_dof_handler_velocity());
 
     if(this->start_with_low_order == false)
     {
@@ -80,7 +81,8 @@ TimeIntBDF<dim, Number>::setup_derived()
       for(unsigned int i = 1; i < this->order; ++i)
       {
         helpers_ale->move_grid(this->get_previous_time(i));
-        pde_operator->fill_grid_coordinates_vector(vec_grid_coordinates[i]);
+        helpers_ale->fill_grid_coordinates_vector(vec_grid_coordinates[i],
+                                                  pde_operator->get_dof_handler_velocity());
       }
     }
   }
@@ -133,6 +135,69 @@ TimeIntBDF<dim, Number>::allocate_vectors()
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); ++i)
       pde_operator->initialize_dof_vector_velocity(vec_grid_coordinates[i]);
   }
+}
+
+template<int dim, typename Number>
+std::shared_ptr<std::vector<dealii::LinearAlgebra::distributed::Vector<Number> *>>
+TimeIntBDF<dim, Number>::get_vectors()
+{
+  std::shared_ptr<std::vector<VectorType *>> vectors =
+    std::make_shared<std::vector<VectorType *>>();
+
+  for(unsigned int i = 0; i < this->order; i++)
+  {
+    vectors->emplace_back(&solution[i]);
+  }
+
+  vectors->emplace_back(&solution_np);
+
+  vectors->emplace_back(&rhs_vector);
+
+  if(param.convective_problem() and
+     param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
+    for(unsigned int i = 0; i < this->order; i++)
+    {
+      vectors->emplace_back(&vec_convective_term[i]);
+    }
+
+    if(param.ale_formulation == false)
+    {
+      vectors->emplace_back(&convective_term_np);
+    }
+  }
+
+  if(this->param.ale_formulation)
+  {
+    vectors->emplace_back(&grid_velocity);
+
+    vectors->emplace_back(&grid_coordinates_np);
+
+    for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
+    {
+      vectors->emplace_back(&vec_grid_coordinates[i]);
+    }
+  }
+
+  return vectors;
+}
+
+template<int dim, typename Number>
+void
+TimeIntBDF<dim, Number>::prepare_coarsening_and_refinement()
+{
+  std::shared_ptr<std::vector<VectorType *>> vectors = get_vectors();
+  pde_operator->prepare_coarsening_and_refinement(*vectors);
+}
+
+template<int dim, typename Number>
+void
+TimeIntBDF<dim, Number>::interpolate_after_coarsening_and_refinement()
+{
+  this->allocate_vectors();
+
+  std::shared_ptr<std::vector<VectorType *>> vectors = get_vectors();
+  pde_operator->interpolate_after_coarsening_and_refinement(*vectors);
 }
 
 template<int dim, typename Number>
@@ -340,7 +405,8 @@ void
 TimeIntBDF<dim, Number>::ale_update()
 {
   // and compute grid coordinates at the end of the current time step t_{n+1}
-  pde_operator->fill_grid_coordinates_vector(grid_coordinates_np);
+  helpers_ale->fill_grid_coordinates_vector(grid_coordinates_np,
+                                            pde_operator->get_dof_handler_velocity());
 
   // and update grid velocity using BDF time derivative
   compute_bdf_time_derivative(grid_velocity,
@@ -589,6 +655,13 @@ TimeIntBDF<dim, Number>::set_velocities_and_times(
 {
   velocities = velocities_in;
   times      = times_in;
+}
+
+template<int dim, typename Number>
+dealii::LinearAlgebra::distributed::Vector<Number> const &
+TimeIntBDF<dim, Number>::get_solution_np() const
+{
+  return (this->solution_np);
 }
 
 template<int dim, typename Number>

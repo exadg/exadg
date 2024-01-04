@@ -98,13 +98,21 @@ public:
    * Initialization function.
    */
   void
-  initialize(MultigridData const &                       data,
-             std::shared_ptr<Grid<dim> const>            grid,
-             std::shared_ptr<dealii::Mapping<dim> const> mapping,
-             dealii::FiniteElement<dim> const &          fe,
-             bool const                                  operator_is_singular,
-             Map_DBC const &                             dirichlet_bc,
-             Map_DBC_ComponentMask const &               dirichlet_bc_component_mask);
+  initialize(MultigridData const &                                 data,
+             std::shared_ptr<Grid<dim> const>                      grid,
+             std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+             dealii::FiniteElement<dim> const &                    fe,
+             bool const                                            operator_is_singular,
+             Map_DBC const &                                       dirichlet_bc,
+             Map_DBC_ComponentMask const &                         dirichlet_bc_component_mask,
+             bool const                                            initialize_preconditioners);
+
+  /*
+   * Update of multigrid preconditioner including operators, smoothers, etc. (e.g. for problems
+   * with time-dependent coefficients).
+   */
+  void
+  update() override;
 
   /*
    * This function applies the multigrid preconditioner dst = P^{-1} src.
@@ -124,13 +132,6 @@ public:
    */
   virtual void
   apply_smoother_on_fine_level(VectorTypeMG & dst, VectorTypeMG const & src) const;
-
-  /*
-   * Update of multigrid preconditioner including operators, smoothers, etc. (e.g. for problems
-   * with time-dependent coefficients).
-   */
-  void
-  update() override;
 
   std::shared_ptr<TimerTree>
   get_timings() const override;
@@ -250,6 +251,8 @@ protected:
   // Pointer to grid class.
   std::shared_ptr<Grid<dim> const> grid;
 
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
+
   dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>>              dof_handlers;
   dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>> constraints;
 
@@ -302,16 +305,16 @@ private:
    * Smoother.
    */
   void
-  initialize_smoothers();
+  initialize_smoothers(bool const initialize_preconditioner);
 
   void
-  initialize_smoother(Operator & matrix, unsigned int level);
+  initialize_smoother(Operator & matrix, unsigned int level, bool const initialize_preconditioner);
 
   /*
    * Coarse grid solver.
    */
   void
-  initialize_coarse_solver(bool const operator_is_singular);
+  initialize_coarse_solver(bool const operator_is_singular, bool const initialize_preconditioners);
 
   /*
    * Initialization of actual multigrid algorithm.
@@ -326,13 +329,6 @@ private:
   // TODO try to avoid this private member variable by extracting this information from level_info
   // when needed.
   std::vector<MGDoFHandlerIdentifier> p_levels;
-
-  // The mapping associated to the fine triangulation.
-  std::shared_ptr<dealii::Mapping<dim> const> mapping;
-
-  // In case of h-multigrid with more than one h-level, this vector contains the mappings for all
-  // levels coarser than the fine level.
-  std::vector<std::shared_ptr<dealii::Mapping<dim> const>> coarse_mappings;
 
   dealii::MGLevelObject<std::shared_ptr<Smoother>> smoothers;
 

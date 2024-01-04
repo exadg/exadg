@@ -46,15 +46,15 @@ MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & m
 template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize(
-  MultigridData const &                       mg_data,
-  std::shared_ptr<Grid<dim> const>            grid,
-  std::shared_ptr<dealii::Mapping<dim> const> mapping,
-  dealii::FiniteElement<dim> const &          fe,
-  PDEOperator const &                         pde_operator,
-  MultigridOperatorType const &               mg_operator_type,
-  bool const                                  mesh_is_moving,
-  Map_DBC const &                             dirichlet_bc,
-  Map_DBC_ComponentMask const &               dirichlet_bc_component_mask)
+  MultigridData const &                                 mg_data,
+  std::shared_ptr<Grid<dim> const>                      grid,
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+  dealii::FiniteElement<dim> const &                    fe,
+  PDEOperator const &                                   pde_operator,
+  MultigridOperatorType const &                         mg_operator_type,
+  bool const                                            mesh_is_moving,
+  Map_DBC const &                                       dirichlet_bc,
+  Map_DBC_ComponentMask const &                         dirichlet_bc_component_mask)
 {
   this->degree_velocity = fe.degree;
 
@@ -97,11 +97,12 @@ MultigridPreconditioner<dim, Number>::initialize(
 
   Base::initialize(mg_data,
                    grid,
-                   mapping,
+                   multigrid_mappings,
                    fe,
                    data.operator_is_singular,
                    dirichlet_bc,
-                   dirichlet_bc_component_mask);
+                   dirichlet_bc_component_mask,
+                   false /* initialize_preconditioners */);
 }
 
 template<int dim, typename Number>
@@ -167,6 +168,8 @@ MultigridPreconditioner<dim, Number>::update()
   // functionality implemented in the base class.
   this->update_smoothers();
   this->update_coarse_solver();
+
+  this->update_needed = false;
 }
 
 template<int dim, typename Number>
@@ -191,8 +194,7 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
 
   if(data.use_cell_based_loops and this->level_info[level].is_dg())
   {
-    auto tria = dynamic_cast<dealii::parallel::distributed::Triangulation<dim> const *>(
-      &this->dof_handlers[level]->get_triangulation());
+    auto tria = &this->dof_handlers[level]->get_triangulation();
     Categorization::do_cell_based_loops(*tria, matrix_free_data.data, dealii_tria_level);
   }
 

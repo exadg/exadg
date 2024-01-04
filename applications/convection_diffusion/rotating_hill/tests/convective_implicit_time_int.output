@@ -51,7 +51,8 @@ Spatial Discretization:
   Element type:                              Hypercube
   Number of global refinements:              3
   Create coarse triangulations:              false
-  Mapping degree:                            1
+  Mapping degree:                            4
+  Mapping degree coarse grids:               4
   Polynomial degree:                         4
   Numerical flux convective term:            LaxFriedrichsFlux
 
@@ -68,7 +69,7 @@ Solver:
   Multigrid operator type:                   ReactionConvection
   Multigrid type:                            hMG
   Smoother:                                  Jacobi
-  Preconditioner smoother:                   BlockJacobi
+  Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
   Relaxation factor:                         8.0000e-01
   Coarse grid solver:                        GMRES
@@ -83,7 +84,7 @@ Solver:
   Interval time steps:                       4294967295
 
 Numerical parameters:
-  Use cell-based face loops:                 true
+  Use cell-based face loops:                 false
   Store velocity in DoF vector:              false
   Use over-integration:                      false
 
@@ -116,10 +117,6 @@ Calculation of time step size according to CFL condition:
 Adjust time step size to hit end time:
 
   Time step size:                            1.0040e-03
-
-... done!
-
-Setup solver ...
 
 ... done!
 

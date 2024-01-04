@@ -33,7 +33,7 @@ namespace IncNS
 template<int dim, typename Number>
 TimeIntBDFCoupled<dim, Number>::TimeIntBDFCoupled(
   std::shared_ptr<Operator>                       operator_in,
-  std::shared_ptr<HelpersALE<Number> const>       helpers_ale_in,
+  std::shared_ptr<HelpersALE<dim, Number> const>  helpers_ale_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
   Parameters const &                              param_in,
   MPI_Comm const &                                mpi_comm_in,
@@ -316,7 +316,6 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
       pde_operator->solve_linear_stokes_problem(solution_np,
                                                 rhs_vector,
                                                 update_preconditioner,
-                                                this->get_next_time(),
                                                 this->get_scaling_factor_time_derivative_term());
 
     iterations.first += 1;

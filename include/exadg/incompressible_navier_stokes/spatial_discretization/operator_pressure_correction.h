@@ -102,13 +102,15 @@ public:
   /*
    * Constructor.
    */
-  OperatorPressureCorrection(std::shared_ptr<Grid<dim> const>               grid,
-                             std::shared_ptr<dealii::Mapping<dim> const>    mapping,
-                             std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
-                             std::shared_ptr<FieldFunctions<dim> const>     field_functions,
-                             Parameters const &                             parameters,
-                             std::string const &                            field,
-                             MPI_Comm const &                               mpi_comm);
+  OperatorPressureCorrection(
+    std::shared_ptr<Grid<dim> const>                      grid,
+    std::shared_ptr<dealii::Mapping<dim> const>           mapping,
+    std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+    std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor,
+    std::shared_ptr<FieldFunctions<dim> const>            field_functions,
+    Parameters const &                                    parameters,
+    std::string const &                                   field,
+    MPI_Comm const &                                      mpi_comm);
 
   /*
    * Destructor.
@@ -124,7 +126,7 @@ public:
   setup_derived() final;
 
   void
-  setup_solvers(double const & scaling_factor_mass, VectorType const & velocity) final;
+  update_after_grid_motion(bool const update_matrix_free) final;
 
   /*
    * Momentum step:
@@ -222,17 +224,17 @@ public:
   interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time) const;
 
 private:
+  void
+  setup_preconditioners_and_solvers() final;
+
   /*
    * Setup of momentum solver (operator, preconditioner, solver).
    */
   void
+  setup_momentum_preconditioner();
+
+  void
   setup_momentum_solver();
-
-  void
-  initialize_momentum_preconditioner();
-
-  void
-  initialize_momentum_solver();
 
   /*
    * Setup of inverse mass operator for pressure.

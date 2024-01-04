@@ -27,74 +27,80 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
 
+#include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
+
 namespace ExaDG
 {
 namespace Acoustics
 {
-enum class BoundaryTypeP
+/* Boundary conditions:
+ *
+ * +---------------------------+-------------------------+-------------------------+
+ * | example                   | pressure                | velocity                |
+ * +---------------------------+-------------------------+-------------------------+
+ * | prescribe pressure values | Dirichlet:              |                         |
+ * |                           | prescribe g_p           | no BCs to be prescribed |
+ * +-----------------------------------------------------+-------------------------+
+ * | prescribe velocity values |                         | Dirichlet:              |
+ * |                           | no BCs to be prescribed | prescribe g_u           |
+ * +---------------------------+-------------------------+-------------------------+
+ */
+
+enum class BoundaryType
 {
   Undefined,
-  Dirichlet,
-};
-
-enum class BoundaryTypeU
-{
-  Undefined,
-  Neumann
-};
-
-template<int dim>
-struct BoundaryDescriptorP
-{
-  static constexpr int dimension = dim;
-  using BoundaryType             = BoundaryTypeP;
-
-  // Dirichlet: prescribe pressure
-  std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> dirichlet_bc;
-
-  // return the boundary type
-  inline DEAL_II_ALWAYS_INLINE //
-    BoundaryTypeP
-    get_boundary_type(dealii::types::boundary_id const & boundary_id) const
-  {
-    if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
-      return BoundaryTypeP::Dirichlet;
-
-    AssertThrow(false, dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-
-    return BoundaryTypeP::Undefined;
-  }
-};
-
-template<int dim>
-struct BoundaryDescriptorU
-{
-  static constexpr int dimension = dim;
-  using BoundaryType             = BoundaryTypeU;
-
-  // Neumann: only the boundary IDs are stored but no inhomogeneous boundary conditions are
-  // prescribed
-  std::set<dealii::types::boundary_id> neumann_bc;
-
-  // return the boundary type
-  inline DEAL_II_ALWAYS_INLINE //
-    BoundaryTypeU
-    get_boundary_type(dealii::types::boundary_id const & boundary_id) const
-  {
-    if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
-      return BoundaryTypeU::Neumann;
-
-    AssertThrow(false, dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-
-    return BoundaryTypeU::Undefined;
-  }
+  PressureDirichlet,
+  VelocityDirichlet,
 };
 
 template<int dim>
 struct BoundaryDescriptor
 {
-  std::shared_ptr<BoundaryDescriptorP<dim>> pressure;
-  std::shared_ptr<BoundaryDescriptorU<dim>> velocity;
+  using boundary_type = BoundaryType;
+
+  static constexpr int dimension = dim;
+
+  // Dirichlet: prescribe pressure
+  std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> pressure_dbc;
+
+  // Dirichlet: prescribe velocity
+  std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> velocity_dbc;
+
+  // return the boundary type
+  inline DEAL_II_ALWAYS_INLINE //
+    BoundaryType
+    get_boundary_type(dealii::types::boundary_id const & boundary_id) const
+  {
+    if(this->pressure_dbc.find(boundary_id) != this->pressure_dbc.end())
+      return BoundaryType::PressureDirichlet;
+
+    if(this->velocity_dbc.find(boundary_id) != this->velocity_dbc.end())
+      return BoundaryType::VelocityDirichlet;
+
+    AssertThrow(false, dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+
+    return BoundaryType::Undefined;
+  }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    void
+    verify_boundary_conditions(
+      dealii::types::boundary_id const             boundary_id,
+      std::set<dealii::types::boundary_id> const & periodic_boundary_ids) const
+  {
+    unsigned int counter = 0;
+    if(this->pressure_dbc.find(boundary_id) != this->pressure_dbc.end())
+      counter++;
+
+    if(this->velocity_dbc.find(boundary_id) != this->velocity_dbc.end())
+      counter++;
+
+    if(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())
+      counter++;
+
+    AssertThrow(counter == 1,
+                dealii::ExcMessage("Boundary face with non-unique boundary type found."));
+  }
 };
 
 } // namespace Acoustics

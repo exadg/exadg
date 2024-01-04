@@ -40,16 +40,18 @@ namespace IncNS
 {
 template<int dim, typename Number>
 SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
-  std::shared_ptr<Grid<dim> const>               grid_in,
-  std::shared_ptr<dealii::Mapping<dim> const>    mapping_in,
-  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
-  Parameters const &                             parameters_in,
-  std::string const &                            field_in,
-  MPI_Comm const &                               mpi_comm_in)
+  std::shared_ptr<Grid<dim> const>                      grid_in,
+  std::shared_ptr<dealii::Mapping<dim> const>           mapping_in,
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings_in,
+  std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim> const>            field_functions_in,
+  Parameters const &                                    parameters_in,
+  std::string const &                                   field_in,
+  MPI_Comm const &                                      mpi_comm_in)
   : dealii::Subscriptor(),
     grid(grid_in),
     mapping(mapping_in),
+    multigrid_mappings(multigrid_mappings_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(parameters_in),
@@ -724,18 +726,9 @@ SpatialOperatorBase<dim, Number>::setup(
   // Finally, do set up of derived classes
   setup_derived();
 
+  setup_preconditioners_and_solvers();
+
   pcout << std::endl << "... done!" << std::endl << std::flush;
-}
-
-template<int dim, typename Number>
-void
-SpatialOperatorBase<dim, Number>::setup_solvers(double const &     scaling_factor_mass,
-                                                VectorType const & velocity)
-{
-  momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
-  momentum_operator.set_velocity_ptr(velocity);
-
-  // remaining setup of preconditioners and solvers is done in derived classes
 }
 
 template<int dim, typename Number>
@@ -1320,7 +1313,7 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
 
   mg_preconditioner->initialize(mg_data,
                                 grid,
-                                get_mapping(),
+                                multigrid_mappings,
                                 dof_handler_u_scalar.get_fe(),
                                 laplace_operator.get_data(),
                                 param.ale_formulation,
@@ -1527,21 +1520,12 @@ SpatialOperatorBase<dim, Number>::update_after_grid_motion(bool const update_mat
     viscous_kernel->calculate_penalty_parameter(*matrix_free, get_dof_index_velocity());
   }
 
+  // The inverse mass operator might contain matrix-based components, in which cases it needs to be
+  // updated after the grid has been deformed.
+  inverse_mass_velocity.update();
+  inverse_mass_velocity_scalar.update();
+
   // note that the update of div-div and continuity penalty terms is done separately
-}
-
-template<int dim, typename Number>
-void
-SpatialOperatorBase<dim, Number>::fill_grid_coordinates_vector(VectorType & vector) const
-{
-  std::shared_ptr<MappingDoFVector<dim, Number> const> mapping_dof_vector =
-    std::dynamic_pointer_cast<MappingDoFVector<dim, Number> const>(get_mapping());
-
-  AssertThrow(mapping_dof_vector.get(),
-              dealii::ExcMessage("The function fill_grid_coordinates_vector() is only "
-                                 "implemented for mappings of type MappingDoFVector."));
-
-  mapping_dof_vector->fill_grid_coordinates_vector(vector, get_dof_handler_u());
 }
 
 template<int dim, typename Number>
@@ -1580,6 +1564,17 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
         std::make_shared<INVERSE_MASS>(projection_operator->get_matrix_free(),
                                        projection_operator->get_dof_index(),
                                        projection_operator->get_quad_index());
+    }
+    else if(param.preconditioner_projection == PreconditionerProjection::PointJacobi)
+    {
+      typedef Elementwise::JacobiPreconditioner<dim, dim, Number, ProjOperator> JACOBI;
+
+      elementwise_preconditioner_projection =
+        std::make_shared<JACOBI>(projection_operator->get_matrix_free(),
+                                 projection_operator->get_dof_index(),
+                                 projection_operator->get_quad_index(),
+                                 *projection_operator,
+                                 false);
     }
     else
     {
@@ -1637,7 +1632,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       // time step size has not been set. Hence, 'update_preconditioner = true' should be used for
       // the Jacobi preconditioner in order to use to correct diagonal for preconditioning.
       preconditioner_projection =
-        std::make_shared<JacobiPreconditioner<ProjOperator>>(*projection_operator);
+        std::make_shared<JacobiPreconditioner<ProjOperator>>(*projection_operator, false);
     }
     else if(param.preconditioner_projection == PreconditionerProjection::BlockJacobi)
     {
@@ -1646,7 +1641,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       // size has not been set. Hence, 'update_preconditioner = true' should be used for the Jacobi
       // preconditioner in order to use to correct diagonal blocks for preconditioning.
       preconditioner_projection =
-        std::make_shared<BlockJacobiPreconditioner<ProjOperator>>(*projection_operator);
+        std::make_shared<BlockJacobiPreconditioner<ProjOperator>>(*projection_operator, false);
     }
     else if(param.preconditioner_projection == PreconditionerProjection::Multigrid)
     {
@@ -1678,7 +1673,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       auto const & dof_handler = this->get_dof_handler_u();
       mg_preconditioner->initialize(this->param.multigrid_data_projection,
                                     grid,
-                                    get_mapping(),
+                                    multigrid_mappings,
                                     dof_handler.get_fe(),
                                     *this->projection_operator,
                                     this->param.ale_formulation,

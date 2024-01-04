@@ -36,7 +36,7 @@ namespace ExaDG
 template<typename BoundaryDescriptorType, typename Number>
 class BoundaryFaceIntegratorBase
 {
-  using BoundaryType       = typename BoundaryDescriptorType::BoundaryType;
+  using BoundaryType       = typename BoundaryDescriptorType::boundary_type;
   static constexpr int dim = BoundaryDescriptorType::dimension;
 
 public:

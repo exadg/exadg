@@ -90,8 +90,7 @@ private:
   typedef OperatorCoupled<dim, Number> PDEOperator;
 
 public:
-  LinearOperatorCoupled()
-    : dealii::Subscriptor(), pde_operator(nullptr), time(0.0), scaling_factor_mass(1.0)
+  LinearOperatorCoupled() : dealii::Subscriptor(), pde_operator(nullptr)
   {
   }
 
@@ -111,12 +110,6 @@ public:
     pde_operator->set_velocity_ptr(solution_linearization.block(0));
   }
 
-  void
-  update(double const & time, double const & scaling_factor)
-  {
-    this->time                = time;
-    this->scaling_factor_mass = scaling_factor;
-  }
 
   /*
    * The implementation of linear solvers in deal.ii requires that a function called 'vmult' is
@@ -125,14 +118,11 @@ public:
   void
   vmult(BlockVectorType & dst, BlockVectorType const & src) const
   {
-    pde_operator->apply_linearized_problem(dst, src, time, scaling_factor_mass);
+    pde_operator->apply_linearized_problem(dst, src);
   }
 
 private:
   PDEOperator const * pde_operator;
-
-  double time;
-  double scaling_factor_mass;
 };
 
 template<int dim, typename Number>
@@ -144,7 +134,7 @@ private:
   typedef OperatorCoupled<dim, Number> PDEOperator;
 
 public:
-  BlockPreconditioner() : pde_operator(nullptr)
+  BlockPreconditioner() : update_needed(true), pde_operator(nullptr)
   {
   }
 
@@ -158,11 +148,23 @@ public:
   update()
   {
     pde_operator->update_block_preconditioner();
+
+    this->update_needed = false;
+  }
+
+  bool
+  needs_update() const
+  {
+    return update_needed;
   }
 
   void
   vmult(BlockVectorType & dst, BlockVectorType const & src) const
   {
+    AssertThrow(this->update_needed == false,
+                dealii::ExcMessage(
+                  "BlockPreconditioner can not be applied because it is not up-to-date."));
+
     pde_operator->apply_block_preconditioner(dst, src);
   }
 
@@ -175,6 +177,9 @@ public:
 
     return std::make_shared<TimerTree>();
   }
+
+private:
+  bool update_needed;
 
   PDEOperator * pde_operator;
 };
@@ -196,13 +201,14 @@ public:
   /*
    * Constructor.
    */
-  OperatorCoupled(std::shared_ptr<Grid<dim> const>               grid,
-                  std::shared_ptr<dealii::Mapping<dim> const>    mapping,
-                  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
-                  std::shared_ptr<FieldFunctions<dim> const>     field_functions,
-                  Parameters const &                             parameters,
-                  std::string const &                            field,
-                  MPI_Comm const &                               mpi_comm);
+  OperatorCoupled(std::shared_ptr<Grid<dim> const>                      grid,
+                  std::shared_ptr<dealii::Mapping<dim> const>           mapping,
+                  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+                  std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor,
+                  std::shared_ptr<FieldFunctions<dim> const>            field_functions,
+                  Parameters const &                                    parameters,
+                  std::string const &                                   field,
+                  MPI_Comm const &                                      mpi_comm);
 
   /*
    * Destructor.
@@ -213,11 +219,10 @@ private:
   void
   setup_derived() final;
 
-public:
   void
-  setup_solvers(double const &     scaling_factor_time_derivative_term,
-                VectorType const & velocity) final;
+  setup_preconditioners_and_solvers() final;
 
+public:
   /*
    *  Update divergence penalty operator by recalculating the penalty parameter
    *  which depends on the current velocity field
@@ -257,7 +262,6 @@ public:
   solve_linear_stokes_problem(BlockVectorType &       dst,
                               BlockVectorType const & src,
                               bool const &            update_preconditioner,
-                              double const &          time                = 0.0,
                               double const &          scaling_factor_mass = 1.0);
 
   /*
@@ -300,10 +304,7 @@ public:
    * This function calculates the matrix-vector product for the linear(ized) problem.
    */
   void
-  apply_linearized_problem(BlockVectorType &       dst,
-                           BlockVectorType const & src,
-                           double const &          time,
-                           double const &          scaling_factor_mass) const;
+  apply_linearized_problem(BlockVectorType & dst, BlockVectorType const & src) const;
 
   /*
    * This function calculates the right-hand side of the steady Stokes problem, or unsteady Stokes
@@ -325,13 +326,13 @@ public:
 
 private:
   void
-  initialize_solver_coupled();
+  setup_solver_coupled();
 
   /*
    * Block preconditioner
    */
   void
-  initialize_block_preconditioner();
+  setup_block_preconditioner();
 
   void
   initialize_vectors();

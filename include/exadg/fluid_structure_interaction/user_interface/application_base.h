@@ -68,7 +68,6 @@ public:
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       parameter_file(parameter_file)
   {
-    grid = std::make_shared<Grid<dim>>();
   }
 
   virtual ~ApplicationBase()
@@ -91,7 +90,9 @@ public:
   }
 
   void
-  setup()
+  setup(std::shared_ptr<Grid<dim>> &                      grid,
+        std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+        std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings)
   {
     this->parse_parameters();
 
@@ -106,8 +107,8 @@ public:
     param.print(pcout, "List of parameters for structure:");
 
     // grid
-    GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
-    create_grid();
+    grid = std::make_shared<Grid<dim>>();
+    create_grid(*grid, mapping, multigrid_mappings);
     print_grid_info(pcout, *grid);
 
     // boundary conditions
@@ -128,18 +129,6 @@ public:
   get_parameters() const
   {
     return param;
-  }
-
-  std::shared_ptr<Grid<dim> const>
-  get_grid() const
-  {
-    return grid;
-  }
-
-  std::shared_ptr<dealii::Mapping<dim> const>
-  get_mapping() const
-  {
-    return mapping;
   }
 
   std::shared_ptr<Structure::BoundaryDescriptor<dim> const>
@@ -164,13 +153,11 @@ public:
   create_postprocessor() = 0;
 
 protected:
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   dealii::ConditionalOStream pcout;
 
   Structure::Parameters                               param;
-  std::shared_ptr<Grid<dim>>                          grid;
-  std::shared_ptr<dealii::Mapping<dim>>               mapping;
   std::shared_ptr<Structure::MaterialDescriptor>      material_descriptor;
   std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor;
   std::shared_ptr<Structure::FieldFunctions<dim>>     field_functions;
@@ -191,7 +178,9 @@ private:
   set_parameters() = 0;
 
   virtual void
-  create_grid() = 0;
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) = 0;
 
   virtual void
   set_boundary_descriptor() = 0;
@@ -218,7 +207,6 @@ public:
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       parameter_file(parameter_file)
   {
-    grid = std::make_shared<Grid<dim>>();
   }
 
   virtual ~ApplicationBase()
@@ -241,7 +229,9 @@ public:
   }
 
   void
-  setup()
+  setup(std::shared_ptr<Grid<dim>> &                      grid,
+        std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+        std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings)
   {
     this->parse_parameters();
 
@@ -259,8 +249,8 @@ public:
                 dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
     // grid
-    GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
-    create_grid();
+    grid = std::make_shared<Grid<dim>>();
+    create_grid(*grid, mapping, multigrid_mappings);
     print_grid_info(pcout, *grid);
 
     // boundary conditions
@@ -339,18 +329,6 @@ public:
     return param;
   }
 
-  std::shared_ptr<Grid<dim> const>
-  get_grid() const
-  {
-    return grid;
-  }
-
-  std::shared_ptr<dealii::Mapping<dim> const>
-  get_mapping() const
-  {
-    return mapping;
-  }
-
   std::shared_ptr<IncNS::BoundaryDescriptor<dim> const>
   get_boundary_descriptor() const
   {
@@ -409,14 +387,12 @@ public:
   }
 
 protected:
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   dealii::ConditionalOStream pcout;
 
   // fluid
   IncNS::Parameters                               param;
-  std::shared_ptr<Grid<dim>>                      grid;
-  std::shared_ptr<dealii::Mapping<dim>>           mapping;
   std::shared_ptr<IncNS::FieldFunctions<dim>>     field_functions;
   std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor;
 
@@ -450,7 +426,9 @@ private:
   set_parameters() = 0;
 
   virtual void
-  create_grid() = 0;
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) = 0;
 
   virtual void
   set_boundary_descriptor() = 0;
@@ -502,14 +480,6 @@ public:
 
   virtual ~ApplicationBase()
   {
-  }
-
-  void
-  setup()
-  {
-    structure->setup();
-
-    fluid->setup();
   }
 
   std::shared_ptr<StructureFSI::ApplicationBase<dim, Number>> structure;

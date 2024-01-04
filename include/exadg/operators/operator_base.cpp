@@ -24,6 +24,7 @@
 #include <deal.II/lac/sparse_matrix_tools.h>
 #include <deal.II/lac/sparsity_tools.h>
 #include <deal.II/matrix_free/tools.h>
+#include <deal.II/multigrid/mg_tools.h>
 
 // ExaDG
 #include <exadg/operators/operator_base.h>
@@ -42,7 +43,6 @@ OperatorBase<dim, Number, n_components>::OperatorBase()
     is_dg(true),
     data(OperatorBaseData()),
     level(dealii::numbers::invalid_unsigned_int),
-    block_diagonal_preconditioner_is_initialized(false),
     n_mpi_processes(0)
 {
 }
@@ -500,32 +500,6 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::calculate_block_diagonal_matrices() const
-{
-  AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
-
-  // allocate memory only the first time
-  if(not(block_diagonal_preconditioner_is_initialized) or
-     matrix_free->n_cell_batches() * vectorization_length != matrices.size())
-  {
-    auto dofs =
-      matrix_free->get_shape_info(this->data.dof_index).dofs_per_component_on_cell * n_components;
-
-    matrices.resize(matrix_free->n_cell_batches() * vectorization_length, LAPACKMatrix(dofs, dofs));
-
-    block_diagonal_preconditioner_is_initialized = true;
-  }
-  // else: reuse old memory
-
-  // clear matrices
-  initialize_block_jacobi_matrices_with_zero(matrices);
-
-  // compute block matrices
-  add_block_diagonal_matrices(matrices);
-}
-
-template<int dim, typename Number, int n_components>
-void
 OperatorBase<dim, Number, n_components>::add_block_diagonal_matrices(
   std::vector<LAPACKMatrix> & matrices) const
 {
@@ -557,19 +531,6 @@ OperatorBase<dim, Number, n_components>::add_block_diagonal_matrices(
   {
     matrix_free->cell_loop(&This::cell_loop_block_diagonal, this, matrices, matrices);
   }
-}
-
-template<int dim, typename Number, int n_components>
-void
-OperatorBase<dim, Number, n_components>::apply_block_diagonal_matrix_based(
-  VectorType &       dst,
-  VectorType const & src) const
-{
-  AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
-  AssertThrow(block_diagonal_preconditioner_is_initialized,
-              dealii::ExcMessage("Block Jacobi matrices have not been initialized!"));
-
-  matrix_free->cell_loop(&This::cell_loop_apply_block_diagonal_matrix_based, this, dst, src);
 }
 
 template<int dim, typename Number, int n_components>
@@ -611,8 +572,6 @@ OperatorBase<dim, Number, n_components>::apply_inverse_block_diagonal_matrix_bas
   VectorType const & src) const
 {
   AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
-  AssertThrow(block_diagonal_preconditioner_is_initialized,
-              dealii::ExcMessage("Block Jacobi matrices have not been initialized!"));
 
   matrix_free->cell_loop(&This::cell_loop_apply_inverse_block_diagonal_matrix_based,
                          this,
@@ -622,8 +581,8 @@ OperatorBase<dim, Number, n_components>::apply_inverse_block_diagonal_matrix_bas
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditioner_matrix_free()
-  const
+OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditioner_matrix_free(
+  bool const initialize) const
 {
   elementwise_operator = std::make_shared<ELEMENTWISE_OPERATOR>(*this);
 
@@ -640,8 +599,8 @@ OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditione
   {
     typedef Elementwise::JacobiPreconditioner<dim, n_components, Number, This> POINT_JACOBI;
 
-    elementwise_preconditioner =
-      std::make_shared<POINT_JACOBI>(get_matrix_free(), get_dof_index(), get_quad_index(), *this);
+    elementwise_preconditioner = std::make_shared<POINT_JACOBI>(
+      get_matrix_free(), get_dof_index(), get_quad_index(), *this, initialize);
   }
   else if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::InverseMassMatrix)
   {
@@ -663,6 +622,41 @@ OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditione
     *std::dynamic_pointer_cast<ELEMENTWISE_OPERATOR>(elementwise_operator),
     *std::dynamic_pointer_cast<ELEMENTWISE_PRECONDITIONER>(elementwise_preconditioner),
     iterative_solver_data);
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::update_block_diagonal_preconditioner_matrix_free() const
+{
+  elementwise_preconditioner->update();
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditioner_matrix_based(
+  bool const initialize) const
+{
+  // allocate memory
+  auto dofs =
+    matrix_free->get_shape_info(this->data.dof_index).dofs_per_component_on_cell * n_components;
+  matrices.resize(matrix_free->n_cell_batches() * vectorization_length, LAPACKMatrix(dofs, dofs));
+
+  // compute and factorize matrices
+  if(initialize)
+    update_block_diagonal_preconditioner_matrix_based();
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::update_block_diagonal_preconditioner_matrix_based() const
+{
+  // clear matrices
+  initialize_block_jacobi_matrices_with_zero(matrices);
+
+  // compute block matrices and add
+  add_block_diagonal_matrices(matrices);
+
+  calculate_lu_factorization_block_jacobi(matrices);
 }
 
 template<int dim, typename Number, int n_components>
@@ -736,43 +730,36 @@ OperatorBase<dim, Number, n_components>::apply_add_block_diagonal_elementwise(
 
 template<int dim, typename Number, int n_components>
 void
+OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditioner(
+  bool const initialize) const
+{
+  AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
+
+  if(data.implement_block_diagonal_preconditioner_matrix_free)
+  {
+    initialize_block_diagonal_preconditioner_matrix_free(initialize);
+  }
+  else // matrix-based variant
+  {
+    initialize_block_diagonal_preconditioner_matrix_based(initialize);
+  }
+}
+
+template<int dim, typename Number, int n_components>
+void
 OperatorBase<dim, Number, n_components>::update_block_diagonal_preconditioner() const
 {
   AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
 
-  // initialization
-
-  if(not block_diagonal_preconditioner_is_initialized)
+  if(data.implement_block_diagonal_preconditioner_matrix_free)
   {
-    if(data.implement_block_diagonal_preconditioner_matrix_free)
-    {
-      initialize_block_diagonal_preconditioner_matrix_free();
-    }
-    else // matrix-based variant
-    {
-      // allocate memory only the first time
-      auto dofs =
-        matrix_free->get_shape_info(this->data.dof_index).dofs_per_component_on_cell * n_components;
-      matrices.resize(matrix_free->n_cell_batches() * vectorization_length,
-                      LAPACKMatrix(dofs, dofs));
-    }
-
-    block_diagonal_preconditioner_is_initialized = true;
+    // For the matrix-free variant we have to update the elementwise preconditioner.
+    update_block_diagonal_preconditioner_matrix_free();
   }
-
-  // update
-
-  // For the matrix-free variant there is nothing to do.
-  // For the matrix-based variant we have to recompute the block matrices.
-  if(not data.implement_block_diagonal_preconditioner_matrix_free)
+  else // matrix-based variant
   {
-    // clear matrices
-    initialize_block_jacobi_matrices_with_zero(matrices);
-
-    // compute block matrices and add
-    add_block_diagonal_matrices(matrices);
-
-    calculate_lu_factorization_block_jacobi(matrices);
+    // For the matrix-based variant we have to recompute the block matrices.
+    update_block_diagonal_preconditioner_matrix_based();
   }
 }
 
@@ -1665,43 +1652,6 @@ OperatorBase<dim, Number, n_components>::cell_loop_apply_inverse_block_diagonal_
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::cell_loop_apply_block_diagonal_matrix_based(
-  dealii::MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                            dst,
-  VectorType const &                      src,
-  Range const &                           range) const
-{
-  IntegratorCell integrator =
-    IntegratorCell(matrix_free, this->data.dof_index, this->data.quad_index);
-
-  unsigned int const dofs_per_cell = integrator.dofs_per_cell;
-
-  for(unsigned int cell = range.first; cell < range.second; ++cell)
-  {
-    this->reinit_cell(integrator, cell);
-
-    integrator.read_dof_values(src);
-
-    for(unsigned int v = 0; v < vectorization_length; ++v)
-    {
-      dealii::Vector<Number> src_vector(dofs_per_cell);
-      dealii::Vector<Number> dst_vector(dofs_per_cell);
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        src_vector(j) = integrator.begin_dof_values()[j][v];
-
-      // apply matrix
-      matrices[cell * vectorization_length + v].vmult(dst_vector, src_vector, false);
-
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        integrator.begin_dof_values()[j][v] = dst_vector(j);
-    }
-
-    integrator.set_dof_values(dst);
-  }
-}
-
-template<int dim, typename Number, int n_components>
-void
 OperatorBase<dim, Number, n_components>::cell_loop_block_diagonal(
   dealii::MatrixFree<dim, Number> const & matrix_free,
   std::vector<LAPACKMatrix> &             matrices,
@@ -2288,7 +2238,9 @@ OperatorBase<dim, Number, n_components>::internal_compute_factorized_additive_sc
   const
 {
   if(is_dg)
+  {
     update_block_diagonal_preconditioner();
+  }
   else
   {
     dealii::DoFHandler<dim> const & dof_handler =

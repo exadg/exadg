@@ -47,6 +47,12 @@ public:
   set_robin_parameters(std::set<dealii::types::boundary_id> const & boundary_IDs,
                        double const &                               robin_parameter) const;
 
+  // grid and mapping
+  std::shared_ptr<Grid<dim>>            grid;
+  std::shared_ptr<dealii::Mapping<dim>> mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
+
   // matrix-free
   std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
   std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
@@ -69,10 +75,14 @@ SolverStructure<dim, Number>::setup(
   bool const                                                  is_test,
   double const &                                              robin_parameter_in)
 {
+  // setup application
+  application->setup(grid, mapping, multigrid_mappings);
+
   // setup spatial operator
   pde_operator =
-    std::make_shared<Structure::Operator<dim, Number>>(application->get_grid(),
-                                                       application->get_mapping(),
+    std::make_shared<Structure::Operator<dim, Number>>(grid,
+                                                       mapping,
+                                                       multigrid_mappings,
                                                        application->get_boundary_descriptor(),
                                                        application->get_field_functions(),
                                                        application->get_material_descriptor(),
@@ -85,7 +95,7 @@ SolverStructure<dim, Number>::setup(
   matrix_free_data->append(pde_operator);
 
   matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-  matrix_free->reinit(*application->get_mapping(),
+  matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
@@ -95,7 +105,7 @@ SolverStructure<dim, Number>::setup(
 
   // initialize postprocessor
   postprocessor = application->create_postprocessor();
-  postprocessor->setup(pde_operator->get_dof_handler(), *application->get_mapping());
+  postprocessor->setup(pde_operator->get_dof_handler(), *mapping);
 
   // initialize time integrator
   time_integrator = std::make_shared<Structure::TimeIntGenAlpha<dim, Number>>(
@@ -104,11 +114,9 @@ SolverStructure<dim, Number>::setup(
   time_integrator->setup(application->get_parameters().restarted_simulation);
 
   // Robin parameters need to be set *before* solver setup
+  // ##+ MAYBE REMOVE THIS ENTIRE THING SINCE SOLVER SETUP IS DONE AT SOLVER CALL.
   set_robin_parameters(application->get_boundary_descriptor()->neumann_cached_bc,
                        robin_parameter_in);
-
-  pde_operator->setup_solver(time_integrator->get_scaling_factor_acceleration(),
-                             time_integrator->get_scaling_factor_velocity());
 }
 
 template<int dim, typename Number>

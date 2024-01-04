@@ -23,7 +23,6 @@
 #define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_FLUID_H_
 
 // grid
-#include <exadg/grid/get_dynamic_mapping.h>
 #include <exadg/grid/mapping_deformation_poisson.h>
 #include <exadg/grid/mapping_deformation_structure.h>
 
@@ -52,6 +51,8 @@ template<int dim, typename Number>
 class SolverFluid
 {
 public:
+  using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
+
   SolverFluid()
   {
     timer_tree = std::make_shared<TimerTree>();
@@ -68,6 +69,12 @@ public:
   std::shared_ptr<TimerTree>
   get_timings_ale() const;
 
+  // grid and mapping
+  std::shared_ptr<Grid<dim>>            grid;
+  std::shared_ptr<dealii::Mapping<dim>> mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
+
   // spatial discretization
   std::shared_ptr<IncNS::SpatialOperatorBase<dim, Number>> pde_operator;
 
@@ -80,8 +87,10 @@ public:
   // ALE mapping
   std::shared_ptr<DeformedMappingBase<dim, Number>> ale_mapping;
 
+  std::shared_ptr<MultigridMappings<dim, Number>> ale_multigrid_mappings;
+
   // ALE helper functions required by fluid time integrator
-  std::shared_ptr<HelpersALE<Number>> helpers_ale;
+  std::shared_ptr<HelpersALE<dim, Number>> helpers_ale;
 
   /*
    * Computation time (wall clock time).
@@ -95,12 +104,16 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
                                 MPI_Comm const                                          mpi_comm,
                                 bool const                                              is_test)
 {
+  // setup application
+  application->setup(grid, mapping, multigrid_mappings);
+
   // ALE: create grid motion object
   if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Poisson)
   {
     ale_mapping = std::make_shared<Poisson::DeformedMapping<dim, Number>>(
-      application->get_grid(),
-      application->get_mapping(),
+      grid,
+      mapping,
+      multigrid_mappings,
       application->get_boundary_descriptor_ale_poisson(),
       application->get_field_functions_ale_poisson(),
       application->get_parameters_ale_poisson(),
@@ -110,8 +123,9 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
   else if(application->get_parameters().mesh_movement_type == IncNS::MeshMovementType::Elasticity)
   {
     ale_mapping = std::make_shared<Structure::DeformedMapping<dim, Number>>(
-      application->get_grid(),
-      application->get_mapping(),
+      grid,
+      mapping,
+      multigrid_mappings,
       application->get_boundary_descriptor_ale_elasticity(),
       application->get_field_functions_ale_elasticity(),
       application->get_material_descriptor_ale_elasticity(),
@@ -124,9 +138,13 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
     AssertThrow(false, dealii::ExcMessage("not implemented."));
   }
 
+  ale_multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(
+    ale_mapping, application->get_parameters().mapping_degree_coarse_grids);
+
   // initialize pde_operator
-  pde_operator = IncNS::create_operator<dim, Number>(application->get_grid(),
-                                                     ale_mapping,
+  pde_operator = IncNS::create_operator<dim, Number>(grid,
+                                                     ale_mapping->get_mapping(),
+                                                     ale_multigrid_mappings,
                                                      application->get_boundary_descriptor(),
                                                      application->get_field_functions(),
                                                      application->get_parameters(),
@@ -146,7 +164,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
               dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
   // initialize time_integrator
-  helpers_ale = std::make_shared<HelpersALE<Number>>();
+  helpers_ale = std::make_shared<HelpersALE<dim, Number>>();
 
   helpers_ale->move_grid = [&](double const & time) {
     ale_mapping->update(time,
@@ -158,13 +176,15 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
     pde_operator->update_after_grid_motion(true /* update_matrix_free */);
   };
 
+  helpers_ale->fill_grid_coordinates_vector = [&](VectorType &                    grid_coordinates,
+                                                  dealii::DoFHandler<dim> const & dof_handler) {
+    ale_mapping->fill_grid_coordinates_vector(grid_coordinates, dof_handler);
+  };
+
   time_integrator = IncNS::create_time_integrator<dim, Number>(
     pde_operator, helpers_ale, postprocessor, application->get_parameters(), mpi_comm, is_test);
 
   time_integrator->setup(application->get_parameters().restarted_simulation);
-
-  pde_operator->setup_solvers(time_integrator->get_scaling_factor_time_derivative_term(),
-                              time_integrator->get_velocity());
 }
 
 template<int dim, typename Number>

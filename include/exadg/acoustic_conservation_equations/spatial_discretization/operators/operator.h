@@ -29,6 +29,7 @@
 #include <exadg/acoustic_conservation_equations/user_interface/enum_types.h>
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/integrator_flags.h>
+#include <exadg/operators/mapping_flags.h>
 
 namespace ExaDG
 {
@@ -46,6 +47,19 @@ class Kernel
   using CellIntegratorU = CellIntegrator<dim, dim, Number>;
 
 public:
+  static MappingFlags
+  get_mapping_flags()
+  {
+    MappingFlags flags;
+
+    flags.cells       = dealii::update_JxW_values | dealii::update_gradients;
+    flags.inner_faces = dealii::update_JxW_values | dealii::update_normal_vectors;
+    flags.boundary_faces =
+      dealii::update_JxW_values | dealii::update_quadrature_points | dealii::update_normal_vectors;
+
+    return flags;
+  }
+
   /*
    * Volume flux for the momentum equation, i.e., the term occurring in the volume integral for
    * weak formulation (performing integration-by-parts)
@@ -98,14 +112,14 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    calculate_lax_friedrichs_flux_momentum(vector const & um,
-                                           vector const & up,
+    calculate_lax_friedrichs_flux_momentum(vector const & rho_um,
+                                           vector const & rho_up,
                                            Number const & gamma,
                                            scalar const & pm,
                                            scalar const & pp,
                                            vector const & n) const
   {
-    return Number{0.5} * (um + up) + gamma * (pm - pp) * n;
+    return Number{0.5} * (rho_um + rho_up) + gamma * (pm - pp) * n;
   }
 
   /*
@@ -116,11 +130,11 @@ public:
     calculate_lax_friedrichs_flux_mass(scalar const & pm,
                                        scalar const & pp,
                                        Number const & tau,
-                                       vector const & um,
-                                       vector const & up,
+                                       vector const & rho_um,
+                                       vector const & rho_up,
                                        vector const & n) const
   {
-    return Number{0.5} * (pm + pp) + tau * (um - up) * n;
+    return Number{0.5} * (pm + pp) + tau * (rho_um - rho_up) * n;
   }
 };
 
@@ -133,9 +147,10 @@ struct OperatorData
     : dof_index_pressure(0),
       dof_index_velocity(1),
       quad_index(0),
+      block_index_pressure(0),
+      block_index_velocity(1),
       formulation(Formulation::SkewSymmetric),
       bc(nullptr),
-      density(-1.0),
       speed_of_sound(-1.0)
   {
   }
@@ -145,11 +160,13 @@ struct OperatorData
 
   unsigned int quad_index;
 
+  unsigned int block_index_pressure;
+  unsigned int block_index_velocity;
+
   Formulation formulation;
 
   std::shared_ptr<BoundaryDescriptor<dim> const> bc;
 
-  double density;
   double speed_of_sound;
 };
 
@@ -172,12 +189,7 @@ class Operator
   using FaceIntegratorP = FaceIntegrator<dim, 1, Number>;
 
 public:
-  Operator()
-    : evaluation_time(Number{0.0}),
-      rhocc(Number{0.0}),
-      rho_inv(Number{0.0}),
-      tau(Number{0.0}),
-      gamma(Number{0.0})
+  Operator() : evaluation_time(Number{0.0}), tau(Number{0.0}), gamma(Number{0.0})
   {
   }
 
@@ -190,10 +202,8 @@ public:
     data        = data_in;
 
     // Precompute numbers that are needed in kernels.
-    rhocc   = (Number)(data_in.density * data_in.speed_of_sound * data_in.speed_of_sound);
-    rho_inv = (Number)(1.0 / data_in.density);
-    tau     = (Number)(0.5 * data_in.speed_of_sound * data_in.density);
-    gamma   = (Number)(0.5 / (data_in.speed_of_sound * data_in.density));
+    tau   = (Number)(0.5 * data_in.speed_of_sound);
+    gamma = (Number)(0.5 / data_in.speed_of_sound);
 
     // Set integration flags.
     if(data_in.formulation == Formulation::Weak)
@@ -280,8 +290,8 @@ private:
         vector const flux_momentum = kernel.get_volume_flux_weak_momentum(velocity, q);
         scalar const flux_mass     = kernel.get_volume_flux_weak_mass(pressure, q);
 
-        pressure.submit_gradient(rhocc * flux_momentum, q);
-        velocity.submit_divergence(rho_inv * flux_mass, q);
+        pressure.submit_gradient(flux_momentum, q);
+        velocity.submit_divergence(flux_mass, q);
       }
     }
     else if(data.formulation == Formulation::Strong)
@@ -291,8 +301,8 @@ private:
         scalar const flux_momentum = kernel.get_volume_flux_strong_momentum(velocity, q);
         vector const flux_mass     = kernel.get_volume_flux_strong_mass(pressure, q);
 
-        pressure.submit_value(rhocc * flux_momentum, q);
-        velocity.submit_value(rho_inv * flux_mass, q);
+        pressure.submit_value(flux_momentum, q);
+        velocity.submit_value(flux_mass, q);
       }
     }
     else if(data.formulation == Formulation::SkewSymmetric)
@@ -302,8 +312,8 @@ private:
         vector const flux_momentum = kernel.get_volume_flux_weak_momentum(velocity, q);
         vector const flux_mass     = kernel.get_volume_flux_strong_mass(pressure, q);
 
-        pressure.submit_gradient(rhocc * flux_momentum, q);
-        velocity.submit_value(rho_inv * flux_mass, q);
+        pressure.submit_gradient(flux_momentum, q);
+        velocity.submit_value(flux_mass, q);
       }
     }
     else
@@ -324,21 +334,22 @@ private:
   {
     for(unsigned int q : pressure_m.quadrature_point_indices())
     {
-      scalar const pm = pressure_m.get_value(q);
-      scalar const pp = pressure_p.get_value(q);
-      vector const um = velocity_m.get_value(q);
-      vector const up = velocity_p.get_value(q);
-      vector const n  = pressure_m.normal_vector(q);
+      scalar const pm     = pressure_m.get_value(q);
+      scalar const pp     = pressure_p.get_value(q);
+      vector const rho_um = velocity_m.get_value(q);
+      vector const rho_up = velocity_p.get_value(q);
+      vector const n      = pressure_m.normal_vector(q);
 
       vector const flux_momentum =
-        kernel.calculate_lax_friedrichs_flux_momentum(um, up, gamma, pm, pp, n);
+        kernel.calculate_lax_friedrichs_flux_momentum(rho_um, rho_up, gamma, pm, pp, n);
 
-      scalar const flux_mass = kernel.calculate_lax_friedrichs_flux_mass(pm, pp, tau, um, up, n);
+      scalar const flux_mass =
+        kernel.calculate_lax_friedrichs_flux_mass(pm, pp, tau, rho_um, rho_up, n);
 
       if(data.formulation == Formulation::Weak)
       {
-        scalar const flux_momentum_weak = rhocc * flux_momentum * n;
-        vector const flux_mass_weak     = rho_inv * flux_mass * n;
+        scalar const flux_momentum_weak = flux_momentum * n;
+        vector const flux_mass_weak     = flux_mass * n;
 
         pressure_m.submit_value(flux_momentum_weak, q);
         velocity_m.submit_value(flux_mass_weak, q);
@@ -352,28 +363,28 @@ private:
       }
       else if(data.formulation == Formulation::Strong)
       {
-        pressure_m.submit_value(rhocc * (flux_momentum - um) * n, q);
-        velocity_m.submit_value(rho_inv * (flux_mass - pm) * n, q);
+        pressure_m.submit_value((flux_momentum - rho_um) * n, q);
+        velocity_m.submit_value((flux_mass - pm) * n, q);
 
         if constexpr(weight_neighbor)
         {
           // minus signs since n⁺ = - n⁻
-          pressure_p.submit_value(-rhocc * (flux_momentum - up) * n, q);
-          velocity_p.submit_value(-rho_inv * (flux_mass - pp) * n, q);
+          pressure_p.submit_value((rho_up - flux_momentum) * n, q);
+          velocity_p.submit_value((pp - flux_mass) * n, q);
         }
       }
       else if(data.formulation == Formulation::SkewSymmetric)
       {
-        scalar const flux_momentum_weak = rhocc * flux_momentum * n;
+        scalar const flux_momentum_weak = flux_momentum * n;
 
         pressure_m.submit_value(flux_momentum_weak, q);
-        velocity_m.submit_value(rho_inv * (flux_mass - pm) * n, q);
+        velocity_m.submit_value((flux_mass - pm) * n, q);
 
         if constexpr(weight_neighbor)
         {
           // minus signs since n⁺ = - n⁻
           pressure_p.submit_value(-flux_momentum_weak, q);
-          velocity_p.submit_value(-rho_inv * (flux_mass - pp) * n, q);
+          velocity_p.submit_value((pp - flux_mass) * n, q);
         }
       }
       else
@@ -395,15 +406,19 @@ private:
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
       pressure.reinit(cell);
-      pressure.gather_evaluate(src.block(0), integrator_flags_p.cell_evaluate);
+      pressure.gather_evaluate(src.block(data.block_index_pressure),
+                               integrator_flags_p.cell_evaluate);
 
       velocity.reinit(cell);
-      velocity.gather_evaluate(src.block(1), integrator_flags_u.cell_evaluate);
+      velocity.gather_evaluate(src.block(data.block_index_velocity),
+                               integrator_flags_u.cell_evaluate);
 
       do_cell_integral(pressure, velocity);
 
-      pressure.integrate_scatter(integrator_flags_p.cell_integrate, dst.block(0));
-      velocity.integrate_scatter(integrator_flags_u.cell_integrate, dst.block(1));
+      pressure.integrate_scatter(integrator_flags_p.cell_integrate,
+                                 dst.block(data.block_index_pressure));
+      velocity.integrate_scatter(integrator_flags_u.cell_integrate,
+                                 dst.block(data.block_index_velocity));
     }
   }
 
@@ -422,22 +437,30 @@ private:
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
       pressure_m.reinit(face);
-      pressure_m.gather_evaluate(src.block(0), integrator_flags_p.face_evaluate);
+      pressure_m.gather_evaluate(src.block(data.block_index_pressure),
+                                 integrator_flags_p.face_evaluate);
       pressure_p.reinit(face);
-      pressure_p.gather_evaluate(src.block(0), integrator_flags_p.face_evaluate);
+      pressure_p.gather_evaluate(src.block(data.block_index_pressure),
+                                 integrator_flags_p.face_evaluate);
 
       velocity_m.reinit(face);
-      velocity_m.gather_evaluate(src.block(1), integrator_flags_u.face_evaluate);
+      velocity_m.gather_evaluate(src.block(data.block_index_velocity),
+                                 integrator_flags_u.face_evaluate);
       velocity_p.reinit(face);
-      velocity_p.gather_evaluate(src.block(1), integrator_flags_u.face_evaluate);
+      velocity_p.gather_evaluate(src.block(data.block_index_velocity),
+                                 integrator_flags_u.face_evaluate);
 
       do_face_integral<true>(pressure_m, pressure_p, velocity_m, velocity_p);
 
-      pressure_m.integrate_scatter(integrator_flags_p.face_integrate, dst.block(0));
-      pressure_p.integrate_scatter(integrator_flags_p.face_integrate, dst.block(0));
+      pressure_m.integrate_scatter(integrator_flags_p.face_integrate,
+                                   dst.block(data.block_index_pressure));
+      pressure_p.integrate_scatter(integrator_flags_p.face_integrate,
+                                   dst.block(data.block_index_pressure));
 
-      velocity_m.integrate_scatter(integrator_flags_u.face_integrate, dst.block(1));
-      velocity_p.integrate_scatter(integrator_flags_u.face_integrate, dst.block(1));
+      velocity_m.integrate_scatter(integrator_flags_u.face_integrate,
+                                   dst.block(data.block_index_velocity));
+      velocity_p.integrate_scatter(integrator_flags_u.face_integrate,
+                                   dst.block(data.block_index_velocity));
     }
   }
 
@@ -448,25 +471,29 @@ private:
                      Range const &                           face_range) const
   {
     FaceIntegratorP pressure_m(matrix_free_in, true, data.dof_index_pressure, data.quad_index);
-    BoundaryFaceIntegratorP<dim, Number> pressure_p(pressure_m, *data.bc->pressure);
+    BoundaryFaceIntegratorP<dim, Number> pressure_p(pressure_m, *data.bc);
 
     FaceIntegratorU velocity_m(matrix_free_in, true, data.dof_index_velocity, data.quad_index);
-    BoundaryFaceIntegratorU<dim, Number> velocity_p(velocity_m, *data.bc->velocity);
+    BoundaryFaceIntegratorU<dim, Number> velocity_p(velocity_m, *data.bc);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
       pressure_m.reinit(face);
-      pressure_m.gather_evaluate(src.block(0), integrator_flags_p.face_evaluate);
+      pressure_m.gather_evaluate(src.block(data.block_index_pressure),
+                                 integrator_flags_p.face_evaluate);
       pressure_p.reinit(face, evaluation_time);
 
       velocity_m.reinit(face);
-      velocity_m.gather_evaluate(src.block(1), integrator_flags_u.face_evaluate);
+      velocity_m.gather_evaluate(src.block(data.block_index_velocity),
+                                 integrator_flags_u.face_evaluate);
       velocity_p.reinit(face, evaluation_time);
 
       do_face_integral<false>(pressure_m, pressure_p, velocity_m, velocity_p);
 
-      pressure_m.integrate_scatter(integrator_flags_p.face_integrate, dst.block(0));
-      velocity_m.integrate_scatter(integrator_flags_u.face_integrate, dst.block(1));
+      pressure_m.integrate_scatter(integrator_flags_p.face_integrate,
+                                   dst.block(data.block_index_pressure));
+      velocity_m.integrate_scatter(integrator_flags_u.face_integrate,
+                                   dst.block(data.block_index_velocity));
     }
   }
 
@@ -477,8 +504,6 @@ private:
   dealii::SmartPointer<dealii::MatrixFree<dim, Number> const> matrix_free;
   OperatorData<dim>                                           data;
 
-  Number rhocc;
-  Number rho_inv;
   Number tau;
   Number gamma;
 

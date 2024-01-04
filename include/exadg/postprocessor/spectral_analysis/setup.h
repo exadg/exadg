@@ -58,7 +58,7 @@ public:
   // length of header (8 ints)
   static int const HEADER_LENGTH = 8;
 
-  MPI_Comm const & comm;
+  MPI_Comm const comm;
 
   // is initialized?
   bool initialized;

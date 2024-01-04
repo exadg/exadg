@@ -57,11 +57,12 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up elasticity solver:" << std::endl;
 
-  application->setup();
+  application->setup(grid, mapping, multigrid_mappings);
 
   // setup spatial operator
-  pde_operator = std::make_shared<Operator<dim, Number>>(application->get_grid(),
-                                                         application->get_mapping(),
+  pde_operator = std::make_shared<Operator<dim, Number>>(grid,
+                                                         mapping,
+                                                         multigrid_mappings,
                                                          application->get_boundary_descriptor(),
                                                          application->get_field_functions(),
                                                          application->get_material_descriptor(),
@@ -99,16 +100,6 @@ Driver<dim, Number>::setup()
     else
     {
       AssertThrow(false, dealii::ExcMessage("Not implemented."));
-    }
-
-    if(application->get_parameters().problem_type == ProblemType::Unsteady)
-    {
-      pde_operator->setup_solver(time_integrator->get_scaling_factor_acceleration(),
-                                 time_integrator->get_scaling_factor_velocity());
-    }
-    else
-    {
-      pde_operator->setup_solver(0.0 /* no acceleration term */, 0.0 /* no damping term */);
     }
   }
 
