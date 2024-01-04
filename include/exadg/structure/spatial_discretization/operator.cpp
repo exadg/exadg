@@ -267,8 +267,12 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
     matrix_free_data.append_mapping_flags(BodyForceOperator<dim, Number>::get_mapping_flags());
 
   if(param.problem_type == ProblemType::Unsteady)
+  {
+    // The boundary mass operator is only required, if we have damping terms from the Robin
+    // condition, i.e., in the unsteady case.
     matrix_free_data.append_mapping_flags(
       BoundaryMassOperator<dim, Number, dim /* n_components */>::get_mapping_flags());
+  }
 
   // dealii::DoFHandler, dealii::AffineConstraints
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
