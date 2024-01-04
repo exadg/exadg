@@ -13,19 +13,6 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 
-ExaDG info:
-
-  ExaDG git version b7c936c1b on branch structure_exterior_support
-
-deal.II info:
-
-  deal.II git version 45c3525795 on branch master
-
-MatrixFree info:
-
-  vectorization level = 2
-  Vectorization over 4 double = 256 bits (AVX)
-
 MPI info:
 
   Number of processes:                       1
@@ -110,45 +97,7 @@ Calculate error for all fields for initial data:
 
 Solving steady state problem ...
 
-  Newton iterations:                 7
-  Linear iterations (avg):        24.4
-  Linear iterations (tot):         171
-  Wall time [s]:              4.93e-01
-
 ... done!
 
 Calculate error for all fields for solution data:
   Relative error (L2-norm): 1.08741e-05
-
-_________________________________________________________________________________
-
-Performance results for elasticity solver:
-
-Timings for level 1:
-
-Elasticity          5.38e-01 s    100.00 %
-  Setup             3.80e-02 s      7.07 %
-  DriverSteady      4.99e-01 s     92.87 %
-  Other             3.32e-04 s      0.06 %
-
-Timings for level 2:
-
-Elasticity        
-  DriverSteady      4.99e-01 s    100.00 %
-    Postprocessing  6.46e-03 s      1.29 %
-    Solve           4.93e-01 s     98.70 %
-    Other           1.23e-05 s      0.00 %
-
-Throughput:
-  Number of MPI processes = 1
-  Degrees of freedom      = 1275
-  Wall time               = 5.38e-01 s
-  Throughput              = 2.37e+03 DoFs/s/core
-
-Computational costs:
-  Number of MPI processes = 1
-  Wall time               = 5.38e-01 s
-  Computational costs     = 1.49e-04 CPUh
-
-_________________________________________________________________________________
-
