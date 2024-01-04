@@ -13,6 +13,19 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 
+ExaDG info:
+
+  ExaDG git version b7c936c1b on branch structure_exterior_support
+
+deal.II info:
+
+  deal.II git version 45c3525795 on branch master
+
+MatrixFree info:
+
+  vectorization level = 2
+  Vectorization over 4 double = 256 bits (AVX)
+
 MPI info:
 
   Number of processes:                       1
@@ -49,6 +62,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         2
 
 Solver:
@@ -106,10 +120,6 @@ Setup elasticity time integrator ...
 
 ... done!
 
-Setup elasticity solver ...
-
-... done!
-
 Starting time loop ...
 
 Calculate error for all fields at time t = 0.0000e+00:
@@ -120,6 +130,12 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 5.00000e-01
 ________________________________________________________________________________
 
+Solve nonlinear elasticity problem:
+  Newton iterations:                 3
+  Linear iterations (avg):         4.7
+  Linear iterations (tot):          14
+  Wall time [s]:              7.50e-02
+
 Calculate error for all fields at time t = 2.5000e+01:
   Relative error (L2-norm): 2.28147e-05
 
@@ -129,10 +145,60 @@ Calculate error for all fields at time t = 5.0000e+01:
 Calculate error for all fields at time t = 7.5000e+01:
   Relative error (L2-norm): 2.28144e-05
 
+Estimated time until completion is 0 h 0 min 0 s.
+
 ________________________________________________________________________________
 
  Time step number = 200     t = 9.95000e+01 -> t + dt = 1.00000e+02
 ________________________________________________________________________________
 
+Solve nonlinear elasticity problem:
+  Newton iterations:                 3
+  Linear iterations (avg):         4.7
+  Linear iterations (tot):          14
+  Wall time [s]:              7.63e-02
+
 Calculate error for all fields at time t = 1.0000e+02:
   Relative error (L2-norm): 1.00002e+00
+
+_________________________________________________________________________________
+
+Performance results for elasticity solver:
+
+Average number of iterations:
+  Nonlinear iterations                     3.70
+  Linear iterations (accumulated)         20.51
+  Linear iterations (per nonlinear it.)    5.54
+
+Timings for level 1:
+
+Elasticity          1.88e+01 s    100.00 %
+  Setup             3.82e-02 s      0.20 %
+  Timeloop          1.88e+01 s     99.69 %
+  Other             1.93e-02 s      0.10 %
+
+Timings for level 2:
+
+Elasticity        
+  Timeloop          1.88e+01 s    100.00 %
+    Postprocessing  1.55e-02 s      0.08 %
+    Compute rhs     1.73e-02 s      0.09 %
+    Solve           1.87e+01 s     99.80 %
+    Update vectors  1.80e-03 s      0.01 %
+    Other           2.44e-03 s      0.01 %
+
+Throughput per time step:
+  Number of MPI processes = 1
+  Degrees of freedom      = 1275
+  Wall time               = 1.88e+01 s
+  Time steps              = 200
+  Wall time per time step = 9.41e-02 s
+  Throughput              = 1.35e+04 DoFs/s/core
+
+Computational costs:
+  Number of MPI processes = 1
+  Wall time               = 1.88e+01 s
+  Computational costs     = 5.23e-03 CPUh
+
+_________________________________________________________________________________
+

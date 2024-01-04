@@ -1,0 +1,25 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "true"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "4",
+        "DegreeMax": "4",
+        "RefineSpaceMin": "3",
+        "RefineSpaceMax": "3"
+    },
+    "TemporalResolution": {
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+        "EnableAdaptivity": "true"
+    },
+    "Output": {
+        "OutputDirectory": "output/rotating_hill/",
+        "OutputName": "test",
+        "WriteOutput": "false"
+    }
+}

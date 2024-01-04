@@ -82,10 +82,19 @@ public:
   calculate_inverse_diagonal(VectorType & inverse_diagonal_entries) const = 0;
 
   virtual void
+  initialize_block_diagonal_preconditioner(bool const initialize) const = 0;
+
+  virtual void
   update_block_diagonal_preconditioner() const = 0;
 
   virtual void
   apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const = 0;
+
+  virtual void
+  apply_inverse_additive_schwarz_matrices(VectorType & dst, VectorType const & src) const = 0;
+
+  virtual void
+  compute_factorized_additive_schwarz_matrices() const = 0;
 
 #ifdef DEAL_II_WITH_TRILINOS
   virtual void

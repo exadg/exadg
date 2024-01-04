@@ -48,16 +48,21 @@ class Solver
 public:
   void
   setup(std::shared_ptr<Domain<dim, Number>> & domain,
+        std::vector<std::string> const &       subsection_names_parameters,
         std::string const &                    field,
         MPI_Comm const &                       mpi_comm,
         bool const                             is_test)
   {
+    // setup application
+    domain->setup(grid, mapping, multigrid_mappings, subsection_names_parameters);
+
     // ALE is not used for this solver
-    std::shared_ptr<HelpersALE<Number>> helpers_ale_dummy;
+    std::shared_ptr<HelpersALE<dim, Number>> helpers_ale_dummy;
 
     // initialize pde_operator
-    pde_operator = create_operator<dim, Number>(domain->get_grid(),
-                                                domain->get_mapping(),
+    pde_operator = create_operator<dim, Number>(grid,
+                                                mapping,
+                                                multigrid_mappings,
                                                 domain->get_boundary_descriptor(),
                                                 domain->get_field_functions(),
                                                 domain->get_parameters(),
@@ -70,9 +75,8 @@ public:
 
     matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
     if(domain->get_parameters().use_cell_based_face_loops)
-      Categorization::do_cell_based_loops(*domain->get_grid()->triangulation,
-                                          matrix_free_data->data);
-    matrix_free->reinit(*domain->get_mapping(),
+      Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
+    matrix_free->reinit(*mapping,
                         matrix_free_data->get_dof_handler_vector(),
                         matrix_free_data->get_constraint_vector(),
                         matrix_free_data->get_quadrature_vector(),
@@ -89,14 +93,16 @@ public:
     time_integrator = create_time_integrator<dim, Number>(
       pde_operator, helpers_ale_dummy, postprocessor, domain->get_parameters(), mpi_comm, is_test);
 
-    // setup time integrator before calling setup_solvers (this is necessary since the setup of the
-    // solvers depends on quantities such as the time_step_size or gamma0!)
     time_integrator->setup(domain->get_parameters().restarted_simulation);
-
-    // setup solvers
-    pde_operator->setup_solvers(time_integrator->get_scaling_factor_time_derivative_term(),
-                                time_integrator->get_velocity());
   }
+
+  /*
+   * Grid and mapping
+   */
+  std::shared_ptr<Grid<dim>>            grid;
+  std::shared_ptr<dealii::Mapping<dim>> mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
 
   /*
    * Spatial discretization
@@ -147,6 +153,9 @@ private:
   void
   synchronize_time_step_size() const;
 
+  void
+  consistency_checks() const;
+
   // MPI communicator
   MPI_Comm const mpi_comm;
 
@@ -159,7 +168,7 @@ private:
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
-  Solver<dim, Number> main, precursor;
+  Solver<dim, Number> solver_main, solver_precursor;
 
   bool use_adaptive_time_stepping;
 

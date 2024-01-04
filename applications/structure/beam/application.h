@@ -156,8 +156,9 @@ private:
     this->param.body_force        = false;
     this->param.large_deformation = true;
 
-    this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.mapping_degree          = 1;
+    this->param.grid.triangulation_type     = TriangulationType::Distributed;
+    this->param.mapping_degree              = 1;
+    this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
 
     this->param.load_increment = 0.1;
 
@@ -177,8 +178,13 @@ private:
   }
 
   void
-  create_grid() final
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
+    (void)mapping;
+    (void)multigrid_mappings;
+
     auto const lambda_create_triangulation =
       [&](dealii::Triangulation<dim, dim> &                        tria,
           std::vector<dealii::GridTools::PeriodicFacePair<
@@ -205,10 +211,7 @@ private:
         if(dim == 3)
           repetitions[2] = this->repetitions2;
 
-        dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                                          repetitions,
-                                                          p1,
-                                                          p2);
+        dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, p1, p2);
 
         element_length = this->length / (this->repetitions0 * pow(2, global_refinements));
 
@@ -247,12 +250,20 @@ private:
         tria.refine_global(global_refinements);
       };
 
-    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+    GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
                                                             this->param.grid,
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
+
+    // mappings
+    GridUtilities::create_mapping_with_multigrid(mapping,
+                                                 multigrid_mappings,
+                                                 this->param.grid.element_type,
+                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree_coarse_grids,
+                                                 this->param.involves_h_multigrid());
   }
 
   void

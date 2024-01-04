@@ -141,8 +141,9 @@ DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_pro
       pde_operator->update_continuity_penalty_operator(solution.block(0));
   }
 
-  // update viscosity
-  if(this->param.viscosity_is_variable())
+  // explicit viscosity update
+  if(this->param.viscosity_is_variable() and
+     this->param.treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit)
   {
     dealii::Timer timer_viscosity_update;
     timer_viscosity_update.restart();

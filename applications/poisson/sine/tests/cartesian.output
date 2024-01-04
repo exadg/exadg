@@ -30,6 +30,7 @@ Spatial Discretization:
   Number of global refinements:              2
   Create coarse triangulations:              false
   Mapping degree:                            3
+  Mapping degree coarse grids:               3
   FE space:                                  DG
   Polynomial degree:                         1
   IP factor:                                 1.0000e+00
@@ -82,10 +83,6 @@ Setup Poisson operator ...
 
 ... done!
 
-Setup Poisson solver ...
-
-... done!
-
 Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
@@ -123,6 +120,7 @@ Spatial Discretization:
   Number of global refinements:              2
   Create coarse triangulations:              false
   Mapping degree:                            3
+  Mapping degree coarse grids:               3
   FE space:                                  DG
   Polynomial degree:                         2
   IP factor:                                 1.0000e+00
@@ -175,10 +173,6 @@ Setup Poisson operator ...
 
 ... done!
 
-Setup Poisson solver ...
-
-... done!
-
 Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
@@ -216,6 +210,7 @@ Spatial Discretization:
   Number of global refinements:              2
   Create coarse triangulations:              false
   Mapping degree:                            3
+  Mapping degree coarse grids:               3
   FE space:                                  DG
   Polynomial degree:                         3
   IP factor:                                 1.0000e+00
@@ -268,10 +263,6 @@ Setup Poisson operator ...
 
 ... done!
 
-Setup Poisson solver ...
-
-... done!
-
 Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
@@ -309,6 +300,7 @@ Spatial Discretization:
   Number of global refinements:              2
   Create coarse triangulations:              false
   Mapping degree:                            3
+  Mapping degree coarse grids:               3
   FE space:                                  DG
   Polynomial degree:                         4
   IP factor:                                 1.0000e+00
@@ -361,10 +353,6 @@ Setup Poisson operator ...
 
 ... done!
 
-Setup Poisson solver ...
-
-... done!
-
 Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
@@ -402,6 +390,7 @@ Spatial Discretization:
   Number of global refinements:              2
   Create coarse triangulations:              false
   Mapping degree:                            3
+  Mapping degree coarse grids:               3
   FE space:                                  DG
   Polynomial degree:                         5
   IP factor:                                 1.0000e+00
@@ -454,10 +443,6 @@ Setup Poisson operator ...
 
 ... done!
 
-Setup Poisson solver ...
-
-... done!
-
 Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
@@ -495,6 +480,7 @@ Spatial Discretization:
   Number of global refinements:              2
   Create coarse triangulations:              false
   Mapping degree:                            3
+  Mapping degree coarse grids:               3
   FE space:                                  DG
   Polynomial degree:                         6
   IP factor:                                 1.0000e+00
@@ -547,10 +533,6 @@ Setup Poisson operator ...
 
 ... done!
 
-Setup Poisson solver ...
-
-... done!
-
 Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
@@ -588,6 +570,7 @@ Spatial Discretization:
   Number of global refinements:              2
   Create coarse triangulations:              false
   Mapping degree:                            3
+  Mapping degree coarse grids:               3
   FE space:                                  DG
   Polynomial degree:                         7
   IP factor:                                 1.0000e+00
@@ -637,10 +620,6 @@ Discontinuous Galerkin finite element discretization:
 ... done!
 
 Setup Poisson operator ...
-
-... done!
-
-Setup Poisson solver ...
 
 ... done!
 

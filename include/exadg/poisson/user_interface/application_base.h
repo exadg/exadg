@@ -68,7 +68,6 @@ public:
       parameter_file(parameter_file),
       n_subdivisions_1d_hypercube(1)
   {
-    grid = std::make_shared<Grid<dim>>();
   }
 
   virtual ~ApplicationBase()
@@ -93,7 +92,9 @@ public:
   }
 
   void
-  setup()
+  setup(std::shared_ptr<Grid<dim>> &                      grid,
+        std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+        std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings)
   {
     // parameters
     parse_parameters();
@@ -102,8 +103,8 @@ public:
     param.print(pcout, "List of parameters:");
 
     // grid
-    GridUtilities::create_mapping(mapping, param.grid.element_type, param.mapping_degree);
-    create_grid();
+    grid = std::make_shared<Grid<dim>>();
+    create_grid(*grid, mapping, multigrid_mappings);
     print_grid_info(pcout, *grid);
 
     if(compute_aspect_ratio)
@@ -138,18 +139,6 @@ public:
     return param;
   }
 
-  std::shared_ptr<Grid<dim> const>
-  get_grid() const
-  {
-    return grid;
-  }
-
-  std::shared_ptr<dealii::Mapping<dim> const>
-  get_mapping() const
-  {
-    return mapping;
-  }
-
   std::shared_ptr<BoundaryDescriptor<rank, dim> const>
   get_boundary_descriptor() const
   {
@@ -171,15 +160,11 @@ protected:
     prm.parse_input(parameter_file, "", true, true);
   }
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   dealii::ConditionalOStream pcout;
 
   Parameters param;
-
-  std::shared_ptr<Grid<dim>> grid;
-
-  std::shared_ptr<dealii::Mapping<dim>> mapping;
 
   std::shared_ptr<BoundaryDescriptor<rank, dim>> boundary_descriptor;
   std::shared_ptr<FieldFunctions<dim>>           field_functions;
@@ -199,7 +184,9 @@ private:
   set_parameters() = 0;
 
   virtual void
-  create_grid() = 0;
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) = 0;
 
   virtual void
   set_boundary_descriptor() = 0;

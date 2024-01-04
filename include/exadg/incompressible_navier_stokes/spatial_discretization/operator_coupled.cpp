@@ -36,15 +36,17 @@ namespace IncNS
 {
 template<int dim, typename Number>
 OperatorCoupled<dim, Number>::OperatorCoupled(
-  std::shared_ptr<Grid<dim> const>               grid_in,
-  std::shared_ptr<dealii::Mapping<dim> const>    mapping_in,
-  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
-  Parameters const &                             parameters_in,
-  std::string const &                            field_in,
-  MPI_Comm const &                               mpi_comm_in)
+  std::shared_ptr<Grid<dim> const>                      grid_in,
+  std::shared_ptr<dealii::Mapping<dim> const>           mapping_in,
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings_in,
+  std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim> const>            field_functions_in,
+  Parameters const &                                    parameters_in,
+  std::string const &                                   field_in,
+  MPI_Comm const &                                      mpi_comm_in)
   : Base(grid_in,
          mapping_in,
+         multigrid_mappings_in,
          boundary_descriptor_in,
          field_functions_in,
          parameters_in,
@@ -61,38 +63,27 @@ OperatorCoupled<dim, Number>::~OperatorCoupled()
 
 template<int dim, typename Number>
 void
-OperatorCoupled<dim, Number>::setup(
-  std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
-  std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
-  std::string const &                                    dof_index_temperature)
+OperatorCoupled<dim, Number>::setup_derived()
 {
-  Base::setup(matrix_free, matrix_free_data, dof_index_temperature);
-
   this->initialize_vector_velocity(temp_vector);
 }
 
 template<int dim, typename Number>
 void
-OperatorCoupled<dim, Number>::setup_solvers(double const &     scaling_factor_time_derivative_term,
-                                            VectorType const & velocity)
+OperatorCoupled<dim, Number>::setup_preconditioners_and_solvers()
 {
-  this->pcout << std::endl << "Setup incompressible Navier-Stokes solver ..." << std::endl;
-
-  Base::setup_solvers(scaling_factor_time_derivative_term, velocity);
-
-  initialize_block_preconditioner();
-
-  initialize_solver_coupled();
+  Base::setup_preconditioners_and_solvers();
 
   if(this->param.apply_penalty_terms_in_postprocessing_step)
-    this->setup_projection_solver();
+    Base::setup_projection_solver();
 
-  this->pcout << std::endl << "... done!" << std::endl;
+  setup_block_preconditioner();
+  setup_solver_coupled();
 }
 
 template<int dim, typename Number>
 void
-OperatorCoupled<dim, Number>::initialize_solver_coupled()
+OperatorCoupled<dim, Number>::setup_solver_coupled()
 {
   linear_operator.initialize(*this);
 
@@ -178,11 +169,13 @@ unsigned int
 OperatorCoupled<dim, Number>::solve_linear_stokes_problem(BlockVectorType &       dst,
                                                           BlockVectorType const & src,
                                                           bool const &   update_preconditioner,
-                                                          double const & time,
                                                           double const & scaling_factor_mass)
 {
-  // Update linear operator
-  linear_operator.update(time, scaling_factor_mass);
+  // Update momentum operator
+  // We do not need to set the time here, because time affects the operator only in the form of
+  // boundary conditions. The result of such boundary condition evaluations is handed over to this
+  // function via the vector src.
+  this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
 
   linear_solver->update_preconditioner(update_preconditioner);
 
@@ -220,13 +213,9 @@ OperatorCoupled<dim, Number>::rhs_stokes_problem(BlockVectorType & dst, double c
 template<int dim, typename Number>
 void
 OperatorCoupled<dim, Number>::apply_linearized_problem(BlockVectorType &       dst,
-                                                       BlockVectorType const & src,
-                                                       double const &          time,
-                                                       double const & scaling_factor_mass) const
+                                                       BlockVectorType const & src) const
 {
   // (1,1) block of saddle point matrix
-  this->momentum_operator.set_time(time);
-  this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
   this->momentum_operator.vmult(dst.block(0), src.block(0));
 
   // Divergence and continuity penalty operators
@@ -263,8 +252,9 @@ OperatorCoupled<dim, Number>::solve_nonlinear_problem(BlockVectorType &  dst,
   // Update nonlinear operator
   nonlinear_operator.update(rhs_vector, time, scaling_factor_mass);
 
-  // Update linear operator
-  linear_operator.update(time, scaling_factor_mass);
+  // Update linearized momentum operator
+  this->momentum_operator.set_time(time);
+  this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
 
   // Solve nonlinear problem
   Newton::UpdateData update;
@@ -297,7 +287,7 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &     
   else
     dst.block(0) = 0.0;
 
-  if(this->param.convective_problem())
+  if(this->param.implicit_convective_problem())
   {
     this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0), src.block(0), time);
   }
@@ -321,7 +311,7 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &     
   this->gradient_operator.evaluate(temp_vector, src.block(1), time);
   dst.block(0).add(scaling_factor_continuity, temp_vector);
 
-  // constant right-hand side vector (body force vector and sum_alphai_ui term)
+  // constant right-hand side vector (body force, sum_alphai_ui and explicit convective terms)
   dst.block(0).add(-1.0, *rhs_vector);
 
   // pressure-block
@@ -360,7 +350,7 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVectorType
     dst.block(0) *= -1.0;
   }
 
-  if(this->param.convective_problem())
+  if(this->param.implicit_convective_problem())
   {
     this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0), src.block(0), time);
   }
@@ -396,7 +386,7 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVectorType
 
 template<int dim, typename Number>
 void
-OperatorCoupled<dim, Number>::initialize_block_preconditioner()
+OperatorCoupled<dim, Number>::setup_block_preconditioner()
 {
   block_preconditioner.initialize(this);
 
@@ -433,24 +423,22 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_velocity_block()
 
   if(type == MomentumPreconditioner::PointJacobi)
   {
-    preconditioner_momentum = std::make_shared<JacobiPreconditioner<MomentumOperator<dim, Number>>>(
-      this->momentum_operator);
+    preconditioner_momentum =
+      std::make_shared<JacobiPreconditioner<MomentumOperator<dim, Number>>>(this->momentum_operator,
+                                                                            false);
   }
   else if(type == MomentumPreconditioner::BlockJacobi)
   {
     preconditioner_momentum =
       std::make_shared<BlockJacobiPreconditioner<MomentumOperator<dim, Number>>>(
-        this->momentum_operator);
+        this->momentum_operator, false);
   }
   else if(type == MomentumPreconditioner::InverseMassMatrix)
   {
     InverseMassOperatorData inverse_mass_operator_data;
     inverse_mass_operator_data.dof_index  = this->get_dof_index_velocity();
     inverse_mass_operator_data.quad_index = this->get_quad_index_velocity_linear();
-    inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
-      this->param.solve_elementwise_mass_system_matrix_free;
-    inverse_mass_operator_data.solver_data_block_diagonal =
-      this->param.solver_data_elementwise_inverse_mass;
+    inverse_mass_operator_data.parameters = this->param.inverse_mass_preconditioner;
 
     preconditioner_momentum =
       std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(this->get_matrix_free(),
@@ -502,7 +490,7 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
 
   mg_preconditioner->initialize(this->param.multigrid_data_velocity_block,
                                 this->grid,
-                                this->get_mapping(),
+                                this->multigrid_mappings,
                                 this->get_dof_handler_u().get_fe(),
                                 this->momentum_operator,
                                 this->param.multigrid_operator_type_velocity_block,
@@ -537,15 +525,13 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
 {
   auto type = this->param.preconditioner_pressure_block;
 
+  InverseMassOperatorData inverse_mass_operator_data;
+  inverse_mass_operator_data.dof_index  = this->get_dof_index_pressure();
+  inverse_mass_operator_data.quad_index = this->get_quad_index_pressure();
+  inverse_mass_operator_data.parameters = this->param.inverse_mass_preconditioner;
+
   if(type == SchurComplementPreconditioner::InverseMassMatrix)
   {
-    InverseMassOperatorData inverse_mass_operator_data;
-    inverse_mass_operator_data.dof_index  = this->get_dof_index_pressure();
-    inverse_mass_operator_data.quad_index = this->get_quad_index_pressure();
-    inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
-      this->param.solve_elementwise_mass_system_matrix_free;
-    inverse_mass_operator_data.solver_data_block_diagonal =
-      this->param.solver_data_elementwise_inverse_mass;
     inverse_mass_preconditioner_schur_complement =
       std::make_shared<InverseMassPreconditioner<dim, 1, Number>>(this->get_matrix_free(),
                                                                   inverse_mass_operator_data);
@@ -574,13 +560,6 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
 
     // inverse mass operator to also include the part of the preconditioner that is beneficial when
     // using large time steps and large viscosities.
-    InverseMassOperatorData inverse_mass_operator_data;
-    inverse_mass_operator_data.dof_index  = this->get_quad_index_pressure();
-    inverse_mass_operator_data.quad_index = this->get_quad_index_pressure();
-    inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
-      this->param.solve_elementwise_mass_system_matrix_free;
-    inverse_mass_operator_data.solver_data_block_diagonal =
-      this->param.solver_data_elementwise_inverse_mass;
     inverse_mass_preconditioner_schur_complement =
       std::make_shared<InverseMassPreconditioner<dim, 1, Number>>(this->get_matrix_free(),
                                                                   inverse_mass_operator_data);
@@ -604,13 +583,6 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
     setup_pressure_convection_diffusion_operator();
 
     // III. inverse pressure mass operator
-    InverseMassOperatorData inverse_mass_operator_data;
-    inverse_mass_operator_data.dof_index  = this->get_dof_index_pressure();
-    inverse_mass_operator_data.quad_index = this->get_quad_index_pressure();
-    inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
-      this->param.solve_elementwise_mass_system_matrix_free;
-    inverse_mass_operator_data.solver_data_block_diagonal =
-      this->param.solver_data_elementwise_inverse_mass;
     inverse_mass_preconditioner_schur_complement =
       std::make_shared<InverseMassPreconditioner<dim, 1, Number>>(this->get_matrix_free(),
                                                                   inverse_mass_operator_data);
@@ -652,7 +624,7 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complement()
   auto & dof_handler = this->get_dof_handler_p();
   mg_preconditioner->initialize(mg_data,
                                 this->grid,
-                                this->get_mapping(),
+                                this->multigrid_mappings,
                                 dof_handler.get_fe(),
                                 laplace_operator_data,
                                 this->param.ale_formulation,
@@ -761,7 +733,7 @@ OperatorCoupled<dim, Number>::setup_pressure_convection_diffusion_operator()
   operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
 
   operator_data.unsteady_problem   = this->unsteady_problem_has_to_be_solved();
-  operator_data.convective_problem = this->param.nonlinear_problem_has_to_be_solved();
+  operator_data.convective_problem = this->param.implicit_convective_problem();
   operator_data.diffusive_problem  = this->param.viscous_problem();
 
   operator_data.convective_kernel_data = convective_kernel_data;
@@ -1176,8 +1148,10 @@ OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &  
         this->momentum_operator.get_scaling_factor_mass_operator());
     }
 
-    if(this->param.nonlinear_problem_has_to_be_solved())
+    if(this->param.implicit_convective_problem())
+    {
       pressure_conv_diff_operator->set_velocity_ptr(this->convective_kernel->get_velocity());
+    }
 
     pressure_conv_diff_operator->apply(dst, tmp_scp_pressure);
 

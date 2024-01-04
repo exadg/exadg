@@ -35,7 +35,7 @@ namespace IncNS
 template<int dim, typename Number>
 TimeIntBDFPressureCorrection<dim, Number>::TimeIntBDFPressureCorrection(
   std::shared_ptr<Operator>                       operator_in,
-  std::shared_ptr<HelpersALE<Number> const>       helpers_ale_in,
+  std::shared_ptr<HelpersALE<dim, Number> const>  helpers_ale_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
   Parameters const &                              param_in,
   MPI_Comm const &                                mpi_comm_in,
@@ -154,7 +154,7 @@ TimeIntBDFPressureCorrection<dim, Number>::initialize_current_solution()
 
 template<int dim, typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::initialize_former_solutions()
+TimeIntBDFPressureCorrection<dim, Number>::initialize_former_multistep_dof_vectors()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < velocity.size(); ++i)
@@ -355,10 +355,10 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
   }
 
   /*
-   *  if a variable viscosity is used: update
-   *  viscosity model before calculating rhs_momentum
+   *  explicit variable viscosity update executed prior to calculation of rhs_momentum
    */
-  if(this->param.viscosity_is_variable())
+  if(this->param.viscosity_is_variable() and
+     this->param.treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit)
   {
     dealii::Timer timer_viscosity_update;
     timer_viscosity_update.restart();
@@ -371,7 +371,6 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
       print_wall_time(this->pcout, timer_viscosity_update.wall_time());
     }
   }
-
 
   /*
    *  Calculate the right-hand side of the linear system of equations

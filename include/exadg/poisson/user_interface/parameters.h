@@ -82,6 +82,9 @@ public:
   // Mapping
   unsigned int mapping_degree;
 
+  // mapping degree for coarser grids in h-multigrid
+  unsigned int mapping_degree_coarse_grids;
+
   // type of spatial discretization approach
   SpatialDiscretization spatial_discretization;
 

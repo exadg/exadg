@@ -143,10 +143,11 @@ private:
       (this->param.end_time - this->param.start_time) / 20;
 
     // SPATIAL DISCRETIZATION
-    this->param.degree_p                = DegreePressure::MixedOrder;
-    this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.spatial_discretization  = SpatialDiscretization::HDIV;
-    this->param.mapping_degree          = this->param.degree_u;
+    this->param.degree_p                    = DegreePressure::MixedOrder;
+    this->param.grid.triangulation_type     = TriangulationType::Distributed;
+    this->param.spatial_discretization      = SpatialDiscretization::HDIV;
+    this->param.mapping_degree              = this->param.degree_u;
+    this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
 
     // div-div and continuity penalty
     this->param.use_divergence_penalty                     = false;
@@ -231,43 +232,69 @@ private:
     // preconditioner Schur-complement block
     this->param.preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard;
 
-    // Solve mass matrix
-    this->param.solver_data_mass    = SolverData(1000, ABS_TOL, REL_TOL);
-    this->param.preconditioner_mass = PreconditionerMass::PointJacobi;
+    // Inversion of mass operator in case of H(div)-conforming method
+    this->param.inverse_mass_operator_hdiv.solver_data    = SolverData(1000, ABS_TOL, REL_TOL);
+    this->param.inverse_mass_operator_hdiv.preconditioner = PreconditionerMass::PointJacobi;
   }
 
   void
-  create_grid() final
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
-    auto const lambda_create_triangulation =
-      [&](dealii::Triangulation<dim, dim> &                        tria,
-          std::vector<dealii::GridTools::PeriodicFacePair<
-            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
-          unsigned int const                                       global_refinements,
-          std::vector<unsigned int> const &                        vector_local_refinements) {
-        (void)periodic_face_pairs;
-        (void)vector_local_refinements;
+    auto const lambda_create_triangulation = [&](dealii::Triangulation<dim, dim> & tria,
+                                                 std::vector<dealii::GridTools::PeriodicFacePair<
+                                                   typename dealii::Triangulation<
+                                                     dim>::cell_iterator>> & periodic_face_pairs,
+                                                 unsigned int const          global_refinements,
+                                                 std::vector<unsigned int> const &
+                                                   vector_local_refinements) {
+      (void)periodic_face_pairs;
+      (void)vector_local_refinements;
 
-        double const left = -1.0, right = 1.0;
+      AssertThrow(
+        this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+        dealii::ExcMessage(
+          "Periodic faces might not be applied correctly for TriangulationType::FullyDistributed. "
+          "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
 
-        double const deformation                 = 0.05;
-        unsigned int n_subdivisions_1d_hypercube = 1;
-        create_periodic_box(tria,
-                            global_refinements,
-                            periodic_face_pairs,
-                            n_subdivisions_1d_hypercube,
-                            left,
-                            right,
-                            mesh_type == MeshType::Curvilinear,
-                            deformation);
-      };
+      if(mesh_type == MeshType::Curvilinear)
+      {
+        AssertThrow(
+          this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+          dealii::ExcMessage(
+            "Manifolds might not be applied correctly for TriangulationType::FullyDistributed. "
+            "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
+      }
 
-    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+      double const left = -1.0, right = 1.0;
+      double const deformation                 = 0.05;
+      unsigned int n_subdivisions_1d_hypercube = 1;
+
+      create_periodic_box(tria,
+                          global_refinements,
+                          periodic_face_pairs,
+                          n_subdivisions_1d_hypercube,
+                          left,
+                          right,
+                          mesh_type == MeshType::Curvilinear,
+                          deformation);
+    };
+
+    GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
                                                             this->param.grid,
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
+
+    // mappings
+    GridUtilities::create_mapping_with_multigrid(mapping,
+                                                 multigrid_mappings,
+                                                 this->param.grid.element_type,
+                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree_coarse_grids,
+                                                 this->param.involves_h_multigrid());
   }
 
   void

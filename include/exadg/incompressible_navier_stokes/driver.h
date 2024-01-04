@@ -143,6 +143,8 @@ public:
                  unsigned int const   n_repetitions_outer) const;
 
 private:
+  using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
+
   void
   ale_update() const;
 
@@ -161,17 +163,20 @@ private:
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
-  // moving mapping (ALE)
-  std::shared_ptr<DeformedMappingBase<dim, Number>> grid_motion;
+  // Grid and mapping
+  std::shared_ptr<Grid<dim>> grid;
+
+  std::shared_ptr<dealii::Mapping<dim>> mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
+
+  // ALE mapping
+  std::shared_ptr<DeformedMappingBase<dim, Number>> ale_mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> ale_multigrid_mappings;
 
   // ALE helper functions required by time integrator
-  std::shared_ptr<HelpersALE<Number>> helpers_ale;
-
-  /*
-   * MatrixFree
-   */
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
+  std::shared_ptr<HelpersALE<dim, Number>> helpers_ale;
 
   /*
    * Spatial discretization

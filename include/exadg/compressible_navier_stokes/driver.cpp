@@ -56,30 +56,18 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up compressible Navier-Stokes solver:" << std::endl;
 
-  application->setup();
+  application->setup(grid, mapping);
 
   // initialize compressible Navier-Stokes operator
-  pde_operator = std::make_shared<Operator<dim, Number>>(application->get_grid(),
-                                                         application->get_mapping(),
+  pde_operator = std::make_shared<Operator<dim, Number>>(grid,
+                                                         mapping,
                                                          application->get_boundary_descriptor(),
                                                          application->get_field_functions(),
                                                          application->get_parameters(),
                                                          "fluid",
                                                          mpi_comm);
 
-  // initialize matrix_free
-  matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-  matrix_free_data->append(pde_operator);
-
-  matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-  matrix_free->reinit(*application->get_mapping(),
-                      matrix_free_data->get_dof_handler_vector(),
-                      matrix_free_data->get_constraint_vector(),
-                      matrix_free_data->get_quadrature_vector(),
-                      matrix_free_data->data);
-
-  // setup compressible Navier-Stokes operator
-  pde_operator->setup(matrix_free, matrix_free_data);
+  pde_operator->setup();
 
   // initialize postprocessor
   if(not is_throughput_study)

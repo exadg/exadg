@@ -44,8 +44,7 @@ struct PointwiseOutputData : public PointwiseOutputDataBase<dim>
 };
 
 template<int dim, typename Number>
-class PointwiseOutputGenerator
-  : public PointwiseOutputGeneratorBase<dim, dealii::LinearAlgebra::distributed::Vector<Number>>
+class PointwiseOutputGenerator : public PointwiseOutputGeneratorBase<dim, Number>
 {
 public:
   using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
@@ -57,10 +56,10 @@ public:
         dealii::Mapping<dim> const &     mapping_in,
         PointwiseOutputData<dim> const & pointwise_output_data_in);
 
-private:
   void
-  do_evaluate(VectorType const & solution) final;
+  evaluate(VectorType const & solution, double const time, bool const unsteady);
 
+private:
   dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
   PointwiseOutputData<dim>                            pointwise_output_data;
 };

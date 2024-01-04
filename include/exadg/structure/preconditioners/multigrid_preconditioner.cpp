@@ -36,14 +36,14 @@ MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & m
 template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize(
-  MultigridData const &                       mg_data,
-  std::shared_ptr<Grid<dim> const>            grid,
-  std::shared_ptr<dealii::Mapping<dim> const> mapping,
-  dealii::FiniteElement<dim> const &          fe,
-  ElasticityOperatorBase<dim, Number> const & pde_operator_in,
-  bool const                                  nonlinear_in,
-  Map_DBC const &                             dirichlet_bc,
-  Map_DBC_ComponentMask const &               dirichlet_bc_component_mask)
+  MultigridData const &                                 mg_data,
+  std::shared_ptr<Grid<dim> const>                      grid,
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+  dealii::FiniteElement<dim> const &                    fe,
+  ElasticityOperatorBase<dim, Number> const &           pde_operator_in,
+  bool const                                            nonlinear_in,
+  Map_DBC const &                                       dirichlet_bc,
+  Map_DBC_ComponentMask const &                         dirichlet_bc_component_mask)
 {
   pde_operator = &pde_operator_in;
 
@@ -53,11 +53,12 @@ MultigridPreconditioner<dim, Number>::initialize(
 
   Base::initialize(mg_data,
                    grid,
-                   mapping,
+                   multigrid_mappings,
                    fe,
                    false /*operator_is_singular*/,
                    dirichlet_bc,
-                   dirichlet_bc_component_mask);
+                   dirichlet_bc_component_mask,
+                   false /* initialize_preconditioners */);
 }
 
 template<int dim, typename Number>
@@ -114,7 +115,7 @@ MultigridPreconditioner<dim, Number>::update()
     // interpolate velocity from fine to coarse level
     this->transfer_from_fine_to_coarse_levels(
       [&](unsigned int const fine_level, unsigned int const coarse_level) {
-        auto vector_fine_level =
+        auto const & vector_fine_level =
           this->get_operator_nonlinear(fine_level)->get_solution_linearization();
         auto vector_coarse_level =
           this->get_operator_nonlinear(coarse_level)->get_solution_linearization();
@@ -130,6 +131,8 @@ MultigridPreconditioner<dim, Number>::update()
     this->update_smoothers();
     this->update_coarse_solver();
   }
+
+  this->update_needed = false;
 }
 
 template<int dim, typename Number>

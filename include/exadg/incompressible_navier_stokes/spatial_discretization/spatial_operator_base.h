@@ -87,13 +87,14 @@ public:
   /*
    * Constructor.
    */
-  SpatialOperatorBase(std::shared_ptr<Grid<dim> const>               grid,
-                      std::shared_ptr<dealii::Mapping<dim> const>    mapping,
-                      std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
-                      std::shared_ptr<FieldFunctions<dim> const>     field_functions,
-                      Parameters const &                             parameters,
-                      std::string const &                            field,
-                      MPI_Comm const &                               mpi_comm);
+  SpatialOperatorBase(std::shared_ptr<Grid<dim> const>                      grid,
+                      std::shared_ptr<dealii::Mapping<dim> const>           mapping,
+                      std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+                      std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor,
+                      std::shared_ptr<FieldFunctions<dim> const>            field_functions,
+                      Parameters const &                                    parameters,
+                      std::string const &                                   field,
+                      MPI_Comm const &                                      mpi_comm);
 
   /*
    * Destructor.
@@ -103,24 +104,42 @@ public:
   void
   fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
 
-  /*
-   * Setup function. Initializes basic finite element components, matrix-free object, and basic
-   * operators. This function does not perform the setup related to the solution of linear systems
-   * of equations.
+  /**
+   * Call this setup() function if the dealii::MatrixFree object can be set up by the present class.
    */
-  virtual void
+  void
+  setup();
+
+  /**
+   * Call this setup() function if the dealii::MatrixFree object needs to be created outside this
+   * class. The typical use case would be multiphysics-coupling with one MatrixFree object handed
+   * over to several single-field solvers. Another typical use case is the use of an ALE
+   * formulation.
+   */
+  void
   setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
         std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
         std::string const &                                    dof_index_temperature = "");
 
+protected:
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
    * (non-)linear systems of equation required for implicit formulations. It has to be extended
    * by derived classes if necessary.
    */
   virtual void
-  setup_solvers(double const & scaling_factor_mass, VectorType const & velocity);
+  setup_preconditioners_and_solvers()
+  {
+  }
 
+private:
+  /**
+   * Additional setup to be done by derived classes.
+   */
+  virtual void
+  setup_derived() = 0;
+
+public:
   /*
    * Getters and setters.
    */
@@ -385,13 +404,7 @@ public:
    * Updates operators after grid has been moved.
    */
   virtual void
-  update_after_grid_motion();
-
-  /*
-   * Fills a dof-vector with grid coordinates for ALE-type problems.
-   */
-  void
-  fill_grid_coordinates_vector(VectorType & vector) const;
+  update_after_grid_motion(bool const update_matrix_free);
 
   /*
    * Sets the grid velocity.
@@ -425,6 +438,8 @@ protected:
    * deformed configuration.)
    */
   std::shared_ptr<dealii::Mapping<dim> const> mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings;
 
   /*
    * User interface: Boundary conditions and field functions.
@@ -497,6 +512,11 @@ private:
   std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data;
   std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free;
 
+  // If we want to be able to update the mapping, we need a pointer to a non-const MatrixFree
+  // object. In case this object is created, we let the above object called matrix_free point to
+  // matrix_free_own_storage. This variable is needed for ALE formulations.
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_own_storage;
+
   bool pressure_level_is_undefined;
 
   /*
@@ -542,11 +562,9 @@ protected:
   InverseMassOperator<dim, 1, Number>   inverse_mass_velocity_scalar;
 
   /*
-   * solver for mass system (projection). Used when matrix-free inverse mass operator is not
-   * avaliable.
+   * Inverse mass operator used in case of H(div)-conforming space
    */
-  std::shared_ptr<PreconditionerBase<Number>>     mass_preconditioner;
-  std::shared_ptr<Krylov::SolverBase<VectorType>> mass_solver;
+  InverseMassOperatorHdiv<dim, dim, Number> inverse_mass_hdiv;
 
   /*
    * Projection operator.
@@ -558,7 +576,8 @@ protected:
    * Projection solver.
    */
 
-  // elementwise solver/preconditioner
+  // Elementwise solver/preconditioner used in case that only the divergence penalty term is used
+  // and the system of equations is block-diagonal.
   typedef Elementwise::OperatorBase<dim, Number, ProjOperator> ELEMENTWISE_PROJ_OPERATOR;
   std::shared_ptr<ELEMENTWISE_PROJ_OPERATOR>                   elementwise_projection_operator;
 
@@ -566,7 +585,7 @@ protected:
                                               ELEMENTWISE_PRECONDITIONER;
   std::shared_ptr<ELEMENTWISE_PRECONDITIONER> elementwise_preconditioner_projection;
 
-  // projection solver
+  // global solver/preconditioner to be used if the continuity penalty term is applied.
   std::shared_ptr<Krylov::SolverBase<VectorType>> projection_solver;
   std::shared_ptr<PreconditionerBase<Number>>     preconditioner_projection;
 
@@ -595,13 +614,13 @@ private:
   initialize_boundary_descriptor_laplace();
 
   void
-  distribute_dofs();
+  initialize_dof_handler_and_constraints();
+
+  void
+  initialize_dirichlet_cached_bc();
 
   void
   initialize_operators(std::string const & dof_index_temperature);
-
-  void
-  initialize_viscosity_model();
 
   void
   initialize_calculators_for_derived_quantities();

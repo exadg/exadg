@@ -63,6 +63,7 @@ Parameters::Parameters()
     // SPATIAL DISCRETIZATION
     grid(GridData()),
     mapping_degree(1),
+    mapping_degree_coarse_grids(1),
     degree(1),
 
     // SOLVER
@@ -96,12 +97,14 @@ Parameters::check() const
   {
     AssertThrow(restarted_simulation == false,
                 dealii::ExcMessage("Restart has not been implemented."));
+  }
 
-    if(weak_damping_active)
-    {
-      AssertThrow(weak_damping_coefficient > 0.0,
-                  dealii::ExcMessage("Weak linear damping requires positive coefficient."));
-    }
+  if(weak_damping_active)
+  {
+    AssertThrow(problem_type == ProblemType::Unsteady,
+                dealii::ExcMessage("Weak damping only well-defined for ProblemType::Unsteady."));
+    AssertThrow(weak_damping_coefficient > 0.0,
+                dealii::ExcMessage("Weak damping coefficient defined positive."));
   }
 
   // SPATIAL DISCRETIZATION
@@ -209,6 +212,9 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
   grid.print(pcout);
 
   print_parameter(pcout, "Mapping degree", mapping_degree);
+
+  if(involves_h_multigrid())
+    print_parameter(pcout, "Mapping degree coarse grids", mapping_degree_coarse_grids);
 
   print_parameter(pcout, "Polynomial degree", degree);
 }

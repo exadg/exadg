@@ -2,7 +2,7 @@
  *
  *  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
  *
- *  Copyright (C) 2021 by the ExaDG authors
+ *  Copyright (C) 2023 by the ExaDG authors
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,33 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_GET_DYNAMIC_MAPPING_H_
-#define INCLUDE_EXADG_GRID_GET_DYNAMIC_MAPPING_H_
+// solver
+#include <exadg/acoustic_conservation_equations/solver.h>
 
-// ExaDG
-#include <exadg/grid/grid.h>
-#include <exadg/grid/mapping_deformation_base.h>
-
-namespace ExaDG
-{
-/**
- * Return pointer to dynamic mapping (and redirect to static mapping if dynamic mapping is not
- * initialized).
- */
-template<int dim, typename Number>
-std::shared_ptr<dealii::Mapping<dim> const>
-get_dynamic_mapping(std::shared_ptr<dealii::Mapping<dim> const>             static_mapping,
-                    std::shared_ptr<DeformedMappingBase<dim, Number> const> dynamic_mapping)
-{
-  if(dynamic_mapping.get() != 0)
-  {
-    return dynamic_mapping;
-  }
-  else
-  {
-    return static_mapping;
-  }
-}
-} // namespace ExaDG
-
-#endif /* INCLUDE_EXADG_GRID_GET_DYNAMIC_MAPPING_H_ */
+// application
+#include "application.h"

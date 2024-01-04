@@ -36,32 +36,43 @@ class JacobiPreconditioner : public PreconditionerBase<typename Operator::value_
 public:
   typedef typename PreconditionerBase<typename Operator::value_type>::VectorType VectorType;
 
-  JacobiPreconditioner(Operator const & underlying_operator_in)
+  JacobiPreconditioner(Operator const & underlying_operator_in, bool const initialize)
     : underlying_operator(underlying_operator_in)
   {
     underlying_operator.initialize_dof_vector(inverse_diagonal);
 
-    underlying_operator.calculate_inverse_diagonal(inverse_diagonal);
+    if(initialize)
+    {
+      this->update();
+    }
   }
 
   void
   vmult(VectorType & dst, VectorType const & src) const final
   {
-    if(not dealii::PointerComparison::equal(&dst, &src))
-      dst = src;
-    dst.scale(inverse_diagonal);
-  }
-
-  void
-  update() final
-  {
-    underlying_operator.calculate_inverse_diagonal(inverse_diagonal);
+    if(dealii::PointerComparison::equal(&dst, &src))
+    {
+      dst.scale(inverse_diagonal);
+    }
+    else
+    {
+      for(unsigned int i = 0; i < dst.locally_owned_size(); ++i)
+        dst.local_element(i) = inverse_diagonal.local_element(i) * src.local_element(i);
+    }
   }
 
   unsigned int
   get_size_of_diagonal()
   {
     return inverse_diagonal.size();
+  }
+
+  void
+  update() final
+  {
+    underlying_operator.calculate_inverse_diagonal(inverse_diagonal);
+
+    this->update_needed = false;
   }
 
 private:

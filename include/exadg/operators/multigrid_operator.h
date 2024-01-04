@@ -123,6 +123,12 @@ public:
   }
 
   void
+  initialize_block_diagonal_preconditioner(bool const initialize) const final
+  {
+    pde_operator->initialize_block_diagonal_preconditioner(initialize);
+  }
+
+  void
   update_block_diagonal_preconditioner() const final
   {
     pde_operator->update_block_diagonal_preconditioner();
@@ -132,6 +138,18 @@ public:
   apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const final
   {
     pde_operator->apply_inverse_block_diagonal(dst, src);
+  }
+
+  virtual void
+  apply_inverse_additive_schwarz_matrices(VectorType & dst, VectorType const & src) const final
+  {
+    pde_operator->apply_inverse_additive_schwarz_matrices(dst, src);
+  }
+
+  virtual void
+  compute_factorized_additive_schwarz_matrices() const final
+  {
+    pde_operator->compute_factorized_additive_schwarz_matrices();
   }
 
 #ifdef DEAL_II_WITH_TRILINOS

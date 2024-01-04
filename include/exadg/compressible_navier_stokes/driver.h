@@ -91,8 +91,10 @@ private:
 
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
+  // Grid and mapping
+  std::shared_ptr<Grid<dim>> grid;
+
+  std::shared_ptr<dealii::Mapping<dim>> mapping;
 
   std::shared_ptr<Operator<dim, Number>> pde_operator;
 

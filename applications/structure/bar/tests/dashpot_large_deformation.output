@@ -49,6 +49,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         2
 
 Solver:
@@ -106,10 +107,6 @@ Setup elasticity time integrator ...
 
 ... done!
 
-Setup elasticity solver ...
-
-... done!
-
 Starting time loop ...
 
 Calculate error for all fields at time t = 0.0000e+00:
@@ -121,13 +118,13 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for all fields at time t = 2.5000e+01:
-  Relative error (L2-norm): 1.40923e-05
+  Relative error (L2-norm): 1.40907e-05
 
 Calculate error for all fields at time t = 5.0000e+01:
   Relative error (L2-norm): 1.00002e+00
 
 Calculate error for all fields at time t = 7.5000e+01:
-  Relative error (L2-norm): 1.41055e-05
+  Relative error (L2-norm): 1.40902e-05
 
 ________________________________________________________________________________
 

@@ -50,6 +50,7 @@ Spatial Discretization:
   Number of global refinements:              0
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         1
 
 Solver:
@@ -104,10 +105,6 @@ Setup elasticity operator ...
 ... done!
 
 Setup elasticity time integrator ...
-
-... done!
-
-Setup elasticity solver ...
 
 ... done!
 

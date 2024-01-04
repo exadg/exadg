@@ -39,33 +39,23 @@ class Solver
 {
 public:
   void
-  setup(std::shared_ptr<Domain<dim, n_components, Number>> domain, MPI_Comm const mpi_comm)
+  setup(std::shared_ptr<Domain<dim, n_components, Number> const> const & domain,
+        std::shared_ptr<Grid<dim> const> const &                         grid,
+        std::shared_ptr<dealii::Mapping<dim> const> const &              mapping,
+        std::shared_ptr<MultigridMappings<dim, Number>> const            multigrid_mappings,
+        MPI_Comm const                                                   mpi_comm)
   {
     pde_operator =
-      std::make_shared<Operator<dim, n_components, Number>>(domain->get_grid(),
-                                                            domain->get_mapping(),
+      std::make_shared<Operator<dim, n_components, Number>>(grid,
+                                                            mapping,
+                                                            multigrid_mappings,
                                                             domain->get_boundary_descriptor(),
                                                             domain->get_field_functions(),
                                                             domain->get_parameters(),
                                                             "Poisson",
                                                             mpi_comm);
 
-    matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-    matrix_free_data->append(pde_operator);
-
-    matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-    if(domain->get_parameters().enable_cell_based_face_loops)
-      Categorization::do_cell_based_loops(*domain->get_grid()->triangulation,
-                                          matrix_free_data->data);
-    matrix_free->reinit(*domain->get_mapping(),
-                        matrix_free_data->get_dof_handler_vector(),
-                        matrix_free_data->get_constraint_vector(),
-                        matrix_free_data->get_quadrature_vector(),
-                        matrix_free_data->data);
-
-    pde_operator->setup(matrix_free, matrix_free_data);
-
-    pde_operator->setup_solver();
+    pde_operator->setup();
 
     postprocessor = domain->create_postprocessor();
     postprocessor->setup(*pde_operator);
@@ -73,10 +63,6 @@ public:
 
   std::shared_ptr<Operator<dim, n_components, Number>>          pde_operator;
   std::shared_ptr<PostProcessorBase<dim, n_components, Number>> postprocessor;
-
-private:
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
 };
 
 template<int dim, int n_components, typename Number>
@@ -103,6 +89,12 @@ private:
   dealii::ConditionalOStream pcout;
 
   std::shared_ptr<ApplicationBase<dim, n_components, Number>> application;
+
+  std::shared_ptr<Grid<dim>> grid1, grid2;
+
+  std::shared_ptr<dealii::Mapping<dim>> mapping1, mapping2;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings1, multigrid_mappings2;
 
   // Poisson solvers
   std::shared_ptr<Solver<dim, n_components, Number>> poisson1, poisson2;

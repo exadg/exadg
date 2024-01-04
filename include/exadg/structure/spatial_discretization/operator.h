@@ -192,32 +192,33 @@ public:
   /*
    * Constructor.
    */
-  Operator(std::shared_ptr<Grid<dim> const>               grid,
-           std::shared_ptr<dealii::Mapping<dim> const>    mapping,
-           std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
-           std::shared_ptr<FieldFunctions<dim> const>     field_functions,
-           std::shared_ptr<MaterialDescriptor const>      material_descriptor,
-           Parameters const &                             param,
-           std::string const &                            field,
-           MPI_Comm const &                               mpi_comm);
+  Operator(std::shared_ptr<Grid<dim> const>                      grid,
+           std::shared_ptr<dealii::Mapping<dim> const>           mapping,
+           std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+           std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor,
+           std::shared_ptr<FieldFunctions<dim> const>            field_functions,
+           std::shared_ptr<MaterialDescriptor const>             material_descriptor,
+           Parameters const &                                    param,
+           std::string const &                                   field,
+           MPI_Comm const &                                      mpi_comm);
 
   void
   fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
 
-  /*
-   * Setup function. Initializes basic operators. This function does not perform the setup
-   * related to the solution of linear systems of equations.
+  /**
+   * Call this setup() function if the dealii::MatrixFree object can be set up by the present class.
+   */
+  void
+  setup();
+
+  /**
+   * Call this setup() function if the dealii::MatrixFree object needs to be created outside this
+   * class. The typical use case would be multiphysics-coupling with one MatrixFree object handed
+   * over to several single-field solvers.
    */
   void
   setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
         std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data);
-
-  /*
-   * This function initializes operators, preconditioners, and solvers related to the solution of
-   * linear systems of equation required for implicit formulations.
-   */
-  void
-  setup_solver(double const & scaling_factor_acceleration, double const & scaling_factor_velocity);
 
   /*
    * Initialization of dof-vector.
@@ -330,7 +331,7 @@ public:
   /*
    * Setters and getters.
    */
-  dealii::MatrixFree<dim, Number> const &
+  std::shared_ptr<dealii::MatrixFree<dim, Number> const>
   get_matrix_free() const;
 
   dealii::Mapping<dim> const &
@@ -358,7 +359,7 @@ private:
    * Initializes dealii::DoFHandler.
    */
   void
-  distribute_dofs();
+  initialize_dof_handler_and_constraints();
 
   std::string
   get_dof_name() const;
@@ -381,7 +382,7 @@ private:
   unsigned int
   get_quad_index_gauss_lobatto() const;
 
-  /*
+  /**
    * Scaling factor for mass matrix assuming a weak damping operator leading to a scaled mass
    * matrix.
    */
@@ -389,23 +390,29 @@ private:
   compute_scaling_factor_mass(double const scaling_factor_acceleration,
                               double const scaling_factor_velocity) const;
 
-  /*
+  /**
+   * Setup of "cached" boundary conditions for coupling with other domains.
+   */
+  void
+  setup_coupling_boundary_conditions();
+
+  /**
    * Initializes operators.
    */
   void
   setup_operators();
 
-  /*
+  /**
    * Initializes preconditioner.
    */
   void
-  initialize_preconditioner();
+  setup_preconditioner();
 
-  /*
+  /**
    * Initializes solver.
    */
   void
-  initialize_solver();
+  setup_solver();
 
   /*
    * Grid
@@ -416,6 +423,8 @@ private:
    * Mapping
    */
   std::shared_ptr<dealii::Mapping<dim> const> mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings;
 
   /*
    * User interface.

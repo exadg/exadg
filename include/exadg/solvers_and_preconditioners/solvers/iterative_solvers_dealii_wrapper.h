@@ -122,9 +122,12 @@ public:
   void
   update_preconditioner(bool const update_preconditioner) const override
   {
-    if(solver_data.use_preconditioner and update_preconditioner)
+    if(solver_data.use_preconditioner)
     {
-      preconditioner.update();
+      if(preconditioner.needs_update() or update_preconditioner)
+      {
+        preconditioner.update();
+      }
     }
   }
 
@@ -163,7 +166,9 @@ public:
   get_timings() const override
   {
     if(solver_data.use_preconditioner)
+    {
       this->timer_tree->insert({"SolverCG"}, preconditioner.get_timings());
+    }
 
     return this->timer_tree;
   }
@@ -235,9 +240,12 @@ public:
   void
   update_preconditioner(bool const update_preconditioner) const override
   {
-    if(solver_data.use_preconditioner and update_preconditioner)
+    if(solver_data.use_preconditioner)
     {
-      preconditioner.update();
+      if(preconditioner.needs_update() or update_preconditioner)
+      {
+        preconditioner.update();
+      }
     }
   }
 
@@ -287,7 +295,10 @@ public:
   std::shared_ptr<TimerTree>
   get_timings() const override
   {
-    this->timer_tree->insert({"SolverGMRES"}, preconditioner.get_timings());
+    if(solver_data.use_preconditioner)
+    {
+      this->timer_tree->insert({"SolverGMRES"}, preconditioner.get_timings());
+    }
 
     return this->timer_tree;
   }
@@ -340,9 +351,12 @@ public:
   void
   update_preconditioner(bool const update_preconditioner) const override
   {
-    if(solver_data.use_preconditioner and update_preconditioner)
+    if(solver_data.use_preconditioner)
     {
-      preconditioner.update();
+      if(preconditioner.needs_update() or update_preconditioner)
+      {
+        preconditioner.update();
+      }
     }
   }
 
@@ -384,7 +398,10 @@ public:
   std::shared_ptr<TimerTree>
   get_timings() const override
   {
-    this->timer_tree->insert({"SolverFGMRES"}, preconditioner.get_timings());
+    if(solver_data.use_preconditioner)
+    {
+      this->timer_tree->insert({"SolverFGMRES"}, preconditioner.get_timings());
+    }
 
     return this->timer_tree;
   }

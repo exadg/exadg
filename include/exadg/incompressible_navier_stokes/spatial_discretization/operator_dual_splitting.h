@@ -53,21 +53,19 @@ public:
   /*
    * Constructor.
    */
-  OperatorDualSplitting(std::shared_ptr<Grid<dim> const>               grid,
-                        std::shared_ptr<dealii::Mapping<dim> const>    mapping,
-                        std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
-                        std::shared_ptr<FieldFunctions<dim> const>     field_functions,
-                        Parameters const &                             parameters,
-                        std::string const &                            field,
-                        MPI_Comm const &                               mpi_comm);
+  OperatorDualSplitting(std::shared_ptr<Grid<dim> const>                      grid,
+                        std::shared_ptr<dealii::Mapping<dim> const>           mapping,
+                        std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+                        std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor,
+                        std::shared_ptr<FieldFunctions<dim> const>            field_functions,
+                        Parameters const &                                    parameters,
+                        std::string const &                                   field,
+                        MPI_Comm const &                                      mpi_comm);
 
   /*
    * Destructor.
    */
   virtual ~OperatorDualSplitting();
-
-  void
-  setup_solvers(double const & scaling_factor_mass, VectorType const & velocity) final;
 
   /*
    * Pressure Poisson equation.
@@ -139,17 +137,17 @@ public:
   interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time) const;
 
 private:
+  void
+  setup_preconditioners_and_solvers() final;
+
   /*
-   * Setup of Helmholtz solver (operator, preconditioner, solver).
+   * Setup of Helmholtz solver.
    */
   void
+  setup_helmholtz_preconditioner();
+
+  void
   setup_helmholtz_solver();
-
-  void
-  initialize_helmholtz_preconditioner();
-
-  void
-  initialize_helmholtz_solver();
 
   /*
    * rhs pressure Poisson equation

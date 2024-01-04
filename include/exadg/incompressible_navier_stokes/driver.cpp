@@ -25,7 +25,6 @@
 #endif
 
 // ExaDG
-#include <exadg/grid/get_dynamic_mapping.h>
 #include <exadg/incompressible_navier_stokes/driver.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
 #include <exadg/incompressible_navier_stokes/time_integration/create_time_integrator.h>
@@ -59,30 +58,33 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up incompressible Navier-Stokes solver:" << std::endl;
 
-  application->setup();
+  application->setup(grid, mapping, multigrid_mappings);
 
   // moving mesh (ALE formulation)
-  if(application->get_parameters().ale_formulation)
+  bool const ale = application->get_parameters().ale_formulation;
+
+  if(ale)
   {
     if(application->get_parameters().mesh_movement_type == MeshMovementType::Function)
     {
       std::shared_ptr<dealii::Function<dim>> mesh_motion =
         application->create_mesh_movement_function();
 
-      grid_motion = std::make_shared<DeformedMappingFunction<dim, Number>>(
-        application->get_mapping(),
+      ale_mapping = std::make_shared<DeformedMappingFunction<dim, Number>>(
+        mapping,
         application->get_parameters().mapping_degree,
-        *application->get_grid()->triangulation,
+        *grid->triangulation,
         mesh_motion,
         application->get_parameters().start_time);
     }
     else if(application->get_parameters().mesh_movement_type == MeshMovementType::Poisson)
     {
-      application->setup_poisson();
+      application->setup_poisson(grid);
 
-      grid_motion = std::make_shared<Poisson::DeformedMapping<dim, Number>>(
-        application->get_grid(),
-        application->get_mapping(),
+      ale_mapping = std::make_shared<Poisson::DeformedMapping<dim, Number>>(
+        grid,
+        mapping,
+        multigrid_mappings,
         application->get_boundary_descriptor_poisson(),
         application->get_field_functions_poisson(),
         application->get_parameters_poisson(),
@@ -94,28 +96,32 @@ Driver<dim, Number>::setup()
       AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
-    helpers_ale = std::make_shared<HelpersALE<Number>>();
+    ale_multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(
+      ale_mapping, application->get_parameters().mapping_degree_coarse_grids);
+
+    helpers_ale = std::make_shared<HelpersALE<dim, Number>>();
 
     helpers_ale->move_grid = [&](double const & time) {
-      grid_motion->update(time,
+      ale_mapping->update(time,
                           false /* print_solver_info */,
                           this->time_integrator->get_number_of_time_steps());
     };
 
     helpers_ale->update_pde_operator_after_grid_motion = [&]() {
-      matrix_free->update_mapping(*grid_motion);
+      pde_operator->update_after_grid_motion(true);
+    };
 
-      pde_operator->update_after_grid_motion();
+    helpers_ale->fill_grid_coordinates_vector = [&](VectorType & grid_coordinates,
+                                                    dealii::DoFHandler<dim> const & dof_handler) {
+      ale_mapping->fill_grid_coordinates_vector(grid_coordinates, dof_handler);
     };
   }
 
-  std::shared_ptr<dealii::Mapping<dim> const> mapping_fluid =
-    get_dynamic_mapping<dim, Number>(application->get_mapping(), grid_motion);
-
   if(application->get_parameters().solver_type == SolverType::Unsteady)
   {
-    pde_operator = create_operator<dim, Number>(application->get_grid(),
-                                                mapping_fluid,
+    pde_operator = create_operator<dim, Number>(grid,
+                                                ale ? ale_mapping->get_mapping() : mapping,
+                                                ale ? ale_multigrid_mappings : multigrid_mappings,
                                                 application->get_boundary_descriptor(),
                                                 application->get_field_functions(),
                                                 application->get_parameters(),
@@ -124,37 +130,23 @@ Driver<dim, Number>::setup()
   }
   else if(application->get_parameters().solver_type == SolverType::Steady)
   {
-    pde_operator =
-      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(application->get_grid(),
-                                                            mapping_fluid,
-                                                            application->get_boundary_descriptor(),
-                                                            application->get_field_functions(),
-                                                            application->get_parameters(),
-                                                            "fluid",
-                                                            mpi_comm);
+    pde_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
+      grid,
+      ale ? ale_mapping->get_mapping() : mapping,
+      ale ? ale_multigrid_mappings : multigrid_mappings,
+      application->get_boundary_descriptor(),
+      application->get_field_functions(),
+      application->get_parameters(),
+      "fluid",
+      mpi_comm);
   }
   else
   {
     AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
-  // initialize matrix_free
-  matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-  matrix_free_data->append(pde_operator);
-
-  matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-  if(application->get_parameters().use_cell_based_face_loops)
-    Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
-                                        matrix_free_data->data);
-
-  matrix_free->reinit(*mapping_fluid,
-                      matrix_free_data->get_dof_handler_vector(),
-                      matrix_free_data->get_constraint_vector(),
-                      matrix_free_data->get_quadrature_vector(),
-                      matrix_free_data->data);
-
   // setup Navier-Stokes operator
-  pde_operator->setup(matrix_free, matrix_free_data);
+  pde_operator->setup();
 
   if(not is_throughput_study)
   {
@@ -162,13 +154,12 @@ Driver<dim, Number>::setup()
     postprocessor = application->create_postprocessor();
     postprocessor->setup(*pde_operator);
 
-    // setup time integrator before calling setup_solvers
-    // (this is necessary since the setup of the solvers
-    // depends on quantities such as the time_step_size or gamma0!)
     if(application->get_parameters().solver_type == SolverType::Unsteady)
     {
       time_integrator = create_time_integrator<dim, Number>(
         pde_operator, helpers_ale, postprocessor, application->get_parameters(), mpi_comm, is_test);
+
+      time_integrator->setup(application->get_parameters().restarted_simulation);
     }
     else if(application->get_parameters().solver_type == SolverType::Steady)
     {
@@ -178,24 +169,8 @@ Driver<dim, Number>::setup()
       // initialize driver for steady state problem that depends on pde_operator
       driver_steady = std::make_shared<DriverSteadyProblems<dim, Number>>(
         operator_coupled, postprocessor, application->get_parameters(), mpi_comm, is_test);
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
-    }
 
-    if(application->get_parameters().solver_type == SolverType::Unsteady)
-    {
-      time_integrator->setup(application->get_parameters().restarted_simulation);
-
-      pde_operator->setup_solvers(time_integrator->get_scaling_factor_time_derivative_term(),
-                                  time_integrator->get_velocity());
-    }
-    else if(application->get_parameters().solver_type == SolverType::Steady)
-    {
       driver_steady->setup();
-
-      pde_operator->setup_solvers(1.0 /* dummy */, driver_steady->get_velocity());
     }
     else
     {
@@ -482,7 +457,7 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
       if(operator_type == OperatorType::CoupledNonlinearResidual)
         operator_coupled->evaluate_nonlinear_residual(dst1,src1,&src1.block(0), 0.0, 1.0);
       else if(operator_type == OperatorType::CoupledLinearized)
-        operator_coupled->apply_linearized_problem(dst1,src1, 0.0, 1.0);
+        operator_coupled->apply_linearized_problem(dst1,src1);
       else if(operator_type == OperatorType::ConvectiveOperator)
         operator_coupled->evaluate_convective_term(dst2,src2,0.0);
       else if(operator_type == OperatorType::InverseMassOperator)
