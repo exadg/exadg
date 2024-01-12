@@ -40,7 +40,6 @@ Parameters::Parameters()
     start_time(0.),
     end_time(-1.),
     speed_of_sound(-1.),
-    density(-1.),
 
     // TEMPORAL DISCRETIZATION
     calculation_of_time_step_size(TimeStepCalculation::Undefined),
@@ -74,7 +73,6 @@ Parameters::check() const
   // PHYSICAL QUANTITIES
   AssertThrow(end_time > start_time, dealii::ExcMessage("parameter end_time must be defined"));
   AssertThrow(speed_of_sound >= 0.0, dealii::ExcMessage("parameter must be defined"));
-  AssertThrow(density >= 0.0, dealii::ExcMessage("parameter must be defined"));
 
   // TEMPORAL DISCRETIZATION
   AssertThrow(calculation_of_time_step_size != TimeStepCalculation::Undefined,
@@ -135,9 +133,6 @@ Parameters::print_parameters_physical_quantities(dealii::ConditionalOStream cons
 
   // speed of sound
   print_parameter(pcout, "Speed of sound", speed_of_sound);
-
-  // mean density
-  print_parameter(pcout, "Density", density);
 }
 
 void

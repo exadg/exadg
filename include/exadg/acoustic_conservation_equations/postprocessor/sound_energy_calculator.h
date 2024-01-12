@@ -155,6 +155,8 @@ private:
       {
         f.open(filename.str().c_str(), std::ios::trunc);
         f << "Time, Sound energy: E = (1,p*p/(2*rho*c*c)+rho*u*u/2)_Omega" << std::endl;
+        f << "c   = " << data.speed_of_sound << std::endl;
+        f << "rho = " << data.density << std::endl;
         clear_files = false;
       }
       else
