@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['lambda_5finitialize_5fcoarse_5fmappings_0',['lambda_initialize_coarse_mappings',['../classExaDG_1_1MultigridMappings.html#ab0fc7d77a39a15b902f2192a89a0c902',1,'ExaDG::MultigridMappings']]],
+  ['lambda_5finitialize_5fcoarse_5fmappings_0',['lambda_initialize_coarse_mappings',['../classExaDG_1_1MultigridMappings.html#a39b8eae4f3fe71f77a1b1280b50d31ad',1,'ExaDG::MultigridMappings']]],
   ['laplacekernel_1',['LaplaceKernel',['../classExaDG_1_1Poisson_1_1Operators_1_1LaplaceKernel.html',1,'ExaDG::Poisson::Operators']]],
   ['laplacekernel_3c_20dim_2c_20double_2c_20n_5fcomponents_20_3e_2',['LaplaceKernel&lt; dim, double, n_components &gt;',['../classExaDG_1_1Poisson_1_1Operators_1_1LaplaceKernel.html',1,'ExaDG::Poisson::Operators']]],
   ['laplacekernel_3c_20dim_2c_20number_2c_20n_5fcomponents_20_3e_3',['LaplaceKernel&lt; dim, Number, n_components &gt;',['../classExaDG_1_1Poisson_1_1Operators_1_1LaplaceKernel.html',1,'ExaDG::Poisson::Operators']]],
