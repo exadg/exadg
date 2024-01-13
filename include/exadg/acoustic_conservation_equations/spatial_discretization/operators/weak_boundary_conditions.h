@@ -103,7 +103,7 @@ inline DEAL_II_ALWAYS_INLINE //
     // normal share of velocty
     auto const rho_up_normal = (Number{2.0} * Y * pm / c) * n - rho_um_normal;
 
-    // tangential share of velocity stays the same
+    // tangential share of velocity stays the same (rho_up_tangential = rho_um_tangential)
     return rho_up_normal + rho_um_tangential;
   }
   else
