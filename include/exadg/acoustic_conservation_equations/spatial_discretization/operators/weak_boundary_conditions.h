@@ -50,7 +50,7 @@ inline DEAL_II_ALWAYS_INLINE //
       time);
     return -pressure_m.get_value(q) + Number{2.0} * g;
   }
-  else if(boundary_type == BoundaryType::VelocityDirichlet ||
+  else if(boundary_type == BoundaryType::VelocityDirichlet or
           boundary_type == BoundaryType::Admittance)
   {
     return pressure_m.get_value(q);
