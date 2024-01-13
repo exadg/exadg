@@ -83,7 +83,7 @@ public:
     }
     prm.leave_subsection();
 
-    // For a reasonable test we have to create a differen postprocessor, see below.
+    // For a reasonable test we have to create a different postprocessor, see below.
     prm.enter_subsection("General");
     {
       prm.add_parameter("IsTest", is_test, "Do we run a test?", dealii::Patterns::Bool());
