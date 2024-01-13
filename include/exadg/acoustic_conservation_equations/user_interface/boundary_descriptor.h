@@ -44,8 +44,10 @@ namespace Acoustics
  * | prescribe velocity values |                         | Dirichlet:              |
  * |                           | no BCs to be prescribed | prescribe g_u           |
  * +---------------------------+-------------------------+-------------------------+
- * | admittance BC             |                         | Admittance:             |
- * |                           | no BCs to be prescribed | prescribe Y             |
+ * | admittance (Y) BC         |                         | Admittance:             |
+ * | rho * u * n = Y / c * p   | no BCs to be prescribed | prescribe Y             |
+ * | Y = 0: sound hard         |                         |                         |
+ * | Y = 1: first order ABC    |                         |                         |
  * +---------------------------+-------------------------+-------------------------+
  */
 
