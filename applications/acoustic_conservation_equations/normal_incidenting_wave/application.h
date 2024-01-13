@@ -207,6 +207,15 @@ private:
         std::make_shared<dealii::Functions::ZeroFunction<dim>>(1);
       pp_data.error_data_p.calculate_relative_errors = false; // analytical solution is zero
       pp_data.error_data_p.name                      = "pressure";
+
+      // calculation of velocity error
+      pp_data.error_data_u.time_control_data.is_active        = true;
+      pp_data.error_data_u.time_control_data.start_time       = this->param.start_time;
+      pp_data.error_data_u.time_control_data.trigger_interval = this->param.end_time;
+      pp_data.error_data_u.analytical_solution =
+        std::make_shared<dealii::Functions::ZeroFunction<dim>>(dim);
+      pp_data.error_data_u.calculate_relative_errors = false; // analytical solution is zero
+      pp_data.error_data_u.name                      = "velocity";
     }
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;

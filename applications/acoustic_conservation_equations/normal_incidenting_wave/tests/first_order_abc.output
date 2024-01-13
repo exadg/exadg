@@ -90,6 +90,9 @@ Starting time loop ...
 Calculate error for pressure at time t = 0.0000e+00:
   Absolute error (L2-norm): 1.19175e-01
 
+Calculate error for velocity at time t = 0.0000e+00:
+  Absolute error (L2-norm): 0.00000e+00
+
 ________________________________________________________________________________
 
  Time step number = 1       t = 0.00000e+00 -> t + dt = 1.41720e-05
@@ -97,3 +100,6 @@ ________________________________________________________________________________
 
 Calculate error for pressure at time t = 1.0005e-02:
   Absolute error (L2-norm): 5.34766e-04
+
+Calculate error for velocity at time t = 1.0005e-02:
+  Absolute error (L2-norm): 1.83535e-06
