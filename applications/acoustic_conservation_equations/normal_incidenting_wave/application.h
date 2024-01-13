@@ -80,13 +80,11 @@ public:
       prm.add_parameter("EndTime", end_time, "End time.", dealii::Patterns::Double(1.0e-12));
 
       prm.add_parameter("Radius", radius, "Radius of domain.", dealii::Patterns::Double(1.0e-12));
-    }
-    prm.leave_subsection();
 
-    // For a reasonable test we have to create a different postprocessor, see below.
-    prm.enter_subsection("General");
-    {
-      prm.add_parameter("IsTest", is_test, "Do we run a test?", dealii::Patterns::Bool());
+      prm.add_parameter("AnalyticalSolutionAvailable",
+                        analytical_solution_is_available,
+                        "We know the analytical solution for Y=1 after the wave left domain?",
+                        dealii::Patterns::Bool());
     }
     prm.leave_subsection();
   }
@@ -187,9 +185,9 @@ private:
 
     // To be able to compute an analytical solution for testing purposes we have to make
     // multiple assumptions. The application is intended to be used with different
-    // admittances which contradicts the assumptions. Therefore, we compute the analytical
-    // solution only if we run a test and fetch this information from the input file.
-    if(is_test)
+    // admittances which contradicts the assumptions. We compute the analytical
+    // solution only if we run with Y=1 and after the wave left the domain.
+    if(analytical_solution_is_available)
     {
       // To be able to compute an error and thus test the behavior of the admittance BC for
       // Y=1 (first-oder ABC). We also have to ensure the that the wave left the domain
@@ -230,8 +228,9 @@ private:
   double end_time       = 1.0;
   double radius         = 1.0;
 
-  // only needed to setup error calculation for test
-  bool is_test = false;
+  // analytical solution only known for first oder ABC and after
+  // the wave left the domain
+  bool analytical_solution_is_available = false;
 };
 
 } // namespace Acoustics

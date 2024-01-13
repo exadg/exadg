@@ -18,7 +18,8 @@
         "SpeedOfSound": "340.0",
         "Admittance": "1.0",
         "EndTime": "0.01",
-        "Radius": "1.0"
+        "Radius": "1.0",
+        "AnalyticalSolutionAvailable": "true"
     },
     "Output": {
         "OutputDirectory": "output/normal_incidenting_wave/",
