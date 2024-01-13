@@ -100,7 +100,7 @@ inline DEAL_II_ALWAYS_INLINE //
     auto const rho_um_normal     = (rho_um * n) * n;
     auto const rho_um_tangential = rho_um - rho_um_normal;
 
-    // normal share of velocty
+    // normal share of velocity
     auto const rho_up_normal = (Number{2.0} * Y * pm / speed_of_sound) * n - rho_um_normal;
 
     // tangential share of velocity stays the same (rho_up_tangential = rho_um_tangential)
