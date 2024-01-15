@@ -474,7 +474,10 @@ private:
     BoundaryFaceIntegratorP<dim, Number> pressure_p(pressure_m, *data.bc);
 
     FaceIntegratorU velocity_m(matrix_free_in, true, data.dof_index_velocity, data.quad_index);
-    BoundaryFaceIntegratorU<dim, Number> velocity_p(velocity_m, *data.bc);
+    BoundaryFaceIntegratorU<dim, Number> velocity_p(velocity_m,
+                                                    pressure_m,
+                                                    data.speed_of_sound,
+                                                    *data.bc);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
