@@ -1,0 +1,34 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "SpatialResolutionAcoustics": {
+        "Degree": "2",
+        "RefineSpace": "0"
+    },
+    "SpatialResolutionFluid": {
+        "Degree": "4",
+        "RefineSpace": "0"
+    },
+    "AeroAcoustic": {
+        "Density": "1.34",
+        "SourceTermWithConvection": "false",
+        "FluidToAcousticCouplingStrategy": "NonNestedMGRestriction"
+    },
+    "Application": {
+        "StartTimeAcoustic": "50",
+        "EndTime": "50.05",
+        "CFLFluid": "0.5",
+        "CFLAcoustics": "0.5",
+        "SpeedOfSound": "325.47",
+        "KinematicViscosity" : "1.247e-5",
+        "TravelSpeed" : "0.08"
+    },
+    "Output": {
+        "OutputDirectory": "output/santa_in_crossflow/",
+        "OutputName": "santa_in_crossflow",
+        "WriteOutput": "false"
+    }
+}
