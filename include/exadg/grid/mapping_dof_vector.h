@@ -214,13 +214,10 @@ public:
     }
     else if(element_type == ElementType::Simplex)
     {
-      // TODO
+      AssertThrow(mapping_fe_field.get(),
+                  dealii::ExcMessage("Mapping object mapping_fe_field is not initialized."));
 
-      AssertThrow(false,
-                  dealii::ExcMessage(
-                    "MappingDoFVector is currently not implemented for ElementType::Simplex."));
-
-      return mapping_q_cache;
+      return mapping_fe_field;
     }
     else
     {
@@ -297,28 +294,7 @@ public:
   fill_grid_coordinates_vector(VectorType &                    grid_coordinates,
                                dealii::DoFHandler<dim> const & dof_handler) const
   {
-    if(element_type == ElementType::Hypercube)
-    {
-      AssertThrow(mapping_q_cache.get(),
-                  dealii::ExcMessage("Mapping object mapping_q_cache is not initialized."));
-
-      // use the deformed state described by the dealii::MappingQCache object
-      MappingTools::fill_grid_coordinates_vector(*mapping_q_cache, grid_coordinates, dof_handler);
-    }
-    else if(element_type == ElementType::Simplex)
-    {
-      AssertThrow(mapping_fe_field.get(),
-                  dealii::ExcMessage("Mapping object mapping_fe_field is not initialized."));
-
-      // use the deformed state described by the dealii::MappingQCache object
-      MappingTools::fill_grid_coordinates_vector(*mapping_fe_field, grid_coordinates, dof_handler);
-    }
-    else
-    {
-      AssertThrow(false,
-                  dealii::ExcMessage(
-                    "MappingDoFVector is currently not implemented for the given ElementType."));
-    }
+    MappingTools::fill_grid_coordinates_vector(*get_mapping(), grid_coordinates, dof_handler);
   }
 
   /**
@@ -543,11 +519,12 @@ protected:
    */
   std::shared_ptr<dealii::MappingFEField<dim, dim, VectorType>> mapping_fe_field;
 
-  // For MappingFEField, we need a separate dof-handler/dof-vector in addition to the mapping
-  // object.
-  std::shared_ptr<dealii::DoFHandler<dim>> dof_handler_fe_field;
-
+  // For MappingFEField, we need a separate dof-vector in addition to the mapping object.
   VectorType dof_vector_fe_field;
+
+  // In case we initialize the mapping from a dealii::Function, we also need a dof-handler object
+  // owned by the present class.
+  std::shared_ptr<dealii::DoFHandler<dim>> dof_handler_fe_field;
 
 private:
   ElementType element_type;
