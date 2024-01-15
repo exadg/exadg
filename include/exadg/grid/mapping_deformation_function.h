@@ -67,8 +67,7 @@ public:
 
     mesh_deformation_function->set_time(time);
 
-    this->initialize_mapping_from_function(this->mapping_undeformed,
-                                           triangulation,
+    this->initialize_mapping_from_function(triangulation,
                                            mapping_degree,
                                            mesh_deformation_function);
   }

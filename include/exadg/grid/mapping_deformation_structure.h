@@ -35,9 +35,7 @@ namespace ExaDG
 namespace Structure
 {
 /**
- * Class for moving grid problems based on a pseudo-solid grid motion technique.
- *
- * TODO: extend this class to simplicial elements.
+ * Class for moving grid problems based on a elasticity-type grid motion technique.
  */
 template<int dim, typename Number>
 class DeformedMapping : public DeformedMappingBase<dim, Number>
@@ -80,9 +78,7 @@ public:
     // finally, initialize dof vector
     pde_operator->initialize_dof_vector(displacement);
 
-    this->initialize_mapping_from_dof_vector(this->mapping_undeformed,
-                                             displacement,
-                                             pde_operator->get_dof_handler());
+    this->initialize_mapping_from_dof_vector(displacement, pde_operator->get_dof_handler());
   }
 
   std::shared_ptr<Operator<dim, Number> const>
@@ -157,9 +153,7 @@ public:
       }
     }
 
-    this->initialize_mapping_from_dof_vector(this->mapping_undeformed,
-                                             displacement,
-                                             pde_operator->get_dof_handler());
+    this->initialize_mapping_from_dof_vector(displacement, pde_operator->get_dof_handler());
   }
 
   /**
