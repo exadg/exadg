@@ -28,10 +28,8 @@
 namespace ExaDG
 {
 /**
- * Class for mesh deformations that can be described analytically via a dealii::Function<dim>
- * object.
- *
- * TODO: extend this class to simplicial elements.
+ * Class for mesh deformation problems that can be described analytically via a
+ * dealii::Function<dim> object.
  */
 template<int dim, typename Number>
 class DeformedMappingFunction : public DeformedMappingBase<dim, Number>
@@ -49,15 +47,15 @@ public:
                           double const                                 start_time)
     : DeformedMappingBase<dim, Number>(mapping_undeformed, triangulation),
       mesh_deformation_function(mesh_deformation_function),
+      mapping_degree(mapping_degree_q_cache),
       triangulation(triangulation)
   {
-    this->mapping_q_cache = std::make_shared<dealii::MappingQCache<dim>>(mapping_degree_q_cache);
-
     update(start_time, false, dealii::numbers::invalid_unsigned_int);
   }
 
   /**
-   * Updates the grid coordinates using a dealii::Function<dim> object evaluated at a given time.
+   * Updates the mapping by evaluating the dealii::Function<dim> (which describes the mesh
+   * deformation) at a given time.
    */
   void
   update(double const     time,
@@ -69,63 +67,16 @@ public:
 
     mesh_deformation_function->set_time(time);
 
-    this->do_initialize(triangulation, mesh_deformation_function);
+    this->initialize_mapping_from_function(this->mapping_undeformed,
+                                           triangulation,
+                                           mapping_degree,
+                                           mesh_deformation_function);
   }
 
 private:
-  /**
-   * Initializes the dealii::MappingQCache object by providing a dealii::Function<dim> that
-   * describes the displacement of the grid compared to an undeformed reference configuration
-   * described by the mapping_undeformed member of the base class.
-   */
-  void
-  do_initialize(dealii::Triangulation<dim> const &     triangulation,
-                std::shared_ptr<dealii::Function<dim>> displacement_function)
-  {
-    AssertThrow(dealii::MultithreadInfo::n_threads() == 1, dealii::ExcNotImplemented());
-
-    AssertThrow(get_element_type(triangulation) == ElementType::Hypercube,
-                dealii::ExcMessage("Only implemented for hypercube elements."));
-
-    // dummy FE for compatibility with interface of dealii::FEValues
-    dealii::FE_Nothing<dim> dummy_fe;
-    dealii::FEValues<dim>   fe_values(*this->mapping_undeformed,
-                                    dummy_fe,
-                                    dealii::QGaussLobatto<dim>(this->mapping_q_cache->get_degree() +
-                                                               1),
-                                    dealii::update_quadrature_points);
-
-    std::vector<unsigned int> hierarchic_to_lexicographic_numbering =
-      dealii::FETools::hierarchic_to_lexicographic_numbering<dim>(
-        this->mapping_q_cache->get_degree());
-
-    this->mapping_q_cache->initialize(
-      triangulation,
-      [&](typename dealii::Triangulation<dim>::cell_iterator const & cell)
-        -> std::vector<dealii::Point<dim>> {
-        fe_values.reinit(cell);
-
-        // dealii::MappingQCache::initialize() expects vector of points in hierarchical ordering
-        std::vector<dealii::Point<dim>> points_moved(fe_values.n_quadrature_points);
-
-        // compute displacement and add to original position
-        for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
-        {
-          // access fe_values->quadrature_point() by lexicographic index
-          dealii::Point<dim> const point =
-            fe_values.quadrature_point(hierarchic_to_lexicographic_numbering[i]);
-          dealii::Point<dim> displacement;
-          for(unsigned int d = 0; d < dim; ++d)
-            displacement[d] = displacement_function->value(point, d);
-
-          points_moved[i] = point + displacement;
-        }
-
-        return points_moved;
-      });
-  }
-
   std::shared_ptr<dealii::Function<dim>> mesh_deformation_function;
+
+  unsigned int const mapping_degree;
 
   dealii::Triangulation<dim> const & triangulation;
 };

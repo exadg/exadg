@@ -153,11 +153,14 @@ fill_grid_coordinates_vector(dealii::Mapping<dim> const &                       
 } // namespace MappingTools
 
 /**
- * A mapping class based on dealii::MappingQCache equipped with practical interfaces that can be
- * used to initialize the mapping.
+ * A mapping class used to realize mappings described by a displacement function (via
+ * dealii::Function) or by a displacement DoFVector. The most prominent use case of this class are
+ * ALE (arbitrary Lagrangian-Eulerian) methods for moving mesh problems.
  *
- * The two functions fill_grid_coordinates_vector() and initialize_mapping_q_cache() should become
- * member functions of dealii::MappingQCache in dealii, rendering this class superfluous in ExaDG.
+ * Internally, this class uses Mapping classes provided by dealii (which currently depends on the
+ * ElementType of a mesh). Having initialized this class via a displacement function or a
+ * displacement dof-vector, the main functionality of this class is to fill a dof-vector with the
+ * grid coordinates of a grid that is described by the underlying mapping object.
  */
 template<int dim, typename Number>
 class MappingDoFVector
@@ -299,16 +302,82 @@ public:
   }
 
   /**
+   * Initializes the mapping object by providing a dealii::Function<dim> that describes the
+   * displacement of the grid compared to an undeformed reference configuration described by
+   * mapping_undeformed.
+   */
+  void
+  initialize_mapping_from_function(std::shared_ptr<dealii::Mapping<dim> const> mapping_undeformed,
+                                   dealii::Triangulation<dim> const &          triangulation,
+                                   unsigned int const                          mapping_degree,
+                                   std::shared_ptr<dealii::Function<dim>> displacement_function)
+  {
+    AssertThrow(dealii::MultithreadInfo::n_threads() == 1, dealii::ExcNotImplemented());
+
+    AssertThrow(get_element_type(triangulation) == ElementType::Hypercube,
+                dealii::ExcMessage("Only implemented for hypercube elements."));
+
+    if(mapping_q_cache.get())
+    {
+      AssertThrow(
+        mapping_degree == mapping_q_cache->get_degree(),
+        dealii::ExcMessage(
+          "Degree of finite element of dof_handler does not fit to the degree used to initialize MappingQCache."));
+    }
+    else
+    {
+      mapping_q_cache = std::make_shared<dealii::MappingQCache<dim>>(mapping_degree);
+    }
+
+    // dummy FE for compatibility with interface of dealii::FEValues
+    dealii::FE_Nothing<dim> dummy_fe;
+    dealii::FEValues<dim>   fe_values(*mapping_undeformed,
+                                    dummy_fe,
+                                    dealii::QGaussLobatto<dim>(mapping_q_cache->get_degree() + 1),
+                                    dealii::update_quadrature_points);
+
+    std::vector<unsigned int> hierarchic_to_lexicographic_numbering =
+      dealii::FETools::hierarchic_to_lexicographic_numbering<dim>(mapping_q_cache->get_degree());
+
+    mapping_q_cache->initialize(triangulation,
+                                [&](typename dealii::Triangulation<dim>::cell_iterator const & cell)
+                                  -> std::vector<dealii::Point<dim>> {
+                                  fe_values.reinit(cell);
+
+                                  // dealii::MappingQCache::initialize() expects vector of points in
+                                  // hierarchical ordering
+                                  std::vector<dealii::Point<dim>> points_moved(
+                                    fe_values.n_quadrature_points);
+
+                                  // compute displacement and add to original position
+                                  for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
+                                  {
+                                    // access fe_values->quadrature_point() by lexicographic index
+                                    dealii::Point<dim> const point = fe_values.quadrature_point(
+                                      hierarchic_to_lexicographic_numbering[i]);
+                                    dealii::Point<dim> displacement;
+                                    for(unsigned int d = 0; d < dim; ++d)
+                                      displacement[d] = displacement_function->value(point, d);
+
+                                    points_moved[i] = point + displacement;
+                                  }
+
+                                  return points_moved;
+                                });
+  }
+
+  /**
    * Initializes the dealii::MappingQCache object by providing a mapping that describes an
    * undeformed reference configuration and a displacement dof-vector (with a corresponding
    * dealii::DoFHandler object) that describes the displacement of the mesh compared to that
    * reference configuration.
    *
-   * If the mapping pointer is invalid, this implies that the reference coordinates are interpreted
-   * as zero, i.e., the displacement vector describes the absolute coordinates of the grid points.
+   * If the pointer mapping_undeformed is invalid, this implies that the reference coordinates are
+   * interpreted as zero, i.e., the displacement vector describes the absolute coordinates of the
+   * grid points.
    */
   void
-  initialize_mapping_from_dof_vector(std::shared_ptr<dealii::Mapping<dim> const> mapping,
+  initialize_mapping_from_dof_vector(std::shared_ptr<dealii::Mapping<dim> const> mapping_undeformed,
                                      VectorType const &              displacement_vector,
                                      dealii::DoFHandler<dim> const & dof_handler)
   {
@@ -355,9 +424,9 @@ public:
       // rather than dealii::DoFHandler::cell_iterator).
       dealii::FE_Nothing<dim> fe_nothing;
 
-      if(mapping.get() != 0)
+      if(mapping_undeformed.get() != 0)
       {
-        fe_values = std::make_shared<dealii::FEValues<dim>>(*mapping,
+        fe_values = std::make_shared<dealii::FEValues<dim>>(*mapping_undeformed,
                                                             fe_nothing,
                                                             dealii::QGaussLobatto<dim>(degree + 1),
                                                             dealii::update_quadrature_points);
@@ -379,7 +448,7 @@ public:
           // dealii::MappingQCache::initialize() expects vector of points in hierarchical ordering
           std::vector<dealii::Point<dim>> grid_coordinates(dofs_per_cell);
 
-          if(mapping.get() != 0)
+          if(mapping_undeformed.get() != 0)
           {
             fe_values->reinit(cell_tria);
             // extract displacement and add to original position
