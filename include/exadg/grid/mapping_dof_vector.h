@@ -32,6 +32,7 @@
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_tools.h>
 #include <deal.II/fe/fe_values.h>
+#include <deal.II/fe/mapping_fe_field.h>
 #include <deal.II/fe/mapping_q_cache.h>
 #include <deal.II/lac/la_parallel_block_vector.h>
 #include <deal.II/multigrid/mg_transfer_matrix_free.h>
@@ -264,7 +265,26 @@ public:
       AssertThrow(
         mapping_q_cache->get_degree() == degree,
         dealii::ExcMessage(
-          "Cannot create MappingQCache(degree) because the object already exists with another degree."));
+          "Cannot create MappingQCache because the object already exists with another degree."));
+    }
+  }
+
+  void
+  create_mapping_fe_field(dealii::DoFHandler<dim> const & dof_handler_fe_field,
+                          unsigned int const              degree)
+  {
+    if(not mapping_fe_field.get())
+    {
+      mapping_fe_field =
+        std::make_shared<dealii::MappingFEField<dim, dim, VectorType>>(dof_handler_fe_field,
+                                                                       dof_vector_fe_field);
+    }
+    else
+    {
+      AssertThrow(
+        dof_handler_fe_field.get_fe().degree == degree,
+        dealii::ExcMessage(
+          "Cannot create MappingFEField because the object already exists with another degree."));
     }
   }
 
@@ -287,11 +307,11 @@ public:
     }
     else if(element_type == ElementType::Simplex)
     {
-      // TODO
+      AssertThrow(mapping_fe_field.get(),
+                  dealii::ExcMessage("Mapping object mapping_fe_field is not initialized."));
 
-      AssertThrow(false,
-                  dealii::ExcMessage(
-                    "MappingDoFVector is currently not implemented for ElementType::Simplex."));
+      // use the deformed state described by the dealii::MappingQCache object
+      MappingTools::fill_grid_coordinates_vector(*mapping_fe_field, grid_coordinates, dof_handler);
     }
     else
     {
@@ -312,58 +332,70 @@ public:
                                    unsigned int const                          mapping_degree,
                                    std::shared_ptr<dealii::Function<dim>> displacement_function)
   {
-    AssertThrow(dealii::MultithreadInfo::n_threads() == 1, dealii::ExcNotImplemented());
-
-    AssertThrow(get_element_type(triangulation) == ElementType::Hypercube,
-                dealii::ExcMessage("Only implemented for hypercube elements."));
-
-    if(mapping_q_cache.get())
+    if(element_type == ElementType::Hypercube)
     {
-      AssertThrow(
-        mapping_degree == mapping_q_cache->get_degree(),
-        dealii::ExcMessage(
-          "Degree of finite element of dof_handler does not fit to the degree used to initialize MappingQCache."));
+      AssertThrow(dealii::MultithreadInfo::n_threads() == 1, dealii::ExcNotImplemented());
+
+      create_mapping_q_cache(mapping_degree);
+
+      // dummy FE for compatibility with interface of dealii::FEValues
+      dealii::FE_Nothing<dim> dummy_fe;
+      dealii::FEValues<dim>   fe_values(*mapping_undeformed,
+                                      dummy_fe,
+                                      dealii::QGaussLobatto<dim>(mapping_q_cache->get_degree() + 1),
+                                      dealii::update_quadrature_points);
+
+      std::vector<unsigned int> hierarchic_to_lexicographic_numbering =
+        dealii::FETools::hierarchic_to_lexicographic_numbering<dim>(mapping_q_cache->get_degree());
+
+      mapping_q_cache->initialize(
+        triangulation,
+        [&](typename dealii::Triangulation<dim>::cell_iterator const & cell)
+          -> std::vector<dealii::Point<dim>> {
+          fe_values.reinit(cell);
+
+          // dealii::MappingQCache::initialize() expects vector of points in
+          // hierarchical ordering
+          std::vector<dealii::Point<dim>> points_moved(fe_values.n_quadrature_points);
+
+          // compute displacement and add to original position
+          for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
+          {
+            // access fe_values->quadrature_point() by lexicographic index
+            dealii::Point<dim> const point =
+              fe_values.quadrature_point(hierarchic_to_lexicographic_numbering[i]);
+            dealii::Point<dim> displacement;
+            for(unsigned int d = 0; d < dim; ++d)
+              displacement[d] = displacement_function->value(point, d);
+
+            points_moved[i] = point + displacement;
+          }
+
+          return points_moved;
+        });
+    }
+    else if(element_type == ElementType::Simplex)
+    {
+      VectorType grid_coordinates_undeformed, displacement;
+
+      // TODO: fill vectors
+      AssertThrow(false,
+                  dealii::ExcMessage(
+                    "MappingDoFVector is currently not implemented for ElementType::Simplex."));
+
+      // update dof-vector
+      dof_vector_fe_field = grid_coordinates_undeformed;
+      dof_vector_fe_field += displacement;
+
+      // create MappingFEField object using the member variable dof_vector_fe_field
+      create_mapping_fe_field(*dof_handler_fe_field, mapping_degree);
     }
     else
     {
-      mapping_q_cache = std::make_shared<dealii::MappingQCache<dim>>(mapping_degree);
+      AssertThrow(false,
+                  dealii::ExcMessage(
+                    "MappingDoFVector is currently not implemented for the given ElementType."));
     }
-
-    // dummy FE for compatibility with interface of dealii::FEValues
-    dealii::FE_Nothing<dim> dummy_fe;
-    dealii::FEValues<dim>   fe_values(*mapping_undeformed,
-                                    dummy_fe,
-                                    dealii::QGaussLobatto<dim>(mapping_q_cache->get_degree() + 1),
-                                    dealii::update_quadrature_points);
-
-    std::vector<unsigned int> hierarchic_to_lexicographic_numbering =
-      dealii::FETools::hierarchic_to_lexicographic_numbering<dim>(mapping_q_cache->get_degree());
-
-    mapping_q_cache->initialize(triangulation,
-                                [&](typename dealii::Triangulation<dim>::cell_iterator const & cell)
-                                  -> std::vector<dealii::Point<dim>> {
-                                  fe_values.reinit(cell);
-
-                                  // dealii::MappingQCache::initialize() expects vector of points in
-                                  // hierarchical ordering
-                                  std::vector<dealii::Point<dim>> points_moved(
-                                    fe_values.n_quadrature_points);
-
-                                  // compute displacement and add to original position
-                                  for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
-                                  {
-                                    // access fe_values->quadrature_point() by lexicographic index
-                                    dealii::Point<dim> const point = fe_values.quadrature_point(
-                                      hierarchic_to_lexicographic_numbering[i]);
-                                    dealii::Point<dim> displacement;
-                                    for(unsigned int d = 0; d < dim; ++d)
-                                      displacement[d] = displacement_function->value(point, d);
-
-                                    points_moved[i] = point + displacement;
-                                  }
-
-                                  return points_moved;
-                                });
   }
 
   /**
@@ -385,23 +417,13 @@ public:
                 dealii::ExcMessage("MappingDoFVector detected inconsistent element types."));
 
     AssertThrow(dof_handler.n_dofs() > 0 and displacement_vector.size() == dof_handler.n_dofs(),
-                dealii::ExcMessage("Unitialized parameters displacement_vector or dof_handler."));
+                dealii::ExcMessage("Uninitialized parameters displacement_vector or dof_handler."));
 
     if(element_type == ElementType::Hypercube)
     {
       unsigned int const degree = dof_handler.get_fe().degree;
 
-      if(mapping_q_cache.get())
-      {
-        AssertThrow(
-          degree == mapping_q_cache->get_degree(),
-          dealii::ExcMessage(
-            "Degree of finite element of dof_handler does not fit to the degree used to initialize MappingQCache."));
-      }
-      else
-      {
-        mapping_q_cache = std::make_shared<dealii::MappingQCache<dim>>(degree);
-      }
+      create_mapping_q_cache(degree);
 
       AssertThrow(dealii::MultithreadInfo::n_threads() == 1, dealii::ExcNotImplemented());
 
@@ -515,6 +537,17 @@ protected:
    * For ElementType::Hypercube
    */
   std::shared_ptr<dealii::MappingQCache<dim>> mapping_q_cache;
+
+  /**
+   * For ElementType::Simplex
+   */
+  std::shared_ptr<dealii::MappingFEField<dim, dim, VectorType>> mapping_fe_field;
+
+  // For MappingFEField, we need a separate dof-handler/dof-vector in addition to the mapping
+  // object.
+  std::shared_ptr<dealii::DoFHandler<dim>> dof_handler_fe_field;
+
+  VectorType dof_vector_fe_field;
 
 private:
   ElementType element_type;
