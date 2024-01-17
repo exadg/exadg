@@ -376,6 +376,14 @@ public:
                   dealii::ExcMessage(
                     "MappingDoFVector is currently not implemented for ElementType::Simplex."));
 
+      // TODO initialize dof_handler_fe_field
+
+      MappingTools::fill_grid_coordinates_vector(*mapping_undeformed,
+                                                 grid_coordinates_undeformed,
+                                                 *dof_handler_fe_field);
+
+      // TODO fill displacement vector
+
       // update dof-vector
       dof_vector_fe_field = grid_coordinates_undeformed;
       dof_vector_fe_field += displacement;
@@ -412,10 +420,10 @@ public:
     AssertThrow(dof_handler.n_dofs() > 0 and displacement_vector.size() == dof_handler.n_dofs(),
                 dealii::ExcMessage("Uninitialized parameters displacement_vector or dof_handler."));
 
+    unsigned int const degree = dof_handler.get_fe().degree;
+
     if(element_type == ElementType::Hypercube)
     {
-      unsigned int const degree = dof_handler.get_fe().degree;
-
       create_mapping_q_cache(degree);
 
       AssertThrow(dealii::MultithreadInfo::n_threads() == 1, dealii::ExcNotImplemented());
@@ -511,11 +519,27 @@ public:
     }
     else if(element_type == ElementType::Simplex)
     {
-      // TODO
+      if(mapping_undeformed.get() != 0)
+      {
+        VectorType grid_coordinates_undeformed;
 
-      AssertThrow(false,
-                  dealii::ExcMessage(
-                    "MappingDoFVector is currently not implemented for ElementType::Simplex."));
+        // fill vector grid_coordinates_undeformed using mapping_undeformed
+        MappingTools::fill_grid_coordinates_vector(*mapping_undeformed,
+                                                   grid_coordinates_undeformed,
+                                                   dof_handler);
+
+        // update dof-vector
+        dof_vector_fe_field = grid_coordinates_undeformed;
+        dof_vector_fe_field += displacement_vector;
+      }
+      else
+      {
+        dof_vector_fe_field = displacement_vector;
+      }
+
+      // create MappingFEField object using the member variable dof_vector_fe_field and external
+      // DoFHandler object.
+      create_mapping_fe_field(dof_handler, degree);
     }
     else
     {
