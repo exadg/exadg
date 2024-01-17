@@ -135,11 +135,28 @@ fill_grid_coordinates_vector(dealii::Mapping<dim> const &                       
   }
   else if(element_type == ElementType::Simplex)
   {
-    // TODO
+    dealii::FiniteElement<dim> const & fe = dof_handler.get_fe();
 
-    AssertThrow(false,
-                dealii::ExcMessage(
-                  "MappingDoFVector is currently not implemented for ElementType::Simplex."));
+    dealii::FEValues<dim> fe_values(mapping,
+                                    fe,
+                                    dealii::Quadrature<dim>(fe.get_unit_support_points()),
+                                    dealii::update_quadrature_points);
+
+    std::vector<dealii::types::global_dof_index> dof_indices(fe.dofs_per_cell);
+    for(auto const & cell : dof_handler.active_cell_iterators())
+    {
+      if(not cell->is_artificial())
+      {
+        fe_values.reinit(cell);
+        cell->get_dof_indices(dof_indices);
+        for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
+        {
+          unsigned int const       coordinate_direction = fe.system_to_component_index(i).first;
+          dealii::Point<dim> const point                = fe_values.quadrature_point(i);
+          grid_coordinates(dof_indices[i])              = point[coordinate_direction];
+        }
+      }
+    }
   }
   else
   {
