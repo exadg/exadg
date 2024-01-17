@@ -55,8 +55,6 @@ fill_grid_coordinates_vector(dealii::Mapping<dim> const &                       
                              dealii::LinearAlgebra::distributed::Vector<Number> & grid_coordinates,
                              dealii::DoFHandler<dim> const &                      dof_handler)
 {
-  ElementType element_type = get_element_type(dof_handler.get_triangulation());
-
   if(grid_coordinates.size() != dof_handler.n_dofs())
   {
     dealii::IndexSet relevant_dofs_grid;
@@ -70,108 +68,36 @@ fill_grid_coordinates_vector(dealii::Mapping<dim> const &                       
     grid_coordinates = 0;
   }
 
-  if(element_type == ElementType::Hypercube)
+  dealii::FiniteElement<dim> const & fe = dof_handler.get_fe();
+
+  // Set up dealii::FEValues with FE_Nothing since we only use the geometry information (this
+  // means we need to call fe_values.reinit(cell) with Triangulation::cell_iterator rather than
+  // dealii::DoFHandler::cell_iterator).
+  dealii::FE_Nothing<dim> fe_nothing;
+  dealii::FEValues<dim>   fe_values(mapping,
+                                  fe_nothing,
+                                  dealii::Quadrature<dim>(
+                                    fe.base_element(0).get_unit_support_points()),
+                                  dealii::update_quadrature_points);
+
+  std::vector<dealii::types::global_dof_index> dof_indices(fe.dofs_per_cell);
+  for(auto const & cell : dof_handler.active_cell_iterators())
   {
-    dealii::FiniteElement<dim> const & fe = dof_handler.get_fe();
-
-    unsigned int dofs_per_cell = fe.base_element(0).dofs_per_cell;
-
-    // The elements of this vector need to be in lexicographic ordering.
-    std::vector<std::array<unsigned int, dim>> component_to_system_index(dofs_per_cell);
-
-    if(fe.dofs_per_vertex > 0) // dealii::FE_Q
+    if(cell->is_locally_owned())
     {
-      std::vector<unsigned int> hierarchic_to_lexicographic_numbering =
-        dealii::FETools::hierarchic_to_lexicographic_numbering<dim>(fe.degree);
+      cell->get_dof_indices(dof_indices);
+
+      fe_values.reinit(typename dealii::Triangulation<dim>::cell_iterator(cell));
 
       for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
       {
-        component_to_system_index
-          [hierarchic_to_lexicographic_numbering[fe.system_to_component_index(i).second]]
-          [fe.system_to_component_index(i).first] = i;
+        unsigned int const d        = fe.system_to_component_index(i).first;
+        unsigned int const i_scalar = fe.system_to_component_index(i).second;
+
+        dealii::Point<dim> const point   = fe_values.quadrature_point(i_scalar);
+        grid_coordinates(dof_indices[i]) = point[d];
       }
     }
-    else // dealii::FE_DGQ
-    {
-      for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
-      {
-        component_to_system_index[fe.system_to_component_index(i).second]
-                                 [fe.system_to_component_index(i).first] = i;
-      }
-    }
-
-    // Set up dealii::FEValues with FE_Nothing and the Gauss-Lobatto quadrature to
-    // reduce setup cost, as we only use the geometry information (this means
-    // we need to call fe_values.reinit(cell) with Triangulation::cell_iterator
-    // rather than dealii::DoFHandler::cell_iterator).
-    dealii::FE_Nothing<dim> fe_nothing;
-    dealii::FEValues<dim>   fe_values(mapping,
-                                    fe_nothing,
-                                    dealii::QGaussLobatto<dim>(fe.degree + 1),
-                                    dealii::update_quadrature_points);
-
-    std::vector<dealii::types::global_dof_index> dof_indices(fe.dofs_per_cell);
-
-    for(auto const & cell : dof_handler.active_cell_iterators())
-    {
-      if(cell->is_locally_owned())
-      {
-        fe_values.reinit(typename dealii::Triangulation<dim>::cell_iterator(cell));
-        cell->get_dof_indices(dof_indices);
-        for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
-        {
-          dealii::Point<dim> const point = fe_values.quadrature_point(i);
-          for(unsigned int d = 0; d < dim; ++d)
-          {
-            if(grid_coordinates.get_partitioner()->in_local_range(
-                 dof_indices[component_to_system_index[i][d]]))
-            {
-              grid_coordinates(dof_indices[component_to_system_index[i][d]]) = point[d];
-            }
-          }
-        }
-      }
-    }
-  }
-  else if(element_type == ElementType::Simplex)
-  {
-    dealii::FiniteElement<dim> const & fe = dof_handler.get_fe();
-
-    // Set up dealii::FEValues with FE_Nothing since we only use the geometry information (this
-    // means we need to call fe_values.reinit(cell) with Triangulation::cell_iterator rather than
-    // dealii::DoFHandler::cell_iterator).
-    dealii::FE_Nothing<dim> fe_nothing;
-    dealii::FEValues<dim>   fe_values(mapping,
-                                    fe_nothing,
-                                    dealii::Quadrature<dim>(
-                                      fe.base_element(0).get_unit_support_points()),
-                                    dealii::update_quadrature_points);
-
-    std::vector<dealii::types::global_dof_index> dof_indices(fe.dofs_per_cell);
-    for(auto const & cell : dof_handler.active_cell_iterators())
-    {
-      if(cell->is_locally_owned())
-      {
-        cell->get_dof_indices(dof_indices);
-
-        fe_values.reinit(typename dealii::Triangulation<dim>::cell_iterator(cell));
-
-        for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
-        {
-          unsigned int const d        = fe.system_to_component_index(i).first;
-          unsigned int const i_scalar = fe.system_to_component_index(i).second;
-
-          dealii::Point<dim> const point   = fe_values.quadrature_point(i_scalar);
-          grid_coordinates(dof_indices[i]) = point[d];
-        }
-      }
-    }
-  }
-  else
-  {
-    AssertThrow(false,
-                dealii::ExcMessage(
-                  "MappingDoFVector is currently not implemented for the given ElementType."));
   }
 
   grid_coordinates.update_ghost_values();
@@ -409,10 +335,9 @@ public:
   }
 
   /**
-   * Initializes the dealii::MappingQCache object by providing a mapping that describes an
-   * undeformed reference configuration and a displacement dof-vector (with a corresponding
-   * dealii::DoFHandler object) that describes the displacement of the mesh compared to that
-   * reference configuration.
+   * Initializes the mapping object by providing a mapping that describes an undeformed reference
+   * configuration and a displacement dof-vector (with a corresponding dealii::DoFHandler object)
+   * that describes the displacement of the mesh compared to that reference configuration.
    *
    * If the pointer mapping_undeformed is invalid, this implies that the reference coordinates are
    * interpreted as zero, i.e., the displacement vector describes the absolute coordinates of the
