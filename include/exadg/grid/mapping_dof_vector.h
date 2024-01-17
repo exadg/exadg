@@ -114,7 +114,7 @@ fill_grid_coordinates_vector(dealii::Mapping<dim> const &                       
 
     for(auto const & cell : dof_handler.active_cell_iterators())
     {
-      if(not cell->is_artificial())
+      if(cell->is_locally_owned())
       {
         fe_values.reinit(typename dealii::Triangulation<dim>::cell_iterator(cell));
         cell->get_dof_indices(dof_indices);
@@ -137,23 +137,32 @@ fill_grid_coordinates_vector(dealii::Mapping<dim> const &                       
   {
     dealii::FiniteElement<dim> const & fe = dof_handler.get_fe();
 
-    dealii::FEValues<dim> fe_values(mapping,
-                                    fe,
-                                    dealii::Quadrature<dim>(fe.get_unit_support_points()),
+    // Set up dealii::FEValues with FE_Nothing since we only use the geometry information (this
+    // means we need to call fe_values.reinit(cell) with Triangulation::cell_iterator rather than
+    // dealii::DoFHandler::cell_iterator).
+    dealii::FE_Nothing<dim> fe_nothing;
+    dealii::FEValues<dim>   fe_values(mapping,
+                                    fe_nothing,
+                                    dealii::Quadrature<dim>(
+                                      fe.base_element(0).get_unit_support_points()),
                                     dealii::update_quadrature_points);
 
     std::vector<dealii::types::global_dof_index> dof_indices(fe.dofs_per_cell);
     for(auto const & cell : dof_handler.active_cell_iterators())
     {
-      if(not cell->is_artificial())
+      if(cell->is_locally_owned())
       {
-        fe_values.reinit(cell);
         cell->get_dof_indices(dof_indices);
+
+        fe_values.reinit(typename dealii::Triangulation<dim>::cell_iterator(cell));
+
         for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
         {
-          unsigned int const       coordinate_direction = fe.system_to_component_index(i).first;
-          dealii::Point<dim> const point                = fe_values.quadrature_point(i);
-          grid_coordinates(dof_indices[i])              = point[coordinate_direction];
+          unsigned int const d        = fe.system_to_component_index(i).first;
+          unsigned int const i_scalar = fe.system_to_component_index(i).second;
+
+          dealii::Point<dim> const point   = fe_values.quadrature_point(i_scalar);
+          grid_coordinates(dof_indices[i]) = point[d];
         }
       }
     }
