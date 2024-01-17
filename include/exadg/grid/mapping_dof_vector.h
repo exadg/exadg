@@ -39,6 +39,7 @@
 
 // ExaDG
 #include <exadg/grid/grid_data.h>
+#include <exadg/operators/finite_element.h>
 #include <exadg/solvers_and_preconditioners/multigrid/transfer.h>
 
 namespace ExaDG
@@ -127,21 +128,6 @@ public:
   MappingDoFVector(dealii::Triangulation<dim> const & triangulation)
   {
     element_type = get_element_type(triangulation);
-
-    if(element_type == ElementType::Hypercube)
-    {
-      // TODO
-    }
-    else if(element_type == ElementType::Simplex)
-    {
-      // TODO
-    }
-    else
-    {
-      AssertThrow(false,
-                  dealii::ExcMessage(
-                    "MappingDoFVector is currently not implemented for the given ElementType."));
-    }
   }
 
   /**
@@ -306,22 +292,69 @@ public:
     {
       VectorType grid_coordinates_undeformed, displacement;
 
-      // TODO: fill vectors
-      AssertThrow(false,
-                  dealii::ExcMessage(
-                    "MappingDoFVector is currently not implemented for ElementType::Simplex."));
+      // create finite element and dof-handler only once (when this function is called the first
+      // time)
+      if(not dof_handler_fe_field.get())
+      {
+        fe_fe_field = create_finite_element<dim>(element_type, false, dim, mapping_degree);
 
-      // TODO initialize dof_handler_fe_field
+        dof_handler_fe_field = std::make_shared<dealii::DoFHandler<dim>>(triangulation);
+        dof_handler_fe_field->distribute_dofs(*fe_fe_field);
+      }
 
+      // fill grid_coordinates_undeformed
       MappingTools::fill_grid_coordinates_vector(*mapping_undeformed,
                                                  grid_coordinates_undeformed,
                                                  *dof_handler_fe_field);
 
-      // TODO fill displacement vector
+      // fill displacement_vector
+      {
+        if(displacement.size() != dof_handler_fe_field->n_dofs())
+        {
+          dealii::IndexSet relevant_dofs;
+          dealii::DoFTools::extract_locally_relevant_dofs(*dof_handler_fe_field, relevant_dofs);
+          displacement.reinit(dof_handler_fe_field->locally_owned_dofs(),
+                              relevant_dofs,
+                              dof_handler_fe_field->get_communicator());
+        }
+
+        // Set up dealii::FEValues with FE_Nothing since we only use the geometry information (this
+        // means we need to call fe_values.reinit(cell) with Triangulation::cell_iterator rather
+        // than dealii::DoFHandler::cell_iterator).
+        dealii::FE_Nothing<dim> fe_nothing;
+        dealii::FEValues<dim>   fe_values(*mapping_undeformed,
+                                        fe_nothing,
+                                        dealii::Quadrature<dim>(
+                                          fe_fe_field->base_element(0).get_unit_support_points()),
+                                        dealii::update_quadrature_points);
+
+        std::vector<dealii::types::global_dof_index> dof_indices(fe_fe_field->dofs_per_cell);
+        for(auto const & cell : dof_handler_fe_field->active_cell_iterators())
+        {
+          if(cell->is_locally_owned())
+          {
+            cell->get_dof_indices(dof_indices);
+
+            fe_values.reinit(typename dealii::Triangulation<dim>::cell_iterator(cell));
+
+            for(unsigned int i = 0; i < fe_fe_field->dofs_per_cell; ++i)
+            {
+              unsigned int const d        = fe_fe_field->system_to_component_index(i).first;
+              unsigned int const i_scalar = fe_fe_field->system_to_component_index(i).second;
+
+              dealii::Point<dim> const point = fe_values.quadrature_point(i_scalar);
+
+              displacement(dof_indices[i]) = displacement_function->value(point, d);
+            }
+          }
+        }
+      }
 
       // update dof-vector
       dof_vector_fe_field = grid_coordinates_undeformed;
       dof_vector_fe_field += displacement;
+
+      // TODO: Do we need an update_ghost_values() here?
 
       // create MappingFEField object using the member variable dof_vector_fe_field
       create_mapping_fe_field(*dof_handler_fe_field, mapping_degree);
@@ -499,7 +532,8 @@ protected:
 
   // In case we initialize the mapping from a dealii::Function, we also need a dof-handler object
   // owned by the present class.
-  std::shared_ptr<dealii::DoFHandler<dim>> dof_handler_fe_field;
+  std::shared_ptr<dealii::FiniteElement<dim>> fe_fe_field;
+  std::shared_ptr<dealii::DoFHandler<dim>>    dof_handler_fe_field;
 
 private:
   ElementType element_type;
