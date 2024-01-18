@@ -338,7 +338,7 @@ SpatialOperator<dim, Number>::evaluate(BlockVectorType &       dst,
 
   if(param.aero_acoustic_source_term)
   {
-    AssertThrow(aero_acoustic_source_term,
+    AssertThrow(aero_acoustic_source_term.get() != nullptr,
                 dealii::ExcMessage("Aero-acoustic source term not valid."));
     dst.block(block_index_pressure) += *aero_acoustic_source_term;
   }
