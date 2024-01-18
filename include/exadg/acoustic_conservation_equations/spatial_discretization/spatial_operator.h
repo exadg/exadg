@@ -159,10 +159,10 @@ public:
   prescribe_initial_conditions(BlockVectorType & dst, double const time) const final;
 
   /*
-   * Set right-hand side vector that has been integrated externally.
+   * Set aero-acoustic source term that has been integrated externally.
    */
   void
-  set_integrated_rhs(VectorType const & integrated_rhs_in);
+  set_aero_acoustic_source_term(VectorType const & aero_acoustic_source_term_in);
 
   /*
    *  This function is used in case of explicit time integration:
@@ -273,9 +273,9 @@ private:
    */
   RHSOperator<dim, Number, 1> rhs_operator;
 
-  // Right-hand side DoF vector that has been computed AND integrated
+  // The aero-acoustic source term has been computed AND integrated
   // externally.
-  lazy_ptr<VectorType> integrated_rhs;
+  lazy_ptr<VectorType> aero_acoustic_source_term;
 
   MPI_Comm const mpi_comm;
 

@@ -95,7 +95,7 @@ public:
       AssertThrow(false, dealii::ExcMessage("FluidToAcousticCouplingStrategy not implemented."));
     }
 
-    acoustic_solver->pde_operator->set_integrated_rhs(source_term_acoustic);
+    acoustic_solver->pde_operator->set_aero_acoustic_source_term(source_term_acoustic);
   }
 
 private:

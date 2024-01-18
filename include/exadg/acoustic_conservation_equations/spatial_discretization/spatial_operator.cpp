@@ -316,9 +316,10 @@ SpatialOperator<dim, Number>::prescribe_initial_conditions(BlockVectorType & dst
 
 template<int dim, typename Number>
 void
-SpatialOperator<dim, Number>::set_integrated_rhs(VectorType const & integrated_rhs_in)
+SpatialOperator<dim, Number>::set_aero_acoustic_source_term(
+  VectorType const & aero_acoustic_source_term_in)
 {
-  integrated_rhs.reset(integrated_rhs_in);
+  aero_acoustic_source_term.reset(aero_acoustic_source_term_in);
 }
 
 template<int dim, typename Number>
@@ -337,8 +338,9 @@ SpatialOperator<dim, Number>::evaluate(BlockVectorType &       dst,
 
   if(param.aero_acoustic_source_term)
   {
-    AssertThrow(integrated_rhs, dealii::ExcMessage("Aero-acoustic source term not valid."));
-    dst.block(block_index_pressure) += *integrated_rhs;
+    AssertThrow(aero_acoustic_source_term,
+                dealii::ExcMessage("Aero-acoustic source term not valid."));
+    dst.block(block_index_pressure) += *aero_acoustic_source_term;
   }
 
   apply_scaled_inverse_mass_operator(dst, dst);
