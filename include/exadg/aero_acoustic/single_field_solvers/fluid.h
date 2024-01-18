@@ -103,7 +103,7 @@ public:
     time_integrator->advance_one_timestep_pre_solve(true);
     time_integrator->advance_one_timestep_solve();
 
-    // The pressure time derivative has to be compute before the push back
+    // The pressure time derivative has to be computed before the push back
     // of pressure vectors that is triggered in advance_one_timestep_post_solve()
     if(update_dpdt)
     {
