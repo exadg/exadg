@@ -98,7 +98,7 @@ public:
   }
 
   void
-  advance_one_timestep_with_pressure_time_derivative(bool const update_dpdt)
+  advance_one_timestep_and_compute_pressure_time_derivative(bool const update_dpdt)
   {
     time_integrator->advance_one_timestep_pre_solve(true);
     time_integrator->advance_one_timestep_solve();
@@ -144,7 +144,7 @@ public:
 private:
   // The aeroacoustic source term needs the pressure time derivative.
   // The update of the vector is performed using
-  // advance_one_timestep_with_pressure_time_derivative(true).
+  // advance_one_timestep_and_compute_pressure_time_derivative(true).
   VectorType pressure_time_derivative;
 };
 

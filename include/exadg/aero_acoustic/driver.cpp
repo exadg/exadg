@@ -152,7 +152,8 @@ Driver<dim, Number>::solve()
       couple_fluid_to_acoustic();
     acoustic->time_integrator->advance_one_timestep();
 
-    fluid->advance_one_timestep_with_pressure_time_derivative(acoustic->time_integrator->started());
+    fluid->advance_one_timestep_and_compute_pressure_time_derivative(
+      acoustic->time_integrator->started());
   }
 }
 
