@@ -68,25 +68,13 @@ public:
 
       pressure_cfd.reset(pressure_cfd_in);
       pressure_cfd->update_ghost_values();
+    }
 
-      matrix_free->cell_loop(&This::compute_integrated_source_term<true>,
-                             this,
-                             dst,
-                             pressure_cfd_time_derivative_in,
-                             true);
-    }
-    else
-    {
-      matrix_free->cell_loop(&This::compute_integrated_source_term<false>,
-                             this,
-                             dst,
-                             pressure_cfd_time_derivative_in,
-                             true);
-    }
+    matrix_free->cell_loop(
+      &This::compute_integrated_source_term, this, dst, pressure_cfd_time_derivative_in, true);
   }
 
 private:
-  template<bool consider_convection>
   void
   compute_integrated_source_term(dealii::MatrixFree<dim, Number> const &       matrix_free_in,
                                  VectorType &                                  dst,
@@ -104,7 +92,7 @@ private:
       dpdt.reinit(cell);
       dpdt.gather_evaluate(dp_cfd_dt, dealii::EvaluationFlags::values);
 
-      if constexpr(consider_convection)
+      if(data.consider_convection)
       {
         p.reinit(cell);
         p.gather_evaluate(*pressure_cfd, dealii::EvaluationFlags::gradients);
