@@ -52,7 +52,6 @@ SpatialOperator<dim, Number>::SpatialOperator(
     field(field_in),
     dof_handler_p(*grid_in->triangulation),
     dof_handler_u(*grid_in->triangulation),
-    integrated_rhs_set(false),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
 {
@@ -319,7 +318,6 @@ template<int dim, typename Number>
 void
 SpatialOperator<dim, Number>::set_integrated_rhs(VectorType const & integrated_rhs_in)
 {
-  integrated_rhs_set = true;
   integrated_rhs.reset(integrated_rhs_in);
 }
 
@@ -337,8 +335,11 @@ SpatialOperator<dim, Number>::evaluate(BlockVectorType &       dst,
   if(param.right_hand_side)
     rhs_operator.evaluate_add(dst.block(block_index_pressure), time);
 
-  if(integrated_rhs_set)
+  if(param.aero_acoustic_source_term)
+  {
+    AssertThrow(integrated_rhs, dealii::ExcMessage("Aero-acoustic source term not valid."));
     dst.block(block_index_pressure) += *integrated_rhs;
+  }
 
   apply_scaled_inverse_mass_operator(dst, dst);
 }

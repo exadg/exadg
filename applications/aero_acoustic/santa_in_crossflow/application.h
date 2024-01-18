@@ -72,7 +72,8 @@ private:
   set_parameters() final
   {
     // MATHEMATICAL MODEL
-    this->param.formulation = Formulation::SkewSymmetric;
+    this->param.formulation               = Formulation::SkewSymmetric;
+    this->param.aero_acoustic_source_term = true;
 
     // TEMPORAL DISCRETIZATION
     this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;

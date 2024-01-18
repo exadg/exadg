@@ -275,7 +275,6 @@ private:
 
   // Right-hand side DoF vector that has been computed AND integrated
   // externally.
-  bool                 integrated_rhs_set;
   lazy_ptr<VectorType> integrated_rhs;
 
   MPI_Comm const mpi_comm;

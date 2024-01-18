@@ -35,6 +35,7 @@ Parameters::Parameters()
   : // MATHEMATICAL MODEL
     formulation(Formulation::Undefined),
     right_hand_side(false),
+    aero_acoustic_source_term(false),
 
     // PHYSICAL QUANTITIES
     start_time(0.),
