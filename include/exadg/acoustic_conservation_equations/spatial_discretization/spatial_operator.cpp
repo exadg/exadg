@@ -321,7 +321,6 @@ SpatialOperator<dim, Number>::set_integrated_rhs(VectorType const & integrated_r
 {
   integrated_rhs_set = true;
   integrated_rhs.reset(integrated_rhs_in);
-  integrated_rhs->update_ghost_values();
 }
 
 template<int dim, typename Number>
