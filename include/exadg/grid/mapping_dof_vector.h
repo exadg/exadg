@@ -514,6 +514,22 @@ public:
     }
   }
 
+  /**
+   * For Simplex elements, we need the same function as above but with a shared_ptr for the
+   * dof_handler argument instead of a reference. This function copies the shared pointer and then
+   * calls the other function above. The reason behind is that dealii::MappingFEField needs
+   * DoFHandler object that stays alive after construction of the dealii::MappingFEField object.
+   */
+  void
+  initialize_mapping_from_dof_vector(std::shared_ptr<dealii::Mapping<dim> const> mapping_undeformed,
+                                     VectorType const &                       displacement_vector,
+                                     std::shared_ptr<dealii::DoFHandler<dim>> dof_handler)
+  {
+    dof_handler_fe_field = dof_handler;
+
+    initialize_mapping_from_dof_vector(mapping_undeformed, displacement_vector, *dof_handler);
+  }
+
 protected:
   /**
    * For ElementType::Hypercube
@@ -726,17 +742,19 @@ initialize_coarse_mappings_from_mapping_dof_vector(
   unsigned int const n_h_levels = coarse_triangulations.size() + 1;
 
   // setup dof-handlers and constraints for all levels using degree_coarse_mappings
-  std::vector<dealii::DoFHandler<dim>>           dof_handlers_all_levels(n_h_levels);
-  std::vector<dealii::AffineConstraints<Number>> constraints_all_levels(n_h_levels);
+  std::vector<std::shared_ptr<dealii::DoFHandler<dim>>> dof_handlers_all_levels(n_h_levels);
+  std::vector<dealii::AffineConstraints<Number>>        constraints_all_levels(n_h_levels);
 
   for(unsigned int h_level = 0; h_level < n_h_levels; ++h_level)
   {
     if(h_level == n_h_levels - 1)
-      dof_handlers_all_levels[h_level].reinit(*fine_triangulation);
+      dof_handlers_all_levels[h_level] =
+        std::make_shared<dealii::DoFHandler<dim>>(*fine_triangulation);
     else
-      dof_handlers_all_levels[h_level].reinit(*coarse_triangulations[h_level]);
+      dof_handlers_all_levels[h_level] =
+        std::make_shared<dealii::DoFHandler<dim>>(*coarse_triangulations[h_level]);
 
-    dof_handlers_all_levels[h_level].distribute_dofs(*fe);
+    dof_handlers_all_levels[h_level]->distribute_dofs(*fe);
 
     // constraints are irrelevant for interpolation
     constraints_all_levels[h_level].close();
@@ -750,7 +768,7 @@ initialize_coarse_mappings_from_mapping_dof_vector(
     std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector_fine_level =
       std::make_shared<MappingDoFVector<dim, Number>>(*fine_triangulation);
 
-    auto const & dof_handler_fine_level = dof_handlers_all_levels[n_h_levels - 1];
+    auto const & dof_handler_fine_level = *dof_handlers_all_levels[n_h_levels - 1];
     MappingTools::fill_grid_coordinates_vector(*fine_mapping->get_mapping(),
                                                grid_coordinates_fine_level,
                                                dof_handler_fine_level);
@@ -760,8 +778,8 @@ initialize_coarse_mappings_from_mapping_dof_vector(
   dealii::MGLevelObject<dealii::MGTwoLevelTransfer<dim, VectorType>> transfers(0, n_h_levels - 1);
   for(unsigned int h_level = 1; h_level < n_h_levels; ++h_level)
   {
-    transfers[h_level].reinit_geometric_transfer(dof_handlers_all_levels[h_level],
-                                                 dof_handlers_all_levels[h_level - 1],
+    transfers[h_level].reinit_geometric_transfer(*dof_handlers_all_levels[h_level],
+                                                 *dof_handlers_all_levels[h_level - 1],
                                                  constraints_all_levels[h_level],
                                                  constraints_all_levels[h_level - 1]);
   }
@@ -770,11 +788,11 @@ initialize_coarse_mappings_from_mapping_dof_vector(
   const std::function<void(unsigned int const, VectorType &)> initialize_dof_vector =
     [&](unsigned int const h_level, VectorType & vector) {
       dealii::IndexSet locally_relevant_dofs;
-      dealii::DoFTools::extract_locally_relevant_dofs(dof_handlers_all_levels[h_level],
+      dealii::DoFTools::extract_locally_relevant_dofs(*dof_handlers_all_levels[h_level],
                                                       locally_relevant_dofs);
-      vector.reinit(dof_handlers_all_levels[h_level].locally_owned_dofs(),
+      vector.reinit(dof_handlers_all_levels[h_level]->locally_owned_dofs(),
                     locally_relevant_dofs,
-                    dof_handlers_all_levels[h_level].get_communicator());
+                    dof_handlers_all_levels[h_level]->get_communicator());
     };
 
   dealii::MGTransferGlobalCoarsening<dim, VectorType> mg_transfer_global_coarsening(
