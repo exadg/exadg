@@ -275,7 +275,7 @@ private:
 
   // The aero-acoustic source term has been computed AND integrated
   // externally.
-  lazy_ptr<VectorType> aero_acoustic_source_term;
+  VectorType const * aero_acoustic_source_term;
 
   MPI_Comm const mpi_comm;
 

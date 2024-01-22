@@ -52,6 +52,7 @@ SpatialOperator<dim, Number>::SpatialOperator(
     field(field_in),
     dof_handler_p(*grid_in->triangulation),
     dof_handler_u(*grid_in->triangulation),
+    aero_acoustic_source_term(nullptr),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
 {
@@ -319,7 +320,7 @@ void
 SpatialOperator<dim, Number>::set_aero_acoustic_source_term(
   VectorType const & aero_acoustic_source_term_in)
 {
-  aero_acoustic_source_term.reset(aero_acoustic_source_term_in);
+  aero_acoustic_source_term = &aero_acoustic_source_term_in;
 }
 
 template<int dim, typename Number>
@@ -338,7 +339,7 @@ SpatialOperator<dim, Number>::evaluate(BlockVectorType &       dst,
 
   if(param.aero_acoustic_source_term)
   {
-    AssertThrow(aero_acoustic_source_term.get() != nullptr,
+    AssertThrow(aero_acoustic_source_term,
                 dealii::ExcMessage("Aero-acoustic source term not valid."));
     dst.block(block_index_pressure) += *aero_acoustic_source_term;
   }
