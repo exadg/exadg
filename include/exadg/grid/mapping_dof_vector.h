@@ -565,11 +565,6 @@ initialize_coarse_mappings_from_mapping_dof_vector(
   {
     AssertThrow(dealii::MultithreadInfo::n_threads() == 1, dealii::ExcNotImplemented());
 
-    std::shared_ptr<dealii::MappingQCache<dim>> mapping_q_cache =
-      fine_mapping->get_mapping_q_cache();
-    AssertThrow(mapping_q_cache.get(),
-                dealii::ExcMessage("Shared pointer mapping_q_cache is invalid."));
-
     dealii::FESystem<dim>   fe(dealii::FE_Q<dim>(degree_coarse_mappings), dim);
     dealii::DoFHandler<dim> dof_handler(triangulation);
     dof_handler.distribute_dofs(fe);
@@ -725,108 +720,90 @@ initialize_coarse_mappings_from_mapping_dof_vector(
   std::shared_ptr<dealii::Triangulation<dim> const> const &              fine_triangulation,
   std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> const & coarse_triangulations)
 {
-  if(get_element_type(*fine_triangulation) == ElementType::Hypercube)
+  std::shared_ptr<dealii::FiniteElement<dim>> fe = create_finite_element<dim>(
+    get_element_type(*fine_triangulation), false /* continuous */, dim, degree_coarse_mappings);
+
+  unsigned int const n_h_levels = coarse_triangulations.size() + 1;
+
+  // setup dof-handlers and constraints for all levels using degree_coarse_mappings
+  std::vector<dealii::DoFHandler<dim>>           dof_handlers_all_levels(n_h_levels);
+  std::vector<dealii::AffineConstraints<Number>> constraints_all_levels(n_h_levels);
+
+  for(unsigned int h_level = 0; h_level < n_h_levels; ++h_level)
   {
-    std::shared_ptr<dealii::MappingQCache<dim>> mapping_q_cache =
-      fine_mapping->get_mapping_q_cache();
-    AssertThrow(mapping_q_cache.get(),
-                dealii::ExcMessage("Shared pointer mapping_q_cache is invalid."));
+    if(h_level == n_h_levels - 1)
+      dof_handlers_all_levels[h_level].reinit(*fine_triangulation);
+    else
+      dof_handlers_all_levels[h_level].reinit(*coarse_triangulations[h_level]);
 
-    // setup dof-handlers and constraints for all levels using degree_coarse_mappings
-    dealii::FESystem<dim>                fe(dealii::FE_Q<dim>(degree_coarse_mappings), dim);
-    unsigned int const                   n_h_levels = coarse_triangulations.size() + 1;
-    std::vector<dealii::DoFHandler<dim>> dof_handlers_all_levels(n_h_levels);
-    std::vector<dealii::AffineConstraints<Number>> constraints_all_levels(n_h_levels);
-    for(unsigned int h_level = 0; h_level < n_h_levels; ++h_level)
-    {
-      if(h_level == n_h_levels - 1)
-        dof_handlers_all_levels[h_level].reinit(*fine_triangulation);
-      else
-        dof_handlers_all_levels[h_level].reinit(*coarse_triangulations[h_level]);
-      dof_handlers_all_levels[h_level].distribute_dofs(fe);
-      // constraints are irrelevant for interpolation
-      constraints_all_levels[h_level].close();
-    }
+    dof_handlers_all_levels[h_level].distribute_dofs(*fe);
 
-    // fill a dof vector with grid coordinates of the fine level using degree_coarse_mappings
-    typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
-    VectorType                                                 grid_coordinates_fine_level;
-
-    {
-      std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector_fine_level =
-        std::make_shared<MappingDoFVector<dim, Number>>(*fine_triangulation);
-
-      auto const & dof_handler_fine_level = dof_handlers_all_levels[n_h_levels - 1];
-      MappingTools::fill_grid_coordinates_vector(*fine_mapping->get_mapping(),
-                                                 grid_coordinates_fine_level,
-                                                 dof_handler_fine_level);
-    }
-
-    // create transfer objects
-    dealii::MGLevelObject<dealii::MGTwoLevelTransfer<dim, VectorType>> transfers(0, n_h_levels - 1);
-    for(unsigned int h_level = 1; h_level < n_h_levels; ++h_level)
-    {
-      transfers[h_level].reinit_geometric_transfer(dof_handlers_all_levels[h_level],
-                                                   dof_handlers_all_levels[h_level - 1],
-                                                   constraints_all_levels[h_level],
-                                                   constraints_all_levels[h_level - 1]);
-    }
-
-    // a function that initializes the dof-vector for a given level and dof_handler
-    const std::function<void(unsigned int const, VectorType &)> initialize_dof_vector =
-      [&](unsigned int const h_level, VectorType & vector) {
-        dealii::IndexSet locally_relevant_dofs;
-        dealii::DoFTools::extract_locally_relevant_dofs(dof_handlers_all_levels[h_level],
-                                                        locally_relevant_dofs);
-        vector.reinit(dof_handlers_all_levels[h_level].locally_owned_dofs(),
-                      locally_relevant_dofs,
-                      dof_handlers_all_levels[h_level].get_communicator());
-      };
-
-    dealii::MGTransferGlobalCoarsening<dim, VectorType> mg_transfer_global_coarsening(
-      transfers, initialize_dof_vector);
-
-    // Transfer grid coordinates to coarser h-levels.
-    // The dealii::DoFHandler object will not be used for global coarsening.
-    dealii::DoFHandler<dim>           dof_handler_dummy;
-    dealii::MGLevelObject<VectorType> grid_coordinates_all_levels(0, n_h_levels - 1);
-    mg_transfer_global_coarsening.interpolate_to_mg(dof_handler_dummy,
-                                                    grid_coordinates_all_levels,
-                                                    grid_coordinates_fine_level);
-
-    // initialize mapping for all coarse h-levels using the dof-vectors with grid coordinates
-    AssertThrow(coarse_mappings.size() == n_h_levels - 1,
-                dealii::ExcMessage(
-                  "coarse_mappings does not have correct size relative to coarse_triangulations."));
-
-    for(unsigned int h_level = 0; h_level < coarse_mappings.size(); ++h_level)
-    {
-      coarse_mappings[h_level] =
-        std::make_shared<MappingDoFVector<dim, Number>>(*coarse_triangulations[h_level]);
-
-      // grid_coordinates_all_levels describes absolute coordinates -> use an uninitialized mapping
-      // in order to interpret the grid coordinates vector as absolute coordinates and not as
-      // displacements.
-      std::shared_ptr<dealii::Mapping<dim> const> mapping_dummy;
-      coarse_mappings[h_level]->initialize_mapping_from_dof_vector(
-        mapping_dummy, grid_coordinates_all_levels[h_level], dof_handlers_all_levels[h_level]);
-    }
+    // constraints are irrelevant for interpolation
+    constraints_all_levels[h_level].close();
   }
-  else if(get_element_type(*fine_triangulation) == ElementType::Simplex)
-  {
-    // TODO
 
-    AssertThrow(false,
-                dealii::ExcMessage(
-                  "The function initialize_coarse_mappings_from_mapping_dof_vector() "
-                  "is currently not implemented for ElementType::Simplex."));
-  }
-  else
+  // fill a dof vector with grid coordinates of the fine level using degree_coarse_mappings
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+  VectorType                                                 grid_coordinates_fine_level;
+
   {
-    AssertThrow(false,
-                dealii::ExcMessage(
-                  "The function initialize_coarse_mappings_from_mapping_dof_vector() "
-                  "is currently not implemented for the given ElementType."));
+    std::shared_ptr<MappingDoFVector<dim, Number>> mapping_dof_vector_fine_level =
+      std::make_shared<MappingDoFVector<dim, Number>>(*fine_triangulation);
+
+    auto const & dof_handler_fine_level = dof_handlers_all_levels[n_h_levels - 1];
+    MappingTools::fill_grid_coordinates_vector(*fine_mapping->get_mapping(),
+                                               grid_coordinates_fine_level,
+                                               dof_handler_fine_level);
+  }
+
+  // create transfer objects
+  dealii::MGLevelObject<dealii::MGTwoLevelTransfer<dim, VectorType>> transfers(0, n_h_levels - 1);
+  for(unsigned int h_level = 1; h_level < n_h_levels; ++h_level)
+  {
+    transfers[h_level].reinit_geometric_transfer(dof_handlers_all_levels[h_level],
+                                                 dof_handlers_all_levels[h_level - 1],
+                                                 constraints_all_levels[h_level],
+                                                 constraints_all_levels[h_level - 1]);
+  }
+
+  // a function that initializes the dof-vector for a given level and dof_handler
+  const std::function<void(unsigned int const, VectorType &)> initialize_dof_vector =
+    [&](unsigned int const h_level, VectorType & vector) {
+      dealii::IndexSet locally_relevant_dofs;
+      dealii::DoFTools::extract_locally_relevant_dofs(dof_handlers_all_levels[h_level],
+                                                      locally_relevant_dofs);
+      vector.reinit(dof_handlers_all_levels[h_level].locally_owned_dofs(),
+                    locally_relevant_dofs,
+                    dof_handlers_all_levels[h_level].get_communicator());
+    };
+
+  dealii::MGTransferGlobalCoarsening<dim, VectorType> mg_transfer_global_coarsening(
+    transfers, initialize_dof_vector);
+
+  // Transfer grid coordinates to coarser h-levels.
+  // The dealii::DoFHandler object will not be used for global coarsening.
+  dealii::DoFHandler<dim>           dof_handler_dummy;
+  dealii::MGLevelObject<VectorType> grid_coordinates_all_levels(0, n_h_levels - 1);
+  mg_transfer_global_coarsening.interpolate_to_mg(dof_handler_dummy,
+                                                  grid_coordinates_all_levels,
+                                                  grid_coordinates_fine_level);
+
+  // initialize mapping for all coarse h-levels using the dof-vectors with grid coordinates
+  AssertThrow(coarse_mappings.size() == n_h_levels - 1,
+              dealii::ExcMessage(
+                "coarse_mappings does not have correct size relative to coarse_triangulations."));
+
+  for(unsigned int h_level = 0; h_level < coarse_mappings.size(); ++h_level)
+  {
+    coarse_mappings[h_level] =
+      std::make_shared<MappingDoFVector<dim, Number>>(*coarse_triangulations[h_level]);
+
+    // grid_coordinates_all_levels describes absolute coordinates -> use an uninitialized mapping
+    // in order to interpret the grid coordinates vector as absolute coordinates and not as
+    // displacements.
+    std::shared_ptr<dealii::Mapping<dim> const> mapping_dummy;
+    coarse_mappings[h_level]->initialize_mapping_from_dof_vector(
+      mapping_dummy, grid_coordinates_all_levels[h_level], dof_handlers_all_levels[h_level]);
   }
 }
 
