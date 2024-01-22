@@ -108,7 +108,7 @@ private:
     this->param.grid.triangulation_type = TriangulationType::Distributed;
     if(this->param.grid.element_type == ElementType::Simplex)
       this->param.grid.triangulation_type = TriangulationType::FullyDistributed;
-    this->param.mapping_degree              = 2;
+    this->param.mapping_degree              = 1;
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
 
     // high-oder quadrature rules are not available for simplex
@@ -257,7 +257,7 @@ private:
     pp_data.output_data.filename  = this->output_parameters.filename;
     pp_data.output_data.degree    = this->param.degree;
 
-    pp_data.error_data.time_control_data.is_active        = false; // true;
+    pp_data.error_data.time_control_data.is_active        = true;
     pp_data.error_data.time_control_data.start_time       = start_time;
     pp_data.error_data.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
     pp_data.error_data.analytical_solution.reset(new Solution<dim>(1));
