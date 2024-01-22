@@ -686,12 +686,11 @@ initialize_coarse_mappings_from_mapping_dof_vector(
   }
   else if(get_element_type(triangulation) == ElementType::Simplex)
   {
-    // TODO
-
     AssertThrow(false,
                 dealii::ExcMessage(
                   "The function initialize_coarse_mappings_from_mapping_dof_vector() "
-                  "is currently not implemented for ElementType::Simplex."));
+                  "with a single dealii::Triangulation object for all multigrid levels "
+                  "is not available for ElementType::Simplex."));
   }
   else
   {
