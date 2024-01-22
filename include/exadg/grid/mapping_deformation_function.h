@@ -41,13 +41,13 @@ public:
    * Constructor.
    */
   DeformedMappingFunction(std::shared_ptr<dealii::Mapping<dim> const>  mapping_undeformed,
-                          unsigned int const                           mapping_degree_q_cache,
+                          unsigned int const                           mapping_degree,
                           dealii::Triangulation<dim> const &           triangulation,
                           std::shared_ptr<dealii::Function<dim>> const mesh_deformation_function,
                           double const                                 start_time)
     : DeformedMappingBase<dim, Number>(mapping_undeformed, triangulation),
       mesh_deformation_function(mesh_deformation_function),
-      mapping_degree(mapping_degree_q_cache),
+      mapping_degree(mapping_degree),
       triangulation(triangulation)
   {
     update(start_time, false, dealii::numbers::invalid_unsigned_int);

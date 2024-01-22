@@ -354,8 +354,6 @@ public:
       dof_vector_fe_field = grid_coordinates_undeformed;
       dof_vector_fe_field += displacement;
 
-      // TODO: Do we need an update_ghost_values() here?
-
       // create MappingFEField object using the member variable dof_vector_fe_field
       create_mapping_fe_field(*dof_handler_fe_field, mapping_degree);
     }

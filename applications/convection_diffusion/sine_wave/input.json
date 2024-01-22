@@ -5,8 +5,8 @@
         "IsTest": "false"
     },
     "SpatialResolution": {
-        "DegreeMin": "7",
-        "DegreeMax": "7",
+        "DegreeMin": "2",
+        "DegreeMax": "2",
         "RefineSpaceMin": "2",
         "RefineSpaceMax": "2"
     },
@@ -15,6 +15,7 @@
         "RefineTimeMax": "0"
     },
     "Application": {
+        "ALE": "false"
     },
     "Output": {
         "OutputDirectory": "output/sine_wave/",

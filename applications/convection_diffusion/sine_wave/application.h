@@ -60,6 +60,18 @@ public:
   {
   }
 
+  void
+  add_parameters(dealii::ParameterHandler & prm) final
+  {
+    ApplicationBase<dim, Number>::add_parameters(prm);
+
+    prm.enter_subsection("Application");
+    {
+      prm.add_parameter("ALE", ale, "Moving mesh (ALE).", dealii::Patterns::Bool());
+    }
+    prm.leave_subsection();
+  }
+
 private:
   void
   set_parameters() final
@@ -78,8 +90,10 @@ private:
     this->param.diffusivity = 0.0;
 
     // TEMPORAL DISCRETIZATION
-    this->param.temporal_discretization       = TemporalDiscretization::ExplRK;
-    this->param.time_integrator_rk            = TimeIntegratorRK::ExplRK3Stage7Reg2;
+    this->param.temporal_discretization = TemporalDiscretization::ExplRK;
+    this->param.time_integrator_rk      = TimeIntegratorRK::ExplRK3Stage7Reg2;
+    if(ale)
+      this->param.temporal_discretization = TemporalDiscretization::BDF;
     this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit; // Explicit;
     this->param.adaptive_time_stepping        = true;
     this->param.order_time_integrator         = 2;
@@ -90,9 +104,16 @@ private:
     this->param.diffusion_number              = 0.01;
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.triangulation_type     = TriangulationType::Distributed;
-    this->param.mapping_degree              = 1;
+    this->param.grid.element_type       = ElementType::Simplex;
+    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    if(this->param.grid.element_type == ElementType::Simplex)
+      this->param.grid.triangulation_type = TriangulationType::FullyDistributed;
+    this->param.mapping_degree              = 2;
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
+
+    // high-oder quadrature rules are not available for simplex
+    if(this->param.grid.element_type == ElementType::Simplex)
+      this->param.use_overintegration = false;
 
     // convective term
     this->param.numerical_flux_convective_operator =
@@ -101,11 +122,17 @@ private:
     // viscous term
     this->param.IP_factor = 1.0;
 
+    // inverse mass
+    if(this->param.grid.element_type == ElementType::Simplex)
+      this->param.inverse_mass_operator.implementation_type = InverseMassType::BlockMatrices;
+
     // SOLVER
     this->param.solver         = Solver::GMRES;
     this->param.solver_data    = SolverData(1e4, 1.e-20, 1.e-6, 100);
     this->param.preconditioner = Preconditioner::InverseMassMatrix;
-    // use default parameters of multigrid preconditioner
+
+    if(this->param.grid.element_type == ElementType::Simplex)
+      this->param.inverse_mass_preconditioner.implementation_type = InverseMassType::BlockMatrices;
 
     // output of solver information
     this->param.solver_info_data.interval_time = (end_time - start_time) / 20;
@@ -113,6 +140,8 @@ private:
     // NUMERICAL PARAMETERS
     this->param.use_combined_operator                   = true;
     this->param.store_analytical_velocity_in_dof_vector = false;
+    if(ale)
+      this->param.store_analytical_velocity_in_dof_vector = true;
   }
 
   void
@@ -132,8 +161,19 @@ private:
         (void)periodic_face_pairs;
         (void)vector_local_refinements;
 
-        // hypercube volume is [left,right]^dim
-        dealii::GridGenerator::hyper_cube(tria, left, right);
+        if(this->param.grid.element_type == ElementType::Hypercube)
+        {
+          // hypercube volume is [left,right]^dim
+          dealii::GridGenerator::hyper_cube(tria, left, right);
+        }
+        else if(this->param.grid.element_type == ElementType::Simplex)
+        {
+          dealii::GridGenerator::subdivided_hyper_cube_with_simplices(tria, 1, left, right);
+        }
+        else
+        {
+          AssertThrow(false, ExcNotImplemented());
+        }
 
         // set boundary id of 1 at right boundary (outflow)
         for(auto cell : tria)
@@ -217,7 +257,7 @@ private:
     pp_data.output_data.filename  = this->output_parameters.filename;
     pp_data.output_data.degree    = this->param.degree;
 
-    pp_data.error_data.time_control_data.is_active        = true;
+    pp_data.error_data.time_control_data.is_active        = false; // true;
     pp_data.error_data.time_control_data.start_time       = start_time;
     pp_data.error_data.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
     pp_data.error_data.analytical_solution.reset(new Solution<dim>(1));
@@ -234,7 +274,7 @@ private:
   double const left  = -1.0;
   double const right = +1.0;
 
-  bool const ale = false;
+  bool ale = false;
 };
 
 } // namespace ConvDiff
