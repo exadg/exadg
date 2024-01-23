@@ -94,7 +94,7 @@ private:
     this->param.time_integrator_rk      = TimeIntegratorRK::ExplRK3Stage7Reg2;
     if(ale)
       this->param.temporal_discretization = TemporalDiscretization::BDF;
-    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit; // Explicit;
+    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
     this->param.adaptive_time_stepping        = true;
     this->param.order_time_integrator         = 2;
     this->param.start_with_low_order          = false;
@@ -104,11 +104,14 @@ private:
     this->param.diffusion_number              = 0.01;
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.element_type       = ElementType::Hypercube;
+    this->param.grid.element_type       = ElementType::Hypercube //Simplex;
     this->param.grid.triangulation_type = TriangulationType::Distributed;
     if(this->param.grid.element_type == ElementType::Simplex)
-      this->param.grid.triangulation_type = TriangulationType::FullyDistributed;
-    this->param.mapping_degree              = 1;
+    {
+      this->param.grid.triangulation_type           = TriangulationType::FullyDistributed;
+      this->param.grid.create_coarse_triangulations = true;
+    }
+    this->param.mapping_degree              = 2;
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
 
     // high-oder quadrature rules are not available for simplex
@@ -129,7 +132,13 @@ private:
     // SOLVER
     this->param.solver         = Solver::GMRES;
     this->param.solver_data    = SolverData(1e4, 1.e-20, 1.e-6, 100);
-    this->param.preconditioner = Preconditioner::InverseMassMatrix;
+    this->param.preconditioner = Preconditioner::InverseMassMatrix; //Multigrid;
+
+    this->param.mg_operator_type                      = MultigridOperatorType::ReactionConvection;
+    this->param.multigrid_data.smoother_data.smoother = MultigridSmoother::GMRES;
+    this->param.multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
+    this->param.multigrid_data.smoother_data.iterations     = 4;
+    this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
 
     if(this->param.grid.element_type == ElementType::Simplex)
       this->param.inverse_mass_preconditioner.implementation_type = InverseMassType::BlockMatrices;
