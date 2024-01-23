@@ -56,10 +56,10 @@ public:
     if(parameters.fluid_to_acoustic_coupling_strategy ==
        FluidToAcousticCouplingStrategy::ConservativeInterpolation)
     {
-      non_nested_mg.reinit(fluid_solver_in->pde_operator->get_dof_handler_p(),
-                           acoustic_solver_in->pde_operator->get_dof_handler_p(),
-                           *fluid_solver_in->pde_operator->get_mapping(),
-                           *acoustic_solver_in->pde_operator->get_mapping());
+      non_nested_grid_transfer.reinit(fluid_solver_in->pde_operator->get_dof_handler_p(),
+                                      acoustic_solver_in->pde_operator->get_dof_handler_p(),
+                                      *fluid_solver_in->pde_operator->get_mapping(),
+                                      *acoustic_solver_in->pde_operator->get_mapping());
     }
     else
     {
@@ -88,7 +88,7 @@ public:
                                                 fluid_solver->time_integrator->get_pressure(),
                                                 fluid_solver->get_pressure_time_derivative());
 
-      non_nested_mg.restrict_and_add(source_term_acoustic, source_term_fluid);
+      non_nested_grid_transfer.restrict_and_add(source_term_acoustic, source_term_fluid);
     }
     else
     {
@@ -106,7 +106,7 @@ private:
   std::shared_ptr<SolverFluid<dim, Number>>    fluid_solver;
 
   // Transfer operator
-  dealii::MGTwoLevelTransferNonNested<dim, VectorType> non_nested_mg;
+  dealii::MGTwoLevelTransferNonNested<dim, VectorType> non_nested_grid_transfer;
 
   // Class that knows how to compute the source term
   SourceTermCalculator<dim, Number> source_term_calculator;
