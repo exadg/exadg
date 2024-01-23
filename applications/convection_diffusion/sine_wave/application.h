@@ -104,8 +104,9 @@ private:
     this->param.diffusion_number              = 0.01;
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.element_type       = ElementType::Hypercube //Simplex;
-    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.element_type = ElementType::Hypercube // Simplex;
+                                    this->param.grid.triangulation_type =
+      TriangulationType::Distributed;
     if(this->param.grid.element_type == ElementType::Simplex)
     {
       this->param.grid.triangulation_type           = TriangulationType::FullyDistributed;
@@ -132,13 +133,13 @@ private:
     // SOLVER
     this->param.solver         = Solver::GMRES;
     this->param.solver_data    = SolverData(1e4, 1.e-20, 1.e-6, 100);
-    this->param.preconditioner = Preconditioner::InverseMassMatrix; //Multigrid;
+    this->param.preconditioner = Preconditioner::InverseMassMatrix; // Multigrid;
 
     this->param.mg_operator_type                      = MultigridOperatorType::ReactionConvection;
     this->param.multigrid_data.smoother_data.smoother = MultigridSmoother::GMRES;
     this->param.multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
     this->param.multigrid_data.smoother_data.iterations     = 4;
-    this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
+    this->param.multigrid_data.coarse_problem.solver        = MultigridCoarseGridSolver::GMRES;
 
     if(this->param.grid.element_type == ElementType::Simplex)
       this->param.inverse_mass_preconditioner.implementation_type = InverseMassType::BlockMatrices;
