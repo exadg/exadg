@@ -54,7 +54,7 @@ public:
 
     // setup the transfer operator
     if(parameters.fluid_to_acoustic_coupling_strategy ==
-       FluidToAcousticCouplingStrategy::NonNestedMGRestriction)
+       FluidToAcousticCouplingStrategy::ConservativeInterpolation)
     {
       non_nested_mg.reinit(fluid_solver_in->pde_operator->get_dof_handler_p(),
                            acoustic_solver_in->pde_operator->get_dof_handler_p(),
@@ -81,7 +81,7 @@ public:
   fluid_to_acoustic()
   {
     if(parameters.fluid_to_acoustic_coupling_strategy ==
-       FluidToAcousticCouplingStrategy::NonNestedMGRestriction)
+       FluidToAcousticCouplingStrategy::ConservativeInterpolation)
     {
       source_term_calculator.evaluate_integrate(source_term_fluid,
                                                 fluid_solver->time_integrator->get_velocity(),

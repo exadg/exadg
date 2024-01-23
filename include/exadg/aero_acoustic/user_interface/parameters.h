@@ -33,7 +33,7 @@ namespace AeroAcoustic
 enum class FluidToAcousticCouplingStrategy
 {
   Undefined,
-  NonNestedMGRestriction
+  ConservativeInterpolation
 };
 
 class Parameters
