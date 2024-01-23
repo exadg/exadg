@@ -71,15 +71,15 @@ public:
     }
 
     matrix_free->cell_loop(
-      &This::compute_integrated_source_term, this, dst, pressure_cfd_time_derivative_in, true);
+      &This::compute_source_term, this, dst, pressure_cfd_time_derivative_in, true);
   }
 
 private:
   void
-  compute_integrated_source_term(dealii::MatrixFree<dim, Number> const &       matrix_free_in,
-                                 VectorType &                                  dst,
-                                 VectorType const &                            dp_cfd_dt,
-                                 std::pair<unsigned int, unsigned int> const & cell_range) const
+  compute_source_term(dealii::MatrixFree<dim, Number> const &       matrix_free_in,
+                      VectorType &                                  dst,
+                      VectorType const &                            dp_cfd_dt,
+                      std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     CellIntegratorScalar dpdt(matrix_free_in, data.dof_index_pressure, data.quad_index);
     CellIntegratorScalar p(matrix_free_in, data.dof_index_pressure, data.quad_index);

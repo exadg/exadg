@@ -159,7 +159,7 @@ public:
   prescribe_initial_conditions(BlockVectorType & dst, double const time) const final;
 
   /*
-   * Set aero-acoustic source term that has been integrated externally.
+   * Set aero-acoustic source term.
    */
   void
   set_aero_acoustic_source_term(VectorType const & aero_acoustic_source_term_in);
@@ -273,8 +273,7 @@ private:
    */
   RHSOperator<dim, Number, 1> rhs_operator;
 
-  // The aero-acoustic source term has been computed AND integrated
-  // externally.
+  // The aero-acoustic source term has been computed externally.
   VectorType const * aero_acoustic_source_term;
 
   MPI_Comm const mpi_comm;
