@@ -19,23 +19,28 @@
  *  ______________________________________________________________________
  */
 
-#ifndef APPLICATIONS_AERO_ACOUSTIC_SANTA_IN_CROSSFLOW_H_
-#define APPLICATIONS_AERO_ACOUSTIC_SANTA_IN_CROSSFLOW_H_
+#ifndef APPLICATIONS_AERO_ACOUSTIC_CO_ROTATING_VORTEX_PAIR_H_
+#define APPLICATIONS_AERO_ACOUSTIC_CO_ROTATING_VORTEX_PAIR_H_
 
 #include <deal.II/base/function.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/grid_in.h>
 
 #include <exadg/grid/grid_utilities.h>
 
-// Air at -10°C
-// density:        1.34
-// speed_od_sound: 325.47
-// viscosity:      1.247e-5
-
 namespace ExaDG
 {
+// Helper functions, needed for acoustic and fluid
+namespace CoRotVortexPair
+{
+double
+compute_rotation_period(double const intensity, double const r_0)
+{
+  double const pi = dealii::numbers::PI;
+  return 8.0 * pi * pi * r_0 * r_0 / intensity;
+}
+} // namespace CoRotVortexPair
+
 namespace AcousticsAeroAcoustic
 {
 using namespace Acoustics;
@@ -57,12 +62,34 @@ public:
     prm.enter_subsection("Application");
     {
       // PHYSICAL QUANTITIES
-      prm.add_parameter("StartTimeAcoustic", this->param.start_time);
-      prm.add_parameter("EndTime", this->param.end_time);
-      prm.add_parameter("SpeedOfSound", this->param.speed_of_sound);
+      prm.add_parameter(
+        "StartTimeAcousticsInVortexRotations",
+        n_rotations_before_start,
+        "Number of rotations of the vortices before acoustic simulation is started.",
+        dealii::Patterns::Double(1e-12));
+
+      prm.add_parameter("EndTimeInVortexRotations",
+                        n_rotations,
+                        "Number of rotations of the vortices.",
+                        dealii::Patterns::Double(1e-12));
+
+      prm.add_parameter("SpeedOfSound", this->param.speed_of_sound, "Speed of sound.");
 
       // TEMPORAL DISCRETIZATION
-      prm.add_parameter("CFLAcoustics", this->param.cfl);
+      prm.add_parameter("CFLAcoustics", this->param.cfl, "Courant Number.");
+
+      // APPLICATION SPECIFIC QUNATITIES
+      prm.add_parameter("DomainRadiusAcoustics",
+                        domain_radius,
+                        "Radius of acoustic domain.",
+                        dealii::Patterns::Double(1e-12));
+
+      prm.add_parameter("Intensity", intensity, "Intensity.", dealii::Patterns::Double(1e-12));
+
+      prm.add_parameter("VortexRadius",
+                        r_0,
+                        "Distance of vortices to center.",
+                        dealii::Patterns::Double(1e-12));
     }
     prm.leave_subsection();
   }
@@ -74,6 +101,11 @@ private:
     // MATHEMATICAL MODEL
     this->param.formulation               = Formulation::SkewSymmetric;
     this->param.aero_acoustic_source_term = true;
+
+    // PHYSICAL QUANTITIES
+    this->param.start_time =
+      n_rotations_before_start * CoRotVortexPair::compute_rotation_period(intensity, r_0);
+    this->param.end_time = n_rotations * CoRotVortexPair::compute_rotation_period(intensity, r_0);
 
     // TEMPORAL DISCRETIZATION
     this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
@@ -100,18 +132,11 @@ private:
             typename dealii::Triangulation<dim>::cell_iterator>> & /*periodic_face_pairs*/,
           unsigned int const global_refinements,
           std::vector<unsigned int> const & /* vector_local_refinements*/) {
-        dealii::GridIn<dim> mesh(tria);
-        std::ifstream input_file("../applications/aero_acoustic/santa_in_crossflow/santa.msh");
-        mesh.read_msh(input_file);
+        dealii::GridGenerator::hyper_ball(tria, {0.0, 0.0}, domain_radius);
 
         for(const auto & face : tria.active_face_iterators())
           if(face->at_boundary())
-          {
-            if(face->center().norm() < 20.0)
-              face->set_boundary_id(0); // santa
-            else
-              face->set_boundary_id(1); // absorbing
-          }
+            face->set_boundary_id(1);
 
         tria.refine_global(global_refinements);
       };
@@ -127,26 +152,19 @@ private:
   void
   set_boundary_descriptor() final
   {
-    {
-      double const Y = 0.1; // Santa and deers are minimally absorbing
-      this->boundary_descriptor->admittance_bc.insert(
-        std::make_pair(0, std::make_shared<dealii::Functions::ConstantFunction<dim>>(Y, 1)));
-    }
-    {
-      double const Y = 1.0; // ABC
-      this->boundary_descriptor->admittance_bc.insert(
-        std::make_pair(1, std::make_shared<dealii::Functions::ConstantFunction<dim>>(Y, 1)));
-    }
+    double const Y = 1.0; // ABC
+    this->boundary_descriptor->admittance_bc.insert(
+      std::make_pair(1, std::make_shared<dealii::Functions::ConstantFunction<dim>>(Y, 1)));
   }
 
   void
   set_field_functions() final
   {
-    this->field_functions->initial_solution_velocity =
-      std::make_shared<dealii::Functions::ZeroFunction<dim>>(dim);
-
     this->field_functions->initial_solution_pressure =
       std::make_shared<dealii::Functions::ZeroFunction<dim>>(1);
+
+    this->field_functions->initial_solution_velocity =
+      std::make_shared<dealii::Functions::ZeroFunction<dim>>(dim);
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
@@ -171,6 +189,12 @@ private:
 
     return pp;
   }
+
+  double domain_radius            = 300.0;
+  double n_rotations_before_start = 1.0;
+  double n_rotations              = 2.0;
+  double intensity                = 7.54;
+  double r_0                      = 1.0;
 };
 
 } // namespace AcousticsAeroAcoustic
@@ -181,26 +205,101 @@ namespace FluidAeroAcoustic
 using namespace IncNS;
 
 template<int dim>
-class InflowBC : public dealii::Function<dim>
+class AnalyticalSolutionVelocity : public dealii::Function<dim>
 {
 public:
-  InflowBC(double const inlet_velocity_in)
-    : dealii::Function<dim>(dim, 0.0), inlet_velocity(inlet_velocity_in)
+  AnalyticalSolutionVelocity(double const intensity, double const r_0, double const r_c)
+    : dealii::Function<dim>(dim, 0.0),
+      pi(dealii::numbers::PI),
+      intensity(intensity),
+      r_0(r_0),
+      r_c(r_c),
+      omega(2.0 * pi / CoRotVortexPair::compute_rotation_period(intensity, r_0)),
+      period(CoRotVortexPair::compute_rotation_period(intensity, r_0))
   {
   }
 
   double
-  value(dealii::Point<dim> const &, unsigned int const component) const final
+  value(unsigned int const comp, double const t, double const r, double const theta) const
   {
-    if(component == 0)
-      return inlet_velocity;
-    return 0.0;
+    double result = intensity * r /
+                    (pi * (std::pow(r * r + r_0 * r_0 + r_c * r_c, 2) -
+                           4.0 * r * r * r_0 * r_0 * std::pow(std::cos(omega * t - theta), 2)));
+
+    if(comp == 0)
+      result *=
+        -(r_c * r_c + r * r) * std::sin(theta) + r_0 * r_0 * std::sin(2.0 * omega * t - theta);
+    else
+      result *=
+        (r_c * r_c + r * r) * std::cos(theta) - r_0 * r_0 * std::cos(2.0 * omega * t - theta);
+
+    return result;
+  }
+
+  double
+  value(dealii::Point<dim> const & p, unsigned int const comp) const final
+  {
+    double const t     = this->get_time();
+    double const r     = p.norm();
+    double const theta = std::atan2(p[1], p[0]);
+
+    return value(comp, t, r, theta);
   }
 
 private:
-  double const inlet_velocity;
+  double const pi;
+  double const intensity;
+  double const r_0;
+  double const r_c;
+  double const omega;
+  double const period;
 };
 
+template<int dim>
+class AnalyticalSolutionPressure : public dealii::Function<dim>
+{
+public:
+  AnalyticalSolutionPressure(double const intensity, double const r_0, double const r_c)
+    : dealii::Function<dim>(1, 0.0),
+      velocity(intensity, r_0, r_c),
+      pi(dealii::numbers::PI),
+      intensity(intensity),
+      r_0(r_0),
+      r_c(r_c),
+      omega(2.0 * pi / CoRotVortexPair::compute_rotation_period(intensity, r_0)),
+      period(CoRotVortexPair::compute_rotation_period(intensity, r_0))
+  {
+  }
+
+  double
+  value(dealii::Point<dim> const & p, unsigned int const) const final
+  {
+    double const t     = this->get_time();
+    double const r     = p.norm();
+    double const theta = std::atan2(p[1], p[0]);
+
+    double const dRe_dt =
+      intensity * omega * r_0 * r_0 *
+      (r_0 * r_0 + r_c * r_c - r * r * std::cos(2.0 * omega * t - 2.0 * theta)) /
+      (pi * (std::pow(r * r + r_0 * r_0 + r_c * r_c, 2) -
+             4.0 * r * r * r_0 * r_0 * std::pow(std::cos(omega * t - theta), 2)));
+
+    double const u_0 = velocity.value(0, t, r, theta);
+    double const u_1 = velocity.value(1, t, r, theta);
+
+    return -dRe_dt - 0.5 * (u_0 * u_0 + u_1 * u_1);
+  }
+
+private:
+  AnalyticalSolutionVelocity<dim> const velocity;
+
+  double const pi;
+  double const intensity;
+  double const r_0;
+  double const r_c;
+  double const omega;
+  double const period;
+};
 
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
@@ -219,17 +318,36 @@ public:
     prm.enter_subsection("Application");
     {
       // PHYSICAL QUANTITIES
-      prm.add_parameter("EndTime", this->param.end_time);
-      prm.add_parameter("KinematicViscosity", this->param.viscosity);
+      prm.add_parameter("EndTimeInVortexRotations",
+                        n_rotations,
+                        "Number of rotations of the vortices.",
+                        dealii::Patterns::Double(1e-12));
 
       // TEMPORAL DISCRETIZATION
-      prm.add_parameter("CFLFluid", this->param.cfl);
+      prm.add_parameter("CFLFluid", this->param.cfl, "Courant Number.");
 
-      // Testcase
-      prm.add_parameter("TravelSpeed",
-                        inlet_velocity,
-                        "Speed at which Santa travels.",
-                        dealii::Patterns::Double(1.0e-12));
+      // APPLICATION SPECIFIC QUNATITIES
+      prm.add_parameter("AdditionalCFDRefinementsAroundSource",
+                        additional_refinements_around_source,
+                        "Additional mesh refinements around source.",
+                        dealii::Patterns::Integer(0));
+
+      prm.add_parameter("DomainRadiusFluid",
+                        domain_radius,
+                        "Radius of fluid domain.",
+                        dealii::Patterns::Double(1e-12));
+
+      prm.add_parameter("Intensity", intensity, "Intensity.", dealii::Patterns::Double(1e-12));
+
+      prm.add_parameter("VortexRadius",
+                        r_0,
+                        "Distance of vortices to center.",
+                        dealii::Patterns::Double(1e-12));
+
+      prm.add_parameter("VortexCoreRadius",
+                        r_c,
+                        "Vortex core radius for Scully model.",
+                        dealii::Patterns::Double(1e-12));
     }
     prm.leave_subsection();
   }
@@ -238,15 +356,16 @@ public:
   set_parameters() final
   {
     // MATHEMATICAL MODEL
-    this->param.problem_type                   = ProblemType::Unsteady;
-    this->param.equation_type                  = EquationType::NavierStokes;
-    this->param.formulation_viscous_term       = FormulationViscousTerm::LaplaceFormulation;
-    this->param.formulation_convective_term    = FormulationConvectiveTerm::DivergenceFormulation;
-    this->param.right_hand_side                = false;
-    this->param.use_outflow_bc_convective_term = true;
+    this->param.problem_type                = ProblemType::Unsteady;
+    this->param.equation_type               = EquationType::NavierStokes;
+    this->param.formulation_viscous_term    = FormulationViscousTerm::LaplaceFormulation;
+    this->param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
+    this->param.right_hand_side             = false;
 
     // PHYSICAL QUANTITIES
     this->param.start_time = 0.0;
+    this->param.end_time   = n_rotations * CoRotVortexPair::compute_rotation_period(intensity, r_0);
+    this->param.viscosity  = 0.0; // analytical solution derived with potential theory
 
     // TEMPORAL DISCRETIZATION
     this->param.solver_type                     = SolverType::Unsteady;
@@ -257,10 +376,15 @@ public:
     this->param.start_with_low_order            = false;
     this->param.adaptive_time_stepping          = false;
     this->param.cfl_exponent_fe_degree_velocity = 1.5;
-    this->param.max_velocity                    = inlet_velocity;
+
+    double const r           = r_0 + 0.5 * r_0;
+    this->param.max_velocity = intensity * r * ((r_c * r_c + r * r) - r_0 * r_0) /
+                               (dealii::numbers::PI * (std::pow(r * r + r_0 * r_0 + r_c * r_c, 2) -
+                                                       4.0 * r * r * r_0 * r_0));
 
     // output of solver information
-    this->param.solver_info_data.interval_time = (this->param.end_time - this->param.start_time);
+    this->param.solver_info_data.interval_time =
+      (this->param.end_time - this->param.start_time) / 100;
 
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type = TriangulationType::Distributed;
@@ -396,24 +520,15 @@ public:
         (void)periodic_face_pairs;
         (void)vector_local_refinements;
 
-        dealii::GridIn<dim> mesh(tria);
-        std::ifstream input_file("../applications/aero_acoustic/santa_in_crossflow/santa.msh");
-        mesh.read_msh(input_file);
+        dealii::GridGenerator::hyper_ball_balanced(tria, {0., 0.}, domain_radius);
 
         for(const auto & face : tria.active_face_iterators())
           if(face->at_boundary())
-          {
-            if(face->center().norm() < 20.0)
-              face->set_boundary_id(0); // santa
-            else if(face->center()[0] < -50.0 + 1e-6)
-              face->set_boundary_id(1); // inlet
-            else if(face->center()[0] > 50.0 - 1e-6)
-              face->set_boundary_id(3); // outlet
-            else
-              face->set_boundary_id(2); // symmetry
-          }
+            face->set_boundary_id(1);
 
         tria.refine_global(global_refinements);
+
+        refine_triangulation_around_center(tria, additional_refinements_around_source, 1.5 * r_0);
       };
 
     GridUtilities::create_triangulation_with_multigrid<dim>(grid,
@@ -422,6 +537,7 @@ public:
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {});
+
     // mappings
     GridUtilities::create_mapping_with_multigrid(mapping,
                                                  multigrid_mappings,
@@ -432,41 +548,47 @@ public:
   }
 
   void
+  refine_triangulation_around_center(dealii::Triangulation<dim> & tria,
+                                     unsigned int const           n_ref,
+                                     double const                 radius)
+  {
+    if(n_ref > 0)
+    {
+      for(unsigned int r = 0; r < n_ref; ++r)
+      {
+        for(auto const & cell : tria.active_cell_iterators())
+          if(cell->is_locally_owned())
+          {
+            for(const unsigned int i : dealii::GeometryInfo<dim>::vertex_indices())
+            {
+              if(cell->vertex(i).norm() < radius + 1.0e-6)
+              {
+                cell->set_refine_flag();
+              }
+            }
+          }
+
+        tria.execute_coarsening_and_refinement();
+      }
+    }
+  }
+
+  void
   set_boundary_descriptor() final
   {
-    // santa
-    this->boundary_descriptor->pressure->neumann_bc.insert(0);
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
-      std::make_pair(0, std::make_shared<dealii::Functions::ZeroFunction<dim>>(dim)));
-
-    // inflow
+      std::make_pair(1, std::make_shared<AnalyticalSolutionVelocity<dim>>(intensity, r_0, r_c)));
     this->boundary_descriptor->pressure->neumann_bc.insert(1);
-    this->boundary_descriptor->velocity->dirichlet_bc.insert(
-      std::make_pair(1, std::make_shared<InflowBC<dim>>(inlet_velocity)));
-
-    // symmetry
-    this->boundary_descriptor->velocity->symmetry_bc.insert(
-      std::make_pair(2, std::make_shared<dealii::Functions::ZeroFunction<dim>>(dim)));
-    this->boundary_descriptor->pressure->neumann_bc.insert(2);
-
-    // outflow
-    this->boundary_descriptor->pressure->dirichlet_bc.insert(
-      std::make_pair(3, std::make_shared<dealii::Functions::ZeroFunction<dim>>(1)));
-    this->boundary_descriptor->velocity->neumann_bc.insert(
-      std::make_pair(3, std::make_shared<dealii::Functions::ZeroFunction<dim>>(dim)));
   }
 
   void
   set_field_functions() final
   {
     this->field_functions->initial_solution_velocity =
-      std::make_shared<dealii::Functions::ZeroFunction<dim>>(dim);
+      std::make_shared<AnalyticalSolutionVelocity<dim>>(intensity, r_0, r_c);
 
     this->field_functions->initial_solution_pressure =
-      std::make_shared<dealii::Functions::ZeroFunction<dim>>(1);
-
-    this->field_functions->analytical_solution_pressure =
-      std::make_shared<dealii::Functions::ZeroFunction<dim>>(1);
+      std::make_shared<AnalyticalSolutionPressure<dim>>(intensity, r_0, r_c);
 
     this->field_functions->right_hand_side =
       std::make_shared<dealii::Functions::ZeroFunction<dim>>(dim);
@@ -502,9 +624,13 @@ public:
   double const ABS_TOL_LINEAR = 1.e-12;
   double const REL_TOL_LINEAR = 1.e-2;
 
-  // testcase specific
-  // For a travel speed of 0.08 a Karman vortex street emerges in the wake of Santa
-  double inlet_velocity = 0.08;
+  // parameters specified via input.json
+  double n_rotations                          = 2.0;
+  double additional_refinements_around_source = 0;
+  double domain_radius                        = 40.0;
+  double intensity                            = 7.54;
+  double r_0                                  = 1.0;
+  double r_c                                  = 0.1 * r_0;
 };
 } // namespace FluidAeroAcoustic
 
@@ -519,6 +645,7 @@ public:
   {
   }
 
+private:
   void
   set_single_field_solvers(std::string input_file, MPI_Comm const & comm) final
   {
@@ -533,4 +660,4 @@ public:
 
 #include <exadg/aero_acoustic/user_interface/implement_get_application.h>
 
-#endif /*APPLICATIONS_AERO_ACOUSTIC_SANTA_IN_CROSSFLOW_H_*/
+#endif /*APPLICATIONS_AERO_ACOUSTIC_CO_ROTATING_VORTEX_PAIR_H_*/
