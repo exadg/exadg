@@ -432,11 +432,13 @@ protected:
    */
   IntegratorFlags integrator_flags;
 
+private:
   /*
    * Is the operator used as a multigrid level operator?
    */
   bool is_mg;
 
+protected:
   /*
    * Is the discretization based on discontinuous Galerkin method?
    */
