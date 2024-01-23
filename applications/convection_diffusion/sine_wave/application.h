@@ -104,9 +104,8 @@ private:
     this->param.diffusion_number              = 0.01;
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.element_type = ElementType::Hypercube // Simplex;
-                                    this->param.grid.triangulation_type =
-      TriangulationType::Distributed;
+    this->param.grid.element_type       = ElementType::Hypercube; // Simplex;
+    this->param.grid.triangulation_type = TriangulationType::Distributed;
     if(this->param.grid.element_type == ElementType::Simplex)
     {
       this->param.grid.triangulation_type           = TriangulationType::FullyDistributed;
