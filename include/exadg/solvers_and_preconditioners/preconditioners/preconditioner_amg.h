@@ -312,17 +312,24 @@ public:
   void
   vmult(VectorType & dst, VectorType const & src) const final
   {
-    // create temporal vectors of type double
-    VectorTypeAMG dst_amg;
-    dst_amg.reinit(dst, false);
-    VectorTypeAMG src_amg;
-    src_amg.reinit(src, true);
-    src_amg = src;
+    if constexpr(std::is_same_v<Number, NumberAMG>)
+    {
+      preconditioner_amg->vmult(dst, src);
+    }
+    else
+    {
+      // create temporal vectors of type NumberAMG
+      VectorTypeAMG dst_amg;
+      dst_amg.reinit(dst, false);
+      VectorTypeAMG src_amg;
+      src_amg.reinit(src, true);
+      src_amg = src;
 
-    preconditioner_amg->vmult(dst_amg, src_amg);
+      preconditioner_amg->vmult(dst_amg, src_amg);
 
-    // convert: double -> Number
-    dst.copy_locally_owned_data_from(dst_amg);
+      // convert: NumberAMG -> Number
+      dst.copy_locally_owned_data_from(dst_amg);
+    }
   }
 
 private:
