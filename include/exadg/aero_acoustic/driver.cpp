@@ -146,6 +146,8 @@ Driver<dim, Number>::solve()
       couple_fluid_to_acoustic();
     acoustic->advance_multiple_timesteps(fluid->time_integrator->get_time_step_size());
 
+    // TODO: we have to interpolate the source term also if the acoustic solver will be started
+    // during the sub-time-stepping sweep!
     fluid->advance_one_timestep_and_compute_pressure_time_derivative(
       acoustic->time_integrator->started());
   }
