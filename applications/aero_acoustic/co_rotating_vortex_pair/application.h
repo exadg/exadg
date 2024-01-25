@@ -636,6 +636,40 @@ public:
 
 namespace AeroAcoustic
 {
+template<int dim>
+class BlendInFunction : public Utilities::OptionalFunction<dim>
+{
+public:
+  BlendInFunction(double const blend_in_start, double const blend_in_end)
+    : Utilities::OptionalFunction<dim>(1, 0.0), start(blend_in_start), end(blend_in_end)
+  {
+  }
+
+  double
+  value(dealii::Point<dim> const &, unsigned int const) const final
+  {
+    double const time = this->get_time();
+
+    double const pi = dealii::numbers::PI;
+    double const T  = end - start;
+    double const t  = time - start;
+
+    return 0.5 * (1.0 - std::cos(pi * std::min(t / T, 1.0)));
+  }
+
+  bool
+  needs_evaluation_at_time(double const new_time) const final
+  {
+    // Since we do not apply a blend in in space, we only have to
+    // evaluate this function until blend in end time.
+    return new_time < end;
+  }
+
+private:
+  double const start;
+  double const end;
+};
+
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
@@ -652,6 +686,15 @@ private:
     this->acoustic =
       std::make_shared<AcousticsAeroAcoustic::Application<dim, Number>>(input_file, comm);
     this->fluid = std::make_shared<FluidAeroAcoustic::Application<dim, Number>>(input_file, comm);
+  }
+
+  void
+  set_field_functions() final
+  {
+    this->field_functions->source_term_blend_in =
+      std::make_shared<BlendInFunction<dim>>(this->acoustic->get_parameters().start_time,
+                                             0.1 * (this->acoustic->get_parameters().end_time -
+                                                    this->acoustic->get_parameters().start_time));
   }
 };
 } // namespace AeroAcoustic

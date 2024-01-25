@@ -43,7 +43,8 @@ public:
   void
   setup(Parameters const &                           parameters_in,
         std::shared_ptr<SolverAcoustic<dim, Number>> acoustic_solver_in,
-        std::shared_ptr<SolverFluid<dim, Number>>    fluid_solver_in)
+        std::shared_ptr<SolverFluid<dim, Number>>    fluid_solver_in,
+        std::shared_ptr<FieldFunctions<dim>>         field_functions_in)
   {
     parameters      = parameters_in;
     acoustic_solver = acoustic_solver_in;
@@ -67,12 +68,14 @@ public:
     }
 
     // setup aeroacoustic source term calculator
-    SourceTermCalculatorData data;
+    SourceTermCalculatorData<dim> data;
     data.dof_index_pressure  = fluid_solver_in->pde_operator->get_dof_index_pressure();
     data.dof_index_velocity  = fluid_solver_in->pde_operator->get_dof_index_velocity();
     data.quad_index          = fluid_solver_in->pde_operator->get_quad_index_pressure();
     data.density             = parameters_in.density;
     data.consider_convection = parameters_in.source_term_with_convection;
+    data.blend_in            = parameters.blend_in_source_term;
+    data.blend_in_function   = field_functions_in->source_term_blend_in;
 
     source_term_calculator.setup(fluid_solver_in->pde_operator->get_matrix_free(), data);
   }
@@ -86,7 +89,8 @@ public:
       source_term_calculator.evaluate_integrate(source_term_fluid,
                                                 fluid_solver->time_integrator->get_velocity(),
                                                 fluid_solver->time_integrator->get_pressure(),
-                                                fluid_solver->get_pressure_time_derivative());
+                                                fluid_solver->get_pressure_time_derivative(),
+                                                fluid_solver->time_integrator->get_time());
 
       non_nested_grid_transfer.restrict_and_add(source_term_acoustic, source_term_fluid);
     }
@@ -104,6 +108,9 @@ private:
   // Single field solvers
   std::shared_ptr<SolverAcoustic<dim, Number>> acoustic_solver;
   std::shared_ptr<SolverFluid<dim, Number>>    fluid_solver;
+
+  // Field functions
+  std::shared_ptr<FieldFunctions<dim>> field_functions;
 
   // Transfer operator
   dealii::MGTwoLevelTransferNonNested<dim, VectorType> non_nested_grid_transfer;

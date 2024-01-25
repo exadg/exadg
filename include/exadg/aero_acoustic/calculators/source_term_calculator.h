@@ -8,6 +8,7 @@ namespace ExaDG
 {
 namespace AeroAcoustic
 {
+template<int dim>
 struct SourceTermCalculatorData
 {
   unsigned int dof_index_pressure;
@@ -19,6 +20,10 @@ struct SourceTermCalculatorData
 
   // use material or partial temporal derivative of pressure as source term.
   bool consider_convection;
+
+  // function if blend in is required.
+  bool                                              blend_in;
+  std::shared_ptr<Utilities::OptionalFunction<dim>> blend_in_function;
 };
 
 /**
@@ -41,13 +46,13 @@ class SourceTermCalculator
   using CellIntegratorVector = CellIntegrator<dim, dim, Number>;
 
 public:
-  SourceTermCalculator() : matrix_free(nullptr)
+  SourceTermCalculator() : matrix_free(nullptr), time(std::numeric_limits<double>::min())
   {
   }
 
   void
   setup(dealii::MatrixFree<dim, Number> const & matrix_free_in,
-        SourceTermCalculatorData const &        data_in)
+        SourceTermCalculatorData<dim> const &   data_in)
   {
     matrix_free = &matrix_free_in;
     data        = data_in;
@@ -57,8 +62,11 @@ public:
   evaluate_integrate(VectorType &       dst,
                      VectorType const & velocity_cfd_in,
                      VectorType const & pressure_cfd_in,
-                     VectorType const & pressure_cfd_time_derivative_in)
+                     VectorType const & pressure_cfd_time_derivative_in,
+                     double const       evaluation_time)
   {
+    time = evaluation_time;
+
     dst.zero_out_ghost_values();
 
     if(data.consider_convection)
@@ -108,16 +116,30 @@ private:
           dpdt.submit_value(-rho * dpdt.get_value(q), q);
       }
 
+      // apply blend in function before integration
+      if(data.blend_in && data.blend_in_function->needs_evaluation_at_time(time))
+      {
+        for(unsigned int q = 0; q < dpdt.n_q_points; ++q)
+        {
+          auto const scale = FunctionEvaluator<0, dim, Number>::value(*data.blend_in_function,
+                                                                      dpdt.quadrature_point(q),
+                                                                      time);
+          dpdt.submit_value(scale * dpdt.get_value(q), q);
+        }
+      }
+
       dpdt.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 
   dealii::MatrixFree<dim, Number> const * matrix_free;
 
-  SourceTermCalculatorData data;
+  SourceTermCalculatorData<dim> data;
 
   lazy_ptr<VectorType> velocity_cfd;
   lazy_ptr<VectorType> pressure_cfd;
+
+  double time;
 };
 } // namespace AeroAcoustic
 } // namespace ExaDG
