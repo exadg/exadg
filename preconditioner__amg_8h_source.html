@@ -395,35 +395,42 @@ $(function() { codefold.init(0); });
 <div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>  vmult(VectorType &amp; dst, VectorType <span class="keyword">const</span> &amp; src) <span class="keyword">const</span> <span class="keyword">final</span></div>
 <div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>  {</div>
-<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span>    <span class="comment">// create temporal vectors of type double</span></div>
-<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>    VectorTypeAMG dst_amg;</div>
-<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>    dst_amg.reinit(dst, <span class="keyword">false</span>);</div>
-<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>    VectorTypeAMG src_amg;</div>
-<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>    src_amg.reinit(src, <span class="keyword">true</span>);</div>
-<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span>    src_amg = src;</div>
-<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span> </div>
-<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>    preconditioner_amg-&gt;vmult(dst_amg, src_amg);</div>
-<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span> </div>
-<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>    <span class="comment">// convert: double -&gt; Number</span></div>
-<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>    dst.copy_locally_owned_data_from(dst_amg);</div>
-<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>  }</div>
+<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span>    <span class="keywordflow">if</span> <span class="keyword">constexpr</span>(std::is_same_v&lt;Number, NumberAMG&gt;)</div>
+<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>    {</div>
+<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>      preconditioner_amg-&gt;vmult(dst, src);</div>
+<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>    }</div>
+<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>    <span class="keywordflow">else</span></div>
+<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span>    {</div>
+<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>      <span class="comment">// create temporal vectors of type NumberAMG</span></div>
+<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>      VectorTypeAMG dst_amg;</div>
+<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span>      dst_amg.reinit(dst, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>      VectorTypeAMG src_amg;</div>
+<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>      src_amg.reinit(src, <span class="keyword">true</span>);</div>
+<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>      src_amg = src;</div>
 <div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span> </div>
-<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span>  update() <span class="keyword">final</span></div>
-<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>  {</div>
-<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span>    preconditioner_amg-&gt;update();</div>
-<div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span> </div>
-<div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span>    this-&gt;update_needed = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00335" name="l00335"></a><span class="lineno">  335</span>  }</div>
-<div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span> </div>
-<div class="line"><a id="l00337" name="l00337"></a><span class="lineno">  337</span>  std::shared_ptr&lt;PreconditionerBase&lt;NumberAMG&gt;&gt; preconditioner_amg;</div>
-<div class="line"><a id="l00338" name="l00338"></a><span class="lineno">  338</span>};</div>
+<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>      preconditioner_amg-&gt;vmult(dst_amg, src_amg);</div>
+<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span> </div>
+<div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span>      <span class="comment">// convert: NumberAMG -&gt; Number</span></div>
+<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>      dst.copy_locally_owned_data_from(dst_amg);</div>
+<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span>    }</div>
+<div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span>  }</div>
+<div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span> </div>
+<div class="line"><a id="l00335" name="l00335"></a><span class="lineno">  335</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00337" name="l00337"></a><span class="lineno">  337</span>  update() <span class="keyword">final</span></div>
+<div class="line"><a id="l00338" name="l00338"></a><span class="lineno">  338</span>  {</div>
+<div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span>    preconditioner_amg-&gt;update();</div>
+<div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span> </div>
+<div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span>    this-&gt;update_needed = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span>  }</div>
+<div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span> </div>
+<div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span>  std::shared_ptr&lt;PreconditionerBase&lt;NumberAMG&gt;&gt; preconditioner_amg;</div>
+<div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span>};</div>
 </div>
-<div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span> </div>
-<div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span> </div>
-<div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span> </div>
+<div class="line"><a id="l00347" name="l00347"></a><span class="lineno">  347</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span> </div>
+<div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span><span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclassExaDG_1_1PreconditionerAMG_html"><div class="ttname"><a href="classExaDG_1_1PreconditionerAMG.html">ExaDG::PreconditionerAMG</a></div><div class="ttdef"><b>Definition</b> preconditioner_amg.h:272</div></div>
 <div class="ttc" id="aclassExaDG_1_1PreconditionerBase_html"><div class="ttname"><a href="classExaDG_1_1PreconditionerBase.html">ExaDG::PreconditionerBase</a></div><div class="ttdef"><b>Definition</b> preconditioner_base.h:35</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
