@@ -10,6 +10,7 @@ var searchData=
   ['viscousoperator_7',['ViscousOperator',['../classExaDG_1_1CompNS_1_1ViscousOperator.html',1,'ExaDG::CompNS::ViscousOperator&lt; dim, Number &gt;'],['../classExaDG_1_1IncNS_1_1ViscousOperator.html',1,'ExaDG::IncNS::ViscousOperator&lt; dim, Number &gt;']]],
   ['viscousoperator_3c_20dim_2c_20double_20_3e_8',['ViscousOperator&lt; dim, double &gt;',['../classExaDG_1_1IncNS_1_1ViscousOperator.html',1,'ExaDG::IncNS']]],
   ['viscousoperatordata_9',['ViscousOperatorData',['../structExaDG_1_1CompNS_1_1ViscousOperatorData.html',1,'ExaDG::CompNS::ViscousOperatorData&lt; dim &gt;'],['../structExaDG_1_1IncNS_1_1ViscousOperatorData.html',1,'ExaDG::IncNS::ViscousOperatorData&lt; dim &gt;']]],
-  ['vorticitycalculator_10',['VorticityCalculator',['../classExaDG_1_1VorticityCalculator.html',1,'ExaDG']]],
-  ['vorticitycalculator_3c_20dim_2c_20double_20_3e_11',['VorticityCalculator&lt; dim, double &gt;',['../classExaDG_1_1VorticityCalculator.html',1,'ExaDG']]]
+  ['volumecoupling_10',['VolumeCoupling',['../classExaDG_1_1AeroAcoustic_1_1VolumeCoupling.html',1,'ExaDG::AeroAcoustic']]],
+  ['vorticitycalculator_11',['VorticityCalculator',['../classExaDG_1_1VorticityCalculator.html',1,'ExaDG']]],
+  ['vorticitycalculator_3c_20dim_2c_20double_20_3e_12',['VorticityCalculator&lt; dim, double &gt;',['../classExaDG_1_1VorticityCalculator.html',1,'ExaDG']]]
 ];
