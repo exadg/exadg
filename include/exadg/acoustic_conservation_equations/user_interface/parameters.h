@@ -75,6 +75,8 @@ public:
   // if there are acoustic source terms, set right_hand_side = true
   bool right_hand_side;
 
+  // Use the aero-acoustic source term that is internally computed from the fluid solution
+  bool aero_acoustic_source_term;
 
   /**************************************************************************************/
   /*                                                                                    */

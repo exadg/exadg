@@ -52,6 +52,7 @@ SpatialOperator<dim, Number>::SpatialOperator(
     field(field_in),
     dof_handler_p(*grid_in->triangulation),
     dof_handler_u(*grid_in->triangulation),
+    aero_acoustic_source_term(nullptr),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
 {
@@ -279,6 +280,13 @@ SpatialOperator<dim, Number>::initialize_dof_vector(BlockVectorType & dst) const
 
 template<int dim, typename Number>
 void
+SpatialOperator<dim, Number>::initialize_dof_vector_pressure(VectorType & dst) const
+{
+  matrix_free->initialize_dof_vector(dst, get_dof_index_pressure());
+}
+
+template<int dim, typename Number>
+void
 SpatialOperator<dim, Number>::prescribe_initial_conditions(BlockVectorType & dst,
                                                            double const      time) const
 {
@@ -309,6 +317,14 @@ SpatialOperator<dim, Number>::prescribe_initial_conditions(BlockVectorType & dst
 
 template<int dim, typename Number>
 void
+SpatialOperator<dim, Number>::set_aero_acoustic_source_term(
+  VectorType const & aero_acoustic_source_term_in)
+{
+  aero_acoustic_source_term = &aero_acoustic_source_term_in;
+}
+
+template<int dim, typename Number>
+void
 SpatialOperator<dim, Number>::evaluate(BlockVectorType &       dst,
                                        BlockVectorType const & src,
                                        double const            time) const
@@ -320,6 +336,13 @@ SpatialOperator<dim, Number>::evaluate(BlockVectorType &       dst,
 
   if(param.right_hand_side)
     rhs_operator.evaluate_add(dst.block(block_index_pressure), time);
+
+  if(param.aero_acoustic_source_term)
+  {
+    AssertThrow(aero_acoustic_source_term,
+                dealii::ExcMessage("Aero-acoustic source term not valid."));
+    dst.block(block_index_pressure) += *aero_acoustic_source_term;
+  }
 
   apply_scaled_inverse_mass_operator(dst, dst);
 }

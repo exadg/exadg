@@ -194,6 +194,8 @@ SET(TARGET_SRC
      include/exadg/acoustic_conservation_equations/postprocessor/postprocessor.cpp
      include/exadg/acoustic_conservation_equations/postprocessor/output_generator.cpp
      include/exadg/acoustic_conservation_equations/driver.cpp
+     # aero-acoustic
+     include/exadg/aero_acoustic/driver.cpp
      )
 
 SET(DEAL_II_HAVE_TESTS_DIRECTORY TRUE)
