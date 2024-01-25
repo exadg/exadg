@@ -57,7 +57,8 @@ public:
         is_test_in),
       param(param_in),
       postprocessor(postprocessor_in),
-      pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
+      pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
+      initial_time_step_size(std::numeric_limits<double>::max())
   {
   }
 
@@ -75,38 +76,36 @@ private:
   {
     pcout << std::endl << "Calculation of time step size:" << std::endl << std::endl;
 
-    double time_step = std::numeric_limits<double>::max();
-
     if(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
     {
-      time_step = calculate_const_time_step(param.time_step_size, param.n_refine_time);
+      initial_time_step_size = calculate_const_time_step(param.time_step_size, param.n_refine_time);
 
-      print_parameter(pcout, "time step size", time_step);
+      print_parameter(pcout, "time step size", initial_time_step_size);
     }
     else if(param.calculation_of_time_step_size == TimeStepCalculation::CFL)
     {
       double const cfl = param.cfl / std::pow(2.0, param.n_refine_time);
 
-      time_step = cfl * this->get_underlying_operator().calculate_time_step_cfl();
+      initial_time_step_size = cfl * this->get_underlying_operator().calculate_time_step_cfl();
 
       this->pcout << std::endl
                   << "Calculation of time step size according to CFL condition:" << std::endl
                   << std::endl;
       print_parameter(this->pcout, "CFL", cfl);
-      print_parameter(this->pcout, "time step size", time_step);
+      print_parameter(this->pcout, "time step size", initial_time_step_size);
     }
 
-    return time_step;
+    return initial_time_step_size;
   }
 
   double
   recalculate_time_step_size() const final
   {
-    AssertThrow(not(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified),
-                dealii::ExcMessage(
-                  "Adaptive time step is not implemented for user specified time step size."));
-
-    return {};
+    // Currently the time step sice can not vary since the
+    // it depends only on the speed of sound that is
+    // constant over time. This changes once ALE is used
+    // or additional convective terms are considered.
+    return initial_time_step_size;
   }
 
   void
@@ -127,6 +126,11 @@ private:
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor;
 
   dealii::ConditionalOStream pcout;
+
+  // Store initially compute time step size. We do this because the value
+  // will not change, but we need adaptive time-stepping for efficient
+  // sub-time stepping methods.
+  double initial_time_step_size;
 };
 
 } // namespace Acoustics

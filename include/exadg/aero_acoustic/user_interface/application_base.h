@@ -94,9 +94,9 @@ public:
     param.check();
 
     // Some AeroAcoustic specific Asserts
-    AssertThrow(param.adaptive_time_stepping == false,
-                dealii::ExcMessage(
-                  "Adaptive timestepping not yet implemented for aero-acoustics."));
+    AssertThrow(param.adaptive_time_stepping == true,
+                dealii::ExcMessage("Adaptive timestepping has to be enabled for aero-acoustics."));
+
     AssertThrow(param.aero_acoustic_source_term,
                 dealii::ExcMessage(
                   "aero_acoustic_source_term has to be set true for aero-acoustic computations."));

@@ -111,7 +111,7 @@ private:
     this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
     this->param.order_time_integrator         = 2;
     this->param.start_with_low_order          = true;
-    this->param.adaptive_time_stepping        = false;
+    this->param.adaptive_time_stepping        = true;
 
     // output of solver information
     this->param.solver_info_data.interval_time = (this->param.end_time - this->param.start_time);
@@ -374,7 +374,7 @@ public:
     this->param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     this->param.order_time_integrator           = 2;
     this->param.start_with_low_order            = false;
-    this->param.adaptive_time_stepping          = false;
+    this->param.adaptive_time_stepping          = true;
     this->param.cfl_exponent_fe_degree_velocity = 1.5;
 
     double const r           = r_0 + 0.5 * r_0;

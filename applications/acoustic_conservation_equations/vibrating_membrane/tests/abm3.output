@@ -39,6 +39,7 @@ Temporal discretization:
   Restarted simulation:                      false
   Restart:
   Write restart:                             false
+  Adaptive time stepping:                    false
 
 Spatial discretization:
   Triangulation type:                        Distributed
