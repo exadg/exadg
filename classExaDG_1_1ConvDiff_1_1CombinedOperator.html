@@ -122,8 +122,7 @@ typedef dealii::FullMatrix&lt; dealii::TrilinosScalar &gt;&#160;</td><td class="
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a6c9959cf8664ba9ccfbef36181164000" id="r_a6c9959cf8664ba9ccfbef36181164000"><td class="memItemLeft" align="right" valign="top"><a id="a6c9959cf8664ba9ccfbef36181164000" name="a6c9959cf8664ba9ccfbef36181164000"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;affine_constraints, <a class="el" href="structExaDG_1_1ConvDiff_1_1CombinedOperatorData.html">CombinedOperatorData</a>&lt; dim &gt; const &amp;data)</td></tr>
+<tr class="memitem:a6c9959cf8664ba9ccfbef36181164000" id="r_a6c9959cf8664ba9ccfbef36181164000"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6c9959cf8664ba9ccfbef36181164000">initialize</a> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;affine_constraints, <a class="el" href="structExaDG_1_1ConvDiff_1_1CombinedOperatorData.html">CombinedOperatorData</a>&lt; dim &gt; const &amp;data)</td></tr>
 <tr class="separator:a6c9959cf8664ba9ccfbef36181164000"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a87d8cf971fe50727ca8bc010562d7cf6" id="r_a87d8cf971fe50727ca8bc010562d7cf6"><td class="memItemLeft" align="right" valign="top"><a id="a87d8cf971fe50727ca8bc010562d7cf6" name="a87d8cf971fe50727ca8bc010562d7cf6"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;affine_constraints, <a class="el" href="structExaDG_1_1ConvDiff_1_1CombinedOperatorData.html">CombinedOperatorData</a>&lt; dim &gt; const &amp;data, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ConvDiff_1_1Operators_1_1ConvectiveKernel.html">Operators::ConvectiveKernel</a>&lt; dim, Number &gt; &gt; convective_kernel, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ConvDiff_1_1Operators_1_1DiffusiveKernel.html">Operators::DiffusiveKernel</a>&lt; dim, Number &gt; &gt; diffusive_kernel)</td></tr>
@@ -339,9 +338,6 @@ dealii::AffineConstraints&lt; double &gt;&#160;</td><td class="memItemRight" val
 <tr class="memitem:a1577cc3a973d7480dad55ae7fa19a8da inherit pro_attribs_classExaDG_1_1OperatorBase" id="r_a1577cc3a973d7480dad55ae7fa19a8da"><td class="memItemLeft" align="right" valign="top">
 <a class="el" href="structExaDG_1_1IntegratorFlags.html">IntegratorFlags</a>&#160;</td><td class="memItemRight" valign="bottom"><b>integrator_flags</b></td></tr>
 <tr class="separator:a1577cc3a973d7480dad55ae7fa19a8da inherit pro_attribs_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1a5c744a07f5c6ca9d3f619ff2d4dcae inherit pro_attribs_classExaDG_1_1OperatorBase" id="r_a1a5c744a07f5c6ca9d3f619ff2d4dcae"><td class="memItemLeft" align="right" valign="top">
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>is_mg</b></td></tr>
-<tr class="separator:a1a5c744a07f5c6ca9d3f619ff2d4dcae inherit pro_attribs_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4f04c6817853425587e29cb0bb511cad inherit pro_attribs_classExaDG_1_1OperatorBase" id="r_a4f04c6817853425587e29cb0bb511cad"><td class="memItemLeft" align="right" valign="top">
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>is_dg</b></td></tr>
 <tr class="separator:a4f04c6817853425587e29cb0bb511cad inherit pro_attribs_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -355,6 +351,36 @@ std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Elementwise_1_1Preconditio
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Elementwise_1_1IterativeSolver.html">ELEMENTWISE_SOLVER</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>elementwise_solver</b></td></tr>
 <tr class="separator:a9d1247c9effb51c667229781b25e53a2 inherit pro_attribs_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a6c9959cf8664ba9ccfbef36181164000" name="a6c9959cf8664ba9ccfbef36181164000"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6c9959cf8664ba9ccfbef36181164000">&#9670;&#160;</a></span>initialize()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1CombinedOperator.html">ExaDG::ConvDiff::CombinedOperator</a>&lt; dim, Number &gt;::initialize </td>
+          <td>(</td>
+          <td class="paramtype">dealii::MatrixFree&lt; dim, Number &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>matrix_free</em>, </span></td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">dealii::AffineConstraints&lt; Number &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>affine_constraints</em>, </span></td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structExaDG_1_1ConvDiff_1_1CombinedOperatorData.html">CombinedOperatorData</a>&lt; dim &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>data</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>This function creates own kernels for the different terms of the combined PDE operator. This function is typically called when using this operator as the PDE operator in multigrid. </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/exadg/convection_diffusion/spatial_discretization/operators/<a class="el" href="combined__operator_8h_source.html">combined_operator.h</a></li>
 <li>include/exadg/convection_diffusion/spatial_discretization/operators/<b>combined_operator.cpp</b></li>
