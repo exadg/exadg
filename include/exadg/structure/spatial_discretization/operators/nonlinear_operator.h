@@ -124,7 +124,7 @@ private:
   /*
    * Calculates the integral
    *
-   *  (v_h, factor * d_h)_Omega + (Grad(v_h), P_h)_Omega
+   *  (v_h, factor * density * d_h)_Omega + (Grad(v_h), P_h)_Omega ,
    *
    * with 1st Piola-Kirchhoff stress tensor P_h
    *
@@ -150,20 +150,30 @@ private:
   do_cell_integral_nonlinear(IntegratorCell & integrator) const;
 
   /*
-   * Computes Neumann BC integral
+   * Computes boundary integrals
    *
-   *  - (v_h, t_0)_{Gamma_N}
+   * inhomogeneous operator:
+   *  - (v_h, t_0)_{Gamma_N} - (v_h, - p * N)_{Gamma_R} ,
+   *
    *
    * with traction
    *
-   *  t_0 = da/dA t .
+   *  t_0 = da/dA t ,
    *
-   * If the traction is specified as force per surface area of the underformed
-   * body, the specified traction t is interpreted as t_0 = t, and no pull-back
-   * is necessary.
+   * and exterior pressure p. If the traction is specified as force per surface area of the
+   * underformed body, the specified traction t is interpreted as t_0 = t, and no pull-back is
+   * necessary.
+   *
+   * homogeneous operator on Robin boundary:
+   *  + (v_h, k * d_h + c * factor_velocity * d_h)_{Gamma_R} ,
+   *
+   * with spring stiffness k, dashpot coefficient c and time integration coefficient
+   * factor_velocity, which together with the remainding terms added via a const_vector on the rhs
+   * constitutes the complete .
    */
   void
   do_boundary_integral_continuous(IntegratorFace &                   integrator_m,
+                                  OperatorType const &               operator_type,
                                   dealii::types::boundary_id const & boundary_id) const final;
 
   /*
@@ -175,7 +185,7 @@ private:
   /*
    * Calculates the integral
    *
-   *  (v_h, factor * delta d_h)_Omega + (Grad(v_h), delta P_h)_Omega
+   *  (v_h, factor * density * delta d_h)_Omega + (Grad(v_h), delta P_h)_Omega
    *
    * with the directional derivative of the 1st Piola-Kirchhoff stress tensor P_h
    *
