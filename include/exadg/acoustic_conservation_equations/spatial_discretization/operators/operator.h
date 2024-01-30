@@ -251,13 +251,13 @@ public:
   void
   evaluate(BlockVectorType & dst, BlockVectorType const & src, double const time) const
   {
-    do_evaluate(dst, src, true, time);
+    do_evaluate(dst, src, time, true);
   }
 
   void
   evaluate_add(BlockVectorType & dst, BlockVectorType const & src, double const time) const
   {
-    do_evaluate(dst, src, false, time);
+    do_evaluate(dst, src, time, true);
   }
 
 private:
