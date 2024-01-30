@@ -637,16 +637,28 @@ public:
 namespace AeroAcoustic
 {
 template<int dim>
-class BlendInFunction : public Utilities::OptionalFunction<dim>
+class BlendInFunction : public Utilities::SpatialAwareFunction<dim>
 {
 public:
   BlendInFunction(double const blend_in_start, double const blend_in_end)
-    : Utilities::OptionalFunction<dim>(1, 0.0), start(blend_in_start), end(blend_in_end)
+    : Utilities::SpatialAwareFunction<dim>(1, 0.0), start(blend_in_start), end(blend_in_end)
   {
   }
 
   double
   value(dealii::Point<dim> const &, unsigned int const) const final
+  {
+    return compute_time_factor();
+  }
+
+  bool
+  varies_in_space() const final
+  {
+    return false;
+  }
+
+  double
+  compute_time_factor() const final
   {
     double const time = this->get_time();
 
@@ -655,14 +667,6 @@ public:
     double const t  = time - start;
 
     return 0.5 * (1.0 - std::cos(pi * std::min(t / T, 1.0)));
-  }
-
-  bool
-  needs_evaluation_at_time(double const new_time) const final
-  {
-    // Since we do not apply a blend in in space, we only have to
-    // evaluate this function until blend in end time.
-    return new_time < end;
   }
 
 private:

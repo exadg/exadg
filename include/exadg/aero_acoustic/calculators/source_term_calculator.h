@@ -22,8 +22,8 @@ struct SourceTermCalculatorData
   bool consider_convection;
 
   // function if blend in is required.
-  bool                                              blend_in;
-  std::shared_ptr<Utilities::OptionalFunction<dim>> blend_in_function;
+  bool                                                  blend_in;
+  std::shared_ptr<Utilities::SpatialAwareFunction<dim>> blend_in_function;
 };
 
 /**
@@ -95,6 +95,25 @@ private:
 
     Number rho = static_cast<Number>(data.density);
 
+    // In case we blend in the source term we check, if the scaling is space dependent. Only in that
+    // case we have to evaluate the function in every equadrature point. Otherwise the scaling
+    // purely temporal and constant during this function.
+    if(data.blend_in)
+      AssertThrow(data.blend_in_function != nullptr,
+                  dealii::ExcMessage("No blend-in function provided."));
+
+    bool const space_dependent_scaling =
+      data.blend_in_function != nullptr ? data.blend_in_function->varies_in_space() : false;
+    Number const pure_temporal_scaling_factor =
+      data.blend_in_function != nullptr ? data.blend_in_function->compute_time_factor() : 1.0;
+
+    auto apply_scaling = [&](auto & flux, auto const & q) {
+      if(space_dependent_scaling)
+        flux *= FunctionEvaluator<0, dim, Number>::value(*data.blend_in_function, q, time);
+      else
+        flux *= pure_temporal_scaling_factor;
+    };
+
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
       dpdt.reinit(cell);
@@ -108,23 +127,25 @@ private:
         u.gather_evaluate(*velocity_cfd, dealii::EvaluationFlags::values);
 
         for(unsigned int q = 0; q < dpdt.n_q_points; ++q)
-          dpdt.submit_value(-rho * (dpdt.get_value(q) + u.get_value(q) * p.get_gradient(q)), q);
+        {
+          auto flux = -rho * dpdt.get_value(q) + u.get_value(q) * p.get_gradient(q);
+
+          if(data.blend_in)
+            apply_scaling(flux, dpdt.quadrature_point(q));
+
+          dpdt.submit_value(flux, q);
+        }
       }
       else
       {
         for(unsigned int q = 0; q < dpdt.n_q_points; ++q)
-          dpdt.submit_value(-rho * dpdt.get_value(q), q);
-      }
-
-      // apply blend in function before integration
-      if(data.blend_in && data.blend_in_function->needs_evaluation_at_time(time))
-      {
-        for(unsigned int q = 0; q < dpdt.n_q_points; ++q)
         {
-          auto const scale = FunctionEvaluator<0, dim, Number>::value(*data.blend_in_function,
-                                                                      dpdt.quadrature_point(q),
-                                                                      time);
-          dpdt.submit_value(scale * dpdt.get_value(q), q);
+          auto flux = -rho * dpdt.get_value(q);
+
+          if(data.blend_in)
+            apply_scaling(flux, dpdt.quadrature_point(q));
+
+          dpdt.submit_value(flux, q);
         }
       }
 

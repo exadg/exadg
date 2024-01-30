@@ -40,11 +40,11 @@ struct FieldFunctions
    * much larger than the CFD domain).
    *
    * If the source term is only used to blend in the source term over time
-   * it has to be evaluated only in the beginning of the simulation.
-   * Therefore, we are using an OptionalFunction, which provides
-   * information if the function has to be evaluated.
+   * it has to be evaluated only once every time step. Therefore, we are using a
+   * SpatialAwareFunction, which provides information if the function varies in
+   * space for a given time.
    */
-  std::shared_ptr<Utilities::OptionalFunction<dim>> source_term_blend_in;
+  std::shared_ptr<Utilities::SpatialAwareFunction<dim>> source_term_blend_in;
 };
 
 } // namespace AeroAcoustic

@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef EXADG_AERO_UTILITIES_OPTIONAL_FUNCTION_H_
-#define EXADG_AERO_UTILITIES_OPTIONAL_FUNCTION_H_
+#ifndef EXADG_AERO_UTILITIES_SPATIAL_AWARE_FUNCTION_H_
+#define EXADG_AERO_UTILITIES_SPATIAL_AWARE_FUNCTION_H_
 
 #include <deal.II/base/function.h>
 
@@ -29,26 +29,34 @@ namespace ExaDG
 namespace Utilities
 {
 /**
- * This is a @c dealii::Function, that provides information if it has
- * to be evaluated at a given time.
+ * This is a @c dealii::Function, that provides information if its result is constant over space at
+ * every time.
  */
-
 template<int dim, typename Number = double>
-class OptionalFunction : public dealii::Function<dim, Number>
+class SpatialAwareFunction : public dealii::Function<dim, Number>
 {
 public:
   using time_type = typename dealii::Function<dim, Number>::time_type;
 
-  OptionalFunction(const unsigned int n_components = 1, const time_type initial_time = 0.0)
+  SpatialAwareFunction(const unsigned int n_components = 1, const time_type initial_time = 0.0)
     : dealii::Function<dim, Number>(n_components, initial_time)
   {
   }
 
+  /**
+   * Varies in space, i.e. is not constant over space at every time.
+   */
   virtual bool
-  needs_evaluation_at_time(double const new_time) const = 0;
+  varies_in_space() const = 0;
+
+  /**
+   * Compute the value that is constant over space at every time.
+   */
+  virtual Number
+  compute_time_factor() const = 0;
 };
 
 } // namespace Utilities
 } // namespace ExaDG
 
-#endif /*EXADG_AERO_ACOUSTIC_USER_INTERFACE_BLEND_IN_FUNCTION_H_*/
+#endif /*EXADG_AERO_UTILITIES_SPATIAL_AWARE_FUNCTION_H_*/
