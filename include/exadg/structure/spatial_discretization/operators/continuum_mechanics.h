@@ -186,7 +186,7 @@ inline DEAL_II_ALWAYS_INLINE //
   // check_type 1 : Global quasi-Newton, update linearization vector only if the complete field is
   // valid everywhere (see nonlinear_operator: set_solution_linearization).
 
-  // check_type 2 : Just update F and J values, if J > 0 (see do_set_cell_linearization_data),
+  // check_type 2 : Just update F and J values, if J > 0, see set_cell_linearization_data(),
   // otherwise keep the old values which are initialized with a zero displacement field at
   // simulation start.
 
