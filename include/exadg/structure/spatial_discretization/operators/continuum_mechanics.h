@@ -158,8 +158,7 @@ inline DEAL_II_ALWAYS_INLINE //
 }
 
 template<typename Number>
-inline
-Number
+inline Number
 get_J_tol()
 {
   return 0.001;

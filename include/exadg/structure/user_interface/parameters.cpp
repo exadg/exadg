@@ -39,6 +39,10 @@ Parameters::Parameters()
     pull_back_traction(false),
     spatial_integration(false),
 
+    force_material_residual(false),
+    check_type(0),
+    cache_level(0),
+
     // PHYSICAL QUANTITIES
     density(1.0),
 
