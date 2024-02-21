@@ -27,6 +27,7 @@
 
 // ExaDG
 #include <exadg/structure/material/library/compressible_neo_hookean.h>
+#include <exadg/structure/material/library/incompressible_fibrous_tissue.h>
 #include <exadg/structure/material/library/incompressible_neo_hookean.h>
 #include <exadg/structure/material/library/st_venant_kirchhoff.h>
 #include <exadg/structure/material/material.h>
@@ -106,6 +107,26 @@ public:
                                                            force_material_residual,
                                                            check_type,
                                                            cache_level)));
+          break;
+        }
+        case MaterialType::IncompressibleFibrousTissue:
+        {
+          AssertThrow(large_deformation == true,
+                      dealii::ExcMessage(
+                        "Incompressible fiber model defined for finite strain theory."));
+
+          std::shared_ptr<IncompressibleFibrousTissueData<dim>> data_IncompressibleFibrousTissue =
+            std::static_pointer_cast<IncompressibleFibrousTissueData<dim>>(data);
+          material_map.insert(
+            Pair(id,
+                 new IncompressibleFibrousTissue<dim, Number>(matrix_free,
+                                                              dof_index,
+                                                              quad_index,
+                                                              *data_IncompressibleFibrousTissue,
+                                                              spatial_integration,
+                                                              force_material_residual,
+                                                              check_type,
+                                                              cache_level)));
           break;
         }
         case MaterialType::CompressibleNeoHookean:

@@ -61,6 +61,9 @@ public:
     AssertThrow(false,
                 dealii::ExcMessage("For a total Lagrangian formulation,"
                                    "overwrite this method in derived class."));
+
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> dummy;
+    return dummy;
   }
 
   /*
@@ -84,6 +87,9 @@ public:
     AssertThrow(false,
                 dealii::ExcMessage("For a total Lagrangian formulation, "
                                    "overwrite this method in derived class."));
+
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> dummy;
+    return dummy;
   }
 
   /*
@@ -106,6 +112,9 @@ public:
     AssertThrow(false,
                 dealii::ExcMessage("For a Lagrangian formulation in spatial domain, "
                                    "overwrite this method in derived class."));
+
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> dummy;
+    return dummy;
   }
 
   /*
@@ -127,6 +136,9 @@ public:
     AssertThrow(false,
                 dealii::ExcMessage("For a Lagrangian formulation in spatial domain, "
                                    "overwrite this method in derived class."));
+
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> dummy;
+    return dummy;
   }
 
   /*
@@ -150,8 +162,9 @@ public:
     AssertThrow(false,
                 dealii::ExcMessage(
                   "Overwrite this method in derived class to access stored one_over_J."));
-    dealii::VectorizedArray<Number> one_over_J;
-    return one_over_J;
+
+    dealii::VectorizedArray<Number> dummy;
+    return dummy;
   }
 
   virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
@@ -162,8 +175,9 @@ public:
     AssertThrow(false,
                 dealii::ExcMessage(
                   "Overwrite this method in derived class to access stored deformation gradient."));
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> F;
-    return F;
+
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> dummy;
+    return dummy;
   }
 };
 

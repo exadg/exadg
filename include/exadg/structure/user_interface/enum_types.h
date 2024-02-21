@@ -58,7 +58,8 @@ enum class MaterialType
   Undefined,
   StVenantKirchhoff,
   IncompressibleNeoHookean,
-  CompressibleNeoHookean
+  CompressibleNeoHookean,
+  IncompressibleFibrousTissue
 };
 
 /**************************************************************************************/

@@ -172,6 +172,7 @@ SET(TARGET_SRC
      include/exadg/structure/material/library/st_venant_kirchhoff.cpp
      include/exadg/structure/material/library/incompressible_neo_hookean.cpp
      include/exadg/structure/material/library/compressible_neo_hookean.cpp
+     include/exadg/structure/material/library/incompressible_fibrous_tissue.cpp
      include/exadg/structure/spatial_discretization/operators/elasticity_operator_base.cpp
      include/exadg/structure/spatial_discretization/operators/nonlinear_operator.cpp
      include/exadg/structure/spatial_discretization/operators/linear_operator.cpp
