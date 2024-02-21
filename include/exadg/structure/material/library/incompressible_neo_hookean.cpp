@@ -390,7 +390,7 @@ IncompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradi
     tensor F;
     get_modified_F_J(F, J, gradient_displacement, check_type, false /* compute_J */);
 
-    tau = F * transposed(F) * (shear_modulus_stored * J_pow); // first part only
+    tau = F * transpose(F); // temporary container
 
     scalar J_pow, c1;
     if(cache_level == 0)
@@ -398,9 +398,8 @@ IncompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradi
       J = determinant(F);
 
       J_pow = pow(J, static_cast<Number>(-2.0 * one_third));
-      // Note that with tau holding the first part only, we have
-      // trace(tau) = shear_modulus_stored * J_pow * trace(F * transposed(F)).
-      c1 = bulk_modulus * 0.5 * (J * J - 1.0) - one_third * trace(tau);
+      c1    = bulk_modulus * 0.5 * (J * J - 1.0) -
+           (one_third * shear_modulus_stored * J_pow) * trace(tau /* F * transpose(F) */);
     }
     else
     {
@@ -408,6 +407,7 @@ IncompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradi
       c1    = c1_coefficients.get_coefficient_cell(cell, q);
     }
 
+    tau *= shear_modulus_stored * J_pow;
     add_scaled_identity(tau, c1);
   }
   else
