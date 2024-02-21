@@ -220,7 +220,7 @@ IncompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
     tensor const C   = transpose(F) * F;
     scalar const I_1 = trace(C);
     scalar const c1 =
-      -shear_modulus_stored * one_third * J_pow * I_1 + bulk_modulus * 0.5 * (J * J - 1.0);
+      bulk_modulus * 0.5 * (J * J - 1.0) - shear_modulus_stored * one_third * J_pow * I_1;
     c1_coefficients.set_coefficient_cell(cell, q, c1);
 
     scalar const c2 =
@@ -291,8 +291,7 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
       J = determinant(F);
 
       J_pow = pow(J, static_cast<Number>(-2.0 * one_third));
-      c1 =
-        (-shear_modulus_stored * J_pow * one_third * trace(C) + bulk_modulus * 0.5 * (J * J - 1.0));
+      c1 = bulk_modulus * 0.5 * (J * J - 1.0) - shear_modulus_stored * J_pow * one_third * trace(C);
     }
     else
     {
@@ -330,11 +329,10 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacemen
   if(cache_level == 0)
   {
     scalar const J   = determinant(deformation_gradient);
-    tensor const C   = transpose(deformation_gradient) * deformation_gradient;
-    scalar const I_1 = trace(C);
+    scalar const I_1 = trace(transpose(deformation_gradient) * deformation_gradient);
 
     J_pow = pow(J, static_cast<Number>(-2.0 * one_third));
-    c1    = -shear_modulus_stored * one_third * J_pow * I_1 + bulk_modulus * 0.5 * (J * J - 1.0);
+    c1    = bulk_modulus * 0.5 * (J * J - 1.0) - shear_modulus_stored * one_third * J_pow * I_1;
     c2    = shear_modulus_stored * one_third * J_pow * 2.0 * one_third * I_1 + bulk_modulus * J * J;
   }
   else
@@ -356,14 +354,16 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacemen
     C_inv = C_inv_coefficients.get_coefficient_cell(cell, q);
   }
 
-  scalar const one_over_J_times_Dd_J = trace(F_inv * gradient_increment);
-  scalar const Dd_I_1 = 2.0 * trace(transpose(gradient_increment) * deformation_gradient);
-  tensor const Dd_F_inv_times_transpose_F_inv = -F_inv * gradient_increment * C_inv;
+  tensor const F_inv_times_gradient_increment = F_inv * gradient_increment;
+
+  scalar const one_over_J_times_Dd_J          = trace(F_inv_times_gradient_increment);
+  tensor const Dd_F_inv_times_transpose_F_inv = -F_inv_times_gradient_increment * C_inv;
   tensor const Dd_C_inv =
     Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
 
-  Dd_S =
-    C_inv * (Dd_I_1 * (-shear_modulus_stored * one_third * J_pow) + one_over_J_times_Dd_J * c2);
+  Dd_S = C_inv * (c2 * one_over_J_times_Dd_J -
+                  (2.0 * shear_modulus_stored * one_third * J_pow) *
+                    trace(transpose(gradient_increment) * deformation_gradient));
   Dd_S += Dd_C_inv * c1;
   add_scaled_identity(Dd_S,
                       -shear_modulus_stored * one_third * J_pow * 2.0 * one_over_J_times_Dd_J);
@@ -390,7 +390,7 @@ IncompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradi
     tensor F;
     get_modified_F_J(F, J, gradient_displacement, check_type, false /* compute_J */);
 
-    tensor const F_times_F_transposed = F * transpose(F);
+    tau = F * transposed(F) * (shear_modulus_stored * J_pow); // first part only
 
     scalar J_pow, c1;
     if(cache_level == 0)
@@ -398,8 +398,9 @@ IncompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradi
       J = determinant(F);
 
       J_pow = pow(J, static_cast<Number>(-2.0 * one_third));
-      c1    = (-shear_modulus_stored * J_pow * one_third * trace(F_times_F_transposed) /* = I_1 */
-            + bulk_modulus * 0.5 * (J * J - 1.0));
+      // Note that with tau holding the first part only, we have
+      // trace(tau) = shear_modulus_stored * J_pow * trace(F * transposed(F)).
+      c1 = bulk_modulus * 0.5 * (J * J - 1.0) - one_third * trace(tau);
     }
     else
     {
@@ -407,7 +408,6 @@ IncompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradi
       c1    = c1_coefficients.get_coefficient_cell(cell, q);
     }
 
-    tau = F_times_F_transposed * (shear_modulus_stored * J_pow);
     add_scaled_identity(tau, c1);
   }
   else
@@ -460,11 +460,11 @@ IncompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
     c2    = c2_coefficients.get_coefficient_cell(cell, q);
   }
 
-  result              = symmetric_gradient_increment * (-2.0 * c1);
-  scalar const factor = -4.0 * one_third * shear_modulus_stored * J_pow *
+  result = symmetric_gradient_increment * (-2.0 * c1);
+  add_scaled_identity(result,
+                      -4.0 * one_third * shear_modulus_stored * J_pow *
                           scalar_product(C, symmetric_gradient_increment) +
-                        c2 * trace(symmetric_gradient_increment);
-  add_scaled_identity(result, factor);
+                        c2 * trace(symmetric_gradient_increment));
 
   return result;
 }

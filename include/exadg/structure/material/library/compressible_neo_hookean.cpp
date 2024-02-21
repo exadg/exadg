@@ -414,7 +414,7 @@ CompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
 
   tensor result =
     (2.0 * (shear_modulus_stored - 2.0 * lambda_stored * log_J)) * symmetric_gradient_increment;
-  add_scaled_identity(result, (2.0 * lambda_stored * trace(symmetric_gradient_increment)));
+  add_scaled_identity(result, 2.0 * lambda_stored * trace(symmetric_gradient_increment));
 
   return result;
 }
