@@ -85,17 +85,35 @@ CompressibleNeoHookean<dim, Number>::CompressibleNeoHookean(
 
     if(cache_level > 1)
     {
-      deformation_gradient_coefficients.initialize(matrix_free, quad_index, false, false);
-      deformation_gradient_coefficients.set_coefficients(get_identity<dim, Number>());
-
       tensor const zero_tensor;
       if(spatial_integration)
       {
         kirchhoff_stress_coefficients.initialize(matrix_free, quad_index, false, false);
         kirchhoff_stress_coefficients.set_coefficients(zero_tensor);
+
+        if(force_material_residual)
+        {
+          deformation_gradient_coefficients.initialize(matrix_free, quad_index, false, false);
+          deformation_gradient_coefficients.set_coefficients(get_identity<dim, Number>());
+
+          second_piola_kirchhoff_stress_coefficients.initialize(matrix_free,
+                                                                quad_index,
+                                                                false,
+                                                                false);
+          second_piola_kirchhoff_stress_coefficients.set_coefficients(zero_tensor);
+        }
       }
       else
       {
+        deformation_gradient_coefficients.initialize(matrix_free, quad_index, false, false);
+        deformation_gradient_coefficients.set_coefficients(get_identity<dim, Number>());
+
+        second_piola_kirchhoff_stress_coefficients.initialize(matrix_free,
+                                                              quad_index,
+                                                              false,
+                                                              false);
+        second_piola_kirchhoff_stress_coefficients.set_coefficients(zero_tensor);
+
         F_inv_coefficients.initialize(matrix_free, quad_index, false, false);
         F_inv_coefficients.set_coefficients(get_identity<dim, Number>());
 
@@ -103,16 +121,43 @@ CompressibleNeoHookean<dim, Number>::CompressibleNeoHookean(
         C_inv_coefficients.set_coefficients(get_identity<dim, Number>());
       }
 
-      if(force_material_residual or not spatial_integration)
-      {
-        second_piola_kirchhoff_stress_coefficients.initialize(matrix_free,
-                                                              quad_index,
-                                                              false,
-                                                              false);
-        second_piola_kirchhoff_stress_coefficients.set_coefficients(zero_tensor);
-      }
-
       AssertThrow(cache_level < 3, dealii::ExcMessage("Cache level > 2 not implemented."));
+    }
+  }
+}
+
+template<int dim, typename Number>
+void
+CompressibleNeoHookean<dim, Number>::cell_loop_set_coefficients(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &,
+  VectorType const &,
+  Range const & cell_range) const
+{
+  IntegratorCell integrator(matrix_free, dof_index, quad_index);
+
+  // loop over all cells
+  for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
+  {
+    integrator.reinit(cell);
+
+    // loop over all quadrature points
+    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+    {
+      dealii::VectorizedArray<Number> shear_modulus_vec =
+        FunctionEvaluator<0, dim, Number>::value(*(data.shear_modulus_function),
+                                                 integrator.quadrature_point(q),
+                                                 0.0 /*time*/);
+
+      dealii::VectorizedArray<Number> lambda_vec =
+        FunctionEvaluator<0, dim, Number>::value(*(data.lambda_function),
+                                                 integrator.quadrature_point(q),
+                                                 0.0 /*time*/);
+
+      // set the coefficients
+      shear_modulus_coefficients.set_coefficient_cell(cell, q, shear_modulus_vec);
+
+      lambda_coefficients.set_coefficient_cell(cell, q, lambda_vec);
     }
   }
 }
@@ -171,65 +216,36 @@ CompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
 
     if(cache_level > 1)
     {
-      deformation_gradient_coefficients.set_coefficient_cell(cell, q, F);
-
+      tensor const zero_tensor;
       if(spatial_integration)
       {
         tensor const tau_lin =
           this->kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
         kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau_lin);
+
+        if(force_material_residual)
+        {
+          deformation_gradient_coefficients.set_coefficient_cell(cell, q, F);
+
+          tensor const S_lin =
+            this->second_piola_kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
+          second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S_lin);
+        }
       }
       else
       {
+        deformation_gradient_coefficients.set_coefficient_cell(cell, q, F);
+
+        tensor const S_lin =
+          this->second_piola_kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
+        second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S_lin);
+
         tensor const F_inv = invert(F);
         F_inv_coefficients.set_coefficient_cell(cell, q, F_inv);
 
         tensor const C_inv = F_inv * transpose(F_inv);
         C_inv_coefficients.set_coefficient_cell(cell, q, C_inv);
       }
-
-      if(force_material_residual or not spatial_integration)
-      {
-        tensor const S_lin =
-          this->second_piola_kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
-        second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S_lin);
-      }
-    }
-  }
-}
-
-template<int dim, typename Number>
-void
-CompressibleNeoHookean<dim, Number>::cell_loop_set_coefficients(
-  dealii::MatrixFree<dim, Number> const & matrix_free,
-  VectorType &,
-  VectorType const &,
-  Range const & cell_range) const
-{
-  IntegratorCell integrator(matrix_free, dof_index, quad_index);
-
-  // loop over all cells
-  for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
-  {
-    integrator.reinit(cell);
-
-    // loop over all quadrature points
-    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-    {
-      dealii::VectorizedArray<Number> shear_modulus_vec =
-        FunctionEvaluator<0, dim, Number>::value(*(data.shear_modulus_function),
-                                                 integrator.quadrature_point(q),
-                                                 0.0 /*time*/);
-
-      dealii::VectorizedArray<Number> lambda_vec =
-        FunctionEvaluator<0, dim, Number>::value(*(data.lambda_function),
-                                                 integrator.quadrature_point(q),
-                                                 0.0 /*time*/);
-
-      // set the coefficients
-      shear_modulus_coefficients.set_coefficient_cell(cell, q, shear_modulus_vec);
-
-      lambda_coefficients.set_coefficient_cell(cell, q, lambda_vec);
     }
   }
 }
