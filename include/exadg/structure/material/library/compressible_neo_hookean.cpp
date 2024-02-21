@@ -216,7 +216,6 @@ CompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
 
     if(cache_level > 1)
     {
-      tensor const zero_tensor;
       if(spatial_integration)
       {
         tensor const tau_lin =

@@ -551,7 +551,8 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      // material gradient of the linearization vector and deformation gradient only needed for cache_lvl 0 or 1
+      // material gradient of the linearization vector and deformation gradient only needed for
+      // cache_lvl 0 or 1
       tensor Grad_d_lin_cache_lvl_0_1, F;
       if(this->operator_data.cache_level < 2)
       {
@@ -601,13 +602,14 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       // spatial gradient of the displacement increment
       tensor const grad_delta = integrator.get_gradient(q);
 
-      // material gradient of the linearization vector and displacement gradient only needed for cache_lvl 0 or 1
+      // material gradient of the linearization vector and displacement gradient only needed for
+      // cache_lvl 0 or 1
       scalar J_lin;
-      tensor Grad_d_lin_cache_lvl_0_1, F_lin;
+      tensor Grad_d_lin_cache_lvl_0_1, F_lin_cache_lvl_0;
       if(this->operator_data.cache_level < 2)
       {
         Grad_d_lin_cache_lvl_0_1 = integrator_lin->get_gradient(q);
-        get_modified_F_J(F_lin,
+        get_modified_F_J(F_lin_cache_lvl_0,
                          J_lin,
                          Grad_d_lin_cache_lvl_0_1,
                          this->operator_data.check_type,
@@ -616,13 +618,13 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       else
       {
         // Grad_d_lin : dummy tensor sufficient for function call.
-        F_lin = material->deformation_gradient(integrator.get_current_cell_index(), q);
+        // F_lin : dummy tensor sufficient for function call.
       }
 
       scalar one_over_J;
       if(this->operator_data.cache_level == 0)
       {
-        J_lin      = determinant(F_lin);
+        J_lin      = determinant(F_lin_cache_lvl_0);
         one_over_J = 1.0 / J_lin;
       }
       else
@@ -636,8 +638,11 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
                                                         q);
 
       // material part of the directional derivative
-      tensor delta_tau = material->contract_with_J_times_C(
-        0.5 * (grad_delta + transpose(grad_delta)), F_lin, integrator.get_current_cell_index(), q);
+      tensor delta_tau =
+        material->contract_with_J_times_C(0.5 * (grad_delta + transpose(grad_delta)),
+                                          F_lin_cache_lvl_0,
+                                          integrator.get_current_cell_index(),
+                                          q);
 
       // integral over spatial domain
       integrator.submit_gradient((delta_tau + grad_delta * tau_lin) * one_over_J, q);
