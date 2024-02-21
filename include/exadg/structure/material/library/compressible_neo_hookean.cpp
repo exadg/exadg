@@ -333,12 +333,14 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacement_
     C_inv = C_inv_coefficients.get_coefficient_cell(cell, q);
   }
 
-  scalar const one_over_J_times_Dd_J          = trace(F_inv * gradient_increment);
-  tensor const Dd_F_inv_times_transpose_F_inv = -F_inv * gradient_increment * C_inv;
+  tensor const F_inv_times_gradient_increment = F_inv * gradient_increment;
+
+  scalar const one_over_J_times_Dd_J          = trace(F_inv_times_gradient_increment);
+  tensor const Dd_F_inv_times_transpose_F_inv = -F_inv_times_gradient_increment * C_inv;
   tensor const Dd_C_inv =
     Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
 
-  return (-(shear_modulus_stored - 2.0 * lambda_stored * log_J) * Dd_C_inv +
+  return ((2.0 * lambda_stored * log_J - shear_modulus_stored) * Dd_C_inv +
           (2.0 * lambda_stored * one_over_J_times_Dd_J) * C_inv);
 }
 
