@@ -551,7 +551,7 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      // material gradient of the linearization vector and deformation gradient
+      // material gradient of the linearization vector and deformation gradient only needed for cache_lvl 0 or 1
       tensor Grad_d_lin_cache_lvl_0_1, F;
       if(this->operator_data.cache_level < 2)
       {
@@ -601,7 +601,7 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       // spatial gradient of the displacement increment
       tensor const grad_delta = integrator.get_gradient(q);
 
-      // material gradient of the linearization vector and displacement gradient
+      // material gradient of the linearization vector and displacement gradient only needed for cache_lvl 0 or 1
       scalar J_lin;
       tensor Grad_d_lin_cache_lvl_0_1, F_lin;
       if(this->operator_data.cache_level < 2)
