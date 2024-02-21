@@ -1,0 +1,41 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "3",
+        "IsTest": "true"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "4",
+        "DegreeMax": "4",
+        "RefineSpaceMin": "1",
+        "RefineSpaceMax": "1"
+    },
+    "TemporalResolution": {
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+        "Length": "100.0",
+        "Height": "10.0",
+        "Width": "10.0",
+        "ProblemType": "QuasiStatic",
+        "MaterialType": "IncompressibleNeoHookean",
+        "WeakDamping": "0.0",
+        "LoadIncrement": "0.1",
+        "UseVolumeForce": "false",
+        "VolumeForce": "1.0",
+        "SpatialIntegration": "true",
+        "ForceMaterialResidual": "true",
+        "CacheLevel": "2",
+        "CheckType": "0",
+        "MappingStrength": "0.00",
+        "BoundaryType": "Dirichlet",
+        "Displacement": "20.0",
+        "Traction":	"0.0"
+    },
+    "Output": {
+        "OutputDirectory": "output/bar/",
+        "OutputName": "test",
+        "WriteOutput": "false"
+    }
+}
