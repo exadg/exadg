@@ -32,6 +32,32 @@
 namespace ExaDG
 {
 /**
+ * Compute the cross product of two vectors of type dealii::Tensor<1,dim,Number>.
+ */
+template<int dim, typename Number>
+inline dealii::Tensor<1, dim, Number>
+cross_product_3d(dealii::Tensor<1, dim, Number> const & vec_1,
+                 dealii::Tensor<1, dim, Number> const & vec_2)
+{
+  dealii::Tensor<1, dim, Number> result;
+
+  if constexpr(dim == 3)
+  {
+    result[0] = vec_1[1] * vec_2[2] - vec_1[2] * vec_2[1];
+    result[1] = vec_2[0] * vec_1[2] - vec_1[0] * vec_2[2];
+    result[2] = vec_1[0] * vec_2[1] - vec_1[1] * vec_2[0];
+  }
+  else
+  {
+    AssertThrow(dim == 3,
+                dealii::ExcMessage("Cross product of two vectors only "
+                                   "defined for three dimensions."));
+  }
+
+  return result;
+}
+
+/**
  * Extract a certain component of a list of tensors.
  */
 template<int n_components1, int n_components2, typename Number>
