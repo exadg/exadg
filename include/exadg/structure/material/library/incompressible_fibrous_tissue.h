@@ -44,6 +44,11 @@ struct IncompressibleFibrousTissueData : public MaterialData
     double const &                               shear_modulus,
     double const &                               bulk_modulus,
     double const &                               fiber_angle_phi_in_degree,
+	double const &                               fiber_H_11,
+	double const &                               fiber_H_22,
+	double const &                               fiber_H_33,
+	double const &                               fiber_k_1,
+	double const &                               fiber_k_2,
     Type2D const &                               type_two_dim,
     std::shared_ptr<dealii::Function<dim>> const shear_modulus_function = nullptr)
     : MaterialData(type),
@@ -51,9 +56,9 @@ struct IncompressibleFibrousTissueData : public MaterialData
       shear_modulus_function(shear_modulus_function),
       bulk_modulus(bulk_modulus),
       fiber_angle_phi_in_degree(fiber_angle_phi_in_degree),
-      fiber_H11(fiber_H11),
-      fiber_H22(fiber_H22),
-      fiber_H33(fiber_H33),
+      fiber_H_11(fiber_H_11),
+      fiber_H_22(fiber_H_22),
+      fiber_H_33(fiber_H_33),
       fiber_k_1(fiber_k_1),
       fiber_k_2(fiber_k_2),
       type_two_dim(type_two_dim)
@@ -66,9 +71,9 @@ struct IncompressibleFibrousTissueData : public MaterialData
   double bulk_modulus;
 
   double fiber_angle_phi_in_degree;
-  double fiber_H11;
-  double fiber_H22;
-  double fiber_H33;
+  double fiber_H_11;
+  double fiber_H_22;
+  double fiber_H_33;
   double fiber_k_1;
   double fiber_k_2;
 
@@ -241,9 +246,9 @@ private:
   unsigned int const  n_fiber_families = 2;
   std::vector<Number> fiber_sin_phi;
   std::vector<Number> fiber_cos_phi;
-  Number              fiber_H11;
-  Number              fiber_H22;
-  Number              fiber_H33;
+  Number              fiber_H_11;
+  Number              fiber_H_22;
+  Number              fiber_H_33;
   Number              fiber_k_1;
   Number              fiber_k_2;
 
@@ -283,6 +288,8 @@ private:
   mutable VariableCoefficients<tensor> C_inv_coefficients;
 
   mutable std::vector<VariableCoefficients<tensor>> fiber_structure_tensor;
+  mutable std::vector<VariableCoefficients<tensor>> H_i_times_C_coefficients;
+  mutable std::vector<VariableCoefficients<tensor>> C_times_H_i_coefficients;
 
   Number const one_third = 1.0 / 3.0;
 

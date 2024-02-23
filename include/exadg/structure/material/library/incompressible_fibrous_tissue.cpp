@@ -68,17 +68,22 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
   fiber_cos_phi.resize(n_fiber_families);
   for(unsigned int i = 0; i < n_fiber_families; i++)
   {
+    AssertThrow(
+      n_fiber_families <= 2,
+      dealii::ExcMessage(
+        "Assuming potentially symmetrically dispersed fiber families. The fiber "
+        "families >2 have the same mean fiber directions as fiber families 1 and 2."));
     fiber_sin_phi[i] =
       std::sin(pow(-1.0, i + 1) * data.fiber_angle_phi_in_degree * dealii::numbers::PI / 180.0);
     fiber_cos_phi[i] =
       std::cos(pow(-1.0, i + 1) * data.fiber_angle_phi_in_degree * dealii::numbers::PI / 180.0);
   }
 
-  fiber_H11 = data.fiber_H11;
-  fiber_H22 = data.fiber_H22;
-  fiber_H33 = data.fiber_H33;
-  fiber_k_1 = data.fiber_k_1;
-  fiber_k_2 = data.fiber_k_2;
+  fiber_H_11 = data.fiber_H_11;
+  fiber_H_22 = data.fiber_H_22;
+  fiber_H_33 = data.fiber_H_33;
+  fiber_k_1  = data.fiber_k_1;
+  fiber_k_2  = data.fiber_k_2;
 
   VectorType dummy;
   matrix_free.cell_loop(&IncompressibleFibrousTissue<dim, Number>::cell_loop_set_coefficients,
@@ -128,6 +133,17 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
 
         C_coefficients.initialize(matrix_free, quad_index, false, false);
         C_coefficients.set_coefficients(I);
+
+        // Set tensorial linearization data for fiber contribution initially. ##++
+        H_i_times_C_coefficients.resize(n_fiber_families);
+        C_times_H_i_coefficients.resize(n_fiber_families);
+        for(unsigned int i = 0; i < n_fiber_families; i++)
+        {
+          H_i_times_C_coefficients[i].initialize(matrix_free, quad_index, false, false);
+          H_i_times_C_coefficients[i].set_coefficients(tensor_zero);
+          C_times_H_i_coefficients[i].initialize(matrix_free, quad_index, false, false);
+          C_times_H_i_coefficients[i].set_coefficients(tensor_zero);
+        }
 
         if(force_material_residual)
         {
@@ -190,8 +206,6 @@ IncompressibleFibrousTissue<dim, Number>::cell_loop_set_coefficients(
   }
 
   dealii::Tensor<1, dim> E_3 = cross_product_3d(E_1, E_2);
-  std::cout << "E_3 = [" << E_3[0] << ", " << E_3[1] << ", " << E_3[2]
-            << "] test cross product ##+ \n";
   vector const M_3 = E_3;
 
   // Store only the minimal amount for the general case of having a field of
@@ -257,9 +271,9 @@ IncompressibleFibrousTissue<dim, Number>::cell_loop_set_coefficients(
           fiber_direction_M_1[i].set_coefficient_cell(cell, q, M_1[i]);
 
           // clang-format off
-    	  fiber_structure_tensor[i].set_coefficient_cell(cell, q, fiber_H11 * outer_product(M_1[i], M_1[i])
-                                                                + fiber_H22 * outer_product(M_2[i], M_2[i])
-                                                                + fiber_H33 * outer_product(M_3, M_3));
+    	  fiber_structure_tensor[i].set_coefficient_cell(cell, q, fiber_H_11 * outer_product(M_1[i], M_1[i])
+                                                                + fiber_H_22 * outer_product(M_2[i], M_2[i])
+                                                                + fiber_H_33 * outer_product(M_3, M_3));
           // clang-format on
         }
       }
@@ -281,9 +295,8 @@ IncompressibleFibrousTissue<dim, Number>::get_structure_tensor(tensor &         
     vector M_3 = cross_product_3d(M_1, M_2);
 
     // clang format off
-    H = fiber_H11 * outer_product(M_1, M_1)
-      +	fiber_H22 * outer_product(M_2, M_2)
-      + fiber_H33 * outer_product(M_3, M_3);
+    H = fiber_H_11 * outer_product(M_1, M_1) + fiber_H_22 * outer_product(M_2, M_2) +
+        fiber_H_33 * outer_product(M_3, M_3);
     // clang format on
   }
   else
@@ -309,7 +322,7 @@ IncompressibleFibrousTissue<dim, Number>::get_fiber_switch(scalar &           fi
     // fiber_switch = I_i_star < 1 ? 0.0 : 1.0
     fiber_switch = dealii::compare_and_apply_mask<dealii::SIMDComparison::less_than>(I_i,
                                                                                      scalar_one,
-                                                                                     scalar_zero,
+                                                                                     scalar_one, // scalar_zero, ##++ fiber switch is always on now
                                                                                      scalar_one);
   }
   else
@@ -423,6 +436,14 @@ IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
 
         C_coefficients.set_coefficient_cell(cell, q, C);
 
+        // Set tensorial linearization data for fiber contribution. ##++
+        for(unsigned int i = 0; i < n_fiber_families; i++)
+        {
+          tensor const H_i = fiber_structure_tensor[i].get_coefficient_cell(cell, q);
+          H_i_times_C_coefficients[i].set_coefficient_cell(cell, q, H_i * C);
+          C_times_H_i_coefficients[i].set_coefficient_cell(cell, q, C * H_i);
+        }
+
         if(force_material_residual)
         {
           deformation_gradient_coefficients.set_coefficient_cell(cell, q, F);
@@ -501,10 +522,11 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress(
       else
       {
         // M_1 : dummy vector suffices for function call.
-    	// M_2 : dummy vector suffices for function call.
+        // M_2 : dummy vector suffices for function call.
       }
       scalar fiber_switch;
-      get_fiber_switch(fiber_switch, M_1_cache_level_0_1, C, i, cell, q, false /* force_evaluation */);
+      get_fiber_switch(
+        fiber_switch, M_1_cache_level_0_1, C, i, cell, q, false /* force_evaluation */);
 
       // Compute or load structure tensor.
       tensor H_i;
@@ -595,11 +617,11 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
   tensor const Dd_C_inv =
     Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
 
-  tensor const transpose_gradient_increment_times_F = transpose(gradient_increment) * deformation_gradient;
+  tensor const transpose_gradient_increment_times_F =
+    transpose(gradient_increment) * deformation_gradient;
 
-  Dd_S = C_inv * (c2 * one_over_J_times_Dd_J -
-                  (2.0 * shear_modulus_stored * one_third * J_pow) *
-                    trace(transpose_gradient_increment_times_F));
+  Dd_S = C_inv * (c2 * one_over_J_times_Dd_J - (2.0 * shear_modulus_stored * one_third * J_pow) *
+                                                 trace(transpose_gradient_increment_times_F));
   Dd_S += Dd_C_inv * c1;
   add_scaled_identity(Dd_S,
                       -shear_modulus_stored * one_third * J_pow * 2.0 * one_over_J_times_Dd_J);
@@ -607,53 +629,61 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
   // Add fiber contribution.
   for(unsigned int i = 0; i < n_fiber_families; i++)
   {
-	// Compute or load fiber switch. ##++ Dd_S
-	vector M_1_cache_level_0_1, M_2_cache_level_0_1;
-	tensor C_cache_level_0_1;
-	if(cache_level < 2)
-	{
-	  M_1_cache_level_0_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
-	  M_2_cache_level_0_1 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
-	  C_cache_level_0_1 = transpose(deformation_gradient) * deformation_gradient;
-	}
-	else
-	{
-	  // M_1 : dummy vector suffices for function call.
-	  // M_2 : dummy vector suffices for function call.
-	  // C   : dummy tensor suffices for function call.
-	}
-	scalar fiber_switch;
-	get_fiber_switch(fiber_switch, M_1_cache_level_0_1, C_cache_level_0_1, i, cell, q, false /* force_evaluation */);
+    // Compute or load fiber switch. ##++ Dd_S
+    vector M_1_cache_level_0_1, M_2_cache_level_0_1;
+    tensor C_cache_level_0_1;
+    if(cache_level < 2)
+    {
+      M_1_cache_level_0_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+      M_2_cache_level_0_1 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+      C_cache_level_0_1   = transpose(deformation_gradient) * deformation_gradient;
+    }
+    else
+    {
+      // M_1 : dummy vector suffices for function call.
+      // M_2 : dummy vector suffices for function call.
+      // C   : dummy tensor suffices for function call.
+    }
+    scalar fiber_switch;
+    get_fiber_switch(fiber_switch,
+                     M_1_cache_level_0_1,
+                     C_cache_level_0_1,
+                     i,
+                     cell,
+                     q,
+                     false /* force_evaluation */);
 
-	// Compute or load structure tensor.
-	tensor H_i;
-	get_structure_tensor(H_i, M_1_cache_level_0_1, M_2_cache_level_0_1, i, cell, q);
+    // Compute or load structure tensor.
+    tensor H_i;
+    get_structure_tensor(H_i, M_1_cache_level_0_1, M_2_cache_level_0_1, i, cell, q);
 
-	// Compute or load fiber strain-like quantity.
-	scalar E_i;
-	if(cache_level == 0)
-	{
-	  tensor C_minus_I = C_cache_level_0_1 - I;
-	  E_i              = scalar_product(H_i, C_minus_I);
-	}
-	else
-	{
-	  E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
-	}
+    // Compute or load fiber strain-like quantity.
+    scalar E_i;
+    if(cache_level == 0)
+    {
+      tensor C_minus_I = C_cache_level_0_1 - I;
+      E_i              = scalar_product(H_i, C_minus_I);
+    }
+    else
+    {
+      E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
+    }
 
-	// Compute or load c3 coefficient.
-	scalar c3;
-	if(cache_level == 0)
-	{
-	  c3 = 2.0 * fiber_k_1 * exp(fiber_k_2 * E_i * E_i);
-	}
-	else
-	{
-	  c3 = c_3_coefficients[i].get_coefficient_cell(cell, q);
-	}
+    // Compute or load c3 coefficient.
+    scalar c3;
+    if(cache_level == 0)
+    {
+      c3 = 2.0 * fiber_k_1 * exp(fiber_k_2 * E_i * E_i);
+    }
+    else
+    {
+      c3 = c_3_coefficients[i].get_coefficient_cell(cell, q);
+    }
 
-	Dd_S += H_i * (fiber_switch * c3 * (2.0 * fiber_k_1 * E_i * E_i + 1.0) *
-	  scalar_product(H_i, transpose_gradient_increment_times_F + transpose(transpose_gradient_increment_times_F)));
+    Dd_S += H_i * (fiber_switch * c3 * (2.0 * fiber_k_2 * E_i * E_i + 1.0) *
+                   scalar_product(H_i,
+                                  transpose_gradient_increment_times_F +
+                                    transpose(transpose_gradient_increment_times_F)));
   }
 
   return Dd_S;
@@ -678,16 +708,73 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
     tensor F;
     get_modified_F_J(F, J, gradient_displacement, check_type, false /* compute_J */);
 
-    tau = F * transpose(F); // temporary container
+    // Add fiber contribution.
+    for(unsigned int i = 0; i < n_fiber_families; i++)
+    {
+      // Compute or load fiber switch. ##++ tau
+      vector M_1_cache_level_0_1, M_2_cache_level_0_1;
+      tensor C_cache_level_0_1;
+      if(cache_level < 2)
+      {
+        M_1_cache_level_0_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+        M_2_cache_level_0_1 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+        C_cache_level_0_1   = transpose(F) * F;
+      }
+      else
+      {
+        // M_1 : dummy vector suffices for function call.
+        // M_2 : dummy vector suffices for function call.
+        // C   : dummy tensor suffices for function call.
+      }
+      scalar fiber_switch;
+      get_fiber_switch(fiber_switch,
+                       M_1_cache_level_0_1,
+                       C_cache_level_0_1,
+                       i,
+                       cell,
+                       q,
+                       false /* force_evaluation */);
+
+      // Compute or load structure tensor.
+      tensor H_i;
+      get_structure_tensor(H_i, M_1_cache_level_0_1, M_2_cache_level_0_1, i, cell, q);
+
+      // Compute or load fiber strain-like quantity.
+      scalar E_i;
+      if(cache_level == 0)
+      {
+        tensor C_minus_I = C_cache_level_0_1 - I;
+        E_i              = scalar_product(H_i, C_minus_I);
+      }
+      else
+      {
+        E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
+      }
+
+      // Compute or load c3 coefficient.
+      scalar c3;
+      if(cache_level == 0)
+      {
+        c3 = 2.0 * fiber_k_1 * exp(fiber_k_2 * E_i * E_i);
+      }
+      else
+      {
+        c3 = c_3_coefficients[i].get_coefficient_cell(cell, q);
+      }
+
+      // Add terms in non-push-forwarded form.
+      tau += (c3 * E_i) * H_i;
+    }
 
     scalar J_pow, c1;
     if(cache_level == 0)
     {
-      J = determinant(F);
+      J   = determinant(F);
+      tensor const C = transpose(F) * F;
 
       J_pow = pow(J, static_cast<Number>(-2.0 * one_third));
       c1    = bulk_modulus * 0.5 * (J * J - 1.0) -
-           (one_third * shear_modulus_stored * J_pow) * trace(tau /* F * transpose(F) */);
+           (one_third * shear_modulus_stored * J_pow) * trace(C);
     }
     else
     {
@@ -695,7 +782,15 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
       c1    = c_1_coefficients.get_coefficient_cell(cell, q);
     }
 
-    tau *= shear_modulus_stored * J_pow;
+    // tau holds fiber terms in non-push-forwarded form.
+    // Add isochoric terms (the one with F*transpose(F))
+    // to avoid a matrix-matrix product.
+    add_scaled_identity(tau, shear_modulus_stored * J_pow);
+
+    // We cannot avoid this triple matrix product even if
+    // we have C already computed as for cache_level 0.
+    tau = F * tau * transpose(F);
+
     add_scaled_identity(tau, c1);
   }
   else
@@ -753,6 +848,74 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
                       -4.0 * one_third * shear_modulus_stored * J_pow *
                           scalar_product(C, symmetric_gradient_increment) +
                         c2 * trace(symmetric_gradient_increment));
+
+  // Add fiber contribution.
+  for(unsigned int i = 0; i < n_fiber_families; i++)
+  {
+    // Compute or load fiber switch. ##++ J C : (o)
+    vector M_1_cache_level_0_1, M_2_cache_level_0_1;
+    if(cache_level < 2)
+    {
+      M_1_cache_level_0_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+      M_2_cache_level_0_1 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+    }
+    else
+    {
+      // M_1 : dummy vector suffices for function call.
+      // M_2 : dummy vector suffices for function call.
+      // C   : dummy tensor suffices for function call.
+    }
+    scalar fiber_switch;
+    get_fiber_switch(fiber_switch,
+                     M_1_cache_level_0_1,
+                     C,
+                     i,
+                     cell,
+                     q,
+                     false /* force_evaluation */);
+
+    // Compute or load structure tensor.
+    tensor H_i;
+    get_structure_tensor(H_i, M_1_cache_level_0_1, M_2_cache_level_0_1, i, cell, q);
+
+    // Compute or load fiber strain-like quantity.
+    scalar E_i;
+    if(cache_level == 0)
+    {
+      tensor C_minus_I = C - I;
+      E_i              = scalar_product(H_i, C_minus_I);
+    }
+    else
+    {
+      E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
+    }
+
+    // Compute or load c3 coefficient.
+    scalar c3;
+    if(cache_level == 0)
+    {
+      c3 = 2.0 * fiber_k_1 * exp(fiber_k_2 * E_i * E_i);
+    }
+    else
+    {
+      c3 = c_3_coefficients[i].get_coefficient_cell(cell, q);
+    }
+
+    // Compute or load H_i * C tensor.
+    tensor H_i_times_C, C_times_H_i;
+    if(cache_level < 2)
+    {
+      H_i_times_C = H_i * C;
+      C_times_H_i = C * H_i;
+    }
+    else
+    {
+      H_i_times_C = H_i_times_C_coefficients[i].get_coefficient_cell(cell, q);
+      C_times_H_i = C_times_H_i_coefficients[i].get_coefficient_cell(cell, q);
+    }
+
+    result += (4.0 * c3 * (2.0 * fiber_k_2 * E_i * E_i + 1.0) * scalar_product(C_times_H_i, symmetric_gradient_increment) ) * H_i_times_C;
+  }
 
   return result;
 }
