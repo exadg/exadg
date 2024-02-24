@@ -27,7 +27,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
-  Perform cell integral in spatial configuration:false
+  Perform cell integral in spatial configuration:true
 
 Physical quantities:
 

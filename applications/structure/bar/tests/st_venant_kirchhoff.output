@@ -27,6 +27,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Perform cell integral in spatial configuration:false
 
 Physical quantities:
 
@@ -38,7 +39,7 @@ Spatial Discretization:
   Element type:                              Hypercube
   Number of global refinements:              1
   Create coarse triangulations:              false
-  Mapping degree:                            1
+  Mapping degree:                            4
   Polynomial degree:                         4
 
 Solver:
@@ -56,7 +57,7 @@ Linear solver:
   Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
   Multigrid type:                            phMG
-  p-sequence:                                Bisect
+  p-sequence:                                DecreaseByOne
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -76,7 +77,7 @@ Linear solver:
 Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                1
-  Number of cells:                           32
+  Number of cells:                           8
 
 Construct elasticity operator ...
 
@@ -84,7 +85,7 @@ Continuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
   number of dofs per cell:                   375
-  number of dofs (total):                    8019
+  number of dofs (total):                    2187
 
 ... done!
 

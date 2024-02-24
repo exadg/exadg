@@ -27,7 +27,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
-  Perform cell integral in spatial configuration:false
+  Perform cell integral in spatial configuration:true
 
 Physical quantities:
 
@@ -160,4 +160,4 @@ ________________________________________________________________________________
 ... done!
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 6.03102e-02
+  Relative error (L2-norm): 6.06313e-02

@@ -27,6 +27,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Perform cell integral in spatial configuration:false
 
 Physical quantities:
   Density:                                   1.0000e-03
@@ -67,7 +68,7 @@ Linear solver:
   Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
   Multigrid type:                            phMG
-  p-sequence:                                Bisect
+  p-sequence:                                DecreaseByOne
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -87,7 +88,7 @@ Linear solver:
 Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                0
-  Number of cells:                           4
+  Number of cells:                           1
 
 Construct elasticity operator ...
 
@@ -95,7 +96,7 @@ Continuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  1
   number of dofs per cell:                   24
-  number of dofs (total):                    60
+  number of dofs (total):                    24
 
 ... done!
 
@@ -127,4 +128,4 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for all fields at time t = 1.0000e+02:
-  Relative error (L2-norm): 6.27902e-01
+  Relative error (L2-norm): 5.77573e-01
