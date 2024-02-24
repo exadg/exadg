@@ -600,33 +600,36 @@ private:
     }
     else if(material_type == MaterialType::IncompressibleFibrousTissue)
     {
-        Type2D const two_dim_type  = Type2D::Undefined;
-        double const shear_modulus = 1.0e2;
-        double const nu            = 0.49;
-        double const bulk_modulus  = shear_modulus * 2.0 * (1.0 + nu) / (3.0 * (1.0 - 2.0 * nu));
+      Type2D const two_dim_type  = Type2D::Undefined;
+      double const shear_modulus = 1.0e2;
+      double const nu            = 0.49;
+      double const bulk_modulus  = shear_modulus * 2.0 * (1.0 + nu) / (3.0 * (1.0 - 2.0 * nu));
 
-        // Parameters corresponding to aortic tissue, medial layer.
-        // see [Weisbecker et al., J Mech Behav Biomed Mater 12, 2012]
-        // or  [Rolf-Pissarczyk et al., Comput Methods Appl Mech Eng 373, 2021]
-        // a = 3.62, b = 34.3
-        double const fiber_angle_phi_in_degree = 45.0;   // [deg]
-        double const fiber_H_11                = 0.9168; // [-]
-		double const fiber_H_22                = 0.0759; // [-]
-		double const fiber_H_33                = 0.0073; // [-]
-		double const fiber_k_1                 = 1.4e3 * 0.0 + shear_modulus/30.0;  // [Pa]
-		double const fiber_k_2                 = 22.1;   // [-]
+      // Parameters corresponding to aortic tissue might be found in
+      // [Weisbecker et al., J Mech Behav Biomed Mater 12, 2012] or
+      // [Rolf-Pissarczyk et al., Comput Methods Appl Mech Eng 373, 2021].
+      // a = 3.62, b = 34.3 for medial tissue lead to the H_ii below,
+      // while the k_1 coefficient is scaled relative to the shear modulus
+      // used in the other cases here.
+      double const fiber_angle_phi_in_degree = 27.47;                          // [deg]
+      double const fiber_H_11                = 0.9168;                         // [-]
+      double const fiber_H_22                = 0.0759;                         // [-]
+      double const fiber_H_33                = 0.0073;                         // [-]
+      double const fiber_k_1                 = 62.1e3 / 1.4e3 * shear_modulus; // [Pa]
+      double const fiber_k_2                 = 22.1;                           // [-]
 
-        this->material_descriptor->insert(Pair(0,
-                                               new IncompressibleFibrousTissueData<dim>(material_type,
-                                                                                        shear_modulus,
-                                                                                        bulk_modulus,
-																						fiber_angle_phi_in_degree,
-																						fiber_H_11,
-																						fiber_H_22,
-																						fiber_H_33,
-																						fiber_k_1,
-																						fiber_k_2,
-                                                                                        two_dim_type)));
+      this->material_descriptor->insert(
+        Pair(0,
+             new IncompressibleFibrousTissueData<dim>(material_type,
+                                                      shear_modulus,
+                                                      bulk_modulus,
+                                                      fiber_angle_phi_in_degree,
+                                                      fiber_H_11,
+                                                      fiber_H_22,
+                                                      fiber_H_33,
+                                                      fiber_k_1,
+                                                      fiber_k_2,
+                                                      two_dim_type)));
     }
     else
     {
