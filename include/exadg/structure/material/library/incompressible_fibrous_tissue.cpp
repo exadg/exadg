@@ -854,10 +854,8 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
   }
 
   result = symmetric_gradient_increment * (-2.0 * c1);
-  add_scaled_identity(result,
-                      -4.0 * one_third * shear_modulus_stored * J_pow *
-                          scalar_product(C, symmetric_gradient_increment) +
-                        c2 * trace(symmetric_gradient_increment));
+  result += (-4.0 * one_third * shear_modulus_stored * J_pow * trace(symmetric_gradient_increment)) * C;
+  add_scaled_identity(result, c2 * trace(symmetric_gradient_increment));
 
   // Add fiber contribution.
   for(unsigned int i = 0; i < n_fiber_families; i++)
@@ -920,8 +918,8 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
     }
 
     result += (2.0 * c3 * (2.0 * fiber_k_2 * E_i * E_i + 1.0) *
-               scalar_product(C_times_H_i, symmetric_gradient_increment)) *
-              H_i_times_C;
+               scalar_product(H_i_times_C, symmetric_gradient_increment)) *
+              C_times_H_i;
   }
 
   return result;
