@@ -31,15 +31,17 @@ namespace IncNS
 {
 template<int dim, typename Number>
 OperatorPressureCorrection<dim, Number>::OperatorPressureCorrection(
-  std::shared_ptr<Grid<dim> const>               grid_in,
-  std::shared_ptr<dealii::Mapping<dim> const>    mapping_in,
-  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
-  Parameters const &                             parameters_in,
-  std::string const &                            field_in,
-  MPI_Comm const &                               mpi_comm_in)
+  std::shared_ptr<Grid<dim> const>                      grid_in,
+  std::shared_ptr<dealii::Mapping<dim> const>           mapping_in,
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings_in,
+  std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim> const>            field_functions_in,
+  Parameters const &                                    parameters_in,
+  std::string const &                                   field_in,
+  MPI_Comm const &                                      mpi_comm_in)
   : ProjectionBase(grid_in,
                    mapping_in,
+                   multigrid_mappings_in,
                    boundary_descriptor_in,
                    field_functions_in,
                    parameters_in,
@@ -55,70 +57,60 @@ OperatorPressureCorrection<dim, Number>::~OperatorPressureCorrection()
 
 template<int dim, typename Number>
 void
-OperatorPressureCorrection<dim, Number>::setup(
-  std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
-  std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
-  std::string const &                                    dof_index_temperature)
+OperatorPressureCorrection<dim, Number>::setup_derived()
 {
-  ProjectionBase::setup(matrix_free, matrix_free_data, dof_index_temperature);
+  ProjectionBase::setup_derived();
 
   setup_inverse_mass_operator_pressure();
 }
 
 template<int dim, typename Number>
 void
-OperatorPressureCorrection<dim, Number>::setup_solvers(double const &     scaling_factor_mass,
-                                                       VectorType const & velocity)
+OperatorPressureCorrection<dim, Number>::setup_preconditioners_and_solvers()
 {
-  this->pcout << std::endl << "Setup incompressible Navier-Stokes solver ..." << std::endl;
+  ProjectionBase::setup_preconditioners_and_solvers();
 
-  ProjectionBase::setup_solvers(scaling_factor_mass, velocity);
-
+  setup_momentum_preconditioner();
   setup_momentum_solver();
-
-  ProjectionBase::setup_pressure_poisson_solver();
-
-  ProjectionBase::setup_projection_solver();
-
-  this->pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, typename Number>
 void
-OperatorPressureCorrection<dim, Number>::setup_momentum_solver()
+OperatorPressureCorrection<dim, Number>::update_after_grid_motion(bool const update_matrix_free)
 {
-  initialize_momentum_preconditioner();
+  ProjectionBase::update_after_grid_motion(update_matrix_free);
 
-  initialize_momentum_solver();
+  // The inverse mass operator might contain matrix-based components, in which cases it needs to be
+  // updated after the grid has been deformed.
+  inverse_mass_pressure.update();
 }
 
 template<int dim, typename Number>
 void
-OperatorPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
+OperatorPressureCorrection<dim, Number>::setup_momentum_preconditioner()
 {
   if(this->param.preconditioner_momentum == MomentumPreconditioner::InverseMassMatrix)
   {
     InverseMassOperatorData inverse_mass_operator_data;
     inverse_mass_operator_data.dof_index  = this->get_dof_index_velocity();
     inverse_mass_operator_data.quad_index = this->get_quad_index_velocity_linear();
-    inverse_mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
-      this->param.solve_elementwise_mass_system_matrix_free;
-    inverse_mass_operator_data.solver_data_block_diagonal =
-      this->param.solver_data_elementwise_inverse_mass;
+    inverse_mass_operator_data.parameters = this->param.inverse_mass_preconditioner;
+
     momentum_preconditioner =
       std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(this->get_matrix_free(),
                                                                     inverse_mass_operator_data);
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::PointJacobi)
   {
-    momentum_preconditioner = std::make_shared<JacobiPreconditioner<MomentumOperator<dim, Number>>>(
-      this->momentum_operator);
+    momentum_preconditioner =
+      std::make_shared<JacobiPreconditioner<MomentumOperator<dim, Number>>>(this->momentum_operator,
+                                                                            false);
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::BlockJacobi)
   {
     momentum_preconditioner =
       std::make_shared<BlockJacobiPreconditioner<MomentumOperator<dim, Number>>>(
-        this->momentum_operator);
+        this->momentum_operator, false);
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::Multigrid)
   {
@@ -151,7 +143,7 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
 
     mg_preconditioner->initialize(this->param.multigrid_data_momentum,
                                   this->grid,
-                                  this->get_mapping(),
+                                  this->multigrid_mappings,
                                   this->get_dof_handler_u().get_fe(),
                                   this->momentum_operator,
                                   this->param.multigrid_operator_type_momentum,
@@ -168,7 +160,7 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
 
 template<int dim, typename Number>
 void
-OperatorPressureCorrection<dim, Number>::initialize_momentum_solver()
+OperatorPressureCorrection<dim, Number>::setup_momentum_solver()
 {
   if(this->param.solver_momentum == SolverMomentum::CG)
   {
@@ -250,10 +242,8 @@ OperatorPressureCorrection<dim, Number>::setup_inverse_mass_operator_pressure()
   InverseMassOperatorData inverse_mass_operator_data_pressure;
   inverse_mass_operator_data_pressure.dof_index  = this->get_dof_index_pressure();
   inverse_mass_operator_data_pressure.quad_index = this->get_quad_index_pressure();
-  inverse_mass_operator_data_pressure.implement_block_diagonal_preconditioner_matrix_free =
-    this->param.solve_elementwise_mass_system_matrix_free;
-  inverse_mass_operator_data_pressure.solver_data_block_diagonal =
-    this->param.solver_data_elementwise_inverse_mass;
+  inverse_mass_operator_data_pressure.parameters = this->param.inverse_mass_operator;
+
   inverse_mass_pressure.initialize(this->get_matrix_free(), inverse_mass_operator_data_pressure);
 }
 
@@ -265,6 +255,9 @@ OperatorPressureCorrection<dim, Number>::solve_linear_momentum_equation(
   bool const &       update_preconditioner,
   double const &     scaling_factor_mass)
 {
+  // We do not need to set the time here, because time affects the operator only in the form of
+  // boundary conditions. The result of such boundary condition evaluations is handed over to this
+  // function via the vector rhs.
   this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
 
   // Note that there is no need to set the evaluation time for the momentum_operator
@@ -329,8 +322,11 @@ OperatorPressureCorrection<dim, Number>::evaluate_nonlinear_residual(
 
   this->mass_operator.apply_scale(dst, scaling_factor_mass, src);
 
-  if(this->param.convective_problem())
+  // implicitly treated convective term
+  if(this->param.implicit_convective_problem())
+  {
     this->convective_operator.evaluate_nonlinear_operator_add(dst, src, time);
+  }
 
   // viscous term
   this->viscous_operator.set_time(time);
@@ -370,8 +366,10 @@ OperatorPressureCorrection<dim, Number>::evaluate_nonlinear_residual_steady(
     dst_u *= -1.0;
   }
 
-  if(this->param.convective_problem())
+  if(this->param.implicit_convective_problem())
+  {
     this->convective_operator.evaluate_nonlinear_operator_add(dst_u, src_u, time);
+  }
 
   if(this->param.viscous_problem())
   {

@@ -1461,6 +1461,7 @@ void
 create_coarse_grid(dealii::Triangulation<dim> &                             triangulation,
                    std::vector<dealii::GridTools::PeriodicFacePair<
                      typename dealii::Triangulation<dim>::cell_iterator>> & periodic_faces,
+                   TriangulationType const &                                triangulation_type,
                    CylinderType const                                       cylinder_type,
                    ElementType                                              element_type)
 {
@@ -1477,11 +1478,16 @@ create_coarse_grid(dealii::Triangulation<dim> &                             tria
   {
     case CylinderType::Circular:
     {
+      AssertThrow(element_type == ElementType::Hypercube,
+                  dealii::ExcMessage(
+                    "You are trying to create a non-Hypercube grid for the circular cylinder case, "
+                    "which is currently not supported."));
+
       AssertThrow(
-        element_type == ElementType::Hypercube,
+        triangulation_type != TriangulationType::FullyDistributed,
         dealii::ExcMessage(
-          "You are trying to create a grid with simplex elements for the circular cylinder case, "
-          "which is currently not supported."));
+          "Manifolds might not be applied correctly for TriangulationType::FullyDistributed. "
+          "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
 
       CircularCylinder::create_coarse_triangulation<dim>(triangulation, periodic_faces);
       break;

@@ -57,11 +57,12 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up elasticity solver:" << std::endl;
 
-  application->setup();
+  application->setup(grid, mapping, multigrid_mappings);
 
   // setup spatial operator
-  pde_operator = std::make_shared<Operator<dim, Number>>(application->get_grid(),
-                                                         application->get_mapping(),
+  pde_operator = std::make_shared<Operator<dim, Number>>(grid,
+                                                         mapping,
+                                                         multigrid_mappings,
                                                          application->get_boundary_descriptor(),
                                                          application->get_field_functions(),
                                                          application->get_material_descriptor(),
@@ -69,18 +70,7 @@ Driver<dim, Number>::setup()
                                                          "elasticity",
                                                          mpi_comm);
 
-  // initialize matrix_free
-  matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-  matrix_free_data->append(pde_operator);
-
-  matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-  matrix_free->reinit(*application->get_mapping(),
-                      matrix_free_data->get_dof_handler_vector(),
-                      matrix_free_data->get_constraint_vector(),
-                      matrix_free_data->get_quadrature_vector(),
-                      matrix_free_data->data);
-
-  pde_operator->setup(matrix_free, matrix_free_data);
+  pde_operator->setup();
 
   if(not is_throughput_study)
   {
@@ -110,16 +100,6 @@ Driver<dim, Number>::setup()
     else
     {
       AssertThrow(false, dealii::ExcMessage("Not implemented."));
-    }
-
-    if(application->get_parameters().problem_type == ProblemType::Unsteady)
-    {
-      pde_operator->setup_solver(time_integrator->get_scaling_factor_acceleration(),
-                                 time_integrator->get_scaling_factor_velocity());
-    }
-    else
-    {
-      pde_operator->setup_solver(0.0 /* no acceleration term */, 0.0 /* no damping term */);
     }
   }
 

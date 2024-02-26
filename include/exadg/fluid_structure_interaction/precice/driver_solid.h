@@ -49,18 +49,6 @@ public:
 
 
   void
-  setup_application()
-  {
-    dealii::Timer timer_local;
-    timer_local.restart();
-
-    this->application->structure->setup();
-
-    this->timer_tree.insert({"FSI", "Setup", "Application"}, timer_local.wall_time());
-  }
-
-
-  void
   setup_structure()
   {
     dealii::Timer timer_local;
@@ -89,7 +77,7 @@ public:
         {this->precice_parameters.displacement_data_name,
          this->precice_parameters.velocity_data_name},
         this->precice_parameters.write_data_type,
-        structure->matrix_free,
+        *structure->pde_operator->get_matrix_free(),
         structure->pde_operator->get_dof_index(),
         dealii::numbers::invalid_unsigned_int);
     }
@@ -97,7 +85,7 @@ public:
     // fluid to structure
     {
       this->precice->add_read_surface(
-        structure->matrix_free,
+        *structure->pde_operator->get_matrix_free(),
         structure->pde_operator->get_container_interface_data_neumann(),
         this->precice_parameters.read_mesh_name,
         {this->precice_parameters.stress_data_name});
@@ -118,8 +106,6 @@ public:
     timer.restart();
 
     this->pcout << std::endl << "Setting up fluid-structure interaction solver:" << std::endl;
-
-    setup_application();
 
     setup_structure();
 

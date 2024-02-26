@@ -41,7 +41,7 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 class QuadCoupling : public CouplingBase<dim, data_dim, VectorizedArrayType>
 {
 public:
-  QuadCoupling(std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
+  QuadCoupling(dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
 #ifdef EXADG_WITH_PRECICE
                std::shared_ptr<precice::SolverInterface> precice,
 #endif
@@ -111,7 +111,7 @@ private:
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 QuadCoupling<dim, data_dim, VectorizedArrayType>::QuadCoupling(
-  std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
+  dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
 #ifdef EXADG_WITH_PRECICE
   std::shared_ptr<precice::SolverInterface> precice,
 #endif
@@ -144,27 +144,26 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
     return;
 
   // Initial guess: half of the boundary is part of the coupling surface
-  coupling_nodes_ids.reserve(this->matrix_free->n_boundary_face_batches() / 2);
+  coupling_nodes_ids.reserve(this->matrix_free.n_boundary_face_batches() / 2);
 
   // Set up data structures
-  FEFaceIntegrator phi(*this->matrix_free, true, mf_dof_index, mf_quad_index);
+  FEFaceIntegrator phi(this->matrix_free, true, mf_dof_index, mf_quad_index);
   std::array<double, dim * VectorizedArrayType::size()> unrolled_vertices;
   std::array<int, VectorizedArrayType::size()>          node_ids;
   unsigned int                                          size = 0;
   // Loop over all boundary faces
-  for(unsigned int face = this->matrix_free->n_inner_face_batches();
-      face <
-      this->matrix_free->n_boundary_face_batches() + this->matrix_free->n_inner_face_batches();
+  for(unsigned int face = this->matrix_free.n_inner_face_batches();
+      face < this->matrix_free.n_boundary_face_batches() + this->matrix_free.n_inner_face_batches();
       ++face)
   {
-    auto const boundary_id = this->matrix_free->get_boundary_id(face);
+    auto const boundary_id = this->matrix_free.get_boundary_id(face);
 
     // Only for interface nodes
     if(boundary_id != this->dealii_boundary_surface_id)
       continue;
 
     phi.reinit(face);
-    int const active_faces = this->matrix_free->n_active_entries_per_face_batch(face);
+    int const active_faces = this->matrix_free.n_active_entries_per_face_batch(face);
 
     // Loop over all quadrature points and pass the vertices to preCICE
     for(unsigned int q = 0; q < phi.n_q_points; ++q)
@@ -252,7 +251,7 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data_factory(
   Assert(write_data_id != -1, dealii::ExcNotInitialized());
   Assert(coupling_nodes_ids.size() > 0, dealii::ExcNotInitialized());
   // Similar as in define_coupling_mesh
-  FEFaceIntegrator phi(*this->matrix_free, true, mf_dof_index, mf_quad_index);
+  FEFaceIntegrator phi(this->matrix_free, true, mf_dof_index, mf_quad_index);
 
   // In order to unroll the vectorization
   std::array<double, data_dim * VectorizedArrayType::size()> unrolled_local_data;
@@ -261,12 +260,11 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data_factory(
   auto index = coupling_nodes_ids.begin();
 
   // Loop over all faces
-  for(unsigned int face = this->matrix_free->n_inner_face_batches();
-      face <
-      this->matrix_free->n_boundary_face_batches() + this->matrix_free->n_inner_face_batches();
+  for(unsigned int face = this->matrix_free.n_inner_face_batches();
+      face < this->matrix_free.n_boundary_face_batches() + this->matrix_free.n_inner_face_batches();
       ++face)
   {
-    auto const boundary_id = this->matrix_free->get_boundary_id(face);
+    auto const boundary_id = this->matrix_free.get_boundary_id(face);
 
     // Only for interface nodes
     if(boundary_id != this->dealii_boundary_surface_id)
@@ -276,7 +274,7 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data_factory(
     phi.reinit(face);
     phi.read_dof_values_plain(data_vector);
     phi.evaluate(flags);
-    int const active_faces = this->matrix_free->n_active_entries_per_face_batch(face);
+    int const active_faces = this->matrix_free.n_active_entries_per_face_batch(face);
 
     for(unsigned int q = 0; q < phi.n_q_points; ++q, ++index)
     {

@@ -35,16 +35,22 @@ namespace ExaDG
 {
 template<int dim, typename VectorType>
 double
-calculate_error(MPI_Comm const &                             mpi_comm,
-                bool const &                                 relative_error,
-                dealii::DoFHandler<dim> const &              dof_handler,
-                dealii::Mapping<dim> const &                 mapping,
-                VectorType const &                           numerical_solution,
-                std::shared_ptr<dealii::Function<dim>> const analytical_solution,
-                double const &                               time,
-                dealii::VectorTools::NormType const &        norm_type,
-                unsigned int const                           additional_quadrature_points = 3)
+calculate_error(MPI_Comm const &                               mpi_comm,
+                bool const &                                   relative_error,
+                dealii::DoFHandler<dim> const &                dof_handler,
+                dealii::Mapping<dim> const &                   mapping,
+                VectorType const &                             numerical_solution,
+                std::shared_ptr<dealii::Function<dim>> const   analytical_solution,
+                double const &                                 time,
+                dealii::VectorTools::NormType const &          norm_type,
+                bool const                                     spatially_weight_error,
+                std::shared_ptr<dealii::Function<dim>> const & weight,
+                unsigned int const                             additional_quadrature_points = 3)
 {
+  if(spatially_weight_error == true)
+    AssertThrow(weight != nullptr,
+                dealii::ExcMessage("No spatial weight provided for error computation."));
+
   double error = 1.0;
   analytical_solution->set_time(time);
 
@@ -66,7 +72,8 @@ calculate_error(MPI_Comm const &                             mpi_comm,
                                             *analytical_solution,
                                             error_norm_per_cell,
                                             *quadrature,
-                                            norm_type);
+                                            norm_type,
+                                            spatially_weight_error ? weight.get() : nullptr);
 
   double error_norm =
     std::sqrt(dealii::Utilities::MPI::sum(error_norm_per_cell.norm_sqr(), mpi_comm));
@@ -85,7 +92,8 @@ calculate_error(MPI_Comm const &                             mpi_comm,
                                               *analytical_solution,
                                               solution_norm_per_cell,
                                               *quadrature,
-                                              norm_type);
+                                              norm_type,
+                                              spatially_weight_error ? weight.get() : nullptr);
 
     double solution_norm =
       std::sqrt(dealii::Utilities::MPI::sum(solution_norm_per_cell.norm_sqr(), mpi_comm));
@@ -167,7 +175,9 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
                                             solution_vector,
                                             error_data.analytical_solution,
                                             time,
-                                            dealii::VectorTools::L2_norm);
+                                            dealii::VectorTools::L2_norm,
+                                            error_data.spatially_weight_error,
+                                            error_data.weight);
 
   dealii::ConditionalOStream pcout(std::cout,
                                    dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);
@@ -211,7 +221,9 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
                                               solution_vector,
                                               error_data.analytical_solution,
                                               time,
-                                              dealii::VectorTools::H1_seminorm);
+                                              dealii::VectorTools::H1_seminorm,
+                                              error_data.spatially_weight_error,
+                                              error_data.weight);
 
     dealii::ConditionalOStream pcout(std::cout,
                                      dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);

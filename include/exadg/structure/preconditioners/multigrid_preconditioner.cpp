@@ -36,14 +36,14 @@ MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & m
 template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize(
-  MultigridData const &                       mg_data,
-  std::shared_ptr<Grid<dim> const>            grid,
-  std::shared_ptr<dealii::Mapping<dim> const> mapping,
-  dealii::FiniteElement<dim> const &          fe,
-  ElasticityOperatorBase<dim, Number> const & pde_operator_in,
-  bool const                                  nonlinear_in,
-  Map_DBC const &                             dirichlet_bc,
-  Map_DBC_ComponentMask const &               dirichlet_bc_component_mask)
+  MultigridData const &                                 mg_data,
+  std::shared_ptr<Grid<dim> const>                      grid,
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+  dealii::FiniteElement<dim> const &                    fe,
+  ElasticityOperatorBase<dim, Number> const &           pde_operator_in,
+  bool const                                            nonlinear_in,
+  Map_DBC const &                                       dirichlet_bc,
+  Map_DBC_ComponentMask const &                         dirichlet_bc_component_mask)
 {
   pde_operator = &pde_operator_in;
 
@@ -53,11 +53,12 @@ MultigridPreconditioner<dim, Number>::initialize(
 
   Base::initialize(mg_data,
                    grid,
-                   mapping,
+                   multigrid_mappings,
                    fe,
                    false /*operator_is_singular*/,
                    dirichlet_bc,
-                   dirichlet_bc_component_mask);
+                   dirichlet_bc_component_mask,
+                   false /* initialize_preconditioners */);
 }
 
 template<int dim, typename Number>
@@ -127,6 +128,8 @@ MultigridPreconditioner<dim, Number>::update()
     this->update_smoothers();
     this->update_coarse_solver();
   }
+
+  this->update_needed = false;
 }
 
 template<int dim, typename Number>
@@ -242,10 +245,10 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
                                    *this->constraints[level],
                                    data);
 
-    // Set undeformed mapping to construct map for spatial integration
+    // Set undeformed mapping to construct map for spatial integration.
     if(data.spatial_integration)
     {
-      pde_operator_level->set_mapping_undeformed(this->get_mapping_ptr_level(level));
+      pde_operator_level->set_mapping_undeformed(this->get_mapping_ptr(level));
     }
 
     mg_operator_level = std::make_shared<MGOperatorNonlinear>(pde_operator_level);

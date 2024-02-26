@@ -13,7 +13,7 @@
         "RefineSpace": "0"
     },
     "FSI" : {
-        "Method": "Aitken",
+        "AccelerationMethod": "Aitken",
         "AbsTol": "1.e-8",
         "RelTol": "1.e-3",
         "OmegaInit": "0.3",

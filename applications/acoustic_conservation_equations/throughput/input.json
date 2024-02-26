@@ -1,0 +1,25 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "3",
+        "IsTest": "false"
+    },
+    "Resolution": {
+        "RunType": "FixedProblemSize",
+        "ElementType": "Hypercube",
+        "DegreeMin": "2",
+        "DegreeMax": "15",
+        "RefineSpaceMin": "3",
+        "RefineSpaceMax": "3",
+        "DofsMin": "200000",
+        "DofsMax": "500000"
+    },
+    "Throughput": {
+        "OperatorType": "AcousticOperator",
+        "RepetitionsInner": "100",
+        "RepetitionsOuter": "1"
+    },
+    "Application": {
+        "MeshType": "Cartesian"
+    }
+}

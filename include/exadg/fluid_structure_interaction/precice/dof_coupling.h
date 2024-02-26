@@ -43,7 +43,7 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 class DoFCoupling : public CouplingBase<dim, data_dim, VectorizedArrayType>
 {
 public:
-  DoFCoupling(std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
+  DoFCoupling(dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
 #ifdef EXADG_WITH_PRECICE
               std::shared_ptr<precice::SolverInterface> precice,
 #endif
@@ -88,7 +88,7 @@ private:
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 DoFCoupling<dim, data_dim, VectorizedArrayType>::DoFCoupling(
-  std::shared_ptr<dealii::MatrixFree<dim, double, VectorizedArrayType> const> data,
+  dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
 #ifdef EXADG_WITH_PRECICE
   std::shared_ptr<precice::SolverInterface> precice,
 #endif
@@ -129,14 +129,14 @@ DoFCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
     // TODO: This is super inefficient, have a look at the
     // dof_handler.n_boundary_dofs implementation for a proper version
     dealii::IndexSet const indices =
-      (dealii::DoFTools::extract_boundary_dofs(this->matrix_free->get_dof_handler(mf_dof_index),
+      (dealii::DoFTools::extract_boundary_dofs(this->matrix_free.get_dof_handler(mf_dof_index),
                                                component_mask,
                                                std::set<dealii::types::boundary_id>{
                                                  this->dealii_boundary_surface_id}) &
-       this->matrix_free->get_dof_handler(mf_dof_index).locally_owned_dofs());
+       this->matrix_free.get_dof_handler(mf_dof_index).locally_owned_dofs());
 
     Assert(indices.n_elements() * data_dim ==
-             this->matrix_free->get_dof_handler(mf_dof_index)
+             this->matrix_free.get_dof_handler(mf_dof_index)
                .n_boundary_dofs(
                  std::set<dealii::types::boundary_id>{this->dealii_boundary_surface_id}),
            dealii::ExcInternalError());
@@ -163,8 +163,8 @@ DoFCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
   component_mask.set(0, true);
 
   dealii::DoFTools::map_boundary_dofs_to_support_points(
-    *(this->matrix_free->get_mapping_info().mapping),
-    this->matrix_free->get_dof_handler(mf_dof_index),
+    *(this->matrix_free.get_mapping_info().mapping),
+    this->matrix_free.get_dof_handler(mf_dof_index),
     support_points,
     component_mask,
     this->dealii_boundary_surface_id);

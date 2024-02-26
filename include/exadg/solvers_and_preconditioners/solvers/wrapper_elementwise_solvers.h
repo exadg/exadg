@@ -78,11 +78,15 @@ public:
   void
   update_preconditioner(bool const update_preconditioner) const override
   {
-    (void)update_preconditioner;
-    AssertThrow(
-      false, dealii::ExcMessage("Should not arrive here. This function has not been implemented."));
+    if(preconditioner.needs_update() or update_preconditioner)
+    {
+      preconditioner.update();
+    }
   }
 
+  /**
+   * Solve function. This function may be called with identical dst, src vectors.
+   */
   unsigned int
   solve(VectorType & dst, VectorType const & src) const override
   {

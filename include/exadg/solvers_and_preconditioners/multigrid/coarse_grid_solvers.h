@@ -109,21 +109,24 @@ public:
     AMGData amg_data;
   };
 
-  MGCoarseKrylov(Operator const &       matrix,
+  MGCoarseKrylov(Operator const &       pde_operator_in,
+                 bool const             initialize,
                  AdditionalData const & additional_data,
                  MPI_Comm const &       comm)
-    : coarse_matrix(matrix), additional_data(additional_data), mpi_comm(comm)
+    : pde_operator(pde_operator_in), additional_data(additional_data), mpi_comm(comm)
   {
     if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi)
     {
-      preconditioner = std::make_shared<JacobiPreconditioner<Operator>>(coarse_matrix);
+      preconditioner = std::make_shared<JacobiPreconditioner<Operator>>(pde_operator, initialize);
+
       std::shared_ptr<JacobiPreconditioner<Operator>> jacobi =
         std::dynamic_pointer_cast<JacobiPreconditioner<Operator>>(preconditioner);
-      AssertDimension(jacobi->get_size_of_diagonal(), coarse_matrix.m());
+      AssertDimension(jacobi->get_size_of_diagonal(), pde_operator.m());
     }
     else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::BlockJacobi)
     {
-      preconditioner = std::make_shared<BlockJacobiPreconditioner<Operator>>(coarse_matrix);
+      preconditioner =
+        std::make_shared<BlockJacobiPreconditioner<Operator>>(pde_operator, initialize);
     }
     else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
     {
@@ -131,7 +134,8 @@ public:
       {
 #ifdef DEAL_II_WITH_TRILINOS
         preconditioner_amg =
-          std::make_shared<PreconditionerML<Operator, NumberAMG>>(matrix,
+          std::make_shared<PreconditionerML<Operator, NumberAMG>>(pde_operator,
+                                                                  initialize,
                                                                   additional_data.amg_data.ml_data);
 #else
         AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with Trilinos!"));
@@ -141,7 +145,7 @@ public:
       {
 #ifdef DEAL_II_WITH_PETSC
         preconditioner_amg = std::make_shared<PreconditionerBoomerAMG<Operator, NumberAMG>>(
-          matrix, additional_data.amg_data.boomer_data);
+          pde_operator, initialize, additional_data.amg_data.boomer_data);
 #else
         AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with PETSc!"));
 #endif
@@ -307,7 +311,7 @@ public:
 
         solver.reset(
           new Krylov::SolverCG<Operator, PreconditionerBase<MultigridNumber>, VectorType>(
-            coarse_matrix, *preconditioner, solver_data));
+            pde_operator, *preconditioner, solver_data));
       }
       else if(additional_data.solver_type == KrylovSolverType::GMRES)
       {
@@ -334,7 +338,7 @@ public:
 
         solver.reset(
           new Krylov::SolverGMRES<Operator, PreconditionerBase<MultigridNumber>, VectorType>(
-            coarse_matrix, *preconditioner, solver_data, mpi_comm));
+            pde_operator, *preconditioner, solver_data, mpi_comm));
       }
       else
       {
@@ -347,7 +351,7 @@ public:
   }
 
 private:
-  const Operator & coarse_matrix;
+  const Operator & pde_operator;
 
   std::shared_ptr<PreconditionerBase<MultigridNumber>> preconditioner;
 
@@ -372,42 +376,26 @@ public:
     DealiiChebyshev;
 
   MGCoarseChebyshev(Operator const &                          coarse_operator_in,
-                    SolverData const &                        solver_data_in,
+                    bool const                                initialize_preconditioner_in,
+                    double const                              relative_tolerance_in,
                     MultigridCoarseGridPreconditioner const & preconditioner,
                     bool const                                operator_is_singular_in)
     : coarse_operator(coarse_operator_in),
-      solver_data(solver_data_in),
+      relative_tolerance(relative_tolerance_in),
       operator_is_singular(operator_is_singular_in)
   {
     AssertThrow(preconditioner == MultigridCoarseGridPreconditioner::PointJacobi,
                 dealii::ExcMessage(
                   "Only PointJacobi preconditioner implemented for Chebyshev coarse-grid solver."));
 
-    initialize_chebyshev_smoother_coarse_grid(coarse_operator, solver_data, operator_is_singular);
+    if(initialize_preconditioner_in)
+    {
+      update();
+    }
   }
 
   void
   update() final
-  {
-    initialize_chebyshev_smoother_coarse_grid(coarse_operator, solver_data, operator_is_singular);
-  }
-
-  void
-  operator()(unsigned int const level, VectorType & dst, const VectorType & src) const final
-  {
-    AssertThrow(chebyshev_smoother.get() != 0,
-                dealii::ExcMessage("MGCoarseChebyshev: chebyshev_smoother is not initialized."));
-
-    AssertThrow(level == 0, dealii::ExcNotImplemented());
-
-    chebyshev_smoother->vmult(dst, src);
-  }
-
-private:
-  void
-  initialize_chebyshev_smoother_coarse_grid(Operator const &   coarse_operator,
-                                            SolverData const & solver_data,
-                                            bool const         operator_is_singular)
   {
     // use Chebyshev smoother of high degree to solve the coarse grid problem approximately
     typename DealiiChebyshev::AdditionalData dealii_additional_data;
@@ -433,7 +421,7 @@ private:
 
     // calculate/estimate the number of Chebyshev iterations needed to reach a specified relative
     // solver tolerance
-    double const eps = solver_data.rel_tol;
+    double const eps = relative_tolerance;
 
     dealii_additional_data.degree = static_cast<unsigned int>(
       std::log(1. / eps + std::sqrt(1. / eps / eps - 1.)) / std::log(1. / sigma));
@@ -443,8 +431,20 @@ private:
     chebyshev_smoother->initialize(coarse_operator, dealii_additional_data);
   }
 
+  void
+  operator()(unsigned int const level, VectorType & dst, const VectorType & src) const final
+  {
+    AssertThrow(chebyshev_smoother.get() != 0,
+                dealii::ExcMessage("MGCoarseChebyshev: chebyshev_smoother is not initialized."));
+
+    AssertThrow(level == 0, dealii::ExcNotImplemented());
+
+    chebyshev_smoother->vmult(dst, src);
+  }
+
+private:
   Operator const & coarse_operator;
-  SolverData const solver_data;
+  double const     relative_tolerance;
   bool const       operator_is_singular;
 
   std::shared_ptr<DealiiChebyshev> chebyshev_smoother;
@@ -462,7 +462,7 @@ private:
     VectorTypeMultigrid;
 
 public:
-  MGCoarseAMG(Operator const & op, AMGData data = AMGData())
+  MGCoarseAMG(Operator const & op, bool const initialize, AMGData data = AMGData())
   {
     (void)op;
     (void)data;
@@ -471,7 +471,9 @@ public:
     {
 #ifdef DEAL_II_WITH_PETSC
       amg_preconditioner =
-        std::make_shared<PreconditionerBoomerAMG<Operator, NumberAMG>>(op, data.boomer_data);
+        std::make_shared<PreconditionerBoomerAMG<Operator, NumberAMG>>(op,
+                                                                       initialize,
+                                                                       data.boomer_data);
 #else
       AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with PETSc!"));
 #endif
@@ -480,7 +482,7 @@ public:
     {
 #ifdef DEAL_II_WITH_TRILINOS
       amg_preconditioner =
-        std::make_shared<PreconditionerML<Operator, NumberAMG>>(op, data.ml_data);
+        std::make_shared<PreconditionerML<Operator, NumberAMG>>(op, initialize, data.ml_data);
 #else
       AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif

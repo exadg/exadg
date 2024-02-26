@@ -252,7 +252,7 @@ private:
   }
 
   void
-  create_grid() final
+  create_grid(Grid<dim> & grid, std::shared_ptr<dealii::Mapping<dim>> & mapping) final
   {
     auto const lambda_create_triangulation =
       [&](dealii::Triangulation<dim, dim> &                        tria,
@@ -271,11 +271,15 @@ private:
         tria.refine_global(global_refinements);
       };
 
-    GridUtilities::create_triangulation<dim>(*this->grid,
+    GridUtilities::create_triangulation<dim>(grid,
                                              this->mpi_comm,
                                              this->param.grid,
                                              lambda_create_triangulation,
                                              {} /* no local refinements */);
+
+    GridUtilities::create_mapping(mapping,
+                                  this->param.grid.element_type,
+                                  this->param.mapping_degree);
   }
 
   void

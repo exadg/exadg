@@ -48,40 +48,31 @@ public:
   /**
    * Constructor.
    */
-  DeformedMapping(std::shared_ptr<Grid<dim> const>                           grid,
-                  std::shared_ptr<dealii::Mapping<dim> const>                mapping_undeformed,
-                  std::shared_ptr<Poisson::BoundaryDescriptor<1, dim> const> boundary_descriptor,
-                  std::shared_ptr<Poisson::FieldFunctions<dim> const>        field_functions,
-                  Poisson::Parameters const &                                param,
-                  std::string const &                                        field,
-                  MPI_Comm const &                                           mpi_comm)
+  DeformedMapping(
+    std::shared_ptr<Grid<dim> const>                           grid,
+    std::shared_ptr<dealii::Mapping<dim> const>                mapping_undeformed,
+    std::shared_ptr<MultigridMappings<dim, Number>> const      multigrid_mappings_undeformed,
+    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim> const> boundary_descriptor,
+    std::shared_ptr<Poisson::FieldFunctions<dim> const>        field_functions,
+    Poisson::Parameters const &                                param,
+    std::string const &                                        field,
+    MPI_Comm const &                                           mpi_comm)
     : DeformedMappingBase<dim, Number>(mapping_undeformed, param.degree, *grid->triangulation),
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       iterations({0, 0})
   {
-    // initialize PDE operator
-    pde_operator = std::make_shared<Poisson::Operator<dim, dim, Number>>(
-      grid, mapping_undeformed, boundary_descriptor, field_functions, param, field, mpi_comm);
+    // create and setup PDE operator
+    pde_operator =
+      std::make_shared<Poisson::Operator<dim, dim, Number>>(grid,
+                                                            mapping_undeformed,
+                                                            multigrid_mappings_undeformed,
+                                                            boundary_descriptor,
+                                                            field_functions,
+                                                            param,
+                                                            field,
+                                                            mpi_comm);
 
-    // initialize matrix_free_data
-    matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-
-    if(param.enable_cell_based_face_loops)
-      Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
-
-    matrix_free_data->append(pde_operator);
-
-    // initialize matrix_free
-    matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-    matrix_free->reinit(*mapping_undeformed,
-                        matrix_free_data->get_dof_handler_vector(),
-                        matrix_free_data->get_constraint_vector(),
-                        matrix_free_data->get_quadrature_vector(),
-                        matrix_free_data->data);
-
-    // setup PDE operator and solver
-    pde_operator->setup(matrix_free, matrix_free_data);
-    pde_operator->setup_solver();
+    pde_operator->setup();
 
     // finally, initialize dof vector
     pde_operator->initialize_dof_vector(displacement);
@@ -93,10 +84,10 @@ public:
     return pde_operator;
   }
 
-  std::shared_ptr<dealii::MatrixFree<dim, Number> const>
+  dealii::MatrixFree<dim, Number> const &
   get_matrix_free() const
   {
-    return matrix_free;
+    return *pde_operator->get_matrix_free();
   }
 
   /**
@@ -129,9 +120,9 @@ public:
       print_solver_info_linear(pcout, n_iter, timer.wall_time());
     }
 
-    this->initialize_mapping_q_cache(this->mapping_undeformed,
-                                     displacement,
-                                     pde_operator->get_dof_handler());
+    this->initialize_mapping_from_dof_vector(this->mapping_undeformed,
+                                             displacement,
+                                             pde_operator->get_dof_handler());
   }
 
   /**
@@ -151,10 +142,6 @@ public:
   }
 
 private:
-  // matrix-free
-  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
-  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
-
   // PDE operator
   std::shared_ptr<Poisson::Operator<dim, dim, Number>> pde_operator;
 

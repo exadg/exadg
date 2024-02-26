@@ -26,6 +26,11 @@
 
 namespace ExaDG
 {
+/**
+ * A manifold that corresponds to a triangulation generated via
+ *
+ *  dealii::GridGenerator::subdivided_hyper_cube(tria, n_cells_1d, left, right);
+ */
 template<int dim>
 class DeformedCubeManifold : public dealii::ChartManifold<dim, dim, dim>
 {
@@ -48,6 +53,7 @@ public:
     dealii::Point<dim> space_point;
     for(unsigned int d = 0; d < dim; ++d)
       space_point(d) = chart_point(d) + sinval;
+
     return space_point;
   }
 
@@ -60,15 +66,16 @@ public:
       one(d) = 1.;
 
     // Newton iteration to solve the nonlinear equation given by the point
-    dealii::Tensor<1, dim> sinvals;
+    dealii::Tensor<1, dim> sinvals, residual;
+
     for(unsigned int d = 0; d < dim; ++d)
       sinvals[d] = std::sin(frequency * dealii::numbers::PI * (x(d) - left) / (right - left));
-
     double sinval = deformation;
     for(unsigned int d = 0; d < dim; ++d)
       sinval *= sinvals[d];
-    dealii::Tensor<1, dim> residual = space_point - x - sinval * one;
-    unsigned int           its      = 0;
+    residual = space_point - (x + sinval * one);
+
+    unsigned int its = 0;
     while(residual.norm() > 1e-12 and its < 100)
     {
       dealii::Tensor<2, dim> jacobian;
@@ -90,14 +97,16 @@ public:
 
       for(unsigned int d = 0; d < dim; ++d)
         sinvals[d] = std::sin(frequency * dealii::numbers::PI * (x(d) - left) / (right - left));
-
       sinval = deformation;
       for(unsigned int d = 0; d < dim; ++d)
         sinval *= sinvals[d];
-      residual = space_point - x - sinval * one;
+      residual = space_point - (x + sinval * one);
+
       ++its;
     }
+
     AssertThrow(residual.norm() < 1e-12, dealii::ExcMessage("Newton for point did not converge."));
+
     return x;
   }
 
@@ -122,7 +131,7 @@ apply_deformed_cube_manifold(dealii::Triangulation<dim> & triangulation,
                              double const                 deformation,
                              unsigned int const           frequency)
 {
-  static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
+  DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
   triangulation.set_all_manifold_ids(1);
   triangulation.set_manifold(1, manifold);
 

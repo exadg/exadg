@@ -64,7 +64,7 @@ public:
          ConvectiveKernelData const &            data,
          unsigned int const                      dof_index,
          unsigned int const                      quad_index_linearized,
-         bool const                              is_mg)
+         bool const                              use_own_velocity_storage)
   {
     this->data = data;
 
@@ -84,8 +84,7 @@ public:
         std::make_shared<IntegratorFace>(matrix_free, true, dof_index, quad_index_linearized);
     }
 
-    // use own storage of velocity vector only in case of multigrid
-    if(is_mg)
+    if(use_own_velocity_storage)
     {
       velocity.reset();
       matrix_free.initialize_dof_vector(velocity.own(), dof_index);

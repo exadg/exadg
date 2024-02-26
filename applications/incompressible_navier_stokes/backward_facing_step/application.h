@@ -107,9 +107,11 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
   param.solver_info_data.interval_time = (end_time - start_time) / 100;
 
   // SPATIAL DISCRETIZATION
-  param.grid.triangulation_type = TriangulationType::Distributed;
-  param.mapping_degree          = param.degree_u;
-  param.degree_p                = DegreePressure::MixedOrder;
+  param.grid.triangulation_type     = TriangulationType::Distributed;
+  param.mapping_degree              = param.degree_u;
+  param.mapping_degree_coarse_grids = param.mapping_degree;
+
+  param.degree_p = DegreePressure::MixedOrder;
 
   // convective term
   if(param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -253,26 +255,49 @@ public:
   }
 
   void
-  create_grid() final
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
-    auto const lambda_create_triangulation =
-      [&](dealii::Triangulation<dim, dim> &                        tria,
-          std::vector<dealii::GridTools::PeriodicFacePair<
-            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
-          unsigned int const                                       global_refinements,
-          std::vector<unsigned int> const &                        vector_local_refinements) {
-        (void)periodic_face_pairs;
-        (void)vector_local_refinements;
+    auto const lambda_create_triangulation = [&](dealii::Triangulation<dim, dim> & tria,
+                                                 std::vector<dealii::GridTools::PeriodicFacePair<
+                                                   typename dealii::Triangulation<
+                                                     dim>::cell_iterator>> & periodic_face_pairs,
+                                                 unsigned int const          global_refinements,
+                                                 std::vector<unsigned int> const &
+                                                   vector_local_refinements) {
+      (void)periodic_face_pairs;
+      (void)vector_local_refinements;
 
-        Geometry::create_grid_precursor(tria, global_refinements, periodic_face_pairs);
-      };
+      AssertThrow(
+        this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+        dealii::ExcMessage(
+          "Periodic faces might not be applied correctly for TriangulationType::FullyDistributed. "
+          "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
 
-    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+      AssertThrow(
+        this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+        dealii::ExcMessage(
+          "Manifolds might not be applied correctly for TriangulationType::FullyDistributed. "
+          "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
+
+      Geometry::create_grid_precursor(tria, global_refinements, periodic_face_pairs);
+    };
+
+    GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
                                                             this->param.grid,
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
+
+    // mappings
+    GridUtilities::create_mapping_with_multigrid(mapping,
+                                                 multigrid_mappings,
+                                                 this->param.grid.element_type,
+                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree_coarse_grids,
+                                                 this->param.involves_h_multigrid());
   }
 
   void
@@ -384,26 +409,49 @@ public:
   }
 
   void
-  create_grid() final
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
-    auto const lambda_create_triangulation =
-      [&](dealii::Triangulation<dim, dim> &                        tria,
-          std::vector<dealii::GridTools::PeriodicFacePair<
-            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
-          unsigned int const                                       global_refinements,
-          std::vector<unsigned int> const &                        vector_local_refinements) {
-        (void)periodic_face_pairs;
-        (void)vector_local_refinements;
+    auto const lambda_create_triangulation = [&](dealii::Triangulation<dim, dim> & tria,
+                                                 std::vector<dealii::GridTools::PeriodicFacePair<
+                                                   typename dealii::Triangulation<
+                                                     dim>::cell_iterator>> & periodic_face_pairs,
+                                                 unsigned int const          global_refinements,
+                                                 std::vector<unsigned int> const &
+                                                   vector_local_refinements) {
+      (void)periodic_face_pairs;
+      (void)vector_local_refinements;
 
-        Geometry::create_grid(tria, global_refinements, periodic_face_pairs);
-      };
+      AssertThrow(
+        this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+        dealii::ExcMessage(
+          "Periodic faces might not be applied correctly for TriangulationType::FullyDistributed. "
+          "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
 
-    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+      AssertThrow(
+        this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+        dealii::ExcMessage(
+          "Manifolds might not be applied correctly for TriangulationType::FullyDistributed. "
+          "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
+
+      Geometry::create_grid(tria, global_refinements, periodic_face_pairs);
+    };
+
+    GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
                                                             this->param.grid,
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
+
+    // mappings
+    GridUtilities::create_mapping_with_multigrid(mapping,
+                                                 multigrid_mappings,
+                                                 this->param.grid.element_type,
+                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree_coarse_grids,
+                                                 this->param.involves_h_multigrid());
   }
 
   void

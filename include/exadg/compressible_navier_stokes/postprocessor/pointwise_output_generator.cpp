@@ -20,9 +20,6 @@
  */
 
 
-// deal.II
-#include <deal.II/numerics/vector_tools.h>
-
 // ExaDG
 #include <exadg/compressible_navier_stokes/postprocessor/pointwise_output_generator.h>
 #include <exadg/utilities/print_functions.h>
@@ -56,7 +53,7 @@ template struct PointwiseOutputData<3>;
 
 template<int dim, typename Number>
 PointwiseOutputGenerator<dim, Number>::PointwiseOutputGenerator(MPI_Comm const & comm)
-  : PointwiseOutputGeneratorBase<dim, VectorType>(comm)
+  : PointwiseOutputGeneratorBase<dim, Number>(comm)
 {
 }
 
@@ -72,30 +69,42 @@ PointwiseOutputGenerator<dim, Number>::setup(
   dof_handler           = &dof_handler_in;
   pointwise_output_data = pointwise_output_data_in;
 
-  if(pointwise_output_data.write_rho)
-    this->add_quantity("Rho", 1);
-  if(pointwise_output_data.write_rho_u)
-    this->add_quantity("Rho_U", dim);
-  if(pointwise_output_data.write_rho_E)
-    this->add_quantity("Rho_E", 1);
+  if(pointwise_output_data.time_control_data.is_active and
+     pointwise_output_data.evaluation_points.size() > 0)
+  {
+    if(pointwise_output_data.write_rho)
+      this->add_quantity("Rho", 1);
+    if(pointwise_output_data.write_rho_u)
+      this->add_quantity("Rho_U", dim);
+    if(pointwise_output_data.write_rho_E)
+      this->add_quantity("Rho_E", 1);
+  }
 }
 
 template<int dim, typename Number>
 void
-PointwiseOutputGenerator<dim, Number>::do_evaluate(VectorType const & solution)
+PointwiseOutputGenerator<dim, Number>::evaluate(VectorType const & solution,
+                                                double const       time,
+                                                bool const         unsteady)
 {
-  if(pointwise_output_data.write_rho or pointwise_output_data.write_rho_u or
-     pointwise_output_data.write_rho_E)
-  {
-    auto const values = this->template compute_point_values<dim + 2>(solution, *dof_handler);
-    if(pointwise_output_data.write_rho)
-      this->write_quantity("Rho", values, 0);
-    if(pointwise_output_data.write_rho_u)
-      this->write_quantity("Rho_U", values, 1);
-    if(pointwise_output_data.write_rho_E)
-      this->write_quantity("Rho_E", values, dim + 1);
-  }
+  this->do_evaluate(
+    [&]() {
+      if(pointwise_output_data.write_rho or pointwise_output_data.write_rho_u or
+         pointwise_output_data.write_rho_E)
+      {
+        auto const values = this->template compute_point_values<dim + 2>(solution, *dof_handler);
+        if(pointwise_output_data.write_rho)
+          this->write_quantity("Rho", values, 0);
+        if(pointwise_output_data.write_rho_u)
+          this->write_quantity("Rho_U", values, 1);
+        if(pointwise_output_data.write_rho_E)
+          this->write_quantity("Rho_E", values, dim + 1);
+      }
+    },
+    time,
+    unsteady);
 }
+
 
 template class PointwiseOutputGenerator<2, float>;
 template class PointwiseOutputGenerator<2, double>;

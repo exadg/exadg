@@ -1,0 +1,105 @@
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up acoustic conservation equations solver:
+
+List of parameters:
+
+Mathematical model:
+  Formulation:                               SkewSymmetric
+  Right-hand side:                           false
+
+Physical quantities:
+  Start time:                                0.0000e+00
+  End time:                                  1.0000e-02
+  Speed of sound:                            3.4000e+02
+
+Temporal discretization:
+  Calculation of time step size:             CFL
+  Maximum number of time steps:              4294967295
+  Temporal refinements:                      0
+  Order of time integration scheme:          2
+  Start with low order method:               true
+  Restarted simulation:                      false
+  Restart:
+  Write restart:                             false
+
+Spatial discretization:
+  Triangulation type:                        Distributed
+  Element type:                              Hypercube
+  Number of global refinements:              2
+  Create coarse triangulations:              false
+  Mapping degree:                            2
+  Polynomial degree pressure:                2
+  Polynomial degree velocity:                2
+
+Generating grid for 2-dimensional problem:
+
+  Max. number of refinements:                2
+  Number of cells:                           192
+
+Construct acoustic conservation equations operator ...
+Pressure:
+  degree of 1D polynomials:                  2
+  number of dofs per cell:                   9
+  number of dofs (total):                    1728
+Velocity:
+  degree of 1D polynomials:                  2
+  number of dofs per cell:                   18
+  number of dofs (total):                    3456
+Pressure and velocity:
+  number of dofs per cell:                   27
+  number of dofs (total):                    5184
+
+... done!
+
+Setup acoustic conservation equations operator ...
+
+... done!
+
+Setup Multistep time integrator ...
+
+Calculation of time step size:
+
+
+Calculation of time step size according to CFL condition:
+
+  CFL:                                       2.5000e-01
+  time step size:                            1.4172e-05
+
+... done!
+
+Starting time loop ...
+
+Calculate error for pressure at time t = 0.0000e+00:
+  Absolute error (L2-norm): 1.19175e-01
+
+Calculate error for velocity at time t = 0.0000e+00:
+  Absolute error (L2-norm): 0.00000e+00
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 1.41720e-05
+________________________________________________________________________________
+
+Calculate error for pressure at time t = 1.0005e-02:
+  Absolute error (L2-norm): 5.34766e-04
+
+Calculate error for velocity at time t = 1.0005e-02:
+  Absolute error (L2-norm): 1.83535e-06

@@ -24,7 +24,11 @@
 
 // deal.II
 #include <deal.II/base/mpi.h>
+#include <deal.II/fe/mapping.h>
 #include <deal.II/grid/tria.h>
+
+// ExaDG
+#include <exadg/grid/grid_data.h>
 
 namespace ExaDG
 {
@@ -36,24 +40,61 @@ namespace ExaDG
 template<int dim>
 inline double
 calculate_minimum_vertex_distance(dealii::Triangulation<dim> const & triangulation,
+                                  dealii::Mapping<dim> const &       mapping,
                                   MPI_Comm const &                   mpi_comm)
 {
-  double diameter = 0.0, min_cell_diameter = std::numeric_limits<double>::max();
+  double min_cell_diameter = std::numeric_limits<double>::max();
 
   for(auto const & cell : triangulation.active_cell_iterators())
   {
     if(cell->is_locally_owned())
     {
-      diameter = cell->minimum_vertex_distance();
-      if(diameter < min_cell_diameter)
-        min_cell_diameter = diameter;
+      auto const vertices = mapping.get_vertices(cell);
+      for(unsigned int i = 0; i < vertices.size(); ++i)
+        for(unsigned int j = i + 1; j < vertices.size(); ++j)
+          min_cell_diameter = std::min(min_cell_diameter, vertices[i].distance(vertices[j]));
     }
   }
 
-  double const global_min_cell_diameter =
-    -dealii::Utilities::MPI::max(-min_cell_diameter, mpi_comm);
+  return dealii::Utilities::MPI::min(min_cell_diameter, mpi_comm);
+}
 
-  return global_min_cell_diameter;
+/**
+ * This function calculates a characteristic element length given the volume of the element, the
+ * number of space dimensions, and the element type.
+ */
+template<typename Number>
+inline Number
+calculate_characteristic_element_length(Number const        element_volume,
+                                        unsigned int const  dim,
+                                        ElementType const & element_type)
+{
+  if(element_type == ElementType::Hypercube)
+  {
+    // calculate the length h of a dim-dimensional cube that has the volume "element_volume".
+    return std::exp(std::log(element_volume) / (double)dim);
+  }
+  else if(element_type == ElementType::Simplex)
+  {
+    // calculate the length h of an equilateral triangle/tetrahedron that has the volume
+    // "element_volume" (V = h^dim / factor).
+    double factor = 1.0;
+
+    if(dim == 2)
+      factor = 4.0 / std::sqrt(3.0);
+    else if(dim == 3)
+      factor = 6.0 * std::sqrt(2.0);
+    else
+      AssertThrow(false, dealii::ExcMessage("Only dim = 2, 3 implemented."));
+
+    return std::exp(std::log(element_volume * factor) / (double)dim);
+  }
+  else
+  {
+    AssertThrow(false,
+                dealii::ExcMessage("This function is not implemented for the given ElementType."));
+    return std::exp(std::log(element_volume) / (double)dim);
+  }
 }
 
 /**
@@ -62,10 +103,11 @@ calculate_minimum_vertex_distance(dealii::Triangulation<dim> const & triangulati
  * by the number of nodes per coordinate direction. Hence, the result depends on the function space
  * (H^1 vs. L^2).
  */
-inline double
-calculate_characteristic_element_length(double const       element_length,
-                                        unsigned int const fe_degree,
-                                        bool const         is_dg)
+template<typename Number>
+inline Number
+calculate_high_order_element_length(Number const       element_length,
+                                    unsigned int const fe_degree,
+                                    bool const         is_dg)
 {
   unsigned int n_nodes_1d = fe_degree;
 

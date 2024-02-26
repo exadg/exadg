@@ -26,6 +26,7 @@
 #include <exadg/incompressible_navier_stokes/postprocessor/kinetic_energy_dissipation_detailed.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/line_plot_calculation.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/output_generator.h>
+#include <exadg/incompressible_navier_stokes/postprocessor/pointwise_output_generator.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor_base.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 #include <exadg/postprocessor/error_calculation.h>
@@ -45,6 +46,7 @@ struct PostProcessorData
   }
 
   OutputData                  output_data;
+  PointwiseOutputData<dim>    pointwise_output_data;
   ErrorCalculationData<dim>   error_data_u;
   ErrorCalculationData<dim>   error_data_p;
   LiftAndDragData             lift_and_drag_data;
@@ -109,6 +111,9 @@ private:
 
   // write output for visualization of results (e.g., using paraview)
   OutputGenerator<dim, Number> output_generator;
+
+  // writes output at certain points in space
+  PointwiseOutputGenerator<dim, Number> pointwise_output_generator;
 
   // calculate errors for verification purposes for problems with known analytical solution
   ErrorCalculator<dim, Number> error_calculator_u;

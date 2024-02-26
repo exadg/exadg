@@ -32,12 +32,8 @@ void
 initialize_block_jacobi_matrices_with_zero(std::vector<dealii::LAPACKFullMatrix<Number>> & matrices)
 {
   // initialize matrices
-  for(typename std::vector<dealii::LAPACKFullMatrix<Number>>::iterator it = matrices.begin();
-      it != matrices.end();
-      ++it)
-  {
-    *it = 0;
-  }
+  for(auto & m : matrices)
+    m = 0;
 }
 
 
@@ -49,25 +45,22 @@ template<typename Number>
 void
 calculate_lu_factorization_block_jacobi(std::vector<dealii::LAPACKFullMatrix<Number>> & matrices)
 {
-  for(typename std::vector<dealii::LAPACKFullMatrix<Number>>::iterator it = matrices.begin();
-      it != matrices.end();
-      ++it)
+  for(auto & matrix : matrices)
   {
-    dealii::LAPACKFullMatrix<Number> copy(*it);
     try // the matrix might be singular
     {
-      (*it).compute_lu_factorization();
+      matrix.compute_lu_factorization();
     }
     catch(std::exception & exc)
     {
       // add a small, positive value to the diagonal
       // of the LU factorized matrix
-      for(unsigned int i = 0; i < (*it).m(); ++i)
+      for(unsigned int i = 0; i < matrix.m(); ++i)
       {
-        for(unsigned int j = 0; j < (*it).n(); ++j)
+        for(unsigned int j = 0; j < matrix.n(); ++j)
         {
           if(i == j)
-            (*it)(i, j) += 1.e-4;
+            matrix(i, j) += 1.e-4;
         }
       }
     }

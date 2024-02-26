@@ -33,7 +33,7 @@ MomentumOperator<dim, Number>::initialize(
                                     operator_data.convective_kernel_data,
                                     operator_data.dof_index,
                                     operator_data.quad_index,
-                                    this->is_mg);
+                                    true);
   }
 
   if(operator_data.viscous_problem)

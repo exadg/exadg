@@ -45,30 +45,35 @@ public:
   /*
    * Constructor.
    */
-  OperatorProjectionMethods(std::shared_ptr<Grid<dim> const>               grid,
-                            std::shared_ptr<dealii::Mapping<dim> const>    mapping,
-                            std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
-                            std::shared_ptr<FieldFunctions<dim> const>     field_functions,
-                            Parameters const &                             parameters,
-                            std::string const &                            field,
-                            MPI_Comm const &                               mpi_comm);
+  OperatorProjectionMethods(
+    std::shared_ptr<Grid<dim> const>                      grid,
+    std::shared_ptr<dealii::Mapping<dim> const>           mapping,
+    std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+    std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor,
+    std::shared_ptr<FieldFunctions<dim> const>            field_functions,
+    Parameters const &                                    parameters,
+    std::string const &                                   field,
+    MPI_Comm const &                                      mpi_comm);
 
   /*
    * Destructor.
    */
   virtual ~OperatorProjectionMethods();
 
+protected:
   /*
    * Calls setup() function of base class and additionally initializes the pressure Poisson operator
    * needed for projection-type methods.
    */
   void
-  setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
-        std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
-        std::string const &                                    dof_index_temperature = "") override;
+  setup_derived() override;
 
   void
-  update_after_grid_motion() override;
+  setup_preconditioners_and_solvers() override;
+
+public:
+  void
+  update_after_grid_motion(bool const update_matrix_free) override;
 
   /*
    * This function evaluates the rhs-contribution of the viscous term and adds the result to the
@@ -105,15 +110,6 @@ public:
   apply_laplace_operator(VectorType & dst, VectorType const & src) const;
 
 protected:
-  /*
-   * Initializes the preconditioner and solver for the pressure Poisson equation. Can be done in
-   * this base class since it is the same for dual-splitting and pressure-correction. The function
-   * is declared virtual so that individual initializations required for derived class can be added
-   * where needed.
-   */
-  virtual void
-  setup_pressure_poisson_solver();
-
   // Pressure Poisson equation (operator, preconditioner, solver).
   Poisson::LaplaceOperator<dim, Number, 1> laplace_operator;
 
@@ -122,17 +118,17 @@ protected:
   std::shared_ptr<Krylov::SolverBase<VectorType>> pressure_poisson_solver;
 
 private:
-  /*
-   * Initialization functions called during setup of pressure Poisson solver.
-   */
   void
   initialize_laplace_operator();
 
+  /*
+   * Setup functions called during setup of pressure Poisson solver.
+   */
   void
-  initialize_preconditioner_pressure_poisson();
+  setup_preconditioner_pressure_poisson();
 
   void
-  initialize_solver_pressure_poisson();
+  setup_solver_pressure_poisson();
 };
 
 } // namespace IncNS

@@ -115,6 +115,7 @@ enum class Preconditioner
 {
   None,
   PointJacobi,
+  AdditiveSchwarz,
   Multigrid,
   AMG
 };

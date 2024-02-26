@@ -31,6 +31,7 @@
 #include <exadg/operators/quadrature.h>
 #include <exadg/poisson/preconditioners/multigrid_preconditioner.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/additive_schwarz_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
@@ -46,16 +47,18 @@ namespace Poisson
 {
 template<int dim, int n_components, typename Number>
 Operator<dim, n_components, Number>::Operator(
-  std::shared_ptr<Grid<dim> const>                     grid_in,
-  std::shared_ptr<dealii::Mapping<dim> const>          mapping_in,
-  std::shared_ptr<BoundaryDescriptor<rank, dim> const> boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim> const>           field_functions_in,
-  Parameters const &                                   param_in,
-  std::string const &                                  field_in,
-  MPI_Comm const &                                     mpi_comm_in)
+  std::shared_ptr<Grid<dim> const>                      grid_in,
+  std::shared_ptr<dealii::Mapping<dim> const>           mapping_in,
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings_in,
+  std::shared_ptr<BoundaryDescriptor<rank, dim> const>  boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim> const>            field_functions_in,
+  Parameters const &                                    param_in,
+  std::string const &                                   field_in,
+  MPI_Comm const &                                      mpi_comm_in)
   : dealii::Subscriptor(),
     grid(grid_in),
     mapping(mapping_in),
+    multigrid_mappings(multigrid_mappings_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(param_in),
@@ -66,14 +69,14 @@ Operator<dim, n_components, Number>::Operator(
 {
   pcout << std::endl << "Construct Poisson operator ..." << std::endl;
 
-  distribute_dofs();
+  initialize_dof_handler_and_constraints();
 
   pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, int n_components, typename Number>
 void
-Operator<dim, n_components, Number>::distribute_dofs()
+Operator<dim, n_components, Number>::initialize_dof_handler_and_constraints()
 {
   fe = create_finite_element<dim>(param.grid.element_type,
                                   param.spatial_discretization == SpatialDiscretization::DG,
@@ -192,6 +195,30 @@ Operator<dim, n_components, Number>::fill_matrix_free_data(
 
 template<int dim, int n_components, typename Number>
 void
+Operator<dim, n_components, Number>::setup_coupling_boundary_conditions()
+{
+  if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
+  {
+    interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<rank, dim, double>>();
+    std::vector<unsigned int> quad_indices;
+    if(param.spatial_discretization == SpatialDiscretization::DG)
+      quad_indices.emplace_back(get_quad_index());
+    else if(param.spatial_discretization == SpatialDiscretization::CG)
+      quad_indices.emplace_back(get_quad_index_gauss_lobatto());
+    else
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
+
+    interface_data_dirichlet_cached->setup(*matrix_free,
+                                           get_dof_index(),
+                                           quad_indices,
+                                           boundary_descriptor->dirichlet_cached_bc);
+
+    boundary_descriptor->set_dirichlet_cached_data(interface_data_dirichlet_cached);
+  }
+}
+
+template<int dim, int n_components, typename Number>
+void
 Operator<dim, n_components, Number>::setup_operators()
 {
   // Laplace operator
@@ -229,6 +256,31 @@ Operator<dim, n_components, Number>::setup_operators()
 
 template<int dim, int n_components, typename Number>
 void
+Operator<dim, n_components, Number>::setup()
+{
+  // initialize MatrixFree and MatrixFreeData
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> mf =
+    std::make_shared<dealii::MatrixFree<dim, Number>>();
+  std::shared_ptr<MatrixFreeData<dim, Number>> mf_data =
+    std::make_shared<MatrixFreeData<dim, Number>>();
+
+  fill_matrix_free_data(*mf_data);
+
+  if(param.enable_cell_based_face_loops)
+    Categorization::do_cell_based_loops(*grid->triangulation, mf_data->data);
+  mf->reinit(*get_mapping(),
+             mf_data->get_dof_handler_vector(),
+             mf_data->get_constraint_vector(),
+             mf_data->get_quadrature_vector(),
+             mf_data->data);
+
+  // Subsequently, call the other setup function with MatrixFree/MatrixFreeData objects as
+  // arguments.
+  this->setup(mf, mf_data);
+}
+
+template<int dim, int n_components, typename Number>
+void
 Operator<dim, n_components, Number>::setup(
   std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
   std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data_in)
@@ -238,36 +290,19 @@ Operator<dim, n_components, Number>::setup(
   matrix_free      = matrix_free_in;
   matrix_free_data = matrix_free_data_in;
 
-  if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
-  {
-    interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<rank, dim, double>>();
-    std::vector<unsigned int> quad_indices;
-    if(param.spatial_discretization == SpatialDiscretization::DG)
-      quad_indices.emplace_back(get_quad_index());
-    else if(param.spatial_discretization == SpatialDiscretization::CG)
-      quad_indices.emplace_back(get_quad_index_gauss_lobatto());
-    else
-      AssertThrow(false, dealii::ExcMessage("not implemented."));
-
-    interface_data_dirichlet_cached->setup(*matrix_free,
-                                           get_dof_index(),
-                                           quad_indices,
-                                           boundary_descriptor->dirichlet_cached_bc);
-
-    boundary_descriptor->set_dirichlet_cached_data(interface_data_dirichlet_cached);
-  }
+  setup_coupling_boundary_conditions();
 
   setup_operators();
+
+  setup_preconditioner_and_solver();
 
   pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, int n_components, typename Number>
 void
-Operator<dim, n_components, Number>::setup_solver()
+Operator<dim, n_components, Number>::setup_preconditioner_and_solver()
 {
-  pcout << std::endl << "Setup Poisson solver ..." << std::endl;
-
   // initialize preconditioner
   if(param.preconditioner == Poisson::Preconditioner::None)
   {
@@ -275,16 +310,21 @@ Operator<dim, n_components, Number>::setup_solver()
   }
   else if(param.preconditioner == Poisson::Preconditioner::PointJacobi)
   {
-    preconditioner = std::make_shared<JacobiPreconditioner<Laplace>>(laplace_operator);
+    preconditioner = std::make_shared<JacobiPreconditioner<Laplace>>(laplace_operator, true);
   }
   else if(param.preconditioner == Poisson::Preconditioner::BlockJacobi)
   {
-    preconditioner = std::make_shared<BlockJacobiPreconditioner<Laplace>>(laplace_operator);
+    preconditioner = std::make_shared<BlockJacobiPreconditioner<Laplace>>(laplace_operator, true);
+  }
+  else if(param.preconditioner == Poisson::Preconditioner::AdditiveSchwarz)
+  {
+    preconditioner =
+      std::make_shared<AdditiveSchwarzPreconditioner<Laplace>>(laplace_operator, true);
   }
   else if(param.preconditioner == Poisson::Preconditioner::AMG)
   {
     preconditioner = std::make_shared<PreconditionerAMG<Laplace, Number>>(
-      laplace_operator, param.multigrid_data.coarse_problem.amg_data);
+      laplace_operator, true, param.multigrid_data.coarse_problem.amg_data);
   }
   else if(param.preconditioner == Poisson::Preconditioner::Multigrid)
   {
@@ -326,7 +366,7 @@ Operator<dim, n_components, Number>::setup_solver()
 
     mg_preconditioner->initialize(mg_data,
                                   grid,
-                                  mapping,
+                                  multigrid_mappings,
                                   dof_handler.get_fe(),
                                   laplace_operator.get_data(),
                                   false /* moving_mesh */,
@@ -377,8 +417,6 @@ Operator<dim, n_components, Number>::setup_solver()
   {
     AssertThrow(false, dealii::ExcMessage("Specified solver is not implemented!"));
   }
-
-  pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, int n_components, typename Number>
@@ -467,10 +505,10 @@ Operator<dim, n_components, Number>::solve(VectorType &       sol,
 }
 
 template<int dim, int n_components, typename Number>
-dealii::MatrixFree<dim, Number> const &
+std::shared_ptr<dealii::MatrixFree<dim, Number> const>
 Operator<dim, n_components, Number>::get_matrix_free() const
 {
-  return *matrix_free;
+  return matrix_free;
 }
 
 template<int dim, int n_components, typename Number>

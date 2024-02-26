@@ -50,10 +50,7 @@ CombinedOperator<dim, Number>::initialize(
   if(operator_data.convective_problem)
   {
     convective_kernel = std::make_shared<Operators::ConvectiveKernel<dim, Number>>();
-    convective_kernel->reinit(matrix_free,
-                              data.convective_kernel_data,
-                              data.quad_index,
-                              this->is_mg);
+    convective_kernel->reinit(matrix_free, data.convective_kernel_data, data.quad_index, true);
   }
 
   if(operator_data.diffusive_problem)

@@ -52,7 +52,7 @@ PostProcessor<dim, n_components, Number>::setup(
   if(pp_data.normal_flux_data.evaluate)
   {
     normal_flux_calculator =
-      std::make_shared<NormalFluxCalculator<dim, Number>>(pde_operator.get_matrix_free(),
+      std::make_shared<NormalFluxCalculator<dim, Number>>(*pde_operator.get_matrix_free(),
                                                           pde_operator.get_dof_index(),
                                                           pde_operator.get_quad_index(),
                                                           pp_data.normal_flux_data,

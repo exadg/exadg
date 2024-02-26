@@ -42,6 +42,12 @@ public:
         MPI_Comm const                                              mpi_comm,
         bool const                                                  is_test);
 
+  // grid and mapping
+  std::shared_ptr<Grid<dim>>            grid;
+  std::shared_ptr<dealii::Mapping<dim>> mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
+
   // matrix-free
   std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
   std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
@@ -63,10 +69,14 @@ SolverStructure<dim, Number>::setup(
   MPI_Comm const                                              mpi_comm,
   bool const                                                  is_test)
 {
+  // setup application
+  application->setup(grid, mapping, multigrid_mappings);
+
   // setup spatial operator
   pde_operator =
-    std::make_shared<Structure::Operator<dim, Number>>(application->get_grid(),
-                                                       application->get_mapping(),
+    std::make_shared<Structure::Operator<dim, Number>>(grid,
+                                                       mapping,
+                                                       multigrid_mappings,
                                                        application->get_boundary_descriptor(),
                                                        application->get_field_functions(),
                                                        application->get_material_descriptor(),
@@ -79,7 +89,7 @@ SolverStructure<dim, Number>::setup(
   matrix_free_data->append(pde_operator);
 
   matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
-  matrix_free->reinit(*application->get_mapping(),
+  matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
@@ -89,16 +99,13 @@ SolverStructure<dim, Number>::setup(
 
   // initialize postprocessor
   postprocessor = application->create_postprocessor();
-  postprocessor->setup(pde_operator->get_dof_handler(), *application->get_mapping());
+  postprocessor->setup(pde_operator->get_dof_handler(), *mapping);
 
   // initialize time integrator
   time_integrator = std::make_shared<Structure::TimeIntGenAlpha<dim, Number>>(
     pde_operator, postprocessor, application->get_parameters(), mpi_comm, is_test);
 
   time_integrator->setup(application->get_parameters().restarted_simulation);
-
-  pde_operator->setup_solver(time_integrator->get_scaling_factor_acceleration(),
-                             time_integrator->get_scaling_factor_velocity());
 }
 
 } // namespace FSI

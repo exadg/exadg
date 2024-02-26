@@ -69,18 +69,22 @@ public:
   };
 
   void
-  initialize(Operator const & operator_in, AdditionalData const & additional_data_in)
+  setup(Operator const &       operator_in,
+        bool const             initialize_preconditioner,
+        AdditionalData const & additional_data_in)
   {
     underlying_operator = &operator_in;
     data                = additional_data_in;
 
     if(data.preconditioner == PreconditionerSmoother::PointJacobi)
     {
-      preconditioner = new JacobiPreconditioner<Operator>(*underlying_operator);
+      preconditioner =
+        new JacobiPreconditioner<Operator>(*underlying_operator, initialize_preconditioner);
     }
     else if(data.preconditioner == PreconditionerSmoother::BlockJacobi)
     {
-      preconditioner = new BlockJacobiPreconditioner<Operator>(*underlying_operator);
+      preconditioner =
+        new BlockJacobiPreconditioner<Operator>(*underlying_operator, initialize_preconditioner);
     }
     else
     {
