@@ -27,6 +27,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Perform cell integral in spatial configuration:false
 
 Physical quantities:
   Density:                                   1.0000e+00
@@ -144,6 +145,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Perform cell integral in spatial configuration:false
 
 Physical quantities:
   Density:                                   1.0000e+00
@@ -261,6 +263,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Perform cell integral in spatial configuration:false
 
 Physical quantities:
   Density:                                   1.0000e+00
@@ -378,6 +381,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Perform cell integral in spatial configuration:false
 
 Physical quantities:
   Density:                                   1.0000e+00
@@ -495,6 +499,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Perform cell integral in spatial configuration:false
 
 Physical quantities:
   Density:                                   1.0000e+00
@@ -612,6 +617,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Perform cell integral in spatial configuration:false
 
 Physical quantities:
   Density:                                   1.0000e+00
@@ -729,6 +735,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Perform cell integral in spatial configuration:false
 
 Physical quantities:
   Density:                                   1.0000e+00
@@ -846,6 +853,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Perform cell integral in spatial configuration:false
 
 Physical quantities:
   Density:                                   1.0000e+00
@@ -963,6 +971,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Perform cell integral in spatial configuration:false
 
 Physical quantities:
   Density:                                   1.0000e+00

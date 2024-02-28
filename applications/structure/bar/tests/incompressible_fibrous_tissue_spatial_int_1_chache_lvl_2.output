@@ -40,6 +40,7 @@ Spatial Discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            4
+  Mapping degree coarse grids:               4  
   Polynomial degree:                         4
 
 Solver:
@@ -90,10 +91,6 @@ Continuous Galerkin finite element discretization:
 ... done!
 
 Setup elasticity operator ...
-
-... done!
-
-Setup elasticity solver ...
 
 ... done!
 
