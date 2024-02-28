@@ -660,10 +660,11 @@ Operator<dim, Number>::get_container_interface_data_dirichlet() const
   return interface_data_dirichlet_cached;
 }
 
-//template<int dim, typename Number>
-//void
+// template<int dim, typename Number>
+// void
 //<<<<<<< HEAD
-//Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const
+// Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data)
+// const
 //{
 //  if(param.large_deformation)
 //    matrix_free_data.append_mapping_flags(NonLinearOperator<dim, Number>::get_mapping_flags());
@@ -705,14 +706,15 @@ Operator<dim, Number>::get_container_interface_data_dirichlet() const
 //  }
 //}
 //
-//template<int dim, typename Number>
-//void
-//Operator<dim, Number>::setup_operators()
+// template<int dim, typename Number>
+// void
+// Operator<dim, Number>::setup_operators()
 //{
 //  // elasticity operator
 //  operator_data.dof_index               = get_dof_index();
 //  operator_data.quad_index              = get_quad_index();
-//  operator_data.dof_index_inhomogeneous = get_dof_index_periodicity_and_hanging_node_constraints();
+//  operator_data.dof_index_inhomogeneous =
+//  get_dof_index_periodicity_and_hanging_node_constraints();
 //  if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
 //  {
 //    AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
@@ -811,9 +813,9 @@ Operator<dim, Number>::get_container_interface_data_dirichlet() const
 //  body_force_operator.initialize(*matrix_free, body_force_data);
 //}
 //
-//template<int dim, typename Number>
-//void
-//Operator<dim, Number>::setup_solver(double const & scaling_factor_acceleration,
+// template<int dim, typename Number>
+// void
+// Operator<dim, Number>::setup_solver(double const & scaling_factor_acceleration,
 //                                    double const & scaling_factor_velocity)
 //{
 //  pcout << std::endl << "Setup elasticity solver ..." << std::endl;
@@ -832,9 +834,9 @@ Operator<dim, Number>::get_container_interface_data_dirichlet() const
 //  pcout << std::endl << "... done!" << std::endl;
 //}
 //
-//template<int dim, typename Number>
-//void
-//Operator<dim, Number>::initialize_preconditioner()
+// template<int dim, typename Number>
+// void
+// Operator<dim, Number>::initialize_preconditioner()
 //{
 //  if(param.preconditioner == Preconditioner::None)
 //  {
@@ -965,9 +967,9 @@ Operator<dim, Number>::get_container_interface_data_dirichlet() const
 //  }
 //}
 //
-//template<int dim, typename Number>
-//void
-//Operator<dim, Number>::initialize_solver()
+// template<int dim, typename Number>
+// void
+// Operator<dim, Number>::initialize_solver()
 //{
 //  // initialize linear solver
 //  if(param.solver == Solver::CG)
@@ -992,7 +994,8 @@ Operator<dim, Number>::get_container_interface_data_dirichlet() const
 //    }
 //    else
 //    {
-//      typedef Krylov::SolverCG<LinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
+//      typedef Krylov::SolverCG<LinearOperator<dim, Number>, PreconditionerBase<Number>,
+//      VectorType>
 //        CG;
 //      linear_solver =
 //        std::make_shared<CG>(elasticity_operator_linear, *preconditioner, solver_data);

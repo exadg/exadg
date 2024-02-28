@@ -140,9 +140,8 @@ NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & ve
     // update mapping to spatial configuration
     if(this->operator_data.spatial_integration and update_mapping)
     {
-      this->mapping_spatial->initialize_mapping_from_dof_vector(this->mapping_undeformed,
-                                                        displacement_lin,
-                                                        this->matrix_free->get_dof_handler());
+      this->mapping_spatial->initialize_mapping_from_dof_vector(
+        this->mapping_undeformed, displacement_lin, this->matrix_free->get_dof_handler());
       this->matrix_free_spatial.update_mapping(*mapping_spatial->get_mapping());
     }
   }

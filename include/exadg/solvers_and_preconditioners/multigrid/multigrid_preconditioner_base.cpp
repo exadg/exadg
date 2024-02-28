@@ -343,9 +343,10 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::get_mapping(
 
 template<int dim, typename Number, typename MultigridNumber>
 std::shared_ptr<dealii::Mapping<dim> const>
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::get_mapping_ptr(unsigned int const level) const
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::get_mapping_ptr(
+  unsigned int const level) const
 {
-  auto const h_level = level_info[level].h_level();
+  auto const         h_level    = level_info[level].h_level();
   unsigned int const n_h_levels = level_info.back().h_level() - level_info.front().h_level() + 1;
   return multigrid_mappings->get_mapping_ptr(h_level, n_h_levels);
 }

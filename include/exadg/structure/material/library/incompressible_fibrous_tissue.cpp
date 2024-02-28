@@ -854,7 +854,8 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
   }
 
   result = symmetric_gradient_increment * (-2.0 * c1);
-  result += (-4.0 * one_third * shear_modulus_stored * J_pow * trace(symmetric_gradient_increment)) * C;
+  result +=
+    (-4.0 * one_third * shear_modulus_stored * J_pow * trace(symmetric_gradient_increment)) * C;
   add_scaled_identity(result, c2 * trace(symmetric_gradient_increment));
 
   // Add fiber contribution.
