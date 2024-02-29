@@ -542,8 +542,7 @@ protected:
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
   std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel;
 
-  std::shared_ptr<Operators::DivergencePenaltyKernel<dim, Number>> div_penalty_kernel;
-  std::shared_ptr<Operators::ContinuityPenaltyKernel<dim, Number>> conti_penalty_kernel;
+  std::shared_ptr<Operators::ProjectionKernel<dim, Number>> projection_kernel;
 
   /*
    * Basic operators.
@@ -554,9 +553,6 @@ protected:
   RHSOperator<dim, Number>        rhs_operator;
   GradientOperator<dim, Number>   gradient_operator;
   DivergenceOperator<dim, Number> divergence_operator;
-
-  DivergencePenaltyOperator<dim, Number> div_penalty_operator;
-  ContinuityPenaltyOperator<dim, Number> conti_penalty_operator;
 
   /*
    * Linear(ized) momentum operator.

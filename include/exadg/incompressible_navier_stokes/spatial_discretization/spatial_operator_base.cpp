@@ -24,6 +24,7 @@
 
 // ExaDG
 #include <exadg/grid/mapping_dof_vector.h>
+#include <exadg/incompressible_navier_stokes/preconditioners/block_preconditioner_projection.h>
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_projection.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 #include <exadg/operators/finite_element.h>
@@ -324,13 +325,9 @@ SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
   if(param.right_hand_side)
     matrix_free_data.append_mapping_flags(Operators::RHSKernel<dim, Number>::get_mapping_flags());
 
-  if(param.use_divergence_penalty)
+  if(param.use_divergence_penalty || param.use_continuity_penalty)
     matrix_free_data.append_mapping_flags(
-      Operators::DivergencePenaltyKernel<dim, Number>::get_mapping_flags());
-
-  if(param.use_continuity_penalty)
-    matrix_free_data.append_mapping_flags(
-      Operators::ContinuityPenaltyKernel<dim, Number>::get_mapping_flags());
+      Operators::ProjectionKernel<dim, Number>::get_mapping_flags());
 
   // mapping flags required for CFL condition
   MappingFlags flags_cfl;
@@ -416,7 +413,8 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   inverse_mass_data_hdiv.quad_index = get_quad_index_velocity_standard();
   inverse_mass_data_hdiv.parameters = this->param.inverse_mass_operator_hdiv;
 
-  inverse_mass_hdiv.initialize(*matrix_free, constraint_u, inverse_mass_data_hdiv);
+  if(param.spatial_discretization == SpatialDiscretization::HDIV)
+    inverse_mass_hdiv.initialize(*matrix_free, constraint_u, inverse_mass_data_hdiv);
 
   // inverse mass operator
   if(param.spatial_discretization == SpatialDiscretization::L2)
@@ -572,83 +570,43 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   momentum_operator.initialize(
     *matrix_free, constraint_dummy, data, viscous_kernel, convective_kernel);
 
-  if(param.use_divergence_penalty)
-  {
-    // Kernel
-    Operators::DivergencePenaltyKernelData div_penalty_data;
-    div_penalty_data.type_penalty_parameter = param.type_penalty_parameter;
-    div_penalty_data.viscosity              = param.viscosity;
-    div_penalty_data.degree                 = param.degree_u;
-    div_penalty_data.penalty_factor         = param.divergence_penalty_factor;
-
-    div_penalty_kernel = std::make_shared<Operators::DivergencePenaltyKernel<dim, Number>>();
-    div_penalty_kernel->reinit(*matrix_free,
-                               get_dof_index_velocity(),
-                               get_quad_index_velocity_standard(),
-                               div_penalty_data);
-
-    // Operator
-    DivergencePenaltyData operator_data;
-    operator_data.dof_index  = get_dof_index_velocity();
-    operator_data.quad_index = get_quad_index_velocity_standard();
-
-    div_penalty_operator.initialize(*matrix_free, operator_data, div_penalty_kernel);
-  }
-
-  if(param.use_continuity_penalty)
-  {
-    // Kernel
-    Operators::ContinuityPenaltyKernelData kernel_data;
-
-    kernel_data.type_penalty_parameter = param.type_penalty_parameter;
-    kernel_data.which_components       = param.continuity_penalty_components;
-    kernel_data.viscosity              = param.viscosity;
-    kernel_data.degree                 = param.degree_u;
-    kernel_data.penalty_factor         = param.continuity_penalty_factor;
-
-    conti_penalty_kernel = std::make_shared<Operators::ContinuityPenaltyKernel<dim, Number>>();
-    conti_penalty_kernel->reinit(*matrix_free,
-                                 get_dof_index_velocity(),
-                                 get_quad_index_velocity_standard(),
-                                 kernel_data);
-
-    // Operator
-    ContinuityPenaltyData<dim> operator_data;
-    operator_data.dof_index         = get_dof_index_velocity();
-    operator_data.quad_index        = get_quad_index_velocity_standard();
-    operator_data.use_boundary_data = param.continuity_penalty_use_boundary_data;
-    operator_data.bc                = this->boundary_descriptor->velocity;
-
-    conti_penalty_operator.initialize(*matrix_free, operator_data, conti_penalty_kernel);
-  }
-
   if(param.use_divergence_penalty or param.use_continuity_penalty)
   {
-    if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme or
-       param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection or
-       (param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution and
-        param.apply_penalty_terms_in_postprocessing_step == true))
-    {
-      // setup projection operator
-      ProjectionOperatorData<dim> data;
-      data.use_divergence_penalty = param.use_divergence_penalty;
-      data.use_continuity_penalty = param.use_continuity_penalty;
-      data.use_boundary_data      = param.continuity_penalty_use_boundary_data;
-      data.bc                     = this->boundary_descriptor->velocity;
-      data.dof_index              = get_dof_index_velocity();
-      data.quad_index             = get_quad_index_velocity_standard();
-      data.use_cell_based_loops   = param.use_cell_based_face_loops;
-      data.implement_block_diagonal_preconditioner_matrix_free =
-        param.implement_block_diagonal_preconditioner_matrix_free;
-      data.solver_block_diagonal         = Elementwise::Solver::CG;
-      data.preconditioner_block_diagonal = param.preconditioner_block_diagonal_projection;
-      data.solver_data_block_diagonal    = param.solver_data_block_diagonal_projection;
+    // Kernel
+    Operators::ContinuityPenaltyKernelData conti_penalty_data;
+    conti_penalty_data.type_penalty_parameter = param.type_penalty_parameter;
+    conti_penalty_data.which_components       = param.continuity_penalty_components;
+    conti_penalty_data.viscosity              = param.viscosity;
+    conti_penalty_data.degree                 = param.degree_u;
+    conti_penalty_data.penalty_factor         = param.continuity_penalty_factor;
 
-      projection_operator = std::make_shared<ProjOperator>();
+    projection_kernel = std::make_shared<Operators::ProjectionKernel<dim, Number>>();
+    projection_kernel->reinit(*matrix_free,
+                              get_dof_index_velocity(),
+                              get_quad_index_velocity_linear(),
+                              div_penalty_data,
+                              conti_penalty_data);
 
-      projection_operator->initialize(
-        *matrix_free, constraint_dummy, data, div_penalty_kernel, conti_penalty_kernel);
-    }
+    // setup projection operator
+    ProjectionOperatorData<dim> data;
+    data.use_divergence_penalty = param.use_divergence_penalty;
+    data.use_continuity_penalty = param.use_continuity_penalty;
+    data.use_boundary_data      = param.continuity_penalty_use_boundary_data;
+    data.bc                     = this->boundary_descriptor->velocity;
+    data.dof_index              = get_dof_index_velocity();
+    data.quad_index             = get_quad_index_velocity_linear();
+    data.use_cell_based_loops   = param.use_cell_based_face_loops;
+    data.apply_penalty_terms_in_postprocessing_step =
+      param.apply_penalty_terms_in_postprocessing_step;
+    data.implement_block_diagonal_preconditioner_matrix_free =
+      param.implement_block_diagonal_preconditioner_matrix_free;
+    data.solver_block_diagonal         = Elementwise::Solver::CG;
+    data.preconditioner_block_diagonal = param.preconditioner_block_diagonal_projection;
+    data.solver_data_block_diagonal    = param.solver_data_block_diagonal_projection;
+
+    projection_operator = std::make_shared<ProjOperator>();
+
+    projection_operator->initialize(*matrix_free, constraint_dummy, data, projection_kernel);
   }
 }
 
@@ -1497,37 +1455,17 @@ SpatialOperatorBase<dim, Number>::calculate_dissipation_viscous_term(
 template<int dim, typename Number>
 double
 SpatialOperatorBase<dim, Number>::calculate_dissipation_divergence_term(
-  VectorType const & velocity) const
+  VectorType const & /*velocity*/) const
 {
-  if(param.use_divergence_penalty == true)
-  {
-    VectorType dst;
-    dst.reinit(velocity, false);
-    div_penalty_operator.apply(dst, velocity);
-    return velocity * dst;
-  }
-  else
-  {
-    return 0.0;
-  }
+  return 0.0;
 }
 
 template<int dim, typename Number>
 double
 SpatialOperatorBase<dim, Number>::calculate_dissipation_continuity_term(
-  VectorType const & velocity) const
+  VectorType const & /*velocity*/) const
 {
-  if(param.use_continuity_penalty == true)
-  {
-    VectorType dst;
-    dst.reinit(velocity, false);
-    conti_penalty_operator.apply(dst, velocity);
-    return velocity * dst;
-  }
-  else
-  {
-    return 0.0;
-  }
+  return 0.0;
 }
 
 template<int dim, typename Number>
@@ -1676,6 +1614,12 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       // preconditioner in order to use to correct diagonal blocks for preconditioning.
       preconditioner_projection =
         std::make_shared<BlockJacobiPreconditioner<ProjOperator>>(*projection_operator, false);
+    }
+    else if(param.preconditioner_projection == PreconditionerProjection::BlockPreconditioner)
+    {
+      preconditioner_projection =
+        std::make_shared<BlockPreconditionerProjection<dim, Number>>(*this->matrix_free,
+                                                                     *projection_operator);
     }
     else if(param.preconditioner_projection == PreconditionerProjection::Multigrid)
     {

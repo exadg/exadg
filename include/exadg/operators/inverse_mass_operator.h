@@ -187,6 +187,28 @@ public:
     }
   }
 
+  // dst = M^-1 * src
+  void
+  apply(VectorType &                                                        dst,
+        VectorType const &                                                  src,
+        const std::function<void(const unsigned int, const unsigned int)> & before_loop,
+        const std::function<void(const unsigned int, const unsigned int)> & after_loop) const
+  {
+    dst.zero_out_ghost_values();
+
+    if(data.implementation_type == InverseMassType::MatrixfreeOperator)
+    {
+      matrix_free->cell_loop(
+        &This::cell_loop_matrix_free_operator, this, dst, src, before_loop, after_loop);
+    }
+    else // ElementwiseKrylovSolver or BlockMatrices
+    {
+      before_loop(0, src.locally_owned_size());
+      block_jacobi_preconditioner->vmult(dst, src);
+      after_loop(0, src.locally_owned_size());
+    }
+  }
+
   // dst = scaling_factor * (M^-1 * src)
   void
   apply_scale(VectorType & dst, double const scaling_factor, VectorType const & src) const

@@ -19,6 +19,7 @@
  *  ______________________________________________________________________
  */
 
+#include <exadg/incompressible_navier_stokes/preconditioners/block_preconditioner_momentum.h>
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_momentum.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>

@@ -156,6 +156,19 @@ OperatorBase<dim, Number, n_components>::vmult(VectorType & dst, VectorType cons
 
 template<int dim, typename Number, int n_components>
 void
+OperatorBase<dim, Number, n_components>::vmult(
+  VectorType &                                                        dst,
+  VectorType const &                                                  src,
+  const std::function<void(const unsigned int, const unsigned int)> & before_loop,
+  const std::function<void(const unsigned int, const unsigned int)> & after_loop) const
+{
+  before_loop(0, dst.locally_owned_size());
+  this->apply(dst, src);
+  after_loop(0, dst.locally_owned_size());
+}
+
+template<int dim, typename Number, int n_components>
+void
 OperatorBase<dim, Number, n_components>::vmult_add(VectorType & dst, VectorType const & src) const
 {
   if(this->data.use_matrix_based_vmult)

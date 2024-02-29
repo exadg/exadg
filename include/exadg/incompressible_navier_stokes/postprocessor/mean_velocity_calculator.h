@@ -97,6 +97,8 @@ public:
                          MeanVelocityCalculatorData<dim> const & data_in,
                          MPI_Comm const &                        comm_in);
 
+  ~MeanVelocityCalculator();
+
   /*
    * Calculates the mean velocity through a given cross section of the domain by dividing
    * the flow rate through the cross section area. This function is more general than
@@ -131,7 +133,10 @@ public:
 
 private:
   void
-  write_output(Number const & value, double const & time, std::string const & name) const;
+  write_output(Number const &      value,
+               double const &      time,
+               std::string const & name,
+               bool const          force_write = false) const;
 
   Number
   calculate_area() const;
@@ -166,6 +171,8 @@ private:
   bool                                    area_has_been_initialized, volume_has_been_initialized;
   double                                  area, volume;
   mutable bool                            clear_files;
+
+  mutable std::vector<std::pair<double, double>> accumulated_results;
 
   MPI_Comm const mpi_comm;
 };

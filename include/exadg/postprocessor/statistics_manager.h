@@ -131,10 +131,10 @@ private:
   std::vector<double> y_glob;
 
   // mean velocity <u_i>, i=1,...,d (for all y-coordinates)
-  std::vector<std::vector<double>> vel_glob;
+  std::vector<dealii::Tensor<1, dim>> vel_glob;
 
   // square velocity <u_i²>, i=1,...,d (for all y-coordinates)
-  std::vector<std::vector<double>> velsq_glob;
+  std::vector<dealii::Tensor<1, dim>> velsq_glob;
 
   // <u_1*u_2> = <u*v> (for all y-coordinates)
   std::vector<double> veluv_glob;

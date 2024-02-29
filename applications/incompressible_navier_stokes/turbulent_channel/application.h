@@ -200,7 +200,7 @@ private:
     this->param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
     this->param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     this->param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
-    this->param.order_time_integrator           = 2;
+    this->param.order_time_integrator           = 3;
     this->param.start_with_low_order            = true;
     this->param.adaptive_time_stepping          = true;
     this->param.max_velocity                    = MAX_VELOCITY;
@@ -210,17 +210,18 @@ private:
 
     // output of solver information
     this->param.solver_info_data.interval_time       = CHARACTERISTIC_TIME;
-    this->param.solver_info_data.interval_time_steps = 1;
+    this->param.solver_info_data.interval_time_steps = 100;
 
     // SPATIAL DISCRETIZATION
     this->param.grid.triangulation_type     = TriangulationType::Distributed;
-    this->param.mapping_degree              = this->param.degree_u;
+    this->param.mapping_degree              = 1;
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
     this->param.degree_p                    = DegreePressure::MixedOrder;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
       this->param.upwind_factor = 0.5;
+    this->param.type_dirichlet_bc_convective = TypeDirichletBCs::Direct;
 
     // viscous term
     this->param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
@@ -231,7 +232,7 @@ private:
 
     // div-div and continuity penalty
     this->param.use_divergence_penalty                     = true;
-    this->param.divergence_penalty_factor                  = 1.0e0;
+    this->param.divergence_penalty_factor                  = 1.0e1;
     this->param.use_continuity_penalty                     = true;
     this->param.continuity_penalty_factor                  = this->param.divergence_penalty_factor;
     this->param.continuity_penalty_components              = ContinuityPenaltyComponents::Normal;
@@ -257,10 +258,11 @@ private:
     this->param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
 
     // projection step
-    this->param.solver_projection         = SolverProjection::CG;
-    this->param.solver_data_projection    = SolverData(1000, ABS_TOL, REL_TOL);
-    this->param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
-
+    this->param.solver_projection                = SolverProjection::CG;
+    this->param.solver_data_projection           = SolverData(1000, ABS_TOL, REL_TOL);
+    this->param.preconditioner_projection        = PreconditionerProjection::BlockPreconditioner;
+    this->param.update_preconditioner_projection = true;
+    this->param.update_preconditioner_projection_every_time_steps = 5;
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
 
@@ -272,9 +274,8 @@ private:
     {
       this->param.solver_momentum         = SolverMomentum::CG;
       this->param.solver_data_momentum    = SolverData(1000, ABS_TOL, REL_TOL);
-      this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
+      this->param.preconditioner_momentum = MomentumPreconditioner::BlockPreconditioner;
     }
-
 
     // PRESSURE-CORRECTION SCHEME
 
@@ -444,7 +445,7 @@ private:
     pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = this->output_parameters.filename;
     pp_data.output_data.degree             = this->param.degree_u;
-    pp_data.output_data.write_higher_order = false;
+    pp_data.output_data.write_higher_order = true;
 
     // calculate div and mass error
     pp_data.mass_data.time_control_data.is_active                = false; // true;

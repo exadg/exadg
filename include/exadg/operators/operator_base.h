@@ -173,6 +173,12 @@ public:
   vmult(VectorType & dst, VectorType const & src) const;
 
   void
+  vmult(VectorType &                                                        dst,
+        VectorType const &                                                  src,
+        const std::function<void(const unsigned int, const unsigned int)> & before_loop,
+        const std::function<void(const unsigned int, const unsigned int)> & after_loop) const;
+
+  void
   vmult_add(VectorType & dst, VectorType const & src) const;
 
   void

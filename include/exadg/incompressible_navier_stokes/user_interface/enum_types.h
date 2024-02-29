@@ -399,6 +399,7 @@ enum class PreconditionerProjection
   InverseMassMatrix,
   PointJacobi,
   BlockJacobi,
+  BlockPreconditioner,
   Multigrid
 };
 
@@ -483,6 +484,7 @@ enum class MomentumPreconditioner
   PointJacobi,
   BlockJacobi,
   InverseMassMatrix,
+  BlockPreconditioner,
   Multigrid
 };
 

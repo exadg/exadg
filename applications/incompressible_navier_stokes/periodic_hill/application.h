@@ -180,7 +180,7 @@ private:
     this->param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     this->param.adaptive_time_stepping          = true;
     this->param.max_velocity                    = bulk_velocity;
-    this->param.cfl                             = 0.3; // 0.375;
+    this->param.cfl                             = 0.5; // 0.375;
     this->param.cfl_exponent_fe_degree_velocity = 1.5;
     this->param.time_step_size                  = 1.0e-1;
     this->param.order_time_integrator           = 2;
@@ -196,7 +196,8 @@ private:
     this->param.degree_p                    = DegreePressure::MixedOrder;
 
     // convective term
-    this->param.upwind_factor = 0.5;
+    this->param.upwind_factor                = 0.5;
+    this->param.type_dirichlet_bc_convective = TypeDirichletBCs::Direct;
 
     // viscous term
     this->param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
@@ -214,7 +215,7 @@ private:
 
     // pressure Poisson equation
     this->param.solver_pressure_poisson              = SolverPressurePoisson::CG;
-    this->param.solver_data_pressure_poisson         = SolverData(1000, 1.e-12, 1.e-6, 100);
+    this->param.solver_data_pressure_poisson         = SolverData(1000, 1.e-12, 1.e-4, 100);
     this->param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
     this->param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
     this->param.multigrid_data_pressure_poisson.coarse_problem.solver =
@@ -224,7 +225,7 @@ private:
 
     // projection step
     this->param.solver_projection                = SolverProjection::CG;
-    this->param.solver_data_projection           = SolverData(1000, 1.e-12, 1.e-6);
+    this->param.solver_data_projection           = SolverData(1000, 1.e-12, 1.e-3);
     this->param.preconditioner_projection        = PreconditionerProjection::InverseMassMatrix;
     this->param.update_preconditioner_projection = true;
 
@@ -236,7 +237,7 @@ private:
       this->param.order_time_integrator <= 2 ? this->param.order_time_integrator : 2;
 
     this->param.solver_momentum         = SolverMomentum::CG;
-    this->param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-6);
+    this->param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-3);
     this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
   }
 
@@ -272,11 +273,6 @@ private:
       refinements[0] = 2;
       dealii::GridGenerator::subdivided_hyper_rectangle(tria, refinements, p_1, p_2);
 
-      // create hill by shifting y-coordinates of middle vertices by -H in y-direction
-      tria.last()->vertex(0)[1] = 0.;
-      if(dim == 3)
-        tria.last()->vertex(4)[1] = 0.;
-
       AssertThrow(
         this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
         dealii::ExcMessage(
@@ -298,15 +294,14 @@ private:
         tria.begin()->face(4)->set_all_boundary_ids(2 + 10);
         tria.begin()->face(5)->set_all_boundary_ids(3 + 10);
         // right element
-        tria.last()->face(4)->set_all_boundary_ids(4 + 10);
-        tria.last()->face(5)->set_all_boundary_ids(5 + 10);
+        tria.last()->face(4)->set_all_boundary_ids(2 + 10);
+        tria.last()->face(5)->set_all_boundary_ids(3 + 10);
       }
 
       dealii::GridTools::collect_periodic_faces(tria, 0 + 10, 1 + 10, 0, periodic_face_pairs);
       if(dim == 3)
       {
         dealii::GridTools::collect_periodic_faces(tria, 2 + 10, 3 + 10, 2, periodic_face_pairs);
-        dealii::GridTools::collect_periodic_faces(tria, 4 + 10, 5 + 10, 2, periodic_face_pairs);
       }
 
       tria.add_periodicity(periodic_face_pairs);
@@ -316,14 +311,6 @@ private:
         dealii::ExcMessage(
           "Manifolds might not be applied correctly for TriangulationType::FullyDistributed. "
           "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
-
-      unsigned int const manifold_id = 111;
-      tria.begin()->set_all_manifold_ids(manifold_id);
-      tria.last()->set_all_manifold_ids(manifold_id);
-
-      static const PeriodicHillManifold<dim> manifold =
-        PeriodicHillManifold<dim>(H, length, height, grid_stretch_factor);
-      tria.set_manifold(manifold_id, manifold);
 
       tria.refine_global(global_refinements);
     };
@@ -336,12 +323,58 @@ private:
                                                             {} /* no local refinements */);
 
     // mappings
-    GridUtilities::create_mapping_with_multigrid(mapping,
-                                                 multigrid_mappings,
-                                                 this->param.grid.element_type,
-                                                 this->param.mapping_degree,
-                                                 this->param.mapping_degree_coarse_grids,
-                                                 this->param.involves_h_multigrid());
+    PeriodicHillManifold<dim> manifold(H, length, height, grid_stretch_factor);
+    AssertThrow(get_element_type(*grid.triangulation) == ElementType::Hypercube,
+                dealii::ExcMessage("Only implemented for hypercube elements."));
+
+    // dummy FE for compatibility with interface of dealii::FEValues
+    dealii::FE_Nothing<dim>         dummy_fe;
+    dealii::MappingQ1<dim>          mapping_undeformed;
+    dealii::FEValues<dim>           fe_values(mapping_undeformed,
+                                    dummy_fe,
+                                    dealii::QGaussLobatto<dim>(this->param.mapping_degree + 1),
+                                    dealii::update_quadrature_points);
+    const std::vector<unsigned int> hierarchic_to_lexicographic_numbering =
+      dealii::FETools::hierarchic_to_lexicographic_numbering<dim>(this->param.mapping_degree);
+
+    const auto mapping_q_cache =
+      std::make_shared<dealii::MappingQCache<dim>>(this->param.mapping_degree);
+    mapping_q_cache->initialize(*grid.triangulation,
+                                [&](typename dealii::Triangulation<dim>::cell_iterator const & cell)
+                                  -> std::vector<dealii::Point<dim>> {
+                                  fe_values.reinit(cell);
+
+                                  std::vector<dealii::Point<dim>> points_moved(
+                                    fe_values.n_quadrature_points);
+                                  for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
+                                  {
+                                    // need to adjust for hierarchic numbering of
+                                    // dealii::MappingQCache
+                                    points_moved[i] =
+                                      manifold.push_forward(fe_values.quadrature_point(
+                                        hierarchic_to_lexicographic_numbering[i]));
+                                  }
+
+                                  return points_moved;
+                                });
+
+    const auto mapping_coarse = std::make_shared<dealii::MappingQCache<dim>>(1);
+    mapping_coarse->initialize(*grid.triangulation,
+                               [&](typename dealii::Triangulation<dim>::cell_iterator const & cell)
+                                 -> std::vector<dealii::Point<dim>> {
+                                 std::vector<dealii::Point<dim>> points_moved(cell->n_vertices());
+                                 for(unsigned int i = 0; i < cell->n_vertices(); ++i)
+                                 {
+                                   // need to adjust for hierarchic numbering of
+                                   // dealii::MappingQCache
+                                   points_moved[i] = manifold.push_forward(cell->vertex(i));
+                                 }
+
+                                 return points_moved;
+                               });
+    mapping = mapping_q_cache;
+    multigrid_mappings =
+      std::make_shared<MultigridMappings<dim, Number>>(mapping_q_cache, mapping_coarse);
   }
 
   void
@@ -387,7 +420,7 @@ private:
     pp_data.output_data.write_vorticity_magnitude = true;
     pp_data.output_data.write_q_criterion         = true;
     pp_data.output_data.degree                    = this->param.degree_u;
-    pp_data.output_data.write_higher_order        = false;
+    pp_data.output_data.write_higher_order        = true;
 
     MyPostProcessorData<dim> my_pp_data;
     my_pp_data.pp_data = pp_data;
@@ -491,15 +524,15 @@ private:
     vel_8->quantities.push_back(quantity_reynolds);
 
     // set line names
-    vel_0->name = "x_0";
-    vel_1->name = "x_1";
-    vel_2->name = "x_2";
-    vel_3->name = "x_3";
-    vel_4->name = "x_4";
-    vel_5->name = "x_5";
-    vel_6->name = "x_6";
-    vel_7->name = "x_7";
-    vel_8->name = "x_8";
+    vel_0->name = this->output_parameters.filename + "_x_0";
+    vel_1->name = this->output_parameters.filename + "_x_1";
+    vel_2->name = this->output_parameters.filename + "_x_2";
+    vel_3->name = this->output_parameters.filename + "_x_3";
+    vel_4->name = this->output_parameters.filename + "_x_4";
+    vel_5->name = this->output_parameters.filename + "_x_5";
+    vel_6->name = this->output_parameters.filename + "_x_6";
+    vel_7->name = this->output_parameters.filename + "_x_7";
+    vel_8->name = this->output_parameters.filename + "_x_8";
 
     // insert lines
     my_pp_data.line_plot_data.lines.push_back(vel_0);
@@ -520,12 +553,12 @@ private:
     my_pp_data.line_plot_data.time_control_data_statistics.time_control_data
       .trigger_every_time_steps = sample_every_timesteps;
     my_pp_data.line_plot_data.time_control_data_statistics
-      .write_preliminary_results_every_nth_time_step = sample_every_timesteps * 100;
+      .write_preliminary_results_every_nth_time_step = sample_every_timesteps * 1000;
 
     // calculation of flow rate (use volume-based computation)
     my_pp_data.mean_velocity_data.calculate = true;
     my_pp_data.mean_velocity_data.directory = this->output_parameters.directory;
-    my_pp_data.mean_velocity_data.filename  = "flow_rate";
+    my_pp_data.mean_velocity_data.filename  = this->output_parameters.filename + "_flow_rate";
     dealii::Tensor<1, dim, double> direction;
     direction[0]                                = 1.0;
     my_pp_data.mean_velocity_data.direction     = direction;
@@ -560,7 +593,7 @@ private:
 
   // start and end time
   double const start_time         = 0.0;
-  unsigned int end_time_multiples = 1;
+  unsigned int end_time_multiples = 10;
   double       end_time           = double(end_time_multiples) * flow_through_time;
 
   // grid
@@ -574,7 +607,7 @@ private:
   double       sample_start_time      = double(sample_start_time_multiples) * flow_through_time;
   double       sample_end_time        = end_time;
   unsigned int sample_every_timesteps = 1;
-  unsigned int points_per_line        = 20;
+  unsigned int points_per_line        = 40;
 };
 
 } // namespace IncNS

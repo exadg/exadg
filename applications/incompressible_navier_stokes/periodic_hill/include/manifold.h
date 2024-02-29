@@ -49,7 +49,8 @@ f(double x_m, double const H, double const LENGTH)
   double x = m_to_mm(x_m);
   double y = 0.0;
 
-  AssertThrow(x_m <= LENGTH / 2.0 + 1.e-12, dealii::ExcMessage("Parameter out of bounds."));
+  AssertThrow(x_m > -1e-12 and x_m <= LENGTH / 2.0 + 1.e-12,
+              dealii::ExcMessage("Parameter out of bounds."));
 
   if(x <= 9.0)
     y =
@@ -103,10 +104,21 @@ public:
     // transform y-coordinate only
     double const gamma           = GRID_STRETCH_FAC;
     double const xi_1_normalized = (xi[1] - H) / HEIGHT;
-    double       xi_1_hat = std::tanh(gamma * (2.0 * xi_1_normalized - 1.0)) / std::tanh(gamma);
-    x[1] = H + (xi_1_hat + 1.0) / 2.0 * HEIGHT + (1.0 - xi_1_hat) / 2.0 * f(xi[0], H, LENGTH);
-
-    return x;
+    double const xi_1_hat = std::tanh(gamma * (2.0 * xi_1_normalized - 1.0)) / std::tanh(gamma);
+    double const xi_0_a   = x[0] < LENGTH / 2 ? x[0] : LENGTH - x[0];
+    double const xi_0_b =
+      xi_0_a < 0.25 * LENGTH ?
+        ((xi_0_a + 0.2 * LENGTH) * xi_0_a * 0.2 / (0.25 * 0.45 * LENGTH)) :
+        (0.5 * LENGTH - xi_0_a) * (0.2 / 0.25) + (xi_0_a - 0.25 * LENGTH) * (0.5 / 0.25);
+    double const       xi_0 = x[0] < LENGTH / 2 ? xi_0_b : LENGTH - xi_0_b;
+    dealii::Point<dim> xi_bottom;
+    xi_bottom[0] = xi_0;
+    xi_bottom[1] = H + f(xi_0, H, LENGTH);
+    if(dim > 2)
+      xi_bottom[2] = xi[2];
+    dealii::Point<dim> xi_top = xi;
+    xi_top[1]                 = H + HEIGHT;
+    return xi_top * (xi_1_hat + 1.0) * 0.5 + xi_bottom * (1.0 - xi_1_hat) * 0.5;
   }
 
   dealii::Point<dim>

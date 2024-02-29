@@ -336,7 +336,7 @@ private:
     // projection step
     this->param.solver_projection         = SolverProjection::CG;
     this->param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-6);
-    this->param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
+    this->param.preconditioner_projection = PreconditionerProjection::BlockPreconditioner;
     this->param.preconditioner_block_diagonal_projection =
       Elementwise::Preconditioner::InverseMassMatrix;
     this->param.solver_data_block_diagonal_projection = SolverData(1000, 1.e-12, 1.e-2, 1000);
@@ -682,7 +682,7 @@ private:
 
   MeshType const mesh_type = MeshType::Cartesian;
 
-  bool const ALE = true;
+  bool const ALE = false;
 };
 
 } // namespace IncNS
