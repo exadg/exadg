@@ -266,10 +266,16 @@ BlockPreconditionerProjection<dim, Number>::do_vmult(
           break;
         }
       if(all_indices_contiguous)
-        before_loop(dof_indices[0], dof_indices[0] + scalar::size() * nn * dim);
+        {
+          if (before_loop)
+            before_loop(dof_indices[0], dof_indices[0] + scalar::size() * nn * dim);
+        }
       else
         for(unsigned int i = 0; i < scalar::size(); ++i)
-          before_loop(dof_indices[i], dof_indices[i] + nn * dim);
+          {
+            if (before_loop)
+              before_loop(dof_indices[i], dof_indices[i] + nn * dim);
+          }
     }
 
     dealii::vectorized_load_and_transpose(nn * dim, global_src.begin(), dof_indices, src.begin());
@@ -398,10 +404,16 @@ BlockPreconditionerProjection<dim, Number>::do_vmult(
           break;
         }
       if(all_indices_contiguous)
-        after_loop(dof_indices[0], dof_indices[0] + scalar::size() * nn * dim);
+        {
+          if (after_loop)
+            after_loop(dof_indices[0], dof_indices[0] + scalar::size() * nn * dim);
+        }
       else
         for(unsigned int i = 0; i < scalar::size(); ++i)
-          after_loop(dof_indices[i], dof_indices[i] + nn * dim);
+          {
+            if (after_loop)
+              after_loop(dof_indices[i], dof_indices[i] + nn * dim);
+          }
     }
   }
 }
