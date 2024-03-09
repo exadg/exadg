@@ -796,6 +796,7 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
     // Set initial acceleration for the Dirichlet degrees of freedom so that the initial
     // acceleration is also correct on the Dirichlet boundary
     mass_operator.set_inhomogeneous_boundary_values(initial_acceleration);
+    affine_constraints_periodicity_and_hanging_nodes.distribute(initial_acceleration);
   }
 }
 
