@@ -797,8 +797,8 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
     // acceleration is also correct on the Dirichlet boundary
     mass_operator.set_inhomogeneous_boundary_values(initial_acceleration);
 
-    // ##+ is this needed?
-    affine_constraints_periodicity_and_hanging_nodes.distribute(initial_acceleration);
+//    // ##+ is this needed?
+//    affine_constraints_periodicity_and_hanging_nodes.distribute(initial_acceleration);
   }
 }
 
@@ -944,8 +944,8 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   elasticity_operator_nonlinear.set_time(time);
   elasticity_operator_nonlinear.set_inhomogeneous_boundary_values(sol);
 
-  // is this needed?
-  affine_constraints_periodicity_and_hanging_nodes.distribute(sol);
+  // is this needed? ##+
+//  affine_constraints_periodicity_and_hanging_nodes.distribute(sol);
 
   // call Newton solver
   Newton::UpdateData update;
@@ -1014,8 +1014,8 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
   elasticity_operator_linear.set_time(time);
   elasticity_operator_linear.set_inhomogeneous_boundary_values(sol);
 
-  // is this needed ##+?
-  affine_constraints_periodicity_and_hanging_nodes.distribute(sol);
+//  // is this needed ##+?
+//  affine_constraints_periodicity_and_hanging_nodes.distribute(sol);
 
   return iterations;
 }
