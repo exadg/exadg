@@ -935,6 +935,7 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   // set inhomogeneous Dirichlet values in order to evaluate the nonlinear residual correctly
   elasticity_operator_nonlinear.set_time(time);
   elasticity_operator_nonlinear.set_inhomogeneous_boundary_values(sol);
+  affine_constraints_periodicity_and_hanging_nodes.distribute(sol);
 
   // call Newton solver
   Newton::UpdateData update;
@@ -1002,6 +1003,7 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
   // Set Dirichlet degrees of freedom according to Dirichlet boundary condition.
   elasticity_operator_linear.set_time(time);
   elasticity_operator_linear.set_inhomogeneous_boundary_values(sol);
+  affine_constraints_periodicity_and_hanging_nodes.distribute(sol);
 
   return iterations;
 }
