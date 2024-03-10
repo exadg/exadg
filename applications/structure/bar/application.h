@@ -644,7 +644,7 @@ private:
     }
     else
     {
-      AssertThrow(false, dealii::ExcMessage(""));
+      AssertThrow(false, dealii::ExcMessage("Material type is not expected in application."));
     }
   }
 
