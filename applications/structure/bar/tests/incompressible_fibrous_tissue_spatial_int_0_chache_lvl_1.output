@@ -61,18 +61,18 @@ Linear solver:
   p-sequence:                                DecreaseByOne
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
-  Iterations smoother:                       5
-  Smoothing range:                           2.0000e+01
+  Iterations smoother:                       12
+  Smoothing range:                           6.0000e+01
   Iterations eigenvalue estimation:          20
   Coarse grid solver:                        GMRES
   Coarse grid preconditioner:                AMG
-  Maximum number of iterations:              10000
+  Maximum number of iterations:              1000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-03
   Maximum size of Krylov space:              30
       AMG type:                              ML
-      Smoother sweeps:                       1
-      Number of cycles:                      1
+      Smoother sweeps:                       2
+      Number of cycles:                      2
       Smoother type:                         ILU
 
 Generating grid for 3-dimensional problem:

@@ -241,43 +241,29 @@ public:
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
+    // clang-format off
     prm.enter_subsection("Application");
     {
-      prm.add_parameter("Length", length, "Length of domain.");
-      prm.add_parameter("Height", height, "Height of domain.");
-      prm.add_parameter("Width", width, "Width of domain.");
-      prm.add_parameter("UseVolumeForce", use_volume_force, "Use volume force.");
-      prm.add_parameter("SpatialIntegration", spatial_integration, "Use spatial integration.");
-      prm.add_parameter("ForceMaterialResidual",
-                        force_material_residual,
-                        "Use undeformed configuration to evaluate the residual.");
-      prm.add_parameter("LoadIncrement",
-                        load_increment,
-                        "Load increment used in QuasiStatic solver.");
-      prm.add_parameter("CacheLevel", cache_level, "Cache level: 0 none, 1 scalars, 2 tensors.");
-      prm.add_parameter("CheckType", check_type, "Check type for deformation gradient.");
-      prm.add_parameter("MappingStrength", mapping_strength, "Strength of the mapping applied.");
-      prm.add_parameter("VolumeForce", volume_force, "Volume force.");
-      prm.add_parameter("BoundaryType",
-                        boundary_type,
-                        "Type of boundary condition, Dirichlet vs Neumann.");
-      prm.add_parameter("ProblemType",
-                        problem_type,
-                        "Problem type considered, QuasiStatic vs Unsteady vs. Steady");
-      prm.add_parameter("MaterialType",
-                        material_type,
-                        "StVenantKirchhoff vs. IncompressibleNeoHookean");
-      prm.add_parameter("WeakDamping",
-                        weak_damping_coefficient,
-                        "Weak damping coefficient for unsteady problems.");
-      prm.add_parameter("Displacement",
-                        displacement,
-                        "Displacement of right boundary in case of Dirichlet BC.");
-      prm.add_parameter("Traction",
-                        area_force,
-                        "Traction acting on right boundary in case of Neumann BC.");
+      prm.add_parameter("Length",                length,                   "Length of domain.");
+      prm.add_parameter("Height",                height,                   "Height of domain.");
+      prm.add_parameter("Width",                 width,                    "Width of domain.");
+      prm.add_parameter("UseVolumeForce",        use_volume_force,         "Use volume force.");
+      prm.add_parameter("SpatialIntegration",    spatial_integration,      "Use spatial integration.");
+      prm.add_parameter("ForceMaterialResidual", force_material_residual,  "Use undeformed configuration to evaluate the residual.");
+      prm.add_parameter("LoadIncrement",         load_increment,           "Load increment used in QuasiStatic solver.");
+      prm.add_parameter("CacheLevel",            cache_level,              "Cache level: 0 none, 1 scalars, 2 tensors.");
+      prm.add_parameter("CheckType",             check_type,               "Check type for deformation gradient.");
+      prm.add_parameter("MappingStrength",       mapping_strength,         "Strength of the mapping applied.");
+      prm.add_parameter("VolumeForce",           volume_force,             "Volume force.");
+      prm.add_parameter("BoundaryType",          boundary_type,            "Type of boundary condition, Dirichlet vs Neumann.");
+      prm.add_parameter("ProblemType",           problem_type,             "Problem type considered, QuasiStatic vs Unsteady vs. Steady");
+      prm.add_parameter("MaterialType",          material_type,            "StVenantKirchhoff vs. IncompressibleNeoHookean");
+      prm.add_parameter("WeakDamping",           weak_damping_coefficient, "Weak damping coefficient for unsteady problems.");
+      prm.add_parameter("Displacement",          displacement,             "Displacement of right boundary in case of Dirichlet BC.");
+      prm.add_parameter("Traction",              area_force,               "Traction acting on right boundary in case of Neumann BC.");
     }
     prm.leave_subsection();
+    // clang-format on
   }
 
 private:
@@ -335,17 +321,44 @@ private:
     this->param.multigrid_data.p_sequence             = PSequenceType::DecreaseByOne; // Bisect;
     this->param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
     this->param.multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
-    this->param.multigrid_data.smoother_data.iterations     = 5;
+    this->param.multigrid_data.smoother_data.iterations     = 12;
+    this->param.multigrid_data.smoother_data.relaxation_factor = 0.8; // Jacobi,    default: 0.8
+    this->param.multigrid_data.smoother_data.smoothing_range   = 60;  // Chebyshev, default: 20
+    this->param.multigrid_data.smoother_data.iterations_eigenvalue_estimation =
+      20; // Chebyshev, default: 20
 
-    this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
+    this->param.multigrid_data.coarse_problem.solver      = MultigridCoarseGridSolver::GMRES;
+    this->param.multigrid_data.coarse_problem.solver_data = SolverData(1e3, 1.e-12, 1.e-3, 30);
     this->param.multigrid_data.coarse_problem.preconditioner =
       MultigridCoarseGridPreconditioner::AMG;
 
-    this->param.update_preconditioner                  = true;
-    this->param.update_preconditioner_every_time_steps = 1;
-    this->param.update_preconditioner_every_newton_iterations =
-      this->param.newton_solver_data.max_iter;
-    this->param.update_preconditioner_once_newton_converged = true;
+#ifdef DEAL_II_WITH_TRILINOS
+    bool const higher_order_amg =
+      this->param.preconditioner == Preconditioner::AMG and this->param.degree > 1;
+    if(higher_order_amg)
+    {
+      AssertThrow(not higher_order_amg,
+                  dealii::ExcMessage("Trilinos' ML not tuned for higher-order AMG."));
+    }
+    else
+    {
+      this->param.multigrid_data.coarse_problem.amg_data.ml_data.elliptic = true;
+      this->param.multigrid_data.coarse_problem.amg_data.ml_data.higher_order_elements =
+        higher_order_amg;
+      this->param.multigrid_data.coarse_problem.amg_data.ml_data.n_cycles              = 2;
+      this->param.multigrid_data.coarse_problem.amg_data.ml_data.w_cycle               = false;
+      this->param.multigrid_data.coarse_problem.amg_data.ml_data.aggregation_threshold = 1e-4;
+      this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_sweeps       = 2;
+      this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_overlap      = 0;
+      this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_type         = "ILU";
+      this->param.multigrid_data.coarse_problem.amg_data.ml_data.coarse_type = "Amesos-KLU";
+    }
+#endif
+
+    this->param.update_preconditioner                         = true;
+    this->param.update_preconditioner_every_time_steps        = 1;
+    this->param.update_preconditioner_every_newton_iterations = 5;
+    this->param.update_preconditioner_once_newton_converged   = true;
   }
 
   void
@@ -640,6 +653,9 @@ private:
                                                       fiber_H_33,
                                                       fiber_k_1,
                                                       fiber_k_2,
+                                                      "",
+                                                      "",
+                                                      0.0,
                                                       two_dim_type)));
     }
     else

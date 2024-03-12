@@ -39,6 +39,8 @@ namespace Structure
 template<int dim>
 struct IncompressibleFibrousTissueData : public MaterialData
 {
+  typedef dealii::LinearAlgebra::distributed::Vector<float> VectorType;
+
   IncompressibleFibrousTissueData(
     MaterialType const &                         type,
     double const &                               shear_modulus,
@@ -49,6 +51,9 @@ struct IncompressibleFibrousTissueData : public MaterialData
     double const &                               fiber_H_33,
     double const &                               fiber_k_1,
     double const &                               fiber_k_2,
+    std::string const &                          e1_orientation_file_path,
+    std::string const &                          e2_orientation_file_path,
+    double const &                               point_tolerance,
     Type2D const &                               type_two_dim,
     std::shared_ptr<dealii::Function<dim>> const shear_modulus_function = nullptr)
     : MaterialData(type),
@@ -61,6 +66,9 @@ struct IncompressibleFibrousTissueData : public MaterialData
       fiber_H_33(fiber_H_33),
       fiber_k_1(fiber_k_1),
       fiber_k_2(fiber_k_2),
+      e1_orientation_file_path(e1_orientation_file_path),
+      e2_orientation_file_path(e2_orientation_file_path),
+      point_tolerance(point_tolerance),
       type_two_dim(type_two_dim)
   {
   }
@@ -76,6 +84,10 @@ struct IncompressibleFibrousTissueData : public MaterialData
   double fiber_H_33;
   double fiber_k_1;
   double fiber_k_2;
+
+  std::string e1_orientation_file_path;
+  std::string e2_orientation_file_path;
+  double      point_tolerance;
 
   Type2D type_two_dim;
 };
@@ -252,6 +264,8 @@ private:
   Number              fiber_k_1;
   Number              fiber_k_2;
 
+  bool const orientation_vectors_provided;
+
   // cache coefficients for spatially varying material parameters
   bool                                 shear_modulus_is_variable;
   mutable VariableCoefficients<scalar> shear_modulus_coefficients;
@@ -269,6 +283,9 @@ private:
 
   mutable std::vector<VariableCoefficients<vector>> fiber_direction_M_1;
   mutable std::vector<VariableCoefficients<vector>> fiber_direction_M_2;
+
+  std::shared_ptr<VectorType> e1_orientation;
+  std::shared_ptr<VectorType> e2_orientation;
 
   // scalar cache level
   mutable VariableCoefficients<scalar> J_pow_coefficients;

@@ -21,11 +21,18 @@
 
 // deal.II
 #include <deal.II/base/vectorization.h>
+#include <deal.II/fe/mapping_fe.h>
 
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/evaluate_functions.h>
 #include <exadg/structure/material/library/incompressible_fibrous_tissue.h>
 #include <exadg/structure/spatial_discretization/operators/continuum_mechanics.h>
+
+// ExaDG-Bio
+#define LINK_TO_EXADGBIO
+#ifdef LINK_TO_EXADGBIO
+#  include "../../../../../../exadg-bio/include/match_cell_data.h"
+#endif
 
 namespace ExaDG
 {
@@ -44,6 +51,8 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
   : dof_index(dof_index),
     quad_index(quad_index),
     data(data),
+    orientation_vectors_provided(data.e1_orientation_file_path.size() > 0 or
+                                 data.e2_orientation_file_path.size() > 0),
     shear_modulus_is_variable(data.shear_modulus_function != nullptr),
     spatial_integration(spatial_integration),
     force_material_residual(force_material_residual),
@@ -174,12 +183,133 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
     }
   }
 
+  // The vector imported from the binary file is of type
+  // dealii::LinearAlgebra::distributed::Vector<float>
+  // and lives on the finest grid/highest order. For the
+  // operator on the current level, we need to construct
+  // a fitting vector or link to the fine level vector.
+  if(orientation_vectors_provided)
+  {
+    AssertThrow(data.e1_orientation_file_path.size() > 0 and
+                  data.e2_orientation_file_path.size() > 0,
+                dealii::ExcMessage("Provide file paths for both orientations."));
+
+    typedef typename IncompressibleFibrousTissueData<dim>::VectorType VectorTypeOrientation;
+
+    e1_orientation = std::make_shared<VectorType>();
+    e2_orientation = std::make_shared<VectorType>();
+    matrix_free.initialize_dof_vector(*e1_orientation, dof_index);
+    matrix_free.initialize_dof_vector(*e2_orientation, dof_index);
+
+#ifdef LINK_TO_EXADGBIO
+    // Read the suitable vector from binary format.
+    dealii::DoFHandler<dim> const & dof_handler = matrix_free.get_dof_handler(dof_index);
+    dealii::MappingFE<dim>          linear_mapping(dof_handler.get_fe().base_element(0));
+    unsigned int const              degree   = dof_handler.get_fe().base_element(0).degree;
+    MPI_Comm const &                mpi_comm = dof_handler.get_communicator();
+    dealii::ConditionalOStream      pcout(std::cout,
+                                     dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);
+    typedef float                   NumberBinaryFile;
+
+    // The binary data is stored per cell, where we match centers.
+    // We cannot deduce from this data, how many CG DoFs the dim-dimensional
+    // continuous FE space would have (which has to be identical to the current
+    // vector size). So, we need to try and match the data. All of this should
+    // be replaced by an interpolation strategy using the MG hierarchy anyways.
+    unsigned int lvl = 0;
+    std::string  identifier;
+    bool         found_match = false;
+    for(unsigned int i = 0; i < dof_handler.get_triangulation().n_global_levels(); i++)
+    {
+      lvl        = i;
+      identifier = "_p" + std::to_string(degree) + "_lvl" + std::to_string(lvl);
+
+      FEDataReader<dim, NumberBinaryFile> fe_data_reader(mpi_comm);
+      fe_data_reader.read_info_file(data.e1_orientation_file_path + identifier + "_info.txt",
+                                    true /* allow_fail_and_return */);
+
+      if(degree == fe_data_reader.get_fe_data_reader_data().polynomial_degree)
+      {
+        try
+        {
+          pcout << "Filling vector of size " << e1_orientation->size() << ". Reading file ...\n";
+
+          ExaDG::MatchCellData::read_cell_data<dim, NumberBinaryFile, VectorType>(
+            *e1_orientation,
+            data.e1_orientation_file_path + identifier,
+            degree,
+            dof_handler,
+            linear_mapping,
+            data.point_tolerance,
+            true /* point_ordering_from_support_points */,
+            mpi_comm,
+            false /*print_data*/);
+
+          found_match = true;
+        }
+        catch(...)
+        {
+          pcout << "match not successful.\n";
+        }
+
+        if(found_match)
+        {
+          pcout << "found a match: lvl = " << lvl << ", degree = " << degree << "\n";
+
+          ExaDG::MatchCellData::read_cell_data<dim, NumberBinaryFile, VectorType>(
+            *e2_orientation,
+            data.e2_orientation_file_path + identifier,
+            degree,
+            dof_handler,
+            linear_mapping,
+            data.point_tolerance,
+            true /* point_ordering_from_support_points */,
+            mpi_comm,
+            false /*print_data*/);
+
+          break;
+        }
+      }
+    }
+
+    if(not found_match)
+    {
+      (*e1_orientation) = 0.0;
+      e1_orientation->add(1.0);
+      (*e1_orientation) = 0.0;
+      e1_orientation->add(1.0);
+
+      pcout << "Overwritten orientation vector of size " << e1_orientation->size()
+            << " with dummy data.\n\n\n";
+    }
+    else
+    {
+      pcout << "|E1|_2 = " << e1_orientation->l2_norm() << "\n"
+            << "|E2|_2 = " << e2_orientation->l2_norm() << "\n\n";
+    }
+
+#else
+    AssertThrow(not orientation_vectors_provided,
+                "You must link against ExaDG-Bio to enable material orientations.");
+#endif
+
+    e1_orientation->update_ghost_values();
+    e2_orientation->update_ghost_values();
+  }
+
   // Set the coefficients on the integration point level.
   VectorType dummy;
   matrix_free.cell_loop(&IncompressibleFibrousTissue<dim, Number>::cell_loop_set_coefficients,
                         this,
                         dummy,
                         dummy);
+
+  // Release vectors after initialization, since cell data is stored.
+  if(orientation_vectors_provided)
+  {
+    e1_orientation.reset();
+    e2_orientation.reset();
+  }
 }
 
 template<int dim, typename Number>
@@ -191,24 +321,27 @@ IncompressibleFibrousTissue<dim, Number>::cell_loop_set_coefficients(
   Range const & cell_range) const
 {
   IntegratorCell integrator(matrix_free, dof_index, quad_index);
+  IntegratorCell integrator_e1(matrix_free, dof_index, quad_index);
+  IntegratorCell integrator_e2(matrix_free, dof_index, quad_index);
 
-  // The material coordinate system is kept constant in the entire domain,
-  // where one might consider custom-made material coordinate systems in the future.
+  // The material coordinate system is initialized constant in the entire domain.
   // Phi is the angle from the circumferential vector E_1 towards the longitudinal
   // vector E_2.
-  dealii::Tensor<1, dim> E_1, E_2;
-  E_1[0] = 1.0;
-  E_2[1] = 1.0;
-
-  std::vector<vector> M_1(2), M_2(2);
-  for(unsigned int i = 0; i < 2; i++)
+  vector                 M_3;
+  std::vector<vector>    M_1(n_fiber_families), M_2(n_fiber_families);
+  dealii::Tensor<1, dim> E_1_default, E_2_default;
+  E_1_default[0] = 1.0;
+  E_2_default[1] = 1.0;
   {
-    M_1[i] = fiber_cos_phi[i] * E_1 - fiber_sin_phi[i] * E_2;
-    M_2[i] = fiber_sin_phi[i] * E_1 + fiber_cos_phi[i] * E_2;
-  }
+    for(unsigned int i = 0; i < n_fiber_families; i++)
+    {
+      M_1[i] = fiber_cos_phi[i] * E_1_default - fiber_sin_phi[i] * E_2_default;
+      M_2[i] = fiber_sin_phi[i] * E_1_default + fiber_cos_phi[i] * E_2_default;
+    }
 
-  dealii::Tensor<1, dim> E_3 = cross_product_3d(E_1, E_2);
-  vector const           M_3 = E_3;
+    dealii::Tensor<1, dim> E_3 = cross_product_3d(E_1_default, E_2_default);
+    M_3                        = E_3;
+  }
 
   // Store only the minimal amount for the general case of having a field of
   // material coordinate systems. The mean fiber direction is always needed, since
@@ -243,6 +376,16 @@ IncompressibleFibrousTissue<dim, Number>::cell_loop_set_coefficients(
   {
     integrator.reinit(cell);
 
+    if(orientation_vectors_provided)
+    {
+      integrator_e1.reinit(cell);
+      integrator_e1.read_dof_values(*e1_orientation);
+      integrator_e1.evaluate(dealii::EvaluationFlags::values);
+      integrator_e2.reinit(cell);
+      integrator_e2.read_dof_values(*e2_orientation);
+      integrator_e2.evaluate(dealii::EvaluationFlags::values);
+    }
+
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
@@ -254,6 +397,44 @@ IncompressibleFibrousTissue<dim, Number>::cell_loop_set_coefficients(
                                                    integrator.quadrature_point(q),
                                                    0.0 /*time*/);
         shear_modulus_coefficients.set_coefficient_cell(cell, q, shear_modulus_vec);
+      }
+
+      // Update the fiber mean directions.
+      if(orientation_vectors_provided)
+      {
+        vector E_1 = integrator_e1.get_value(q);
+        vector E_2 = integrator_e2.get_value(q);
+
+        // Guard a potential zero norm, since we want to allow for
+        // non-normed orientation vectors given by the user.
+        Number constexpr tol = 1e-10;
+        scalar E_1_norm      = E_1.norm();
+        scalar E_2_norm      = E_2.norm();
+
+        // factor_default = norm < tol ? 1.0 : 0.0
+        scalar E_1_default_factor =
+          dealii::compare_and_apply_mask<dealii::SIMDComparison::less_than>(E_1_norm,
+                                                                            scalar_one * tol,
+                                                                            scalar_one,
+                                                                            scalar_zero);
+
+        scalar E_2_default_factor =
+          dealii::compare_and_apply_mask<dealii::SIMDComparison::less_than>(E_2_norm,
+                                                                            scalar_one * tol,
+                                                                            scalar_one,
+                                                                            scalar_zero);
+
+        // Add tol to norm to make sure we do not get undefined behavior.
+        E_1 = E_1_default_factor * E_1_default +
+              ((scalar_one - E_1_default_factor) / (E_1_norm + tol)) * E_1;
+        E_2 = E_2_default_factor * E_2_default +
+              ((scalar_one - E_2_default_factor) / (E_2_norm + tol)) * E_2;
+
+        for(unsigned int i = 0; i < n_fiber_families; i++)
+        {
+          M_1[i] = fiber_cos_phi[i] * E_1 - fiber_sin_phi[i] * E_2;
+          M_2[i] = fiber_sin_phi[i] * E_1 + fiber_cos_phi[i] * E_2;
+        }
       }
 
       // Fill the fiber orientation vectors or the structure tensor directly
@@ -269,6 +450,9 @@ IncompressibleFibrousTissue<dim, Number>::cell_loop_set_coefficients(
       }
       else
       {
+        // Fiber families have identical M_3 since they lie in a plane normal to it.
+        M_3 = cross_product_3d(M_1[0], M_2[0]);
+
         for(unsigned int i = 0; i < n_fiber_families; i++)
         {
           fiber_direction_M_1[i].set_coefficient_cell(cell, q, M_1[i]);
