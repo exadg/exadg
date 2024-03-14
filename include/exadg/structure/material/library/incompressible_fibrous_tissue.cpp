@@ -290,7 +290,8 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
 
 #else
     AssertThrow(not orientation_vectors_provided,
-                "You must link against ExaDG-Bio to enable material orientations.");
+                dealii::ExcMessage(
+                  "You must link against ExaDG-Bio to enable material orientations."));
 #endif
 
     e1_orientation->update_ghost_values();
