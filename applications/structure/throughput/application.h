@@ -120,12 +120,32 @@ private:
     {
       problem_type_str = "QuasiStatic";
     }
+
+    std::string material_type_str = "Undefined";
+    if(material_type == MaterialType::CompressibleNeoHookean)
+    {
+      material_type_str = "CompressibleNeoHookean";
+    }
+    else if(material_type == MaterialType::IncompressibleNeoHookean)
+    {
+      material_type_str = "IncompressibleNeoHookean";
+    }
+    else if(material_type == MaterialType::IncompressibleFibrousTissue)
+    {
+      material_type_str = "IncompressibleFibrousTissue";
+    }
+    else if(material_type == MaterialType::StVenantKirchhoff)
+    {
+      material_type_str = "StVenantKirchhoff";
+    }
+
     this->pcout << "ProblemType           = " << problem_type_str << "\n"
                 << "SpatialIntegration    = " << spatial_integration << "\n"
                 << "ForceMaterialResidual = " << force_material_residual << "\n"
                 << "CacheLevel            = " << cache_level << "\n"
                 << "CheckType             = " << check_type << "\n"
-                << "MappingStrength       = " << mapping_strength << "\n";
+                << "MappingStrength       = " << mapping_strength << "\n"
+				<< "MaterialType          = " << material_type_str << "\n";
   }
 
   void
