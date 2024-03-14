@@ -30,7 +30,7 @@
         "ForceMaterialResidual": "false",
         "CacheLevel": "2",
         "CheckType": "0",
-        "MappingStrength": "0.20"
+        "MappingStrength": "0.0"
     },
     "Output": {
         "OutputDirectory": "output/no_output_is_written/",

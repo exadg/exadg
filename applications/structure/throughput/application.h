@@ -108,6 +108,27 @@ private:
 
     // These should not be needed for the throughput applications.
     this->param.solver = Solver::FGMRES;
+
+    // Output all the application parameters to screen.
+    std::string problem_type_str = "Undefined";
+    if(problem_type == ProblemType::Steady)
+    {
+      problem_type_str = "Steady";
+    }
+    else if(problem_type == ProblemType::Unsteady)
+    {
+      problem_type_str = "Unsteady";
+    }
+    else if(problem_type == ProblemType::QuasiStatic)
+    {
+      problem_type_str = "QuasiStatic";
+    }
+    this->pcout << "ProblemType           = " << problem_type_str << "\n"
+                << "SpatialIntegration    = " << spatial_integration << "\n"
+                << "ForceMaterialResidual = " << force_material_residual << "\n"
+                << "CacheLevel            = " << cache_level << "\n"
+                << "CheckType             = " << check_type << "\n"
+                << "MappingStrength       = " << mapping_strength << "\n";
   }
 
   void
