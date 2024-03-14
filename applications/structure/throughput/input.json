@@ -16,7 +16,7 @@
     },
     "Throughput": {
         "OperatorType": "Apply",
-        "RepetitionsInner": "5",
+        "RepetitionsInner": "100",
         "RepetitionsOuter": "1"
     },
     "Application": {
