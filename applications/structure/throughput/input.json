@@ -8,11 +8,11 @@
         "RunType": "FixedProblemSize",
         "ElementType": "Hypercube",
         "DegreeMin": "1",
-        "DegreeMax": "1",
-        "RefineSpaceMin": "3",
-        "RefineSpaceMax": "3",
-        "DofsMin": "1000",
-        "DofsMax": "10000"
+        "DegreeMax": "8",
+        "RefineSpaceMin": "0",
+        "RefineSpaceMax": "0",
+        "DofsMin": "100000",
+        "DofsMax": "1000000"
     },
     "Throughput": {
         "OperatorType": "Apply",
@@ -20,9 +20,6 @@
         "RepetitionsOuter": "1"
     },
     "Application": {
-        "Length": "100.0",
-        "Height": "10.0",
-        "Width": "10.0",
         "ProblemType": "QuasiStatic",
         "MaterialType": "IncompressibleFibrousTissue",
         "WeakDamping": "0.0",

@@ -45,9 +45,6 @@ public:
     // clang-format off
     prm.enter_subsection("Application");
     {
-      prm.add_parameter("Length",                length,                   "Length of domain.");
-      prm.add_parameter("Height",                height,                   "Height of domain.");
-      prm.add_parameter("Width",                 width,                    "Width of domain.");
       prm.add_parameter("SpatialIntegration",    spatial_integration,      "Use spatial integration.");
       prm.add_parameter("ForceMaterialResidual", force_material_residual,  "Use undeformed configuration to evaluate the residual.");
       prm.add_parameter("CacheLevel",            cache_level,              "Cache level: 0 none, 1 scalars, 2 tensors.");
@@ -136,108 +133,37 @@ private:
               std::shared_ptr<dealii::Mapping<dim>> &           mapping,
               std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
-    auto const lambda_create_triangulation =
-      [&](dealii::Triangulation<dim, dim> &                        tria,
-          std::vector<dealii::GridTools::PeriodicFacePair<
-            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
-          unsigned int const                                       global_refinements,
-          std::vector<unsigned int> const &                        vector_local_refinements) {
-        (void)periodic_face_pairs;
+    auto const lambda_create_triangulation = [&](dealii::Triangulation<dim, dim> & tria,
+                                                 std::vector<dealii::GridTools::PeriodicFacePair<
+                                                   typename dealii::Triangulation<
+                                                     dim>::cell_iterator>> & periodic_face_pairs,
+                                                 unsigned int const          global_refinements,
+                                                 std::vector<unsigned int> const &
+                                                   vector_local_refinements) {
+      (void)periodic_face_pairs;
+      (void)vector_local_refinements;
 
-        // left-bottom-front and right-top-back point
-        dealii::Point<dim> p1, p2;
+      AssertThrow(
+        this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+        dealii::ExcMessage(
+          "Manifolds might not be applied correctly for TriangulationType::FullyDistributed. "
+          "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
 
-        for(unsigned d = 0; d < dim; d++)
-          p1[d] = 0.0;
+      double constexpr left = -1.0, right = 1.0;
 
-        p2[0] = this->length;
-        p2[1] = this->height;
-        if(dim == 3)
-          p2[2] = this->width;
+      dealii::GridGenerator::subdivided_hyper_cube(tria,
+                                                   this->n_subdivisions_1d_hypercube,
+                                                   left,
+                                                   right);
 
-        std::vector<unsigned int> repetitions(dim);
-        repetitions[0] = this->repetitions0;
-        repetitions[1] = this->repetitions1;
-        if(dim == 3)
-          repetitions[2] = this->repetitions2;
+      if(mapping_strength > 1e-12)
+      {
+        unsigned int constexpr frequency = 2;
+        apply_deformed_cube_manifold(tria, left, right, mapping_strength, frequency);
+      }
 
-        if(this->param.grid.element_type == ElementType::Hypercube)
-        {
-          dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, p1, p2);
-        }
-        else if(this->param.grid.element_type == ElementType::Simplex)
-        {
-          dealii::Triangulation<dim, dim> tria_hypercube;
-          dealii::GridGenerator::subdivided_hyper_rectangle(tria_hypercube, repetitions, p1, p2);
-
-          dealii::GridGenerator::convert_hypercube_to_simplex_mesh(tria_hypercube, tria);
-        }
-        else
-        {
-          AssertThrow(false, dealii::ExcMessage("Not implemented."));
-        }
-
-        /*
-         * illustration of 2d geometry / boundary ids:
-         *
-         *                  bid = 0
-         *      ________________________________
-         *     |                                |
-         *     | bid = 1                        | bid = 2
-         *     |________________________________|
-         *
-         *                  bid = 3
-         *
-         * in the 3d case: face at z = 0 has bid = 4, the other face has bid = 0 (as the top face in
-         * the figure above).
-         *
-         */
-        for(auto cell : tria)
-        {
-          for(auto const & face : cell.face_indices())
-          {
-            // left face
-            if(std::fabs(cell.face(face)->center()(0) - 0.0) < 1e-8)
-            {
-              cell.face(face)->set_all_boundary_ids(1);
-            }
-
-            // right face
-            if(std::fabs(cell.face(face)->center()(0) - this->length) < 1e-8)
-            {
-              cell.face(face)->set_all_boundary_ids(2);
-            }
-
-            // lower face
-            if(std::fabs(cell.face(face)->center()(1) - 0.0) < 1e-8)
-            {
-              cell.face(face)->set_all_boundary_ids(3);
-            }
-
-            // back face
-            if(dim == 3)
-            {
-              if(std::fabs(cell.face(face)->center()(2) - 0.0) < 1e-8)
-              {
-                cell.face(face)->set_all_boundary_ids(4);
-              }
-            }
-          }
-        }
-
-        if(vector_local_refinements.size() > 0)
-          refine_local(tria, vector_local_refinements);
-
-        if(global_refinements > 0)
-          tria.refine_global(global_refinements);
-
-        // Apply manifold map on a uniform cube
-        unsigned int const frequency = 1;
-        if(mapping_strength > 1e-12)
-          if(std::abs(this->length - this->height) < 1e-12)
-            if(dim == 2 or std::abs(this->length - this->width) < 1e-12)
-              apply_deformed_cube_manifold(tria, 0.0, this->length, mapping_strength, frequency);
-      };
+      tria.refine_global(global_refinements);
+    };
 
     GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
@@ -262,37 +188,14 @@ private:
                                                                                   pair;
     typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
 
-    this->boundary_descriptor->neumann_bc.insert(
+    // zero Dirichlet BCs
+    std::vector<bool> mask(dim, true);
+    this->boundary_descriptor->dirichlet_bc.insert(
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
       pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
 
-    // left face: Dirichlet BCs
-    bool constexpr clamp_at_left_boundary = true;
-    std::vector<bool> mask_left           = {true, clamp_at_left_boundary};
-    if(dim == 3)
-    {
-      mask_left.resize(3);
-      mask_left[2] = clamp_at_left_boundary;
-    }
-    this->boundary_descriptor->dirichlet_bc.insert(
-      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
-    this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
-      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
-
-    this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, mask_left));
-
-    // right face: Neumann BCs
-    this->boundary_descriptor->neumann_bc.insert(
-      pair(2, new dealii::Functions::ConstantFunction<dim>(dim)));
-
-    // lower/upper face (3d: front/back face)
-    this->boundary_descriptor->neumann_bc.insert(
-      pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
-
-    if(dim == 3)
-    {
-      this->boundary_descriptor->neumann_bc.insert(
-        pair(4, new dealii::Functions::ZeroFunction<dim>(dim)));
-    }
+    this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(0, mask));
   }
 
   void
@@ -394,8 +297,6 @@ private:
     return pp;
   }
 
-  double length = 1.0, height = 1.0, width = 1.0;
-
   bool spatial_integration     = false;
   bool force_material_residual = false;
 
@@ -405,9 +306,6 @@ private:
   ProblemType problem_type = ProblemType::Unsteady;
 
   double weak_damping_coefficient = 0.0;
-
-  // mesh parameters
-  unsigned int const repetitions0 = 1, repetitions1 = 1, repetitions2 = 1;
 
   MaterialType material_type = MaterialType::Undefined;
   double const E_modul       = 200.0;
