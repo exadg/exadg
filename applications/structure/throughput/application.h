@@ -145,7 +145,7 @@ private:
                 << "CacheLevel            = " << cache_level << "\n"
                 << "CheckType             = " << check_type << "\n"
                 << "MappingStrength       = " << mapping_strength << "\n"
-				<< "MaterialType          = " << material_type_str << "\n";
+                << "MaterialType          = " << material_type_str << "\n";
   }
 
   void
