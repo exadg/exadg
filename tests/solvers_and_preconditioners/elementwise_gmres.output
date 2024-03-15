@@ -4,6 +4,11 @@ GMRES solver (double), size M=3:
 L2 norm of initial residual = 7.3e+00
 L2 norm of final residual = 3.6e-15
 
+GMRES solver (double), size M=3, restart size = 1:
+
+L2 norm of initial residual = 7.3e+00
+L2 norm of final residual = 1.7e-13
+
 GMRES solver (double), size M=10000:
 
 L2 norm of initial residual = 1.0e+02
