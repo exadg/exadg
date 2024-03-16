@@ -22,7 +22,7 @@
 #ifndef EXADG_AERO_ACOUSTIC_USER_INTERFACE_FIELD_FUNCTIONS_H_
 #define EXADG_AERO_ACOUSTIC_USER_INTERFACE_FIELD_FUNCTIONS_H_
 
-#include <exadg/utilities/optional_function.h>
+#include <exadg/utilities/spatial_aware_function.h>
 
 namespace ExaDG
 {
