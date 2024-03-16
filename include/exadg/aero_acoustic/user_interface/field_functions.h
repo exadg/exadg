@@ -37,7 +37,9 @@ struct FieldFunctions
    * out the source term in space: If large source term contributions are
    * placed at the boundary of the CFD domain, there can be problems when
    * interpolating to the non-matching acoustic domain (that is mostly
-   * much larger than the CFD domain).
+   * much larger than the CFD domain. A typical spatial fade out function
+   * "shrinks" the area of the source terms by a smooth function that is one
+   * in large parts of the domain and reduces to zero at boundaris.
    *
    * If the source term is only used to blend in the source term over time
    * it has to be evaluated only once every time step. Therefore, we are using a
