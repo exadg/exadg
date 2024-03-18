@@ -88,9 +88,6 @@ Parameters::check() const
     AssertThrow(cfl_exponent_fe_degree > 0., dealii::ExcMessage("cfl_exponent_fe_degree > 0."));
   }
 
-  AssertThrow(not(adaptive_time_stepping),
-              dealii::ExcMessage("adaptive timestepping not supported"));
-
   // SPATIAL DISCRETIZATION
   grid.check();
 }
@@ -155,6 +152,9 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
   // restart
   print_parameter(pcout, "Restarted simulation", restarted_simulation);
   restart_data.print(pcout);
+
+  // adaptive time-stepping
+  print_parameter(pcout, "Adaptive time stepping", adaptive_time_stepping);
 }
 
 void
