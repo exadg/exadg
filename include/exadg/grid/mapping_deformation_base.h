@@ -41,8 +41,6 @@ namespace ExaDG
  * domains / grids, where the displacement vector describes the time-dependent deformation of the
  * grid. However, this class may also be used for stationary problems, e.g. to apply high-order
  * curved boundaries on top of low-order approximation of a certain geometry.
- *
- * TODO: extend this class to simplicial elements.
  */
 template<int dim, typename Number>
 class DeformedMappingBase : public MappingDoFVector<dim, Number>
@@ -58,16 +56,9 @@ public:
    * absolute coordinates of the grid.
    */
   DeformedMappingBase(std::shared_ptr<dealii::Mapping<dim> const> mapping_undeformed,
-                      unsigned int const                          mapping_degree_deformed,
                       dealii::Triangulation<dim> const &          triangulation)
-    : MappingDoFVector<dim, Number>(mapping_degree_deformed), mapping_undeformed(mapping_undeformed)
+    : MappingDoFVector<dim, Number>(triangulation), mapping_undeformed(mapping_undeformed)
   {
-    // Make sure that dealii::MappingQCache is initialized correctly. We use an empty
-    // dof-vector so that no displacements are added to the reference configuration
-    // described by mapping_undeformed.
-    dealii::DoFHandler<dim> dof_handler(triangulation);
-    VectorType              displacement_vector;
-    this->initialize_mapping_from_dof_vector(mapping_undeformed, displacement_vector, dof_handler);
   }
 
   /**
@@ -99,7 +90,35 @@ public:
     AssertThrow(false, dealii::ExcMessage("Has to be overwritten by derived classes."));
   }
 
-protected:
+  /**
+   * Calls corresponding function of base class MappingDoFVector using the member variable
+   * mapping_undeformed.
+   */
+  void
+  initialize_mapping_from_function(dealii::Triangulation<dim> const &     triangulation,
+                                   unsigned int const                     mapping_degree,
+                                   std::shared_ptr<dealii::Function<dim>> displacement_function)
+  {
+    MappingDoFVector<dim, Number>::initialize_mapping_from_function(mapping_undeformed,
+                                                                    triangulation,
+                                                                    mapping_degree,
+                                                                    displacement_function);
+  }
+
+  /**
+   * Calls corresponding function of base class MappingDoFVector using the member variable
+   * mapping_undeformed.
+   */
+  void
+  initialize_mapping_from_dof_vector(VectorType const &              displacement_vector,
+                                     dealii::DoFHandler<dim> const & dof_handler)
+  {
+    MappingDoFVector<dim, Number>::initialize_mapping_from_dof_vector(mapping_undeformed,
+                                                                      displacement_vector,
+                                                                      dof_handler);
+  }
+
+private:
   /**
    * mapping describing undeformed reference state
    */

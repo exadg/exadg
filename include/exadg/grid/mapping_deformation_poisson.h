@@ -36,8 +36,6 @@ namespace Poisson
 {
 /**
  * Class for moving grid problems based on a Poisson-type grid motion technique.
- *
- * TODO: extend this class to simplicial elements.
  */
 template<int dim, typename Number>
 class DeformedMapping : public DeformedMappingBase<dim, Number>
@@ -57,7 +55,7 @@ public:
     Poisson::Parameters const &                                param,
     std::string const &                                        field,
     MPI_Comm const &                                           mpi_comm)
-    : DeformedMappingBase<dim, Number>(mapping_undeformed, param.degree, *grid->triangulation),
+    : DeformedMappingBase<dim, Number>(mapping_undeformed, *grid->triangulation),
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       iterations({0, 0})
   {
@@ -76,6 +74,8 @@ public:
 
     // finally, initialize dof vector
     pde_operator->initialize_dof_vector(displacement);
+
+    this->initialize_mapping_from_dof_vector(displacement, pde_operator->get_dof_handler());
   }
 
   std::shared_ptr<Poisson::Operator<dim, dim, Number> const>
@@ -120,9 +120,7 @@ public:
       print_solver_info_linear(pcout, n_iter, timer.wall_time());
     }
 
-    this->initialize_mapping_from_dof_vector(this->mapping_undeformed,
-                                             displacement,
-                                             pde_operator->get_dof_handler());
+    this->initialize_mapping_from_dof_vector(displacement, pde_operator->get_dof_handler());
   }
 
   /**
