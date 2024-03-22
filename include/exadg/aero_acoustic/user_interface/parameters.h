@@ -42,6 +42,7 @@ public:
   Parameters()
     : density(-1.0),
       source_term_with_convection(false),
+      blend_in_source_term(false),
       fluid_to_acoustic_coupling_strategy(FluidToAcousticCouplingStrategy::Undefined)
   {
   }
@@ -61,6 +62,7 @@ public:
     pcout << std::endl << name << std::endl << std::endl;
     print_parameter(pcout, "Density", density);
     print_parameter(pcout, "Source term has convective part", source_term_with_convection);
+    print_parameter(pcout, "Blend in source term", blend_in_source_term);
     print_parameter(pcout, "Fluid to acoustic coupling", fluid_to_acoustic_coupling_strategy);
   }
 
@@ -75,6 +77,12 @@ public:
       prm.add_parameter("SourceTermWithConvection",
                         source_term_with_convection,
                         "Source term includes convective part.",
+                        dealii::Patterns::Bool(),
+                        true);
+
+      prm.add_parameter("BlendInSourceTerm",
+                        blend_in_source_term,
+                        "Blend in the aeroacoustic source term.",
                         dealii::Patterns::Bool(),
                         true);
 
@@ -94,6 +102,9 @@ public:
   // pressure. Sometimes, it is sufficient to neglect the convective
   // part of the material derivative.
   bool source_term_with_convection;
+
+  // Blend in aero-acoustic source terms in time or space?
+  bool blend_in_source_term;
 
   // Strategy to couple from fluid to acoustic
   FluidToAcousticCouplingStrategy fluid_to_acoustic_coupling_strategy;
