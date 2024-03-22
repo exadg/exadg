@@ -95,9 +95,9 @@ private:
 
     Number rho = static_cast<Number>(data.density);
 
-    // In case we blend in the source term we check, if the scaling is space dependent. Only in that
+    // In case we blend in the source term, we check if the scaling is space dependent. Only in that
     // case we have to evaluate the function in every equadrature point. Otherwise the scaling
-    // purely temporal and constant during this function.
+    // is purely temporal and constant during this function.
     if(data.blend_in)
       AssertThrow(data.blend_in_function != nullptr,
                   dealii::ExcMessage("No blend-in function provided."));
