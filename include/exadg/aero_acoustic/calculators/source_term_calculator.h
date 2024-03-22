@@ -105,7 +105,7 @@ private:
     bool const space_dependent_scaling =
       data.blend_in_function != nullptr ? data.blend_in_function->varies_in_space() : false;
     Number const pure_temporal_scaling_factor =
-      data.blend_in_function != nullptr ? data.blend_in_function->compute_time_factor() : 1.0;
+      (not space_dependent_scaling) ? data.blend_in_function->compute_time_factor() : 1.0;
 
     auto apply_scaling = [&](auto & flux, auto const & q) {
       if(space_dependent_scaling)
