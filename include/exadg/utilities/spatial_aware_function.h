@@ -30,7 +30,7 @@ namespace Utilities
 {
 /**
  * This is a @c dealii::Function, that provides information if its result is constant over space at
- * every time.
+ * given time.
  */
 template<int dim, typename Number = double>
 class SpatialAwareFunction : public dealii::Function<dim, Number>
@@ -44,16 +44,16 @@ public:
   }
 
   /**
-   * Varies in space, i.e. is not constant over space at every time.
+   * Varies in space at given @p time.
    */
   virtual bool
-  varies_in_space() const = 0;
+  varies_in_space(double const time) const = 0;
 
   /**
-   * Compute the value that is constant over space at every time.
+   * Compute the temporal factor at @p time.
    */
   virtual Number
-  compute_time_factor() const = 0;
+  compute_time_factor(double const time) const = 0;
 };
 
 } // namespace Utilities

@@ -648,20 +648,19 @@ public:
   double
   value(dealii::Point<dim> const &, unsigned int const) const final
   {
-    return compute_time_factor();
+    AssertThrow(false, dealii::ExcMessage("Should not end up here"));
+    return {};
   }
 
   bool
-  varies_in_space() const final
+  varies_in_space(double const) const final
   {
     return false;
   }
 
   double
-  compute_time_factor() const final
+  compute_time_factor(double const time) const final
   {
-    double const time = this->get_time();
-
     double const pi = dealii::numbers::PI;
     double const T  = end - start;
     double const t  = time - start;
