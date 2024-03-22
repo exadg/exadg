@@ -29,8 +29,9 @@ namespace ExaDG
 namespace Utilities
 {
 /**
- * This is a @c dealii::Function, that provides information if its result is constant over space at
- * given time.
+ * The intention behind is to bypass a potentially expensive evaluation of
+ * @c dealii::Function::value() (which the internal implementation will call for each quadrature
+ * point) in case one knows a priori that the function does not vary in space.
  */
 template<int dim, typename Number = double>
 class SpatialAwareFunction : public dealii::Function<dim, Number>
@@ -44,13 +45,15 @@ public:
   }
 
   /**
-   * Varies in space at given @p time.
+   * If this function evaluates to true, @c dealii::Function::set_time() in combination with
+   * @c dealii::Function::value() will be used to evaluate the function's value."
    */
   virtual bool
   varies_in_space(double const time) const = 0;
 
   /**
-   * Compute the temporal factor at @p time.
+   * If the above function @c varies_in_space() returns false, this function will be used to
+   * evaluate the function's value, bypassing @c dealii::Function::value().
    */
   virtual Number
   compute_time_factor(double const time) const = 0;
