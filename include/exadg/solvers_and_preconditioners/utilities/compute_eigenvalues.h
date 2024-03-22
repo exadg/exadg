@@ -45,15 +45,14 @@ compute_eigenvalues(Operator const &   op,
   if(operator_is_singular)
     dealii::VectorTools::subtract_mean_value(rhs);
 
-  dealii::SolverControl control(eig_n_iter, rhs.l2_norm() * 1e-5);
-  dealii::internal::PreconditionChebyshevImplementation::EigenvalueTracker eigenvalue_tracker;
+  dealii::SolverControl               control(eig_n_iter, rhs.l2_norm() * 1e-5);
+  dealii::internal::EigenvalueTracker eigenvalue_tracker;
 
   dealii::SolverCG<VectorType> solver(control);
 
-  solver.connect_eigenvalues_slot(
-    std::bind(&dealii::internal::PreconditionChebyshevImplementation::EigenvalueTracker::slot,
-              &eigenvalue_tracker,
-              std::placeholders::_1));
+  solver.connect_eigenvalues_slot(std::bind(&dealii::internal::EigenvalueTracker::slot,
+                                            &eigenvalue_tracker,
+                                            std::placeholders::_1));
 
   JacobiPreconditioner<Operator> preconditioner(op, true /* initialize */);
 
