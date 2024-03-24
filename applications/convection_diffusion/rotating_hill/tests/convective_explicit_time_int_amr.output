@@ -1,0 +1,332 @@
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up scalar convection-diffusion solver:
+
+List of parameters:
+
+Mathematical model:
+  Problem type:                              Unsteady
+  Equation type:                             Convection
+  Right-hand side:                           false
+  Analytical velocity field:                 true
+  ALE formulation:                           false
+  Formulation convective term:               DivergenceFormulation
+
+Physical quantities:
+  Start time:                                0.0000e+00
+  End time:                                  1.0000e+00
+
+Temporal discretization:
+  Temporal discretization method:            ExplRK
+  Explicit time integrator:                  ExplRK3Stage7Reg2
+  Maximum number of time steps:              4294967295
+  Temporal refinements:                      0
+  Calculation of time step size:             CFL
+  Adaptive time stepping:                    false
+  Restarted simulation:                      false
+  Restart:
+  Write restart:                             false
+
+Spatial Discretization:
+  Triangulation type:                        Distributed
+  Element type:                              Hypercube
+  Number of global refinements:              3
+  Create coarse triangulations:              true
+  Mapping degree:                            5
+  Polynomial degree:                         5
+  Enable adaptivity:                         true
+  Triggered every n time steps:              30
+  Maximum refinement level:                  4
+  Minimum refinement level:                  0
+  Preserve boundary cells:                   false
+  Fraction of cells to be refined:           2.5000e-02
+  Fraction of cells to be coarsened:         4.0000e-01
+  Numerical flux convective term:            LaxFriedrichsFlux
+
+Numerical parameters:
+  Use cell-based face loops:                 false
+  Use combined operator:                     true
+  Use over-integration:                      false
+
+Generating grid for 2-dimensional problem:
+
+  Max. number of refinements:                3
+  Number of cells:                           64
+
+Construct convection-diffusion operator ...
+
+Discontinuous Galerkin finite element discretization:
+
+  degree of 1D polynomials:                  5
+  number of dofs per cell:                   36
+  number of dofs (total):                    2304
+
+... done!
+
+Setup convection-diffusion operator ...
+
+... done!
+
+Setup time integrator ...
+
+Calculation of time step size according to CFL condition:
+
+  CFL:                                       2.5000e-01
+  Time step size (CFL global):               4.8902e-04
+
+Adjust time step size to hit end time:
+
+  Time step size:                            4.8900e-04
+
+... done!
+
+Starting time loop ...
+
+Calculate error for all fields at time t = 0.0000e+00:
+  Relative error (L2-norm): 4.02848e-02
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 4.88998e-04
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:1980
+  number of dofs (total) after adaptive mesh refinement:1872
+  number of dofs (total) after adaptive mesh refinement:1764
+  number of dofs (total) after adaptive mesh refinement:1872
+
+Calculate error for all fields at time t = 5.0367e-02:
+  Relative error (L2-norm): 4.02194e-02
+
+________________________________________________________________________________
+
+ Time step number = 104     t = 5.03667e-02 -> t + dt = 5.08557e-02
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:1980
+  number of dofs (total) after adaptive mesh refinement:2088
+  number of dofs (total) after adaptive mesh refinement:2196
+
+Calculate error for all fields at time t = 1.0024e-01:
+  Relative error (L2-norm): 4.02036e-02
+
+________________________________________________________________________________
+
+ Time step number = 206     t = 1.00244e-01 -> t + dt = 1.00733e-01
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:2196
+  number of dofs (total) after adaptive mesh refinement:2196
+  number of dofs (total) after adaptive mesh refinement:2088
+  number of dofs (total) after adaptive mesh refinement:2196
+
+Calculate error for all fields at time t = 1.5012e-01:
+  Relative error (L2-norm): 4.01919e-02
+
+________________________________________________________________________________
+
+ Time step number = 308     t = 1.50122e-01 -> t + dt = 1.50611e-01
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:2304
+  number of dofs (total) after adaptive mesh refinement:2196
+  number of dofs (total) after adaptive mesh refinement:2196
+
+Calculate error for all fields at time t = 2.0000e-01:
+  Relative error (L2-norm): 4.01796e-02
+
+________________________________________________________________________________
+
+ Time step number = 411     t = 2.00489e-01 -> t + dt = 2.00978e-01
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:2196
+  number of dofs (total) after adaptive mesh refinement:2304
+  number of dofs (total) after adaptive mesh refinement:2412
+  number of dofs (total) after adaptive mesh refinement:2412
+
+Calculate error for all fields at time t = 2.5037e-01:
+  Relative error (L2-norm): 4.01637e-02
+
+________________________________________________________________________________
+
+ Time step number = 513     t = 2.50367e-01 -> t + dt = 2.50856e-01
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:2520
+  number of dofs (total) after adaptive mesh refinement:2520
+  number of dofs (total) after adaptive mesh refinement:2520
+
+Calculate error for all fields at time t = 3.0024e-01:
+  Relative error (L2-norm): 4.01506e-02
+
+________________________________________________________________________________
+
+ Time step number = 615     t = 3.00244e-01 -> t + dt = 3.00733e-01
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:2196
+  number of dofs (total) after adaptive mesh refinement:2088
+  number of dofs (total) after adaptive mesh refinement:2196
+
+Calculate error for all fields at time t = 3.5012e-01:
+  Relative error (L2-norm): 4.01507e-02
+
+________________________________________________________________________________
+
+ Time step number = 717     t = 3.50122e-01 -> t + dt = 3.50611e-01
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:2304
+  number of dofs (total) after adaptive mesh refinement:2088
+  number of dofs (total) after adaptive mesh refinement:2304
+  number of dofs (total) after adaptive mesh refinement:2304
+
+Calculate error for all fields at time t = 4.0000e-01:
+  Relative error (L2-norm): 4.01387e-02
+
+________________________________________________________________________________
+
+ Time step number = 819     t = 4.00000e-01 -> t + dt = 4.00489e-01
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:2304
+  number of dofs (total) after adaptive mesh refinement:2304
+  number of dofs (total) after adaptive mesh refinement:2304
+
+Calculate error for all fields at time t = 4.5037e-01:
+  Relative error (L2-norm): 4.01300e-02
+
+________________________________________________________________________________
+
+ Time step number = 922     t = 4.50367e-01 -> t + dt = 4.50856e-01
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:2304
+  number of dofs (total) after adaptive mesh refinement:2412
+  number of dofs (total) after adaptive mesh refinement:2304
+  number of dofs (total) after adaptive mesh refinement:2412
+
+Calculate error for all fields at time t = 5.0024e-01:
+  Relative error (L2-norm): 4.01223e-02
+
+________________________________________________________________________________
+
+ Time step number = 1024    t = 5.00244e-01 -> t + dt = 5.00733e-01
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:2412
+  number of dofs (total) after adaptive mesh refinement:2196
+  number of dofs (total) after adaptive mesh refinement:2412
+
+Calculate error for all fields at time t = 5.5012e-01:
+  Relative error (L2-norm): 4.01162e-02
+
+________________________________________________________________________________
+
+ Time step number = 1126    t = 5.50122e-01 -> t + dt = 5.50611e-01
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:2412
+  number of dofs (total) after adaptive mesh refinement:2412
+  number of dofs (total) after adaptive mesh refinement:2412
+
+Calculate error for all fields at time t = 6.0000e-01:
+  Relative error (L2-norm): 4.01117e-02
+
+________________________________________________________________________________
+
+ Time step number = 1228    t = 6.00000e-01 -> t + dt = 6.00489e-01
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:2088
+  number of dofs (total) after adaptive mesh refinement:1980
+  number of dofs (total) after adaptive mesh refinement:1980
+  number of dofs (total) after adaptive mesh refinement:1872
+
+Calculate error for all fields at time t = 6.5037e-01:
+  Relative error (L2-norm): 4.01063e-02
+
+________________________________________________________________________________
+
+ Time step number = 1331    t = 6.50367e-01 -> t + dt = 6.50856e-01
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:2088
+  number of dofs (total) after adaptive mesh refinement:2304
+  number of dofs (total) after adaptive mesh refinement:2412
+
+Calculate error for all fields at time t = 7.0024e-01:
+  Relative error (L2-norm): 4.01007e-02
+
+________________________________________________________________________________
+
+ Time step number = 1433    t = 7.00244e-01 -> t + dt = 7.00733e-01
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:2412
+  number of dofs (total) after adaptive mesh refinement:2520
+  number of dofs (total) after adaptive mesh refinement:2520
+  number of dofs (total) after adaptive mesh refinement:2628
+
+Calculate error for all fields at time t = 7.5012e-01:
+  Relative error (L2-norm): 4.00976e-02
+
+________________________________________________________________________________
+
+ Time step number = 1535    t = 7.50122e-01 -> t + dt = 7.50611e-01
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:2628
+  number of dofs (total) after adaptive mesh refinement:2628
+  number of dofs (total) after adaptive mesh refinement:2736
+
+Calculate error for all fields at time t = 8.0000e-01:
+  Relative error (L2-norm): 4.00958e-02
+
+________________________________________________________________________________
+
+ Time step number = 1638    t = 8.00489e-01 -> t + dt = 8.00978e-01
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:2736
+  number of dofs (total) after adaptive mesh refinement:2952
+  number of dofs (total) after adaptive mesh refinement:3168
+
+Calculate error for all fields at time t = 8.5037e-01:
+  Relative error (L2-norm): 4.00950e-02
+
+________________________________________________________________________________
+
+ Time step number = 1740    t = 8.50367e-01 -> t + dt = 8.50856e-01
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:3168
+  number of dofs (total) after adaptive mesh refinement:2952
+  number of dofs (total) after adaptive mesh refinement:2628
+  number of dofs (total) after adaptive mesh refinement:2520
+
+Calculate error for all fields at time t = 9.0024e-01:
+  Relative error (L2-norm): 4.00944e-02
+
+________________________________________________________________________________
+
+ Time step number = 1842    t = 9.00244e-01 -> t + dt = 9.00733e-01
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:2520
+  number of dofs (total) after adaptive mesh refinement:2844
+  number of dofs (total) after adaptive mesh refinement:3060
+
+Calculate error for all fields at time t = 9.5012e-01:
+  Relative error (L2-norm): 4.00934e-02
+
+________________________________________________________________________________
+
+ Time step number = 1944    t = 9.50122e-01 -> t + dt = 9.50611e-01
+________________________________________________________________________________
+  number of dofs (total) after adaptive mesh refinement:3168
+  number of dofs (total) after adaptive mesh refinement:3168
+  number of dofs (total) after adaptive mesh refinement:2952
+  number of dofs (total) after adaptive mesh refinement:2844
+
+Calculate error for all fields at time t = 1.0000e+00:
+  Relative error (L2-norm): 4.00925e-02

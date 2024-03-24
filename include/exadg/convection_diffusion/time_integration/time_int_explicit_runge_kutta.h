@@ -68,7 +68,19 @@ public:
   void
   extrapolate_solution(VectorType & vector);
 
+  VectorType const &
+  get_solution_np() const;
+
+  void
+  prepare_coarsening_and_refinement() final;
+
+  void
+  interpolate_after_coarsening_and_refinement() final;
+
 private:
+  std::shared_ptr<std::vector<VectorType *>>
+  get_vectors();
+
   void
   initialize_vectors() final;
 
