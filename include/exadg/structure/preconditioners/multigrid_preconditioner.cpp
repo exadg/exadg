@@ -122,7 +122,7 @@ MultigridPreconditioner<dim, Number>::update()
 
   // In case that the operators have been updated, we also need to update the smoothers and the
   // coarse grid solver. This is generic functionality implemented in the base class.
-  if(nonlinear or data.unsteady)
+  if(nonlinear or data.unsteady or this->update_needed)
   {
     this->update_smoothers();
     this->update_coarse_solver();

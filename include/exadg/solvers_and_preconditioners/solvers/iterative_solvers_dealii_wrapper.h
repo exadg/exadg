@@ -282,7 +282,9 @@ public:
     }
 
     AssertThrow(std::isfinite(solver_control.last_value()),
-                dealii::ExcMessage("Solver contained NaN of Inf values"));
+                dealii::ExcMessage("Convergence value of last iteration step "
+                                   "for which check was called by the solver "
+                                   "contained NaN or Inf values"));
 
     if(solver_data.compute_performance_metrics)
       this->compute_performance_metrics(solver_control);
@@ -385,7 +387,9 @@ public:
     }
 
     AssertThrow(std::isfinite(solver_control.last_value()),
-                dealii::ExcMessage("Solver contained NaN of Inf values"));
+                dealii::ExcMessage("Convergence value of last iteration step "
+                                   "for which check was called by the solver "
+                                   "contained NaN or Inf values"));
 
     if(solver_data.compute_performance_metrics)
       this->compute_performance_metrics(solver_control);
