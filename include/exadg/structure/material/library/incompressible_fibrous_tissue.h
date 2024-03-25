@@ -42,20 +42,21 @@ struct IncompressibleFibrousTissueData : public MaterialData
   typedef dealii::LinearAlgebra::distributed::Vector<float> VectorType;
 
   IncompressibleFibrousTissueData(
-    MaterialType const &                         type,
-    double const &                               shear_modulus,
-    double const &                               bulk_modulus,
-    double const &                               fiber_angle_phi_in_degree,
-    double const &                               fiber_H_11,
-    double const &                               fiber_H_22,
-    double const &                               fiber_H_33,
-    double const &                               fiber_k_1,
-    double const &                               fiber_k_2,
-    std::string const &                          e1_orientation_file_path,
-    std::string const &                          e2_orientation_file_path,
-    double const &                               point_tolerance,
-    Type2D const &                               type_two_dim,
-    std::shared_ptr<dealii::Function<dim>> const shear_modulus_function = nullptr)
+    MaterialType const &                           type,
+    double const &                                 shear_modulus,
+    double const &                                 bulk_modulus,
+    double const &                                 fiber_angle_phi_in_degree,
+    double const &                                 fiber_H_11,
+    double const &                                 fiber_H_22,
+    double const &                                 fiber_H_33,
+    double const &                                 fiber_k_1,
+    double const &                                 fiber_k_2,
+    std::shared_ptr<std::vector<VectorType> const> e1_orientations,
+    std::shared_ptr<std::vector<VectorType> const> e2_orientations,
+    std::vector<unsigned int> const                degree_per_level,
+    double const &                                 point_tolerance,
+    Type2D const &                                 type_two_dim,
+    std::shared_ptr<dealii::Function<dim>> const   shear_modulus_function = nullptr)
     : MaterialData(type),
       shear_modulus(shear_modulus),
       shear_modulus_function(shear_modulus_function),
@@ -66,8 +67,9 @@ struct IncompressibleFibrousTissueData : public MaterialData
       fiber_H_33(fiber_H_33),
       fiber_k_1(fiber_k_1),
       fiber_k_2(fiber_k_2),
-      e1_orientation_file_path(e1_orientation_file_path),
-      e2_orientation_file_path(e2_orientation_file_path),
+      e1_orientations(e1_orientations),
+      e2_orientations(e2_orientations),
+      degree_per_level(degree_per_level),
       point_tolerance(point_tolerance),
       type_two_dim(type_two_dim)
   {
@@ -85,9 +87,10 @@ struct IncompressibleFibrousTissueData : public MaterialData
   double fiber_k_1;
   double fiber_k_2;
 
-  std::string e1_orientation_file_path;
-  std::string e2_orientation_file_path;
-  double      point_tolerance;
+  std::shared_ptr<std::vector<VectorType> const> e1_orientations;
+  std::shared_ptr<std::vector<VectorType> const> e2_orientations;
+  std::vector<unsigned int> const                degree_per_level;
+  double                                         point_tolerance;
 
   Type2D type_two_dim;
 };

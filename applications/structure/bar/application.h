@@ -653,9 +653,10 @@ private:
                                                       fiber_H_33,
                                                       fiber_k_1,
                                                       fiber_k_2,
-                                                      "",
-                                                      "",
-                                                      0.0,
+                                                      nullptr /* e2_orientations */,
+                                                      nullptr /* e2_orientations */,
+                                                      {},
+                                                      0.0 /* point_tolerance */,
                                                       two_dim_type)));
     }
     else

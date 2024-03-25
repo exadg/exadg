@@ -51,8 +51,8 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
   : dof_index(dof_index),
     quad_index(quad_index),
     data(data),
-    orientation_vectors_provided(data.e1_orientation_file_path.size() > 0 or
-                                 data.e2_orientation_file_path.size() > 0),
+    orientation_vectors_provided(data.e1_orientations != nullptr or
+                                 data.e1_orientations != nullptr),
     shear_modulus_is_variable(data.shear_modulus_function != nullptr),
     spatial_integration(spatial_integration),
     force_material_residual(force_material_residual),
@@ -183,16 +183,25 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
     }
   }
 
-  // The vector imported from the binary file is of type
-  // dealii::LinearAlgebra::distributed::Vector<float>
-  // and lives on the finest grid/highest order. For the
-  // operator on the current level, we need to construct
-  // a fitting vector or link to the fine level vector.
+  // The vectors created or imported from the binary files in the application
+  // increase in h-level and then in p-level (ph-Multigrid expected here).
   if(orientation_vectors_provided)
   {
-    AssertThrow(data.e1_orientation_file_path.size() > 0 and
-                  data.e2_orientation_file_path.size() > 0,
-                dealii::ExcMessage("Provide file paths for both orientations."));
+    AssertThrow(data.e1_orientations != nullptr and data.e2_orientations != nullptr,
+                dealii::ExcMessage("Provide orientation vectors for both e1 and e2."));
+
+    AssertThrow(data.e1_orientations->size() == data.e2_orientations->size(),
+                dealii::ExcMessage("Provide orientation vectors for all levels for e1 and e2."));
+
+    for(unsigned int i = 0; i < data.e1_orientations->size(); i++)
+    {
+      AssertThrow((*data.e1_orientations)[i].size() == (*data.e2_orientations)[i].size(),
+                  dealii::ExcMessage(
+                    "Provide e1 and e2 orientation vectors of equal size for each level."));
+    }
+
+    AssertThrow(data.e1_orientations->size() == data.degree_per_level.size(),
+                dealii::ExcMessage("Provide degree for all levels for e1 and e2."));
 
     typedef typename IncompressibleFibrousTissueData<dim>::VectorType VectorTypeOrientation;
 
@@ -204,71 +213,23 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
 #ifdef LINK_TO_EXADGBIO
     // Read the suitable vector from binary format.
     dealii::DoFHandler<dim> const & dof_handler = matrix_free.get_dof_handler(dof_index);
-    dealii::MappingFE<dim>          linear_mapping(dof_handler.get_fe().base_element(0));
-    unsigned int const              degree   = dof_handler.get_fe().base_element(0).degree;
-    MPI_Comm const &                mpi_comm = dof_handler.get_communicator();
+    unsigned int const              degree      = dof_handler.get_fe().base_element(0).degree;
+    MPI_Comm const &                mpi_comm    = dof_handler.get_communicator();
     dealii::ConditionalOStream      pcout(std::cout,
                                      dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);
-    typedef float                   NumberBinaryFile;
 
-    // The binary data is stored per cell, where we match centers.
-    // We cannot deduce from this data, how many CG DoFs the dim-dimensional
-    // continuous FE space would have (which has to be identical to the current
-    // vector size). So, we need to try and match the data. All of this should
-    // be replaced by an interpolation strategy using the MG hierarchy anyways.
-    unsigned int lvl = 0;
-    std::string  identifier;
-    bool         found_match = false;
-    for(unsigned int i = 0; i < dof_handler.get_triangulation().n_global_levels(); i++)
+    // Match the initialized vector with the given vectors.
+    bool found_match = false;
+    for(unsigned int i = 0; i < data.e1_orientations->size(); i++)
     {
-      lvl        = i;
-      identifier = "_p" + std::to_string(degree) + "_lvl" + std::to_string(lvl);
-
-      FEDataReader<dim, NumberBinaryFile> fe_data_reader(mpi_comm);
-      fe_data_reader.read_info_file(data.e1_orientation_file_path + identifier + "_info.txt",
-                                    true /* allow_fail_and_return */);
-
-      if(degree == fe_data_reader.get_fe_data_reader_data().polynomial_degree)
+      if(e1_orientation->size() == (*data.e1_orientations)[i].size() and
+         degree == data.degree_per_level[i])
       {
-        try
-        {
-          pcout << "Filling vector of size " << e1_orientation->size() << ". Reading file ...\n";
-
-          ExaDG::MatchCellData::read_cell_data<dim, NumberBinaryFile, VectorType>(
-            *e1_orientation,
-            data.e1_orientation_file_path + identifier,
-            degree,
-            dof_handler,
-            linear_mapping,
-            data.point_tolerance,
-            true /* point_ordering_from_support_points */,
-            mpi_comm,
-            false /*print_data*/);
-
-          found_match = true;
-        }
-        catch(...)
-        {
-          pcout << "match not successful.\n";
-        }
-
-        if(found_match)
-        {
-          pcout << "found a match: lvl = " << lvl << ", degree = " << degree << "\n";
-
-          ExaDG::MatchCellData::read_cell_data<dim, NumberBinaryFile, VectorType>(
-            *e2_orientation,
-            data.e2_orientation_file_path + identifier,
-            degree,
-            dof_handler,
-            linear_mapping,
-            data.point_tolerance,
-            true /* point_ordering_from_support_points */,
-            mpi_comm,
-            false /*print_data*/);
-
-          break;
-        }
+        pcout << "Filling vector of size " << e1_orientation->size() << " (degree = " << degree
+              << ").\n";
+        found_match = true;
+        e1_orientation->copy_locally_owned_data_from((*data.e1_orientations)[i]);
+        e2_orientation->copy_locally_owned_data_from((*data.e2_orientations)[i]);
       }
     }
 
@@ -287,11 +248,10 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
       pcout << "|E1|_2 = " << e1_orientation->l2_norm() << "\n"
             << "|E2|_2 = " << e2_orientation->l2_norm() << "\n\n";
     }
-
 #else
     AssertThrow(not orientation_vectors_provided,
                 dealii::ExcMessage(
-                  "You must link against ExaDG-Bio to enable material orientations."));
+                  "You must link against ExaDG-Bio to enable user-defined material orientations."));
 #endif
 
     e1_orientation->update_ghost_values();
@@ -331,8 +291,13 @@ IncompressibleFibrousTissue<dim, Number>::cell_loop_set_coefficients(
   vector                 M_3;
   std::vector<vector>    M_1(n_fiber_families), M_2(n_fiber_families);
   dealii::Tensor<1, dim> E_1_default, E_2_default;
-  E_1_default[0] = 1.0;
-  E_2_default[1] = 1.0;
+  for(unsigned int d = 0; d < dim; d++)
+  {
+    Number const reciprocal_norm = 1.0 / std::sqrt(static_cast<Number>(dim));
+    E_1_default[d]               = reciprocal_norm;
+    E_2_default[d]               = reciprocal_norm;
+  }
+
   {
     for(unsigned int i = 0; i < n_fiber_families; i++)
     {
@@ -436,6 +401,11 @@ IncompressibleFibrousTissue<dim, Number>::cell_loop_set_coefficients(
           M_1[i] = fiber_cos_phi[i] * E_1 - fiber_sin_phi[i] * E_2;
           M_2[i] = fiber_sin_phi[i] * E_1 + fiber_cos_phi[i] * E_2;
         }
+      }
+      else
+      {
+        // The mean fiber directions are never updated after initialization
+        // with the default E1 and E2 vectors.
       }
 
       // Fill the fiber orientation vectors or the structure tensor directly
