@@ -24,13 +24,10 @@ List of parameters:
 Mathematical model:
   Problem type:                              Unsteady
   Body force:                                false
-  Large deformation:                         true
-  Pull back body force:                      false
-  Pull back traction:                        false
+  Large deformation:                         false
 
 Physical quantities:
   Density:                                   1.0000e-03
-  Weak damping coefficient:                  1.0000e+04
 
 Temporal discretization:
   Start time:                                0.0000e+00
@@ -47,18 +44,12 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
-  Number of global refinements:              0
+  Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
-  Mapping degree coarse grids:               1
-  Polynomial degree:                         1
+  Polynomial degree:                         4
 
 Solver:
-
-Newton:
-  Maximum number of iterations:              100
-  Absolute solver tolerance:                 1.0000e-09
-  Relative solver tolerance:                 1.0000e-09
 
 Linear solver:
   Solver:                                    FGMRES
@@ -66,37 +57,20 @@ Linear solver:
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-08
   Maximum size of Krylov space:              100
-  Preconditioner:                            Multigrid
-  Multigrid type:                            phMG
-  p-sequence:                                Bisect
-  Smoother:                                  Chebyshev
-  Preconditioner smoother:                   PointJacobi
-  Iterations smoother:                       5
-  Smoothing range:                           2.0000e+01
-  Iterations eigenvalue estimation:          20
-  Coarse grid solver:                        CG
-  Coarse grid preconditioner:                AMG
-  Maximum number of iterations:              10000
-  Absolute solver tolerance:                 1.0000e-12
-  Relative solver tolerance:                 1.0000e-03
-  Maximum size of Krylov space:              30
-      AMG type:                              ML
-      Smoother sweeps:                       1
-      Number of cycles:                      1
-      Smoother type:                         ILU
+  Preconditioner:                            AMG
 
 Generating grid for 3-dimensional problem:
 
-  Max. number of refinements:                0
-  Number of cells:                           4
+  Max. number of refinements:                1
+  Number of cells:                           32
 
 Construct elasticity operator ...
 
 Continuous Galerkin finite element discretization:
 
-  degree of 1D polynomials:                  1
-  number of dofs per cell:                   24
-  number of dofs (total):                    60
+  degree of 1D polynomials:                  4
+  number of dofs per cell:                   375
+  number of dofs (total):                    8019
 
 ... done!
 
@@ -119,4 +93,4 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for all fields at time t = 1.0000e+00:
-  Relative error (L2-norm): 1.02068e+00
+  Relative error (L2-norm): 9.99019e-01
