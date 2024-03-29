@@ -242,7 +242,6 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
   //                                                            n_repetitions_outer,
   //                                                            mpi_comm);
 
-  unsigned int const degree    = application->get_parameters().degree;
   double             wall_time = std::numeric_limits<double>::max();
   {
     dealii::Timer global_timer;
@@ -257,6 +256,7 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
         timer.restart();
 
 #ifdef EXADG_WITH_LIKWID
+        unsigned int const degree = application->get_parameters().degree;
         LIKWID_MARKER_START(("degree_" + std::to_string(degree)).c_str());
 #endif
 
