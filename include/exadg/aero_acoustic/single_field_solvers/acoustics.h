@@ -69,19 +69,23 @@ public:
   }
 
   void
-  advance_multiple_timesteps(double const global_dt)
+  advance_multiple_timesteps(double const macro_dt)
   {
-    double const dt = compute_sub_time_step_size(global_dt);
+    // in case the macro time step is smaller than the acoustic timestep, simply run
+    // with macro time step, otherwise, ensure that n_sub_time_steps * sub_dt = macro_dt
+    double sub_dt = time_integrator->get_time_step_size();
+    if(macro_dt > sub_dt)
+      sub_dt = adjust_time_step_to_hit_end_time(0.0, macro_dt, sub_dt);
 
     // define epsilon dependent on time-step size to avoid
     // wrong terminations of the sub-timestepping loop.
-    double eps = 0.01 * dt;
+    double eps = 0.01 * sub_dt;
 
     // perform time-steps until we advanced the global time step
     unsigned int n_sub_time_steps = 0;
-    while(n_sub_time_steps * dt + eps < global_dt)
+    while(n_sub_time_steps * sub_dt + eps < macro_dt)
     {
-      time_integrator->set_current_time_step_size(dt);
+      time_integrator->set_current_time_step_size(sub_dt);
       time_integrator->advance_one_timestep();
       ++n_sub_time_steps;
     }
@@ -119,23 +123,6 @@ public:
   std::shared_ptr<Acoustics::PostProcessorBase<dim, Number>> postprocessor;
 
 private:
-  double
-  compute_sub_time_step_size(double const global_dt)
-  {
-    double const current_dt = time_integrator->get_time_step_size();
-    if(global_dt < current_dt)
-    {
-      // in case the global time step is smaller than the acoustic timestep, simply run
-      // with global time step
-      return global_dt;
-    }
-    else
-    {
-      // otherwise, ensure that sub-timestepping ends exactly at global_dt
-      return adjust_time_step_to_hit_end_time(0.0, global_dt, current_dt);
-    }
-  }
-
   std::pair<unsigned int /* calls */, unsigned long long /* sub_dt */> sub_time_steps;
 };
 
