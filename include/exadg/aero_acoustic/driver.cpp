@@ -131,9 +131,9 @@ Driver<dim, Number>::solve()
                        application->acoustic->get_parameters().end_time) < 1.0e-12,
               dealii::ExcMessage("Acoustic and fluid simulation need the same end time."));
 
-  while(not acoustic->time_integrator->finished())
+  while(not fluid->time_integrator->finished())
   {
-    if(timer.first == false && acoustic->time_integrator->started())
+    if(timer.first == false and acoustic->time_integrator->started())
     {
       timer.first = true;
       timer.second.restart();
