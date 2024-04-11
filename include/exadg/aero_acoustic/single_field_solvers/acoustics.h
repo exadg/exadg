@@ -78,7 +78,8 @@ public:
       sub_dt = adjust_time_step_to_hit_end_time(0.0, macro_dt, sub_dt);
 
     // define epsilon dependent on time-step size to avoid
-    // wrong terminations of the sub-timestepping loop.
+    // wrong terminations of the sub-timestepping loop due to
+    // round-off errors.
     double eps = 0.01 * sub_dt;
 
     // perform time-steps until we advanced the global time step
