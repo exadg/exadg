@@ -36,6 +36,7 @@ IncompressibleNeoHookean<dim, Number>::IncompressibleNeoHookean(
   bool const                                spatial_integration,
   bool const                                force_material_residual,
   unsigned int const                        check_type,
+  bool const                                stable_formulation,
   unsigned int const                        cache_level)
   : dof_index(dof_index),
     quad_index(quad_index),
@@ -44,6 +45,7 @@ IncompressibleNeoHookean<dim, Number>::IncompressibleNeoHookean(
     spatial_integration(spatial_integration),
     force_material_residual(force_material_residual),
     check_type(check_type),
+    stable_formulation(stable_formulation),
     cache_level(cache_level)
 {
   // initialize (potentially variable) shear modulus
@@ -178,7 +180,7 @@ IncompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
 
     scalar J;
     tensor F;
-    get_modified_F_J(F, J, Grad_d_lin, check_type, true /* compute_J */);
+    get_modified_F_J(F, J, Grad_d_lin, check_type, true /* compute_J */, stable_formulation);
 
     // Overwrite computed values with admissible stored ones
     if(check_type == 2)
@@ -281,7 +283,8 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
 
     scalar J;
     tensor F;
-    get_modified_F_J(F, J, gradient_displacement, check_type, false /* compute_J */);
+    get_modified_F_J(
+      F, J, gradient_displacement, check_type, false /* compute_J */, stable_formulation);
 
     tensor const C = transpose(F) * F;
 
@@ -388,7 +391,8 @@ IncompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradi
 
     scalar J;
     tensor F;
-    get_modified_F_J(F, J, gradient_displacement, check_type, false /* compute_J */);
+    get_modified_F_J(
+      F, J, gradient_displacement, check_type, false /* compute_J */, stable_formulation);
 
     tau = F * transpose(F); // temporary container
 

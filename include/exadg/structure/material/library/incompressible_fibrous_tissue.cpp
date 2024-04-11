@@ -47,6 +47,7 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
   bool const                                   spatial_integration,
   bool const                                   force_material_residual,
   unsigned int const                           check_type,
+  bool const                                   stable_formulation,
   unsigned int const                           cache_level)
   : dof_index(dof_index),
     quad_index(quad_index),
@@ -57,6 +58,7 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
     spatial_integration(spatial_integration),
     force_material_residual(force_material_residual),
     check_type(check_type),
+    stable_formulation(stable_formulation),
     cache_level(cache_level)
 {
   // initialize (potentially variable) shear modulus
@@ -516,7 +518,7 @@ IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
 
     scalar J;
     tensor F;
-    get_modified_F_J(F, J, Grad_d_lin, check_type, true /* compute_J */);
+    get_modified_F_J(F, J, Grad_d_lin, check_type, true /* compute_J */, stable_formulation);
 
     // Overwrite computed values with admissible stored ones
     if(check_type == 2)
@@ -653,7 +655,8 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress(
 
     scalar J;
     tensor F;
-    get_modified_F_J(F, J, gradient_displacement, check_type, false /* compute_J */);
+    get_modified_F_J(
+      F, J, gradient_displacement, check_type, false /* compute_J */, stable_formulation);
 
     tensor const C = transpose(F) * F;
 
@@ -871,7 +874,8 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
 
     scalar J;
     tensor F;
-    get_modified_F_J(F, J, gradient_displacement, check_type, false /* compute_J */);
+    get_modified_F_J(
+      F, J, gradient_displacement, check_type, false /* compute_J */, stable_formulation);
 
     // Add fiber contribution.
     for(unsigned int i = 0; i < n_fiber_families; i++)

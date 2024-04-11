@@ -192,9 +192,14 @@ StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(
 
   if(large_deformation)
   {
-    scalar J;
+    scalar Jm1;
     tensor F;
-    get_modified_F_J(F, J, gradient_displacement, check_type, false /* compute_J */);
+    get_modified_F_Jm1(F,
+                       Jm1,
+                       gradient_displacement,
+                       check_type,
+                       false /* compute_J */,
+                       false /* stable_formulation of J, not used here */);
 
     return (this->second_piola_kirchhoff_stress_symmetrize(get_E<dim, Number>(F), cell, q));
   }

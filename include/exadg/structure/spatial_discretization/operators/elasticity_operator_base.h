@@ -41,6 +41,7 @@ struct OperatorData : public OperatorBaseData
       spatial_integration(false),
       force_material_residual(false),
       check_type(0),
+      stable_formulation(false),
       cache_level(0),
       mapping_degree(1),
       unsteady(false),
@@ -64,6 +65,9 @@ struct OperatorData : public OperatorBaseData
   bool pull_back_traction;
   bool spatial_integration;
   bool force_material_residual;
+
+  // Adopt numerically stable variants of the material models.
+  bool stable_formulation;
 
   // For nonlinear mateiral models, check the determinant of the Jacobian
   // and potentially modify it for J <= 0 and check_type > 0.
