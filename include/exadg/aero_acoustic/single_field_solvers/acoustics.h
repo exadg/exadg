@@ -123,7 +123,7 @@ public:
   std::shared_ptr<Acoustics::PostProcessorBase<dim, Number>> postprocessor;
 
 private:
-  std::pair<unsigned int /* calls */, unsigned long long /* sub_dt */> sub_time_steps;
+  std::pair<unsigned int /* n_macro_dt */, unsigned long long /* n_sub_dt */> sub_time_steps;
 };
 
 
