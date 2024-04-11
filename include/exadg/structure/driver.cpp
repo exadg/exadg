@@ -242,7 +242,7 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
   //                                                            n_repetitions_outer,
   //                                                            mpi_comm);
 
-  double             wall_time = std::numeric_limits<double>::max();
+  double wall_time = std::numeric_limits<double>::max();
   {
     dealii::Timer global_timer;
     global_timer.restart();

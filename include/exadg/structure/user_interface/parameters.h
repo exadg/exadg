@@ -125,6 +125,9 @@ public:
   bool spatial_integration;
   bool force_material_residual;
 
+  // Adopt numerically stable variants of the material models.
+  bool stable_formulation;
+
   // For nonlinear mateiral models, check the determinant of the Jacobian
   // and potentially modify it for J <= 0 and check_type > 0.
   unsigned int check_type;

@@ -78,6 +78,7 @@ public:
                            bool const                                spatial_integration,
                            bool const                                force_material_residual,
                            unsigned int const                        check_type,
+                           bool const                                stable_formulation,
                            unsigned int const                        cache_level);
 
   /*
@@ -118,10 +119,12 @@ public:
 
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  second_piola_kirchhoff_stress_displacement_derivative(tensor const &     gradient_increment,
-                                                        tensor const &     deformation_gradient,
-                                                        unsigned int const cell,
-                                                        unsigned int const q) const final;
+  second_piola_kirchhoff_stress_displacement_derivative(
+    tensor const &     gradient_increment,
+    tensor const &     gradient_displacement_cache_lvl_0_1,
+    tensor const &     deformation_gradient,
+    unsigned int const cell,
+    unsigned int const q) const final;
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   kirchhoff_stress(tensor const &     gradient_displacement,
@@ -131,6 +134,7 @@ public:
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
+                          tensor const &     gradient_displacement_cache_lvl_0_1,
                           tensor const &     deformation_gradient,
                           unsigned int const cell,
                           unsigned int const q) const final;
@@ -172,9 +176,9 @@ private:
   mutable VariableCoefficients<scalar> shear_modulus_coefficients;
 
   // cache linearization data depending on cache_level and spatial_integration
-  bool spatial_integration;
-  bool force_material_residual;
-
+  bool         spatial_integration;
+  bool         force_material_residual;
+  bool         stable_formulation;
   unsigned int check_type;
   unsigned int cache_level;
 

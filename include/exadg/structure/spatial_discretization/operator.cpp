@@ -228,6 +228,7 @@ Operator<dim, Number>::setup_operators()
   operator_data.density             = param.density;
   operator_data.large_deformation   = param.large_deformation;
   operator_data.mapping_degree      = param.mapping_degree;
+  operator_data.stable_formulation  = param.stable_formulation;
   if(param.large_deformation)
   {
     operator_data.pull_back_traction      = param.pull_back_traction;

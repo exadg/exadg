@@ -90,6 +90,7 @@ ElasticityOperatorBase<dim, Number>::initialize(
                               data.spatial_integration,
                               data.force_material_residual,
                               data.check_type,
+                              data.stable_formulation,
                               data.cache_level);
 }
 

@@ -80,9 +80,13 @@ inline DEAL_II_ALWAYS_INLINE //
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  get_E(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & F)
+  get_E(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement)
 {
-  return (0.5 * subtract_identity(transpose(F) * F));
+  // E = 0.5 * (F^T * F - I)
+  // or numerically stable alternative
+  // E = 0.5 * (H + H^T + H^T * H)
+  return (0.5 * (gradient_displacement + transpose(gradient_displacement) +
+                 transpose(gradient_displacement) * gradient_displacement));
 }
 
 template<int dim, typename Number>
@@ -167,18 +171,75 @@ get_J_tol()
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   void
-  get_modified_F_J(
+  get_Jm1(dealii::VectorizedArray<Number> &                               Jm1,
+          dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
+          bool const                                                      stable_formulation)
+{
+  if(stable_formulation)
+  {
+    // See [Shakeri et al., 2024, https://doi.org/10.48550/arXiv.2401.13196]
+    if constexpr(dim == 2)
+    {
+      // clang-format off
+      Jm1 = gradient_displacement[0][0] + gradient_displacement[1][1]
+	      + gradient_displacement[0][0] * gradient_displacement[1][1]
+	      - gradient_displacement[0][1] * gradient_displacement[1][0];
+      // clang-format on
+    }
+    else if constexpr(dim == 3)
+    {
+      // clang-format off
+	  Jm1 = determinant(gradient_displacement) + trace(gradient_displacement)
+		  + (  gradient_displacement[0][0] * gradient_displacement[0][0]
+			 + gradient_displacement[1][1] * gradient_displacement[1][1]
+		     + gradient_displacement[2][2] * gradient_displacement[2][2])
+		  - (  gradient_displacement[0][1] * gradient_displacement[1][0]
+			 + gradient_displacement[1][2] * gradient_displacement[2][1]
+			 + gradient_displacement[0][2] * gradient_displacement[2][0]);
+      // clang-format on
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Unexpected dim. Choose dim == 2 or dim == 3."));
+    }
+
+    // Remove after check.
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const id = get_identity<dim, Number>();
+    auto const check     = std::abs(Jm1 - (determinant(id + gradient_displacement) - 1.0));
+    Number     max_check = 0.0;
+    for(unsigned int n = 0; n < dealii::VectorizedArray<Number>::size(); ++n)
+    {
+      if(check[n] > max_check)
+      {
+        max_check = check[n];
+      }
+    }
+    std::cout << "max_check = " << max_check << "##+ \n";
+  }
+  else
+  {
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const F =
+      get_identity<dim, Number>() + gradient_displacement;
+    Jm1 = determinant(F) - 1.0;
+  }
+}
+
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  void
+  get_modified_F_Jm1(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> &       F,
-    dealii::VectorizedArray<Number> &                               J,
+    dealii::VectorizedArray<Number> &                               Jm1,
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
     unsigned int const                                              check_type,
-    bool const                                                      compute_J)
+    bool const                                                      compute_J,
+    bool const                                                      stable_formulation)
 {
   F = add_identity(gradient_displacement);
 
   if(compute_J)
   {
-    J = determinant(F);
+    get_Jm1(Jm1, gradient_displacement, stable_formulation);
   }
 
   // check_type 0 : Do not modify.
@@ -190,18 +251,24 @@ inline DEAL_II_ALWAYS_INLINE //
   // otherwise keep the old values which are initialized with a zero displacement field at
   // simulation start.
 
-  if(compute_J and check_type > 2)
+  if(check_type > 2)
   {
+    if(not compute_J)
+    {
+      // Compute J - 1 to do any checking.
+      get_Jm1(Jm1, gradient_displacement, stable_formulation);
+    }
+
     Number tol = get_J_tol<Number>();
 
     for(unsigned int n = 0; n < dealii::VectorizedArray<Number>::size(); ++n)
     {
-      if(J[n] <= tol)
+      if(Jm1[n] + 1.0 <= tol)
       {
         if(check_type == 3)
         {
           // check_type 3 : Only return J = tol, while F is not modified.
-          J[n] = tol;
+          Jm1[n] = tol - 1.0;
         }
         else if(check_type == 4)
         {
@@ -274,21 +341,7 @@ inline DEAL_II_ALWAYS_INLINE //
           }
 
           // J = tol follows by construction.
-          J[n] = tol;
-
-          // Alternatively, update Jacobian after modification.
-          if(false)
-          {
-            dealii::Tensor<2, dim, Number> F_mod;
-            for(unsigned int i = 0; i < dim; ++i)
-            {
-              for(unsigned int j = 0; j < dim; ++j)
-              {
-                F_mod[i][j] = F[i][j][n];
-              }
-            }
-            J[n] = determinant(F_mod);
-          }
+          Jm1[n] = tol - 1.0;
         }
         else if(check_type == 5)
         {
@@ -333,21 +386,7 @@ inline DEAL_II_ALWAYS_INLINE //
           }
 
           // J = tol follows by construction.
-          J[n] = tol;
-
-          // Alternatively, update Jacobian after modification.
-          if(false)
-          {
-            dealii::Tensor<2, dim, Number> F_mod;
-            for(unsigned int i = 0; i < dim; ++i)
-            {
-              for(unsigned int j = 0; j < dim; ++j)
-              {
-                F_mod[i][j] = F[i][j][n];
-              }
-            }
-            J[n] = determinant(F_mod);
-          }
+          Jm1[n] = tol - 1.0;
         }
         else if(check_type == 6)
         {

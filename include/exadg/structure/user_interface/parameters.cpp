@@ -40,6 +40,7 @@ Parameters::Parameters()
     spatial_integration(false),
 
     force_material_residual(false),
+	stable_formulation(false),
     check_type(0),
     cache_level(0),
 

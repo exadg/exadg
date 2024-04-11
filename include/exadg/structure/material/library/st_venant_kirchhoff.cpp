@@ -143,10 +143,9 @@ StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients(
 
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_symmetrize(
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & strain,
-  unsigned int const                                              cell,
-  unsigned int const                                              q) const
+StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_symmetrize(tensor const &     strain,
+                                                                         unsigned int const cell,
+                                                                         unsigned int const q) const
 {
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> S;
 
@@ -182,21 +181,17 @@ StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_symmetrize(
 
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
-  unsigned int const                                              cell,
-  unsigned int const                                              q,
-  bool const                                                      force_evaluation) const
+StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(tensor const & gradient_displacement,
+                                                              unsigned int const cell,
+                                                              unsigned int const q,
+                                                              bool const force_evaluation) const
 {
   (void)force_evaluation;
 
   if(large_deformation)
   {
-    scalar J;
-    tensor F;
-    get_modified_F_J(F, J, gradient_displacement, check_type, false /* compute_J */);
-
-    return (this->second_piola_kirchhoff_stress_symmetrize(get_E<dim, Number>(F), cell, q));
+    return (this->second_piola_kirchhoff_stress_symmetrize(
+      get_E<dim, Number>(gradient_displacement), cell, q));
   }
   else
   {
@@ -207,11 +202,14 @@ StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_displacement_derivative(
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_increment,
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & deformation_gradient,
-  unsigned int const                                              cell,
-  unsigned int const                                              q) const
+  tensor const &     gradient_increment,
+  tensor const &     gradient_displacement_cache_lvl_0_1,
+  tensor const &     deformation_gradient,
+  unsigned int const cell,
+  unsigned int const q) const
 {
+  (void)gradient_displacement_cache_lvl_0_1;
+
   // Exploit linear stress-strain relationship and symmetrizing in
   // second_piola_kirchhoff_stress_symmetrize
   return (this->second_piola_kirchhoff_stress_symmetrize(

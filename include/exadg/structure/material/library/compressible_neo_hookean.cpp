@@ -36,6 +36,7 @@ CompressibleNeoHookean<dim, Number>::CompressibleNeoHookean(
   bool const                              spatial_integration,
   bool const                              force_material_residual,
   unsigned int const                      check_type,
+  bool const                              stable_formulation,
   unsigned int const                      cache_level)
   : dof_index(dof_index),
     quad_index(quad_index),
@@ -44,6 +45,7 @@ CompressibleNeoHookean<dim, Number>::CompressibleNeoHookean(
                             data.lambda_function != nullptr),
     spatial_integration(spatial_integration),
     force_material_residual(force_material_residual),
+    stable_formulation(stable_formulation),
     check_type(check_type),
     cache_level(cache_level)
 {
@@ -174,18 +176,18 @@ CompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
   {
     tensor Grad_d_lin = integrator_lin->get_gradient(q);
 
-    scalar J;
+    scalar Jm1;
     tensor F;
-    get_modified_F_J(F, J, Grad_d_lin, check_type, true /* compute_J */);
+    get_modified_F_Jm1(F, Jm1, Grad_d_lin, check_type, true /* compute_J */, stable_formulation);
 
     // Overwrite computed values with admissible stored ones
     if(check_type == 2)
     {
       tensor const F_old    = deformation_gradient_coefficients.get_coefficient_cell(cell, q);
       bool         update_J = false;
-      for(unsigned int i = 0; i < J.size(); ++i)
+      for(unsigned int i = 0; i < Jm1.size(); ++i)
       {
-        if(J[i] <= get_J_tol<Number>())
+        if(Jm1[i] + 1.0 <= get_J_tol<Number>())
         {
           update_J = true;
 
@@ -203,15 +205,17 @@ CompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
 
       if(update_J)
       {
-        J = determinant(F);
+        AssertThrow(stable_formulation == false,
+                    dealii::ExcMessage("Storing F_old does not allow for a stable recovery of J."));
+        Jm1 = determinant(F) - 1.0;
       }
     }
 
-    log_J_coefficients.set_coefficient_cell(cell, q, log(J));
+    log_J_coefficients.set_coefficient_cell(cell, q, log(Jm1 + 1.0));
 
     if(spatial_integration)
     {
-      one_over_J_coefficients.set_coefficient_cell(cell, q, 1.0 / J);
+      one_over_J_coefficients.set_coefficient_cell(cell, q, 1.0 / (Jm1 + 1.0));
     }
 
     if(cache_level > 1)
@@ -266,16 +270,15 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
       lambda_stored        = lambda_coefficients.get_coefficient_cell(cell, q);
     }
 
-    scalar J;
-    tensor F;
-    get_modified_F_J(F, J, gradient_displacement, check_type, false /* compute_J */);
-
     // Access the stored coefficients precomputed using the last linearization vector.
     scalar log_J;
+    tensor F;
     if(cache_level == 0)
     {
-      J     = determinant(F);
-      log_J = log(J);
+      scalar Jm1;
+      get_modified_F_Jm1(
+        F, Jm1, gradient_displacement, check_type, true /* compute_J */, stable_formulation);
+      log_J = log(Jm1 + 1.0);
     }
     else
     {
@@ -300,6 +303,7 @@ template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacement_derivative(
   tensor const &     gradient_increment,
+  tensor const &     gradient_displacement_cache_lvl_0_1,
   tensor const &     deformation_gradient,
   unsigned int const cell,
   unsigned int const q) const
@@ -314,7 +318,16 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacement_
   scalar log_J;
   if(cache_level == 0)
   {
-    log_J = log(determinant(deformation_gradient));
+    scalar Jm1;
+    tensor F;
+    get_modified_F_Jm1(F,
+                       Jm1,
+                       gradient_displacement_cache_lvl_0_1,
+                       check_type,
+                       true /* compute_J */,
+                       stable_formulation);
+
+    log_J = log(Jm1 + 1.0);
   }
   else
   {
@@ -360,16 +373,20 @@ CompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradien
       lambda_stored        = lambda_coefficients.get_coefficient_cell(cell, q);
     }
 
-    scalar J;
+    scalar Jm1;
     tensor F;
-    get_modified_F_J(F, J, gradient_displacement, check_type, false /* compute_J */);
+    get_modified_F_Jm1(F,
+                       Jm1,
+                       gradient_displacement,
+                       check_type,
+                       cache_level == 0 /* compute_J */,
+                       stable_formulation);
 
     // Access the stored coefficients precomputed using the last linearization vector.
     scalar log_J;
     if(cache_level == 0)
     {
-      J     = determinant(F);
-      log_J = log(J);
+      log_J = log(Jm1 + 1.0);
     }
     else
     {
@@ -391,10 +408,13 @@ template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 CompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
   tensor const &     symmetric_gradient_increment,
+  tensor const &     gradient_displacement_cache_lvl_0_1,
   tensor const &     deformation_gradient,
   unsigned int const cell,
   unsigned int const q) const
 {
+  (void)deformation_gradient;
+
   if(parameters_are_variable)
   {
     shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
@@ -405,7 +425,17 @@ CompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
   scalar log_J;
   if(cache_level == 0)
   {
-    log_J = log(determinant(deformation_gradient));
+    // The deformation_gradient is checked, but the gradient_displacement not.
+    scalar Jm1;
+    tensor F;
+    get_modified_F_Jm1(F,
+                       Jm1,
+                       gradient_displacement_cache_lvl_0_1,
+                       check_type,
+                       true /* compute_J */,
+                       stable_formulation);
+
+    log_J = log(Jm1 + 1.0);
   }
   else
   {

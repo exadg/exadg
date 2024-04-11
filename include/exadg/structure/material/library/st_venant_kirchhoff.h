@@ -74,18 +74,18 @@ public:
                     unsigned int const                      check_type);
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  second_piola_kirchhoff_stress(
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
-    unsigned int const                                              cell,
-    unsigned int const                                              q,
-    bool const                                                      force_evaluation) const final;
+  second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
+                                unsigned int const cell,
+                                unsigned int const q,
+                                bool const         force_evaluation) const final;
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   second_piola_kirchhoff_stress_displacement_derivative(
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_increment,
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & deformation_gradient,
-    unsigned int const                                              cell,
-    unsigned int const                                              q) const final;
+    tensor const &     gradient_increment,
+    tensor const &     gradient_displacement_cache_lvl_0_1,
+    tensor const &     deformation_gradient,
+    unsigned int const cell,
+    unsigned int const q) const final;
 
 private:
   /*

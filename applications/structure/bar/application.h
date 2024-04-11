@@ -250,6 +250,7 @@ public:
       prm.add_parameter("UseVolumeForce",        use_volume_force,         "Use volume force.");
       prm.add_parameter("SpatialIntegration",    spatial_integration,      "Use spatial integration.");
       prm.add_parameter("ForceMaterialResidual", force_material_residual,  "Use undeformed configuration to evaluate the residual.");
+      prm.add_parameter("StableFormulation",     stable_formulation,       "Use a stable formulation.");
       prm.add_parameter("LoadIncrement",         load_increment,           "Load increment used in QuasiStatic solver.");
       prm.add_parameter("CacheLevel",            cache_level,              "Cache level: 0 none, 1 scalars, 2 tensors.");
       prm.add_parameter("CheckType",             check_type,               "Check type for deformation gradient.");
@@ -279,6 +280,7 @@ private:
     this->param.cache_level             = cache_level;
     this->param.check_type              = check_type;
     this->param.force_material_residual = force_material_residual;
+    this->param.stable_formulation      = stable_formulation;
 
     this->param.density = density;
     if(this->param.problem_type == ProblemType::Unsteady and weak_damping_coefficient > 0.0)
@@ -727,6 +729,7 @@ private:
   bool use_volume_force        = true;
   bool spatial_integration     = false;
   bool force_material_residual = false;
+  bool stable_formulation      = false;
 
   unsigned int check_type  = 0;
   unsigned int cache_level = 0;

@@ -57,6 +57,7 @@ public:
              bool const                                spatial_integration,
              bool const                                force_material_residual,
              unsigned int const                        check_type,
+             bool const                                stable_formulation,
              unsigned int const                        cache_level)
   {
     this->dof_index           = dof_index;
@@ -106,6 +107,7 @@ public:
                                                            spatial_integration,
                                                            force_material_residual,
                                                            check_type,
+                                                           stable_formulation,
                                                            cache_level)));
           break;
         }
@@ -126,6 +128,7 @@ public:
                                                               spatial_integration,
                                                               force_material_residual,
                                                               check_type,
+                                                              stable_formulation,
                                                               cache_level)));
           break;
         }
@@ -147,6 +150,7 @@ public:
                                                          spatial_integration,
                                                          force_material_residual,
                                                          check_type,
+                                                         stable_formulation,
                                                          cache_level)));
           break;
         }

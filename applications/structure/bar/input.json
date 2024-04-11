@@ -26,6 +26,7 @@
         "VolumeForce": "1.0",
         "SpatialIntegration": "true",
         "ForceMaterialResidual": "false",
+        "StableFormulation": "false",
         "CacheLevel": "2",
         "CheckType": "0",
         "MappingStrength": "0.20",
