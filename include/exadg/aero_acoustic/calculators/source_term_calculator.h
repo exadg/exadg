@@ -8,6 +8,7 @@ namespace ExaDG
 {
 namespace AeroAcoustic
 {
+template<int dim>
 struct SourceTermCalculatorData
 {
   unsigned int dof_index_pressure;
@@ -19,6 +20,10 @@ struct SourceTermCalculatorData
 
   // use material or partial temporal derivative of pressure as source term.
   bool consider_convection;
+
+  // function if blend in is required.
+  bool                                                  blend_in;
+  std::shared_ptr<Utilities::SpatialAwareFunction<dim>> blend_in_function;
 };
 
 /**
@@ -41,13 +46,13 @@ class SourceTermCalculator
   using CellIntegratorVector = CellIntegrator<dim, dim, Number>;
 
 public:
-  SourceTermCalculator() : matrix_free(nullptr)
+  SourceTermCalculator() : matrix_free(nullptr), time(std::numeric_limits<double>::min())
   {
   }
 
   void
   setup(dealii::MatrixFree<dim, Number> const & matrix_free_in,
-        SourceTermCalculatorData const &        data_in)
+        SourceTermCalculatorData<dim> const &   data_in)
   {
     matrix_free = &matrix_free_in;
     data        = data_in;
@@ -57,8 +62,11 @@ public:
   evaluate_integrate(VectorType &       dst,
                      VectorType const & velocity_cfd_in,
                      VectorType const & pressure_cfd_in,
-                     VectorType const & pressure_cfd_time_derivative_in)
+                     VectorType const & pressure_cfd_time_derivative_in,
+                     double const       evaluation_time)
   {
+    time = evaluation_time;
+
     dst.zero_out_ghost_values();
 
     if(data.consider_convection)
@@ -87,6 +95,25 @@ private:
 
     Number rho = static_cast<Number>(data.density);
 
+    // In case we blend in the source term, we check if the scaling is space dependent. Only in that
+    // case we have to evaluate the function in every equadrature point. Otherwise the scaling
+    // is purely temporal and constant during this function.
+    if(data.blend_in)
+      AssertThrow(data.blend_in_function != nullptr,
+                  dealii::ExcMessage("No blend-in function provided."));
+
+    bool const space_dependent_scaling =
+      data.blend_in_function != nullptr ? data.blend_in_function->varies_in_space(time) : false;
+    Number const pure_temporal_scaling_factor =
+      (not space_dependent_scaling) ? data.blend_in_function->compute_time_factor(time) : 1.0;
+
+    auto apply_scaling = [&](auto & flux, auto const & q) {
+      if(space_dependent_scaling)
+        flux *= FunctionEvaluator<0, dim, Number>::value(*data.blend_in_function, q, time);
+      else
+        flux *= pure_temporal_scaling_factor;
+    };
+
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
       dpdt.reinit(cell);
@@ -100,12 +127,26 @@ private:
         u.gather_evaluate(*velocity_cfd, dealii::EvaluationFlags::values);
 
         for(unsigned int q = 0; q < dpdt.n_q_points; ++q)
-          dpdt.submit_value(-rho * (dpdt.get_value(q) + u.get_value(q) * p.get_gradient(q)), q);
+        {
+          auto flux = -rho * dpdt.get_value(q) + u.get_value(q) * p.get_gradient(q);
+
+          if(data.blend_in)
+            apply_scaling(flux, dpdt.quadrature_point(q));
+
+          dpdt.submit_value(flux, q);
+        }
       }
       else
       {
         for(unsigned int q = 0; q < dpdt.n_q_points; ++q)
-          dpdt.submit_value(-rho * dpdt.get_value(q), q);
+        {
+          auto flux = -rho * dpdt.get_value(q);
+
+          if(data.blend_in)
+            apply_scaling(flux, dpdt.quadrature_point(q));
+
+          dpdt.submit_value(flux, q);
+        }
       }
 
       dpdt.integrate_scatter(dealii::EvaluationFlags::values, dst);
@@ -114,10 +155,12 @@ private:
 
   dealii::MatrixFree<dim, Number> const * matrix_free;
 
-  SourceTermCalculatorData data;
+  SourceTermCalculatorData<dim> data;
 
   lazy_ptr<VectorType> velocity_cfd;
   lazy_ptr<VectorType> pressure_cfd;
+
+  double time;
 };
 } // namespace AeroAcoustic
 } // namespace ExaDG
