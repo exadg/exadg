@@ -324,7 +324,7 @@ $(function() { codefold.init(0); });
 <div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>    <span class="comment">// boundary conditions</span></div>
 <div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>    boundary_descriptor = std::make_shared&lt;IncNS::BoundaryDescriptor&lt;dim&gt;&gt;();</div>
 <div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>    set_boundary_descriptor();</div>
-<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>    <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">IncNS::verify_boundary_conditions&lt;dim&gt;</a>(*boundary_descriptor, *grid);</div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>    IncNS::verify_boundary_conditions&lt;dim&gt;(*boundary_descriptor, *grid);</div>
 <div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span> </div>
 <div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>    <span class="comment">// field functions</span></div>
 <div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>    field_functions = std::make_shared&lt;IncNS::FieldFunctions&lt;dim&gt;&gt;();</div>
@@ -465,7 +465,6 @@ $(function() { codefold.init(0); });
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1Parameters.html">ExaDG::IncNS::Parameters</a></div><div class="ttdef"><b>Definition</b> parameters.h:46</div></div>
 <div class="ttc" id="aclassExaDG_1_1MultigridMappings_html"><div class="ttname"><a href="classExaDG_1_1MultigridMappings.html">ExaDG::MultigridMappings</a></div><div class="ttdef"><b>Definition</b> grid.h:84</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
-<div class="ttc" id="astructExaDG_1_1IncNS_1_1BoundaryDescriptor_html"><div class="ttname"><a href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">ExaDG::IncNS::BoundaryDescriptor</a></div><div class="ttdef"><b>Definition</b> boundary_descriptor.h:240</div></div>
 <div class="ttc" id="astructExaDG_1_1OutputParameters_html"><div class="ttname"><a href="structExaDG_1_1OutputParameters.html">ExaDG::OutputParameters</a></div><div class="ttdef"><b>Definition</b> output_parameters.h:32</div></div>
 <div class="ttc" id="astructExaDG_1_1SpatialResolutionParameters_html"><div class="ttname"><a href="structExaDG_1_1SpatialResolutionParameters.html">ExaDG::SpatialResolutionParameters</a></div><div class="ttdef"><b>Definition</b> resolution_parameters.h:81</div></div>
 </div><!-- fragment --></div><!-- contents -->

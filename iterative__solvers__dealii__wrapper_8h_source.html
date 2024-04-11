@@ -242,7 +242,7 @@ $(function() { codefold.init(0); });
 <div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>    }</div>
 <div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span> </div>
 <div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>    AssertThrow(std::isfinite(solver_control.last_value()),</div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>                dealii::ExcMessage(<span class="stringliteral">&quot;Solver contained NaN of Inf values&quot;</span>));</div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>                dealii::ExcMessage(<span class="stringliteral">&quot;Last iteration step contained NaN or Inf values.&quot;</span>));</div>
 <div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span> </div>
 <div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>    <span class="keywordflow">if</span>(solver_data.compute_performance_metrics)</div>
 <div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>      this-&gt;compute_performance_metrics(solver_control);</div>
@@ -376,7 +376,7 @@ $(function() { codefold.init(0); });
 <div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>    }</div>
 <div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span> </div>
 <div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>    AssertThrow(std::isfinite(solver_control.last_value()),</div>
-<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>                dealii::ExcMessage(<span class="stringliteral">&quot;Solver contained NaN of Inf values&quot;</span>));</div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>                dealii::ExcMessage(<span class="stringliteral">&quot;Last iteration step contained NaN or Inf values.&quot;</span>));</div>
 <div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span> </div>
 <div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>    <span class="keywordflow">if</span>(solver_data.compute_performance_metrics)</div>
 <div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>      this-&gt;compute_performance_metrics(solver_control);</div>
@@ -483,7 +483,7 @@ $(function() { codefold.init(0); });
 <div class="line"><a id="l00385" name="l00385"></a><span class="lineno">  385</span>    }</div>
 <div class="line"><a id="l00386" name="l00386"></a><span class="lineno">  386</span> </div>
 <div class="line"><a id="l00387" name="l00387"></a><span class="lineno">  387</span>    AssertThrow(std::isfinite(solver_control.last_value()),</div>
-<div class="line"><a id="l00388" name="l00388"></a><span class="lineno">  388</span>                dealii::ExcMessage(<span class="stringliteral">&quot;Solver contained NaN of Inf values&quot;</span>));</div>
+<div class="line"><a id="l00388" name="l00388"></a><span class="lineno">  388</span>                dealii::ExcMessage(<span class="stringliteral">&quot;Last iteration step contained NaN or Inf values.&quot;</span>));</div>
 <div class="line"><a id="l00389" name="l00389"></a><span class="lineno">  389</span> </div>
 <div class="line"><a id="l00390" name="l00390"></a><span class="lineno">  390</span>    <span class="keywordflow">if</span>(solver_data.compute_performance_metrics)</div>
 <div class="line"><a id="l00391" name="l00391"></a><span class="lineno">  391</span>      this-&gt;compute_performance_metrics(solver_control);</div>

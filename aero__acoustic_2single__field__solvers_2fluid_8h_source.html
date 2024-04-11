@@ -148,7 +148,7 @@ $(function() { codefold.init(0); });
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    application-&gt;setup(grid, mapping, multigrid_mappings);</div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    <span class="comment">// initialize pde_operator</span></div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    pde_operator = <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">IncNS::create_operator&lt;dim, Number&gt;</a>(grid,</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    pde_operator = IncNS::create_operator&lt;dim, Number&gt;(grid,</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>                                                       mapping,</div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>                                                       multigrid_mappings,</div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>                                                       application-&gt;get_boundary_descriptor(),</div>
@@ -170,7 +170,7 @@ $(function() { codefold.init(0); });
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>                dealii::ExcMessage(<span class="stringliteral">&quot;Invalid parameter in context of fluid-structure interaction.&quot;</span>));</div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>    <span class="comment">// initialize time_integrator</span></div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    time_integrator = <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">IncNS::create_time_integrator&lt;dim, Number&gt;</a>(pde_operator,</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    time_integrator = IncNS::create_time_integrator&lt;dim, Number&gt;(pde_operator,</div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>                                                                 <span class="keyword">nullptr</span> <span class="comment">/*no ALE*/</span>,</div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>                                                                 postprocessor,</div>
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>                                                                 application-&gt;get_parameters(),</div>
@@ -244,7 +244,6 @@ $(function() { codefold.init(0); });
 <div class="ttc" id="aclassExaDG_1_1AeroAcoustic_1_1SolverFluid_html"><div class="ttname"><a href="classExaDG_1_1AeroAcoustic_1_1SolverFluid.html">ExaDG::AeroAcoustic::SolverFluid</a></div><div class="ttdef"><b>Definition</b> fluid.h:48</div></div>
 <div class="ttc" id="aclassExaDG_1_1FluidAeroAcoustic_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1FluidAeroAcoustic_1_1ApplicationBase.html">ExaDG::FluidAeroAcoustic::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:185</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
-<div class="ttc" id="astructExaDG_1_1IncNS_1_1BoundaryDescriptor_html"><div class="ttname"><a href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">ExaDG::IncNS::BoundaryDescriptor</a></div><div class="ttdef"><b>Definition</b> boundary_descriptor.h:240</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
