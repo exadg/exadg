@@ -181,7 +181,8 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   fluid->time_integrator->print_iterations();
 
   pcout << std::endl << "Average number of sub-time steps Acoustic:" << std::endl;
-  pcout << "Adams-Bashforth-Moulton    " << acoustic->get_average_sub_time_steps() << std::endl;
+  pcout << "Adams-Bashforth-Moulton    " << acoustic->get_average_number_of_sub_time_steps()
+        << std::endl;
 
   // wall times
   pcout << std::endl << "Wall times:" << std::endl;
@@ -205,7 +206,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 
   dealii::types::global_dof_index const DoFs =
     fluid->pde_operator->get_number_of_dofs() +
-    acoustic->get_average_sub_time_steps() * acoustic->pde_operator->get_number_of_dofs();
+    acoustic->get_average_number_of_sub_time_steps() * acoustic->pde_operator->get_number_of_dofs();
 
   unsigned int const N_time_steps    = acoustic->get_number_of_global_time_steps();
   unsigned int const N_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);

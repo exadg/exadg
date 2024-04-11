@@ -94,7 +94,7 @@ public:
   }
 
   double
-  get_average_sub_time_steps() const
+  get_average_number_of_sub_time_steps() const
   {
     return sub_time_steps.second / sub_time_steps.first;
   }
