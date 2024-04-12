@@ -59,7 +59,6 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
     force_material_residual(force_material_residual),
     stable_formulation(stable_formulation),
     check_type(check_type),
-    stable_formulation(stable_formulation),
     cache_level(cache_level)
 {
   // initialize (potentially variable) shear modulus

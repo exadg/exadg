@@ -253,19 +253,11 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if(check_type > 2)
   {
-<<<<<<< HEAD
     if(not compute_J)
     {
       // Compute J - 1 to do any checking.
       get_Jm1(Jm1, gradient_displacement, stable_formulation);
     }
-=======
-	if(not compute_J)
-	{
-      // Compute J - 1 to do any checking.
-	  get_Jm1(Jm1, gradient_displacement, stable_formulation);
-	}
->>>>>>> 01d7969183e90448e95f89d7870342b15bf1883e
 
     Number tol = get_J_tol<Number>();
 

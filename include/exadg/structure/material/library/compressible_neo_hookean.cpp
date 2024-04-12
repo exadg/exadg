@@ -47,7 +47,6 @@ CompressibleNeoHookean<dim, Number>::CompressibleNeoHookean(
     force_material_residual(force_material_residual),
     stable_formulation(stable_formulation),
     check_type(check_type),
-    stable_formulation(stable_formulation),
     cache_level(cache_level)
 {
   // initialize (potentially variable) parameters
@@ -272,13 +271,17 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
     }
 
     // Access the stored coefficients precomputed using the last linearization vector.
-    scalar log_J;
+    scalar log_J, Jm1;
     tensor F;
+    get_modified_F_Jm1(F,
+                       Jm1,
+                       gradient_displacement,
+                       check_type,
+                       cache_level == 0 /* compute_J */,
+                       stable_formulation);
+
     if(cache_level == 0)
     {
-      scalar Jm1;
-      get_modified_F_Jm1(
-        F, Jm1, gradient_displacement, check_type, true /* compute_J */, stable_formulation);
       log_J = log(Jm1 + 1.0);
     }
     else
