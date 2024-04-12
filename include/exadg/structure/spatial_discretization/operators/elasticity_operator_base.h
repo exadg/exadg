@@ -42,6 +42,7 @@ struct OperatorData : public OperatorBaseData
       force_material_residual(false),
       stable_formulation(false),
       check_type(0),
+      stable_formulation(false),
       cache_level(0),
       mapping_degree(1),
       unsteady(false),

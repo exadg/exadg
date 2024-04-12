@@ -47,6 +47,7 @@ CompressibleNeoHookean<dim, Number>::CompressibleNeoHookean(
     force_material_residual(force_material_residual),
     stable_formulation(stable_formulation),
     check_type(check_type),
+    stable_formulation(stable_formulation),
     cache_level(cache_level)
 {
   // initialize (potentially variable) parameters
@@ -425,7 +426,6 @@ CompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
   scalar log_J;
   if(cache_level == 0)
   {
-    // The deformation_gradient is checked, but the gradient_displacement not.
     scalar Jm1;
     tensor F;
     get_modified_F_Jm1(F,
