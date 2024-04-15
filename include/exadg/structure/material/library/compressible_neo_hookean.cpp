@@ -211,7 +211,14 @@ CompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
       }
     }
 
-    log_J_coefficients.set_coefficient_cell(cell, q, log(Jm1 + 1.0));
+    if(stable_formulation)
+    {
+      log_J_coefficients.set_coefficient_cell(cell, q, log1p(Jm1));
+    }
+    else
+    {
+      log_J_coefficients.set_coefficient_cell(cell, q, log(Jm1 + 1.0));
+    }
 
     if(spatial_integration)
     {
@@ -282,7 +289,14 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
 
     if(cache_level == 0)
     {
-      log_J = log(Jm1 + 1.0);
+      if(stable_formulation)
+      {
+        log_J = log1p(Jm1);
+      }
+      else
+      {
+        log_J = log(Jm1 + 1.0);
+      }
     }
     else
     {
@@ -331,7 +345,14 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacement_
                        true /* compute_J */,
                        stable_formulation);
 
-    log_J = log(Jm1 + 1.0);
+    if(stable_formulation)
+    {
+      log_J = log1p(Jm1);
+    }
+    else
+    {
+      log_J = log(Jm1 + 1.0);
+    }
   }
   else
   {
@@ -390,7 +411,14 @@ CompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradien
     scalar log_J;
     if(cache_level == 0)
     {
-      log_J = log(Jm1 + 1.0);
+      if(stable_formulation)
+      {
+        log_J = log1p(Jm1);
+      }
+      else
+      {
+        log_J = log(Jm1 + 1.0);
+      }
     }
     else
     {
@@ -438,7 +466,14 @@ CompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
                        true /* compute_J */,
                        stable_formulation);
 
-    log_J = log(Jm1 + 1.0);
+    if(stable_formulation)
+    {
+      log_J = log1p(Jm1);
+    }
+    else
+    {
+      log_J = log(Jm1 + 1.0);
+    }
   }
   else
   {

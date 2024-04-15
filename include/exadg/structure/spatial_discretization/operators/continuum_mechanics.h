@@ -31,7 +31,23 @@ namespace ExaDG
 {
 namespace Structure
 {
-template<int dim, typename Number = double>
+template<typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<Number>
+  log1p(dealii::VectorizedArray<Number> const & x)
+{
+  Number values[dealii::VectorizedArray<Number>::size()];
+  for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
+  {
+    values[i] = std::log1p(x[i]);
+  }
+
+  dealii::VectorizedArray<Number> out;
+  out.load(&values[0]);
+  return out;
+}
+
+template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   void
   add_scaled_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> & tmp,
@@ -43,7 +59,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
 }
 
-template<int dim, typename Number = double>
+template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   add_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & tmp)
@@ -56,7 +72,7 @@ inline DEAL_II_ALWAYS_INLINE //
   return result;
 }
 
-template<int dim, typename Number = double>
+template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   subtract_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & tmp)
