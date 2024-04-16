@@ -81,7 +81,7 @@ public:
     // define epsilon dependent on time-step size to avoid
     // wrong terminations of the sub-timestepping loop due to
     // round-off errors.
-    double eps = 0.01 * sub_dt;
+    double const eps = 0.01 * sub_dt;
 
     // perform time-steps until we advanced the global time step
     unsigned int n_sub_time_steps = 0;

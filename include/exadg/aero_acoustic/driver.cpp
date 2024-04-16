@@ -142,7 +142,7 @@ Driver<dim, Number>::solve()
     // To check if acoustics starts during the following sub-stepping sweep we
     // can not simply check acoustic->time_integrator->started(). Instead we
     // compute this information as follows:
-    const bool acoustic_starts_during_present_timestep =
+    bool const acoustic_starts_during_present_timestep =
       fluid->time_integrator->get_next_time() + fluid->time_integrator->get_time_step_size() >
       application->acoustic->get_parameters().start_time;
 
@@ -158,7 +158,7 @@ Driver<dim, Number>::solve()
     // sub-stepping BEFORE performing the current fluid time step we have to check if dt_{n+2}
     // is larger than the acoustic start time. We need this information BEFORE the fluid
     // time-step since we have to know if we have to compute dp/dt.
-    const bool acoustic_might_start_during_next_timestep =
+    bool const acoustic_might_start_during_next_timestep =
       fluid->time_integrator->get_next_time() + fluid->max_next_time_step_size() >
       application->acoustic->get_parameters().start_time;
 
