@@ -102,13 +102,19 @@ public:
   double
   get_average_number_of_sub_time_steps() const
   {
-    return sub_time_steps.second / sub_time_steps.first;
+    return get_number_of_sub_time_steps() / get_number_of_macro_time_steps();
   }
 
   unsigned int
-  get_number_of_global_time_steps() const
+  get_number_of_macro_time_steps() const
   {
     return sub_time_steps.first;
+  }
+
+  unsigned int
+  get_number_of_sub_time_steps() const
+  {
+    return sub_time_steps.second;
   }
 
   // grid and mapping

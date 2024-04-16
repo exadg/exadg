@@ -205,16 +205,28 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
     dealii::Utilities::MPI::min_max_avg(time_solvers_side_by_side, mpi_comm);
   double const time_solvers_side_by_side_avg = time_solvers_side_by_side_data.avg;
 
-  dealii::types::global_dof_index const DoFs =
-    fluid->pde_operator->get_number_of_dofs() +
-    acoustic->get_average_number_of_sub_time_steps() * acoustic->pde_operator->get_number_of_dofs();
 
-  unsigned int const N_time_steps    = acoustic->get_number_of_global_time_steps();
+  dealii::types::global_dof_index const DoFs_f = fluid->pde_operator->get_number_of_dofs();
+  dealii::types::global_dof_index const DoFs_a = acoustic->pde_operator->get_number_of_dofs();
+  double const sub_dt_per_macro__dt            = acoustic->get_average_number_of_sub_time_steps();
+
   unsigned int const N_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
 
-  pcout << std::endl << "Throughput while both solvers ran side by side:";
-  print_throughput_unsteady(
-    pcout, DoFs, time_solvers_side_by_side_avg, N_time_steps, N_mpi_processes);
+  pcout << std::endl << "Throughput related to one macro time step:";
+  print_throughput_unsteady(pcout,
+                            DoFs_f + sub_dt_per_macro_dt * DoFs_a,
+                            time_solvers_side_by_side_avg,
+                            acoustic->get_number_of_macro_time_steps(),
+                            N_mpi_processes);
+
+  pcout << std::endl << "Throughput related to one sub time step:";
+  print_throughput_unsteady(pcout,
+                            DoFs_f + DoFs_a,
+                            time_solvers_side_by_side_avg,
+                            acoustic->get_number_of_sub_time_steps(),
+                            N_mpi_processes);
+
+
 
   // computational costs in CPUh
   dealii::Utilities::MPI::MinMaxAvg total_time_data =
