@@ -214,7 +214,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 
   pcout << std::endl << "Throughput related to one macro time step:";
   print_throughput_unsteady(pcout,
-                            DoFs_f + sub_dt_per_macro_dt * DoFs_a,
+                            (double)DoFs_f + sub_dt_per_macro_dt * (double)DoFs_a,
                             time_solvers_side_by_side_avg,
                             acoustic->get_number_of_macro_time_steps(),
                             N_mpi_processes);
