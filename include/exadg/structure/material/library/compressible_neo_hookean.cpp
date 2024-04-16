@@ -229,26 +229,25 @@ CompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
     {
       if(spatial_integration)
       {
-        tensor const tau_lin =
-          this->kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
-        kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau_lin);
+        tensor const tau = this->kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
+        kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
 
         if(force_material_residual)
         {
           deformation_gradient_coefficients.set_coefficient_cell(cell, q, F);
 
-          tensor const S_lin =
+          tensor const S =
             this->second_piola_kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
-          second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S_lin);
+          second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
         }
       }
       else
       {
         deformation_gradient_coefficients.set_coefficient_cell(cell, q, F);
 
-        tensor const S_lin =
+        tensor const S =
           this->second_piola_kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
-        second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S_lin);
+        second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
 
         tensor const F_inv = invert(F);
         F_inv_coefficients.set_coefficient_cell(cell, q, F_inv);
@@ -306,8 +305,17 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
     tensor const F_inv = invert(F);
     tensor const C_inv = F_inv * transpose(F_inv);
 
-    S = (2.0 * lambda_stored * log_J - shear_modulus_stored) * C_inv;
-    add_scaled_identity(S, shear_modulus_stored);
+    if(stable_formulation)
+    {
+      S = get_E_scaled<dim, Number, scalar>(gradient_displacement, 2.0 * shear_modulus_stored);
+      add_scaled_identity(S, 2.0 * lambda_stored * log_J);
+      S = C_inv * S;
+    }
+    else
+    {
+      S = (2.0 * lambda_stored * log_J - shear_modulus_stored) * C_inv;
+      add_scaled_identity(S, shear_modulus_stored);
+    }
   }
   else
   {
@@ -321,7 +329,7 @@ template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacement_derivative(
   tensor const &     gradient_increment,
-  tensor const &     gradient_displacement_cache_lvl_0_1,
+  tensor const &     gradient_displacement_cache_level_0_1,
   tensor const &     deformation_gradient,
   unsigned int const cell,
   unsigned int const q) const
@@ -340,7 +348,7 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacement_
     tensor F;
     get_modified_F_Jm1(F,
                        Jm1,
-                       gradient_displacement_cache_lvl_0_1,
+                       gradient_displacement_cache_level_0_1,
                        check_type,
                        true /* compute_J */,
                        stable_formulation);
@@ -425,8 +433,17 @@ CompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradien
       log_J = log_J_coefficients.get_coefficient_cell(cell, q);
     }
 
-    tau = shear_modulus_stored * (F * transpose(F));
-    add_scaled_identity(tau, 2.0 * lambda_stored * log_J - shear_modulus_stored);
+    if(stable_formulation)
+    {
+      tau = shear_modulus_stored * (gradient_displacement + transpose(gradient_displacement) +
+                                    gradient_displacement * transpose(gradient_displacement));
+      add_scaled_identity(tau, 2.0 * lambda_stored * log_J);
+    }
+    else
+    {
+      tau = shear_modulus_stored * (F * transpose(F));
+      add_scaled_identity(tau, 2.0 * lambda_stored * log_J - shear_modulus_stored);
+    }
   }
   else
   {
@@ -440,7 +457,7 @@ template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 CompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
   tensor const &     symmetric_gradient_increment,
-  tensor const &     gradient_displacement_cache_lvl_0_1,
+  tensor const &     gradient_displacement_cache_level_0_1,
   tensor const &     deformation_gradient,
   unsigned int const cell,
   unsigned int const q) const
@@ -461,7 +478,7 @@ CompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
     tensor F;
     get_modified_F_Jm1(F,
                        Jm1,
-                       gradient_displacement_cache_lvl_0_1,
+                       gradient_displacement_cache_level_0_1,
                        check_type,
                        true /* compute_J */,
                        stable_formulation);

@@ -505,6 +505,7 @@ IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
   std::shared_ptr<CellIntegrator<dim, dim /* n_components */, Number>> const integrator_lin,
   unsigned int const                                                         cell) const
 {
+  AssertThrow(cache_level == 0, dealii::ExcMessage("Cache level > 0 expected."));
   AssertThrow(cache_level < 3, dealii::ExcMessage("Cache level > 2 not implemented."));
 
   for(unsigned int q = 0; q < integrator_lin->n_q_points; ++q)
@@ -743,7 +744,7 @@ template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displacement_derivative(
   tensor const &     gradient_increment,
-  tensor const &     gradient_displacement_cache_lvl_0_1,
+  tensor const &     gradient_displacement_cache_level_0_1,
   tensor const &     deformation_gradient,
   unsigned int const cell,
   unsigned int const q) const
@@ -762,7 +763,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
     tensor F;
     get_modified_F_Jm1(F,
                        Jm1,
-                       gradient_displacement_cache_lvl_0_1,
+                       gradient_displacement_cache_level_0_1,
                        check_type,
                        true /* compute_J */,
                        stable_formulation);
@@ -993,7 +994,7 @@ template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
   tensor const &     symmetric_gradient_increment,
-  tensor const &     gradient_displacement_cache_lvl_0_1,
+  tensor const &     gradient_displacement_cache_level_0_1,
   tensor const &     deformation_gradient,
   unsigned int const cell,
   unsigned int const q) const
@@ -1022,7 +1023,7 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
     tensor F;
     get_modified_F_Jm1(F,
                        Jm1,
-                       gradient_displacement_cache_lvl_0_1,
+                       gradient_displacement_cache_level_0_1,
                        check_type,
                        true /* compute_J */,
                        stable_formulation);

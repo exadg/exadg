@@ -19,7 +19,7 @@
         "Height": "10.0",
         "Width": "10.0",
         "ProblemType": "QuasiStatic",
-        "MaterialType": "IncompressibleFibrousTissue",
+        "MaterialType": "CompressibleNeoHookean",
         "WeakDamping": "0.0",
         "LoadIncrement": "0.1",
         "UseVolumeForce": "false",

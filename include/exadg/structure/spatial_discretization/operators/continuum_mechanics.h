@@ -93,16 +93,19 @@ inline DEAL_II_ALWAYS_INLINE //
   return add_identity(gradient_displacement);
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename TypeScale>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  get_E(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement)
+  get_E_scaled(
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
+    TypeScale const &                                               scl)
 {
   // E = 0.5 * (F^T * F - I)
   // or numerically stable alternative
   // E = 0.5 * (H + H^T + H^T * H)
-  return (0.5 * (gradient_displacement + transpose(gradient_displacement) +
-                 transpose(gradient_displacement) * gradient_displacement));
+  // where H = gradient_displacement including a scaling factor scl.
+  return ((0.5 * scl) * (gradient_displacement + transpose(gradient_displacement) +
+                         transpose(gradient_displacement) * gradient_displacement));
 }
 
 template<int dim, typename Number>
@@ -238,6 +241,49 @@ inline DEAL_II_ALWAYS_INLINE //
       get_identity<dim, Number>() + gradient_displacement;
     Jm1 = determinant(F) - 1.0;
   }
+}
+
+// Compute J^2-1 in a numerically stable manner based on Jm1 = (J-1),
+// ir in the standard fashion.
+template<typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<Number>
+  get_JJm1(dealii::VectorizedArray<Number> const & Jm1, bool const stable_formulation)
+{
+  dealii::VectorizedArray<Number> JJm1;
+
+  if(stable_formulation)
+  {
+    JJm1 = Jm1 * (Jm1 + 2.0);
+  }
+  else
+  {
+    JJm1 = (Jm1 + 1.0) * (Jm1 + 1.0) - 1.0;
+  }
+
+  return JJm1;
+}
+
+// Compute J^2-1 in a numerically stable manner based on Jm1 = (J-1),
+// ir in the standard fashion.
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<Number>
+  get_I_1(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
+          bool const                                                      stable_formulation)
+{
+  dealii::VectorizedArray<Number> I_1;
+
+  if(stable_formulation)
+  {
+    I_1 = 2.0 * trace(E) + static_cast<Number>(dim);
+  }
+  else
+  {
+    I_1 = trace(2.0 * E + get_identity<dim, Number>());
+  }
+
+  return I_1;
 }
 
 template<int dim, typename Number>

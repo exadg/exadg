@@ -121,7 +121,7 @@ public:
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   second_piola_kirchhoff_stress_displacement_derivative(
     tensor const &     gradient_increment,
-    tensor const &     gradient_displacement_cache_lvl_0_1,
+    tensor const &     gradient_displacement_cache_level_0_1,
     tensor const &     deformation_gradient,
     unsigned int const cell,
     unsigned int const q) const final;
@@ -134,7 +134,7 @@ public:
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
-                          tensor const &     gradient_displacement_cache_lvl_0_1,
+                          tensor const &     gradient_displacement_cache_level_0_1,
                           tensor const &     deformation_gradient,
                           unsigned int const cell,
                           unsigned int const q) const final;
@@ -152,6 +152,43 @@ public:
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   deformation_gradient(unsigned int const cell, unsigned int const q) const final;
+
+  /*
+   * Helper functions to replace frequently appearing terms.
+   */
+  dealii::VectorizedArray<Number>
+  get_c1(scalar const &     Jm1,
+         scalar const &     J_pow,
+         tensor const &     E,
+         scalar const &     shear_modulus_stored,
+         bool const         force_evaluation,
+         unsigned int const cell,
+         unsigned int const q) const;
+
+  dealii::VectorizedArray<Number>
+  get_c2(scalar const &     Jm1,
+         scalar const &     J_pow,
+         tensor const &     E,
+         scalar const &     shear_modulus_stored,
+         bool const         force_evaluation,
+         unsigned int const cell,
+         unsigned int const q) const;
+
+  dealii::VectorizedArray<Number>
+  get_J_pow(scalar const &     Jm1,
+            bool const         force_evaluation,
+            unsigned int const cell,
+            unsigned int const q) const;
+
+  void
+  get_F_Jm1(scalar &           Jm1,
+            tensor &           F,
+            tensor const &     gradient_displacement,
+            bool const         force_evaluation,
+            bool const         compute_F,
+            bool const         compute_J,
+            unsigned int const cell,
+            unsigned int const q) const;
 
 private:
   /*
@@ -187,6 +224,7 @@ private:
   mutable VariableCoefficients<tensor> deformation_gradient_coefficients;
 
   // scalar cache level
+  mutable VariableCoefficients<scalar> Jm1_coefficients;
   mutable VariableCoefficients<scalar> J_pow_coefficients;
   mutable VariableCoefficients<scalar> c1_coefficients;
   mutable VariableCoefficients<scalar> c2_coefficients;
