@@ -145,7 +145,7 @@ print_throughput_unsteady(dealii::ConditionalOStream const & pcout,
   pcout << std::endl
         << "Throughput per time step:" << std::endl
         << "  Number of MPI processes    = " << N_mpi_processes << std::endl
-        << "  Average Degrees of freedom = " std::scientific << std::setprecision(2)<< avg_n_dofs << std::endl
+        << "  Average Degrees of freedom = " << std::scientific << std::setprecision(2)<< avg_n_dofs << std::endl
         << "  Wall time                  = " << std::scientific << std::setprecision(2) << overall_time_avg << " s" << std::endl
         << "  Time steps                 = " << std::left << N_time_steps << std::endl
         << "  Wall time per time step    = " << std::scientific << std::setprecision(2) << time_per_timestep << " s" << std::endl
