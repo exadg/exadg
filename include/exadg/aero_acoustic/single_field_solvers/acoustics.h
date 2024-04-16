@@ -73,9 +73,10 @@ public:
   {
     // in case the macro time step is smaller than the acoustic timestep, simply run
     // with macro time step, otherwise, ensure that n_sub_time_steps * sub_dt = macro_dt
-    double sub_dt = time_integrator->get_time_step_size();
-    if(macro_dt > sub_dt)
-      sub_dt = adjust_time_step_to_hit_end_time(0.0, macro_dt, sub_dt);
+    double const dt = time_integrator->get_time_step_size();
+    double const sub_dt =
+      (macro_dt < dt) ? macro_dt : adjust_time_step_to_hit_end_time(0.0, macro_dt, dt);
+
 
     // define epsilon dependent on time-step size to avoid
     // wrong terminations of the sub-timestepping loop due to
