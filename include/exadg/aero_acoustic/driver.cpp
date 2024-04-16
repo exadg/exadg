@@ -149,7 +149,7 @@ Driver<dim, Number>::solve()
     // The acoustic simulation uses explicit time-stepping while the fluid solver
     // uses implicit time-stepping. Therefore, we advance the acoustic solver to
     // t^(n+1) first and directly use the result in the fluid solver.
-    if(acoustic_starts_during_sub_stepping)
+    if(acoustic_starts_during_present_timestep)
       couple_fluid_to_acoustic();
     acoustic->advance_multiple_timesteps(fluid->time_integrator->get_time_step_size());
 
