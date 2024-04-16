@@ -208,7 +208,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 
   dealii::types::global_dof_index const DoFs_f = fluid->pde_operator->get_number_of_dofs();
   dealii::types::global_dof_index const DoFs_a = acoustic->pde_operator->get_number_of_dofs();
-  double const sub_dt_per_macro__dt            = acoustic->get_average_number_of_sub_time_steps();
+  double const sub_dt_per_macro_dt             = acoustic->get_average_number_of_sub_time_steps();
 
   unsigned int const N_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
 
