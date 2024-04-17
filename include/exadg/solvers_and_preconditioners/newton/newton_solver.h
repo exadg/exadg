@@ -32,6 +32,28 @@ namespace ExaDG
 {
 namespace Newton
 {
+class NewtonExceptionMaxIterationsLinesearch : public std::exception
+{
+public:
+  const char *
+  what() const noexcept final
+  {
+    return ("Damped Newton iteration did not converge. "
+            "Maximum number of iterations exceeded!");
+  }
+};
+
+class NewtonExceptionMaxIterations : public std::exception
+{
+public:
+  const char *
+  what() const noexcept final
+  {
+    return ("Newton solver failed to solve nonlinear problem to given tolerance. "
+            "Maximum number of iterations exceeded!");
+  }
+};
+
 template<typename VectorType,
          typename NonlinearOperator,
          typename LinearOperator,
@@ -113,9 +135,10 @@ public:
         n_iter_damp++;
       } while(norm_r_damp >= (1.0 - tau * omega) * norm_r and n_iter_damp < max_iter_damp);
 
-      AssertThrow(norm_r_damp < (1.0 - tau * omega) * norm_r,
-                  dealii::ExcMessage("Damped Newton iteration did not converge. "
-                                     "Maximum number of iterations exceeded!"));
+      if(norm_r_damp >= (1.0 - tau * omega) * norm_r)
+      {
+        throw NewtonExceptionMaxIterationsLinesearch();
+      }
 
       // update solution and residual
       solution = temporary;
@@ -126,10 +149,10 @@ public:
       linear_iterations += n_iter_linear;
     }
 
-    AssertThrow(norm_r <= this->solver_data.abs_tol or norm_r / norm_r_0 <= solver_data.rel_tol,
-                dealii::ExcMessage(
-                  "Newton solver failed to solve nonlinear problem to given tolerance. "
-                  "Maximum number of iterations exceeded!"));
+    if(norm_r > this->solver_data.abs_tol and norm_r / norm_r_0 > solver_data.rel_tol)
+    {
+      throw NewtonExceptionMaxIterations();
+    }
 
     if(update.do_update and update.update_once_converged)
     {

@@ -168,8 +168,12 @@ DriverQuasiStatic<dim, Number>::do_solve()
         iter    = solve_step(load_factor + load_increment, update_preconditioner);
         success = true;
       }
-      catch(...)
+      catch(std::exception & exc)
       {
+        pcout << "  Exception thrown when solving the current load step:" << std::endl << std::endl
+              << "  " << exc.what() << std::endl
+              << std::flush;
+
         // undo changes in solution vector
         solution = old_solution;
         ++re_try_counter;
@@ -180,6 +184,11 @@ DriverQuasiStatic<dim, Number>::do_solve()
               << "  Could not solve non-linear problem. Reduce load increment to " << load_increment
               << "." << std::endl
               << std::flush;
+      }
+      catch(...)
+      {
+        AssertThrow(false,
+                    dealii::ExcMessage("Unknown exception thrown within current load step solve."));
       }
     }
 
