@@ -191,7 +191,9 @@ StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(tensor const & gra
   if(large_deformation)
   {
     return (this->second_piola_kirchhoff_stress_symmetrize(
-      get_E_scaled<dim, Number, Number>(gradient_displacement, 1.0), cell, q));
+      get_E_scaled<dim, Number, Number>(gradient_displacement, 1.0, true /* stable_formulation */),
+      cell,
+      q));
   }
   else
   {

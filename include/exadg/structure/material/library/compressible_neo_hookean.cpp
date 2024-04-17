@@ -307,7 +307,9 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
 
     if(stable_formulation)
     {
-      S = get_E_scaled<dim, Number, scalar>(gradient_displacement, 2.0 * shear_modulus_stored);
+      S = get_E_scaled<dim, Number, scalar>(gradient_displacement,
+                                            2.0 * shear_modulus_stored,
+                                            true /* stable_formulation */);
       add_scaled_identity(S, 2.0 * lambda_stored * log_J);
       S = C_inv * S;
     }

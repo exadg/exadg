@@ -505,8 +505,8 @@ IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
   std::shared_ptr<CellIntegrator<dim, dim /* n_components */, Number>> const integrator_lin,
   unsigned int const                                                         cell) const
 {
-  AssertThrow(cache_level == 0, dealii::ExcMessage("Cache level > 0 expected."));
-  AssertThrow(cache_level < 3, dealii::ExcMessage("Cache level > 2 not implemented."));
+  AssertThrow(cache_level > 0 and cache_level < 3,
+              dealii::ExcMessage("0 < cache level < 3 expected."));
 
   for(unsigned int q = 0; q < integrator_lin->n_q_points; ++q)
   {
