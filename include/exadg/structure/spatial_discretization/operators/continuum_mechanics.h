@@ -47,42 +47,16 @@ inline DEAL_II_ALWAYS_INLINE //
   return out;
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, typename TypeScale>
 inline DEAL_II_ALWAYS_INLINE //
   void
   add_scaled_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> & tmp,
-                      dealii::VectorizedArray<Number> const &                   factor)
+                      TypeScale const &                                         scl)
 {
   for(unsigned int i = 0; i < dim; i++)
   {
-    tmp[i][i] = tmp[i][i] + factor;
+    tmp[i][i] = tmp[i][i] + scl;
   }
-}
-
-template<int dim, typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  add_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & tmp)
-{
-  auto result = tmp;
-  for(unsigned int i = 0; i < dim; i++)
-  {
-    result[i][i] = result[i][i] + 1.0;
-  }
-  return result;
-}
-
-template<int dim, typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  subtract_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & tmp)
-{
-  auto result = tmp;
-  for(unsigned int i = 0; i < dim; i++)
-  {
-    result[i][i] = result[i][i] - 1.0;
-  }
-  return result;
 }
 
 template<int dim, typename Number>
@@ -90,7 +64,9 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   get_F(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement)
 {
-  return add_identity(gradient_displacement);
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> F = gradient_displacement;
+  add_scaled_identity<dim, Number, Number>(F, 1.0);
+  return F;
 }
 
 template<int dim, typename Number, typename TypeScale>
@@ -98,14 +74,28 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   get_E_scaled(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
-    TypeScale const &                                               scl)
+    TypeScale const &                                               scl,
+    bool const                                                      stable_formulation)
 {
-  // E = 0.5 * (F^T * F - I)
-  // or numerically stable alternative
-  // E = 0.5 * (H + H^T + H^T * H)
-  // where H = gradient_displacement including a scaling factor scl.
-  return ((0.5 * scl) * (gradient_displacement + transpose(gradient_displacement) +
-                         transpose(gradient_displacement) * gradient_displacement));
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> E;
+
+  if(stable_formulation)
+  {
+	// E = 0.5 * (H + H^T + H^T * H)
+	// where H = gradient_displacement
+	E = ((0.5 * scl) * (gradient_displacement + transpose(gradient_displacement) +
+						transpose(gradient_displacement) * gradient_displacement));
+  }
+  else
+  {
+	// E = 0.5 * (F^T * F - I)
+	E = get_F(gradient_displacement);
+	E = transpose(E) * E;
+	add_scaled_identity<dim, Number, Number>(E, -1.0);
+	E *= 0.5 * scl;
+  }
+
+  return E;
 }
 
 template<int dim, typename Number>
@@ -114,7 +104,8 @@ inline DEAL_II_ALWAYS_INLINE //
   get_identity()
 {
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> I;
-  return add_identity(I);
+  add_scaled_identity<dim, Number, Number>(I, 1.0);
+  return I;
 }
 
 template<typename Number>
@@ -237,14 +228,14 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else
   {
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const F =
-      get_identity<dim, Number>() + gradient_displacement;
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> F = gradient_displacement;
+    add_scaled_identity<dim,Number,Number>(F, 1.0);
     Jm1 = determinant(F) - 1.0;
   }
 }
 
-// Compute J^2-1 in a numerically stable manner based on Jm1 = (J-1),
-// ir in the standard fashion.
+// Compute J^2-1 in a numerically stable manner, which is based on Jm1 = (J-1), or in the standard
+// fashion.
 template<typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
@@ -254,18 +245,20 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if(stable_formulation)
   {
+    // J^2-1 = (J - 1) * (J - 1 + 2)
     JJm1 = Jm1 * (Jm1 + 2.0);
   }
   else
   {
+    // J^2-1 = (J - 1 + 1) * (J - 1 + 1) - 1
     JJm1 = (Jm1 + 1.0) * (Jm1 + 1.0) - 1.0;
   }
 
   return JJm1;
 }
 
-// Compute J^2-1 in a numerically stable manner based on Jm1 = (J-1),
-// ir in the standard fashion.
+// Compute I_1 = trace(C) in a numerically stable manner, which is based on E, or in the standard
+// fashion.
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
@@ -276,10 +269,12 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if(stable_formulation)
   {
+    // I_1 = trace(C) = 2 * trace(E) + trace(I)
     I_1 = 2.0 * trace(E) + static_cast<Number>(dim);
   }
   else
   {
+    // I_1 = trace(C) = trace(2 * E + I)
     I_1 = trace(2.0 * E + get_identity<dim, Number>());
   }
 
@@ -297,7 +292,8 @@ inline DEAL_II_ALWAYS_INLINE //
     bool const                                                      compute_J,
     bool const                                                      stable_formulation)
 {
-  F = add_identity(gradient_displacement);
+  F = gradient_displacement;
+  add_scaled_identity<dim, Number, Number>(F, 1.0);
 
   if(compute_J)
   {
