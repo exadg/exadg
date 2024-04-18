@@ -963,7 +963,7 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
                        Jm1,
                        gradient_displacement,
                        check_type,
-                       cache_level == 0 /* compute_J */,
+                       cache_level == 0 or force_evaluation /* compute_J */,
                        stable_formulation);
 
     // Add fiber contribution.
@@ -1016,20 +1016,18 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
       tau += (c3 * E_i) * H_i;
     }
 
-    scalar J_pow, c1;
-    if(cache_level == 0)
+    tensor E;
+    if(cache_level == 0 or force_evaluation)
     {
-      tensor const C = transpose(F) * F;
-
-      J_pow = pow(Jm1 + 1.0, static_cast<Number>(-2.0 * one_third));
-      c1    = bulk_modulus * 0.5 * ((Jm1 + 1.0) * (Jm1 + 1.0) - 1.0) -
-           (one_third * shear_modulus_stored * J_pow) * trace(C);
+      E = get_E_scaled<dim, Number, Number>(gradient_displacement, 1.0, stable_formulation);
     }
     else
     {
-      J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
-      c1    = c1_coefficients.get_coefficient_cell(cell, q);
+      // dummy E sufficient.
     }
+
+    scalar const J_pow = get_J_pow(Jm1, force_evaluation, cell, q);
+    scalar const c1    = get_c1(Jm1, J_pow, E, shear_modulus_stored, force_evaluation, cell, q);
 
     // tau holds fiber terms in non-push-forwarded form.
     // Add isochoric terms (the one with F*transpose(F))
