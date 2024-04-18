@@ -265,13 +265,7 @@ private:
                        unsigned int const q) const;
 
   dealii::VectorizedArray<Number>
-  get_fiber_switch(vector const &     M_1,
-                   tensor const &     C,
-                   unsigned int const i,
-                   unsigned int const cell,
-                   unsigned int const q,
-                   bool const         force_evaluation) const;
-
+  get_fiber_switch(vector const & M_1, tensor const & C) const;
 
   unsigned int dof_index;
   unsigned int quad_index;
@@ -320,7 +314,6 @@ private:
   mutable VariableCoefficients<scalar> c2_coefficients;
 
   mutable std::vector<VariableCoefficients<scalar>> c3_coefficients;
-  mutable std::vector<VariableCoefficients<scalar>> fiber_switch_coefficients;
   mutable std::vector<VariableCoefficients<scalar>> E_i_coefficients;
 
   // tensor cache level
