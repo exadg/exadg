@@ -153,6 +153,16 @@ public:
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   deformation_gradient(unsigned int const cell, unsigned int const q) const final;
 
+private:
+  /*
+   * Store factors involving (potentially variable) shear modulus.
+   */
+  void
+  cell_loop_set_coefficients(dealii::MatrixFree<dim, Number> const & matrix_free,
+                             VectorType &,
+                             VectorType const & src,
+                             Range const &      cell_range) const;
+
   /*
    * Helper functions to replace frequently appearing terms.
    */
@@ -179,16 +189,6 @@ public:
             bool const         force_evaluation,
             unsigned int const cell,
             unsigned int const q) const;
-
-private:
-  /*
-   * Store factors involving (potentially variable) shear modulus.
-   */
-  void
-  cell_loop_set_coefficients(dealii::MatrixFree<dim, Number> const & matrix_free,
-                             VectorType &,
-                             VectorType const & src,
-                             Range const &      cell_range) const;
 
   unsigned int dof_index;
   unsigned int quad_index;

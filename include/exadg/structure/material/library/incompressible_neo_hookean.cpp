@@ -184,8 +184,7 @@ IncompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
 
     scalar Jm1;
     tensor F;
-    get_modified_F_Jm1(
-      F, Jm1, Grad_d_lin, check_type, true /* force_evaluation */, stable_formulation);
+    get_modified_F_Jm1(F, Jm1, Grad_d_lin, check_type, true /* compute_J */, stable_formulation);
 
     // Overwrite computed values with admissible stored ones
     if(check_type == 2)
@@ -363,12 +362,28 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
 
     scalar Jm1;
     tensor F;
-    get_modified_F_Jm1(F,
-                       Jm1,
-                       gradient_displacement,
-                       check_type,
-                       cache_level == 0 or stable_formulation /* compute_J */,
-                       stable_formulation);
+    if(cache_level == 0 or force_evaluation)
+    {
+      get_modified_F_Jm1(
+        F, Jm1, gradient_displacement, check_type, true /* compute_J */, stable_formulation);
+    }
+    else
+    {
+      if(cache_level == 1)
+      {
+        get_modified_F_Jm1(
+          F, Jm1, gradient_displacement, check_type, false /* compute_J */, stable_formulation);
+      }
+      else
+      {
+        F = deformation_gradient_coefficients.get_coefficient_cell(cell, q);
+      }
+
+      if(stable_formulation)
+      {
+        Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
+      }
+    }
 
     tensor const C = transpose(F) * F;
 
