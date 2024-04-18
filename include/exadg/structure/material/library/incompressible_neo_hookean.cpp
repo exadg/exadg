@@ -388,9 +388,12 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
     }
     else
     {
-      S = get_E_scaled<dim, Number, Number>(gradient_displacement,
-                                            1.0,
-                                            false /* stable_formulation */);
+      if(cache_level == 0 or force_evaluation)
+      {
+        S = get_E_scaled<dim, Number, Number>(gradient_displacement,
+                                              1.0,
+                                              false /* stable_formulation */);
+      }
       scalar const c1 =
         get_c1(Jm1, J_pow, S /* E */, shear_modulus_stored, force_evaluation, cell, q);
 
@@ -510,22 +513,38 @@ IncompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradi
                        check_type,
                        cache_level == 0 or force_evaluation /* compute_J */,
                        stable_formulation);
-
-    tensor E;
-    if(cache_level == 0 or force_evaluation)
+    if(cache_level == 1 and not force_evaluation and stable_formulation)
     {
-      E = get_E_scaled<dim, Number, Number>(gradient_displacement, 1.0, stable_formulation);
-    }
-    else
-    {
-      // dummy E sufficient.
+      Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
     }
 
     scalar const J_pow = get_J_pow(Jm1, force_evaluation, cell, q);
-    scalar const c1    = get_c1(Jm1, J_pow, E, shear_modulus_stored, force_evaluation, cell, q);
 
-    tau = (F * transpose(F)) * shear_modulus_stored * J_pow;
-    add_scaled_identity(tau, c1);
+    if(stable_formulation)
+    {
+      tau = get_E_scaled<dim, Number, scalar>(gradient_displacement,
+                                              2.0 * shear_modulus_stored * J_pow,
+                                              true /* stable_formulation */);
+      add_scaled_identity<dim, Number>(
+        tau, -one_third * trace(tau) + 0.5 * bulk_modulus * get_JJm1<Number>(Jm1, stable_formulation));
+    }
+    else
+    {
+      if(cache_level == 0 or force_evaluation)
+      {
+        tau = get_E_scaled<dim, Number, Number>(gradient_displacement, 1.0, stable_formulation);
+      }
+      else
+      {
+        // dummy E sufficient.
+      }
+
+      scalar const c1 =
+        get_c1(Jm1, J_pow, tau /* E */, shear_modulus_stored, force_evaluation, cell, q);
+
+      tau = (F * transpose(F)) * shear_modulus_stored * J_pow;
+      add_scaled_identity(tau, c1);
+    }
   }
   else
   {
