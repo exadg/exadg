@@ -1018,8 +1018,10 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
       tau += (c3 * E_i) * H_i;
     }
 
+    scalar const J_pow = get_J_pow(Jm1, force_evaluation, cell, q);
+
     tensor E;
-    if(cache_level == 0 or force_evaluation)
+    if(cache_level == 0 or force_evaluation or stable_formulation)
     {
       E = get_E_scaled<dim, Number, Number>(gradient_displacement, 1.0, stable_formulation);
     }
@@ -1028,19 +1030,38 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
       // dummy E sufficient.
     }
 
-    scalar const J_pow = get_J_pow(Jm1, force_evaluation, cell, q);
-    scalar const c1    = get_c1(Jm1, J_pow, E, shear_modulus_stored, force_evaluation, cell, q);
+    // tau holds fiber terms in non-push-forwarded form, i.e.,
+    // sum_(j=4,6) c_3 * E_i * H_i
+    // to apply the push-forward only once for the sum of all terms.
+    if(stable_formulation)
+    {
+      // Push forward the fiber contribution.
+      tau = F * tau * transpose(F);
 
-    // tau holds fiber terms in non-push-forwarded form.
-    // Add isochoric terms (the one with F*transpose(F))
-    // to avoid a matrix-matrix product.
-    add_scaled_identity(tau, shear_modulus_stored * J_pow);
+      // Add remaining terms.
+      tau += (2.0 * shear_modulus_stored * J_pow) * E;
 
-    // We cannot avoid this triple matrix product even if
-    // we have C already computed as for cache_level 0.
-    tau = F * tau * transpose(F);
+      add_scaled_identity<dim, Number>(tau,
+                                       (-2.0 * one_third * shear_modulus_stored * J_pow) *
+                                           trace(E) +
+                                         0.5 * bulk_modulus *
+                                           get_JJm1<Number>(Jm1, stable_formulation));
+    }
+    else
+    {
+      scalar const c1 = get_c1(Jm1, J_pow, E, shear_modulus_stored, force_evaluation, cell, q);
 
-    add_scaled_identity(tau, c1);
+      // Add isochoric term, i.e.,
+      // mu * J^(-2/3) * F * F^T
+      // but apply push forward in next step
+      add_scaled_identity(tau, shear_modulus_stored * J_pow);
+
+      // Push forward the summed terms.
+      tau = F * tau * transpose(F);
+
+      // Add the remaining term.
+      add_scaled_identity(tau, c1);
+    }
   }
   else
   {
