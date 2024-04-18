@@ -106,24 +106,24 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
     J_pow_coefficients.initialize(matrix_free, quad_index, false, false);
     J_pow_coefficients.set_coefficients(1.0);
 
-    c_1_coefficients.initialize(matrix_free, quad_index, false, false);
-    c_1_coefficients.set_coefficients(-shear_modulus * one_third * static_cast<Number>(dim));
-    c_2_coefficients.initialize(matrix_free, quad_index, false, false);
-    c_2_coefficients.set_coefficients(
+    c1_coefficients.initialize(matrix_free, quad_index, false, false);
+    c1_coefficients.set_coefficients(-shear_modulus * one_third * static_cast<Number>(dim));
+    c2_coefficients.initialize(matrix_free, quad_index, false, false);
+    c2_coefficients.set_coefficients(
       shear_modulus * one_third * 2.0 * one_third * static_cast<Number>(dim) + bulk_modulus);
 
     // Set scalar linearization data for fiber contribution initially.
     fiber_switch_coefficients.resize(n_fiber_families);
     E_i_coefficients.resize(n_fiber_families);
-    c_3_coefficients.resize(n_fiber_families);
+    c3_coefficients.resize(n_fiber_families);
     for(unsigned int i = 0; i < n_fiber_families; i++)
     {
       fiber_switch_coefficients[i].initialize(matrix_free, quad_index, false, false);
       fiber_switch_coefficients[i].set_coefficients(1.0);
       E_i_coefficients[i].initialize(matrix_free, quad_index, false, false);
       E_i_coefficients[i].set_coefficients(0.0);
-      c_3_coefficients[i].initialize(matrix_free, quad_index, false, false);
-      c_3_coefficients[i].set_coefficients(2.0 * fiber_k_1);
+      c3_coefficients[i].initialize(matrix_free, quad_index, false, false);
+      c3_coefficients[i].set_coefficients(2.0 * fiber_k_1);
     }
 
     if(spatial_integration)
@@ -453,14 +453,87 @@ IncompressibleFibrousTissue<dim, Number>::cell_loop_set_coefficients(
 }
 
 template<int dim, typename Number>
-inline void
-IncompressibleFibrousTissue<dim, Number>::get_structure_tensor(tensor &           H,
-                                                               vector const &     M_1,
+dealii::VectorizedArray<Number>
+IncompressibleFibrousTissue<dim, Number>::get_c1(scalar const &     Jm1,
+                                              scalar const &     J_pow,
+                                              tensor const &     E,
+                                              scalar const &     shear_modulus_stored,
+                                              bool const         force_evaluation,
+                                              unsigned int const cell,
+                                              unsigned int const q) const
+{
+  scalar c1;
+
+  if(cache_level == 0 or force_evaluation)
+  {
+    c1 = 0.5 * bulk_modulus * get_JJm1<Number>(Jm1, stable_formulation) -
+         shear_modulus_stored * one_third * J_pow * get_I_1<dim, Number>(E, stable_formulation);
+  }
+  else
+  {
+    c1 = c1_coefficients.get_coefficient_cell(cell, q);
+  }
+
+  return c1;
+}
+
+template<int dim, typename Number>
+dealii::VectorizedArray<Number>
+IncompressibleFibrousTissue<dim, Number>::get_c2(scalar const &     Jm1,
+                                              scalar const &     J_pow,
+                                              tensor const &     E,
+                                              scalar const &     shear_modulus_stored,
+                                              bool const         force_evaluation,
+                                              unsigned int const cell,
+                                              unsigned int const q) const
+{
+  scalar c2;
+
+  if(cache_level == 0 or force_evaluation)
+  {
+    c2 = bulk_modulus * (get_JJm1<Number>(Jm1, stable_formulation) + 1.0) +
+         2.0 * shear_modulus_stored * one_third * one_third * J_pow *
+           get_I_1<dim, Number>(E, stable_formulation);
+  }
+  else
+  {
+    c2 = c2_coefficients.get_coefficient_cell(cell, q);
+  }
+
+  return c2;
+}
+
+template<int dim, typename Number>
+dealii::VectorizedArray<Number>
+IncompressibleFibrousTissue<dim, Number>::get_J_pow(scalar const &     Jm1,
+                                                 bool const         force_evaluation,
+                                                 unsigned int const cell,
+                                                 unsigned int const q) const
+{
+  scalar J_pow;
+
+  if(cache_level == 0 or force_evaluation)
+  {
+    J_pow = pow(Jm1 + 1.0, static_cast<Number>(-2.0 * one_third));
+  }
+  else
+  {
+    J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
+  }
+
+  return J_pow;
+}
+
+template<int dim, typename Number>
+dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+IncompressibleFibrousTissue<dim, Number>::get_structure_tensor(vector const &     M_1,
                                                                vector const &     M_2,
                                                                unsigned int const i,
                                                                unsigned int const cell,
                                                                unsigned int const q) const
 {
+  tensor H;
+
   if(cache_level < 2)
   {
     vector M_3 = cross_product_3d(M_1, M_2);
@@ -474,18 +547,21 @@ IncompressibleFibrousTissue<dim, Number>::get_structure_tensor(tensor &         
   {
     H = fiber_structure_tensor[i].get_coefficient_cell(cell, q);
   }
+
+  return H;
 }
 
 template<int dim, typename Number>
-inline void
-IncompressibleFibrousTissue<dim, Number>::get_fiber_switch(scalar &           fiber_switch,
-                                                           vector const &     M_1,
+dealii::VectorizedArray<Number>
+IncompressibleFibrousTissue<dim, Number>::get_fiber_switch(vector const &     M_1,
                                                            tensor const &     C,
                                                            unsigned int const i,
                                                            unsigned int const cell,
                                                            unsigned int const q,
                                                            bool const force_evaluation) const
 {
+  scalar fiber_switch;
+
   if(cache_level == 0 or force_evaluation)
   {
     scalar const I_i = scalar_product(outer_product(M_1, M_1), C);
@@ -500,6 +576,8 @@ IncompressibleFibrousTissue<dim, Number>::get_fiber_switch(scalar &           fi
   {
     fiber_switch = fiber_switch_coefficients[i].get_coefficient_cell(cell, q);
   }
+
+  return fiber_switch;
 }
 
 template<int dim, typename Number>
@@ -569,11 +647,11 @@ IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
     scalar const I_1 = trace(C);
     scalar const c1  = bulk_modulus * 0.5 * ((Jm1 + 1.0) * (Jm1 + 1.0) - 1.0) -
                       shear_modulus_stored * one_third * J_pow * I_1;
-    c_1_coefficients.set_coefficient_cell(cell, q, c1);
+    c1_coefficients.set_coefficient_cell(cell, q, c1);
 
     scalar const c2 = shear_modulus_stored * one_third * one_third * 2.0 * J_pow * I_1 +
                       bulk_modulus * (Jm1 + 1.0) * (Jm1 + 1.0);
-    c_2_coefficients.set_coefficient_cell(cell, q, c2);
+    c2_coefficients.set_coefficient_cell(cell, q, c2);
 
     // Set scalar linearization data for fiber contribution.
     for(unsigned int i = 0; i < n_fiber_families; i++)
@@ -585,20 +663,18 @@ IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
         M_2_cache_level_0_1 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
       }
 
-      scalar fiber_switch;
-      get_fiber_switch(fiber_switch, M_1, C, i, cell, q, true /* force_evaluation */);
+      scalar const fiber_switch = get_fiber_switch(M_1, C, i, cell, q, true /* force_evaluation */);
       fiber_switch_coefficients[i].set_coefficient_cell(cell, q, fiber_switch);
 
       // Compute or load structure tensor.
-      tensor H_i;
-      get_structure_tensor(H_i, M_1, M_2_cache_level_0_1, i, cell, q);
+      tensor const H_i = get_structure_tensor(M_1, M_2_cache_level_0_1, i, cell, q);
 
       tensor const C_minus_I = C - I;
       scalar       E_i       = scalar_product(H_i, C_minus_I);
       E_i_coefficients[i].set_coefficient_cell(cell, q, E_i);
 
       scalar c3 = 2.0 * fiber_k_1 * exp(fiber_k_2 * E_i * E_i);
-      c_3_coefficients[i].set_coefficient_cell(cell, q, c3);
+      c3_coefficients[i].set_coefficient_cell(cell, q, c3);
     }
 
     if(cache_level > 1)
@@ -686,7 +762,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress(
     else
     {
       J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
-      c1    = c_1_coefficients.get_coefficient_cell(cell, q);
+      c1    = c1_coefficients.get_coefficient_cell(cell, q);
     }
 
     S = invert(C) * c1;
@@ -707,13 +783,10 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress(
         // M_1 : dummy vector suffices for function call.
         // M_2 : dummy vector suffices for function call.
       }
-      scalar fiber_switch;
-      get_fiber_switch(
-        fiber_switch, M_1_cache_level_0_1, C, i, cell, q, false /* force_evaluation */);
+      scalar const fiber_switch = get_fiber_switch(M_1_cache_level_0_1, C, i, cell, q, false /* force_evaluation */);
 
       // Compute or load structure tensor.
-      tensor H_i;
-      get_structure_tensor(H_i, M_1_cache_level_0_1, M_2_cache_level_0_1, i, cell, q);
+      tensor const H_i = get_structure_tensor(M_1_cache_level_0_1, M_2_cache_level_0_1, i, cell, q);
 
       // Compute or load fiber strain-like quantity.
       scalar E_i;
@@ -735,7 +808,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress(
       }
       else
       {
-        c3 = c_3_coefficients[i].get_coefficient_cell(cell, q);
+        c3 = c3_coefficients[i].get_coefficient_cell(cell, q);
       }
 
       S += (fiber_switch * c3 * E_i) * H_i;
@@ -788,8 +861,8 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
   else
   {
     J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
-    c1    = c_1_coefficients.get_coefficient_cell(cell, q);
-    c2    = c_2_coefficients.get_coefficient_cell(cell, q);
+    c1    = c1_coefficients.get_coefficient_cell(cell, q);
+    c2    = c2_coefficients.get_coefficient_cell(cell, q);
   }
 
   tensor F_inv, C_inv;
@@ -838,9 +911,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
       // M_2 : dummy vector suffices for function call.
       // C   : dummy tensor suffices for function call.
     }
-    scalar fiber_switch;
-    get_fiber_switch(fiber_switch,
-                     M_1_cache_level_0_1,
+    scalar const fiber_switch = get_fiber_switch(M_1_cache_level_0_1,
                      C_cache_level_0_1,
                      i,
                      cell,
@@ -848,8 +919,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
                      false /* force_evaluation */);
 
     // Compute or load structure tensor.
-    tensor H_i;
-    get_structure_tensor(H_i, M_1_cache_level_0_1, M_2_cache_level_0_1, i, cell, q);
+    tensor const H_i = get_structure_tensor(M_1_cache_level_0_1, M_2_cache_level_0_1, i, cell, q);
 
     // Compute or load fiber strain-like quantity.
     scalar E_i;
@@ -871,7 +941,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
     }
     else
     {
-      c3 = c_3_coefficients[i].get_coefficient_cell(cell, q);
+      c3 = c3_coefficients[i].get_coefficient_cell(cell, q);
     }
 
     Dd_S += H_i * (fiber_switch * c3 * (2.0 * fiber_k_2 * E_i * E_i + 1.0) *
@@ -925,9 +995,7 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
         // M_2 : dummy vector suffices for function call.
         // C   : dummy tensor suffices for function call.
       }
-      scalar fiber_switch;
-      get_fiber_switch(fiber_switch,
-                       M_1_cache_level_0_1,
+      scalar const fiber_switch = get_fiber_switch(M_1_cache_level_0_1,
                        C_cache_level_0_1,
                        i,
                        cell,
@@ -935,8 +1003,7 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
                        false /* force_evaluation */);
 
       // Compute or load structure tensor.
-      tensor H_i;
-      get_structure_tensor(H_i, M_1_cache_level_0_1, M_2_cache_level_0_1, i, cell, q);
+      tensor const H_i = get_structure_tensor(M_1_cache_level_0_1, M_2_cache_level_0_1, i, cell, q);
 
       // Compute or load fiber strain-like quantity.
       scalar E_i;
@@ -958,11 +1025,11 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
       }
       else
       {
-        c3 = c_3_coefficients[i].get_coefficient_cell(cell, q);
+        c3 = c3_coefficients[i].get_coefficient_cell(cell, q);
       }
 
       // Add terms in non-push-forwarded form.
-      tau += (c3 * E_i) * H_i;
+      tau += (fiber_switch * c3 * E_i) * H_i;
     }
 
     scalar J_pow, c1;
@@ -977,7 +1044,7 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
     else
     {
       J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
-      c1    = c_1_coefficients.get_coefficient_cell(cell, q);
+      c1    = c1_coefficients.get_coefficient_cell(cell, q);
     }
 
     // tau holds fiber terms in non-push-forwarded form.
@@ -1048,8 +1115,8 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
   else
   {
     J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
-    c1    = c_1_coefficients.get_coefficient_cell(cell, q);
-    c2    = c_2_coefficients.get_coefficient_cell(cell, q);
+    c1    = c1_coefficients.get_coefficient_cell(cell, q);
+    c2    = c2_coefficients.get_coefficient_cell(cell, q);
   }
 
   result = symmetric_gradient_increment * (-2.0 * c1);
@@ -1073,13 +1140,10 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
       // M_2 : dummy vector suffices for function call.
       // C   : dummy tensor suffices for function call.
     }
-    scalar fiber_switch;
-    get_fiber_switch(
-      fiber_switch, M_1_cache_level_0_1, C, i, cell, q, false /* force_evaluation */);
+    scalar const fiber_switch = get_fiber_switch(M_1_cache_level_0_1, C, i, cell, q, false /* force_evaluation */);
 
     // Compute or load structure tensor.
-    tensor H_i;
-    get_structure_tensor(H_i, M_1_cache_level_0_1, M_2_cache_level_0_1, i, cell, q);
+    tensor const H_i = get_structure_tensor(M_1_cache_level_0_1, M_2_cache_level_0_1, i, cell, q);
 
     // Compute or load fiber strain-like quantity.
     scalar E_i;
@@ -1101,7 +1165,7 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
     }
     else
     {
-      c3 = c_3_coefficients[i].get_coefficient_cell(cell, q);
+      c3 = c3_coefficients[i].get_coefficient_cell(cell, q);
     }
 
     // Compute or load H_i * C tensor.
@@ -1117,7 +1181,7 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
       C_times_H_i = C_times_H_i_coefficients[i].get_coefficient_cell(cell, q);
     }
 
-    result += (2.0 * c3 * (2.0 * fiber_k_2 * E_i * E_i + 1.0) *
+    result += (fiber_switch * 2.0 * c3 * (2.0 * fiber_k_2 * E_i * E_i + 1.0) *
                scalar_product(H_i_times_C, symmetric_gradient_increment)) *
               C_times_H_i;
   }

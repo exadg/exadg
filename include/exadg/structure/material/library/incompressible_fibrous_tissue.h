@@ -231,22 +231,41 @@ private:
                              Range const &      cell_range) const;
 
   /*
-   * Compute or access the stored structure tensor.
+   * Helper functions to replace frequently appearing terms.
    */
-  inline void
-  get_structure_tensor(tensor &           H,
-                       vector const &     M_1,
+  dealii::VectorizedArray<Number>
+  get_c1(scalar const &     Jm1,
+         scalar const &     J_pow,
+         tensor const &     E,
+         scalar const &     shear_modulus_stored,
+         bool const         force_evaluation,
+         unsigned int const cell,
+         unsigned int const q) const;
+
+  dealii::VectorizedArray<Number>
+  get_c2(scalar const &     Jm1,
+         scalar const &     J_pow,
+         tensor const &     E,
+         scalar const &     shear_modulus_stored,
+         bool const         force_evaluation,
+         unsigned int const cell,
+         unsigned int const q) const;
+
+  dealii::VectorizedArray<Number>
+  get_J_pow(scalar const &     Jm1,
+            bool const         force_evaluation,
+            unsigned int const cell,
+            unsigned int const q) const;
+
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  get_structure_tensor(vector const &     M_1,
                        vector const &     M_2,
                        unsigned int const i,
                        unsigned int const cell,
                        unsigned int const q) const;
 
-  /*
-   * Compute or access the fiber switch.
-   */
-  inline void
-  get_fiber_switch(scalar &           fiber_switch,
-                   vector const &     M_1,
+  dealii::VectorizedArray<Number>
+  get_fiber_switch(vector const &     M_1,
                    tensor const &     C,
                    unsigned int const i,
                    unsigned int const cell,
@@ -297,10 +316,10 @@ private:
   // scalar cache level
   mutable VariableCoefficients<scalar> Jm1_coefficients;
   mutable VariableCoefficients<scalar> J_pow_coefficients;
-  mutable VariableCoefficients<scalar> c_1_coefficients;
-  mutable VariableCoefficients<scalar> c_2_coefficients;
+  mutable VariableCoefficients<scalar> c1_coefficients;
+  mutable VariableCoefficients<scalar> c2_coefficients;
 
-  mutable std::vector<VariableCoefficients<scalar>> c_3_coefficients;
+  mutable std::vector<VariableCoefficients<scalar>> c3_coefficients;
   mutable std::vector<VariableCoefficients<scalar>> fiber_switch_coefficients;
   mutable std::vector<VariableCoefficients<scalar>> E_i_coefficients;
 
