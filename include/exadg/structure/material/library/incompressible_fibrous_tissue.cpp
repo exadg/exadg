@@ -1074,32 +1074,41 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
     C = C_coefficients.get_coefficient_cell(cell, q);
   }
 
-  scalar J_pow, c1, c2;
+  scalar Jm1_cache_level_0;
+  tensor E_cache_level_0;
   if(cache_level == 0)
   {
-    scalar Jm1;
-    tensor F;
-    get_modified_F_Jm1(F,
-                       Jm1,
+    get_modified_F_Jm1(result,
+                       Jm1_cache_level_0,
                        gradient_displacement_cache_level_0_1,
                        check_type,
                        true /* compute_J */,
                        stable_formulation);
 
-    scalar const I_1 = trace(C);
-
-    J_pow = pow(Jm1 + 1.0, static_cast<Number>(-2.0 * one_third));
-    c1    = -shear_modulus_stored * J_pow * one_third * I_1 +
-         bulk_modulus * 0.5 * ((Jm1 + 1.0) * (Jm1 + 1.0) - 1.0);
-    c2 = shear_modulus_stored * one_third * J_pow * 2.0 * one_third * I_1 +
-         bulk_modulus * (Jm1 + 1.0) * (Jm1 + 1.0);
+    E_cache_level_0 = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0_1,
+                                                        1.0,
+                                                        stable_formulation);
   }
   else
   {
-    J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
-    c1    = c1_coefficients.get_coefficient_cell(cell, q);
-    c2    = c2_coefficients.get_coefficient_cell(cell, q);
+    // dummy E and Jm1 sufficient.
   }
+
+  scalar const J_pow = get_J_pow(Jm1_cache_level_0, false /* force_evaluation */, cell, q);
+  scalar const c1    = get_c1(Jm1_cache_level_0,
+                           J_pow,
+                           E_cache_level_0,
+                           shear_modulus_stored,
+                           false /* force_evaluation */,
+                           cell,
+                           q);
+  scalar const c2    = get_c2(Jm1_cache_level_0,
+                           J_pow,
+                           E_cache_level_0,
+                           shear_modulus_stored,
+                           false /* force_evaluation */,
+                           cell,
+                           q);
 
   result = symmetric_gradient_increment * (-2.0 * c1);
   result +=
