@@ -375,7 +375,7 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
 
     tensor const C = transpose(F) * F;
 
-    scalar J_pow = get_J_pow(Jm1, force_evaluation, cell, q);
+    scalar const J_pow = get_J_pow(Jm1, force_evaluation, cell, q);
 
     if(stable_formulation)
     {
@@ -521,8 +521,8 @@ IncompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradi
       // dummy E sufficient.
     }
 
-    scalar J_pow = get_J_pow(Jm1, force_evaluation, cell, q);
-    scalar c1    = get_c1(Jm1, J_pow, E, shear_modulus_stored, force_evaluation, cell, q);
+    scalar const J_pow = get_J_pow(Jm1, force_evaluation, cell, q);
+    scalar const c1    = get_c1(Jm1, J_pow, E, shear_modulus_stored, force_evaluation, cell, q);
 
     tau = (F * transpose(F)) * shear_modulus_stored * J_pow;
     add_scaled_identity(tau, c1);
@@ -581,21 +581,21 @@ IncompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
     // dummy E and Jm1 sufficient.
   }
 
-  scalar J_pow = get_J_pow(Jm1_cache_level_0, false /* force_evaluation */, cell, q);
-  scalar c1    = get_c1(Jm1_cache_level_0,
-                     J_pow,
-                     E_cache_level_0,
-                     shear_modulus_stored,
-                     false /* force_evaluation */,
-                     cell,
-                     q);
-  scalar c2    = get_c2(Jm1_cache_level_0,
-                     J_pow,
-                     E_cache_level_0,
-                     shear_modulus_stored,
-                     false /* force_evaluation */,
-                     cell,
-                     q);
+  scalar const J_pow = get_J_pow(Jm1_cache_level_0, false /* force_evaluation */, cell, q);
+  scalar const c1    = get_c1(Jm1_cache_level_0,
+                           J_pow,
+                           E_cache_level_0,
+                           shear_modulus_stored,
+                           false /* force_evaluation */,
+                           cell,
+                           q);
+  scalar const c2    = get_c2(Jm1_cache_level_0,
+                           J_pow,
+                           E_cache_level_0,
+                           shear_modulus_stored,
+                           false /* force_evaluation */,
+                           cell,
+                           q);
 
   result = symmetric_gradient_increment * (-2.0 * c1);
   result +=
