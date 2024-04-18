@@ -625,11 +625,13 @@ IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
       one_over_J_coefficients.set_coefficient_cell(cell, q, 1.0 / (Jm1 + 1.0));
     }
 
-    tensor const C   = transpose(F) * F;
+    tensor const C = transpose(F) * F;
 
-    tensor const E  = get_E_scaled<dim,Number,Number>(Grad_d_lin, 1.0, stable_formulation);
-    scalar const c1 = get_c1(Jm1, J_pow, E, shear_modulus_stored, true /* force_evaluation */, cell, q);
-    scalar const c2 = get_c2(Jm1, J_pow, E, shear_modulus_stored, true /* force_evaluation */, cell, q);
+    tensor const E = get_E_scaled<dim, Number, Number>(Grad_d_lin, 1.0, stable_formulation);
+    scalar const c1 =
+      get_c1(Jm1, J_pow, E, shear_modulus_stored, true /* force_evaluation */, cell, q);
+    scalar const c2 =
+      get_c2(Jm1, J_pow, E, shear_modulus_stored, true /* force_evaluation */, cell, q);
 
     c1_coefficients.set_coefficient_cell(cell, q, c1);
     c2_coefficients.set_coefficient_cell(cell, q, c2);
