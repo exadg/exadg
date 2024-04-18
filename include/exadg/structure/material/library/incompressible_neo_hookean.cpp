@@ -362,27 +362,10 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
 
     scalar Jm1;
     tensor F;
-    if(cache_level == 0 or force_evaluation)
+    get_modified_F_Jm1(F, Jm1, gradient_displacement, check_type, cache_level == 0 or force_evaluation /* compute_J */, stable_formulation);
+    if(cache_level == 1 and not force_evaluation and stable_formulation)
     {
-      get_modified_F_Jm1(
-        F, Jm1, gradient_displacement, check_type, true /* compute_J */, stable_formulation);
-    }
-    else
-    {
-      if(cache_level == 1)
-      {
-        get_modified_F_Jm1(
-          F, Jm1, gradient_displacement, check_type, false /* compute_J */, stable_formulation);
-      }
-      else
-      {
-        F = deformation_gradient_coefficients.get_coefficient_cell(cell, q);
-      }
-
-      if(stable_formulation)
-      {
-        Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
-      }
+	  Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
     }
 
     tensor const C = transpose(F) * F;
@@ -517,7 +500,7 @@ IncompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradi
     scalar Jm1;
     tensor F;
     get_modified_F_Jm1(
-      F, Jm1, gradient_displacement, check_type, true /* compute_J */, stable_formulation);
+      F, Jm1, gradient_displacement, check_type, cache_level == 0 or force_evaluation /* compute_J */, stable_formulation);
 
     tensor E;
     if(cache_level == 0 or force_evaluation)
