@@ -967,6 +967,10 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
                        check_type,
                        cache_level == 0 or force_evaluation /* compute_J */,
                        stable_formulation);
+    if(cache_level == 1 and not force_evaluation and stable_formulation)
+    {
+      Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
+    }
 
     // Add fiber contribution.
     for(unsigned int i = 0; i < n_fiber_families; i++)
@@ -1052,8 +1056,8 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
       scalar const c1 = get_c1(Jm1, J_pow, E, shear_modulus_stored, force_evaluation, cell, q);
 
       // Add isochoric term, i.e.,
-      // mu * J^(-2/3) * F * F^T
-      // but apply push forward in next step
+      // mu * J^(-2/3) * I
+      // to apply push forward in next step
       add_scaled_identity(tau, shear_modulus_stored * J_pow);
 
       // Push forward the summed terms.

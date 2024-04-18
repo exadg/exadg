@@ -729,7 +729,7 @@ private:
   bool use_volume_force        = true;
   bool spatial_integration     = false;
   bool force_material_residual = false;
-  bool stable_formulation      = false;
+  bool stable_formulation      = true;
 
   unsigned int check_type  = 0;
   unsigned int cache_level = 0;

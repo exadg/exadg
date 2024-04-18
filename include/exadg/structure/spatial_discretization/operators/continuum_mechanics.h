@@ -212,19 +212,6 @@ inline DEAL_II_ALWAYS_INLINE //
     {
       AssertThrow(false, dealii::ExcMessage("Unexpected dim. Choose dim == 2 or dim == 3."));
     }
-
-    // Remove after check.
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const id = get_identity<dim, Number>();
-    auto const check     = std::abs(Jm1 - (determinant(id + gradient_displacement) - 1.0));
-    Number     max_check = 0.0;
-    for(unsigned int n = 0; n < dealii::VectorizedArray<Number>::size(); ++n)
-    {
-      if(check[n] > max_check)
-      {
-        max_check = check[n];
-      }
-    }
-    std::cout << "max_check = " << max_check << "##+ \n";
   }
   else
   {
