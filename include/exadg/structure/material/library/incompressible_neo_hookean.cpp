@@ -184,14 +184,8 @@ IncompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
 
     scalar Jm1;
     tensor F;
-    get_F_Jm1(Jm1,
-              F,
-              Grad_d_lin,
-              true /* force_evaluation */,
-              true /* compute_F */,
-              true /* compute_J */,
-              cell,
-              q);
+    get_modified_F_Jm1(
+      F, Jm1, Grad_d_lin, check_type, true /* force_evaluation */, stable_formulation);
 
     // Overwrite computed values with admissible stored ones
     if(check_type == 2)
@@ -352,50 +346,6 @@ IncompressibleNeoHookean<dim, Number>::get_J_pow(scalar const &     Jm1,
 }
 
 template<int dim, typename Number>
-void
-IncompressibleNeoHookean<dim, Number>::get_F_Jm1(scalar &           Jm1,
-                                                 tensor &           F,
-                                                 tensor const &     gradient_displacement,
-                                                 bool const         force_evaluation,
-                                                 bool const         compute_F,
-                                                 bool const         compute_J,
-                                                 unsigned int const cell,
-                                                 unsigned int const q) const
-{
-  AssertThrow(compute_J or compute_F,
-              dealii::ExcMessage("Function call has no effect, since no quantities are updated."));
-
-  scalar tmp_Jm1;
-  tensor tmp_F;
-  if(cache_level == 0 or force_evaluation or compute_F)
-  {
-    get_modified_F_Jm1(tmp_F,
-                       tmp_Jm1,
-                       gradient_displacement,
-                       check_type,
-                       compute_J and (cache_level == 0 or force_evaluation),
-                       stable_formulation);
-  }
-
-  if(compute_F)
-  {
-    F = tmp_F;
-  }
-
-  if(compute_J)
-  {
-    if(cache_level == 0 or force_evaluation)
-    {
-      Jm1 = tmp_Jm1;
-    }
-    else
-    {
-      Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
-    }
-  }
-}
-
-template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
   tensor const &     gradient_displacement,
@@ -413,14 +363,12 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
 
     scalar Jm1;
     tensor F;
-    get_F_Jm1(Jm1,
-              F,
-              gradient_displacement,
-              force_evaluation,
-              true /* compute_F */,
-              cache_level == 0 or stable_formulation /* compute_J */,
-              cell,
-              q);
+    get_modified_F_Jm1(F,
+                       Jm1,
+                       gradient_displacement,
+                       check_type,
+                       cache_level == 0 or stable_formulation /* compute_J */,
+                       stable_formulation);
 
     tensor const C = transpose(F) * F;
 
@@ -475,14 +423,12 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacemen
   tensor E_cache_level_0;
   if(cache_level == 0)
   {
-    get_F_Jm1(Jm1_cache_level_0,
-    		  E_cache_level_0 /* F */,
-              gradient_displacement_cache_level_0_1,
-              false /* force_evaluation */,
-			  false /* compute_F */,
-              true /* compute_J */,
-              cell,
-              q);
+    get_modified_F_Jm1(E_cache_level_0 /* F */,
+                       Jm1_cache_level_0,
+                       gradient_displacement_cache_level_0_1,
+                       check_type,
+                       true /* compute_J */,
+                       stable_formulation);
 
     E_cache_level_0 = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0_1,
                                                         1.0,
@@ -493,14 +439,12 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacemen
     // dummy Jm1 and E sufficient.
   }
 
-  scalar const J_pow = get_J_pow(Jm1_cache_level_0,
-		                         false /* force_evaluation */,
-								 cell, q);
+  scalar const J_pow = get_J_pow(Jm1_cache_level_0, false /* force_evaluation */, cell, q);
   scalar const c1    = get_c1(Jm1_cache_level_0,
                            J_pow,
                            E_cache_level_0,
                            shear_modulus_stored,
-						   false /* force_evaluation */,
+                           false /* force_evaluation */,
                            cell,
                            q);
   scalar const c2    = get_c2(Jm1_cache_level_0,
@@ -557,14 +501,8 @@ IncompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradi
 
     scalar Jm1;
     tensor F;
-    get_F_Jm1(Jm1,
-              F,
-              gradient_displacement,
-              force_evaluation,
-              true /* compute_F */,
-              cache_level == 0 or force_evaluation /* compute_J */,
-              cell,
-              q);
+    get_modified_F_Jm1(
+      F, Jm1, gradient_displacement, check_type, true /* compute_J */, stable_formulation);
 
     tensor E;
     if(cache_level == 0 or force_evaluation)
@@ -620,14 +558,12 @@ IncompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
   tensor E_cache_level_0;
   if(cache_level == 0)
   {
-    get_F_Jm1(Jm1_cache_level_0,
-              result /* F */,
-              gradient_displacement_cache_level_0_1,
-              false /* force_evaluation */,
-              false /* compute_F */,
-              true /* compute_J */,
-              cell,
-              q);
+    get_modified_F_Jm1(result,
+                       Jm1_cache_level_0,
+                       gradient_displacement_cache_level_0_1,
+                       check_type,
+                       true /* compute_J */,
+                       stable_formulation);
 
     E_cache_level_0 = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0_1,
                                                         1.0,

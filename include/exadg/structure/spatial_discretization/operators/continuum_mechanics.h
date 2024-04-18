@@ -81,18 +81,18 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if(stable_formulation)
   {
-	// E = 0.5 * (H + H^T + H^T * H)
-	// where H = gradient_displacement
-	E = ((0.5 * scl) * (gradient_displacement + transpose(gradient_displacement) +
-						transpose(gradient_displacement) * gradient_displacement));
+    // E = 0.5 * (H + H^T + H^T * H)
+    // where H = gradient_displacement
+    E = ((0.5 * scl) * (gradient_displacement + transpose(gradient_displacement) +
+                        transpose(gradient_displacement) * gradient_displacement));
   }
   else
   {
-	// E = 0.5 * (F^T * F - I)
-	E = get_F(gradient_displacement);
-	E = transpose(E) * E;
-	add_scaled_identity<dim, Number, Number>(E, -1.0);
-	E *= 0.5 * scl;
+    // E = 0.5 * (F^T * F - I)
+    E = get_F(gradient_displacement);
+    E = transpose(E) * E;
+    add_scaled_identity<dim, Number, Number>(E, -1.0);
+    E *= 0.5 * scl;
   }
 
   return E;
@@ -228,9 +228,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else
   {
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> F = gradient_displacement;
-    add_scaled_identity<dim,Number,Number>(F, 1.0);
-    Jm1 = determinant(F) - 1.0;
+    Jm1 = determinant(get_F(gradient_displacement)) - 1.0;
   }
 }
 
@@ -292,8 +290,7 @@ inline DEAL_II_ALWAYS_INLINE //
     bool const                                                      compute_J,
     bool const                                                      stable_formulation)
 {
-  F = gradient_displacement;
-  add_scaled_identity<dim, Number, Number>(F, 1.0);
+  F = get_F(gradient_displacement);
 
   if(compute_J)
   {

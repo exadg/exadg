@@ -170,7 +170,8 @@ DriverQuasiStatic<dim, Number>::do_solve()
       }
       catch(std::exception & exc)
       {
-        pcout << "  Exception thrown when solving the current load step:" << std::endl << std::endl
+        pcout << "  Exception thrown when solving the current load step:" << std::endl
+              << std::endl
               << "  " << exc.what() << std::endl
               << std::flush;
 

@@ -180,16 +180,6 @@ public:
             unsigned int const cell,
             unsigned int const q) const;
 
-  void
-  get_F_Jm1(scalar &           Jm1,
-            tensor &           F,
-            tensor const &     gradient_displacement,
-            bool const         force_evaluation,
-            bool const         compute_F,
-            bool const         compute_J,
-            unsigned int const cell,
-            unsigned int const q) const;
-
 private:
   /*
    * Store factors involving (potentially variable) shear modulus.
