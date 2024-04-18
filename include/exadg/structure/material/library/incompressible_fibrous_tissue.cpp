@@ -617,7 +617,7 @@ IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
 
     Jm1_coefficients.set_coefficient_cell(cell, q, Jm1);
 
-    scalar const J_pow = pow((Jm1 + 1.0), static_cast<Number>(-2.0 * one_third));
+    scalar const J_pow = get_J_pow(Jm1, true /* force_evaluation */, cell, q);
     J_pow_coefficients.set_coefficient_cell(cell, q, J_pow);
 
     if(spatial_integration)
@@ -626,13 +626,12 @@ IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
     }
 
     tensor const C   = transpose(F) * F;
-    scalar const I_1 = trace(C);
-    scalar const c1  = bulk_modulus * 0.5 * ((Jm1 + 1.0) * (Jm1 + 1.0) - 1.0) -
-                      shear_modulus_stored * one_third * J_pow * I_1;
-    c1_coefficients.set_coefficient_cell(cell, q, c1);
 
-    scalar const c2 = shear_modulus_stored * one_third * one_third * 2.0 * J_pow * I_1 +
-                      bulk_modulus * (Jm1 + 1.0) * (Jm1 + 1.0);
+    tensor const E  = get_E_scaled<dim,Number,Number>(Grad_d_lin, 1.0, stable_formulation);
+    scalar const c1 = get_c1(Jm1, J_pow, E, shear_modulus_stored, true /* force_evaluation */, cell, q);
+    scalar const c2 = get_c2(Jm1, J_pow, E, shear_modulus_stored, true /* force_evaluation */, cell, q);
+
+    c1_coefficients.set_coefficient_cell(cell, q, c1);
     c2_coefficients.set_coefficient_cell(cell, q, c2);
 
     // Set scalar linearization data for fiber contribution.
@@ -731,21 +730,28 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress(
 
     tensor const C = transpose(F) * F;
 
-    scalar J_pow, c1;
-    if(cache_level == 0)
+    scalar const J_pow = get_J_pow(Jm1, force_evaluation, cell, q);
+
+    if(stable_formulation)
     {
-      J_pow = pow((Jm1 + 1.0), static_cast<Number>(-2.0 * one_third));
-      c1    = bulk_modulus * 0.5 * ((Jm1 + 1.0) * (Jm1 + 1.0) - 1.0) -
-           shear_modulus_stored * J_pow * one_third * trace(C);
+      S = get_E_scaled<dim, Number, scalar>(gradient_displacement,
+                                            2.0 * shear_modulus_stored * J_pow,
+                                            true /* stable_formulation */);
+      add_scaled_identity<dim, Number>(
+        S, -one_third * trace(S) + 0.5 * bulk_modulus * get_JJm1<Number>(Jm1, stable_formulation));
+      S = invert(C) * S;
     }
     else
     {
-      J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
-      c1    = c1_coefficients.get_coefficient_cell(cell, q);
-    }
+      S = get_E_scaled<dim, Number, Number>(gradient_displacement,
+                                            1.0,
+                                            false /* stable_formulation */);
+      scalar const c1 =
+        get_c1(Jm1, J_pow, S /* E */, shear_modulus_stored, force_evaluation, cell, q);
 
-    S = invert(C) * c1;
-    add_scaled_identity(S, shear_modulus_stored * J_pow);
+      S = invert(C) * c1;
+      add_scaled_identity(S, shear_modulus_stored * J_pow);
+    }
 
     // Add fiber contribution.
     for(unsigned int i = 0; i < n_fiber_families; i++)
