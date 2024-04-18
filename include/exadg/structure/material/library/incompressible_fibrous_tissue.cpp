@@ -100,6 +100,9 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
   // vector if possible.
   if(cache_level > 0)
   {
+    Jm1_coefficients.initialize(matrix_free, quad_index, false, false);
+    Jm1_coefficients.set_coefficients(0.0);
+
     J_pow_coefficients.initialize(matrix_free, quad_index, false, false);
     J_pow_coefficients.set_coefficients(1.0);
 
@@ -552,6 +555,8 @@ IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
       }
     }
 
+    Jm1_coefficients.set_coefficient_cell(cell, q, Jm1);
+
     scalar const J_pow = pow((Jm1 + 1.0), static_cast<Number>(-2.0 * one_third));
     J_pow_coefficients.set_coefficient_cell(cell, q, J_pow);
 
@@ -662,8 +667,12 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress(
                        Jm1,
                        gradient_displacement,
                        check_type,
-                       cache_level == 0 /* compute_J */,
+                       cache_level == 0 or force_evaluation /* compute_J */,
                        stable_formulation);
+    if(cache_level == 1 and not force_evaluation and stable_formulation)
+    {
+      Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
+    }
 
     tensor const C = transpose(F) * F;
 

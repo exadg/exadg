@@ -295,6 +295,7 @@ private:
   std::shared_ptr<VectorType> e2_orientation;
 
   // scalar cache level
+  mutable VariableCoefficients<scalar> Jm1_coefficients;
   mutable VariableCoefficients<scalar> J_pow_coefficients;
   mutable VariableCoefficients<scalar> c_1_coefficients;
   mutable VariableCoefficients<scalar> c_2_coefficients;
