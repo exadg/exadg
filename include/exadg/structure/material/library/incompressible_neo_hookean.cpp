@@ -525,8 +525,10 @@ IncompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradi
       tau = get_E_scaled<dim, Number, scalar>(gradient_displacement,
                                               2.0 * shear_modulus_stored * J_pow,
                                               true /* stable_formulation */);
-      add_scaled_identity<dim, Number>(
-        tau, -one_third * trace(tau) + 0.5 * bulk_modulus * get_JJm1<Number>(Jm1, stable_formulation));
+      add_scaled_identity<dim, Number>(tau,
+                                       -one_third * trace(tau) +
+                                         0.5 * bulk_modulus *
+                                           get_JJm1<Number>(Jm1, stable_formulation));
     }
     else
     {
