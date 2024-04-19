@@ -276,6 +276,14 @@ private:
   dealii::VectorizedArray<Number>
   get_fiber_switch(vector const & M_1, tensor const & C) const;
 
+  dealii::VectorizedArray<Number>
+  get_E_i(tensor const & H_i,
+		  tensor const & C,
+		  bool const force_evaluation,
+		  unsigned int const i,
+		  unsigned int const cell,
+		  unsigned int const q) const;
+
   unsigned int dof_index;
   unsigned int quad_index;
 

@@ -589,6 +589,29 @@ IncompressibleFibrousTissue<dim, Number>::get_fiber_switch(vector const & M_1,
 }
 
 template<int dim, typename Number>
+dealii::VectorizedArray<Number>
+IncompressibleFibrousTissue<dim, Number>::get_E_i(tensor const & H_i,
+												  tensor const & C,
+												  bool const force_evaluation,
+												  unsigned int const i,
+												  unsigned int const cell,
+												  unsigned int const q) const
+{
+  scalar E_i;
+
+  if(cache_level == 0 or force_evaluation)
+  {
+    E_i = scalar_product(H_i, C - I);
+  }
+  else
+  {
+    E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
+  }
+
+  return E_i;
+}
+
+template<int dim, typename Number>
 void
 IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
   std::shared_ptr<CellIntegrator<dim, dim /* n_components */, Number>> const integrator_lin,
@@ -675,7 +698,7 @@ IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
       // Compute or load structure tensor.
       tensor const H_i = get_structure_tensor(M_1, M_2_cache_level_0_1, i, cell, q);
 
-      scalar const E_i = scalar_product(H_i, C - I);
+      scalar const E_i = get_E_i(H_i, C, true /* force_evaluation */, i, cell, q);
       E_i_coefficients[i].set_coefficient_cell(cell, q, E_i);
 
       scalar const c3 = get_c3(M_1, C, E_i, true /* force_evaluation */, i, cell, q);
@@ -799,15 +822,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress(
       tensor const H_i = get_structure_tensor(M_1_cache_level_0_1, M_2_cache_level_0_1, i, cell, q);
 
       // Compute or load fiber strain-like quantity.
-      scalar E_i;
-      if(cache_level == 0)
-      {
-        E_i = scalar_product(H_i, C - I);
-      }
-      else
-      {
-        E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
-      }
+      scalar const E_i = get_E_i(H_i, C, force_evaluation, i, cell, q);
 
       // Compute or load c3 coefficient.
       scalar const c3 = get_c3(M_1_cache_level_0_1, C, E_i, force_evaluation, i, cell, q);
@@ -924,15 +939,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
     tensor const H_i = get_structure_tensor(M_1_cache_level_0_1, M_2_cache_level_0_1, i, cell, q);
 
     // Compute or load fiber strain-like quantity.
-    scalar E_i;
-    if(cache_level == 0)
-    {
-      E_i = scalar_product(H_i, C_cache_level_0_1 - I);
-    }
-    else
-    {
-      E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
-    }
+    scalar const E_i = get_E_i(H_i, C_cache_level_0_1, false /* force_evaluation */, i, cell, q);
 
     // Compute or load c3 coefficient.
     scalar const c3 =
@@ -996,15 +1003,7 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
       tensor const H_i = get_structure_tensor(M_1_cache_level_0_1, M_2_cache_level_0_1, i, cell, q);
 
       // Compute or load fiber strain-like quantity.
-      scalar E_i;
-      if(cache_level == 0)
-      {
-        E_i = scalar_product(H_i, C_cache_level_0_1 - I);
-      }
-      else
-      {
-        E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
-      }
+      scalar const E_i = get_E_i(H_i, C_cache_level_0_1, force_evaluation, i, cell, q);
 
       // Compute or load c3 coefficient.
       scalar const c3 =
@@ -1155,15 +1154,7 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
     tensor const H_i = get_structure_tensor(M_1_cache_level_0_1, M_2_cache_level_0_1, i, cell, q);
 
     // Compute or load fiber strain-like quantity.
-    scalar E_i;
-    if(cache_level == 0)
-    {
-      E_i = scalar_product(H_i, C - I);
-    }
-    else
-    {
-      E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
-    }
+    scalar const E_i = get_E_i(H_i, C, false /* force_evaluation */, i, cell, q);
 
     // Compute or load c3 coefficient.
     scalar const c3 = get_c3(M_1_cache_level_0_1, C, E_i, false /* force_evaluation */, i, cell, q);
