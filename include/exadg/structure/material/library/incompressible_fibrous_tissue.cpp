@@ -547,6 +547,10 @@ IncompressibleFibrousTissue<dim, Number>::get_J_pow(scalar const &     Jm1,
   return J_pow;
 }
 
+// Load the structure tensor (constituents) depending on the cache_level.
+// Note that here, we *never* enforce evaluation compared to comparable
+// member functions, since the structure tensor or its constituents
+// are considered material parameters.
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleFibrousTissue<dim, Number>::get_structure_tensor(vector const &     M_1,
@@ -561,10 +565,11 @@ IncompressibleFibrousTissue<dim, Number>::get_structure_tensor(vector const &   
   {
     vector M_3 = cross_product_3d(M_1, M_2);
 
-    // clang format off
-    H = fiber_H_11 * outer_product(M_1, M_1) + fiber_H_22 * outer_product(M_2, M_2) +
+    // clang-format off
+    H = fiber_H_11 * outer_product(M_1, M_1) +
+        fiber_H_22 * outer_product(M_2, M_2) +
         fiber_H_33 * outer_product(M_3, M_3);
-    // clang format on
+    // clang-format on
   }
   else
   {
@@ -574,6 +579,7 @@ IncompressibleFibrousTissue<dim, Number>::get_structure_tensor(vector const &   
   return H;
 }
 
+// Function to evaluate the fiber_switch, not using/loading any data.
 template<int dim, typename Number>
 dealii::VectorizedArray<Number>
 IncompressibleFibrousTissue<dim, Number>::get_fiber_switch(vector const & M_1,
@@ -590,12 +596,12 @@ IncompressibleFibrousTissue<dim, Number>::get_fiber_switch(vector const & M_1,
 
 template<int dim, typename Number>
 dealii::VectorizedArray<Number>
-IncompressibleFibrousTissue<dim, Number>::get_E_i(tensor const & H_i,
-												  tensor const & C,
-												  bool const force_evaluation,
-												  unsigned int const i,
-												  unsigned int const cell,
-												  unsigned int const q) const
+IncompressibleFibrousTissue<dim, Number>::get_E_i(tensor const &     H_i,
+                                                  tensor const &     C,
+                                                  bool const         force_evaluation,
+                                                  unsigned int const i,
+                                                  unsigned int const cell,
+                                                  unsigned int const q) const
 {
   scalar E_i;
 
