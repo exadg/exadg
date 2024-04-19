@@ -413,7 +413,7 @@ CompressibleNeoHookean<dim, Number>::kirchhoff_stress(
 
     scalar Jm1;
     tensor F;
-    if(cache_level == 0 or not stable_formulation)
+    if(cache_level == 0 or (not stable_formulation))
     {
       get_modified_F_Jm1(F,
                          Jm1,

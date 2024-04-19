@@ -368,7 +368,7 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
                        check_type,
                        cache_level == 0 or force_evaluation /* compute_J */,
                        stable_formulation);
-    if(cache_level == 1 and not force_evaluation and stable_formulation)
+    if(cache_level == 1 and (not force_evaluation) and stable_formulation)
     {
       Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
     }
@@ -523,7 +523,7 @@ IncompressibleNeoHookean<dim, Number>::kirchhoff_stress(
                        check_type,
                        cache_level == 0 or force_evaluation /* compute_J */,
                        stable_formulation);
-    if(cache_level == 1 and not force_evaluation and stable_formulation)
+    if(cache_level == 1 and (not force_evaluation) and stable_formulation)
     {
       Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
     }
