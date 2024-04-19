@@ -502,6 +502,32 @@ IncompressibleFibrousTissue<dim, Number>::get_c2(scalar const &     Jm1,
 
 template<int dim, typename Number>
 dealii::VectorizedArray<Number>
+IncompressibleFibrousTissue<dim, Number>::get_c3(vector const &     M_1,
+                                                 tensor const &     C,
+                                                 scalar const &     E_i,
+                                                 bool const         force_evaluation,
+                                                 unsigned int const i,
+                                                 unsigned int const cell,
+                                                 unsigned int const q) const
+{
+  scalar c3;
+
+  if(cache_level == 0 or force_evaluation)
+  {
+    scalar const fiber_switch = get_fiber_switch(M_1, C);
+
+    c3 = (fiber_switch * 2.0 * fiber_k_1) * exp(fiber_k_2 * E_i * E_i);
+  }
+  else
+  {
+    c3 = c3_coefficients[i].get_coefficient_cell(cell, q);
+  }
+
+  return c3;
+}
+
+template<int dim, typename Number>
+dealii::VectorizedArray<Number>
 IncompressibleFibrousTissue<dim, Number>::get_J_pow(scalar const &     Jm1,
                                                     bool const         force_evaluation,
                                                     unsigned int const cell,
@@ -652,8 +678,7 @@ IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
       scalar const E_i = scalar_product(H_i, C - I);
       E_i_coefficients[i].set_coefficient_cell(cell, q, E_i);
 
-      scalar const fiber_switch = get_fiber_switch(M_1, C);
-      scalar const c3           = (fiber_switch * 2.0 * fiber_k_1) * exp(fiber_k_2 * E_i * E_i);
+      scalar const c3 = get_c3(M_1, C, E_i, true /* force_evaluation */, i, cell, q);
       c3_coefficients[i].set_coefficient_cell(cell, q, c3);
     }
 
@@ -785,16 +810,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress(
       }
 
       // Compute or load c3 coefficient.
-      scalar c3;
-      if(cache_level == 0)
-      {
-        scalar const fiber_switch = get_fiber_switch(M_1_cache_level_0_1, C);
-        c3                        = (fiber_switch * 2.0 * fiber_k_1) * exp(fiber_k_2 * E_i * E_i);
-      }
-      else
-      {
-        c3 = c3_coefficients[i].get_coefficient_cell(cell, q);
-      }
+      scalar const c3 = get_c3(M_1_cache_level_0_1, C, E_i, force_evaluation, i, cell, q);
 
       S += (c3 * E_i) * H_i;
     }
@@ -919,17 +935,8 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
     }
 
     // Compute or load c3 coefficient.
-    scalar c3;
-    if(cache_level == 0)
-    {
-      scalar const fiber_switch = get_fiber_switch(M_1_cache_level_0_1, C_cache_level_0_1);
-
-      c3 = (fiber_switch * 2.0 * fiber_k_1) * exp(fiber_k_2 * E_i * E_i);
-    }
-    else
-    {
-      c3 = c3_coefficients[i].get_coefficient_cell(cell, q);
-    }
+    scalar const c3 =
+      get_c3(M_1_cache_level_0_1, C_cache_level_0_1, E_i, false /* force_evaluation */, i, cell, q);
 
     Dd_S += H_i * (c3 * (2.0 * fiber_k_2 * E_i * E_i + 1.0) *
                    scalar_product(H_i,
@@ -1000,16 +1007,8 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
       }
 
       // Compute or load c3 coefficient.
-      scalar c3;
-      if(cache_level == 0)
-      {
-        scalar const fiber_switch = get_fiber_switch(M_1_cache_level_0_1, C_cache_level_0_1);
-        c3                        = (fiber_switch * 2.0 * fiber_k_1) * exp(fiber_k_2 * E_i * E_i);
-      }
-      else
-      {
-        c3 = c3_coefficients[i].get_coefficient_cell(cell, q);
-      }
+      scalar const c3 =
+        get_c3(M_1_cache_level_0_1, C_cache_level_0_1, E_i, force_evaluation, i, cell, q);
 
       // Add terms in non-push-forwarded form.
       tau += (c3 * E_i) * H_i;
@@ -1167,16 +1166,7 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
     }
 
     // Compute or load c3 coefficient.
-    scalar c3;
-    if(cache_level == 0)
-    {
-      scalar const fiber_switch = get_fiber_switch(M_1_cache_level_0_1, C);
-      c3                        = (fiber_switch * 2.0 * fiber_k_1) * exp(fiber_k_2 * E_i * E_i);
-    }
-    else
-    {
-      c3 = c3_coefficients[i].get_coefficient_cell(cell, q);
-    }
+    scalar const c3 = get_c3(M_1_cache_level_0_1, C, E_i, false /* force_evaluation */, i, cell, q);
 
     // Compute or load H_i * C tensor.
     tensor H_i_times_C, C_times_H_i;

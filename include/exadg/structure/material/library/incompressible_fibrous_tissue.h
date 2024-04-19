@@ -252,6 +252,15 @@ private:
          unsigned int const q) const;
 
   dealii::VectorizedArray<Number>
+  get_c3(vector const &     M_1,
+         tensor const &     C,
+         scalar const &     E_i,
+         bool const         force_evaluation,
+         unsigned int const i,
+         unsigned int const cell,
+         unsigned int const q) const;
+
+  dealii::VectorizedArray<Number>
   get_J_pow(scalar const &     Jm1,
             bool const         force_evaluation,
             unsigned int const cell,
