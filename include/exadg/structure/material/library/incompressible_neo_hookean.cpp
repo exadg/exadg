@@ -442,7 +442,7 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacemen
   }
   else
   {
-    // dummy Jm1 and E sufficient.
+    // Dummy Jm1 and E sufficient.
   }
 
   scalar const J_pow = get_J_pow(Jm1_cache_level_0, false /* force_evaluation */, cell, q);
@@ -538,7 +538,7 @@ IncompressibleNeoHookean<dim, Number>::kirchhoff_stress(tensor const &     gradi
       }
       else
       {
-        // dummy E sufficient.
+        // Dummy E sufficient.
       }
 
       scalar const c1 =
@@ -599,7 +599,7 @@ IncompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
   }
   else
   {
-    // dummy E and Jm1 sufficient.
+    // Dummy E and Jm1 sufficient.
   }
 
   scalar const J_pow = get_J_pow(Jm1_cache_level_0, false /* force_evaluation */, cell, q);

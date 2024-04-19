@@ -767,8 +767,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress(
       }
       else
       {
-        // M_1 : dummy vector suffices for function call.
-        // M_2 : dummy vector suffices for function call.
+        // Dummy M_1 and M_2 sufficient.
       }
 
       // Compute or load structure tensor.
@@ -841,7 +840,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
   }
   else
   {
-    // dummy Jm1 and E sufficient.
+    // Dummy Jm1 and E sufficient.
   }
 
   scalar const J_pow = get_J_pow(Jm1_cache_level_0, false /* force_evaluation */, cell, q);
@@ -902,9 +901,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
     }
     else
     {
-      // M_1 : dummy vector suffices for function call.
-      // M_2 : dummy vector suffices for function call.
-      // C   : dummy tensor suffices for function call.
+      // Dummy M_1, M_2 and C sufficient.
     }
 
     // Compute or load structure tensor.
@@ -914,8 +911,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
     scalar E_i;
     if(cache_level == 0)
     {
-      tensor C_minus_I = C_cache_level_0_1 - I;
-      E_i              = scalar_product(H_i, C_minus_I);
+      E_i = scalar_product(H_i, C_cache_level_0_1 - I);
     }
     else
     {
@@ -986,9 +982,7 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
       }
       else
       {
-        // M_1 : dummy vector suffices for function call.
-        // M_2 : dummy vector suffices for function call.
-        // C   : dummy tensor suffices for function call.
+        // Dummy M_1, M_2 and C sufficient.
       }
 
       // Compute or load structure tensor.
@@ -998,8 +992,7 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
       scalar E_i;
       if(cache_level == 0)
       {
-        tensor C_minus_I = C_cache_level_0_1 - I;
-        E_i              = scalar_product(H_i, C_minus_I);
+        E_i = scalar_product(H_i, C_cache_level_0_1 - I);
       }
       else
       {
@@ -1031,7 +1024,7 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
     }
     else
     {
-      // dummy E sufficient.
+      // Dummy E sufficient.
     }
 
     // tau holds fiber terms in non-push-forwarded form, i.e.,
@@ -1118,7 +1111,7 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
   }
   else
   {
-    // dummy E and Jm1 sufficient.
+    // Dummy E and Jm1 sufficient.
   }
 
   scalar const J_pow = get_J_pow(Jm1_cache_level_0, false /* force_evaluation */, cell, q);
@@ -1166,8 +1159,7 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
     scalar E_i;
     if(cache_level == 0)
     {
-      tensor C_minus_I = C - I;
-      E_i              = scalar_product(H_i, C_minus_I);
+      E_i = scalar_product(H_i, C - I);
     }
     else
     {
