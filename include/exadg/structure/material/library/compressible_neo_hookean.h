@@ -107,30 +107,28 @@ public:
    * S = shear modulus * I - ( shear_modulus - 2.0 * lambda * ln(J) ) * C^(-1)
    *
    */
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
+  tensor
+  second_piola_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
                                 unsigned int const cell,
                                 unsigned int const q,
                                 bool const         force_evaluation = false) const final;
 
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  tensor
   second_piola_kirchhoff_stress_displacement_derivative(
     tensor const &     gradient_increment,
-    tensor const &     gradient_displacement_cache_level_0,
-    tensor const &     deformation_gradient,
+    tensor const &     gradient_displacement_cache_level_0_1,
     unsigned int const cell,
     unsigned int const q) const final;
 
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  kirchhoff_stress(tensor const &     gradient_displacement,
+  tensor
+  kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
                    unsigned int const cell,
                    unsigned int const q,
                    bool const         force_evaluation = false) const final;
 
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  tensor
   contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
-                          tensor const &     gradient_displacement_cache_level_0,
-                          tensor const &     deformation_gradient_cache_level_1,
+                          tensor const &     gradient_displacement_cache_level_0_1,
                           unsigned int const cell,
                           unsigned int const q) const final;
 
@@ -142,10 +140,10 @@ public:
     std::shared_ptr<CellIntegrator<dim, dim /* n_components */, Number>> const integrator_lin,
     unsigned int const                                                         cell) const final;
 
-  dealii::VectorizedArray<Number>
+  scalar
   one_over_J(unsigned int const cell, unsigned int const q) const final;
 
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  tensor
   deformation_gradient(unsigned int const cell, unsigned int const q) const final;
 
 private:

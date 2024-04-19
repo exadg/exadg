@@ -51,12 +51,12 @@ public:
    * (not to be confused with the deformation gradient).
    */
   virtual tensor
-  second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
+  second_piola_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
                                 unsigned int const cell,
                                 unsigned int const q,
                                 bool const         force_evaluation = false) const
   {
-    (void)gradient_displacement;
+    (void)gradient_displacement_cache_level_0_1;
     (void)cell;
     (void)q;
     (void)force_evaluation;
@@ -78,14 +78,12 @@ public:
   virtual tensor
   second_piola_kirchhoff_stress_displacement_derivative(
     tensor const &     gradient_increment,
-    tensor const &     gradient_displacement_cache_level_0,
-    tensor const &     deformation_gradient,
+    tensor const &     gradient_displacement_cache_level_0_1,
     unsigned int const cell,
     unsigned int const q) const
   {
     (void)gradient_increment;
-    (void)gradient_displacement_cache_level_0;
-    (void)deformation_gradient;
+    (void)gradient_displacement_cache_level_0_1;
     (void)cell;
     (void)q;
     AssertThrow(false,
@@ -103,12 +101,12 @@ public:
    * (not to be confused with the deformation gradient).
    */
   virtual tensor
-  kirchhoff_stress(tensor const &     gradient_displacement,
+  kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
                    unsigned int const cell,
                    unsigned int const q,
                    bool const         force_evalution = false) const
   {
-    (void)gradient_displacement;
+    (void)gradient_displacement_cache_level_0_1;
     (void)cell;
     (void)q;
     (void)force_evalution;
@@ -127,14 +125,12 @@ public:
    */
   virtual tensor
   contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
-                          tensor const &     gradient_displacement_cache_level_0,
-                          tensor const &     deformation_gradient_cache_level_1,
+                          tensor const &     gradient_displacement_cache_level_0_1,
                           unsigned int const cell,
                           unsigned int const q) const
   {
     (void)symmetric_gradient_increment;
-    (void)gradient_displacement_cache_level_0;
-    (void)deformation_gradient_cache_level_1;
+    (void)gradient_displacement_cache_level_0_1;
     (void)cell;
     (void)q;
     AssertThrow(false,

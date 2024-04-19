@@ -178,31 +178,29 @@ public:
    *
    */
 
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
+  tensor
+  second_piola_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
                                 unsigned int const cell,
                                 unsigned int const q,
                                 bool const         force_evaluation = false) const final;
 
 
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  tensor
   second_piola_kirchhoff_stress_displacement_derivative(
     tensor const &     gradient_increment,
-    tensor const &     gradient_displacement_cache_level_0,
-    tensor const &     deformation_gradient,
+    tensor const &     gradient_displacement_cache_level_0_1,
     unsigned int const cell,
     unsigned int const q) const final;
 
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  kirchhoff_stress(tensor const &     gradient_displacement,
+  tensor
+  kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
                    unsigned int const cell,
                    unsigned int const q,
                    bool const         force_evaluation = false) const final;
 
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  tensor
   contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
-                          tensor const &     gradient_displacement_cache_level_0,
-                          tensor const &     deformation_gradient_cache_level_1,
+                          tensor const &     gradient_displacement_cache_level_0_1,
                           unsigned int const cell,
                           unsigned int const q) const final;
 
@@ -214,10 +212,10 @@ public:
     std::shared_ptr<CellIntegrator<dim, dim /* n_components */, Number>> const integrator_lin,
     unsigned int const                                                         cell) const final;
 
-  dealii::VectorizedArray<Number>
+  scalar
   one_over_J(unsigned int const cell, unsigned int const q) const final;
 
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  tensor
   deformation_gradient(unsigned int const cell, unsigned int const q) const final;
 
 private:
@@ -233,7 +231,7 @@ private:
   /*
    * Helper functions to replace frequently appearing terms.
    */
-  dealii::VectorizedArray<Number>
+  scalar
   get_c1(scalar const &     Jm1,
          scalar const &     J_pow,
          tensor const &     E,
@@ -242,7 +240,7 @@ private:
          unsigned int const cell,
          unsigned int const q) const;
 
-  dealii::VectorizedArray<Number>
+  scalar
   get_c2(scalar const &     Jm1,
          scalar const &     J_pow,
          tensor const &     E,
@@ -251,7 +249,7 @@ private:
          unsigned int const cell,
          unsigned int const q) const;
 
-  dealii::VectorizedArray<Number>
+  scalar
   get_c3(vector const &     M_1,
          tensor const &     E,
          scalar const &     E_i,
@@ -260,23 +258,23 @@ private:
          unsigned int const cell,
          unsigned int const q) const;
 
-  dealii::VectorizedArray<Number>
+  scalar
   get_J_pow(scalar const &     Jm1,
             bool const         force_evaluation,
             unsigned int const cell,
             unsigned int const q) const;
 
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  tensor
   get_structure_tensor(vector const &     M_1,
                        vector const &     M_2,
                        unsigned int const i,
                        unsigned int const cell,
                        unsigned int const q) const;
 
-  dealii::VectorizedArray<Number>
+  scalar
   get_fiber_switch(vector const & M_1, tensor const & E) const;
 
-  dealii::VectorizedArray<Number>
+  scalar
   get_E_i(tensor const &     H_i,
           tensor const &     C,
           bool const         force_evaluation,

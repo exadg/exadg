@@ -614,38 +614,32 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       // material gradient of the linearization vector and displacement gradient only needed for
       // cache_level 0 or 1
       scalar one_over_J;
-      tensor Grad_d_lin_cache_level_0_1, F_lin_cache_level_0_1;
-      if(this->operator_data.cache_level == 0)
+      tensor Grad_d_lin_cache_level_0_1;
+      if(this->operator_data.cache_level < 2)
       {
         Grad_d_lin_cache_level_0_1 = integrator_lin->get_gradient(q);
 
         scalar Jm1_lin;
-        get_modified_F_Jm1(F_lin_cache_level_0_1,
+        tensor F_lin;
+        get_modified_F_Jm1(F_lin,
                            Jm1_lin,
                            Grad_d_lin_cache_level_0_1,
                            this->operator_data.check_type,
-                           true /* compute_J */,
+                           this->operator_data.cache_level == 0 /* compute_J */,
                            this->operator_data.stable_formulation);
 
-        one_over_J = 1.0 / (Jm1_lin + 1.0);
-      }
-      else if(this->operator_data.cache_level == 1)
-      {
-        Grad_d_lin_cache_level_0_1 = integrator_lin->get_gradient(q);
-
-        scalar Jm1_lin;
-        get_modified_F_Jm1(F_lin_cache_level_0_1,
-                           Jm1_lin,
-                           Grad_d_lin_cache_level_0_1,
-                           this->operator_data.check_type,
-                           false /* compute_J */,
-                           this->operator_data.stable_formulation);
-
-        one_over_J = material->one_over_J(integrator.get_current_cell_index(), q);
+        if(this->operator_data.cache_level == 0)
+        {
+          one_over_J = 1.0 / (Jm1_lin + 1.0);
+        }
+        else
+        {
+          one_over_J = material->one_over_J(integrator.get_current_cell_index(), q);
+        }
       }
       else
       {
-        // dummy F_lin and Grad_d_lin sufficient
+        // dummy Grad_d_lin sufficient
         one_over_J = material->one_over_J(integrator.get_current_cell_index(), q);
       }
 
@@ -659,7 +653,6 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       tensor delta_tau =
         material->contract_with_J_times_C(0.5 * (grad_delta + transpose(grad_delta)),
                                           Grad_d_lin_cache_level_0_1,
-                                          F_lin_cache_level_0_1,
                                           integrator.get_current_cell_index(),
                                           q);
 
@@ -688,6 +681,7 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       if(this->operator_data.cache_level < 2)
       {
         Grad_d_lin_cache_level_0_1 = integrator_lin->get_gradient(q);
+
         scalar Jm1_lin;
         get_modified_F_Jm1(F_lin,
                            Jm1_lin,
@@ -713,9 +707,8 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
 
       // 1. elastic and initial displacement stiffness contributions
       tensor delta_P =
-        F_lin *
-        material->second_piola_kirchhoff_stress_displacement_derivative(
-          Grad_delta, Grad_d_lin_cache_level_0_1, F_lin, integrator.get_current_cell_index(), q);
+        F_lin * material->second_piola_kirchhoff_stress_displacement_derivative(
+                  Grad_delta, Grad_d_lin_cache_level_0_1, integrator.get_current_cell_index(), q);
 
       // 2. geometric (or initial stress) stiffness contribution
       delta_P += Grad_delta * S_lin;

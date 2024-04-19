@@ -73,19 +73,17 @@ public:
                     bool const                              large_deformation,
                     unsigned int const                      check_type);
 
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
+  tensor
+  second_piola_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
                                 unsigned int const cell,
                                 unsigned int const q,
                                 bool const         force_evaluation) const final;
 
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  second_piola_kirchhoff_stress_displacement_derivative(
-    tensor const &     gradient_increment,
-    tensor const &     gradient_displacement_cache_level_0,
-    tensor const &     deformation_gradient,
-    unsigned int const cell,
-    unsigned int const q) const final;
+  tensor
+  second_piola_kirchhoff_stress_displacement_derivative(tensor const &     gradient_increment,
+                                                        tensor const &     gradient_displacement,
+                                                        unsigned int const cell,
+                                                        unsigned int const q) const final;
 
 private:
   /*
@@ -108,11 +106,10 @@ private:
    * Sij = f2 * (Eij + Eji),    for i, j = 1, ..., dim and i != j.
    * The latter symmetrizes the off-diagonal entries in the strain argument to reduce computations.
    */
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  second_piola_kirchhoff_stress_symmetrize(
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & strain,
-    unsigned int const                                              cell,
-    unsigned int const                                              q) const;
+  tensor
+  second_piola_kirchhoff_stress_symmetrize(tensor const &     strain,
+                                           unsigned int const cell,
+                                           unsigned int const q) const;
 
   /*
    * Store factors involving (potentially variable) Young's modulus.
