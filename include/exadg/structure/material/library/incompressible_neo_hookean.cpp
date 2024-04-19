@@ -413,7 +413,7 @@ template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacement_derivative(
   tensor const &     gradient_increment,
-  tensor const &     gradient_displacement_cache_level_0_1,
+  tensor const &     gradient_displacement_cache_level_0,
   tensor const &     deformation_gradient,
   unsigned int const cell,
   unsigned int const q) const
@@ -431,12 +431,12 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacemen
   {
     get_modified_F_Jm1(E_cache_level_0 /* F */,
                        Jm1_cache_level_0,
-                       gradient_displacement_cache_level_0_1,
+                       gradient_displacement_cache_level_0,
                        check_type,
                        true /* compute_J */,
                        stable_formulation);
 
-    E_cache_level_0 = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0_1,
+    E_cache_level_0 = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0,
                                                         1.0,
                                                         stable_formulation);
   }
@@ -560,8 +560,8 @@ template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
   tensor const &     symmetric_gradient_increment,
-  tensor const &     gradient_displacement_cache_level_0_1,
-  tensor const &     deformation_gradient,
+  tensor const &     gradient_displacement_cache_level_0,
+  tensor const &     deformation_gradient_cache_level_1,
   unsigned int const cell,
   unsigned int const q) const
 {
@@ -575,7 +575,7 @@ IncompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
   tensor C;
   if(cache_level < 2)
   {
-    C = transpose(deformation_gradient) * deformation_gradient;
+    C = transpose(deformation_gradient_cache_level_1) * deformation_gradient_cache_level_1;
   }
   else
   {
@@ -588,12 +588,12 @@ IncompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
   {
     get_modified_F_Jm1(result,
                        Jm1_cache_level_0,
-                       gradient_displacement_cache_level_0_1,
+                       gradient_displacement_cache_level_0,
                        check_type,
                        true /* compute_J */,
                        stable_formulation);
 
-    E_cache_level_0 = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0_1,
+    E_cache_level_0 = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0,
                                                         1.0,
                                                         stable_formulation);
   }

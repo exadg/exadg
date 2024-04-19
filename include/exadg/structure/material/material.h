@@ -38,6 +38,9 @@ template<int dim, typename Number>
 class Material
 {
 public:
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
+
   virtual ~Material()
   {
   }
@@ -47,12 +50,11 @@ public:
    * the gradient of the displacement field with respect to the reference configuration
    * (not to be confused with the deformation gradient).
    */
-  virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  second_piola_kirchhoff_stress(
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
-    unsigned int const                                              cell,
-    unsigned int const                                              q,
-    bool const                                                      force_evaluation = false) const
+  virtual tensor
+  second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
+                                unsigned int const cell,
+                                unsigned int const q,
+                                bool const         force_evaluation = false) const
   {
     (void)gradient_displacement;
     (void)cell;
@@ -62,7 +64,7 @@ public:
                 dealii::ExcMessage("For a total Lagrangian formulation,"
                                    "overwrite this method in derived class."));
 
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> dummy;
+    tensor dummy;
     return dummy;
   }
 
@@ -73,17 +75,16 @@ public:
    * "gradient_increment" and deformation gradient at the current linearization point
    * "deformation_gradient".
    */
-  virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  virtual tensor
   second_piola_kirchhoff_stress_displacement_derivative(
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_increment,
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const &
-      gradient_displacement_cache_level_0_1,
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & deformation_gradient,
-    unsigned int const                                              cell,
-    unsigned int const                                              q) const
+    tensor const &     gradient_increment,
+    tensor const &     gradient_displacement_cache_level_0,
+    tensor const &     deformation_gradient,
+    unsigned int const cell,
+    unsigned int const q) const
   {
     (void)gradient_increment;
-    (void)gradient_displacement_cache_level_0_1;
+    (void)gradient_displacement_cache_level_0;
     (void)deformation_gradient;
     (void)cell;
     (void)q;
@@ -91,7 +92,7 @@ public:
                 dealii::ExcMessage("For a total Lagrangian formulation, "
                                    "overwrite this method in derived class."));
 
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> dummy;
+    tensor dummy;
     return dummy;
   }
 
@@ -101,12 +102,11 @@ public:
    * displacement field with respect to the reference configuration
    * (not to be confused with the deformation gradient).
    */
-  virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  kirchhoff_stress(
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
-    unsigned int const                                              cell,
-    unsigned int const                                              q,
-    bool const                                                      force_evalution = false) const
+  virtual tensor
+  kirchhoff_stress(tensor const &     gradient_displacement,
+                   unsigned int const cell,
+                   unsigned int const q,
+                   bool const         force_evalution = false) const
   {
     (void)gradient_displacement;
     (void)cell;
@@ -116,34 +116,32 @@ public:
                 dealii::ExcMessage("For a Lagrangian formulation in spatial domain, "
                                    "overwrite this method in derived class."));
 
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> dummy;
+    tensor dummy;
     return dummy;
   }
 
   /*
    * Lagrangian formulation with integration in the spatial configuration: provide
-   * operation J*C:(X), where C is the spatial tangent tensor and X is a symmetric
+   * operation J*c:(X), where c is the spatial tangent tensor and X is a symmetric
    * second order tensor.
    */
-  virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  contract_with_J_times_C(
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & symmetric_gradient_increment,
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const &
-      gradient_displacement_cache_level_0_1,
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & deformation_gradient,
-    unsigned int const                                              cell,
-    unsigned int const                                              q) const
+  virtual tensor
+  contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
+                          tensor const &     gradient_displacement_cache_level_0,
+                          tensor const &     deformation_gradient_cache_level_1,
+                          unsigned int const cell,
+                          unsigned int const q) const
   {
     (void)symmetric_gradient_increment;
-    (void)gradient_displacement_cache_level_0_1;
-    (void)deformation_gradient;
+    (void)gradient_displacement_cache_level_0;
+    (void)deformation_gradient_cache_level_1;
     (void)cell;
     (void)q;
     AssertThrow(false,
                 dealii::ExcMessage("For a Lagrangian formulation in spatial domain, "
                                    "overwrite this method in derived class."));
 
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> dummy;
+    tensor dummy;
     return dummy;
   }
 
@@ -160,7 +158,7 @@ public:
     (void)cell;
   }
 
-  virtual dealii::VectorizedArray<Number>
+  virtual scalar
   one_over_J(unsigned int const cell, unsigned int const q) const
   {
     (void)cell;
@@ -169,11 +167,11 @@ public:
                 dealii::ExcMessage(
                   "Overwrite this method in derived class to access stored one_over_J."));
 
-    dealii::VectorizedArray<Number> dummy;
+    scalar dummy;
     return dummy;
   }
 
-  virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  virtual tensor
   deformation_gradient(unsigned int const cell, unsigned int const q) const
   {
     (void)cell;
@@ -182,7 +180,7 @@ public:
                 dealii::ExcMessage(
                   "Overwrite this method in derived class to access stored deformation gradient."));
 
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> dummy;
+    tensor dummy;
     return dummy;
   }
 };

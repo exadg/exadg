@@ -580,7 +580,6 @@ IncompressibleFibrousTissue<dim, Number>::get_structure_tensor(vector const &   
 }
 
 // Function to evaluate the fiber_switch, not using/loading any data.
-// Dependingont he formulation, we assume E or C given in the input tensor.
 template<int dim, typename Number>
 dealii::VectorizedArray<Number>
 IncompressibleFibrousTissue<dim, Number>::get_fiber_switch(vector const & M_1,
@@ -590,9 +589,8 @@ IncompressibleFibrousTissue<dim, Number>::get_fiber_switch(vector const & M_1,
   if(stable_formulation)
   {
     // I_i_star = 2 * (M_1 (x) M_1) : E + tr(M_1 (x) M_1)
-    tensor M_1_otimes_M_1 = outer_product(M_1, M_1);
-    I_i_star              = 2.0 * scalar_product(M_1_otimes_M_1, E);
-    for(unsigned int i = 0; i < dim; ++i)
+    I_i_star = 2.0 * scalar_product(outer_product(M_1, M_1), E);
+    for(unsigned int i = 0; i < dim; i++)
     {
       I_i_star += M_1[i] * M_1[i];
     }
@@ -742,9 +740,8 @@ IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
     {
       if(spatial_integration)
       {
-        tensor const tau_lin =
-          this->kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
-        kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau_lin);
+        tensor const tau = kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
+        kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
 
         C_coefficients.set_coefficient_cell(cell, q, C);
 
@@ -759,18 +756,18 @@ IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
         if(force_material_residual)
         {
           deformation_gradient_coefficients.set_coefficient_cell(cell, q, F);
-          tensor const S_lin =
-            this->second_piola_kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
-          second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S_lin);
+          tensor const S =
+            second_piola_kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
+          second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
         }
       }
       else
       {
         deformation_gradient_coefficients.set_coefficient_cell(cell, q, F);
 
-        tensor const S_lin =
-          this->second_piola_kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
-        second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S_lin);
+        tensor const S =
+          second_piola_kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
+        second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
 
         tensor const F_inv = invert(F);
         F_inv_coefficients.set_coefficient_cell(cell, q, F_inv);
@@ -874,7 +871,7 @@ template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displacement_derivative(
   tensor const &     gradient_increment,
-  tensor const &     gradient_displacement_cache_level_0_1,
+  tensor const &     gradient_displacement_cache_level_0,
   tensor const &     deformation_gradient,
   unsigned int const cell,
   unsigned int const q) const
@@ -892,12 +889,12 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
   {
     get_modified_F_Jm1(E_cache_level_0 /* F */,
                        Jm1_cache_level_0,
-                       gradient_displacement_cache_level_0_1,
+                       gradient_displacement_cache_level_0,
                        check_type,
                        true /* compute_J */,
                        stable_formulation);
 
-    E_cache_level_0 = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0_1,
+    E_cache_level_0 = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0,
                                                         1.0,
                                                         stable_formulation);
   }
@@ -963,7 +960,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
 
       if(cache_level == 0)
       {
-        E_cache_level_0 = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0_1,
+        E_cache_level_0 = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0,
                                                             1.0,
                                                             stable_formulation);
       }
@@ -1109,8 +1106,8 @@ template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
   tensor const &     symmetric_gradient_increment,
-  tensor const &     gradient_displacement_cache_level_0_1,
-  tensor const &     deformation_gradient,
+  tensor const &     gradient_displacement_cache_level_0,
+  tensor const &     deformation_gradient_cache_level_1,
   unsigned int const cell,
   unsigned int const q) const
 {
@@ -1127,11 +1124,11 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
   {
     get_modified_F_Jm1(result,
                        Jm1_cache_level_0,
-                       gradient_displacement_cache_level_0_1,
+                       gradient_displacement_cache_level_0,
                        check_type,
                        true /* compute_J */,
                        stable_formulation);
-    E = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0_1,
+    E = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0,
                                           1.0,
                                           stable_formulation);
     C = 2.0 * E + I;
@@ -1141,7 +1138,7 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
     // Dummy E and Jm1 sufficient.
     if(cache_level == 1)
     {
-      C = transpose(deformation_gradient) + deformation_gradient;
+      C = transpose(deformation_gradient_cache_level_1) + deformation_gradient_cache_level_1;
     }
     else
     {

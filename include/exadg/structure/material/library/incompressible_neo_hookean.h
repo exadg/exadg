@@ -121,7 +121,7 @@ public:
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   second_piola_kirchhoff_stress_displacement_derivative(
     tensor const &     gradient_increment,
-    tensor const &     gradient_displacement_cache_level_0_1,
+    tensor const &     gradient_displacement_cache_level_0,
     tensor const &     deformation_gradient,
     unsigned int const cell,
     unsigned int const q) const final;
@@ -134,8 +134,8 @@ public:
 
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
-                          tensor const &     gradient_displacement_cache_level_0_1,
-                          tensor const &     deformation_gradient,
+                          tensor const &     gradient_displacement_cache_level_0,
+                          tensor const &     deformation_gradient_cache_level_1,
                           unsigned int const cell,
                           unsigned int const q) const final;
 
