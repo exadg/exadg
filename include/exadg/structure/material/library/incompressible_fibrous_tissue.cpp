@@ -1152,7 +1152,7 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
     {
       tensor F = gradient_displacement_cache_level_0_1;
       add_scaled_identity<dim, Number, Number>(F, 1.0);
-      C = transpose(F) + F;
+      C = transpose(F) * F;
     }
     else
     {
