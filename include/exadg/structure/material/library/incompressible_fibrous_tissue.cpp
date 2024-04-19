@@ -1079,7 +1079,7 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(
     // to apply the push-forward only once for the sum of all terms.
     if(stable_formulation)
     {
-      // Push forward the fiber contribution.
+      // Push forward fiber contribution.
       tau = F * tau * transpose(F);
 
       // Add remaining terms.
@@ -1097,7 +1097,7 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(
 
       // Add isochoric term, i.e.,
       // mu * J^(-2/3) * I
-      // to apply push forward in next step
+      // to apply push forward in next step.
       add_scaled_identity(tau, shear_modulus_stored * J_pow);
 
       // Push forward the summed terms.
