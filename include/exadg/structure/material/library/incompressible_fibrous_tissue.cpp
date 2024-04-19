@@ -1015,10 +1015,10 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
         // Dummy M_1 and M_2 sufficient.
       }
 
-      tensor C_cache_level_0;
+      tensor C;
       if(cache_level == 0 or force_evaluation)
       {
-        C_cache_level_0 = transpose(F) * F;
+        C = transpose(F) * F;
       }
       else
       {
@@ -1029,10 +1029,10 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(tensor const &     gr
       tensor const H_i = get_structure_tensor(M_1, M_2_cache_level_0_1, i, cell, q);
 
       // Compute or load fiber strain-like quantity.
-      scalar const E_i = get_E_i(H_i, C_cache_level_0, force_evaluation, i, cell, q);
+      scalar const E_i = get_E_i(H_i, C, force_evaluation, i, cell, q);
 
       // Compute or load c3 coefficient.
-      scalar const c3 = get_c3(M_1, C_cache_level_0, E_i, force_evaluation, i, cell, q);
+      scalar const c3 = get_c3(M_1, C, E_i, force_evaluation, i, cell, q);
 
       // Add terms in non-push-forwarded form.
       tau += (c3 * E_i) * H_i;
