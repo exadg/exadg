@@ -200,9 +200,9 @@ inline DEAL_II_ALWAYS_INLINE //
     {
       // clang-format off
 	  Jm1 = determinant(gradient_displacement) + trace(gradient_displacement)
-		  + (  gradient_displacement[0][0] * gradient_displacement[0][0]
-			 + gradient_displacement[1][1] * gradient_displacement[1][1]
-		     + gradient_displacement[2][2] * gradient_displacement[2][2])
+		  + (  gradient_displacement[0][0] * gradient_displacement[1][1]
+			 + gradient_displacement[1][1] * gradient_displacement[2][2]
+		     + gradient_displacement[0][0] * gradient_displacement[2][2])
 		  - (  gradient_displacement[0][1] * gradient_displacement[1][0]
 			 + gradient_displacement[1][2] * gradient_displacement[2][1]
 			 + gradient_displacement[0][2] * gradient_displacement[2][0]);
