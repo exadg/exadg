@@ -253,7 +253,7 @@ private:
 
   dealii::VectorizedArray<Number>
   get_c3(vector const &     M_1,
-         tensor const &     C,
+         tensor const &     E,
          scalar const &     E_i,
          bool const         force_evaluation,
          unsigned int const i,
@@ -274,7 +274,7 @@ private:
                        unsigned int const q) const;
 
   dealii::VectorizedArray<Number>
-  get_fiber_switch(vector const & M_1, tensor const & C) const;
+  get_fiber_switch(vector const & M_1, tensor const & E) const;
 
   dealii::VectorizedArray<Number>
   get_E_i(tensor const &     H_i,
