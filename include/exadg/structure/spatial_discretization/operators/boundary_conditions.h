@@ -60,6 +60,12 @@ inline DEAL_II_ALWAYS_INLINE //
                                                         q,
                                                         integrator.get_quadrature_index());
   }
+  else if(boundary_type == BoundaryType::RobinSpringDashpotPressure)
+  {
+    double const exterior_pressure =
+      boundary_descriptor->robin_k_c_p_param.find(boundary_id)->second.second[2];
+    traction = -exterior_pressure * integrator.get_normal_vector(q);
+  }
   else
   {
     // do nothing
