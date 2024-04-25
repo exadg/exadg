@@ -252,6 +252,9 @@ public:
       prm.add_parameter("ProblemType",
                         problem_type,
                         "Problem type considered, QuasiStatic vs Unsteady vs. Steady");
+      prm.add_parameter("MaterialType",
+                        material_type,
+                        "StVenantKirchhoff vs. IncompressibleNeoHookean");
       prm.add_parameter("WeakDamping",
                         weak_damping_coefficient,
                         "Weak damping coefficient for unsteady problems.");
@@ -312,7 +315,7 @@ private:
     this->param.solver_data                          = SolverData(1e3, 1.e-12, 1.e-8, 100);
     this->param.preconditioner                       = Preconditioner::Multigrid;
     this->param.multigrid_data.type                  = MultigridType::phMG;
-    this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+    this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
     this->param.multigrid_data.coarse_problem.preconditioner =
       MultigridCoarseGridPreconditioner::AMG;
 
@@ -547,12 +550,26 @@ private:
   {
     typedef std::pair<dealii::types::material_id, std::shared_ptr<MaterialData>> Pair;
 
-    MaterialType const type = MaterialType::StVenantKirchhoff;
-    double const       E = E_modul, nu = 0.3;
-    Type2D const       two_dim_type = Type2D::PlaneStress;
+    if(material_type == MaterialType::StVenantKirchhoff)
+    {
+      Type2D const two_dim_type = Type2D::PlaneStress;
+      double const nu           = 0.3;
+      this->material_descriptor->insert(
+        Pair(0, new StVenantKirchhoffData<dim>(material_type, E_modul, nu, two_dim_type)));
+    }
+    else if(material_type == MaterialType::IncompressibleNeoHookean)
+    {
+      Type2D const two_dim_type  = Type2D::Undefined;
+      double const shear_modulus = 1.0e2;
+      double const nu            = 0.49;
+      double const bulk_modulus  = shear_modulus * 2.0 * (1.0 + nu) / (3.0 * (1.0 - 2.0 * nu));
 
-    this->material_descriptor->insert(
-      Pair(0, new StVenantKirchhoffData<dim>(type, E, nu, two_dim_type)));
+      this->material_descriptor->insert(Pair(0,
+                                             new IncompressibleNeoHookeanData<dim>(material_type,
+                                                                                   shear_modulus,
+                                                                                   bulk_modulus,
+                                                                                   two_dim_type)));
+    }
   }
 
   void
@@ -637,7 +654,8 @@ private:
   // mesh parameters
   unsigned int const repetitions0 = 4, repetitions1 = 1, repetitions2 = 1;
 
-  double const E_modul = 200.0;
+  MaterialType material_type = MaterialType::Undefined;
+  double const E_modul       = 200.0;
 
   double const start_time = 0.0;
   double const end_time   = 100.0;

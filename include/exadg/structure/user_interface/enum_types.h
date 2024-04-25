@@ -56,7 +56,8 @@ enum class Type2D
 enum class MaterialType
 {
   Undefined,
-  StVenantKirchhoff
+  StVenantKirchhoff,
+  IncompressibleNeoHookean
 };
 
 /**************************************************************************************/
