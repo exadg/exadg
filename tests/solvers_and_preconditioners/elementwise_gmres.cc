@@ -221,6 +221,67 @@ gmres_test_1a()
             << res.l2_norm() << std::endl;
 }
 
+void
+gmres_test_1ab()
+{
+  std::cout << std::endl
+            << "GMRES solver (double), size M=3, restart size = 2:" << std::endl
+            << std::endl;
+
+  SolverData solver_data(100, tol, tol, 2);
+
+  typedef Elementwise::PreconditionerIdentity<double>      Preconditioner;
+  typedef MyMatrix<double>                                 Matrix;
+  Preconditioner                                           preconditioner(M);
+  Elementwise::SolverGMRES<double, Matrix, Preconditioner> gmres_solver(M, solver_data);
+
+  MyVector<double> b(M);
+  b.set_value(1.0, 0);
+  b.set_value(4.0, 1);
+  b.set_value(6.0, 2);
+
+  MyVector<double> x(M);
+  x.init();
+
+  Matrix matrix(M);
+  matrix.set_value(1.0, 0, 0);
+  matrix.set_value(2.0, 0, 1);
+  matrix.set_value(3.0, 0, 2);
+  matrix.set_value(2.0, 1, 0);
+  matrix.set_value(3.0, 1, 1);
+  matrix.set_value(1.0, 1, 2);
+  matrix.set_value(3.0, 2, 0);
+  matrix.set_value(1.0, 2, 1);
+  matrix.set_value(2.0, 2, 2);
+
+  MyVector<double> resi(M);
+  matrix.vmult(resi.ptr(), x.ptr());
+  resi.sadd(-1.0, b.ptr());
+
+  std::cout << "L2 norm of initial residual = " << std::scientific << std::setprecision(1)
+            << resi.l2_norm() << std::endl;
+
+  MyVector<double> temp(M);
+
+  // set temp = b
+  temp.init();
+  temp.sadd(1.0, b.ptr());
+
+  // use the same data for dst and src
+  gmres_solver.solve(&matrix, temp.ptr(), temp.ptr(), &preconditioner);
+
+  // set x = temp
+  x.init();
+  x.sadd(1.0, temp.ptr());
+
+  MyVector<double> res(M);
+  matrix.vmult(res.ptr(), x.ptr());
+  res.sadd(-1.0, b.ptr());
+
+  std::cout << "L2 norm of final residual = " << std::scientific << std::setprecision(1)
+            << res.l2_norm() << std::endl;
+}
+
 // double (larger system)
 void
 gmres_test_1b()
@@ -486,6 +547,7 @@ main(int argc, char ** argv)
 
     // double
     ExaDG::gmres_test_1a();
+    ExaDG::gmres_test_1ab();
     ExaDG::gmres_test_1b();
 
     // dealii::VectorizedArray<double>
