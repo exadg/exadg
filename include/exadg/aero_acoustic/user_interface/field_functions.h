@@ -47,6 +47,24 @@ struct FieldFunctions
    * space for a given time.
    */
   std::shared_ptr<Utilities::SpatialAwareFunction<dim>> source_term_blend_in;
+
+  /*
+   * The analytical solution of the CFD velocity, that can be used to compute
+   * the aero acoustic source term.
+   */
+  std::shared_ptr<dealii::Function<dim>> analytical_cfd_solution_velocity;
+
+  /*
+   * The analytical solution of the CFD pressure, that can be used to compute
+   * the aero acoustic source term.
+   */
+  std::shared_ptr<dealii::Function<dim>> analytical_cfd_solution_pressure;
+
+  /*
+   * The actual analytical aero acoustic source term that can be used to compute
+   * acoustic propagation.
+   */
+  std::shared_ptr<dealii::Function<dim>> analytical_aero_acoustic_source_term;
 };
 
 } // namespace AeroAcoustic

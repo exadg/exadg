@@ -43,7 +43,9 @@ public:
     : density(-1.0),
       source_term_with_convection(false),
       blend_in_source_term(false),
-      fluid_to_acoustic_coupling_strategy(FluidToAcousticCouplingStrategy::Undefined)
+      fluid_to_acoustic_coupling_strategy(FluidToAcousticCouplingStrategy::Undefined),
+      compute_acoustic_from_analytical_cfd_solution(false),
+      compute_acoustic_from_analytical_source_term(false)
   {
   }
 
@@ -54,6 +56,14 @@ public:
 
     AssertThrow(fluid_to_acoustic_coupling_strategy != FluidToAcousticCouplingStrategy::Undefined,
                 dealii::ExcMessage("Coupling strategy has to be set."));
+
+    if(compute_acoustic_from_analytical_cfd_solution)
+    {
+      AssertThrow(
+        not compute_acoustic_from_analytical_source_term,
+        dealii::ExcMessage(
+          "Only one of the following can be true: compute_acoustic_from_analytical_cfd_solution, compute_acoustic_from_analytical_source_term."));
+    }
   }
 
   void
@@ -64,6 +74,12 @@ public:
     print_parameter(pcout, "Source term has convective part", source_term_with_convection);
     print_parameter(pcout, "Blend in source term", blend_in_source_term);
     print_parameter(pcout, "Fluid to acoustic coupling", fluid_to_acoustic_coupling_strategy);
+    print_parameter(pcout,
+                    "Acoustic from analytical CFD solution",
+                    compute_acoustic_from_analytical_cfd_solution);
+    print_parameter(pcout,
+                    "Acoustic from analytical source term",
+                    compute_acoustic_from_analytical_source_term);
   }
 
   void
@@ -91,6 +107,18 @@ public:
                         "Volume coupling strategy from the fluid to the acoustic field.",
                         Patterns::Enum<FluidToAcousticCouplingStrategy>(),
                         true);
+
+      prm.add_parameter("AcousticFromAnalyticalCFDSolution",
+                        compute_acoustic_from_analytical_cfd_solution,
+                        "Use analytical CFD solution to compute acoustic.",
+                        dealii::Patterns::Bool(),
+                        true);
+
+      prm.add_parameter("AcousticFromAnalyticalSourceTerm",
+                        compute_acoustic_from_analytical_source_term,
+                        "Use analytical source term to compute acoustic.",
+                        dealii::Patterns::Bool(),
+                        true);
     }
     prm.leave_subsection();
   }
@@ -108,6 +136,21 @@ public:
 
   // Strategy to couple from fluid to acoustic
   FluidToAcousticCouplingStrategy fluid_to_acoustic_coupling_strategy;
+
+  // In case the analytical CFD solution is known, interpolate it to the
+  // CFD triangulation in every time step and compute the acoustic from
+  // this as ususal.
+  bool compute_acoustic_from_analytical_cfd_solution;
+
+  // In case the aero-acoustic source term is known analytically do not compute a
+  // CFD, but interpolate the surce term to the CFD grid and use the given coupling
+  // strategy to transfer the source term. If this parameter is activated the
+  // cfd solution has to be given and is interpolated to the CFD grid as well.
+  // The analytical solution is interpolated as is, i.e. at the point of
+  // interpolation there is no check if source_term_with_convection is true. It is
+  // the resposibility of the user to make sure the source term includes convection
+  // or not.
+  bool compute_acoustic_from_analytical_source_term;
 };
 
 } // namespace AeroAcoustic

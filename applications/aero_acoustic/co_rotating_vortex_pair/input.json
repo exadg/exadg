@@ -16,7 +16,9 @@
         "Density": "2.0",
         "SourceTermWithConvection": "false",
         "BlendInSourceTerm": "true",
-        "FluidToAcousticCouplingStrategy": "ConservativeInterpolation"
+        "FluidToAcousticCouplingStrategy": "ConservativeInterpolation",
+        "AcousticFromAnalyticalCFDSolution" : "false",
+        "AcousticFromAnalyticalSourceTerm" : "true"
     },
     "Application": {
         "StartTimeAcousticsInVortexRotations": "0.05",

@@ -23,6 +23,7 @@
 #define INCLUDE_EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_FLUID_H_
 
 // IncNS
+#include <exadg/aero_acoustic/single_field_solvers/analytical_time_int_fluid.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
@@ -57,8 +58,11 @@ public:
 
   void
   setup(std::shared_ptr<FluidAeroAcoustic::ApplicationBase<dim, Number>> application,
-        MPI_Comm const                                                   mpi_comm,
-        bool const                                                       is_test)
+        bool const                             compute_acoustic_from_analytical_cfd_solution,
+        std::shared_ptr<dealii::Function<dim>> analytical_cfd_solution_velocity,
+        std::shared_ptr<dealii::Function<dim>> analytical_cfd_solution_pressure,
+        MPI_Comm const                         mpi_comm,
+        bool const                             is_test)
   {
     // setup application
     application->setup(grid, mapping, multigrid_mappings);
@@ -86,12 +90,58 @@ public:
                 dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
     // initialize time_integrator
-    time_integrator = IncNS::create_time_integrator<dim, Number>(pde_operator,
-                                                                 nullptr /*no ALE*/,
-                                                                 postprocessor,
-                                                                 application->get_parameters(),
-                                                                 mpi_comm,
-                                                                 is_test);
+    if(compute_acoustic_from_analytical_cfd_solution)
+    {
+      auto interpolate_analytical_solution =
+        [&, analytical_cfd_solution_velocity, analytical_cfd_solution_pressure](
+          VectorType & velocity, VectorType & pressure, double const time) {
+          velocity.zero_out_ghost_values();
+          pressure.zero_out_ghost_values();
+
+          analytical_cfd_solution_velocity->set_time(time);
+          analytical_cfd_solution_pressure->set_time(time);
+
+          // This is necessary if Number == float
+          using VectorTypeDouble = dealii::LinearAlgebra::distributed::Vector<double>;
+
+          VectorTypeDouble velocity_double;
+          VectorTypeDouble pressure_double;
+          velocity_double = velocity;
+          pressure_double = pressure;
+
+          dealii::VectorTools::interpolate(*pde_operator->get_mapping(),
+                                           pde_operator->get_dof_handler_u(),
+                                           *(analytical_cfd_solution_velocity),
+                                           velocity_double);
+
+          dealii::VectorTools::interpolate(*pde_operator->get_mapping(),
+                                           pde_operator->get_dof_handler_p(),
+                                           *(analytical_cfd_solution_pressure),
+                                           pressure_double);
+
+          velocity = velocity_double;
+          pressure = pressure_double;
+        };
+
+
+      time_integrator =
+        std::make_shared<IncNS::TimeIntAnalytic<dim, Number>>(pde_operator,
+                                                              nullptr /*no ALE*/,
+                                                              postprocessor,
+                                                              application->get_parameters(),
+                                                              interpolate_analytical_solution,
+                                                              mpi_comm,
+                                                              is_test);
+    }
+    else
+    {
+      time_integrator = IncNS::create_time_integrator<dim, Number>(pde_operator,
+                                                                   nullptr /*no ALE*/,
+                                                                   postprocessor,
+                                                                   application->get_parameters(),
+                                                                   mpi_comm,
+                                                                   is_test);
+    }
 
     time_integrator->setup(application->get_parameters().restarted_simulation);
 

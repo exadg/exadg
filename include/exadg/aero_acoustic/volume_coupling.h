@@ -44,11 +44,14 @@ public:
   setup(Parameters const &                           parameters_in,
         std::shared_ptr<SolverAcoustic<dim, Number>> acoustic_solver_in,
         std::shared_ptr<SolverFluid<dim, Number>>    fluid_solver_in,
-        std::shared_ptr<FieldFunctions<dim>>         field_functions_in)
+        std::shared_ptr<FieldFunctions<dim>>         field_functions_in,
+        bool const compute_acoustic_from_analytical_source_term_in)
   {
-    parameters      = parameters_in;
-    acoustic_solver = acoustic_solver_in;
-    fluid_solver    = fluid_solver_in;
+    parameters                                   = parameters_in;
+    acoustic_solver                              = acoustic_solver_in;
+    fluid_solver                                 = fluid_solver_in;
+    field_functions                              = field_functions_in;
+    compute_acoustic_from_analytical_source_term = compute_acoustic_from_analytical_source_term_in;
 
     acoustic_solver_in->pde_operator->initialize_dof_vector_pressure(source_term_acoustic);
     fluid_solver_in->pde_operator->initialize_vector_pressure(source_term_fluid);
@@ -86,11 +89,21 @@ public:
     if(parameters.fluid_to_acoustic_coupling_strategy ==
        FluidToAcousticCouplingStrategy::ConservativeInterpolation)
     {
-      source_term_calculator.evaluate_integrate(source_term_fluid,
-                                                fluid_solver->time_integrator->get_velocity(),
-                                                fluid_solver->time_integrator->get_pressure(),
-                                                fluid_solver->get_pressure_time_derivative(),
-                                                fluid_solver->time_integrator->get_time());
+      if(compute_acoustic_from_analytical_source_term)
+      {
+        source_term_calculator.evaluate_integrate(
+          source_term_fluid,
+          *field_functions->analytical_aero_acoustic_source_term,
+          fluid_solver->time_integrator->get_time());
+      }
+      else
+      {
+        source_term_calculator.evaluate_integrate(source_term_fluid,
+                                                  fluid_solver->time_integrator->get_velocity(),
+                                                  fluid_solver->time_integrator->get_pressure(),
+                                                  fluid_solver->get_pressure_time_derivative(),
+                                                  fluid_solver->time_integrator->get_time());
+      }
 
       non_nested_grid_transfer.restrict_and_add(source_term_acoustic, source_term_fluid);
     }
@@ -109,8 +122,12 @@ private:
   std::shared_ptr<SolverAcoustic<dim, Number>> acoustic_solver;
   std::shared_ptr<SolverFluid<dim, Number>>    fluid_solver;
 
+
   // Field functions
   std::shared_ptr<FieldFunctions<dim>> field_functions;
+
+  // Use analytically known source term or compute it from CFD vectors.
+  bool compute_acoustic_from_analytical_source_term;
 
   // Transfer operator
   dealii::MGTwoLevelTransferNonNested<dim, VectorType> non_nested_grid_transfer;
