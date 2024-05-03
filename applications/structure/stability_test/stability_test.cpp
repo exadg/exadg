@@ -446,7 +446,7 @@ main(int argc, char ** argv)
                   {
                     rel_norm_evaluation =
                       std::max(rel_norm_evaluation,
-                               std::abs(diff_evaluation[l][m][0] / evaluation_double[k][l][m][0]));
+                               std::abs((diff_evaluation[l][m][0] + 1e-40) / (evaluation_double[k][l][m][0] + 1e-20)));
                   }
                 }
 
@@ -468,7 +468,7 @@ main(int argc, char ** argv)
           size_t const  fstream_buffer_size = 256 * 1024; // TODO measure if this has any effect.
           char          fstream_buffer[fstream_buffer_size];
           fstream.rdbuf()->pubsetbuf(fstream_buffer, fstream_buffer_size);
-          fstream.open(file_name.c_str(), std::ios::app);
+          fstream.open(file_name.c_str(), std::ios::trunc);
 
           fstream << "  relative errors in stress and stress derivative,\n"
                   << "  grad_increment_scale = 1 / h_e^2 , h_e = " << h_e << "\n"
