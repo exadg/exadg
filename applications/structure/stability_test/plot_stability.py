@@ -8,16 +8,16 @@ import re
    
 if __name__ == "__main__":
 
-    skip_Jacobian = False
+    skip_jacobian = False
     skip_stress = False
 
-    skip_STVK = False
+    skip_STVK = True
     skip_cNH  = True
     skip_iNH  = True
-    skip_iHGO = True
-    skip_spatial_integration = False
+    skip_iHGO = False
+    skip_spatial_integration  = False
     skip_material_integration = False
-    skip_stable_formulation = False
+    skip_stable_formulation   = False
     skip_unstable_formulation = False
 
     # Read the all the txt files and plot the stability test results
@@ -66,56 +66,63 @@ if __name__ == "__main__":
         stable_formulation = file[int(underscore_indices[7]+1):int(underscore_indices[7]+2)]
         material_model = file[int(underscore_indices[8]+1):int(point_idx-3)]     
 
+        if stable_formulation == '1' and skip_stable_formulation:
+            continue
+            
+        if spatial_integration == '1' and skip_spatial_integration:
+            continue
+
         line_style_stress = 'solid'
         line_style_jacobian = 'dashed'
+        
+        line_color = 'black'
         if spatial_integration == '1':
-            if skip_spatial_integration:
-                continue
-            line_style_stress = 'dashdot'
-            line_style_jacobian = 'dotted'
+            Omega_0_or_t = '$\Omega_t$';
+            if stable_formulation == '1':
+                line_color = 'tab:blue'
+            else:
+                line_color = 'tab:green'
         else:
+            Omega_0_or_t = '$\Omega_0$';
             if skip_material_integration:
                 continue
-
+            if stable_formulation == '1':
+                line_color = 'tab:red'
+            else:
+                line_color = 'tab:orange'
+ 
         line_width = 1.0
-        if stable_formulation == '1':
-            if skip_stable_formulation:
-                continue
-            line_width = 2.0
-        else:
-            if skip_unstable_formulation:
-                continue
-            
-        line_color = 'black'
         if material_model == "StVenantKirchhoff":
             if skip_STVK:
                 continue
-            line_color = 'tab:blue'
+            line_width = 0.5
         elif material_model == "CompressibleNeoHookean":
             if skip_cNH:
                 continue
-            line_color = 'tab:orange'
+            line_width = 1.0
         elif material_model == "IncompressibleNeoHookean":
             if skip_iNH:
                 continue
-            line_color = 'tab:green'
+            line_width = 1.5
         elif material_model == "IncompressibleFibrousTissue":
             if skip_iHGO:
                 continue
-            line_color = 'tab:red'
-	
+            line_width = 2.0
+            
         if not skip_stress:
-            plt.loglog(rows[:,0], rows[:,1], label=material_model + ', |stress|', \
-            color=line_color, linestyle=line_style_stress, linewidth=line_width)
+            plt.loglog(rows[:,0], rows[:,1], label=material_model + ', ' + Omega_0_or_t + \
+            ', stable: ' + stable_formulation + ', |stress|', color=line_color, \
+            linestyle=line_style_stress, linewidth=line_width)
         
-        if not skip_Jacobian:
-            plt.loglog(rows[:,0], rows[:,2], label=material_model + ', |Jacobian|', \
-            color=line_color, linestyle=line_style_jacobian, linewidth=line_width)
-
+        if not skip_jacobian:
+            plt.loglog(rows[:,0], rows[:,2], label=material_model + ', ' + Omega_0_or_t + \
+            ', stable: ' + stable_formulation + ', |Jacobian|', color=line_color, \
+            linestyle=line_style_jacobian, linewidth=line_width)
+ 
     plt.title("Relativer Fehler $\epsilon_\mathrm{rel} = \mathrm{max}_i || (.)_\mathrm{f64} - (.)_\mathrm{f32} ||_\infty / ||(.)_\mathrm{f64}||_\infty$")
     plt.legend()
     plt.xlabel('Strain scale')
-    plt.ylabel('$Relativer Fehler \epsilon_\mathrm{rel}$')
+    plt.ylabel('Relativer Fehler $\epsilon_\mathrm{rel}$')
     plt.xlim(xmin=1e-9, xmax=1e3)
     plt.ylim(ymin=1e-10, ymax=1e2)
     plt.show()
