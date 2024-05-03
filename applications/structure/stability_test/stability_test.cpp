@@ -461,9 +461,9 @@ main(int argc, char ** argv)
 
           // Output the results to file.
           std::string const file_name =
-            "./stability_" + ExaDG::Utilities::enum_to_string(material_type) +
-            "_spatial_integration_" + std::to_string(spatial_integration) + "_stable_formulation_" +
-            std::to_string(stable_formulation) + ".txt";
+            "./stability_forward_test_spatial_integration_" + std::to_string(spatial_integration)
+			+ "_stable_formulation_" + std::to_string(stable_formulation) +
+			+ "_" + ExaDG::Utilities::enum_to_string(material_type) + ".txt";
 
           std::ofstream fstream;
           size_t const  fstream_buffer_size = 256 * 1024; // TODO measure if this has any effect.
