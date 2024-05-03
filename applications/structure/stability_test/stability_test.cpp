@@ -446,7 +446,8 @@ main(int argc, char ** argv)
                   {
                     rel_norm_evaluation =
                       std::max(rel_norm_evaluation,
-                               std::abs((diff_evaluation[l][m][0] + 1e-40) / (evaluation_double[k][l][m][0] + 1e-20)));
+                               std::abs((diff_evaluation[l][m][0] + 1e-40) /
+                                        (evaluation_double[k][l][m][0] + 1e-20)));
                   }
                 }
 
