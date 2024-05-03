@@ -192,6 +192,9 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
     AssertThrow(data.e1_orientations != nullptr and data.e2_orientations != nullptr,
                 dealii::ExcMessage("Provide orientation vectors for both e1 and e2."));
 
+    AssertThrow(data.e1_orientations->size() > 0,
+                dealii::ExcMessage("Provide orientation vectors or `nullptr`."));
+
     AssertThrow(data.e1_orientations->size() == data.e2_orientations->size(),
                 dealii::ExcMessage("Provide orientation vectors for all levels for e1 and e2."));
 

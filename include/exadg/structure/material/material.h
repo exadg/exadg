@@ -27,6 +27,7 @@
 #include <deal.II/base/vectorization.h>
 
 // ExaDG
+#include <exadg/matrix_free/integrators.h>
 #include <exadg/structure/material/material_data.h>
 #include <exadg/structure/spatial_discretization/operators/continuum_mechanics.h>
 
