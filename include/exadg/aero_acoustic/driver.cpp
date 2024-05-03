@@ -36,7 +36,8 @@ Driver<dim, Number>::Driver(MPI_Comm const &                              comm,
     is_test(is_test),
     application(app),
     acoustic(std::make_shared<SolverAcoustic<dim, Number>>()),
-    fluid(std::make_shared<SolverFluid<dim, Number>>())
+    fluid(std::make_shared<SolverFluid<dim, Number>>()),
+    time_solvers_side_by_side(std::numeric_limits<double>::min())
 {
   print_general_info<Number>(pcout, mpi_comm, is_test);
 }
@@ -108,19 +109,6 @@ Driver<dim, Number>::set_start_time() const
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::synchronize_time_step_size() const
-{
-  // TODO: to avoid sophisticated methods for the minimal solver we simply
-  // use the smallest time step.
-  double const dt = std::min(fluid->time_integrator->get_time_step_size(),
-                             acoustic->time_integrator->get_time_step_size());
-
-  acoustic->time_integrator->set_current_time_step_size(dt);
-  fluid->time_integrator->set_current_time_step_size(dt);
-}
-
-template<int dim, typename Number>
-void
 Driver<dim, Number>::couple_fluid_to_acoustic()
 {
   dealii::Timer sub_timer;
@@ -135,26 +123,50 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::solve()
 {
-  set_start_time();
+  std::pair<bool, dealii::Timer> timer = std::make_pair(false, dealii::Timer());
 
-  synchronize_time_step_size();
+  set_start_time();
 
   AssertThrow(std::abs(application->fluid->get_parameters().end_time -
                        application->acoustic->get_parameters().end_time) < 1.0e-12,
               dealii::ExcMessage("Acoustic and fluid simulation need the same end time."));
 
-  while(not acoustic->time_integrator->finished())
+  while(not fluid->time_integrator->finished())
   {
+    if(timer.first == false and acoustic->time_integrator->started())
+    {
+      timer.first = true;
+      timer.second.restart();
+    }
+
+    // To check if acoustics starts during the following sub-stepping sweep we
+    // can not simply check acoustic->time_integrator->started(). Instead we
+    // compute this information as follows:
+    bool const acoustic_starts_during_present_timestep =
+      fluid->time_integrator->get_next_time() + fluid->time_integrator->get_time_step_size() >
+      application->acoustic->get_parameters().start_time;
+
     // The acoustic simulation uses explicit time-stepping while the fluid solver
     // uses implicit time-stepping. Therefore, we advance the acoustic solver to
     // t^(n+1) first and directly use the result in the fluid solver.
-    if(acoustic->time_integrator->started())
+    if(acoustic_starts_during_present_timestep)
       couple_fluid_to_acoustic();
-    acoustic->time_integrator->advance_one_timestep();
+    acoustic->advance_multiple_timesteps(fluid->time_integrator->get_time_step_size());
+
+    // We can not simply check acoustic->time_integrator->started() since acoustic might start
+    // during a sub-stepping sweep. To check if the acoustic might be started during the next
+    // sub-stepping BEFORE performing the current fluid time step we have to check if dt_{n+2}
+    // is larger than the acoustic start time. We need this information BEFORE the fluid
+    // time-step since we have to know if we have to compute dp/dt.
+    bool const acoustic_might_start_during_next_timestep =
+      fluid->time_integrator->get_next_time() + fluid->max_next_time_step_size() >
+      application->acoustic->get_parameters().start_time;
 
     fluid->advance_one_timestep_and_compute_pressure_time_derivative(
-      acoustic->time_integrator->started());
+      acoustic_might_start_during_next_timestep);
   }
+
+  time_solvers_side_by_side = timer.second.wall_time();
 }
 
 template<int dim, typename Number>
@@ -166,13 +178,12 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   pcout << "Performance results for aero-acoustic solver:" << std::endl;
 
   // iterations
-  pcout << std::endl << "Average number of iterations:" << std::endl;
-
-  pcout << std::endl << "Fluid:" << std::endl;
+  pcout << std::endl << "Average number of iterations Fluid:" << std::endl;
   fluid->time_integrator->print_iterations();
 
-  pcout << std::endl << "Acoustic:" << std::endl;
-  acoustic->time_integrator->print_iterations();
+  pcout << std::endl << "Average number of sub-time steps Acoustic:" << std::endl;
+  pcout << "Adams-Bashforth-Moulton    " << acoustic->get_average_number_of_sub_time_steps()
+        << std::endl;
 
   // wall times
   pcout << std::endl << "Wall times:" << std::endl;
@@ -188,18 +199,40 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   pcout << std::endl << "Timings for level 2:" << std::endl;
   timer_tree.print_level(pcout, 2);
 
+  // Throughput in DoFs/s per time step per core (during the time both
+  // solvers ran side by side)
+  dealii::Utilities::MPI::MinMaxAvg time_solvers_side_by_side_data =
+    dealii::Utilities::MPI::min_max_avg(time_solvers_side_by_side, mpi_comm);
+  double const time_solvers_side_by_side_avg = time_solvers_side_by_side_data.avg;
+
+
+  dealii::types::global_dof_index const DoFs_f = fluid->pde_operator->get_number_of_dofs();
+  dealii::types::global_dof_index const DoFs_a = acoustic->pde_operator->get_number_of_dofs();
+  double const sub_dt_per_macro_dt             = acoustic->get_average_number_of_sub_time_steps();
+
   unsigned int const N_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
 
+  pcout << std::endl << "Throughput related to one macro time step:";
+  print_throughput_unsteady(pcout,
+                            DoFs_f + DoFs_a,
+                            time_solvers_side_by_side_avg,
+                            acoustic->get_number_of_macro_time_steps(),
+                            N_mpi_processes);
+
+  pcout << std::endl << "Throughput related to one sub time step:";
+  print_throughput_unsteady(pcout,
+                            (double)DoFs_f / sub_dt_per_macro_dt + (double)DoFs_a,
+                            time_solvers_side_by_side_avg,
+                            acoustic->get_number_of_sub_time_steps(),
+                            N_mpi_processes);
+
+
+
+  // computational costs in CPUh
   dealii::Utilities::MPI::MinMaxAvg total_time_data =
     dealii::Utilities::MPI::min_max_avg(total_time, mpi_comm);
   double const total_time_avg = total_time_data.avg;
 
-
-  // TODO: Print throughput statistics is not as easy since the number
-  // of fluid and acoustic timesteps differ. This has to be implemented
-  // once we extend the aerouacoustic solver.
-
-  // computational costs in CPUh
   print_costs(pcout, total_time_avg, N_mpi_processes);
 
   pcout << print_horizontal_line() << std::endl << std::endl;
