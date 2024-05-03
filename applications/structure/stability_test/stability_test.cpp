@@ -373,7 +373,7 @@ main(int argc, char ** argv)
         {
           // Skip some cases not implemented for the STVK model.
           if(material_type == MaterialType::StVenantKirchhoff &&
-             (spatial_integration || stable_formulation))
+             (spatial_integration || not stable_formulation))
           {
             continue;
           }
