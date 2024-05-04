@@ -317,8 +317,8 @@ main(int argc, char ** argv)
                                      dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
     // Gradient and increment scale.
-    unsigned int constexpr n_points_over_log_scale = 1e2;
-    std::vector<double> grad_u_scale               = logspace(1e-8, 1e2, n_points_over_log_scale);
+    unsigned int constexpr n_points_over_log_scale = 1e3;
+    std::vector<double> grad_u_scale               = logspace(1e-8, 1e+2, n_points_over_log_scale);
     double constexpr h_e                           = 1e-3;
     double constexpr grad_increment_scale          = 1.0 / (h_e * h_e);
 
@@ -396,7 +396,7 @@ main(int argc, char ** argv)
           for(unsigned int i = 0; i < n_points_over_log_scale; ++i)
           {
             // Repeat the experiment with `n_samples`, store the highest error sampled.
-            unsigned int n_samples = 1e2;
+            unsigned int n_samples = 2e2;
             for(unsigned int j = 0; j < n_samples; ++j)
             {
               // Generate pseudo-random gradient of the displacement field.
@@ -439,7 +439,7 @@ main(int argc, char ** argv)
                 diff_evaluation -= evaluation_double[k];
 
                 // Maximum relative error in the |tensor|_inf norm.
-                double rel_norm_evaluation = 0.0;
+                double rel_norm_evaluation = 1e-20;
                 for(unsigned int l = 0; l < dim; ++l)
                 {
                   for(unsigned int m = 0; m < dim; ++m)

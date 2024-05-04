@@ -12,13 +12,13 @@ if __name__ == "__main__":
     skip_stress = False
 
     skip_STVK = True
-    skip_cNH  = True
+    skip_cNH  = not True
     skip_iNH  = True
-    skip_iHGO = False
+    skip_iHGO = True
     skip_spatial_integration  = False
     skip_material_integration = False
     skip_stable_formulation   = False
-    skip_unstable_formulation = False
+    skip_unstable_formulation = not False
 
     # Read the all the txt files and plot the stability test results
     plt.figure()
@@ -45,7 +45,7 @@ if __name__ == "__main__":
                 
             # Split on any whitespace (including tab characters)
             row = line.split()            
-            print(row)
+            # print(row)
             for i in range(len(row)):
                 rows[idx_line-n_header_lines-1, i] = float(row[i])
 
@@ -66,11 +66,19 @@ if __name__ == "__main__":
         stable_formulation = file[int(underscore_indices[7]+1):int(underscore_indices[7]+2)]
         material_model = file[int(underscore_indices[8]+1):int(point_idx-3)]     
 
-        if stable_formulation == '1' and skip_stable_formulation:
-            continue
+        if stable_formulation == '1':
+            if skip_stable_formulation:
+                continue
+        else:
+            if skip_unstable_formulation:
+                continue
             
-        if spatial_integration == '1' and skip_spatial_integration:
-            continue
+        if spatial_integration == '1':
+            if skip_spatial_integration:
+                continue
+        else:
+            if skip_material_integration:
+                continue
 
         line_style_stress = 'solid'
         line_style_jacobian = 'dashed'
