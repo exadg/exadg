@@ -527,6 +527,14 @@ IncompressibleFibrousTissue<dim, Number>::get_c3(vector const &     M_1,
     {
       c3 = exp(fiber_k_2 * E_i * E_i);
     }
+
+    // Enforce an upper bound for the computed value
+    // via c3 = c3 < upper_bound ? c3 : upper_bound
+    Number const upper_bound = fiber_k_1 * fiber_k_1 * fiber_k_1;
+
+    scalar c3 = dealii::compare_and_apply_mask<dealii::SIMDComparison::less_than>(
+      c3, scalar_one * upper_bound, c3, scalar_one * upper_bound);
+
     c3 *= fiber_switch * 2.0 * fiber_k_1;
   }
   else
