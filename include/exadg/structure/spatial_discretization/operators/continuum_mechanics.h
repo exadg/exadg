@@ -47,6 +47,22 @@ inline DEAL_II_ALWAYS_INLINE //
   return out;
 }
 
+template<typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<Number>
+  expm1(dealii::VectorizedArray<Number> const & x)
+{
+  Number values[dealii::VectorizedArray<Number>::size()];
+  for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
+  {
+    values[i] = std::expm1(x[i]);
+  }
+
+  dealii::VectorizedArray<Number> out;
+  out.load(&values[0]);
+  return out;
+}
+
 template<int dim, typename Number, typename TypeScale>
 inline DEAL_II_ALWAYS_INLINE //
   void

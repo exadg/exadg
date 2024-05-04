@@ -519,7 +519,15 @@ IncompressibleFibrousTissue<dim, Number>::get_c3(vector const &     M_1,
   {
     scalar const fiber_switch = get_fiber_switch(M_1, E);
 
-    c3 = (fiber_switch * 2.0 * fiber_k_1) * exp(fiber_k_2 * E_i * E_i);
+    if(stable_formulation)
+    {
+      c3 = expm1(fiber_k_2 * E_i * E_i) + 1.0;
+    }
+    else
+    {
+      c3 = exp(fiber_k_2 * E_i * E_i);
+    }
+    c3 *= fiber_switch * 2.0 * fiber_k_1;
   }
   else
   {
