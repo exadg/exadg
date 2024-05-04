@@ -236,7 +236,10 @@ get_random_tensor(Number scale)
       Number const random_number_0c0_1c0 =
         static_cast<Number>(std::rand()) / static_cast<Number>(RAND_MAX);
       Number const random_number_0c1_1c0 = 0.1 + (random_number_0c0_1c0 / 0.9);
-      random_tensor[i][j]                = scale * random_number_0c1_1c0;
+
+      Number const random_sign = random_number_0c0_1c0 > 0.5 ? 1.0 : -1.0;
+
+      random_tensor[i][j] = scale * random_number_0c1_1c0 * random_sign;
     }
   }
 

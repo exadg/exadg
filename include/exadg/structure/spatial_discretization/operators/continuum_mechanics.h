@@ -199,13 +199,15 @@ inline DEAL_II_ALWAYS_INLINE //
     else if constexpr(dim == 3)
     {
       // clang-format off
-	  Jm1 = determinant(gradient_displacement) + trace(gradient_displacement)
-		  + (  gradient_displacement[0][0] * gradient_displacement[1][1]
-			 + gradient_displacement[1][1] * gradient_displacement[2][2]
-		     + gradient_displacement[0][0] * gradient_displacement[2][2])
-		  - (  gradient_displacement[0][1] * gradient_displacement[1][0]
-			 + gradient_displacement[1][2] * gradient_displacement[2][1]
-			 + gradient_displacement[0][2] * gradient_displacement[2][0]);
+      // Sum terms of same order of magnitude individually.
+      Jm1 = (  gradient_displacement[0][0] * gradient_displacement[1][1]
+             + gradient_displacement[1][1] * gradient_displacement[2][2]
+             + gradient_displacement[0][0] * gradient_displacement[2][2])
+          - (  gradient_displacement[0][1] * gradient_displacement[1][0]
+             + gradient_displacement[1][2] * gradient_displacement[2][1]
+             + gradient_displacement[0][2] * gradient_displacement[2][0]);
+      Jm1 += determinant(gradient_displacement);
+      Jm1 += trace(gradient_displacement);
       // clang-format on
     }
     else

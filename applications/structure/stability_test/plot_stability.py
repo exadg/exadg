@@ -8,7 +8,7 @@ import re
    
 if __name__ == "__main__":
 
-    skip_jacobian = False
+    skip_jacobian = not False
     skip_stress = False
 
     skip_STVK = True
@@ -96,7 +96,7 @@ if __name__ == "__main__":
                 continue
 
         line_style_stress = 'solid'
-        line_style_jacobian = 'dashed'
+        line_style_jacobian = 'dotted'
         
         line_color = 'black'
         if spatial_integration == '1':
