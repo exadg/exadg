@@ -18,10 +18,25 @@ if __name__ == "__main__":
     skip_spatial_integration  = False
     skip_material_integration = False
     skip_stable_formulation   = False
-    skip_unstable_formulation = not False
+    skip_unstable_formulation = False
 
     # Read the all the txt files and plot the stability test results
     plt.figure()
+
+    # plot horizontal lines at specific error margins
+    plt.loglog([0.0, 1e20], [1e-5, 1e-5], label=None, color='black', \
+    linestyle='dotted', linewidth=1.0)
+    plt.loglog([0.0, 1e20], [1e-4, 1e-4], label=None, color='black', \
+    linestyle='dotted', linewidth=1.0)
+    plt.loglog([0.0, 1e20], [1e-3, 1e-3], label=None, color='black', \
+    linestyle='dotted', linewidth=1.0)
+    plt.loglog([0.0, 1e20], [1e-2, 1e-2], label=None, color='black', \
+    linestyle='dotted', linewidth=1.0)
+    plt.loglog([0.0, 1e20], [1e-1, 1e-1], label=None, color='black', \
+    linestyle='dotted', linewidth=1.0)
+    plt.loglog([0.0, 1e20], [1e-0, 1e-0], label=None, color='black', \
+    linestyle='dotted', linewidth=1.0)
+
     # os.chdir("/home/richardschussnig/dealii-candi/exadg/build/applications/structure/stability_test/")
     os.chdir("/home/richard/dealii-candi/exadg/build/applications/structure/stability_test/")
     for file in glob.glob("stability_forward_test_*"):
@@ -129,9 +144,15 @@ if __name__ == "__main__":
  
     plt.title("Relativer Fehler $\epsilon_\mathrm{rel} = \mathrm{max}_i || (.)_\mathrm{f64} - (.)_\mathrm{f32} ||_\infty / ||(.)_\mathrm{f64}||_\infty$")
     plt.legend()
-    plt.xlabel('Strain scale')
+
+    plt.xlabel('Grad $\mathbf{u}$ scale')
     plt.ylabel('Relativer Fehler $\epsilon_\mathrm{rel}$')
-    plt.xlim(xmin=1e-9, xmax=1e3)
-    plt.ylim(ymin=1e-10, ymax=1e2)
+
+    x_min = 1e-8
+    x_max = 1e3
+    y_min = 1e-10
+    y_max = 1e3
+    plt.xlim(xmin=x_min, xmax=x_max)
+    plt.ylim(ymin=y_min, ymax=y_max)
     plt.show()
     

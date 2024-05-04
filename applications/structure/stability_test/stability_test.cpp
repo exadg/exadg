@@ -235,8 +235,8 @@ get_random_tensor(Number scale)
       // keep the order of magnitude unchanged.
       Number const random_number_0c0_1c0 =
         static_cast<Number>(std::rand()) / static_cast<Number>(RAND_MAX);
-      Number const random_number_0c1_0c9 = 0.1 + (random_number_0c0_1c0 / 0.8);
-      random_tensor[i][j]                = scale * random_number_0c1_0c9;
+      Number const random_number_0c1_1c0 = 0.1 + (random_number_0c0_1c0 / 0.9);
+      random_tensor[i][j]                = scale * random_number_0c1_1c0;
     }
   }
 
@@ -449,8 +449,9 @@ main(int argc, char ** argv)
                 {
                   for(unsigned int m = 0; m < dim; ++m)
                   {
-                    double const rel_norm = std::abs((diff_evaluation[l][m][0] + 1e-40) /
-                                                     (evaluation_double[k][l][m][0] + 1e-20));
+                    double const rel_norm =
+                      std::abs((diff_evaluation[l][m][0] + 1e-40) /
+                               (0.0 + 1.0 * (evaluation_double[k][l][m][0] + 1e-20)));
                     if(take_max_err)
                     {
                       rel_norm_evaluation = std::max(rel_norm_evaluation, rel_norm);
