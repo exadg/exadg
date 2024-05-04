@@ -48,14 +48,14 @@ Solver:
 Newton:
   Maximum number of iterations:              100
   Absolute solver tolerance:                 1.0000e-09
-  Relative solver tolerance:                 1.0000e-09
+  Relative solver tolerance:                 1.0000e-04
 
 Linear solver:
   Solver:                                    FGMRES
   Maximum number of iterations:              1000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-08
-  Maximum size of Krylov space:              100
+  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            phMG
   p-sequence:                                DecreaseByOne
