@@ -814,7 +814,8 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress(
     tensor const E     = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0_1,
                                                        1.0,
                                                        stable_formulation);
-    tensor const C     = 2.0 * E + I;
+    tensor const F_inv = invert(F);
+    tensor const C_inv = F_inv * transpose(F_inv);
     scalar const J_pow = get_J_pow(Jm1, force_evaluation, cell, q);
 
     if(stable_formulation)
@@ -822,13 +823,13 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress(
       S = (2.0 * shear_modulus_stored * J_pow) * E;
       add_scaled_identity<dim, Number>(
         S, -one_third * trace(S) + 0.5 * bulk_modulus * get_JJm1<Number>(Jm1, stable_formulation));
-      S = invert(C) * S;
+      S = C_inv * S;
     }
     else
     {
       scalar const c1 = get_c1(Jm1, J_pow, E, shear_modulus_stored, force_evaluation, cell, q);
 
-      S = invert(C) * c1;
+      S = F_inv * c1;
       add_scaled_identity(S, shear_modulus_stored * J_pow);
     }
 

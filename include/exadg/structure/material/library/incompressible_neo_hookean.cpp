@@ -373,8 +373,8 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
       Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
     }
 
-    tensor const C = transpose(F) * F;
-
+    tensor const F_inv = invert(F);
+    tensor const C_inv = F_inv * transpose(F_inv);
     scalar const J_pow = get_J_pow(Jm1, force_evaluation, cell, q);
 
     if(stable_formulation)
@@ -384,7 +384,7 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
                                             true /* stable_formulation */);
       add_scaled_identity<dim, Number>(
         S, -one_third * trace(S) + 0.5 * bulk_modulus * get_JJm1<Number>(Jm1, stable_formulation));
-      S = invert(C) * S;
+      S = C_inv * S;
     }
     else
     {
@@ -397,7 +397,7 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
       scalar const c1 =
         get_c1(Jm1, J_pow, S /* E */, shear_modulus_stored, force_evaluation, cell, q);
 
-      S = invert(C) * c1;
+      S = C_inv * c1;
       add_scaled_identity(S, shear_modulus_stored * J_pow);
     }
   }
