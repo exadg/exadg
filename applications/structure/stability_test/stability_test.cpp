@@ -231,8 +231,12 @@ get_random_tensor(Number scale)
   {
     for(unsigned int j = 0; j < dim; ++j)
     {
-      random_tensor[i][j] =
-        scale * static_cast<Number>(std::rand()) / static_cast<Number>(RAND_MAX);
+      // Pseudo-random number, but in the interval [0.1, 0.9] to
+      // keep the order of magnitude unchanged.
+      Number const random_number_0c0_1c0 =
+        static_cast<Number>(std::rand()) / static_cast<Number>(RAND_MAX);
+      Number const random_number_0c1_0c9 = 0.1 + (random_number_0c0_1c0 / 0.8);
+      random_tensor[i][j]                = scale * random_number_0c1_0c9;
     }
   }
 
@@ -439,15 +443,22 @@ main(int argc, char ** argv)
                 diff_evaluation -= evaluation_double[k];
 
                 // Maximum relative error in the |tensor|_inf norm.
-                double rel_norm_evaluation = 1e-20;
+                bool constexpr take_max_err = true;
+                double rel_norm_evaluation  = take_max_err ? 1e-20 : 1e+20;
                 for(unsigned int l = 0; l < dim; ++l)
                 {
                   for(unsigned int m = 0; m < dim; ++m)
                   {
-                    rel_norm_evaluation =
-                      std::max(rel_norm_evaluation,
-                               std::abs((diff_evaluation[l][m][0] + 1e-40) /
-                                        (evaluation_double[k][l][m][0] + 1e-20)));
+                    double const rel_norm = std::abs((diff_evaluation[l][m][0] + 1e-40) /
+                                                     (evaluation_double[k][l][m][0] + 1e-20));
+                    if(take_max_err)
+                    {
+                      rel_norm_evaluation = std::max(rel_norm_evaluation, rel_norm);
+                    }
+                    else
+                    {
+                      rel_norm_evaluation = std::min(rel_norm_evaluation, rel_norm);
+                    }
                   }
                 }
 
