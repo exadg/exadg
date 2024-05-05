@@ -345,6 +345,8 @@ private:
 
   Number const one_third = 1.0 / 3.0;
 
+  Number fiber_numerical_upper_bound;
+
   scalar const scalar_zero = 0.0;
   scalar const scalar_one  = 1.0;
   tensor const tensor_zero;

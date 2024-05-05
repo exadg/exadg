@@ -2,19 +2,20 @@
 # Plot the stability test results in a single graph for an overview.
 
 import numpy as np
+import math
 import matplotlib.pyplot as plt
 import glob, os   
 import re
    
 if __name__ == "__main__":
 
-    skip_jacobian = not False
+    skip_jacobian = False
     skip_stress = False
 
     skip_STVK = True
-    skip_cNH  = not True
+    skip_cNH  = True
     skip_iNH  = True
-    skip_iHGO = True
+    skip_iHGO = not True
     skip_spatial_integration  = False
     skip_material_integration = False
     skip_stable_formulation   = False
@@ -37,8 +38,8 @@ if __name__ == "__main__":
     plt.loglog([0.0, 1e20], [1e-0, 1e-0], label=None, color='black', \
     linestyle='dotted', linewidth=1.0)
 
-    # os.chdir("/home/richardschussnig/dealii-candi/exadg/build/applications/structure/stability_test/")
-    os.chdir("/home/richard/dealii-candi/exadg/build/applications/structure/stability_test/")
+    os.chdir("/home/richardschussnig/dealii-candi/exadg/build/applications/structure/stability_test/")
+    #os.chdir("/home/richard/dealii-candi/exadg/build/applications/structure/stability_test/")
     for file in glob.glob("stability_forward_test_*"):
     
         print("Parsing file:")
@@ -47,6 +48,8 @@ if __name__ == "__main__":
         
         # Parse each file.
         f = open(file, 'r')
+
+        contained_infinite_values = False
 
         rows = np.zeros((1000000,3))
         idx_line = 0
@@ -62,7 +65,13 @@ if __name__ == "__main__":
             row = line.split()            
             # print(row)
             for i in range(len(row)):
-                rows[idx_line-n_header_lines-1, i] = float(row[i])
+                val = float(row[i])
+                rows[idx_line-n_header_lines-1, i] = val
+                if math.isinf(val) or math.isnan(val):
+                    contained_infinite_values = True
+
+        if contained_infinite_values:
+            print("INF/NAN VALUES IN: " + file + "\n")
 
 	# shrink array to actually used size
         rows = rows[0:idx_line-n_header_lines, :]

@@ -31,6 +31,27 @@ namespace ExaDG
 {
 namespace Structure
 {
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  void
+  bound_tensor(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> & tensor,
+               Number const &                                            upper_bound)
+{
+  for(unsigned int i = 0; i < dim; ++i)
+  {
+    for(unsigned int j = 0; j < dim; ++j)
+    {
+      for(unsigned int k = 0; k < dealii::VectorizedArray<Number>::size(); ++k)
+      {
+        if(tensor[i][j][k] > upper_bound or not std::isfinite(tensor[i][j][k]))
+        {
+          tensor[i][j][k] = upper_bound;
+        }
+      }
+    }
+  }
+}
+
 template<typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
@@ -50,12 +71,38 @@ inline DEAL_II_ALWAYS_INLINE //
 template<typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
-  expm1(dealii::VectorizedArray<Number> const & x)
+  expm1_limited(dealii::VectorizedArray<Number> const & x, Number const & upper_bound)
 {
   Number values[dealii::VectorizedArray<Number>::size()];
   for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
   {
     values[i] = std::expm1(x[i]);
+
+    if(values[i] > upper_bound or not std::isfinite(values[i]))
+    {
+      values[i] = upper_bound;
+    }
+  }
+
+  dealii::VectorizedArray<Number> out;
+  out.load(&values[0]);
+  return out;
+}
+
+template<typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<Number>
+  exp_limited(dealii::VectorizedArray<Number> const & x, Number const & upper_bound)
+{
+  Number values[dealii::VectorizedArray<Number>::size()];
+  for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
+  {
+    values[i] = std::exp(x[i]);
+
+    if(values[i] > upper_bound or not std::isfinite(values[i]))
+    {
+      values[i] = upper_bound;
+    }
   }
 
   dealii::VectorizedArray<Number> out;

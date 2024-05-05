@@ -95,6 +95,10 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
   fiber_k_1  = data.fiber_k_1;
   fiber_k_2  = data.fiber_k_2;
 
+  // Numerical upper bound for the fiber stiffness contribution.
+  fiber_numerical_upper_bound =
+    std::max(static_cast<Number>(1e10), fiber_k_1 * fiber_k_1 * fiber_k_1);
+
   // Initialize linearization cache and fill with values corresponding to
   // the initial linearization vector assumed to be a zero displacement
   // vector if possible.
@@ -519,21 +523,15 @@ IncompressibleFibrousTissue<dim, Number>::get_c3(vector const &     M_1,
   {
     scalar const fiber_switch = get_fiber_switch(M_1, E);
 
+    // Enforce an upper bound for the computed value.
     if(stable_formulation)
     {
-      c3 = expm1(fiber_k_2 * E_i * E_i) + 1.0;
+      c3 = expm1_limited(fiber_k_2 * E_i * E_i, fiber_numerical_upper_bound) + 1.0;
     }
     else
     {
-      c3 = exp(fiber_k_2 * E_i * E_i);
+      c3 = exp_limited(fiber_k_2 * E_i * E_i, fiber_numerical_upper_bound);
     }
-
-    // Enforce an upper bound for the computed value
-    // via c3 = c3 < upper_bound ? c3 : upper_bound
-    Number const upper_bound = fiber_k_1 * fiber_k_1 * fiber_k_1;
-
-    scalar c3 = dealii::compare_and_apply_mask<dealii::SIMDComparison::less_than>(
-      c3, scalar_one * upper_bound, c3, scalar_one * upper_bound);
 
     c3 *= fiber_switch * 2.0 * fiber_k_1;
   }
@@ -768,6 +766,7 @@ IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
         for(unsigned int i = 0; i < n_fiber_families; i++)
         {
           tensor const H_i = fiber_structure_tensor[i].get_coefficient_cell(cell, q);
+
           H_i_times_C_coefficients[i].set_coefficient_cell(cell, q, H_i * C);
           C_times_H_i_coefficients[i].set_coefficient_cell(cell, q, C * H_i);
         }
@@ -1231,6 +1230,9 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
     result += (2.0 * c3 * (2.0 * fiber_k_2 * E_i * E_i + 1.0) *
                scalar_product(H_i_times_C, symmetric_gradient_increment)) *
               C_times_H_i;
+
+    // The result is particularly prone to overflow.
+    bound_tensor(result, fiber_numerical_upper_bound);
   }
 
   return result;
