@@ -378,9 +378,8 @@ main(int argc, char ** argv)
       {
         for(bool const stable_formulation : stable_formulation_vec)
         {
-          // Skip some cases not implemented for the STVK model.
-          if(material_type == MaterialType::StVenantKirchhoff &&
-             (spatial_integration || not stable_formulation))
+          // No spatial alternative for STVK model.
+          if(material_type == MaterialType::StVenantKirchhoff && spatial_integration)
           {
             continue;
           }
