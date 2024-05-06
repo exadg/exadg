@@ -22,6 +22,7 @@
 // C++
 #include <stdlib.h>
 #include <algorithm>
+#include <chrono>
 #include <iostream>
 
 // deal.II
@@ -270,7 +271,9 @@ evaluate_material(
   Material<dim, Number> const &                                   material,
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_increment,
-  bool const                                                      spatial_integration)
+  bool const                                                      spatial_integration,
+  std::vector<double> &                                           execution_time_stress_jacobian,
+  unsigned int const                                              n_executions_timer)
 {
   typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> Tensor;
 
@@ -282,22 +285,52 @@ evaluate_material(
   // zero anyways to not access integration point storage.
   bool constexpr force_evaluation = true;
   std::vector<Tensor> evaluation(2);
-  if(spatial_integration)
+  execution_time_stress_jacobian.resize(2);
+
+  // Stress computation and timing.
   {
-    evaluation[0] = material.kirchhoff_stress(gradient_displacement, cell, q, force_evaluation);
-    Tensor const symmetric_gradient_increment =
-      0.5 * (gradient_increment + transpose(gradient_increment));
-    evaluation[1] = material.contract_with_J_times_C(symmetric_gradient_increment,
-                                                     gradient_displacement,
-                                                     cell,
-                                                     q);
+    auto timer_start = std::chrono::steady_clock::now();
+    for(unsigned int i = 0; i < n_executions_timer; ++i)
+    {
+      if(spatial_integration)
+      {
+        evaluation[0] = material.kirchhoff_stress(gradient_displacement, cell, q, force_evaluation);
+      }
+      else
+      {
+        evaluation[0] =
+          material.second_piola_kirchhoff_stress(gradient_displacement, cell, q, force_evaluation);
+      }
+    }
+    auto timer_end = std::chrono::steady_clock::now();
+    execution_time_stress_jacobian[0] =
+      std::chrono::duration<double>(timer_end - timer_start).count();
   }
-  else
+
+  // Jacobian computation and timing.
+  Tensor const symmetric_gradient_increment =
+    0.5 * (gradient_increment + transpose(gradient_increment));
+
   {
-    evaluation[0] =
-      material.second_piola_kirchhoff_stress(gradient_displacement, cell, q, force_evaluation);
-    evaluation[1] = material.second_piola_kirchhoff_stress_displacement_derivative(
-      gradient_increment, gradient_displacement, cell, q);
+    auto timer_start = std::chrono::steady_clock::now();
+    for(unsigned int i = 0; i < n_executions_timer; ++i)
+    {
+      if(spatial_integration)
+      {
+        evaluation[1] = material.contract_with_J_times_C(symmetric_gradient_increment,
+                                                         gradient_displacement,
+                                                         cell,
+                                                         q);
+      }
+      else
+      {
+        evaluation[1] = material.second_piola_kirchhoff_stress_displacement_derivative(
+          gradient_increment, gradient_displacement, cell, q);
+      }
+    }
+    auto timer_end = std::chrono::steady_clock::now();
+    execution_time_stress_jacobian[1] =
+      std::chrono::duration<double>(timer_end - timer_start).count();
   }
 
   return evaluation;
@@ -323,11 +356,20 @@ main(int argc, char ** argv)
     dealii::ConditionalOStream pcout(std::cout,
                                      dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
+    // Perform the stability test or measure the evaluation time.
+    bool constexpr stab_test = false;
+
     // Gradient and increment scale.
-    unsigned int constexpr n_points_over_log_scale = 1e3;
-    std::vector<double> grad_u_scale               = logspace(1e-8, 1e+2, n_points_over_log_scale);
-    double constexpr h_e                           = 1e-3;
-    double constexpr grad_increment_scale          = 1.0 / h_e;
+    unsigned int const n_points_over_log_scale = stab_test ? 1e3 : 1;
+
+    std::vector<double> grad_u_scale{{1e-2}};
+    if(stab_test)
+    {
+      grad_u_scale = logspace(1e-8, 1e+2, n_points_over_log_scale);
+    }
+
+    double constexpr h_e                  = 1e-3;
+    double constexpr grad_increment_scale = 1.0 / h_e;
 
     // Setup dummy MatrixFree object in case the material
     // model stores some data even for cache_level 0.
@@ -365,12 +407,21 @@ main(int argc, char ** argv)
         mapping, dof_handler, empty_constraints_float, dealii::QGauss<1>(2), additional_data_float);
     }
 
+    // Material type choices.
     std::vector<MaterialType> material_type_vec{MaterialType::StVenantKirchhoff,
                                                 MaterialType::CompressibleNeoHookean,
                                                 MaterialType::IncompressibleNeoHookean,
                                                 MaterialType::IncompressibleFibrousTissue};
-    std::vector<bool>         spatial_integration_vec{false, true};
-    std::vector<bool>         stable_formulation_vec{false, true};
+
+    std::vector<bool> spatial_integration_vec{false, true};
+    std::vector<bool> stable_formulation_vec{false, true};
+
+    // Repeat the experiment with `n_samples` of random tensors.
+    unsigned int const n_samples = stab_test ? 2e2 : 10;
+
+    // For execution time measurements, execute the evaluation `n_executions_timer`
+    // times and compute average/min/max. Above sampling is not narrow enough.
+    unsigned int const n_executions_timer = stab_test ? 1 : 1e6;
 
     for(MaterialType const material_type : material_type_vec)
     {
@@ -384,9 +435,10 @@ main(int argc, char ** argv)
             continue;
           }
 
-          pcout << "  Material model : " << ExaDG::Utilities::enum_to_string(material_type) << "\n"
+          pcout << "\n\n"
+                << "  Material model : " << ExaDG::Utilities::enum_to_string(material_type) << "\n"
                 << "  spatial_integration = " << spatial_integration << "\n"
-                << "  stable_formulation = " << stable_formulation << "\n";
+                << "  stable_formulation  = " << stable_formulation << "\n";
 
           // Setup material objects in float and double precision for comparison.
           std::shared_ptr<Material<dim, double>> material_double = setup_material<dim, double>(
@@ -399,10 +451,15 @@ main(int argc, char ** argv)
           relative_error_samples[0].resize(n_points_over_log_scale);
           relative_error_samples[1].resize(n_points_over_log_scale);
 
+          // variables for measuring execution time
+          std::vector<double>              sum_min_max_init = {0.0, 1e20, -1e20};
+          std::vector<std::vector<double>> time_stress_double_float_sum_min_max(2,
+                                                                                sum_min_max_init);
+          std::vector<std::vector<double>> time_jacobian_double_float_sum_min_max(2,
+                                                                                  sum_min_max_init);
+
           for(unsigned int i = 0; i < n_points_over_log_scale; ++i)
           {
-            // Repeat the experiment with `n_samples`, store the highest error sampled.
-            unsigned int n_samples = 2e2;
             for(unsigned int j = 0; j < n_samples; ++j)
             {
               // Generate pseudo-random gradient of the displacement field.
@@ -421,17 +478,39 @@ main(int argc, char ** argv)
                   gradient_increment_float);
 
               // Compute stresses and derivatives.
+              std::vector<double>              time_double(2), time_float(2);
               std::vector<tensor_double> const evaluation_double =
                 evaluate_material<dim, double>(*material_double,
                                                gradient_displacement_double,
                                                gradient_increment_double,
-                                               spatial_integration);
+                                               spatial_integration,
+                                               time_double,
+                                               n_executions_timer);
 
               std::vector<tensor_float> const evaluation_float =
                 evaluate_material<dim, float>(*material_float,
                                               gradient_displacement_float,
                                               gradient_increment_float,
-                                              spatial_integration);
+                                              spatial_integration,
+                                              time_float,
+                                              n_executions_timer);
+
+              // Store execution time average/min/max.
+              // clang-format off
+              time_stress_double_float_sum_min_max[0][0] += time_double[0];
+              time_stress_double_float_sum_min_max[0][1] = std::min(time_double[0], time_stress_double_float_sum_min_max[0][1]);
+              time_stress_double_float_sum_min_max[0][2] = std::max(time_double[0], time_stress_double_float_sum_min_max[0][2]);
+              time_stress_double_float_sum_min_max[1][0] += time_float[0];
+              time_stress_double_float_sum_min_max[1][1] = std::min(time_float[0], time_stress_double_float_sum_min_max[1][1]);
+              time_stress_double_float_sum_min_max[1][2] = std::max(time_float[0], time_stress_double_float_sum_min_max[1][2]);
+
+              time_jacobian_double_float_sum_min_max[0][0] += time_double[1];
+              time_jacobian_double_float_sum_min_max[0][1] = std::min(time_double[1], time_jacobian_double_float_sum_min_max[0][1]);
+              time_jacobian_double_float_sum_min_max[0][2] = std::max(time_double[1], time_jacobian_double_float_sum_min_max[0][2]);
+              time_jacobian_double_float_sum_min_max[1][0] += time_float[1];
+              time_jacobian_double_float_sum_min_max[1][1] = std::min(time_float[1], time_jacobian_double_float_sum_min_max[1][1]);
+              time_jacobian_double_float_sum_min_max[1][2] = std::max(time_float[1], time_jacobian_double_float_sum_min_max[1][2]);
+              // clang-format on
 
               // Store the current sample, if it gives the largest relative error.
               AssertThrow(evaluation_double.size() == 2,
@@ -475,33 +554,62 @@ main(int argc, char ** argv)
             }
           }
 
-          // Output the results to file.
-          std::string const file_name =
-            "./stability_forward_test_spatial_integration_" + std::to_string(spatial_integration) +
-            "_stable_formulation_" + std::to_string(stable_formulation) + +"_" +
-            ExaDG::Utilities::enum_to_string(material_type) + ".txt";
-
-          std::ofstream fstream;
-          size_t const  fstream_buffer_size = 256 * 1024; // TODO measure if this has any effect.
-          char          fstream_buffer[fstream_buffer_size];
-          fstream.rdbuf()->pubsetbuf(fstream_buffer, fstream_buffer_size);
-          fstream.open(file_name.c_str(), std::ios::trunc);
-
-          fstream << "  relative errors in stress and stress derivative,\n"
-                  << "  grad_increment_scale = 1 / h_e^2 , h_e = " << h_e << "\n"
-                  << "  in |.| = max_(samples){ | T_f64 - T_f32 |inf / |T_f64|inf }\n"
-                  << "  grad_u_scl    |stress|      |Jacobian|\n";
-
-          for(unsigned int i = 0; i < n_points_over_log_scale; ++i)
+          // Compute average time and output the timings to the console.
+          pcout << "\n"
+                << "  Time in s/" << n_executions_timer << " executions, "
+                << "statistics over " << n_samples * n_points_over_log_scale << " x "
+                << n_executions_timer << " executions.\n";
+          for(unsigned int i = 0; i < 2; ++i)
           {
-            fstream << "  " << std::scientific << std::setw(10) << grad_u_scale[i];
-            for(unsigned int k = 0; k < relative_error_samples.size(); ++k)
-            {
-              fstream << "  " << std::scientific << std::setw(10) << relative_error_samples[k][i];
-            }
-            fstream << "\n";
+            std::string const str_precision = i == 0 ? "DOUBLE" : "SINGLE";
+            // clang-format off
+            double const n_total_executions = static_cast<double>(n_points_over_log_scale * n_samples);
+            double const t_avg_stress       = time_stress_double_float_sum_min_max[i][0]   / n_total_executions;
+            double const t_avg_jacobian     = time_jacobian_double_float_sum_min_max[i][0] / n_total_executions;
+            pcout << "  " << str_precision << " PRECISION:\n"
+            	  << "               avg           / -% to min       / +% to max)\n"
+                  << "    stress   : "
+				  << std::scientific << std::showpos
+				  << std::setw(10) << t_avg_stress << " / "
+				  << std::setw(10) << 100.0 * (time_stress_double_float_sum_min_max[i][1] - t_avg_stress) / t_avg_stress << " % / "
+                  << std::setw(10) << 100.0 * (time_stress_double_float_sum_min_max[i][2] - t_avg_stress) / t_avg_stress << " % \n"
+                  << "    Jacobian : "
+				  << std::setw(10) << t_avg_jacobian << " / "
+				  << std::setw(10) << 100.0 * (time_jacobian_double_float_sum_min_max[i][1] - t_avg_jacobian) / t_avg_jacobian << " % / "
+                  << std::setw(10) << 100.0 * (time_jacobian_double_float_sum_min_max[i][2] - t_avg_jacobian) / t_avg_jacobian << " % \n\n";
+            // clang-format on
           }
-          fstream.close();
+
+          // Output the results to file.
+          {
+            std::string const file_name = "./stability_forward_test_spatial_integration_" +
+                                          std::to_string(spatial_integration) +
+                                          "_stable_formulation_" +
+                                          std::to_string(stable_formulation) + +"_" +
+                                          ExaDG::Utilities::enum_to_string(material_type) + ".txt";
+
+            std::ofstream fstream;
+            size_t const  fstream_buffer_size = 256 * 1024; // TODO measure if this has any effect.
+            char          fstream_buffer[fstream_buffer_size];
+            fstream.rdbuf()->pubsetbuf(fstream_buffer, fstream_buffer_size);
+            fstream.open(file_name.c_str(), std::ios::trunc);
+
+            fstream << "  relative errors in stress and stress derivative,\n"
+                    << "  grad_increment_scale = 1 / h_e^2 , h_e = " << h_e << "\n"
+                    << "  in |.| = max_(samples){ | T_f64 - T_f32 |inf / |T_f64|inf }\n"
+                    << "  grad_u_scl    |stress|      |Jacobian|\n";
+
+            for(unsigned int i = 0; i < n_points_over_log_scale; ++i)
+            {
+              fstream << "  " << std::scientific << std::setw(10) << grad_u_scale[i];
+              for(unsigned int k = 0; k < relative_error_samples.size(); ++k)
+              {
+                fstream << "  " << std::scientific << std::setw(10) << relative_error_samples[k][i];
+              }
+              fstream << "\n";
+            }
+            fstream.close();
+          }
         }
       }
     }
