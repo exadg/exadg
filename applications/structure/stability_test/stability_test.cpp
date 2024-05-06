@@ -327,7 +327,7 @@ main(int argc, char ** argv)
     unsigned int constexpr n_points_over_log_scale = 1e3;
     std::vector<double> grad_u_scale               = logspace(1e-8, 1e+2, n_points_over_log_scale);
     double constexpr h_e                           = 1e-3;
-    double constexpr grad_increment_scale          = 1.0 / (h_e * h_e);
+    double constexpr grad_increment_scale          = 1.0 / h_e;
 
     // Setup dummy MatrixFree object in case the material
     // model stores some data even for cache_level 0.
@@ -445,16 +445,18 @@ main(int argc, char ** argv)
                 diff_evaluation -= evaluation_double[k];
 
                 // Maximum relative error in the |tensor|_inf norm.
-                bool constexpr take_max_err = true;
-                double rel_norm_evaluation  = take_max_err ? 1e-20 : 1e+20;
+                bool constexpr use_max_err     = true;
+                double constexpr use_abs_error = 0.0;
+                double rel_norm_evaluation     = use_max_err ? 1e-20 : 1e+20;
                 for(unsigned int l = 0; l < dim; ++l)
                 {
                   for(unsigned int m = 0; m < dim; ++m)
                   {
                     double const rel_norm =
                       std::abs((diff_evaluation[l][m][0] + 1e-40) /
-                               (0.0 + 1.0 * (evaluation_double[k][l][m][0] + 1e-20)));
-                    if(take_max_err)
+                               (use_abs_error +
+                                (1.0 - use_abs_error) * (evaluation_double[k][l][m][0] + 1e-20)));
+                    if(use_max_err)
                     {
                       rel_norm_evaluation = std::max(rel_norm_evaluation, rel_norm);
                     }
