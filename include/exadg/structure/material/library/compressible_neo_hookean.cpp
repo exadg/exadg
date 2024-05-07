@@ -344,7 +344,8 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacement_
 
   // Access the stored coefficients precomputed using the last linearization vector.
   scalar log_J;
-  if(cache_level == 0)
+  tensor F_inv, C_inv;
+  if(cache_level < 2)
   {
     scalar Jm1;
     tensor F;
@@ -352,33 +353,31 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacement_
                        Jm1,
                        gradient_displacement_cache_level_0_1,
                        check_type,
-                       true /* compute_J */,
+                       cache_level == 0 /* compute_J */,
                        stable_formulation);
 
-    if(stable_formulation)
+    if(cache_level == 0)
     {
-      log_J = log1p(Jm1);
+      if(stable_formulation)
+      {
+        log_J = log1p(Jm1);
+      }
+      else
+      {
+        log_J = log(Jm1 + 1.0);
+      }
     }
     else
     {
-      log_J = log(Jm1 + 1.0);
+      log_J = log_J_coefficients.get_coefficient_cell(cell, q);
     }
-  }
-  else
-  {
-    log_J = log_J_coefficients.get_coefficient_cell(cell, q);
-  }
 
-  tensor F_inv, C_inv;
-  if(cache_level < 2)
-  {
-    tensor F = gradient_displacement_cache_level_0_1;
-    add_scaled_identity<dim, Number, Number>(F, 1.0);
     F_inv = invert(F);
     C_inv = F_inv * transpose(F_inv);
   }
   else
   {
+    log_J = log_J_coefficients.get_coefficient_cell(cell, q);
     F_inv = F_inv_coefficients.get_coefficient_cell(cell, q);
     C_inv = C_inv_coefficients.get_coefficient_cell(cell, q);
   }
