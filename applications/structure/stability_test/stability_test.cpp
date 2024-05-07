@@ -280,9 +280,9 @@ evaluate_material(
 {
   typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> Tensor;
 
-  // No that this is redundant, since cache_level has to be
-  // zero anyways to not access integration point storage.
-  bool constexpr force_evaluation = true;
+  // Note that we do not want to force_evaluation,
+  // but load as much as is stored depending on the cache_level.
+  bool constexpr force_evaluation = false;
   std::vector<Tensor> evaluation(2);
   execution_time_stress_jacobian.resize(2);
 

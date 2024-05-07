@@ -283,11 +283,11 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
                        Jm1,
                        gradient_displacement_cache_level_0_1,
                        check_type,
-                       cache_level == 0 /* compute_J */,
+                       cache_level == 0 or force_evaluation /* compute_J */,
                        stable_formulation);
 
     scalar log_J;
-    if(cache_level == 0)
+    if(cache_level == 0 or force_evaluation)
     {
       if(stable_formulation)
       {
@@ -412,19 +412,19 @@ CompressibleNeoHookean<dim, Number>::kirchhoff_stress(
 
     scalar Jm1;
     tensor F;
-    if(cache_level == 0 or (not stable_formulation))
+    if(cache_level == 0 or (not stable_formulation) or force_evaluation)
     {
       get_modified_F_Jm1(F,
                          Jm1,
                          gradient_displacement_cache_level_0_1,
                          check_type,
-                         cache_level == 0 /* compute_J */,
+                         cache_level == 0 or force_evaluation /* compute_J */,
                          stable_formulation);
     }
 
     // Access the stored coefficients precomputed using the last linearization vector.
     scalar log_J;
-    if(cache_level == 0)
+    if(cache_level == 0 or force_evaluation)
     {
       if(stable_formulation)
       {
