@@ -32,6 +32,7 @@
 #include <deal.II/base/utilities.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/fe/fe_q.h>
+#include <deal.II/fe/fe_system.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/lac/affine_constraints.h>
@@ -56,7 +57,8 @@ std::shared_ptr<Material<dim, Number>>
 setup_material(MaterialType                            material_type,
                bool const                              spatial_integration,
                bool const                              stable_formulation,
-               dealii::MatrixFree<dim, Number> const & matrix_free)
+               dealii::MatrixFree<dim, Number> const & matrix_free,
+               unsigned int const                      cache_level)
 {
   // Construct Material objects.
   std::shared_ptr<Material<dim, Number>> material;
@@ -89,7 +91,6 @@ setup_material(MaterialType                            material_type,
 
     Type2D constexpr two_dim_type          = Type2D::Undefined;
     bool constexpr force_material_residual = false;
-    unsigned int constexpr cache_level     = 0;
 
     if(material_type == MaterialType::CompressibleNeoHookean)
     {
@@ -271,15 +272,13 @@ evaluate_material(
   Material<dim, Number> const &                                   material,
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_increment,
+  unsigned int const                                              n_cell_batches,
+  unsigned int const                                              n_q_points,
   bool const                                                      spatial_integration,
   std::vector<double> &                                           execution_time_stress_jacobian,
   unsigned int const                                              n_executions_timer)
 {
   typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> Tensor;
-
-  // Dummy parameters.
-  unsigned int constexpr cell = 0;
-  unsigned int constexpr q    = 0;
 
   // No that this is redundant, since cache_level has to be
   // zero anyways to not access integration point storage.
@@ -292,14 +291,23 @@ evaluate_material(
     auto timer_start = std::chrono::steady_clock::now();
     for(unsigned int i = 0; i < n_executions_timer; ++i)
     {
-      if(spatial_integration)
+      for(unsigned int cell = 0; cell < n_cell_batches; ++cell)
       {
-        evaluation[0] = material.kirchhoff_stress(gradient_displacement, cell, q, force_evaluation);
-      }
-      else
-      {
-        evaluation[0] =
-          material.second_piola_kirchhoff_stress(gradient_displacement, cell, q, force_evaluation);
+        for(unsigned int q = 0; q < n_q_points; ++q)
+        {
+          if(spatial_integration)
+          {
+            evaluation[0] =
+              material.kirchhoff_stress(gradient_displacement, cell, q, force_evaluation);
+          }
+          else
+          {
+            evaluation[0] = material.second_piola_kirchhoff_stress(gradient_displacement,
+                                                                   cell,
+                                                                   q,
+                                                                   force_evaluation);
+          }
+        }
       }
     }
     auto timer_end = std::chrono::steady_clock::now();
@@ -315,17 +323,23 @@ evaluate_material(
     auto timer_start = std::chrono::steady_clock::now();
     for(unsigned int i = 0; i < n_executions_timer; ++i)
     {
-      if(spatial_integration)
+      for(unsigned int cell = 0; cell < n_cell_batches; ++cell)
       {
-        evaluation[1] = material.contract_with_J_times_C(symmetric_gradient_increment,
-                                                         gradient_displacement,
-                                                         cell,
-                                                         q);
-      }
-      else
-      {
-        evaluation[1] = material.second_piola_kirchhoff_stress_displacement_derivative(
-          gradient_increment, gradient_displacement, cell, q);
+        for(unsigned int q = 0; q < n_q_points; ++q)
+        {
+          if(spatial_integration)
+          {
+            evaluation[1] = material.contract_with_J_times_C(symmetric_gradient_increment,
+                                                             gradient_displacement,
+                                                             cell,
+                                                             q);
+          }
+          else
+          {
+            evaluation[1] = material.second_piola_kirchhoff_stress_displacement_derivative(
+              gradient_increment, gradient_displacement, cell, q);
+          }
+        }
       }
     }
     auto timer_end = std::chrono::steady_clock::now();
@@ -359,6 +373,8 @@ main(int argc, char ** argv)
     // Perform the stability test or measure the evaluation time.
     bool constexpr stab_test = false;
 
+    unsigned int const cache_level = stab_test ? 0 : 0 /* 0, 1, 2 */;
+
     // Gradient and increment scale.
     unsigned int const n_points_over_log_scale = stab_test ? 1e3 : 1;
 
@@ -372,16 +388,23 @@ main(int argc, char ** argv)
     double constexpr grad_increment_scale = 1.0 / h_e;
 
     // Setup dummy MatrixFree object in case the material
-    // model stores some data even for cache_level 0.
+    // model stores some data.
     dealii::MatrixFree<dim, float>  matrix_free_float;
     dealii::MatrixFree<dim, double> matrix_free_double;
 
     dealii::Triangulation<dim> triangulation;
     dealii::GridGenerator::hyper_cube(triangulation, 0., 1.);
-    dealii::FE_Q<dim> const fe_q(1);
+    if(not stab_test)
+    {
+      triangulation.refine_global(4);
+    }
+    unsigned int const      degree     = stab_test ? 1 : 3;
+    unsigned int const      n_q_points = stab_test ? 1 : degree + 1;
+    dealii::FE_Q<dim> const fe_q(degree);
+    dealii::FESystem<dim>   fe_system(fe_q, dim);
     dealii::MappingQ1<dim>  mapping;
     dealii::DoFHandler<dim> dof_handler(triangulation);
-    dof_handler.distribute_dofs(fe_q);
+    dof_handler.distribute_dofs(fe_system);
     {
       // For MatrixFree<dim, double> object.
       dealii::AffineConstraints<double> empty_constraints_double;
@@ -393,7 +416,7 @@ main(int argc, char ** argv)
       matrix_free_double.reinit(mapping,
                                 dof_handler,
                                 empty_constraints_double,
-                                dealii::QGauss<1>(2),
+                                dealii::QGauss<dim>(n_q_points),
                                 additional_data_double);
 
       // For MatrixFree<dim, float> object.
@@ -403,8 +426,11 @@ main(int argc, char ** argv)
       typename dealii::MatrixFree<dim, float>::AdditionalData additional_data_float;
       // additional_data_float.mapping_update_flags =
       //   (update_gradients | update_JxW_values | update_quadrature_points);
-      matrix_free_float.reinit(
-        mapping, dof_handler, empty_constraints_float, dealii::QGauss<1>(2), additional_data_float);
+      matrix_free_float.reinit(mapping,
+                               dof_handler,
+                               empty_constraints_float,
+                               dealii::QGauss<dim>(n_q_points),
+                               additional_data_float);
     }
 
     // Material type choices.
@@ -417,11 +443,19 @@ main(int argc, char ** argv)
     std::vector<bool> stable_formulation_vec{false, true};
 
     // Repeat the experiment with `n_samples` of random tensors.
+#ifdef DEBUG
     unsigned int const n_samples = stab_test ? 2e2 : 10;
+#else
+    unsigned int const n_samples          = stab_test ? 2e2 : 100;
+#endif
 
     // For execution time measurements, execute the evaluation `n_executions_timer`
     // times and compute average/min/max. Above sampling is not narrow enough.
-    unsigned int const n_executions_timer = stab_test ? 1 : 1e6;
+#ifdef DEBUG
+    unsigned int const n_executions_timer = stab_test ? 1 : 10;
+#else
+    unsigned int const n_executions_timer = stab_test ? 1 : 1e4;
+#endif
 
     for(MaterialType const material_type : material_type_vec)
     {
@@ -437,14 +471,21 @@ main(int argc, char ** argv)
 
           pcout << "\n\n"
                 << "  Material model : " << ExaDG::Utilities::enum_to_string(material_type) << "\n"
+                << "  cache_level         = " << cache_level << "\n"
                 << "  spatial_integration = " << spatial_integration << "\n"
                 << "  stable_formulation  = " << stable_formulation << "\n";
 
           // Setup material objects in float and double precision for comparison.
-          std::shared_ptr<Material<dim, double>> material_double = setup_material<dim, double>(
-            material_type, spatial_integration, stable_formulation, matrix_free_double);
+          // Note that the integration point storage for cache_level > 0 is filled
+          // at construction with data corresponding to zero displacement.
+          std::shared_ptr<Material<dim, double>> material_double =
+            setup_material<dim, double>(material_type,
+                                        spatial_integration,
+                                        stable_formulation,
+                                        matrix_free_double,
+                                        cache_level);
           std::shared_ptr<Material<dim, float>> material_float = setup_material<dim, float>(
-            material_type, spatial_integration, stable_formulation, matrix_free_float);
+            material_type, spatial_integration, stable_formulation, matrix_free_float, cache_level);
 
           // Evaluate the residual and derivative for all given scalings.
           std::vector<std::vector<double>> relative_error_samples(2);
@@ -483,6 +524,8 @@ main(int argc, char ** argv)
                 evaluate_material<dim, double>(*material_double,
                                                gradient_displacement_double,
                                                gradient_increment_double,
+                                               matrix_free_double.n_cell_batches(),
+                                               n_q_points,
                                                spatial_integration,
                                                time_double,
                                                n_executions_timer);
@@ -491,6 +534,8 @@ main(int argc, char ** argv)
                 evaluate_material<dim, float>(*material_float,
                                               gradient_displacement_float,
                                               gradient_increment_float,
+                                              matrix_free_float.n_cell_batches(),
+                                              n_q_points,
                                               spatial_integration,
                                               time_float,
                                               n_executions_timer);
@@ -554,34 +599,9 @@ main(int argc, char ** argv)
             }
           }
 
-          // Compute average time and output the timings to the console.
-          pcout << "\n"
-                << "  Time in s/" << n_executions_timer << " executions, "
-                << "statistics over " << n_samples * n_points_over_log_scale << " x "
-                << n_executions_timer << " executions.\n";
-          for(unsigned int i = 0; i < 2; ++i)
+          if(stab_test)
           {
-            std::string const str_precision = i == 0 ? "DOUBLE" : "SINGLE";
-            // clang-format off
-            double const n_total_executions = static_cast<double>(n_points_over_log_scale * n_samples);
-            double const t_avg_stress       = time_stress_double_float_sum_min_max[i][0]   / n_total_executions;
-            double const t_avg_jacobian     = time_jacobian_double_float_sum_min_max[i][0] / n_total_executions;
-            pcout << "  " << str_precision << " PRECISION:\n"
-            	  << "               avg           / -% to min       / +% to max)\n"
-                  << "    stress   : "
-				  << std::scientific << std::showpos
-				  << std::setw(10) << t_avg_stress << " / "
-				  << std::setw(10) << 100.0 * (time_stress_double_float_sum_min_max[i][1] - t_avg_stress) / t_avg_stress << " % / "
-                  << std::setw(10) << 100.0 * (time_stress_double_float_sum_min_max[i][2] - t_avg_stress) / t_avg_stress << " % \n"
-                  << "    Jacobian : "
-				  << std::setw(10) << t_avg_jacobian << " / "
-				  << std::setw(10) << 100.0 * (time_jacobian_double_float_sum_min_max[i][1] - t_avg_jacobian) / t_avg_jacobian << " % / "
-                  << std::setw(10) << 100.0 * (time_jacobian_double_float_sum_min_max[i][2] - t_avg_jacobian) / t_avg_jacobian << " % \n\n";
-            // clang-format on
-          }
-
-          // Output the results to file.
-          {
+            // Output the results to file.
             std::string const file_name = "./stability_forward_test_spatial_integration_" +
                                           std::to_string(spatial_integration) +
                                           "_stable_formulation_" +
@@ -609,6 +629,34 @@ main(int argc, char ** argv)
               fstream << "\n";
             }
             fstream.close();
+          }
+          else
+          {
+            // Compute average time and output the timings to the console.
+            pcout << "\n"
+                  << "  Time in s/" << n_executions_timer << " executions, "
+                  << "statistics over " << n_samples * n_points_over_log_scale << " x "
+                  << n_executions_timer << " executions.\n";
+            for(unsigned int i = 0; i < 2; ++i)
+            {
+              std::string const str_precision = i == 0 ? "DOUBLE" : "SINGLE";
+              // clang-format off
+				double const n_total_executions = static_cast<double>(n_points_over_log_scale * n_samples);
+				double const t_avg_stress       = time_stress_double_float_sum_min_max[i][0]   / n_total_executions;
+				double const t_avg_jacobian     = time_jacobian_double_float_sum_min_max[i][0] / n_total_executions;
+				pcout << "  " << str_precision << " PRECISION:\n"
+					  << "               avg           / -% to min       / +% to max)\n"
+					  << "    stress   : "
+					  << std::scientific << std::showpos
+					  << std::setw(10) << t_avg_stress << " / "
+					  << std::setw(10) << 100.0 * (time_stress_double_float_sum_min_max[i][1] - t_avg_stress) / t_avg_stress << " % / "
+					  << std::setw(10) << 100.0 * (time_stress_double_float_sum_min_max[i][2] - t_avg_stress) / t_avg_stress << " % \n"
+					  << "    Jacobian : "
+					  << std::setw(10) << t_avg_jacobian << " / "
+					  << std::setw(10) << 100.0 * (time_jacobian_double_float_sum_min_max[i][1] - t_avg_jacobian) / t_avg_jacobian << " % / "
+					  << std::setw(10) << 100.0 * (time_jacobian_double_float_sum_min_max[i][2] - t_avg_jacobian) / t_avg_jacobian << " % \n\n";
+              // clang-format on
+            }
           }
         }
       }
