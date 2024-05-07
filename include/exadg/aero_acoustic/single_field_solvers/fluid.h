@@ -49,7 +49,9 @@ class SolverFluid
 public:
   using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
 
-  SolverFluid() : timer_tree(std::make_shared<TimerTree>())
+  SolverFluid()
+    : timer_tree(std::make_shared<TimerTree>()),
+      adaptive_time_stepping_limiting_factor(std::numeric_limits<double>::min())
   {
   }
 
@@ -95,6 +97,17 @@ public:
 
     // initialize vector that stores the pressure time derivative
     pde_operator->initialize_vector_pressure(pressure_time_derivative);
+
+    // store the adaptive time-stepping limiting factor
+    adaptive_time_stepping_limiting_factor =
+      application->get_parameters().adaptive_time_stepping_limiting_factor;
+  }
+
+  double
+  max_next_time_step_size() const
+  {
+    const auto dt = time_integrator->get_time_step_size();
+    return dt * adaptive_time_stepping_limiting_factor;
   }
 
   void
@@ -146,6 +159,11 @@ private:
   // The update of the vector is performed using
   // advance_one_timestep_and_compute_pressure_time_derivative(true).
   VectorType pressure_time_derivative;
+
+  // To be able to estimate if dp/dt has to be evaluated we have to
+  // estimate the maximum time-step size that can be performed after
+  // the current time step. For that we need the limiting factor.
+  double adaptive_time_stepping_limiting_factor;
 };
 
 } // namespace AeroAcoustic

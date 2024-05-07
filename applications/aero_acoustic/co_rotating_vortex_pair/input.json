@@ -15,6 +15,7 @@
     "AeroAcoustic": {
         "Density": "2.0",
         "SourceTermWithConvection": "false",
+        "BlendInSourceTerm": "true",
         "FluidToAcousticCouplingStrategy": "ConservativeInterpolation"
     },
     "Application": {
