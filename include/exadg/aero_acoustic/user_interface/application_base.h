@@ -48,6 +48,7 @@
 #include <exadg/acoustic_conservation_equations/user_interface/parameters.h>
 
 // AeroAcoustic
+#include <exadg/aero_acoustic/user_interface/field_functions.h>
 #include <exadg/aero_acoustic/user_interface/parameters.h>
 
 namespace ExaDG
@@ -94,9 +95,9 @@ public:
     param.check();
 
     // Some AeroAcoustic specific Asserts
-    AssertThrow(param.adaptive_time_stepping == false,
-                dealii::ExcMessage(
-                  "Adaptive timestepping not yet implemented for aero-acoustics."));
+    AssertThrow(param.adaptive_time_stepping == true,
+                dealii::ExcMessage("Adaptive timestepping has to be enabled for aero-acoustics."));
+
     AssertThrow(param.aero_acoustic_source_term,
                 dealii::ExcMessage(
                   "aero_acoustic_source_term has to be set true for aero-acoustic computations."));
@@ -328,6 +329,9 @@ public:
     parse_parameters();
     parameters.check();
     parameters.print(pcout, "List of parameters for aero-acoustic solver");
+
+    field_functions = std::make_shared<FieldFunctions<dim>>();
+    set_field_functions();
   }
 
   virtual void
@@ -344,6 +348,8 @@ public:
   std::shared_ptr<AcousticsAeroAcoustic::ApplicationBase<dim, Number>> acoustic;
   std::shared_ptr<FluidAeroAcoustic::ApplicationBase<dim, Number>>     fluid;
 
+  std::shared_ptr<FieldFunctions<dim>> field_functions;
+
 private:
   void
   parse_parameters()
@@ -355,6 +361,9 @@ private:
 
   virtual void
   set_single_field_solvers(std::string input_file, MPI_Comm const & comm) = 0;
+
+  virtual void
+  set_field_functions() = 0;
 
   std::string const          parameter_file;
   MPI_Comm const             mpi_comm;
