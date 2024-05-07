@@ -312,7 +312,7 @@ IncompressibleNeoHookean<dim, Number>::get_c2(scalar const &     Jm1,
   if(cache_level == 0 or force_evaluation)
   {
     c2 = bulk_modulus * (get_JJm1<Number>(Jm1, stable_formulation) + 1.0) +
-         2.0 * shear_modulus_stored * one_third * one_third * J_pow *
+         (2.0 * one_third * one_third) * shear_modulus_stored * J_pow *
            get_I_1<dim, Number>(E, stable_formulation);
   }
   else
@@ -334,7 +334,25 @@ IncompressibleNeoHookean<dim, Number>::get_J_pow(scalar const &     Jm1,
 
   if(cache_level == 0 or force_evaluation)
   {
-    J_pow = pow(Jm1 + 1.0, static_cast<Number>(-2.0 * one_third));
+    if(cache_level == 0)
+    {
+      // Compute the third root of J^2 via an in-place Newton method.
+      // J^2 = 1 is a good initial guess, since we enforce this value
+      // implicitly via the constitutive model. We hard-code 3 iterations,
+      // which were in most tests enough, but this might be risky and
+      // not pay off enough for cache-level > 1 since we are storing
+      // this variable anyways.
+      J_pow += 1.0;
+      scalar J_sqrd = (Jm1 * Jm1 + 2.0 * Jm1 + 1.0);
+      J_pow -= (J_pow * J_pow * J_pow - J_sqrd) / (3.0 * J_pow * J_pow);
+      J_pow -= (J_pow * J_pow * J_pow - J_sqrd) / (3.0 * J_pow * J_pow);
+      J_pow -= (J_pow * J_pow * J_pow - J_sqrd) / (3.0 * J_pow * J_pow);
+      J_pow = 1.0 / J_pow;
+    }
+    else
+    {
+      J_pow = pow(Jm1 + 1.0, static_cast<Number>(-2.0 * one_third));
+    }
   }
   else
   {
@@ -490,11 +508,11 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacemen
   tensor const Dd_C_inv =
     Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
 
-  Dd_S = C_inv * (c2 * one_over_J_times_Dd_J - (2.0 * shear_modulus_stored * one_third * J_pow) *
+  Dd_S = C_inv * (c2 * one_over_J_times_Dd_J - ((2.0 * one_third) * shear_modulus_stored * J_pow) *
                                                  trace(transpose(gradient_increment) * F));
   Dd_S += Dd_C_inv * c1;
   add_scaled_identity(Dd_S,
-                      -shear_modulus_stored * one_third * J_pow * 2.0 * one_over_J_times_Dd_J);
+                      -shear_modulus_stored * (2.0 * one_third) * J_pow * one_over_J_times_Dd_J);
 
   return Dd_S;
 }
@@ -556,7 +574,7 @@ IncompressibleNeoHookean<dim, Number>::kirchhoff_stress(
       scalar const c1 =
         get_c1(Jm1, J_pow, tau /* E */, shear_modulus_stored, force_evaluation, cell, q);
 
-      tau = (F * transpose(F)) * shear_modulus_stored * J_pow;
+      tau = (F * transpose(F)) * (shear_modulus_stored * J_pow);
       add_scaled_identity(tau, c1);
     }
   }
@@ -633,7 +651,7 @@ IncompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
 
   result = symmetric_gradient_increment * (-2.0 * c1);
   result +=
-    (-4.0 * one_third * shear_modulus_stored * J_pow * trace(symmetric_gradient_increment)) * C;
+    ((-4.0 * one_third) * shear_modulus_stored * J_pow * trace(symmetric_gradient_increment)) * C;
   add_scaled_identity(result, c2 * trace(symmetric_gradient_increment));
 
   return result;
