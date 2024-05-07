@@ -29,7 +29,7 @@
 #include <exadg/structure/spatial_discretization/operators/continuum_mechanics.h>
 
 // ExaDG-Bio
-#define LINK_TO_EXADGBIO
+// #define LINK_TO_EXADGBIO
 #ifdef LINK_TO_EXADGBIO
 #  include "../../../../../../exadg-bio/include/match_cell_data.h"
 #endif
@@ -470,7 +470,7 @@ IncompressibleFibrousTissue<dim, Number>::get_c1(scalar const &     Jm1,
 
   if(cache_level == 0 or force_evaluation)
   {
-    c1 = 0.5 * bulk_modulus * get_JJm1<Number>(Jm1, stable_formulation) -
+    c1 = (0.5 * bulk_modulus) * get_JJm1<Number>(Jm1, stable_formulation) -
          shear_modulus_stored * one_third * J_pow * get_I_1<dim, Number>(E, stable_formulation);
   }
   else
@@ -496,7 +496,7 @@ IncompressibleFibrousTissue<dim, Number>::get_c2(scalar const &     Jm1,
   if(cache_level == 0 or force_evaluation)
   {
     c2 = bulk_modulus * (get_JJm1<Number>(Jm1, stable_formulation) + 1.0) +
-         2.0 * shear_modulus_stored * one_third * one_third * J_pow *
+         (2.0 * one_third * one_third) * shear_modulus_stored * J_pow *
            get_I_1<dim, Number>(E, stable_formulation);
   }
   else
@@ -533,7 +533,7 @@ IncompressibleFibrousTissue<dim, Number>::get_c3(vector const &     M_1,
       c3 = exp_limited(fiber_k_2 * E_i * E_i, fiber_numerical_upper_bound);
     }
 
-    c3 *= fiber_switch * 2.0 * fiber_k_1;
+    c3 *= fiber_switch * (2.0 * fiber_k_1);
   }
   else
   {
@@ -554,7 +554,25 @@ IncompressibleFibrousTissue<dim, Number>::get_J_pow(scalar const &     Jm1,
 
   if(cache_level == 0 or force_evaluation)
   {
-    J_pow = pow(Jm1 + 1.0, static_cast<Number>(-2.0 * one_third));
+    if(cache_level == 0)
+    {
+      // Compute the third root of J^2 via an in-place Newton method.
+      // J^2 = 1 is a good initial guess, since we enforce this value
+      // implicitly via the constitutive model. We hard-code 3 iterations,
+      // which were in most tests enough, but this might be risky and
+      // not pay off enough for cache-level > 1 since we are storing
+      // this variable anyways.
+      J_pow         = scalar_one;
+      scalar J_sqrd = (Jm1 * Jm1 + 2.0 * Jm1 + 1.0);
+      J_pow -= (J_pow * J_pow * J_pow - J_sqrd) / (3.0 * J_pow * J_pow);
+      J_pow -= (J_pow * J_pow * J_pow - J_sqrd) / (3.0 * J_pow * J_pow);
+      J_pow -= (J_pow * J_pow * J_pow - J_sqrd) / (3.0 * J_pow * J_pow);
+      J_pow = 1.0 / J_pow;
+    }
+    else
+    {
+      J_pow = pow(Jm1 + 1.0, static_cast<Number>(-2.0 * one_third));
+    }
   }
   else
   {
@@ -614,7 +632,7 @@ IncompressibleFibrousTissue<dim, Number>::get_fiber_switch(vector const & M_1,
   }
   else
   {
-    // I_i_star (M_1 (x) M_1) : C
+    // I_i_star = (M_1 (x) M_1) : C
     tensor C = 2.0 * E;
     add_scaled_identity<dim, Number, Number>(C, 1.0);
     I_i_star = scalar_product(outer_product(M_1, M_1), C);
@@ -836,8 +854,10 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress(
     if(stable_formulation)
     {
       S = (2.0 * shear_modulus_stored * J_pow) * E;
-      add_scaled_identity<dim, Number>(
-        S, -one_third * trace(S) + 0.5 * bulk_modulus * get_JJm1<Number>(Jm1, stable_formulation));
+      add_scaled_identity<dim, Number>(S,
+                                       -one_third * trace(S) +
+                                         (0.5 * bulk_modulus) *
+                                           get_JJm1<Number>(Jm1, stable_formulation));
       S = C_inv * S;
     }
     else
@@ -970,11 +990,11 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
 
   tensor const transpose_gradient_increment_times_F = transpose(gradient_increment) * F;
 
-  Dd_S = C_inv * (c2 * one_over_J_times_Dd_J - (2.0 * shear_modulus_stored * one_third * J_pow) *
+  Dd_S = C_inv * (c2 * one_over_J_times_Dd_J - ((2.0 * one_third) * shear_modulus_stored * J_pow) *
                                                  trace(transpose_gradient_increment_times_F));
   Dd_S += Dd_C_inv * c1;
   add_scaled_identity(Dd_S,
-                      -shear_modulus_stored * one_third * J_pow * 2.0 * one_over_J_times_Dd_J);
+                      -shear_modulus_stored * (2.0 * one_third) * J_pow * one_over_J_times_Dd_J);
 
   // Add fiber contribution.
   for(unsigned int i = 0; i < n_fiber_families; i++)
@@ -1009,7 +1029,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
     scalar const c3 =
       get_c3(M_1_cache_level_0_1, E_cache_level_0, E_i, false /* force_evaluation */, i, cell, q);
 
-    Dd_S += H_i * (c3 * (2.0 * fiber_k_2 * E_i * E_i + 1.0) *
+    Dd_S += H_i * (c3 * ((2.0 * fiber_k_2) * E_i * E_i + 1.0) *
                    scalar_product(H_i,
                                   transpose_gradient_increment_times_F +
                                     transpose(transpose_gradient_increment_times_F)));
@@ -1105,9 +1125,9 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(
       tau += (2.0 * shear_modulus_stored * J_pow) * E;
 
       add_scaled_identity<dim, Number>(tau,
-                                       (-2.0 * one_third * shear_modulus_stored * J_pow) *
+                                       (-2.0 * one_third) * shear_modulus_stored * J_pow *
                                            trace(E) +
-                                         0.5 * bulk_modulus *
+                                         (0.5 * bulk_modulus) *
                                            get_JJm1<Number>(Jm1, stable_formulation));
     }
     else
@@ -1187,7 +1207,7 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
 
   result = symmetric_gradient_increment * (-2.0 * c1);
   result +=
-    (-4.0 * one_third * shear_modulus_stored * J_pow * trace(symmetric_gradient_increment)) * C;
+    ((-4.0 * one_third) * shear_modulus_stored * J_pow * trace(symmetric_gradient_increment)) * C;
   add_scaled_identity(result, c2 * trace(symmetric_gradient_increment));
 
   // Add fiber contribution.
@@ -1227,7 +1247,7 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
       C_times_H_i = C_times_H_i_coefficients[i].get_coefficient_cell(cell, q);
     }
 
-    result += (2.0 * c3 * (2.0 * fiber_k_2 * E_i * E_i + 1.0) *
+    result += (2.0 * c3 * ((2.0 * fiber_k_2) * E_i * E_i + 1.0) *
                scalar_product(H_i_times_C, symmetric_gradient_increment)) *
               C_times_H_i;
 
