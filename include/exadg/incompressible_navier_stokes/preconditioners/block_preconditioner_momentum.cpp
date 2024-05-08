@@ -223,16 +223,16 @@ BlockPreconditionerMomentum<dim, Number>::do_vmult(
           break;
         }
       if(all_indices_contiguous)
-        {
-          if (before_loop)
-            before_loop(dof_indices[0], dof_indices[0] + scalar::size() * nn * dim);
-        }
+      {
+        if(before_loop)
+          before_loop(dof_indices[0], dof_indices[0] + scalar::size() * nn * dim);
+      }
       else
         for(unsigned int i = 0; i < scalar::size(); ++i)
-          {
-            if (before_loop)
-              before_loop(dof_indices[i], dof_indices[i] + nn * dim);
-          }
+        {
+          if(before_loop)
+            before_loop(dof_indices[i], dof_indices[i] + nn * dim);
+        }
     }
 
     for(unsigned int d = 0; d < dim; ++d)
@@ -284,16 +284,16 @@ BlockPreconditionerMomentum<dim, Number>::do_vmult(
           break;
         }
       if(all_indices_contiguous)
-        {
-          if (after_loop)
-            after_loop(dof_indices[0], dof_indices[0] + scalar::size() * nn * dim);
-        }
+      {
+        if(after_loop)
+          after_loop(dof_indices[0], dof_indices[0] + scalar::size() * nn * dim);
+      }
       else
         for(unsigned int i = 0; i < scalar::size(); ++i)
-          {
-            if (after_loop)
-              after_loop(dof_indices[i], dof_indices[i] + nn * dim);
-          }
+        {
+          if(after_loop)
+            after_loop(dof_indices[i], dof_indices[i] + nn * dim);
+        }
     }
   }
 }

@@ -347,6 +347,9 @@ public:
   apply_mass_operator(VectorType & dst, VectorType const & src) const;
 
   void
+  apply_scaled_mass_operator(VectorType & dst, Number const factor, VectorType const & src) const;
+
+  void
   apply_mass_operator_add(VectorType & dst, VectorType const & src) const;
 
   // body force term
@@ -557,8 +560,10 @@ protected:
   /*
    * Linear(ized) momentum operator.
    */
+public:
   mutable MomentumOperator<dim, Number> momentum_operator;
 
+protected:
   /*
    * Inverse mass operator (for L2 spaces)
    */
@@ -574,8 +579,11 @@ protected:
    * Projection operator.
    */
   typedef ProjectionOperator<dim, Number> ProjOperator;
-  std::shared_ptr<ProjOperator>           projection_operator;
 
+public:
+  std::shared_ptr<ProjOperator> projection_operator;
+
+protected:
   /*
    * Projection solver.
    */

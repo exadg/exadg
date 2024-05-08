@@ -1096,6 +1096,15 @@ SpatialOperatorBase<dim, Number>::apply_mass_operator(VectorType &       dst,
 
 template<int dim, typename Number>
 void
+SpatialOperatorBase<dim, Number>::apply_scaled_mass_operator(VectorType &       dst,
+                                                             Number const       factor,
+                                                             VectorType const & src) const
+{
+  mass_operator.apply_scale(dst, factor, src);
+}
+
+template<int dim, typename Number>
+void
 SpatialOperatorBase<dim, Number>::apply_mass_operator_add(VectorType &       dst,
                                                           VectorType const & src) const
 {

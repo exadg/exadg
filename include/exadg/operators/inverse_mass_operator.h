@@ -203,10 +203,10 @@ public:
     }
     else // ElementwiseKrylovSolver or BlockMatrices
     {
-      if (before_loop)
+      if(before_loop)
         before_loop(0, src.locally_owned_size());
       block_jacobi_preconditioner->vmult(dst, src);
-      if (after_loop)
+      if(after_loop)
         after_loop(0, src.locally_owned_size());
     }
   }

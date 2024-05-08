@@ -259,7 +259,7 @@ private:
 
     // projection step
     this->param.solver_projection                = SolverProjection::CG;
-    this->param.solver_data_projection           = SolverData(1000, ABS_TOL, REL_TOL);
+    this->param.solver_data_projection           = SolverData(1000, ABS_TOL, 10 * REL_TOL);
     this->param.preconditioner_projection        = PreconditionerProjection::BlockPreconditioner;
     this->param.update_preconditioner_projection = true;
     this->param.update_preconditioner_projection_every_time_steps = 5;
