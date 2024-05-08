@@ -435,10 +435,11 @@ main(int argc, char ** argv)
     }
 
     // Material type choices.
-    std::vector<MaterialType> material_type_vec{MaterialType::StVenantKirchhoff,
+    std::vector<MaterialType> material_type_vec{//MaterialType::StVenantKirchhoff,
                                                 MaterialType::CompressibleNeoHookean,
                                                 MaterialType::IncompressibleNeoHookean,
-                                                MaterialType::IncompressibleFibrousTissue};
+                                                MaterialType::IncompressibleFibrousTissue
+    };
 
     std::vector<bool> spatial_integration_vec{false, true};
     std::vector<bool> stable_formulation_vec{false, true};
@@ -447,7 +448,7 @@ main(int argc, char ** argv)
 #ifdef DEBUG
     unsigned int const n_samples = stab_test ? 2e2 : 10;
 #else
-    unsigned int const n_samples          = stab_test ? 2e2 : 100;
+    unsigned int const n_samples          = stab_test ? 2e2 : 2e1;
 #endif
 
     // For execution time measurements, execute the evaluation `n_executions_timer`
@@ -455,7 +456,7 @@ main(int argc, char ** argv)
 #ifdef DEBUG
     unsigned int const n_executions_timer = stab_test ? 1 : 10;
 #else
-    unsigned int const n_executions_timer = stab_test ? 1 : 1e4;
+    unsigned int const n_executions_timer = stab_test ? 1 : 1e2;
 #endif
 
     for(MaterialType const material_type : material_type_vec)
