@@ -41,13 +41,7 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     for(unsigned int j = 0; j < dim; ++j)
     {
-      for(unsigned int k = 0; k < dealii::VectorizedArray<Number>::size(); ++k)
-      {
-        if(tensor[i][j][k] > upper_bound or not std::isfinite(tensor[i][j][k]))
-        {
-          tensor[i][j][k] = upper_bound;
-        }
-      }
+      tensor[i][j] = std::min(tensor[i][j], dealii::make_vectorized_array(upper_bound));
     }
   }
 }

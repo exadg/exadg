@@ -766,7 +766,7 @@ NonLinearOperator<dim, Number>::calculate_system_matrix(
   if(this->operator_data.spatial_integration)
   {
     this->matrix_free_spatial.cell_loop(
-      &OperatorBase<dim, Number, dim /* n_components */>::cell_loop_calculate_system_matrix,
+      &This::cell_loop_calculate_system_matrix,
       this,
       system_matrix,
       system_matrix);
@@ -791,7 +791,7 @@ NonLinearOperator<dim, Number>::calculate_system_matrix(
   if(this->operator_data.spatial_integration)
   {
     this->matrix_free_spatial.cell_loop(
-      &OperatorBase<dim, Number, dim /* n_components */>::cell_loop_calculate_system_matrix,
+      &This::cell_loop_calculate_system_matrix,
       this,
       system_matrix,
       system_matrix);

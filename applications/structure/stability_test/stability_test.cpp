@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <chrono>
 #include <iostream>
+#include <fstream>
 
 // deal.II
 #include <deal.II/base/conditional_ostream.h>

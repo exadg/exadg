@@ -231,7 +231,7 @@ private:
   /*
    * Helper functions to replace frequently appearing terms.
    */
-  scalar
+  DEAL_II_ALWAYS_INLINE scalar
   get_c1(scalar const &     Jm1,
          scalar const &     J_pow,
          tensor const &     E,
@@ -240,7 +240,7 @@ private:
          unsigned int const cell,
          unsigned int const q) const;
 
-  scalar
+  DEAL_II_ALWAYS_INLINE scalar
   get_c2(scalar const &     Jm1,
          scalar const &     J_pow,
          tensor const &     E,
@@ -249,7 +249,7 @@ private:
          unsigned int const cell,
          unsigned int const q) const;
 
-  scalar
+  DEAL_II_ALWAYS_INLINE scalar
   get_c3(vector const &     M_1,
          tensor const &     E,
          scalar const &     E_i,
