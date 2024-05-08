@@ -258,23 +258,23 @@ private:
          unsigned int const cell,
          unsigned int const q) const;
 
-  scalar
+  DEAL_II_ALWAYS_INLINE scalar
   get_J_pow(scalar const &     Jm1,
             bool const         force_evaluation,
             unsigned int const cell,
             unsigned int const q) const;
 
-  tensor
+  DEAL_II_ALWAYS_INLINE tensor
   get_structure_tensor(vector const &     M_1,
                        vector const &     M_2,
                        unsigned int const i,
                        unsigned int const cell,
                        unsigned int const q) const;
 
-  scalar
+  DEAL_II_ALWAYS_INLINE scalar
   get_fiber_switch(vector const & M_1, tensor const & E) const;
 
-  scalar
+  DEAL_II_ALWAYS_INLINE scalar
   get_E_i(tensor const &     H_i,
           tensor const &     C,
           bool const         force_evaluation,
