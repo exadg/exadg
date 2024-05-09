@@ -199,11 +199,18 @@ private:
                                                              scalar const & c1,
                                                              scalar const & shear_modulus) const;
 
-  template<bool force_evaluation>
   DEAL_II_ALWAYS_INLINE tensor
-  compute_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
-                           unsigned int const cell,
-                           unsigned int const q) const;
+  compute_kirchhoff_stress_stable_formulation(tensor const & gradient_displacement,
+  											  scalar const & Jm1,
+  											  scalar const & J_pow,
+  											  scalar const & shear_modulus) const;
+
+  DEAL_II_ALWAYS_INLINE tensor
+  compute_kirchhoff_stress_unstable_formulation(tensor const & F,
+											    scalar const & J_pow,
+											    scalar const & c1,
+											    scalar const & shear_modulus) const;
+
 
   unsigned int dof_index;
   unsigned int quad_index;
