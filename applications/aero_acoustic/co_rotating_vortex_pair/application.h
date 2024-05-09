@@ -390,8 +390,9 @@ public:
     this->param.grid.triangulation_type           = TriangulationType::Distributed;
     this->param.grid.create_coarse_triangulations = additional_refinements_around_source > 0;
 
-    this->param.mapping_degree = this->param.degree_u;
-    this->param.degree_p       = DegreePressure::MixedOrder;
+    this->param.mapping_degree              = this->param.degree_u;
+    this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
+    this->param.degree_p                    = DegreePressure::MixedOrder;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
