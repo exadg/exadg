@@ -605,7 +605,8 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
       else
       {
         // dummy Grad_d_lin sufficient
-        F = material->deformation_gradient(integrator.get_current_cell_index(), q);
+        F = material->gradient_displacement(integrator.get_current_cell_index(), q);
+        add_scaled_identity(F, 1.0);
       }
 
       // 2nd Piola-Kirchhoff stresses
@@ -760,7 +761,8 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       else
       {
         // dummy Grad_d_lin sufficient
-        F_lin = material->deformation_gradient(integrator.get_current_cell_index(), q);
+        F_lin = material->gradient_displacement(integrator.get_current_cell_index(), q);
+        add_scaled_identity<dim, Number, Number>(F_lin, 1.0);
       }
 
       // 2nd Piola-Kirchhoff stresses

@@ -169,7 +169,7 @@ public:
   }
 
   virtual tensor
-  deformation_gradient(unsigned int const cell, unsigned int const q) const
+  gradient_displacement(unsigned int const cell, unsigned int const q) const
   {
     (void)cell;
     (void)q;

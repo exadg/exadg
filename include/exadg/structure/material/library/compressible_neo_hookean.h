@@ -145,7 +145,7 @@ public:
   one_over_J(unsigned int const cell, unsigned int const q) const final;
 
   tensor
-  deformation_gradient(unsigned int const cell, unsigned int const q) const final;
+  gradient_displacement(unsigned int const cell, unsigned int const q) const final;
 
 private:
   /*
@@ -176,7 +176,7 @@ private:
 
   // required for nonlinear operator
   mutable VariableCoefficients<scalar> one_over_J_coefficients;
-  mutable VariableCoefficients<tensor> deformation_gradient_coefficients;
+  mutable VariableCoefficients<tensor> gradient_displacement_coefficients;
 
   // scalar cache level
   mutable VariableCoefficients<scalar> log_J_coefficients;

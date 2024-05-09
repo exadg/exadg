@@ -155,8 +155,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
         if(force_material_residual)
         {
-          deformation_gradient_coefficients.initialize(matrix_free, quad_index, false, false);
-          deformation_gradient_coefficients.set_coefficients(I);
+          gradient_displacement_coefficients.initialize(matrix_free, quad_index, false, false);
+          gradient_displacement_coefficients.set_coefficients(tensor_zero);
 
           second_piola_kirchhoff_stress_coefficients.initialize(matrix_free,
                                                                 quad_index,
@@ -167,8 +167,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       }
       else
       {
-        deformation_gradient_coefficients.initialize(matrix_free, quad_index, false, false);
-        deformation_gradient_coefficients.set_coefficients(I);
+        gradient_displacement_coefficients.initialize(matrix_free, quad_index, false, false);
+        gradient_displacement_coefficients.set_coefficients(tensor_zero);
 
         second_piola_kirchhoff_stress_coefficients.initialize(matrix_free,
                                                               quad_index,
@@ -748,8 +748,10 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     // Overwrite computed values with admissible stored ones
     if constexpr(check_type == 2)
     {
-      tensor const F_old    = deformation_gradient_coefficients.get_coefficient_cell(cell, q);
-      bool         update_J = false;
+      tensor F_old = gradient_displacement_coefficients.get_coefficient_cell(cell, q);
+      add_scaled_identity(F_old, 1.0);
+
+      bool update_J = false;
       for(unsigned int i = 0; i < Jm1.size(); ++i)
       {
         if(Jm1[i] + 1.0 <= get_J_tol<Number>())
@@ -837,7 +839,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
         if(force_material_residual)
         {
-          deformation_gradient_coefficients.set_coefficient_cell(cell, q, F);
+          gradient_displacement_coefficients.set_coefficient_cell(cell, q, Grad_d_lin);
+
           tensor const S =
             second_piola_kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
           second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
@@ -845,7 +848,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       }
       else
       {
-        deformation_gradient_coefficients.set_coefficient_cell(cell, q, F);
+        gradient_displacement_coefficients.set_coefficient_cell(cell, q, Grad_d_lin);
 
         tensor const S =
           second_piola_kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
@@ -980,12 +983,12 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   if constexpr(cache_level < 2)
   {
     F = gradient_displacement_cache_level_0_1;
-    add_scaled_identity<dim, Number, Number>(F, 1.0);
   }
   else
   {
-    F = deformation_gradient_coefficients.get_coefficient_cell(cell, q);
+    F = gradient_displacement_coefficients.get_coefficient_cell(cell, q);
   }
+  add_scaled_identity<dim, Number, Number>(F, 1.0);
 
   scalar Jm1_cache_level_0;
   tensor E_cache_level_0;
@@ -1334,11 +1337,11 @@ template<int dim,
          unsigned int cache_level>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
-  deformation_gradient(unsigned int const cell, unsigned int const q) const
+  gradient_displacement(unsigned int const cell, unsigned int const q) const
 {
   AssertThrow(cache_level > 1,
               dealii::ExcMessage("Cannot access precomputed deformation gradient."));
-  return (deformation_gradient_coefficients.get_coefficient_cell(cell, q));
+  return (gradient_displacement_coefficients.get_coefficient_cell(cell, q));
 }
 
 // clang-format off
