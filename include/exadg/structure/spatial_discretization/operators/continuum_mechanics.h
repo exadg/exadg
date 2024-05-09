@@ -167,8 +167,8 @@ inline DEAL_II_ALWAYS_INLINE //
     {
       // clang-format off
       return (gradient_displacement[0][0] + gradient_displacement[1][1]
-	        + gradient_displacement[0][0] * gradient_displacement[1][1]
-	        - gradient_displacement[0][1] * gradient_displacement[1][0]);
+            + gradient_displacement[0][0] * gradient_displacement[1][1]
+            - gradient_displacement[0][1] * gradient_displacement[1][0]);
       // clang-format on
     }
     else if constexpr(dim == 3)
@@ -189,7 +189,7 @@ inline DEAL_II_ALWAYS_INLINE //
     else
     {
       AssertThrow(false, dealii::ExcMessage("Unexpected dim. Choose dim == 2 or dim == 3."));
-      return (determinant(get_F(gradient_displacement)) - 1.0);
+      return (dealii::make_vectorized_array(1.0/0.0));
     }
   }
   else

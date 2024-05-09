@@ -23,8 +23,8 @@
 #include <stdlib.h>
 #include <algorithm>
 #include <chrono>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
@@ -83,7 +83,7 @@ setup_material(MaterialType                            material_type,
                                           two_dim_type);
 
     material = std::make_shared<StVenantKirchhoff<dim, Number>>(
-      matrix_free, dof_index, quad_index, data, large_deformation, check_type);
+      matrix_free, dof_index, quad_index, data, large_deformation);
   }
   else
   {
@@ -105,15 +105,88 @@ setup_material(MaterialType                            material_type,
                                                  lambda,
                                                  two_dim_type);
 
-      material = std::make_shared<CompressibleNeoHookean<dim, Number>>(matrix_free,
-                                                                       dof_index,
-                                                                       quad_index,
-                                                                       data,
-                                                                       spatial_integration,
-                                                                       force_material_residual,
-                                                                       check_type,
-                                                                       stable_formulation,
-                                                                       cache_level);
+      if(check_type == 0)
+      {
+        if(stable_formulation)
+        {
+          if(cache_level == 0)
+          {
+            material = std::make_shared<CompressibleNeoHookean<dim, Number, 0, true, 0>>(
+              matrix_free,
+              dof_index,
+              quad_index,
+              data,
+              spatial_integration,
+              force_material_residual);
+          }
+          else if(cache_level == 1)
+          {
+            material = std::make_shared<CompressibleNeoHookean<dim, Number, 0, true, 1>>(
+              matrix_free,
+              dof_index,
+              quad_index,
+              data,
+              spatial_integration,
+              force_material_residual);
+          }
+          else if(cache_level == 2)
+          {
+            material = std::make_shared<CompressibleNeoHookean<dim, Number, 0, true, 2>>(
+              matrix_free,
+              dof_index,
+              quad_index,
+              data,
+              spatial_integration,
+              force_material_residual);
+          }
+          else
+          {
+            AssertThrow(cache_level < 3, dealii::ExcMessage("Cache levels 0 1 and 2 implemented."));
+          }
+        }
+        else
+        {
+          if(cache_level == 0)
+          {
+            material = std::make_shared<CompressibleNeoHookean<dim, Number, 0, false, 0>>(
+              matrix_free,
+              dof_index,
+              quad_index,
+              data,
+              spatial_integration,
+              force_material_residual);
+          }
+          else if(cache_level == 1)
+          {
+            material = std::make_shared<CompressibleNeoHookean<dim, Number, 0, false, 1>>(
+              matrix_free,
+              dof_index,
+              quad_index,
+              data,
+              spatial_integration,
+              force_material_residual);
+          }
+          else if(cache_level == 2)
+          {
+            material = std::make_shared<CompressibleNeoHookean<dim, Number, 0, false, 2>>(
+              matrix_free,
+              dof_index,
+              quad_index,
+              data,
+              spatial_integration,
+              force_material_residual);
+          }
+          else
+          {
+            AssertThrow(cache_level < 3, dealii::ExcMessage("Cache levels 0 1 and 2 implemented."));
+          }
+        }
+      }
+      else
+      {
+        AssertThrow(check_type == 0,
+                    dealii::ExcMessage("Templates only for check_type == 0 implemented."));
+      }
     }
     else if(material_type == MaterialType::IncompressibleNeoHookean)
     {
@@ -435,11 +508,10 @@ main(int argc, char ** argv)
     }
 
     // Material type choices.
-    std::vector<MaterialType> material_type_vec{//MaterialType::StVenantKirchhoff,
+    std::vector<MaterialType> material_type_vec{// MaterialType::StVenantKirchhoff,
                                                 MaterialType::CompressibleNeoHookean,
                                                 MaterialType::IncompressibleNeoHookean,
-                                                MaterialType::IncompressibleFibrousTissue
-    };
+                                                MaterialType::IncompressibleFibrousTissue};
 
     std::vector<bool> spatial_integration_vec{false, true};
     std::vector<bool> stable_formulation_vec{false, true};
