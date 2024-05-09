@@ -27,27 +27,25 @@ namespace ExaDG
 {
 namespace Structure
 {
-template<int dim, typename Number>
-CompressibleNeoHookean<dim, Number>::CompressibleNeoHookean(
-  dealii::MatrixFree<dim, Number> const & matrix_free,
-  unsigned int const                      dof_index,
-  unsigned int const                      quad_index,
-  CompressibleNeoHookeanData<dim> const & data,
-  bool const                              spatial_integration,
-  bool const                              force_material_residual,
-  unsigned int const                      check_type,
-  bool const                              stable_formulation,
-  unsigned int const                      cache_level)
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
+CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
+  CompressibleNeoHookean(dealii::MatrixFree<dim, Number> const & matrix_free,
+                         unsigned int const                      dof_index,
+                         unsigned int const                      quad_index,
+                         CompressibleNeoHookeanData<dim> const & data,
+                         bool const                              spatial_integration,
+                         bool const                              force_material_residual)
   : dof_index(dof_index),
     quad_index(quad_index),
     data(data),
     parameters_are_variable(data.shear_modulus_function != nullptr or
                             data.lambda_function != nullptr),
     spatial_integration(spatial_integration),
-    force_material_residual(force_material_residual),
-    stable_formulation(stable_formulation),
-    check_type(check_type),
-    cache_level(cache_level)
+    force_material_residual(force_material_residual)
 {
   // initialize (potentially variable) parameters
   Number const shear_modulus = data.shear_modulus;
@@ -66,10 +64,12 @@ CompressibleNeoHookean<dim, Number>::CompressibleNeoHookean(
     lambda_coefficients.set_coefficients(lambda);
 
     VectorType dummy;
-    matrix_free.cell_loop(&CompressibleNeoHookean<dim, Number>::cell_loop_set_coefficients,
-                          this,
-                          dummy,
-                          dummy);
+    matrix_free.cell_loop(
+      &CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
+        cell_loop_set_coefficients,
+      this,
+      dummy,
+      dummy);
   }
 
   // Initialize linearization cache and fill with values corresponding to
@@ -128,13 +128,17 @@ CompressibleNeoHookean<dim, Number>::CompressibleNeoHookean(
   }
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 void
-CompressibleNeoHookean<dim, Number>::cell_loop_set_coefficients(
-  dealii::MatrixFree<dim, Number> const & matrix_free,
-  VectorType &,
-  VectorType const &,
-  Range const & cell_range) const
+CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
+  cell_loop_set_coefficients(dealii::MatrixFree<dim, Number> const & matrix_free,
+                             VectorType &,
+                             VectorType const &,
+                             Range const & cell_range) const
 {
   IntegratorCell integrator(matrix_free, dof_index, quad_index);
 
@@ -164,11 +168,16 @@ CompressibleNeoHookean<dim, Number>::cell_loop_set_coefficients(
   }
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 void
-CompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
-  std::shared_ptr<CellIntegrator<dim, dim /* n_components */, Number>> const integrator_lin,
-  unsigned int const                                                         cell) const
+CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
+  do_set_cell_linearization_data(
+    std::shared_ptr<CellIntegrator<dim, dim /* n_components */, Number>> const integrator_lin,
+    unsigned int const                                                         cell) const
 {
   AssertThrow(cache_level < 3, dealii::ExcMessage("Cache level > 2 not implemented."));
 
@@ -259,13 +268,17 @@ CompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
   }
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
-  tensor const &     gradient_displacement_cache_level_0_1,
-  unsigned int const cell,
-  unsigned int const q,
-  bool const         force_evaluation) const
+CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
+  second_piola_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
+                                unsigned int const cell,
+                                unsigned int const q,
+                                bool const         force_evaluation) const
 {
   tensor S;
   if(cache_level < 2 or force_evaluation)
@@ -328,13 +341,18 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
   return S;
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacement_derivative(
-  tensor const &     gradient_increment,
-  tensor const &     gradient_displacement_cache_level_0_1,
-  unsigned int const cell,
-  unsigned int const q) const
+CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
+  second_piola_kirchhoff_stress_displacement_derivative(
+    tensor const &     gradient_increment,
+    tensor const &     gradient_displacement_cache_level_0_1,
+    unsigned int const cell,
+    unsigned int const q) const
 {
   if(parameters_are_variable)
   {
@@ -393,9 +411,13 @@ CompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacement_
           (2.0 * lambda_stored * one_over_J_times_Dd_J) * C_inv);
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-CompressibleNeoHookean<dim, Number>::kirchhoff_stress(
+CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::kirchhoff_stress(
   tensor const &     gradient_displacement_cache_level_0_1,
   unsigned int const cell,
   unsigned int const q,
@@ -462,13 +484,17 @@ CompressibleNeoHookean<dim, Number>::kirchhoff_stress(
   return tau;
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-CompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
-  tensor const &     symmetric_gradient_increment,
-  tensor const &     gradient_displacement_cache_level_0_1,
-  unsigned int const cell,
-  unsigned int const q) const
+CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
+  contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
+                          tensor const &     gradient_displacement_cache_level_0_1,
+                          unsigned int const cell,
+                          unsigned int const q) const
 {
   if(parameters_are_variable)
   {
@@ -510,30 +536,69 @@ CompressibleNeoHookean<dim, Number>::contract_with_J_times_C(
   return result;
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 dealii::VectorizedArray<Number>
-CompressibleNeoHookean<dim, Number>::one_over_J(unsigned int const cell, unsigned int const q) const
+CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::one_over_J(
+  unsigned int const cell,
+  unsigned int const q) const
 {
   AssertThrow(spatial_integration and cache_level > 0,
               dealii::ExcMessage("Cannot access precomputed one_over_J."));
   return (one_over_J_coefficients.get_coefficient_cell(cell, q));
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-CompressibleNeoHookean<dim, Number>::deformation_gradient(unsigned int const cell,
-                                                          unsigned int const q) const
+CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
+  deformation_gradient(unsigned int const cell, unsigned int const q) const
 {
   AssertThrow(cache_level > 1,
               dealii::ExcMessage("Cannot access precomputed deformation gradient."));
   return (deformation_gradient_coefficients.get_coefficient_cell(cell, q));
 }
 
-template class CompressibleNeoHookean<2, float>;
-template class CompressibleNeoHookean<2, double>;
+// clang-format off
+// Note that the higher check types (third template argument) are missing.
+template class CompressibleNeoHookean<2, float,  0, true,  0>;
+template class CompressibleNeoHookean<2, float,  0, true,  1>;
+template class CompressibleNeoHookean<2, float,  0, true,  2>;
 
-template class CompressibleNeoHookean<3, float>;
-template class CompressibleNeoHookean<3, double>;
+template class CompressibleNeoHookean<2, float,  0, false, 0>;
+template class CompressibleNeoHookean<2, float,  0, false, 1>;
+template class CompressibleNeoHookean<2, float,  0, false, 2>;
+
+template class CompressibleNeoHookean<2, double, 0, true,  0>;
+template class CompressibleNeoHookean<2, double, 0, true,  1>;
+template class CompressibleNeoHookean<2, double, 0, true,  2>;
+
+template class CompressibleNeoHookean<2, double, 0, false, 0>;
+template class CompressibleNeoHookean<2, double, 0, false, 1>;
+template class CompressibleNeoHookean<2, double, 0, false, 2>;
+
+template class CompressibleNeoHookean<3, float,  0, true,  0>;
+template class CompressibleNeoHookean<3, float,  0, true,  1>;
+template class CompressibleNeoHookean<3, float,  0, true,  2>;
+
+template class CompressibleNeoHookean<3, float,  0, false, 0>;
+template class CompressibleNeoHookean<3, float,  0, false, 1>;
+template class CompressibleNeoHookean<3, float,  0, false, 2>;
+
+template class CompressibleNeoHookean<3, double, 0, true,  0>;
+template class CompressibleNeoHookean<3, double, 0, true,  1>;
+template class CompressibleNeoHookean<3, double, 0, true,  2>;
+
+template class CompressibleNeoHookean<3, double, 0, false, 0>;
+template class CompressibleNeoHookean<3, double, 0, false, 1>;
+template class CompressibleNeoHookean<3, double, 0, false, 2>;
+// clang-format on
 
 } // namespace Structure
 } // namespace ExaDG

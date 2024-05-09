@@ -70,8 +70,7 @@ public:
                     unsigned int const                      dof_index,
                     unsigned int const                      quad_index,
                     StVenantKirchhoffData<dim> const &      data,
-                    bool const                              large_deformation,
-                    unsigned int const                      check_type);
+                    bool const                              large_deformation);
 
   tensor
   second_piola_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
@@ -126,8 +125,6 @@ private:
   StVenantKirchhoffData<dim> const & data;
 
   bool large_deformation;
-
-  unsigned int check_type;
 
   mutable dealii::VectorizedArray<Number> f0;
   mutable dealii::VectorizedArray<Number> f1;

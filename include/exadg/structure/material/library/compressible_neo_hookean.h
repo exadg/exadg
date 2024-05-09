@@ -64,7 +64,11 @@ struct CompressibleNeoHookeanData : public MaterialData
   Type2D type_two_dim;
 };
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 class CompressibleNeoHookean : public Material<dim, Number>
 {
 public:
@@ -80,10 +84,7 @@ public:
                          unsigned int const                      quad_index,
                          CompressibleNeoHookeanData<dim> const & data,
                          bool const                              spatial_integration,
-                         bool const                              force_material_residual,
-                         unsigned int const                      check_type,
-                         bool const                              stable_formulation,
-                         unsigned int const                      cache_level);
+                         bool const                              force_material_residual);
 
   /*
    * The second Piola-Kirchhoff stress is defined as S = 2 d/dC (Psi),
@@ -170,11 +171,8 @@ private:
   mutable VariableCoefficients<scalar> lambda_coefficients;
 
   // cache linearization data depending on cache_level and spatial_integration
-  bool         spatial_integration;
-  bool         force_material_residual;
-  bool         stable_formulation;
-  unsigned int check_type;
-  unsigned int cache_level;
+  bool spatial_integration;
+  bool force_material_residual;
 
   // required for nonlinear operator
   mutable VariableCoefficients<scalar> one_over_J_coefficients;

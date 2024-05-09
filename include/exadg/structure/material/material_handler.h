@@ -85,8 +85,7 @@ public:
                                                                       dof_index,
                                                                       quad_index,
                                                                       *data_StVenantKirchhoff,
-                                                                      large_deformation,
-                                                                      check_type)));
+                                                                      large_deformation)));
           break;
         }
         case MaterialType::IncompressibleNeoHookean:
@@ -141,17 +140,120 @@ public:
 
           std::shared_ptr<CompressibleNeoHookeanData<dim>> data_CompressibleNeoHookean =
             std::static_pointer_cast<CompressibleNeoHookeanData<dim>>(data);
-          material_map.insert(
-            Pair(id,
-                 new CompressibleNeoHookean<dim, Number>(matrix_free,
-                                                         dof_index,
-                                                         quad_index,
-                                                         *data_CompressibleNeoHookean,
-                                                         spatial_integration,
-                                                         force_material_residual,
-                                                         check_type,
-                                                         stable_formulation,
-                                                         cache_level)));
+          if(check_type == 0)
+          {
+            if(stable_formulation)
+            {
+              if(cache_level == 0)
+              {
+                material_map.insert(
+                  Pair(id,
+                       new CompressibleNeoHookean<dim,
+                                                  Number,
+                                                  0 /* check_type */,
+                                                  true /* stable_formulation */,
+                                                  0 /* cache_level */>(matrix_free,
+                                                                       dof_index,
+                                                                       quad_index,
+                                                                       *data_CompressibleNeoHookean,
+                                                                       spatial_integration,
+                                                                       force_material_residual)));
+              }
+              else if(cache_level == 1)
+              {
+                material_map.insert(
+                  Pair(id,
+                       new CompressibleNeoHookean<dim,
+                                                  Number,
+                                                  0 /* check_type */,
+                                                  true /* stable_formulation */,
+                                                  1 /* cache_level */>(matrix_free,
+                                                                       dof_index,
+                                                                       quad_index,
+                                                                       *data_CompressibleNeoHookean,
+                                                                       spatial_integration,
+                                                                       force_material_residual)));
+              }
+              else if(cache_level == 2)
+              {
+                material_map.insert(
+                  Pair(id,
+                       new CompressibleNeoHookean<dim,
+                                                  Number,
+                                                  0 /* check_type */,
+                                                  true /* stable_formulation */,
+                                                  2 /* cache_level */>(matrix_free,
+                                                                       dof_index,
+                                                                       quad_index,
+                                                                       *data_CompressibleNeoHookean,
+                                                                       spatial_integration,
+                                                                       force_material_residual)));
+              }
+              else
+              {
+                AssertThrow(cache_level < 3,
+                            dealii::ExcMessage("Cache levels 0 1 and 2 implemented."));
+              }
+            }
+            else
+            {
+              if(cache_level == 0)
+              {
+                material_map.insert(
+                  Pair(id,
+                       new CompressibleNeoHookean<dim,
+                                                  Number,
+                                                  0 /* check_type */,
+                                                  false /* stable_formulation */,
+                                                  0 /* cache_level */>(matrix_free,
+                                                                       dof_index,
+                                                                       quad_index,
+                                                                       *data_CompressibleNeoHookean,
+                                                                       spatial_integration,
+                                                                       force_material_residual)));
+              }
+              else if(cache_level == 1)
+              {
+                material_map.insert(
+                  Pair(id,
+                       new CompressibleNeoHookean<dim,
+                                                  Number,
+                                                  0 /* check_type */,
+                                                  false /* stable_formulation */,
+                                                  1 /* cache_level */>(matrix_free,
+                                                                       dof_index,
+                                                                       quad_index,
+                                                                       *data_CompressibleNeoHookean,
+                                                                       spatial_integration,
+                                                                       force_material_residual)));
+              }
+              else if(cache_level == 2)
+              {
+                material_map.insert(
+                  Pair(id,
+                       new CompressibleNeoHookean<dim,
+                                                  Number,
+                                                  0 /* check_type */,
+                                                  false /* stable_formulation */,
+                                                  2 /* cache_level */>(matrix_free,
+                                                                       dof_index,
+                                                                       quad_index,
+                                                                       *data_CompressibleNeoHookean,
+                                                                       spatial_integration,
+                                                                       force_material_residual)));
+              }
+              else
+              {
+                AssertThrow(cache_level < 3,
+                            dealii::ExcMessage("Cache levels 0 1 and 2 implemented."));
+              }
+            }
+          }
+          else
+          {
+            AssertThrow(check_type == 0,
+                        dealii::ExcMessage("Templates only for check_type == 0 implemented."));
+          }
           break;
         }
         default:

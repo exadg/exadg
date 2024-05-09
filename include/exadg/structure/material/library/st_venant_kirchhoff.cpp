@@ -33,13 +33,11 @@ StVenantKirchhoff<dim, Number>::StVenantKirchhoff(
   unsigned int const                      dof_index,
   unsigned int const                      quad_index,
   StVenantKirchhoffData<dim> const &      data,
-  bool const                              large_deformation,
-  unsigned int const                      check_type)
+  bool const                              large_deformation)
   : dof_index(dof_index),
     quad_index(quad_index),
     data(data),
     large_deformation(large_deformation),
-    check_type(check_type),
     E_is_variable(data.E_function != nullptr)
 {
   // initialize (potentially variable) factors
