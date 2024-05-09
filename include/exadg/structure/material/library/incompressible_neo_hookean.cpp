@@ -273,8 +273,7 @@ IncompressibleNeoHookean<dim, Number>::do_set_cell_linearization_data(
 }
 
 template<int dim, typename Number>
-inline
-dealii::VectorizedArray<Number>
+inline dealii::VectorizedArray<Number>
 IncompressibleNeoHookean<dim, Number>::get_c1(scalar const &     Jm1,
                                               scalar const &     J_pow,
                                               tensor const &     E,
@@ -299,8 +298,7 @@ IncompressibleNeoHookean<dim, Number>::get_c1(scalar const &     Jm1,
 }
 
 template<int dim, typename Number>
-inline
-dealii::VectorizedArray<Number>
+inline dealii::VectorizedArray<Number>
 IncompressibleNeoHookean<dim, Number>::get_c2(scalar const &     Jm1,
                                               scalar const &     J_pow,
                                               tensor const &     E,
@@ -326,8 +324,7 @@ IncompressibleNeoHookean<dim, Number>::get_c2(scalar const &     Jm1,
 }
 
 template<int dim, typename Number>
-inline
-dealii::VectorizedArray<Number>
+inline dealii::VectorizedArray<Number>
 IncompressibleNeoHookean<dim, Number>::get_J_pow(scalar const &     Jm1,
                                                  bool const         force_evaluation,
                                                  unsigned int const cell,

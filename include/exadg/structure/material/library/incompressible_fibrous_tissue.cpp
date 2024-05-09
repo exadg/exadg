@@ -457,8 +457,7 @@ IncompressibleFibrousTissue<dim, Number>::cell_loop_set_coefficients(
 }
 
 template<int dim, typename Number>
-inline
-dealii::VectorizedArray<Number>
+inline dealii::VectorizedArray<Number>
 IncompressibleFibrousTissue<dim, Number>::get_c1(scalar const &     Jm1,
                                                  scalar const &     J_pow,
                                                  tensor const &     E,
@@ -483,8 +482,7 @@ IncompressibleFibrousTissue<dim, Number>::get_c1(scalar const &     Jm1,
 }
 
 template<int dim, typename Number>
-inline
-dealii::VectorizedArray<Number>
+inline dealii::VectorizedArray<Number>
 IncompressibleFibrousTissue<dim, Number>::get_c2(scalar const &     Jm1,
                                                  scalar const &     J_pow,
                                                  tensor const &     E,
@@ -510,8 +508,7 @@ IncompressibleFibrousTissue<dim, Number>::get_c2(scalar const &     Jm1,
 }
 
 template<int dim, typename Number>
-inline
-dealii::VectorizedArray<Number>
+inline dealii::VectorizedArray<Number>
 IncompressibleFibrousTissue<dim, Number>::get_c3(vector const &     M_1,
                                                  tensor const &     E,
                                                  scalar const &     E_i,
@@ -547,8 +544,7 @@ IncompressibleFibrousTissue<dim, Number>::get_c3(vector const &     M_1,
 }
 
 template<int dim, typename Number>
-inline
-dealii::VectorizedArray<Number>
+inline dealii::VectorizedArray<Number>
 IncompressibleFibrousTissue<dim, Number>::get_J_pow(scalar const &     Jm1,
                                                     bool const         force_evaluation,
                                                     unsigned int const cell,
@@ -591,8 +587,7 @@ IncompressibleFibrousTissue<dim, Number>::get_J_pow(scalar const &     Jm1,
 // member functions, since the structure tensor or its constituents
 // are considered material parameters.
 template<int dim, typename Number>
-inline
-dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleFibrousTissue<dim, Number>::get_structure_tensor(vector const &     M_1,
                                                                vector const &     M_2,
                                                                unsigned int const i,
@@ -621,8 +616,7 @@ IncompressibleFibrousTissue<dim, Number>::get_structure_tensor(vector const &   
 
 // Function to evaluate the fiber_switch, not using/loading any data.
 template<int dim, typename Number>
-inline
-dealii::VectorizedArray<Number>
+inline dealii::VectorizedArray<Number>
 IncompressibleFibrousTissue<dim, Number>::get_fiber_switch(vector const & M_1,
                                                            tensor const & E) const
 {
@@ -652,8 +646,7 @@ IncompressibleFibrousTissue<dim, Number>::get_fiber_switch(vector const & M_1,
 }
 
 template<int dim, typename Number>
-inline
-dealii::VectorizedArray<Number>
+inline dealii::VectorizedArray<Number>
 IncompressibleFibrousTissue<dim, Number>::get_E_i(tensor const &     H_i,
                                                   tensor const &     E,
                                                   bool const         force_evaluation,

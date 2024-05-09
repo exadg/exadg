@@ -765,11 +765,10 @@ NonLinearOperator<dim, Number>::calculate_system_matrix(
 {
   if(this->operator_data.spatial_integration)
   {
-    this->matrix_free_spatial.cell_loop(
-      &This::cell_loop_calculate_system_matrix,
-      this,
-      system_matrix,
-      system_matrix);
+    this->matrix_free_spatial.cell_loop(&This::cell_loop_calculate_system_matrix,
+                                        this,
+                                        system_matrix,
+                                        system_matrix);
 
     // communicate overlapping matrix parts
     system_matrix.compress(dealii::VectorOperation::add);
@@ -790,11 +789,10 @@ NonLinearOperator<dim, Number>::calculate_system_matrix(
 {
   if(this->operator_data.spatial_integration)
   {
-    this->matrix_free_spatial.cell_loop(
-      &This::cell_loop_calculate_system_matrix,
-      this,
-      system_matrix,
-      system_matrix);
+    this->matrix_free_spatial.cell_loop(&This::cell_loop_calculate_system_matrix,
+                                        this,
+                                        system_matrix,
+                                        system_matrix);
 
     // communicate overlapping matrix parts
     system_matrix.compress(dealii::VectorOperation::add);

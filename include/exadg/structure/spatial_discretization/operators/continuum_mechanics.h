@@ -71,11 +71,7 @@ inline DEAL_II_ALWAYS_INLINE //
   for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
   {
     values[i] = std::expm1(x[i]);
-
-    if(values[i] > upper_bound or not std::isfinite(values[i]))
-    {
-      values[i] = upper_bound;
-    }
+    values[i] = std::min(values[i], upper_bound);
   }
 
   dealii::VectorizedArray<Number> out;
@@ -92,11 +88,7 @@ inline DEAL_II_ALWAYS_INLINE //
   for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
   {
     values[i] = std::exp(x[i]);
-
-    if(values[i] > upper_bound or not std::isfinite(values[i]))
-    {
-      values[i] = upper_bound;
-    }
+    values[i] = std::min(values[i], upper_bound);
   }
 
   dealii::VectorizedArray<Number> out;
@@ -134,25 +126,22 @@ inline DEAL_II_ALWAYS_INLINE //
     TypeScale const &                                               scl,
     bool const                                                      stable_formulation)
 {
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> E;
-
   if(stable_formulation)
   {
     // E = 0.5 * (H + H^T + H^T * H)
     // where H = gradient_displacement
-    E = ((0.5 * scl) * (gradient_displacement + transpose(gradient_displacement) +
-                        transpose(gradient_displacement) * gradient_displacement));
+    return ((0.5 * scl) * (gradient_displacement + transpose(gradient_displacement) +
+                           transpose(gradient_displacement) * gradient_displacement));
   }
   else
   {
     // E = 0.5 * (F^T * F - I)
-    E = get_F(gradient_displacement);
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> E = get_F(gradient_displacement);
+
     E = transpose(E) * E;
     add_scaled_identity<dim, Number, Number>(E, -1.0);
-    E *= 0.5 * scl;
+    return (E * (0.5 * scl));
   }
-
-  return E;
 }
 
 template<int dim, typename Number>
@@ -163,6 +152,89 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> I;
   add_scaled_identity<dim, Number, Number>(I, 1.0);
   return I;
+}
+
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<Number>
+  get_Jm1(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
+          bool const                                                      stable_formulation)
+{
+  if(stable_formulation)
+  {
+    // See [Shakeri et al., 2024, https://doi.org/10.48550/arXiv.2401.13196]
+    if constexpr(dim == 2)
+    {
+      // clang-format off
+      return (gradient_displacement[0][0] + gradient_displacement[1][1]
+	        + gradient_displacement[0][0] * gradient_displacement[1][1]
+	        - gradient_displacement[0][1] * gradient_displacement[1][0]);
+      // clang-format on
+    }
+    else if constexpr(dim == 3)
+    {
+      // clang-format off
+      // Sum terms of starting from lowest order of magnitude individually.
+      dealii::VectorizedArray<Number> Jm1 = determinant(gradient_displacement);
+      Jm1 += (  gradient_displacement[0][0] * gradient_displacement[1][1]
+              + gradient_displacement[1][1] * gradient_displacement[2][2]
+              + gradient_displacement[0][0] * gradient_displacement[2][2])
+           - (  gradient_displacement[0][1] * gradient_displacement[1][0]
+              + gradient_displacement[1][2] * gradient_displacement[2][1]
+              + gradient_displacement[0][2] * gradient_displacement[2][0]);
+      Jm1 += trace(gradient_displacement);
+      return Jm1;
+      // clang-format on
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Unexpected dim. Choose dim == 2 or dim == 3."));
+      return (determinant(get_F(gradient_displacement)) - 1.0);
+    }
+  }
+  else
+  {
+    return (determinant(get_F(gradient_displacement)) - 1.0);
+  }
+}
+
+// Compute J^2-1 in a numerically stable manner, which is based on Jm1 = (J-1), or in the standard
+// fashion.
+template<typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<Number>
+  get_JJm1(dealii::VectorizedArray<Number> const & Jm1, bool const stable_formulation)
+{
+  if(stable_formulation)
+  {
+    // J^2-1 = (J - 1) * (J - 1 + 2)
+    return (Jm1 * (Jm1 + 2.0));
+  }
+  else
+  {
+    // J^2-1 = (J - 1 + 1) * (J - 1 + 1) - 1
+    return ((Jm1 + 1.0) * (Jm1 + 1.0) - 1.0);
+  }
+}
+
+// Compute I_1 = trace(C) in a numerically stable manner, which is based on E, or in the standard
+// fashion.
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<Number>
+  get_I_1(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
+          bool const                                                      stable_formulation)
+{
+  if(stable_formulation)
+  {
+    // I_1 = trace(C) = 2 * trace(E) + trace(I)
+    return (2.0 * trace(E) + static_cast<Number>(dim));
+  }
+  else
+  {
+    // I_1 = trace(C) = trace(2 * E + I)
+    return (trace(2.0 * E + get_identity<dim, Number>()));
+  }
 }
 
 template<typename Number>
@@ -229,100 +301,11 @@ inline DEAL_II_ALWAYS_INLINE //
 }
 
 template<typename Number>
-inline Number
-get_J_tol()
+inline DEAL_II_ALWAYS_INLINE //
+  Number
+  get_J_tol()
 {
   return 0.001;
-}
-
-template<int dim, typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-  void
-  get_Jm1(dealii::VectorizedArray<Number> &                               Jm1,
-          dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
-          bool const                                                      stable_formulation)
-{
-  if(stable_formulation)
-  {
-    // See [Shakeri et al., 2024, https://doi.org/10.48550/arXiv.2401.13196]
-    if constexpr(dim == 2)
-    {
-      // clang-format off
-      Jm1 = gradient_displacement[0][0] + gradient_displacement[1][1]
-	      + gradient_displacement[0][0] * gradient_displacement[1][1]
-	      - gradient_displacement[0][1] * gradient_displacement[1][0];
-      // clang-format on
-    }
-    else if constexpr(dim == 3)
-    {
-      // clang-format off
-      // Sum terms of same order of magnitude individually.
-      Jm1 = (  gradient_displacement[0][0] * gradient_displacement[1][1]
-             + gradient_displacement[1][1] * gradient_displacement[2][2]
-             + gradient_displacement[0][0] * gradient_displacement[2][2])
-          - (  gradient_displacement[0][1] * gradient_displacement[1][0]
-             + gradient_displacement[1][2] * gradient_displacement[2][1]
-             + gradient_displacement[0][2] * gradient_displacement[2][0]);
-      Jm1 += determinant(gradient_displacement);
-      Jm1 += trace(gradient_displacement);
-      // clang-format on
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Unexpected dim. Choose dim == 2 or dim == 3."));
-    }
-  }
-  else
-  {
-    Jm1 = determinant(get_F(gradient_displacement)) - 1.0;
-  }
-}
-
-// Compute J^2-1 in a numerically stable manner, which is based on Jm1 = (J-1), or in the standard
-// fashion.
-template<typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-  dealii::VectorizedArray<Number>
-  get_JJm1(dealii::VectorizedArray<Number> const & Jm1, bool const stable_formulation)
-{
-  dealii::VectorizedArray<Number> JJm1;
-
-  if(stable_formulation)
-  {
-    // J^2-1 = (J - 1) * (J - 1 + 2)
-    JJm1 = Jm1 * (Jm1 + 2.0);
-  }
-  else
-  {
-    // J^2-1 = (J - 1 + 1) * (J - 1 + 1) - 1
-    JJm1 = (Jm1 + 1.0) * (Jm1 + 1.0) - 1.0;
-  }
-
-  return JJm1;
-}
-
-// Compute I_1 = trace(C) in a numerically stable manner, which is based on E, or in the standard
-// fashion.
-template<int dim, typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-  dealii::VectorizedArray<Number>
-  get_I_1(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
-          bool const                                                      stable_formulation)
-{
-  dealii::VectorizedArray<Number> I_1;
-
-  if(stable_formulation)
-  {
-    // I_1 = trace(C) = 2 * trace(E) + trace(I)
-    I_1 = 2.0 * trace(E) + static_cast<Number>(dim);
-  }
-  else
-  {
-    // I_1 = trace(C) = trace(2 * E + I)
-    I_1 = trace(2.0 * E + get_identity<dim, Number>());
-  }
-
-  return I_1;
 }
 
 template<int dim, typename Number>
@@ -340,7 +323,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if(compute_J)
   {
-    get_Jm1(Jm1, gradient_displacement, stable_formulation);
+    Jm1 = get_Jm1(gradient_displacement, stable_formulation);
   }
 
   // check_type 0 : Do not modify.
@@ -357,7 +340,7 @@ inline DEAL_II_ALWAYS_INLINE //
     if(not compute_J)
     {
       // Compute J - 1 to do any checking.
-      get_Jm1(Jm1, gradient_displacement, stable_formulation);
+      Jm1 = get_Jm1(gradient_displacement, stable_formulation);
     }
 
     Number tol = get_J_tol<Number>();
