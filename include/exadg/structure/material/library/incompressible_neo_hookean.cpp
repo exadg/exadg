@@ -300,7 +300,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 
   if(cache_level == 0 or force_evaluation)
   {
-    c1 = 0.5 * bulk_modulus * get_JJm1<Number>(Jm1, stable_formulation) -
+    c1 = 0.5 * bulk_modulus * get_JJm1<Number, stable_formulation>(Jm1) -
          shear_modulus_stored * one_third * J_pow * get_I_1<dim, Number>(E, stable_formulation);
   }
   else
@@ -330,7 +330,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 
   if(cache_level == 0 or force_evaluation)
   {
-    c2 = bulk_modulus * (get_JJm1<Number>(Jm1, stable_formulation) + 1.0) +
+    c2 = bulk_modulus * (get_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
          (2.0 * one_third * one_third) * shear_modulus_stored * J_pow *
            get_I_1<dim, Number>(E, stable_formulation);
   }
@@ -429,7 +429,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
                                             2.0 * shear_modulus_stored * J_pow,
                                             true /* stable_formulation */);
       add_scaled_identity<dim, Number>(
-        S, -one_third * trace(S) + 0.5 * bulk_modulus * get_JJm1<Number>(Jm1, stable_formulation));
+        S, -one_third * trace(S) + 0.5 * bulk_modulus * get_JJm1<Number, stable_formulation>(Jm1));
       S = C_inv * S;
     }
     else
@@ -593,7 +593,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
       add_scaled_identity<dim, Number>(tau,
                                        -one_third * trace(tau) +
                                          0.5 * bulk_modulus *
-                                           get_JJm1<Number>(Jm1, stable_formulation));
+                                           get_JJm1<Number, stable_formulation>(Jm1));
     }
     else
     {

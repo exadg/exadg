@@ -479,7 +479,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
   if(cache_level == 0 or force_evaluation)
   {
-    c1 = (0.5 * bulk_modulus) * get_JJm1<Number>(Jm1, stable_formulation) -
+    c1 = (0.5 * bulk_modulus) * get_JJm1<Number, stable_formulation>(Jm1) -
          shear_modulus_stored * one_third * J_pow * get_I_1<dim, Number>(E, stable_formulation);
   }
   else
@@ -509,7 +509,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
   if(cache_level == 0 or force_evaluation)
   {
-    c2 = bulk_modulus * (get_JJm1<Number>(Jm1, stable_formulation) + 1.0) +
+    c2 = bulk_modulus * (get_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
          (2.0 * one_third * one_third) * shear_modulus_stored * J_pow *
            get_I_1<dim, Number>(E, stable_formulation);
   }
@@ -904,7 +904,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       add_scaled_identity<dim, Number>(S,
                                        -one_third * trace(S) +
                                          (0.5 * bulk_modulus) *
-                                           get_JJm1<Number>(Jm1, stable_formulation));
+                                           get_JJm1<Number, stable_formulation>(Jm1));
       S = C_inv * S;
     }
     else
@@ -1184,7 +1184,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
                                        (-2.0 * one_third) * shear_modulus_stored * J_pow *
                                            trace(E) +
                                          (0.5 * bulk_modulus) *
-                                           get_JJm1<Number>(Jm1, stable_formulation));
+                                           get_JJm1<Number, stable_formulation>(Jm1));
     }
     else
     {

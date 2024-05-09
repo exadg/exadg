@@ -200,12 +200,12 @@ inline DEAL_II_ALWAYS_INLINE //
 
 // Compute J^2-1 in a numerically stable manner, which is based on Jm1 = (J-1), or in the standard
 // fashion.
-template<typename Number>
+template<typename Number, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
-  get_JJm1(dealii::VectorizedArray<Number> const & Jm1, bool const stable_formulation)
+  get_JJm1(dealii::VectorizedArray<Number> const & Jm1)
 {
-  if(stable_formulation)
+  if constexpr(stable_formulation)
   {
     // J^2-1 = (J - 1) * (J - 1 + 2)
     return (Jm1 * (Jm1 + 2.0));
