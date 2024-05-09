@@ -68,7 +68,7 @@ Driver<dim, Number>::setup()
     dealii::Timer timer_local;
 
     fluid->setup(application->fluid,
-                 application->parameters.compute_acoustic_from_analytical_cfd_solution ||
+                 application->parameters.compute_acoustic_from_analytical_cfd_solution or
                    application->parameters.compute_acoustic_from_analytical_source_term,
                  application->field_functions->analytical_cfd_solution_velocity,
                  application->field_functions->analytical_cfd_solution_pressure,
