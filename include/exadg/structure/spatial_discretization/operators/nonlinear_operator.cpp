@@ -519,12 +519,28 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
       {
         scalar Jm1;
         tensor F;
-        get_modified_F_Jm1(F,
-                           Jm1,
-                           Grad_d_lin_cache_level_0_1,
-                           this->operator_data.check_type,
-                           true /* compute_J */,
-                           this->operator_data.stable_formulation);
+        if(this->operator_data.check_type == 0)
+        {
+          if(this->operator_data.stable_formulation)
+          {
+            get_modified_F_Jm1<dim, Number, 0, true>(F,
+                                                     Jm1,
+                                                     Grad_d_lin_cache_level_0_1,
+                                                     true /* compute_J */);
+          }
+          else
+          {
+            get_modified_F_Jm1<dim, Number, 0, false>(F,
+                                                      Jm1,
+                                                      Grad_d_lin_cache_level_0_1,
+                                                      true /* compute_J */);
+          }
+        }
+        else
+        {
+          AssertThrow(this->operator_data.check_type == 0,
+                      dealii::ExcMessage("Currently not implemented."));
+        }
         one_over_J = 1.0 / (Jm1 + 1.0);
       }
       else
@@ -562,12 +578,29 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
       {
         Grad_d_lin_cache_level_0_1 = integrator.get_gradient(q);
         scalar Jm1;
-        get_modified_F_Jm1(F,
-                           Jm1,
-                           Grad_d_lin_cache_level_0_1,
-                           this->operator_data.check_type,
-                           false /* compute_J */,
-                           this->operator_data.stable_formulation);
+
+        if(this->operator_data.check_type == 0)
+        {
+          if(this->operator_data.stable_formulation)
+          {
+            get_modified_F_Jm1<dim, Number, 0, true>(F,
+                                                     Jm1,
+                                                     Grad_d_lin_cache_level_0_1,
+                                                     false /* compute_J */);
+          }
+          else
+          {
+            get_modified_F_Jm1<dim, Number, 0, false>(F,
+                                                      Jm1,
+                                                      Grad_d_lin_cache_level_0_1,
+                                                      false /* compute_J */);
+          }
+        }
+        else
+        {
+          AssertThrow(this->operator_data.check_type == 0,
+                      dealii::ExcMessage("Currently not implemented."));
+        }
       }
       else
       {
@@ -621,12 +654,30 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
 
         scalar Jm1_lin;
         tensor F_lin;
-        get_modified_F_Jm1(F_lin,
-                           Jm1_lin,
-                           Grad_d_lin_cache_level_0_1,
-                           this->operator_data.check_type,
-                           this->operator_data.cache_level == 0 /* compute_J */,
-                           this->operator_data.stable_formulation);
+        if(this->operator_data.check_type == 0)
+        {
+          if(this->operator_data.stable_formulation)
+          {
+            get_modified_F_Jm1<dim, Number, 0, true>(F_lin,
+                                                     Jm1_lin,
+                                                     Grad_d_lin_cache_level_0_1,
+                                                     this->operator_data.cache_level ==
+                                                       0 /* compute_J */);
+          }
+          else
+          {
+            get_modified_F_Jm1<dim, Number, 0, false>(F_lin,
+                                                      Jm1_lin,
+                                                      Grad_d_lin_cache_level_0_1,
+                                                      this->operator_data.cache_level ==
+                                                        0 /* compute_J */);
+          }
+        }
+        else
+        {
+          AssertThrow(this->operator_data.check_type == 0,
+                      dealii::ExcMessage("Currently not implemented."));
+        }
 
         if(this->operator_data.cache_level == 0)
         {
@@ -682,13 +733,29 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       {
         Grad_d_lin_cache_level_0_1 = integrator_lin->get_gradient(q);
 
-        scalar Jm1_lin;
-        get_modified_F_Jm1(F_lin,
-                           Jm1_lin,
-                           Grad_d_lin_cache_level_0_1,
-                           this->operator_data.check_type,
-                           false /* compute_J */,
-                           this->operator_data.stable_formulation);
+        if(this->operator_data.check_type == 0)
+        {
+          scalar Jm1_lin;
+          if(this->operator_data.stable_formulation)
+          {
+            get_modified_F_Jm1<dim, Number, 0, true>(F_lin,
+                                                     Jm1_lin,
+                                                     Grad_d_lin_cache_level_0_1,
+                                                     false /* compute_J */);
+          }
+          else
+          {
+            get_modified_F_Jm1<dim, Number, 0, false>(F_lin,
+                                                      Jm1_lin,
+                                                      Grad_d_lin_cache_level_0_1,
+                                                      false /* compute_J */);
+          }
+        }
+        else
+        {
+          AssertThrow(this->operator_data.check_type == 0,
+                      dealii::ExcMessage("Currently not implemented."));
+        }
       }
       else
       {

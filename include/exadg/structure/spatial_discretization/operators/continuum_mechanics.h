@@ -153,13 +153,12 @@ inline DEAL_II_ALWAYS_INLINE //
   return I;
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
-  get_Jm1(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
-          bool const                                                      stable_formulation)
+  get_Jm1(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement)
 {
-  if(stable_formulation)
+  if constexpr(stable_formulation)
   {
     // See [Shakeri et al., 2024, https://doi.org/10.48550/arXiv.2401.13196]
     if constexpr(dim == 2)
@@ -187,8 +186,9 @@ inline DEAL_II_ALWAYS_INLINE //
     }
     else
     {
-      AssertThrow(false, dealii::ExcMessage("Unexpected dim. Choose dim == 2 or dim == 3."));
-      return (dealii::make_vectorized_array(1.0 / 0.0));
+      AssertThrow(dim != 2 and dim != 3,
+                  dealii::ExcMessage("Unexpected dim. Choose dim == 2 or dim == 3."));
+      return (dealii::make_vectorized_array(std::numeric_limits<Number>::quiet_NaN()));
     }
   }
   else
@@ -307,22 +307,20 @@ inline DEAL_II_ALWAYS_INLINE //
   return 0.001;
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, unsigned int check_type, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
   void
   get_modified_F_Jm1(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> &       F,
     dealii::VectorizedArray<Number> &                               Jm1,
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
-    unsigned int const                                              check_type,
-    bool const                                                      compute_J,
-    bool const                                                      stable_formulation)
+    bool const                                                      compute_J)
 {
   F = get_F(gradient_displacement);
 
   if(compute_J)
   {
-    Jm1 = get_Jm1(gradient_displacement, stable_formulation);
+    Jm1 = get_Jm1<dim, Number, stable_formulation>(gradient_displacement);
   }
 
   // check_type 0 : Do not modify.
@@ -334,12 +332,12 @@ inline DEAL_II_ALWAYS_INLINE //
   // otherwise keep the old values which are initialized with a zero displacement field at
   // simulation start.
 
-  if(check_type > 2)
+  if constexpr(check_type > 2)
   {
     if(not compute_J)
     {
       // Compute J - 1 to do any checking.
-      Jm1 = get_Jm1(gradient_displacement, stable_formulation);
+      Jm1 = get_Jm1<dim, Number, stable_formulation>(gradient_displacement);
     }
 
     Number tol = get_J_tol<Number>();
@@ -348,18 +346,18 @@ inline DEAL_II_ALWAYS_INLINE //
     {
       if(Jm1[n] + 1.0 <= tol)
       {
-        if(check_type == 3)
+        if constexpr(check_type == 3)
         {
           // check_type 3 : Only return J = tol, while F is not modified.
           Jm1[n] = tol - 1.0;
         }
-        else if(check_type == 4)
+        else if constexpr(check_type == 4)
         {
           // check_type 4 : Always update, but enforce J = tol by adding a scaled unit matrix.
           // Scale factor determined by solving for the positive root of the quadratic/cubic
           // polynomial via an exact formula.
           Number fac;
-          if(dim == 2)
+          if constexpr(dim == 2)
           {
             // Find positive root of x^2 + p * x + q = 0.
             // The smaller root will always be negative related to complete self-penetration of the
@@ -368,7 +366,7 @@ inline DEAL_II_ALWAYS_INLINE //
             Number const q = F[0][0][n] * F[1][1][n] - F[0][1][n] * F[1][0][n] - tol;
             fac            = -p * 0.5 + sqrt(p * p * 0.25 - q);
           }
-          else // dim == 3
+          else if constexpr(dim == 3)
           {
             // Find smallest real-valued positive root of x^3 + b * x^2 + c * x + d = 0.
             Number const b = F[0][0][n] + F[1][1][n] + F[2][2][n];
@@ -417,6 +415,11 @@ inline DEAL_II_ALWAYS_INLINE //
               fac      = (e + Q / e) - b * one_third;
             }
           }
+          else
+          {
+            AssertThrow(dim != 2 and dim != 3,
+                        dealii::ExcMessage("Unexpected dim. Choose dim == 2 or dim == 3."));
+          }
 
           for(unsigned int d = 0; d < dim; ++d)
           {
@@ -426,14 +429,14 @@ inline DEAL_II_ALWAYS_INLINE //
           // J = tol follows by construction.
           Jm1[n] = tol - 1.0;
         }
-        else if(check_type == 5)
+        else if constexpr(check_type == 5)
         {
           // check_type 5 : Always update, but enforce J = tol by adding a scaled unit matrix.
           // Scale factor determined by solving for the positive root of the quadratic/cubic
           // polynomial via a Newton solver.
           Number fac;
           bool   converged;
-          if(dim == 2)
+          if constexpr(dim == 2)
           {
             // Find positive root of x^2 + p * x + q = 0.
             Number const p = F[0][0][n] + F[1][1][n];
@@ -441,7 +444,7 @@ inline DEAL_II_ALWAYS_INLINE //
             std::tie(fac, converged) =
               solve_polynomial_newton<Number>(0, 1.0, p, q, tol * tol, tol, 5, 0.0);
           }
-          else // dim == 3
+          else if constexpr(dim == 3)
           {
             // Find smallest real-valued positive root of x^3 + b * x^2 + c * x + d = 0.
             Number const b = F[0][0][n] + F[1][1][n] + F[2][2][n];
@@ -454,6 +457,11 @@ inline DEAL_II_ALWAYS_INLINE //
               F[0][2][n] * F[1][0][n] * F[2][1][n] - F[0][2][n] * F[1][1][n] * F[2][0][n] - tol;
             std::tie(fac, converged) =
               solve_polynomial_newton<Number>(1.0, b, c, d, tol * tol, tol, 5, 0.0);
+          }
+          else
+          {
+            AssertThrow(dim != 2 and dim != 3,
+                        dealii::ExcMessage("Unexpected dim. Choose dim == 2 or dim == 3."));
           }
 
           if(converged)

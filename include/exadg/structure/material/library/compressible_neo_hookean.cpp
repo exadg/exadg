@@ -187,7 +187,10 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
 
     scalar Jm1;
     tensor F;
-    get_modified_F_Jm1(F, Jm1, Grad_d_lin, check_type, true /* compute_J */, stable_formulation);
+    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(F,
+                                                                    Jm1,
+                                                                    Grad_d_lin,
+                                                                    true /* compute_J */);
 
     // Overwrite computed values with admissible stored ones
     if constexpr(check_type == 2)
@@ -292,12 +295,11 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
     // Access the stored coefficients precomputed using the last linearization vector.
     scalar Jm1;
     tensor F;
-    get_modified_F_Jm1(F,
-                       Jm1,
-                       gradient_displacement_cache_level_0_1,
-                       check_type,
-                       cache_level == 0 or force_evaluation /* compute_J */,
-                       stable_formulation);
+    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+      F,
+      Jm1,
+      gradient_displacement_cache_level_0_1,
+      cache_level == 0 or force_evaluation /* compute_J */);
 
     scalar log_J;
     if(cache_level == 0 or force_evaluation)
@@ -367,12 +369,8 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
   {
     scalar Jm1;
     tensor F;
-    get_modified_F_Jm1(F,
-                       Jm1,
-                       gradient_displacement_cache_level_0_1,
-                       check_type,
-                       cache_level == 0 /* compute_J */,
-                       stable_formulation);
+    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+      F, Jm1, gradient_displacement_cache_level_0_1, cache_level == 0 /* compute_J */);
 
     if constexpr(cache_level == 0)
     {
@@ -436,12 +434,11 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
     tensor F;
     if(cache_level == 0 or (not stable_formulation) or force_evaluation)
     {
-      get_modified_F_Jm1(F,
-                         Jm1,
-                         gradient_displacement_cache_level_0_1,
-                         check_type,
-                         cache_level == 0 or force_evaluation /* compute_J */,
-                         stable_formulation);
+      get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+        F,
+        Jm1,
+        gradient_displacement_cache_level_0_1,
+        cache_level == 0 or force_evaluation /* compute_J */);
     }
 
     // Access the stored coefficients precomputed using the last linearization vector.
@@ -508,12 +505,8 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
   {
     scalar Jm1;
     tensor F;
-    get_modified_F_Jm1(F,
-                       Jm1,
-                       gradient_displacement_cache_level_0_1,
-                       check_type,
-                       true /* compute_J */,
-                       stable_formulation);
+    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+      F, Jm1, gradient_displacement_cache_level_0_1, true /* compute_J */);
 
     if constexpr(stable_formulation)
     {
