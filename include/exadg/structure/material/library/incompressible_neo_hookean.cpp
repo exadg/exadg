@@ -254,7 +254,8 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
     {
       if(spatial_integration)
       {
-        tensor const tau = this->kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
+        tensor const tau =
+          compute_kirchhoff_stress<true /* force_evaluation */>(Grad_d_lin, cell, q);
         kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
 
         tensor const C = transpose(F) * F;
@@ -265,7 +266,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
           gradient_displacement_coefficients.set_coefficient_cell(cell, q, Grad_d_lin);
 
           tensor const S =
-            this->second_piola_kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
+            compute_second_piola_kirchhoff_stress<true /*force_evaluation*/>(Grad_d_lin, cell, q);
           second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
         }
       }
@@ -274,7 +275,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
         gradient_displacement_coefficients.set_coefficient_cell(cell, q, Grad_d_lin);
 
         tensor const S =
-          this->second_piola_kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
+          compute_second_piola_kirchhoff_stress<true /*force_evaluation*/>(Grad_d_lin, cell, q);
         second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
 
         tensor const F_inv = invert(F);
@@ -305,7 +306,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   if constexpr(cache_level == 0 or force_evaluation)
   {
     return ((0.5 * bulk_modulus) * get_JJm1<Number, stable_formulation>(Jm1) -
-         shear_modulus_stored * one_third * J_pow * get_I_1<dim, Number>(E, stable_formulation));
+            shear_modulus_stored * one_third * J_pow * get_I_1<dim, Number>(E, stable_formulation));
   }
   else
   {
@@ -331,8 +332,8 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   if constexpr(cache_level == 0 or force_evaluation)
   {
     return (bulk_modulus * (get_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
-         (2.0 * one_third * one_third) * shear_modulus_stored * J_pow *
-           get_I_1<dim, Number>(E, stable_formulation));
+            (2.0 * one_third * one_third) * shear_modulus_stored * J_pow *
+              get_I_1<dim, Number>(E, stable_formulation));
   }
   else
   {
@@ -362,7 +363,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
       // which were in most tests enough, but this might be risky and
       // not pay off enough for cache-level > 1 since we are storing
       // this variable anyways.
-      scalar J_pow = dealii::make_vectorized_array(static_cast<Number>(1.0));
+      scalar J_pow  = dealii::make_vectorized_array(static_cast<Number>(1.0));
       scalar J_sqrd = (Jm1 * Jm1 + 2.0 * Jm1 + 1.0);
       J_pow -= (J_pow * J_pow * J_pow - J_sqrd) / (3.0 * J_pow * J_pow);
       J_pow -= (J_pow * J_pow * J_pow - J_sqrd) / (3.0 * J_pow * J_pow);
@@ -393,72 +394,92 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
                                 bool const         force_evaluation) const
 {
   tensor S;
-  if(cache_level < 2 or force_evaluation)
+  if constexpr(cache_level < 2)
   {
-    if(shear_modulus_is_variable)
-    {
-      shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
-    }
-
-    scalar Jm1;
-    tensor F;
-    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-      F,
-      Jm1,
-      gradient_displacement_cache_level_0_1,
-      cache_level == 0 or force_evaluation /* compute_J */);
-    if(cache_level == 1 and (not force_evaluation) and stable_formulation)
-    {
-      Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
-    }
-
-    tensor const F_inv = invert(F);
-    tensor const C_inv = F_inv * transpose(F_inv);
-
-    scalar J_pow;
-    if(force_evaluation)
-    {
-      J_pow = get_J_pow<true>(Jm1, cell, q);
-    }
-    else
-    {
-	  J_pow = get_J_pow<false>(Jm1, cell, q);
-    }
-
-    if constexpr(stable_formulation)
-    {
-      S =
-        get_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement_cache_level_0_1,
-                                                              2.0 * shear_modulus_stored * J_pow);
-      add_scaled_identity<dim, Number>(
-        S, -one_third * trace(S) + 0.5 * bulk_modulus * get_JJm1<Number, stable_formulation>(Jm1));
-      S = C_inv * S;
-    }
-    else
-    {
-      if(cache_level == 0 or force_evaluation)
-      {
-        S = get_E_scaled<dim, Number, Number, stable_formulation>(
-          gradient_displacement_cache_level_0_1, 1.0);
-      }
-
-      scalar c1;
-      if(force_evaluation)
-      {
-        c1 = get_c1<true>(Jm1, J_pow, S /* E */, shear_modulus_stored, cell, q);
-      }
-      else
-      {
-        c1 = get_c1<false>(Jm1, J_pow, S /* E */, shear_modulus_stored, cell, q);
-      }
-
-      S = C_inv * c1;
-      add_scaled_identity(S, shear_modulus_stored * J_pow);
-    }
+    S =
+      compute_second_piola_kirchhoff_stress<false>(gradient_displacement_cache_level_0_1, cell, q);
   }
   else
   {
     S = second_piola_kirchhoff_stress_coefficients.get_coefficient_cell(cell, q);
+  }
+
+  return S;
+}
+
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
+template<bool force_evaluation>
+inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
+  compute_second_piola_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
+                                        unsigned int const cell,
+                                        unsigned int const q) const
+{
+  tensor S;
+
+  if(shear_modulus_is_variable)
+  {
+    shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+  }
+
+  scalar Jm1;
+  tensor F;
+  get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+    F,
+    Jm1,
+    gradient_displacement_cache_level_0_1,
+    cache_level == 0 or force_evaluation /* compute_J */);
+  if constexpr(cache_level == 1 and (not force_evaluation) and stable_formulation)
+  {
+    Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
+  }
+
+  tensor const F_inv = invert(F);
+  tensor const C_inv = F_inv * transpose(F_inv);
+
+  scalar J_pow;
+  if constexpr(force_evaluation)
+  {
+    J_pow = get_J_pow<true>(Jm1, cell, q);
+  }
+  else
+  {
+    J_pow = get_J_pow<false>(Jm1, cell, q);
+  }
+
+  if constexpr(stable_formulation)
+  {
+    S = get_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement_cache_level_0_1,
+                                                              2.0 * shear_modulus_stored * J_pow);
+    add_scaled_identity<dim, Number>(
+      S, -one_third * trace(S) + 0.5 * bulk_modulus * get_JJm1<Number, stable_formulation>(Jm1));
+    S = C_inv * S;
+  }
+  else
+  {
+    if constexpr(cache_level == 0 or force_evaluation)
+    {
+      S =
+        get_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement_cache_level_0_1,
+                                                              1.0);
+    }
+
+    scalar c1;
+    if constexpr(force_evaluation)
+    {
+      c1 = get_c1<true>(Jm1, J_pow, S /* E */, shear_modulus_stored, cell, q);
+    }
+    else
+    {
+      c1 = get_c1<false>(Jm1, J_pow, S /* E */, shear_modulus_stored, cell, q);
+    }
+
+    S = C_inv * c1;
+    add_scaled_identity(S, shear_modulus_stored * J_pow);
   }
 
   return S;
@@ -515,18 +536,10 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   }
 
   scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1_cache_level_0, cell, q);
-  scalar const c1    = get_c1<false /* force_evaluation */>(Jm1_cache_level_0,
-                           J_pow,
-                           E_cache_level_0,
-                           shear_modulus_stored,
-                           cell,
-                           q);
-  scalar const c2    = get_c2<false /* force_evaluation */>(Jm1_cache_level_0,
-                           J_pow,
-                           E_cache_level_0,
-                           shear_modulus_stored,
-                           cell,
-                           q);
+  scalar const c1    = get_c1<false /* force_evaluation */>(
+    Jm1_cache_level_0, J_pow, E_cache_level_0, shear_modulus_stored, cell, q);
+  scalar const c2 = get_c2<false /* force_evaluation */>(
+    Jm1_cache_level_0, J_pow, E_cache_level_0, shear_modulus_stored, cell, q);
 
   tensor F_inv, C_inv;
   if constexpr(cache_level < 2)
@@ -571,72 +584,92 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   tensor tau;
   if(cache_level < 2 or force_evaluation)
   {
-    if(shear_modulus_is_variable)
-    {
-      shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
-    }
-
-    scalar Jm1;
-    tensor F;
-    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-      F,
-      Jm1,
-      gradient_displacement_cache_level_0_1,
-      cache_level == 0 or force_evaluation /* compute_J */);
-    if(cache_level == 1 and (not force_evaluation) and stable_formulation)
-    {
-      Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
-    }
-
-    scalar J_pow;
-    if(force_evaluation)
-    {
-      J_pow = get_J_pow<true>(Jm1, cell, q);
-    }
-    else
-    {
-      J_pow = get_J_pow<false>(Jm1, cell, q);
-    }
-
-    if constexpr(stable_formulation)
-    {
-      tau =
-        get_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement_cache_level_0_1,
-                                                              2.0 * shear_modulus_stored * J_pow);
-      add_scaled_identity<dim, Number>(tau,
-                                       -one_third * trace(tau) +
-                                         0.5 * bulk_modulus *
-                                           get_JJm1<Number, stable_formulation>(Jm1));
-    }
-    else
-    {
-      if(cache_level == 0 or force_evaluation)
-      {
-        tau = get_E_scaled<dim, Number, Number, stable_formulation>(
-          gradient_displacement_cache_level_0_1, 1.0);
-      }
-      else
-      {
-        // Dummy E sufficient.
-      }
-
-      scalar c1;
-      if(force_evaluation)
-      {
-        c1 = get_c1<true>(Jm1, J_pow, tau /* E */, shear_modulus_stored, cell, q);
-      }
-      else
-      {
-	    c1 = get_c1<false>(Jm1, J_pow, tau /* E */, shear_modulus_stored, cell, q);
-      }
-
-      tau = (F * transpose(F)) * (shear_modulus_stored * J_pow);
-      add_scaled_identity(tau, c1);
-    }
+    tau = compute_kirchhoff_stress<false>(gradient_displacement_cache_level_0_1, cell, q);
   }
   else
   {
     tau = kirchhoff_stress_coefficients.get_coefficient_cell(cell, q);
+  }
+
+  return tau;
+}
+
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
+template<bool force_evaluation>
+inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
+  compute_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
+                           unsigned int const cell,
+                           unsigned int const q) const
+{
+  tensor tau;
+
+  if(shear_modulus_is_variable)
+  {
+    shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+  }
+
+  scalar Jm1;
+  tensor F;
+  get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+    F,
+    Jm1,
+    gradient_displacement_cache_level_0_1,
+    cache_level == 0 or force_evaluation /* compute_J */);
+  if constexpr(cache_level == 1 and (not force_evaluation) and stable_formulation)
+  {
+    Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
+  }
+
+  scalar J_pow;
+  if constexpr(force_evaluation)
+  {
+    J_pow = get_J_pow<true>(Jm1, cell, q);
+  }
+  else
+  {
+    J_pow = get_J_pow<false>(Jm1, cell, q);
+  }
+
+  if constexpr(stable_formulation)
+  {
+    tau =
+      get_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement_cache_level_0_1,
+                                                            2.0 * shear_modulus_stored * J_pow);
+    add_scaled_identity<dim, Number>(tau,
+                                     -one_third * trace(tau) +
+                                       0.5 * bulk_modulus *
+                                         get_JJm1<Number, stable_formulation>(Jm1));
+  }
+  else
+  {
+    if constexpr(cache_level == 0 or force_evaluation)
+    {
+      tau =
+        get_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement_cache_level_0_1,
+                                                              1.0);
+    }
+    else
+    {
+      // Dummy E sufficient.
+    }
+
+    scalar c1;
+    if constexpr(force_evaluation)
+    {
+      c1 = get_c1<true>(Jm1, J_pow, tau /* E */, shear_modulus_stored, cell, q);
+    }
+    else
+    {
+      c1 = get_c1<false>(Jm1, J_pow, tau /* E */, shear_modulus_stored, cell, q);
+    }
+
+    tau = (F * transpose(F)) * (shear_modulus_stored * J_pow);
+    add_scaled_identity(tau, c1);
   }
 
   return tau;
@@ -690,18 +723,10 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   }
 
   scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1_cache_level_0, cell, q);
-  scalar const c1    = get_c1<false /* force_evaluation */>(Jm1_cache_level_0,
-                           J_pow,
-                           E_cache_level_0,
-                           shear_modulus_stored,
-                           cell,
-                           q);
-  scalar const c2    = get_c2<false /* force_evaluation */>(Jm1_cache_level_0,
-                           J_pow,
-                           E_cache_level_0,
-                           shear_modulus_stored,
-                           cell,
-                           q);
+  scalar const c1    = get_c1<false /* force_evaluation */>(
+    Jm1_cache_level_0, J_pow, E_cache_level_0, shear_modulus_stored, cell, q);
+  scalar const c2 = get_c2<false /* force_evaluation */>(
+    Jm1_cache_level_0, J_pow, E_cache_level_0, shear_modulus_stored, cell, q);
 
   result = symmetric_gradient_increment * (-2.0 * c1);
   result +=

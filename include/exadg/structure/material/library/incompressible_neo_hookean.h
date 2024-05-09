@@ -111,13 +111,11 @@ public:
    * S_iso = J^(-2/3) * ( I - 1/3 * I_1 * C^(-1) )
    *
    */
-
   tensor
   second_piola_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
                                 unsigned int const cell,
                                 unsigned int const q,
                                 bool const         force_evaluation = false) const final;
-
 
   tensor
   second_piola_kirchhoff_stress_displacement_derivative(
@@ -185,9 +183,19 @@ private:
 
   template<bool force_evaluation>
   DEAL_II_ALWAYS_INLINE scalar
-  get_J_pow(scalar const &     Jm1,
-            unsigned int const cell,
-            unsigned int const q) const;
+  get_J_pow(scalar const & Jm1, unsigned int const cell, unsigned int const q) const;
+
+  template<bool force_evaluation>
+  DEAL_II_ALWAYS_INLINE tensor
+  compute_second_piola_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
+                                        unsigned int const cell,
+                                        unsigned int const q) const;
+
+  template<bool force_evaluation>
+  DEAL_II_ALWAYS_INLINE tensor
+  compute_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
+                           unsigned int const cell,
+                           unsigned int const q) const;
 
   unsigned int dof_index;
   unsigned int quad_index;
