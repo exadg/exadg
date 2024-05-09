@@ -865,7 +865,7 @@ main(int argc, char ** argv)
 				double const t_avg_stress       = time_stress_double_float_sum_min_max[i][0]   / n_total_executions;
 				double const t_avg_jacobian     = time_jacobian_double_float_sum_min_max[i][0] / n_total_executions;
 				pcout << "  " << str_precision << " PRECISION:\n"
-					  << "               avg           / -% to min       / +% to max)\n"
+					  << "               avg           / -% to min       / +% to max\n"
 					  << "    stress   : "
 					  << std::scientific << std::showpos
 					  << std::setw(10) << t_avg_stress << " / "

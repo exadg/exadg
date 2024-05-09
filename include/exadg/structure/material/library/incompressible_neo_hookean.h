@@ -185,11 +185,19 @@ private:
   DEAL_II_ALWAYS_INLINE scalar
   get_J_pow(scalar const & Jm1, unsigned int const cell, unsigned int const q) const;
 
-  template<bool force_evaluation>
   DEAL_II_ALWAYS_INLINE tensor
-  compute_second_piola_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
-                                        unsigned int const cell,
-                                        unsigned int const q) const;
+  compute_second_piola_kirchhoff_stress_stable_formulation(tensor const & gradient_displacement,
+                                                           tensor const & C_inv,
+                                                           scalar const & J_pow,
+                                                           scalar const & Jm1,
+                                                           scalar const & shear_modulus) const;
+
+  DEAL_II_ALWAYS_INLINE tensor
+  compute_second_piola_kirchhoff_stress_unstable_formulation(tensor const & gradient_displacement,
+                                                             tensor const & C_inv,
+                                                             scalar const & J_pow,
+                                                             scalar const & c1,
+                                                             scalar const & shear_modulus) const;
 
   template<bool force_evaluation>
   DEAL_II_ALWAYS_INLINE tensor
