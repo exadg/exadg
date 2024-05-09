@@ -189,7 +189,7 @@ inline DEAL_II_ALWAYS_INLINE //
     else
     {
       AssertThrow(false, dealii::ExcMessage("Unexpected dim. Choose dim == 2 or dim == 3."));
-      return (dealii::make_vectorized_array(1.0/0.0));
+      return (dealii::make_vectorized_array(1.0 / 0.0));
     }
   }
   else

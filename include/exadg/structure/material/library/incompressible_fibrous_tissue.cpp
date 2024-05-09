@@ -38,17 +38,18 @@ namespace ExaDG
 {
 namespace Structure
 {
-template<int dim, typename Number>
-IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
-  dealii::MatrixFree<dim, Number> const &      matrix_free,
-  unsigned int const                           dof_index,
-  unsigned int const                           quad_index,
-  IncompressibleFibrousTissueData<dim> const & data,
-  bool const                                   spatial_integration,
-  bool const                                   force_material_residual,
-  unsigned int const                           check_type,
-  bool const                                   stable_formulation,
-  unsigned int const                           cache_level)
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
+  IncompressibleFibrousTissue(dealii::MatrixFree<dim, Number> const &      matrix_free,
+                              unsigned int const                           dof_index,
+                              unsigned int const                           quad_index,
+                              IncompressibleFibrousTissueData<dim> const & data,
+                              bool const                                   spatial_integration,
+                              bool const                                   force_material_residual)
   : dof_index(dof_index),
     quad_index(quad_index),
     data(data),
@@ -56,10 +57,7 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
                                  data.e1_orientations != nullptr),
     shear_modulus_is_variable(data.shear_modulus_function != nullptr),
     spatial_integration(spatial_integration),
-    force_material_residual(force_material_residual),
-    stable_formulation(stable_formulation),
-    check_type(check_type),
-    cache_level(cache_level)
+    force_material_residual(force_material_residual)
 {
   // initialize (potentially variable) shear modulus
   Number const shear_modulus = data.shear_modulus;
@@ -102,7 +100,7 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
   // Initialize linearization cache and fill with values corresponding to
   // the initial linearization vector assumed to be a zero displacement
   // vector if possible.
-  if(cache_level > 0)
+  if constexpr(cache_level > 0)
   {
     Jm1_coefficients.initialize(matrix_free, quad_index, false, false);
     Jm1_coefficients.set_coefficients(0.0);
@@ -133,7 +131,7 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
       one_over_J_coefficients.set_coefficients(1.0);
     }
 
-    if(cache_level > 1)
+    if constexpr(cache_level > 1)
     {
       if(spatial_integration)
       {
@@ -269,10 +267,12 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
 
   // Set the coefficients on the integration point level.
   VectorType dummy;
-  matrix_free.cell_loop(&IncompressibleFibrousTissue<dim, Number>::cell_loop_set_coefficients,
-                        this,
-                        dummy,
-                        dummy);
+  matrix_free.cell_loop(
+    &IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
+      cell_loop_set_coefficients,
+    this,
+    dummy,
+    dummy);
 
   // Release vectors after initialization, since cell data is stored.
   if(orientation_vectors_provided)
@@ -282,13 +282,17 @@ IncompressibleFibrousTissue<dim, Number>::IncompressibleFibrousTissue(
   }
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 void
-IncompressibleFibrousTissue<dim, Number>::cell_loop_set_coefficients(
-  dealii::MatrixFree<dim, Number> const & matrix_free,
-  VectorType &,
-  VectorType const &,
-  Range const & cell_range) const
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
+  cell_loop_set_coefficients(dealii::MatrixFree<dim, Number> const & matrix_free,
+                             VectorType &,
+                             VectorType const &,
+                             Range const & cell_range) const
 {
   IntegratorCell integrator(matrix_free, dof_index, quad_index);
   IntegratorCell integrator_e1(matrix_free, dof_index, quad_index);
@@ -327,7 +331,7 @@ IncompressibleFibrousTissue<dim, Number>::cell_loop_set_coefficients(
     fiber_direction_M_1[i].initialize(matrix_free, quad_index, false, false);
   }
 
-  if(cache_level < 2)
+  if constexpr(cache_level < 2)
   {
     // The structure tensor is reconstructed from M1 and M2 on the fly.
     fiber_direction_M_2.resize(n_fiber_families);
@@ -420,7 +424,7 @@ IncompressibleFibrousTissue<dim, Number>::cell_loop_set_coefficients(
       // Fill the fiber orientation vectors or the structure tensor directly
       // based on the Euclidean material coordinate system and correct all
       // corresponding stored data initialized wrongly before.
-      if(cache_level < 2)
+      if constexpr(cache_level < 2)
       {
         for(unsigned int i = 0; i < n_fiber_families; i++)
         {
@@ -456,15 +460,20 @@ IncompressibleFibrousTissue<dim, Number>::cell_loop_set_coefficients(
   }
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 inline dealii::VectorizedArray<Number>
-IncompressibleFibrousTissue<dim, Number>::get_c1(scalar const &     Jm1,
-                                                 scalar const &     J_pow,
-                                                 tensor const &     E,
-                                                 scalar const &     shear_modulus_stored,
-                                                 bool const         force_evaluation,
-                                                 unsigned int const cell,
-                                                 unsigned int const q) const
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::get_c1(
+  scalar const &     Jm1,
+  scalar const &     J_pow,
+  tensor const &     E,
+  scalar const &     shear_modulus_stored,
+  bool const         force_evaluation,
+  unsigned int const cell,
+  unsigned int const q) const
 {
   scalar c1;
 
@@ -481,15 +490,20 @@ IncompressibleFibrousTissue<dim, Number>::get_c1(scalar const &     Jm1,
   return c1;
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 inline dealii::VectorizedArray<Number>
-IncompressibleFibrousTissue<dim, Number>::get_c2(scalar const &     Jm1,
-                                                 scalar const &     J_pow,
-                                                 tensor const &     E,
-                                                 scalar const &     shear_modulus_stored,
-                                                 bool const         force_evaluation,
-                                                 unsigned int const cell,
-                                                 unsigned int const q) const
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::get_c2(
+  scalar const &     Jm1,
+  scalar const &     J_pow,
+  tensor const &     E,
+  scalar const &     shear_modulus_stored,
+  bool const         force_evaluation,
+  unsigned int const cell,
+  unsigned int const q) const
 {
   scalar c2;
 
@@ -507,15 +521,20 @@ IncompressibleFibrousTissue<dim, Number>::get_c2(scalar const &     Jm1,
   return c2;
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 inline dealii::VectorizedArray<Number>
-IncompressibleFibrousTissue<dim, Number>::get_c3(vector const &     M_1,
-                                                 tensor const &     E,
-                                                 scalar const &     E_i,
-                                                 bool const         force_evaluation,
-                                                 unsigned int const i,
-                                                 unsigned int const cell,
-                                                 unsigned int const q) const
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::get_c3(
+  vector const &     M_1,
+  tensor const &     E,
+  scalar const &     E_i,
+  bool const         force_evaluation,
+  unsigned int const i,
+  unsigned int const cell,
+  unsigned int const q) const
 {
   scalar c3;
 
@@ -524,7 +543,7 @@ IncompressibleFibrousTissue<dim, Number>::get_c3(vector const &     M_1,
     scalar const fiber_switch = get_fiber_switch(M_1, E);
 
     // Enforce an upper bound for the computed value.
-    if(stable_formulation)
+    if constexpr(stable_formulation)
     {
       c3 = expm1_limited(fiber_k_2 * E_i * E_i, fiber_numerical_upper_bound) + 1.0;
     }
@@ -543,18 +562,23 @@ IncompressibleFibrousTissue<dim, Number>::get_c3(vector const &     M_1,
   return c3;
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 inline dealii::VectorizedArray<Number>
-IncompressibleFibrousTissue<dim, Number>::get_J_pow(scalar const &     Jm1,
-                                                    bool const         force_evaluation,
-                                                    unsigned int const cell,
-                                                    unsigned int const q) const
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::get_J_pow(
+  scalar const &     Jm1,
+  bool const         force_evaluation,
+  unsigned int const cell,
+  unsigned int const q) const
 {
   scalar J_pow;
 
   if(cache_level == 0 or force_evaluation)
   {
-    if(cache_level == 0)
+    if constexpr(cache_level == 0)
     {
       // Compute the third root of J^2 via an in-place Newton method.
       // J^2 = 1 is a good initial guess, since we enforce this value
@@ -586,17 +610,22 @@ IncompressibleFibrousTissue<dim, Number>::get_J_pow(scalar const &     Jm1,
 // Note that here, we *never* enforce evaluation compared to comparable
 // member functions, since the structure tensor or its constituents
 // are considered material parameters.
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-IncompressibleFibrousTissue<dim, Number>::get_structure_tensor(vector const &     M_1,
-                                                               vector const &     M_2,
-                                                               unsigned int const i,
-                                                               unsigned int const cell,
-                                                               unsigned int const q) const
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
+  get_structure_tensor(vector const &     M_1,
+                       vector const &     M_2,
+                       unsigned int const i,
+                       unsigned int const cell,
+                       unsigned int const q) const
 {
   tensor H;
 
-  if(cache_level < 2)
+  if constexpr(cache_level < 2)
   {
     vector M_3 = cross_product_3d(M_1, M_2);
 
@@ -615,13 +644,17 @@ IncompressibleFibrousTissue<dim, Number>::get_structure_tensor(vector const &   
 }
 
 // Function to evaluate the fiber_switch, not using/loading any data.
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 inline dealii::VectorizedArray<Number>
-IncompressibleFibrousTissue<dim, Number>::get_fiber_switch(vector const & M_1,
-                                                           tensor const & E) const
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
+  get_fiber_switch(vector const & M_1, tensor const & E) const
 {
   scalar I_i_star;
-  if(stable_formulation)
+  if constexpr(stable_formulation)
   {
     // I_i_star = 2 * (M_1 (x) M_1) : E + tr(M_1 (x) M_1)
     I_i_star = 2.0 * scalar_product(outer_product(M_1, M_1), E);
@@ -645,20 +678,25 @@ IncompressibleFibrousTissue<dim, Number>::get_fiber_switch(vector const & M_1,
   return fiber_switch;
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 inline dealii::VectorizedArray<Number>
-IncompressibleFibrousTissue<dim, Number>::get_E_i(tensor const &     H_i,
-                                                  tensor const &     E,
-                                                  bool const         force_evaluation,
-                                                  unsigned int const i,
-                                                  unsigned int const cell,
-                                                  unsigned int const q) const
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::get_E_i(
+  tensor const &     H_i,
+  tensor const &     E,
+  bool const         force_evaluation,
+  unsigned int const i,
+  unsigned int const cell,
+  unsigned int const q) const
 {
   scalar E_i;
 
   if(cache_level == 0 or force_evaluation)
   {
-    if(stable_formulation)
+    if constexpr(stable_formulation)
     {
       E_i = 2.0 * scalar_product(H_i, E);
     }
@@ -677,11 +715,16 @@ IncompressibleFibrousTissue<dim, Number>::get_E_i(tensor const &     H_i,
   return E_i;
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 void
-IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
-  std::shared_ptr<CellIntegrator<dim, dim /* n_components */, Number>> const integrator_lin,
-  unsigned int const                                                         cell) const
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
+  do_set_cell_linearization_data(
+    std::shared_ptr<CellIntegrator<dim, dim /* n_components */, Number>> const integrator_lin,
+    unsigned int const                                                         cell) const
 {
   AssertThrow(cache_level > 0 and cache_level < 3,
               dealii::ExcMessage("0 < cache level < 3 expected."));
@@ -700,7 +743,7 @@ IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
     get_modified_F_Jm1(F, Jm1, Grad_d_lin, check_type, true /* compute_J */, stable_formulation);
 
     // Overwrite computed values with admissible stored ones
-    if(check_type == 2)
+    if constexpr(check_type == 2)
     {
       tensor const F_old    = deformation_gradient_coefficients.get_coefficient_cell(cell, q);
       bool         update_J = false;
@@ -756,7 +799,7 @@ IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
     {
       vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
       vector       M_2_cache_level_0_1;
-      if(cache_level < 2)
+      if constexpr(cache_level < 2)
       {
         M_2_cache_level_0_1 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
       }
@@ -771,7 +814,7 @@ IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
       c3_coefficients[i].set_coefficient_cell(cell, q, c3);
     }
 
-    if(cache_level > 1)
+    if constexpr(cache_level > 1)
     {
       if(spatial_integration)
       {
@@ -815,13 +858,17 @@ IncompressibleFibrousTissue<dim, Number>::do_set_cell_linearization_data(
   }
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress(
-  tensor const &     gradient_displacement_cache_level_0_1,
-  unsigned int const cell,
-  unsigned int const q,
-  bool const         force_evaluation) const
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
+  second_piola_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
+                                unsigned int const cell,
+                                unsigned int const q,
+                                bool const         force_evaluation) const
 {
   tensor S;
   if(cache_level < 2 or force_evaluation)
@@ -851,7 +898,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress(
     tensor const C_inv = F_inv * transpose(F_inv);
     scalar const J_pow = get_J_pow(Jm1, force_evaluation, cell, q);
 
-    if(stable_formulation)
+    if constexpr(stable_formulation)
     {
       S = (2.0 * shear_modulus_stored * J_pow) * E;
       add_scaled_identity<dim, Number>(S,
@@ -877,7 +924,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress(
       {
         M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
 
-        if(cache_level < 2)
+        if constexpr(cache_level < 2)
         {
           M_2_cache_level_0_1 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
         }
@@ -907,13 +954,18 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress(
   return S;
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displacement_derivative(
-  tensor const &     gradient_increment,
-  tensor const &     gradient_displacement_cache_level_0_1,
-  unsigned int const cell,
-  unsigned int const q) const
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
+  second_piola_kirchhoff_stress_displacement_derivative(
+    tensor const &     gradient_increment,
+    tensor const &     gradient_displacement_cache_level_0_1,
+    unsigned int const cell,
+    unsigned int const q) const
 {
   tensor Dd_S;
 
@@ -923,7 +975,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
   }
 
   tensor F;
-  if(cache_level < 2)
+  if constexpr(cache_level < 2)
   {
     F = gradient_displacement_cache_level_0_1;
     add_scaled_identity<dim, Number, Number>(F, 1.0);
@@ -935,7 +987,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
 
   scalar Jm1_cache_level_0;
   tensor E_cache_level_0;
-  if(cache_level == 0)
+  if constexpr(cache_level == 0)
   {
     get_modified_F_Jm1(E_cache_level_0 /* F */,
                        Jm1_cache_level_0,
@@ -970,7 +1022,7 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
                            q);
 
   tensor F_inv, C_inv;
-  if(cache_level < 2)
+  if constexpr(cache_level < 2)
   {
     F_inv = invert(F);
     C_inv = F_inv * transpose(F_inv);
@@ -1002,12 +1054,12 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
     // Compute or load fiber switch.
     vector M_1_cache_level_0_1, M_2_cache_level_0_1;
     tensor E_cache_level_0;
-    if(cache_level < 2)
+    if constexpr(cache_level < 2)
     {
       M_1_cache_level_0_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
       M_2_cache_level_0_1 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
 
-      if(cache_level == 0)
+      if constexpr(cache_level == 0)
       {
         E_cache_level_0 = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0_1,
                                                             1.0,
@@ -1038,13 +1090,17 @@ IncompressibleFibrousTissue<dim, Number>::second_piola_kirchhoff_stress_displace
   return Dd_S;
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(
-  tensor const &     gradient_displacement_cache_level_0_1,
-  unsigned int const cell,
-  unsigned int const q,
-  bool const         force_evaluation) const
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
+  kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
+                   unsigned int const cell,
+                   unsigned int const q,
+                   bool const         force_evaluation) const
 {
   tensor tau;
   if(cache_level < 2 or force_evaluation)
@@ -1088,7 +1144,7 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(
       {
         M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
 
-        if(cache_level < 2)
+        if constexpr(cache_level < 2)
         {
           M_2_cache_level_0_1 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
         }
@@ -1116,7 +1172,7 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(
     // tau holds fiber terms in non-push-forwarded form, i.e.,
     // sum_(j=4,6) c_3 * E_i * H_i
     // to apply the push-forward only once for the sum of all terms.
-    if(stable_formulation)
+    if constexpr(stable_formulation)
     {
       // Push forward fiber contribution.
       tau = F * tau * transpose(F);
@@ -1154,13 +1210,17 @@ IncompressibleFibrousTissue<dim, Number>::kirchhoff_stress(
   return tau;
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
-  tensor const &     symmetric_gradient_increment,
-  tensor const &     gradient_displacement_cache_level_0_1,
-  unsigned int const cell,
-  unsigned int const q) const
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
+  contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
+                          tensor const &     gradient_displacement_cache_level_0_1,
+                          unsigned int const cell,
+                          unsigned int const q) const
 {
   tensor result;
 
@@ -1171,7 +1231,7 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
 
   scalar Jm1_cache_level_0;
   tensor E, C;
-  if(cache_level == 0)
+  if constexpr(cache_level == 0)
   {
     get_modified_F_Jm1(result,
                        Jm1_cache_level_0,
@@ -1187,7 +1247,7 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
   else
   {
     // Dummy E and Jm1 sufficient.
-    if(cache_level == 1)
+    if constexpr(cache_level == 1)
     {
       tensor F = gradient_displacement_cache_level_0_1;
       add_scaled_identity<dim, Number, Number>(F, 1.0);
@@ -1215,7 +1275,7 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
   {
     // Compute or load fiber switch.
     vector M_1_cache_level_0_1, M_2_cache_level_0_1;
-    if(cache_level < 2)
+    if constexpr(cache_level < 2)
     {
       M_1_cache_level_0_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
       M_2_cache_level_0_1 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
@@ -1236,7 +1296,7 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
 
     // Compute or load H_i * C tensor.
     tensor H_i_times_C, C_times_H_i;
-    if(cache_level < 2)
+    if constexpr(cache_level < 2)
     {
       H_i_times_C = H_i * C;
       C_times_H_i = C * H_i;
@@ -1258,31 +1318,69 @@ IncompressibleFibrousTissue<dim, Number>::contract_with_J_times_C(
   return result;
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 dealii::VectorizedArray<Number>
-IncompressibleFibrousTissue<dim, Number>::one_over_J(unsigned int const cell,
-                                                     unsigned int const q) const
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::one_over_J(
+  unsigned int const cell,
+  unsigned int const q) const
 {
   AssertThrow(spatial_integration and cache_level > 0,
               dealii::ExcMessage("Cannot access precomputed one_over_J."));
   return (one_over_J_coefficients.get_coefficient_cell(cell, q));
 }
 
-template<int dim, typename Number>
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-IncompressibleFibrousTissue<dim, Number>::deformation_gradient(unsigned int const cell,
-                                                               unsigned int const q) const
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
+  deformation_gradient(unsigned int const cell, unsigned int const q) const
 {
   AssertThrow(cache_level > 1,
               dealii::ExcMessage("Cannot access precomputed deformation gradient."));
   return (deformation_gradient_coefficients.get_coefficient_cell(cell, q));
 }
 
-template class IncompressibleFibrousTissue<2, float>;
-template class IncompressibleFibrousTissue<2, double>;
+// clang-format off
+// Note that the higher check types (third template argument) are missing.
+template class IncompressibleFibrousTissue<2, float,  0, true,  0>;
+template class IncompressibleFibrousTissue<2, float,  0, true,  1>;
+template class IncompressibleFibrousTissue<2, float,  0, true,  2>;
 
-template class IncompressibleFibrousTissue<3, float>;
-template class IncompressibleFibrousTissue<3, double>;
+template class IncompressibleFibrousTissue<2, float,  0, false, 0>;
+template class IncompressibleFibrousTissue<2, float,  0, false, 1>;
+template class IncompressibleFibrousTissue<2, float,  0, false, 2>;
+
+template class IncompressibleFibrousTissue<2, double, 0, true,  0>;
+template class IncompressibleFibrousTissue<2, double, 0, true,  1>;
+template class IncompressibleFibrousTissue<2, double, 0, true,  2>;
+
+template class IncompressibleFibrousTissue<2, double, 0, false, 0>;
+template class IncompressibleFibrousTissue<2, double, 0, false, 1>;
+template class IncompressibleFibrousTissue<2, double, 0, false, 2>;
+
+template class IncompressibleFibrousTissue<3, float,  0, true,  0>;
+template class IncompressibleFibrousTissue<3, float,  0, true,  1>;
+template class IncompressibleFibrousTissue<3, float,  0, true,  2>;
+
+template class IncompressibleFibrousTissue<3, float,  0, false, 0>;
+template class IncompressibleFibrousTissue<3, float,  0, false, 1>;
+template class IncompressibleFibrousTissue<3, float,  0, false, 2>;
+
+template class IncompressibleFibrousTissue<3, double, 0, true,  0>;
+template class IncompressibleFibrousTissue<3, double, 0, true,  1>;
+template class IncompressibleFibrousTissue<3, double, 0, true,  2>;
+
+template class IncompressibleFibrousTissue<3, double, 0, false, 0>;
+template class IncompressibleFibrousTissue<3, double, 0, false, 1>;
+template class IncompressibleFibrousTissue<3, double, 0, false, 2>;
+// clang-format on
 
 } // namespace Structure
 } // namespace ExaDG

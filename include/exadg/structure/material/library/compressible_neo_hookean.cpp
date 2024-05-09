@@ -74,7 +74,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
 
   // Initialize linearization cache and fill with values corresponding to
   // the initial linearization vector assumed to be a zero displacement vector.
-  if(cache_level > 0)
+  if constexpr(cache_level > 0)
   {
     log_J_coefficients.initialize(matrix_free, quad_index, false, false);
     log_J_coefficients.set_coefficients(0.0);
@@ -85,7 +85,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
       one_over_J_coefficients.set_coefficients(1.0);
     }
 
-    if(cache_level > 1)
+    if constexpr(cache_level > 1)
     {
       tensor const zero_tensor;
       if(spatial_integration)
@@ -190,7 +190,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
     get_modified_F_Jm1(F, Jm1, Grad_d_lin, check_type, true /* compute_J */, stable_formulation);
 
     // Overwrite computed values with admissible stored ones
-    if constexpr (check_type == 2)
+    if constexpr(check_type == 2)
     {
       tensor const F_old    = deformation_gradient_coefficients.get_coefficient_cell(cell, q);
       bool         update_J = false;
@@ -220,7 +220,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
       }
     }
 
-    if constexpr (stable_formulation)
+    if constexpr(stable_formulation)
     {
       log_J_coefficients.set_coefficient_cell(cell, q, log1p(Jm1));
     }
@@ -234,7 +234,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
       one_over_J_coefficients.set_coefficient_cell(cell, q, 1.0 / (Jm1 + 1.0));
     }
 
-    if constexpr (cache_level > 1)
+    if constexpr(cache_level > 1)
     {
       if(spatial_integration)
       {
@@ -302,7 +302,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
     scalar log_J;
     if(cache_level == 0 or force_evaluation)
     {
-      if constexpr (stable_formulation)
+      if constexpr(stable_formulation)
       {
         log_J = log1p(Jm1);
       }
@@ -319,7 +319,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
     tensor const F_inv = invert(F);
     tensor const C_inv = F_inv * transpose(F_inv);
 
-    if constexpr (stable_formulation)
+    if constexpr(stable_formulation)
     {
       S = get_E_scaled<dim, Number, scalar>(gradient_displacement_cache_level_0_1,
                                             2.0 * shear_modulus_stored,
@@ -363,7 +363,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
   // Access the stored coefficients precomputed using the last linearization vector.
   scalar log_J;
   tensor F_inv, C_inv;
-  if constexpr (cache_level < 2)
+  if constexpr(cache_level < 2)
   {
     scalar Jm1;
     tensor F;
@@ -374,9 +374,9 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
                        cache_level == 0 /* compute_J */,
                        stable_formulation);
 
-    if constexpr (cache_level == 0)
+    if constexpr(cache_level == 0)
     {
-      if constexpr (stable_formulation)
+      if constexpr(stable_formulation)
       {
         log_J = log1p(Jm1);
       }
@@ -448,7 +448,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
     scalar log_J;
     if(cache_level == 0 or force_evaluation)
     {
-      if constexpr (stable_formulation)
+      if constexpr(stable_formulation)
       {
         log_J = log1p(Jm1);
       }
@@ -462,7 +462,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
       log_J = log_J_coefficients.get_coefficient_cell(cell, q);
     }
 
-    if constexpr (stable_formulation)
+    if constexpr(stable_formulation)
     {
       tau =
         shear_modulus_stored *
@@ -504,7 +504,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
 
   // Access the stored coefficients precomputed using the last linearization vector.
   scalar log_J;
-  if constexpr (cache_level == 0)
+  if constexpr(cache_level == 0)
   {
     scalar Jm1;
     tensor F;
@@ -515,7 +515,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
                        true /* compute_J */,
                        stable_formulation);
 
-    if constexpr (stable_formulation)
+    if constexpr(stable_formulation)
     {
       log_J = log1p(Jm1);
     }
