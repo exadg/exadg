@@ -233,7 +233,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 
     Jm1_coefficients.set_coefficient_cell(cell, q, Jm1);
 
-    scalar const J_pow = get_J_pow(Jm1, true /* force_evaluation */, cell, q);
+    scalar const J_pow = get_J_pow<true /* force_evaluation */>(Jm1, cell, q);
     J_pow_coefficients.set_coefficient_cell(cell, q, J_pow);
 
     if(spatial_integration)
@@ -243,9 +243,9 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 
     tensor const E = get_E_scaled<dim, Number, Number, stable_formulation>(Grad_d_lin, 1.0);
     scalar const c1 =
-      get_c1(Jm1, J_pow, E, shear_modulus_stored, true /* force_evaluation */, cell, q);
+      get_c1<true /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
     scalar const c2 =
-      get_c2(Jm1, J_pow, E, shear_modulus_stored, true /* force_evaluation */, cell, q);
+      get_c2<true /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
 
     c1_coefficients.set_coefficient_cell(cell, q, c1);
     c2_coefficients.set_coefficient_cell(cell, q, c2);
@@ -292,29 +292,25 @@ template<int dim,
          unsigned int check_type,
          bool         stable_formulation,
          unsigned int cache_level>
+template<bool force_evaluation>
 inline dealii::VectorizedArray<Number>
 IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::get_c1(
   scalar const &     Jm1,
   scalar const &     J_pow,
   tensor const &     E,
   scalar const &     shear_modulus_stored,
-  bool const         force_evaluation,
   unsigned int const cell,
   unsigned int const q) const
 {
-  scalar c1;
-
-  if(cache_level == 0 or force_evaluation)
+  if constexpr(cache_level == 0 or force_evaluation)
   {
-    c1 = 0.5 * bulk_modulus * get_JJm1<Number, stable_formulation>(Jm1) -
-         shear_modulus_stored * one_third * J_pow * get_I_1<dim, Number>(E, stable_formulation);
+    return ((0.5 * bulk_modulus) * get_JJm1<Number, stable_formulation>(Jm1) -
+         shear_modulus_stored * one_third * J_pow * get_I_1<dim, Number>(E, stable_formulation));
   }
   else
   {
-    c1 = c1_coefficients.get_coefficient_cell(cell, q);
+    return c1_coefficients.get_coefficient_cell(cell, q);
   }
-
-  return c1;
 }
 
 template<int dim,
@@ -322,30 +318,26 @@ template<int dim,
          unsigned int check_type,
          bool         stable_formulation,
          unsigned int cache_level>
+template<bool force_evaluation>
 inline dealii::VectorizedArray<Number>
 IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::get_c2(
   scalar const &     Jm1,
   scalar const &     J_pow,
   tensor const &     E,
   scalar const &     shear_modulus_stored,
-  bool const         force_evaluation,
   unsigned int const cell,
   unsigned int const q) const
 {
-  scalar c2;
-
-  if(cache_level == 0 or force_evaluation)
+  if constexpr(cache_level == 0 or force_evaluation)
   {
-    c2 = bulk_modulus * (get_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
+    return (bulk_modulus * (get_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
          (2.0 * one_third * one_third) * shear_modulus_stored * J_pow *
-           get_I_1<dim, Number>(E, stable_formulation);
+           get_I_1<dim, Number>(E, stable_formulation));
   }
   else
   {
-    c2 = c2_coefficients.get_coefficient_cell(cell, q);
+    return c2_coefficients.get_coefficient_cell(cell, q);
   }
-
-  return c2;
 }
 
 template<int dim,
@@ -353,16 +345,14 @@ template<int dim,
          unsigned int check_type,
          bool         stable_formulation,
          unsigned int cache_level>
+template<bool force_evaluation>
 inline dealii::VectorizedArray<Number>
 IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::get_J_pow(
   scalar const &     Jm1,
-  bool const         force_evaluation,
   unsigned int const cell,
   unsigned int const q) const
 {
-  scalar J_pow;
-
-  if(cache_level == 0 or force_evaluation)
+  if constexpr(cache_level == 0 or force_evaluation)
   {
     if constexpr(cache_level == 0)
     {
@@ -372,24 +362,22 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
       // which were in most tests enough, but this might be risky and
       // not pay off enough for cache-level > 1 since we are storing
       // this variable anyways.
-      J_pow += 1.0;
+      scalar J_pow = dealii::make_vectorized_array(static_cast<Number>(1.0));
       scalar J_sqrd = (Jm1 * Jm1 + 2.0 * Jm1 + 1.0);
       J_pow -= (J_pow * J_pow * J_pow - J_sqrd) / (3.0 * J_pow * J_pow);
       J_pow -= (J_pow * J_pow * J_pow - J_sqrd) / (3.0 * J_pow * J_pow);
       J_pow -= (J_pow * J_pow * J_pow - J_sqrd) / (3.0 * J_pow * J_pow);
-      J_pow = 1.0 / J_pow;
+      return (1.0 / J_pow);
     }
     else
     {
-      J_pow = pow(Jm1 + 1.0, static_cast<Number>(-2.0 * one_third));
+      return (pow(Jm1 + 1.0, static_cast<Number>(-2.0 * one_third)));
     }
   }
   else
   {
-    J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
+    return J_pow_coefficients.get_coefficient_cell(cell, q);
   }
-
-  return J_pow;
 }
 
 template<int dim,
@@ -426,7 +414,16 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 
     tensor const F_inv = invert(F);
     tensor const C_inv = F_inv * transpose(F_inv);
-    scalar const J_pow = get_J_pow(Jm1, force_evaluation, cell, q);
+
+    scalar J_pow;
+    if(force_evaluation)
+    {
+      J_pow = get_J_pow<true>(Jm1, cell, q);
+    }
+    else
+    {
+	  J_pow = get_J_pow<false>(Jm1, cell, q);
+    }
 
     if constexpr(stable_formulation)
     {
@@ -444,8 +441,16 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
         S = get_E_scaled<dim, Number, Number, stable_formulation>(
           gradient_displacement_cache_level_0_1, 1.0);
       }
-      scalar const c1 =
-        get_c1(Jm1, J_pow, S /* E */, shear_modulus_stored, force_evaluation, cell, q);
+
+      scalar c1;
+      if(force_evaluation)
+      {
+        c1 = get_c1<true>(Jm1, J_pow, S /* E */, shear_modulus_stored, cell, q);
+      }
+      else
+      {
+        c1 = get_c1<false>(Jm1, J_pow, S /* E */, shear_modulus_stored, cell, q);
+      }
 
       S = C_inv * c1;
       add_scaled_identity(S, shear_modulus_stored * J_pow);
@@ -509,19 +514,17 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
     // Dummy Jm1 and E sufficient.
   }
 
-  scalar const J_pow = get_J_pow(Jm1_cache_level_0, false /* force_evaluation */, cell, q);
-  scalar const c1    = get_c1(Jm1_cache_level_0,
+  scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1_cache_level_0, cell, q);
+  scalar const c1    = get_c1<false /* force_evaluation */>(Jm1_cache_level_0,
                            J_pow,
                            E_cache_level_0,
                            shear_modulus_stored,
-                           false /* force_evaluation */,
                            cell,
                            q);
-  scalar const c2    = get_c2(Jm1_cache_level_0,
+  scalar const c2    = get_c2<false /* force_evaluation */>(Jm1_cache_level_0,
                            J_pow,
                            E_cache_level_0,
                            shear_modulus_stored,
-                           false /* force_evaluation */,
                            cell,
                            q);
 
@@ -585,7 +588,15 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
       Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
     }
 
-    scalar const J_pow = get_J_pow(Jm1, force_evaluation, cell, q);
+    scalar J_pow;
+    if(force_evaluation)
+    {
+      J_pow = get_J_pow<true>(Jm1, cell, q);
+    }
+    else
+    {
+      J_pow = get_J_pow<false>(Jm1, cell, q);
+    }
 
     if constexpr(stable_formulation)
     {
@@ -609,8 +620,15 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
         // Dummy E sufficient.
       }
 
-      scalar const c1 =
-        get_c1(Jm1, J_pow, tau /* E */, shear_modulus_stored, force_evaluation, cell, q);
+      scalar c1;
+      if(force_evaluation)
+      {
+        c1 = get_c1<true>(Jm1, J_pow, tau /* E */, shear_modulus_stored, cell, q);
+      }
+      else
+      {
+	    c1 = get_c1<false>(Jm1, J_pow, tau /* E */, shear_modulus_stored, cell, q);
+      }
 
       tau = (F * transpose(F)) * (shear_modulus_stored * J_pow);
       add_scaled_identity(tau, c1);
@@ -671,19 +689,17 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
     // Dummy E and Jm1 sufficient.
   }
 
-  scalar const J_pow = get_J_pow(Jm1_cache_level_0, false /* force_evaluation */, cell, q);
-  scalar const c1    = get_c1(Jm1_cache_level_0,
+  scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1_cache_level_0, cell, q);
+  scalar const c1    = get_c1<false /* force_evaluation */>(Jm1_cache_level_0,
                            J_pow,
                            E_cache_level_0,
                            shear_modulus_stored,
-                           false /* force_evaluation */,
                            cell,
                            q);
-  scalar const c2    = get_c2(Jm1_cache_level_0,
+  scalar const c2    = get_c2<false /* force_evaluation */>(Jm1_cache_level_0,
                            J_pow,
                            E_cache_level_0,
                            shear_modulus_stored,
-                           false /* force_evaluation */,
                            cell,
                            q);
 

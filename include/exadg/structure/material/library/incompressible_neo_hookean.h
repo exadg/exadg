@@ -165,27 +165,27 @@ private:
   /*
    * Helper functions to replace frequently appearing terms.
    */
+  template<bool force_evaluation>
   DEAL_II_ALWAYS_INLINE scalar
   get_c1(scalar const &     Jm1,
          scalar const &     J_pow,
          tensor const &     E,
          scalar const &     shear_modulus_stored,
-         bool const         force_evaluation,
          unsigned int const cell,
          unsigned int const q) const;
 
+  template<bool force_evaluation>
   DEAL_II_ALWAYS_INLINE scalar
   get_c2(scalar const &     Jm1,
          scalar const &     J_pow,
          tensor const &     E,
          scalar const &     shear_modulus_stored,
-         bool const         force_evaluation,
          unsigned int const cell,
          unsigned int const q) const;
 
+  template<bool force_evaluation>
   DEAL_II_ALWAYS_INLINE scalar
   get_J_pow(scalar const &     Jm1,
-            bool const         force_evaluation,
             unsigned int const cell,
             unsigned int const q) const;
 
