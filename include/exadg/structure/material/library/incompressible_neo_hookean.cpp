@@ -254,18 +254,19 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
     {
       if(spatial_integration)
       {
-        if(stable_formulation)
+        if constexpr(stable_formulation)
         {
-        	tensor const tau = compute_kirchhoff_stress_stable_formulation(Grad_d_lin,
-        		  											  Jm1,
-        		  											  J_pow,
-        		  											  shear_modulus_stored);
-            kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
+          tensor const tau = compute_kirchhoff_stress_stable_formulation(Grad_d_lin,
+                                                                         Jm1,
+                                                                         J_pow,
+                                                                         shear_modulus_stored);
+          kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
         }
         else
         {
-        	tensor const tau = compute_kirchhoff_stress_unstable_formulation(F, J_pow, c1, shear_modulus_stored);
-            kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
+          tensor const tau =
+            compute_kirchhoff_stress_unstable_formulation(F, J_pow, c1, shear_modulus_stored);
+          kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
         }
 
         tensor const C = transpose(F) * F;
@@ -423,7 +424,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
                                 unsigned int const q,
                                 bool const         force_evaluation) const
 {
-  (void) force_evaluation;
+  (void)force_evaluation;
 
   if constexpr(cache_level < 2)
   {
@@ -455,7 +456,8 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
       {
         tensor const E = get_E_scaled<dim, Number, Number, stable_formulation>(
           gradient_displacement_cache_level_0_1, 1.0);
-        scalar const c1 = get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
+        scalar const c1 =
+          get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
 
         return compute_second_piola_kirchhoff_stress_unstable_formulation(
           gradient_displacement_cache_level_0_1, C_inv, J_pow, c1, shear_modulus_stored);
@@ -510,10 +512,8 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
                                                              scalar const & c1,
                                                              scalar const & shear_modulus) const
 {
-  tensor S =
-    get_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement,
-                                                          1.0);
-  S = C_inv * c1;
+  tensor S = get_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement, 1.0);
+  S        = C_inv * c1;
 
   add_scaled_identity(S, shear_modulus * J_pow);
 
@@ -616,51 +616,49 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
                    unsigned int const q,
                    bool const         force_evaluation) const
 {
-  (void) force_evaluation;
+  (void)force_evaluation;
 
   if(cache_level < 2)
   {
-	  if(shear_modulus_is_variable)
-	  {
-	    shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
-	  }
+    if(shear_modulus_is_variable)
+    {
+      shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+    }
 
-	  scalar Jm1;
-	  tensor F;
-	  get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-	    F,
-	    Jm1,
-	    gradient_displacement_cache_level_0_1,
-	    cache_level == 0/* compute_J */);
-	  if constexpr(cache_level == 1 and stable_formulation)
-	  {
-	    Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
-	  }
+    scalar Jm1;
+    tensor F;
+    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+      F, Jm1, gradient_displacement_cache_level_0_1, cache_level == 0 /* compute_J */);
+    if constexpr(cache_level == 1 and stable_formulation)
+    {
+      Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
+    }
 
-	  scalar const J_pow = get_J_pow<false /* force_evaluation*/>(Jm1, cell, q);
+    scalar const J_pow = get_J_pow<false /* force_evaluation*/>(Jm1, cell, q);
 
-	  if constexpr(stable_formulation)
-	  {
-		  return compute_kirchhoff_stress_stable_formulation(gradient_displacement_cache_level_0_1,
-		  											  Jm1,
-		  											  J_pow,
-		  											  shear_modulus_stored);
-	  }
-	  else
-	  {
-        if(cache_level == 0)
-        {
-        	tensor const E = get_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement_cache_level_0_1,
-                    1.0);
-        	scalar const c1 = get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
-    	    return compute_kirchhoff_stress_unstable_formulation(F, J_pow, c1, shear_modulus_stored);
-        }
-        else
-        {
-        	scalar const c1 = c1_coefficients.get_coefficient_cell(cell, q);
-    	    return compute_kirchhoff_stress_unstable_formulation(F, J_pow, c1, shear_modulus_stored);
-        }
-	  }
+    if constexpr(stable_formulation)
+    {
+      return compute_kirchhoff_stress_stable_formulation(gradient_displacement_cache_level_0_1,
+                                                         Jm1,
+                                                         J_pow,
+                                                         shear_modulus_stored);
+    }
+    else
+    {
+      if(cache_level == 0)
+      {
+        tensor const E = get_E_scaled<dim, Number, Number, stable_formulation>(
+          gradient_displacement_cache_level_0_1, 1.0);
+        scalar const c1 =
+          get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
+        return compute_kirchhoff_stress_unstable_formulation(F, J_pow, c1, shear_modulus_stored);
+      }
+      else
+      {
+        scalar const c1 = c1_coefficients.get_coefficient_cell(cell, q);
+        return compute_kirchhoff_stress_unstable_formulation(F, J_pow, c1, shear_modulus_stored);
+      }
+    }
   }
   else
   {
@@ -676,18 +674,17 @@ template<int dim,
 inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
   compute_kirchhoff_stress_stable_formulation(tensor const & gradient_displacement,
-											  scalar const & Jm1,
-											  scalar const & J_pow,
-											  scalar const & shear_modulus) const
+                                              scalar const & Jm1,
+                                              scalar const & J_pow,
+                                              scalar const & shear_modulus) const
 {
-  tensor tau =
-      get_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement,
-                                                            2.0 * shear_modulus * J_pow);
+  tensor tau = get_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement,
+                                                                     2.0 * shear_modulus * J_pow);
 
-    add_scaled_identity<dim, Number>(tau,
-                                     -one_third * trace(tau) +
-                                       (0.5 * bulk_modulus) *
-                                         get_JJm1<Number, stable_formulation>(Jm1));
+  add_scaled_identity<dim, Number>(tau,
+                                   -one_third * trace(tau) +
+                                     (0.5 * bulk_modulus) *
+                                       get_JJm1<Number, stable_formulation>(Jm1));
 
   return tau;
 }
@@ -700,9 +697,9 @@ template<int dim,
 inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
   compute_kirchhoff_stress_unstable_formulation(tensor const & F,
-											    scalar const & J_pow,
-											    scalar const & c1,
-											    scalar const & shear_modulus) const
+                                                scalar const & J_pow,
+                                                scalar const & c1,
+                                                scalar const & shear_modulus) const
 {
   tensor tau = (F * transpose(F)) * (shear_modulus * J_pow);
 
