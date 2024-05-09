@@ -321,9 +321,9 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
 
     if constexpr(stable_formulation)
     {
-      S = get_E_scaled<dim, Number, scalar>(gradient_displacement_cache_level_0_1,
-                                            2.0 * shear_modulus_stored,
-                                            true /* stable_formulation */);
+      S =
+        get_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement_cache_level_0_1,
+                                                              2.0 * shear_modulus_stored);
       add_scaled_identity(S, 2.0 * lambda_stored * log_J);
       S = C_inv * S;
     }

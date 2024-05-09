@@ -236,7 +236,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
       one_over_J_coefficients.set_coefficient_cell(cell, q, 1.0 / (Jm1 + 1.0));
     }
 
-    tensor const E = get_E_scaled<dim, Number, Number>(Grad_d_lin, 1.0, stable_formulation);
+    tensor const E = get_E_scaled<dim, Number, Number, stable_formulation>(Grad_d_lin, 1.0);
     scalar const c1 =
       get_c1(Jm1, J_pow, E, shear_modulus_stored, true /* force_evaluation */, cell, q);
     scalar const c2 =
@@ -425,9 +425,9 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 
     if constexpr(stable_formulation)
     {
-      S = get_E_scaled<dim, Number, scalar>(gradient_displacement_cache_level_0_1,
-                                            2.0 * shear_modulus_stored * J_pow,
-                                            true /* stable_formulation */);
+      S =
+        get_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement_cache_level_0_1,
+                                                              2.0 * shear_modulus_stored * J_pow);
       add_scaled_identity<dim, Number>(
         S, -one_third * trace(S) + 0.5 * bulk_modulus * get_JJm1<Number, stable_formulation>(Jm1));
       S = C_inv * S;
@@ -436,9 +436,8 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
     {
       if(cache_level == 0 or force_evaluation)
       {
-        S = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0_1,
-                                              1.0,
-                                              false /* stable_formulation */);
+        S = get_E_scaled<dim, Number, Number, stable_formulation>(
+          gradient_displacement_cache_level_0_1, 1.0);
       }
       scalar const c1 =
         get_c1(Jm1, J_pow, S /* E */, shear_modulus_stored, force_evaluation, cell, q);
@@ -497,9 +496,9 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
                        true /* compute_J */,
                        stable_formulation);
 
-    E_cache_level_0 = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0_1,
-                                                        1.0,
-                                                        stable_formulation);
+    E_cache_level_0 =
+      get_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement_cache_level_0_1,
+                                                            1.0);
   }
   else
   {
@@ -587,9 +586,9 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 
     if constexpr(stable_formulation)
     {
-      tau = get_E_scaled<dim, Number, scalar>(gradient_displacement_cache_level_0_1,
-                                              2.0 * shear_modulus_stored * J_pow,
-                                              true /* stable_formulation */);
+      tau =
+        get_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement_cache_level_0_1,
+                                                              2.0 * shear_modulus_stored * J_pow);
       add_scaled_identity<dim, Number>(tau,
                                        -one_third * trace(tau) +
                                          0.5 * bulk_modulus *
@@ -599,9 +598,8 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
     {
       if(cache_level == 0 or force_evaluation)
       {
-        tau = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0_1,
-                                                1.0,
-                                                stable_formulation);
+        tau = get_E_scaled<dim, Number, Number, stable_formulation>(
+          gradient_displacement_cache_level_0_1, 1.0);
       }
       else
       {
@@ -665,9 +663,9 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
                        true /* compute_J */,
                        stable_formulation);
 
-    E_cache_level_0 = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0_1,
-                                                        1.0,
-                                                        stable_formulation);
+    E_cache_level_0 =
+      get_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement_cache_level_0_1,
+                                                            1.0);
   }
   else
   {

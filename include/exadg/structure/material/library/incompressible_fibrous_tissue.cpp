@@ -785,7 +785,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
     tensor const C = transpose(F) * F;
 
-    tensor const E = get_E_scaled<dim, Number, Number>(Grad_d_lin, 1.0, stable_formulation);
+    tensor const E = get_E_scaled<dim, Number, Number, stable_formulation>(Grad_d_lin, 1.0);
     scalar const c1 =
       get_c1(Jm1, J_pow, E, shear_modulus_stored, true /* force_evaluation */, cell, q);
     scalar const c2 =
@@ -891,9 +891,9 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
     }
 
-    tensor const E     = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0_1,
-                                                       1.0,
-                                                       stable_formulation);
+    tensor const E =
+      get_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement_cache_level_0_1,
+                                                            1.0);
     tensor const F_inv = invert(F);
     tensor const C_inv = F_inv * transpose(F_inv);
     scalar const J_pow = get_J_pow(Jm1, force_evaluation, cell, q);
@@ -996,9 +996,9 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
                        true /* compute_J */,
                        stable_formulation);
 
-    E_cache_level_0 = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0_1,
-                                                        1.0,
-                                                        stable_formulation);
+    E_cache_level_0 =
+      get_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement_cache_level_0_1,
+                                                            1.0);
   }
   else
   {
@@ -1061,9 +1061,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
       if constexpr(cache_level == 0)
       {
-        E_cache_level_0 = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0_1,
-                                                            1.0,
-                                                            stable_formulation);
+        E_cache_level_0 = get_E_scaled<dim, Number, Number, stable_formulation>(
+          gradient_displacement_cache_level_0_1, 1.0);
       }
     }
     else
@@ -1126,9 +1125,9 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     tensor E;
     if(cache_level == 0 or force_evaluation or stable_formulation)
     {
-      E = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0_1,
-                                            1.0,
-                                            stable_formulation);
+      E =
+        get_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement_cache_level_0_1,
+                                                              1.0);
     }
     else
     {
@@ -1239,9 +1238,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
                        check_type,
                        true /* compute_J */,
                        stable_formulation);
-    E = get_E_scaled<dim, Number, Number>(gradient_displacement_cache_level_0_1,
-                                          1.0,
-                                          stable_formulation);
+    E = get_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement_cache_level_0_1,
+                                                              1.0);
     C = 2.0 * E + I;
   }
   else

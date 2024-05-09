@@ -654,7 +654,7 @@ main(int argc, char ** argv)
     }
 
     // Material type choices.
-    std::vector<MaterialType> material_type_vec{// MaterialType::StVenantKirchhoff,
+    std::vector<MaterialType> material_type_vec{MaterialType::StVenantKirchhoff,
                                                 MaterialType::CompressibleNeoHookean,
                                                 MaterialType::IncompressibleNeoHookean,
                                                 MaterialType::IncompressibleFibrousTissue};

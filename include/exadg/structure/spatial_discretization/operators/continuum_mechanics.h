@@ -100,11 +100,11 @@ template<int dim, typename Number, typename TypeScale>
 inline DEAL_II_ALWAYS_INLINE //
   void
   add_scaled_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> & tmp,
-                      TypeScale const &                                         scl)
+                      TypeScale const &                                         scale)
 {
   for(unsigned int i = 0; i < dim; i++)
   {
-    tmp[i][i] = tmp[i][i] + scl;
+    tmp[i][i] = tmp[i][i] + scale;
   }
 }
 
@@ -118,20 +118,19 @@ inline DEAL_II_ALWAYS_INLINE //
   return F;
 }
 
-template<int dim, typename Number, typename TypeScale>
+template<int dim, typename Number, typename TypeScale, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
   get_E_scaled(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
-    TypeScale const &                                               scl,
-    bool const                                                      stable_formulation)
+    TypeScale const &                                               scale)
 {
-  if(stable_formulation)
+  if constexpr(stable_formulation)
   {
     // E = 0.5 * (H + H^T + H^T * H)
     // where H = gradient_displacement
-    return ((0.5 * scl) * (gradient_displacement + transpose(gradient_displacement) +
-                           transpose(gradient_displacement) * gradient_displacement));
+    return ((0.5 * scale) * (gradient_displacement + transpose(gradient_displacement) +
+                             transpose(gradient_displacement) * gradient_displacement));
   }
   else
   {
@@ -140,7 +139,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
     E = transpose(E) * E;
     add_scaled_identity<dim, Number, Number>(E, -1.0);
-    return (E * (0.5 * scl));
+    return (E * (0.5 * scale));
   }
 }
 
