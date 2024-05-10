@@ -54,13 +54,11 @@ public:
   virtual tensor
   second_piola_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
                                 unsigned int const cell,
-                                unsigned int const q,
-                                bool const         force_evaluation = false) const
+                                unsigned int const q) const
   {
     (void)gradient_displacement_cache_level_0_1;
     (void)cell;
     (void)q;
-    (void)force_evaluation;
     AssertThrow(false,
                 dealii::ExcMessage("For a total Lagrangian formulation,"
                                    "overwrite this method in derived class."));
@@ -104,13 +102,11 @@ public:
   virtual tensor
   kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
                    unsigned int const cell,
-                   unsigned int const q,
-                   bool const         force_evalution = false) const
+                   unsigned int const q) const
   {
     (void)gradient_displacement_cache_level_0_1;
     (void)cell;
     (void)q;
-    (void)force_evalution;
     AssertThrow(false,
                 dealii::ExcMessage("For a Lagrangian formulation in spatial domain, "
                                    "overwrite this method in derived class."));

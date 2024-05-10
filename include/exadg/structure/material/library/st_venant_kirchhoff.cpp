@@ -181,11 +181,8 @@ template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(tensor const & gradient_displacement,
                                                               unsigned int const cell,
-                                                              unsigned int const q,
-                                                              bool const force_evaluation) const
+                                                              unsigned int const q) const
 {
-  (void)force_evaluation;
-
   if(large_deformation)
   {
     return (this->second_piola_kirchhoff_stress_symmetrize(

@@ -551,8 +551,7 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
       // Kirchhoff stresses
       tensor const tau = material->kirchhoff_stress(Grad_d_lin_cache_level_0_1,
                                                     integrator.get_current_cell_index(),
-                                                    q,
-                                                    false /* force_evaluation */);
+                                                    q);
 
       // integral over spatial domain
       integrator.submit_gradient(tau * one_over_J, q);
@@ -612,8 +611,7 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
       // 2nd Piola-Kirchhoff stresses
       tensor const S = material->second_piola_kirchhoff_stress(Grad_d_lin_cache_level_0_1,
                                                                integrator.get_current_cell_index(),
-                                                               q,
-                                                               false /* force_evaluation */);
+                                                               q);
 
       // 1st Piola-Kirchhoff stresses P = F * S
       tensor const P = F * S;
@@ -698,8 +696,7 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       // Kirchhoff stresses
       tensor const tau_lin = material->kirchhoff_stress(Grad_d_lin_cache_level_0_1,
                                                         integrator.get_current_cell_index(),
-                                                        q,
-                                                        false /* force_evaluation */);
+                                                        q);
 
       // material part of the directional derivative
       tensor delta_tau =
@@ -769,8 +766,7 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       tensor const S_lin =
         material->second_piola_kirchhoff_stress(Grad_d_lin_cache_level_0_1,
                                                 integrator.get_current_cell_index(),
-                                                q,
-                                                false /* force_evaluation */);
+                                                q);
 
       // directional derivative of 1st Piola-Kirchhoff stresses P
 

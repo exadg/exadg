@@ -865,11 +865,8 @@ dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
   second_piola_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
                                 unsigned int const cell,
-                                unsigned int const q,
-                                bool const         force_evaluation) const
+                                unsigned int const q) const
 {
-  (void)force_evaluation;
-
   if constexpr(cache_level < 2)
   {
     if(shear_modulus_is_variable)
@@ -1151,11 +1148,8 @@ dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
   kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
                    unsigned int const cell,
-                   unsigned int const q,
-                   bool const         force_evaluation) const
+                   unsigned int const q) const
 {
-  (void)force_evaluation;
-
   if(cache_level < 2)
   {
     if(shear_modulus_is_variable)
