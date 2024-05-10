@@ -163,16 +163,16 @@ private:
 
   DEAL_II_ALWAYS_INLINE tensor
   compute_S_stable(tensor const & gradient_displacement,
-                                                           tensor const & C_inv,
-                                                           scalar const & log_J,
-                                                           scalar const & shear_modulus,
-                                                           scalar const & lambda) const;
+                   tensor const & C_inv,
+                   scalar const & log_J,
+                   scalar const & shear_modulus,
+                   scalar const & lambda) const;
 
   DEAL_II_ALWAYS_INLINE tensor
   compute_S_unstable(tensor const & C_inv,
-                                                             scalar const & log_J,
-                                                             scalar const & shear_modulus,
-                                                             scalar const & lambda) const;
+                     scalar const & log_J,
+                     scalar const & shear_modulus,
+                     scalar const & lambda) const;
 
   DEAL_II_ALWAYS_INLINE tensor
   compute_tau_stable(tensor const & gradient_displacement,

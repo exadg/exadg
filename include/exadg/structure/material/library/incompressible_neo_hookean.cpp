@@ -256,16 +256,12 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
       {
         if constexpr(stable_formulation)
         {
-          tensor const tau = compute_tau_stable(Grad_d_lin,
-                                                                         Jm1,
-                                                                         J_pow,
-                                                                         shear_modulus_stored);
+          tensor const tau = compute_tau_stable(Grad_d_lin, Jm1, J_pow, shear_modulus_stored);
           kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
         }
         else
         {
-          tensor const tau =
-            compute_tau_unstable(F, J_pow, c1, shear_modulus_stored);
+          tensor const tau = compute_tau_unstable(F, J_pow, c1, shear_modulus_stored);
           kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
         }
 
@@ -280,14 +276,12 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
           tensor const C_inv = F_inv * transpose(F_inv);
           if constexpr(stable_formulation)
           {
-            tensor const S = compute_S_stable(
-              Grad_d_lin, C_inv, J_pow, Jm1, shear_modulus_stored);
+            tensor const S = compute_S_stable(Grad_d_lin, C_inv, J_pow, Jm1, shear_modulus_stored);
             second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
           }
           else
           {
-            tensor const S = compute_S_unstable(
-              C_inv, J_pow, c1, shear_modulus_stored);
+            tensor const S = compute_S_unstable(C_inv, J_pow, c1, shear_modulus_stored);
             second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
           }
         }
@@ -304,14 +298,12 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 
         if constexpr(stable_formulation)
         {
-          tensor const S = compute_S_stable(
-            Grad_d_lin, C_inv, J_pow, Jm1, shear_modulus_stored);
+          tensor const S = compute_S_stable(Grad_d_lin, C_inv, J_pow, Jm1, shear_modulus_stored);
           second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
         }
         else
         {
-          tensor const S = compute_S_unstable(
-            C_inv, J_pow, c1, shear_modulus_stored);
+          tensor const S = compute_S_unstable(C_inv, J_pow, c1, shear_modulus_stored);
           second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
         }
       }
@@ -459,15 +451,13 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
         scalar const c1 =
           get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
 
-        return compute_S_unstable(
-          C_inv, J_pow, c1, shear_modulus_stored);
+        return compute_S_unstable(C_inv, J_pow, c1, shear_modulus_stored);
       }
       else
       {
         scalar const c1 = c1_coefficients.get_coefficient_cell(cell, q);
 
-        return compute_S_unstable(
-          C_inv, J_pow, c1, shear_modulus_stored);
+        return compute_S_unstable(C_inv, J_pow, c1, shear_modulus_stored);
       }
     }
   }
@@ -485,10 +475,10 @@ template<int dim,
 inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
   compute_S_stable(tensor const & gradient_displacement,
-                                                           tensor const & C_inv,
-                                                           scalar const & J_pow,
-                                                           scalar const & Jm1,
-                                                           scalar const & shear_modulus) const
+                   tensor const & C_inv,
+                   scalar const & J_pow,
+                   scalar const & Jm1,
+                   scalar const & shear_modulus) const
 {
   tensor S = get_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement,
                                                                    2.0 * shear_modulus * J_pow);
@@ -507,9 +497,9 @@ template<int dim,
 inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
   compute_S_unstable(tensor const & C_inv,
-                                                             scalar const & J_pow,
-                                                             scalar const & c1,
-                                                             scalar const & shear_modulus) const
+                     scalar const & J_pow,
+                     scalar const & c1,
+                     scalar const & shear_modulus) const
 {
   tensor S = C_inv * c1;
 
@@ -637,9 +627,9 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
     if constexpr(stable_formulation)
     {
       return compute_tau_stable(gradient_displacement_cache_level_0_1,
-                                                         Jm1,
-                                                         J_pow,
-                                                         shear_modulus_stored);
+                                Jm1,
+                                J_pow,
+                                shear_modulus_stored);
     }
     else
     {
@@ -672,9 +662,9 @@ template<int dim,
 inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
   compute_tau_stable(tensor const & gradient_displacement,
-                                              scalar const & Jm1,
-                                              scalar const & J_pow,
-                                              scalar const & shear_modulus) const
+                     scalar const & Jm1,
+                     scalar const & J_pow,
+                     scalar const & shear_modulus) const
 {
   tensor tau = get_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement,
                                                                      2.0 * shear_modulus * J_pow);
@@ -695,9 +685,9 @@ template<int dim,
 inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
   compute_tau_unstable(tensor const & F,
-                                                scalar const & J_pow,
-                                                scalar const & c1,
-                                                scalar const & shear_modulus) const
+                       scalar const & J_pow,
+                       scalar const & c1,
+                       scalar const & shear_modulus) const
 {
   tensor tau = (F * transpose(F)) * (shear_modulus * J_pow);
 

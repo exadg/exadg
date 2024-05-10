@@ -279,33 +279,31 @@ private:
 
   DEAL_II_ALWAYS_INLINE tensor
   compute_S_ground_matrix_stable(tensor const & gradient_displacement,
-								   tensor const & C_inv,
-								   scalar const & J_pow,
-								   scalar const & Jm1,
-								   scalar const & shear_modulus) const;
+                                 tensor const & C_inv,
+                                 scalar const & J_pow,
+                                 scalar const & Jm1,
+                                 scalar const & shear_modulus) const;
 
   DEAL_II_ALWAYS_INLINE tensor
   compute_S_ground_matrix_unstable(tensor const & C_inv,
-									 scalar const & J_pow,
-									 scalar const & c1,
-									 scalar const & shear_modulus)const;
+                                   scalar const & J_pow,
+                                   scalar const & c1,
+                                   scalar const & shear_modulus) const;
 
   DEAL_II_ALWAYS_INLINE tensor
-  compute_S_fiber_i(scalar const & c3,
-				    scalar const & E_i,
-				    tensor const & H_i) const;
+  compute_S_fiber_i(scalar const & c3, scalar const & E_i, tensor const & H_i) const;
 
-//  DEAL_II_ALWAYS_INLINE tensor
-//  compute_kirchhoff_stress_stable_formulation(tensor const & gradient_displacement,
-//                                              scalar const & Jm1,
-//                                              scalar const & J_pow,
-//                                              scalar const & shear_modulus) const;
-//
-//  DEAL_II_ALWAYS_INLINE tensor
-//  compute_kirchhoff_stress_unstable_formulation(tensor const & F,
-//                                                scalar const & J_pow,
-//                                                scalar const & c1,
-//                                                scalar const & shear_modulus) const;
+  //  DEAL_II_ALWAYS_INLINE tensor
+  //  compute_kirchhoff_stress_stable_formulation(tensor const & gradient_displacement,
+  //                                              scalar const & Jm1,
+  //                                              scalar const & J_pow,
+  //                                              scalar const & shear_modulus) const;
+  //
+  //  DEAL_II_ALWAYS_INLINE tensor
+  //  compute_kirchhoff_stress_unstable_formulation(tensor const & F,
+  //                                                scalar const & J_pow,
+  //                                                scalar const & c1,
+  //                                                scalar const & shear_modulus) const;
 
   unsigned int dof_index;
   unsigned int quad_index;

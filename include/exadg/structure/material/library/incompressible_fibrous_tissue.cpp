@@ -767,94 +767,94 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
     // Fiber and tensorial linearization data.
     if constexpr(cache_level == 1)
-	{
-        for(unsigned int i = 0; i < n_fiber_families; i++)
-        {
-          vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
-          vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
-          tensor const H_i = compute_structure_tensor(M_1, M_2);
+    {
+      for(unsigned int i = 0; i < n_fiber_families; i++)
+      {
+        vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+        vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+        tensor const H_i = compute_structure_tensor(M_1, M_2);
 
-          scalar const E_i = get_E_i<true /* force_evaluation */>(H_i, E, i, cell, q);
-          E_i_coefficients[i].set_coefficient_cell(cell, q, E_i);
-          scalar const c3 = get_c3<true /* force_evaluation */>(M_1, E, E_i, i, cell, q);
-          c3_coefficients[i].set_coefficient_cell(cell, q, c3);
-        }
-	}
+        scalar const E_i = get_E_i<true /* force_evaluation */>(H_i, E, i, cell, q);
+        E_i_coefficients[i].set_coefficient_cell(cell, q, E_i);
+        scalar const c3 = get_c3<true /* force_evaluation */>(M_1, E, E_i, i, cell, q);
+        c3_coefficients[i].set_coefficient_cell(cell, q, c3);
+      }
+    }
     else
     {
-        tensor const F_inv = invert(F);
-		tensor const C_inv = F_inv * transpose(F_inv);
+      tensor const F_inv = invert(F);
+      tensor const C_inv = F_inv * transpose(F_inv);
 
-		// Set all but the fiber and stress linearization data.
-		if(spatial_integration)
-		{
-	        C_coefficients.set_coefficient_cell(cell, q, C);
- 	        if(force_material_residual)
-			{
-			  gradient_displacement_coefficients.set_coefficient_cell(cell, q, Grad_d_lin);
-			}
-		}
-		else
-		{
-	        gradient_displacement_coefficients.set_coefficient_cell(cell, q, Grad_d_lin);
-	        F_inv_coefficients.set_coefficient_cell(cell, q, F_inv);
-	        C_inv_coefficients.set_coefficient_cell(cell, q, C_inv);
-		}
+      // Set all but the fiber and stress linearization data.
+      if(spatial_integration)
+      {
+        C_coefficients.set_coefficient_cell(cell, q, C);
+        if(force_material_residual)
+        {
+          gradient_displacement_coefficients.set_coefficient_cell(cell, q, Grad_d_lin);
+        }
+      }
+      else
+      {
+        gradient_displacement_coefficients.set_coefficient_cell(cell, q, Grad_d_lin);
+        F_inv_coefficients.set_coefficient_cell(cell, q, F_inv);
+        C_inv_coefficients.set_coefficient_cell(cell, q, C_inv);
+      }
 
-		// Set scalar linearization data for fiber contribution and stresses.
-		tensor tau, S;
-		if(spatial_integration)
-		{
-		  tau = kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
-		}
+      // Set scalar linearization data for fiber contribution and stresses.
+      tensor tau, S;
+      if(spatial_integration)
+      {
+        tau = kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
+      }
 
-		if(not spatial_integration or force_material_residual)
-		{
-		  if constexpr(stable_formulation)
-		  {
-		    S = compute_S_ground_matrix_stable(Grad_d_lin, C_inv, J_pow, Jm1, shear_modulus_stored);
-		  }
-		  else
-		  {
-			S = compute_S_ground_matrix_unstable(C_inv, J_pow, c1, shear_modulus_stored);
-		  }
-		}
+      if(not spatial_integration or force_material_residual)
+      {
+        if constexpr(stable_formulation)
+        {
+          S = compute_S_ground_matrix_stable(Grad_d_lin, C_inv, J_pow, Jm1, shear_modulus_stored);
+        }
+        else
+        {
+          S = compute_S_ground_matrix_unstable(C_inv, J_pow, c1, shear_modulus_stored);
+        }
+      }
 
-		// Compute and store tau and S.
-		for(unsigned int i = 0; i < n_fiber_families; i++)
-		{
-		  vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
-		  tensor const H_i = fiber_structure_tensor[i].get_coefficient_cell(cell, q);
+      // Compute and store tau and S.
+      for(unsigned int i = 0; i < n_fiber_families; i++)
+      {
+        vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+        tensor const H_i = fiber_structure_tensor[i].get_coefficient_cell(cell, q);
 
-		  scalar const E_i = get_E_i<true /* force_evaluation */>(H_i, E, i, cell, q);
-		  E_i_coefficients[i].set_coefficient_cell(cell, q, E_i);
+        scalar const E_i = get_E_i<true /* force_evaluation */>(H_i, E, i, cell, q);
+        E_i_coefficients[i].set_coefficient_cell(cell, q, E_i);
 
-		  scalar const c3 = get_c3<true /* force_evaluation */>(M_1, E, E_i, i, cell, q);
-		  c3_coefficients[i].set_coefficient_cell(cell, q, c3);
+        scalar const c3 = get_c3<true /* force_evaluation */>(M_1, E, E_i, i, cell, q);
+        c3_coefficients[i].set_coefficient_cell(cell, q, c3);
 
-		  if(spatial_integration)
-		  {
-			  H_i_times_C_coefficients[i].set_coefficient_cell(cell, q, H_i * C);
-			  C_times_H_i_coefficients[i].set_coefficient_cell(cell, q, C * H_i);
+        if(spatial_integration)
+        {
+          H_i_times_C_coefficients[i].set_coefficient_cell(cell, q, H_i * C);
+          C_times_H_i_coefficients[i].set_coefficient_cell(cell, q, C * H_i);
 
-//			  tau += compute_tau_fiber_i()
-		  }
+          //			  tau += compute_tau_fiber_i()
+        }
 
-		  if(not spatial_integration or force_material_residual)
-		  {
-			  S += compute_S_fiber_i(c3, E_i, H_i);
-		  }
-		}
+        if(not spatial_integration or force_material_residual)
+        {
+          S += compute_S_fiber_i(c3, E_i, H_i);
+        }
+      }
 
-	  if(spatial_integration)
-	  {
-		kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
-	  }
+      if(spatial_integration)
+      {
+        kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
+      }
 
-	  if(not spatial_integration or force_material_residual)
-	  {
-		second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
-	  }
+      if(not spatial_integration or force_material_residual)
+      {
+        second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
+      }
     }
   }
 }
@@ -871,14 +871,14 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
                                 unsigned int const q,
                                 bool const         force_evaluation) const
 {
-  (void) force_evaluation;
+  (void)force_evaluation;
 
   if constexpr(cache_level < 2)
   {
-	if(shear_modulus_is_variable)
-	{
-	  shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
-	}
+    if(shear_modulus_is_variable)
+    {
+      shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+    }
 
     scalar Jm1;
     tensor F;
@@ -894,69 +894,64 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
 
     if constexpr(cache_level == 0)
-	{
-		tensor const E = get_E_scaled<dim, Number, Number, stable_formulation>(
-				gradient_displacement_cache_level_0_1, 1.0);
+    {
+      tensor const E =
+        get_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement_cache_level_0_1,
+                                                              1.0);
 
-        tensor S;
-        if constexpr(stable_formulation)
-    	{
-        	S = compute_S_ground_matrix_stable(gradient_displacement_cache_level_0_1,
-    											C_inv,
-    											J_pow,
-    											Jm1,
-    											shear_modulus_stored);
-    	}
-        else
-        {
-    		scalar const c1 =
-    		  get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
+      tensor S;
+      if constexpr(stable_formulation)
+      {
+        S = compute_S_ground_matrix_stable(
+          gradient_displacement_cache_level_0_1, C_inv, J_pow, Jm1, shear_modulus_stored);
+      }
+      else
+      {
+        scalar const c1 =
+          get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
 
-    		S = compute_S_ground_matrix_unstable(C_inv, J_pow, c1, shear_modulus_stored);
-        }
+        S = compute_S_ground_matrix_unstable(C_inv, J_pow, c1, shear_modulus_stored);
+      }
 
-        for(unsigned int i = 0; i < n_fiber_families; i++)
-        {
-          vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
-    	  vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
-          tensor const H_i = compute_structure_tensor(M_1, M_2);
-          scalar const E_i = get_E_i<false /* force_evaluation */>(H_i, E, i, cell, q);
-          scalar const c3  = get_c3<false /* force_evaluation */>(M_1, E, E_i, i, cell, q);
-          S += compute_S_fiber_i(c3, E_i, H_i);
-        }
+      for(unsigned int i = 0; i < n_fiber_families; i++)
+      {
+        vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+        vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+        tensor const H_i = compute_structure_tensor(M_1, M_2);
+        scalar const E_i = get_E_i<false /* force_evaluation */>(H_i, E, i, cell, q);
+        scalar const c3  = get_c3<false /* force_evaluation */>(M_1, E, E_i, i, cell, q);
+        S += compute_S_fiber_i(c3, E_i, H_i);
+      }
 
-        return S;
-	}
+      return S;
+    }
     else
     {
-        tensor S;
-        if constexpr(stable_formulation)
-    	{
-        	S = compute_S_ground_matrix_stable(gradient_displacement_cache_level_0_1,
-    											C_inv,
-    											J_pow,
-    											Jm1,
-    											shear_modulus_stored);
-    	}
-        else
-        {
-    		scalar const c1 = c1_coefficients.get_coefficient_cell(cell, q);
+      tensor S;
+      if constexpr(stable_formulation)
+      {
+        S = compute_S_ground_matrix_stable(
+          gradient_displacement_cache_level_0_1, C_inv, J_pow, Jm1, shear_modulus_stored);
+      }
+      else
+      {
+        scalar const c1 = c1_coefficients.get_coefficient_cell(cell, q);
 
-    		S = compute_S_ground_matrix_unstable(C_inv, J_pow, c1, shear_modulus_stored);
-        }
+        S = compute_S_ground_matrix_unstable(C_inv, J_pow, c1, shear_modulus_stored);
+      }
 
-        for(unsigned int i = 0; i < n_fiber_families; i++)
-        {
-          vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
-    	  vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
-          tensor const H_i = compute_structure_tensor(M_1, M_2);
-          scalar const E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
-          scalar const c3  = c3_coefficients[i].get_coefficient_cell(cell, q);
+      for(unsigned int i = 0; i < n_fiber_families; i++)
+      {
+        vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+        vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+        tensor const H_i = compute_structure_tensor(M_1, M_2);
+        scalar const E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
+        scalar const c3  = c3_coefficients[i].get_coefficient_cell(cell, q);
 
-          S += compute_S_fiber_i(c3, E_i, H_i);
-        }
+        S += compute_S_fiber_i(c3, E_i, H_i);
+      }
 
-        return S;
+      return S;
     }
   }
   else
@@ -973,20 +968,18 @@ template<int dim,
 inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
   compute_S_ground_matrix_stable(tensor const & gradient_displacement,
-							     tensor const & C_inv,
-							     scalar const & J_pow,
-							     scalar const & Jm1,
-							     scalar const & shear_modulus) const
+                                 tensor const & C_inv,
+                                 scalar const & J_pow,
+                                 scalar const & Jm1,
+                                 scalar const & shear_modulus) const
 {
   tensor S = get_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement,
-		    		  2.0 * shear_modulus * J_pow);
+                                                                   2.0 * shear_modulus * J_pow);
 
-	add_scaled_identity<dim, Number>(S,
-									 -one_third * trace(S) +
-									   (0.5 * bulk_modulus) *
-										 get_JJm1<Number, stable_formulation>(Jm1));
+  add_scaled_identity<dim, Number>(
+    S, -one_third * trace(S) + (0.5 * bulk_modulus) * get_JJm1<Number, stable_formulation>(Jm1));
 
-	return (C_inv * S);
+  return (C_inv * S);
 }
 
 template<int dim,
@@ -997,15 +990,15 @@ template<int dim,
 inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
   compute_S_ground_matrix_unstable(tensor const & C_inv,
-								 scalar const & J_pow,
-								 scalar const & c1,
-								 scalar const & shear_modulus) const
+                                   scalar const & J_pow,
+                                   scalar const & c1,
+                                   scalar const & shear_modulus) const
 {
-	tensor S = C_inv * c1;
+  tensor S = C_inv * c1;
 
-	add_scaled_identity(S, shear_modulus * J_pow);
+  add_scaled_identity(S, shear_modulus * J_pow);
 
-	return S;
+  return S;
 }
 
 template<int dim,
@@ -1015,9 +1008,7 @@ template<int dim,
          unsigned int cache_level>
 inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
-  compute_S_fiber_i(scalar const & c3,
-					scalar const & E_i,
-					tensor const & H_i) const
+  compute_S_fiber_i(scalar const & c3, scalar const & E_i, tensor const & H_i) const
 {
   return ((c3 * E_i) * H_i);
 }
