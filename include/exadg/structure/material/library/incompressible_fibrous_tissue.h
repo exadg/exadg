@@ -274,6 +274,9 @@ private:
           unsigned int const cell,
           unsigned int const q) const;
 
+  DEAL_II_ALWAYS_INLINE Number
+  compute_numerical_upper_bound(Number const & fiber_k_1) const;
+
   DEAL_II_ALWAYS_INLINE tensor
   compute_S_ground_matrix_stable(tensor const & gradient_displacement,
                                  tensor const & C_inv,
@@ -311,16 +314,6 @@ private:
   IncompressibleFibrousTissueData<dim> const & data;
 
   mutable scalar shear_modulus_stored;
-  Number         bulk_modulus; // penalty term; kept constant
-
-  unsigned int const  n_fiber_families = 2;
-  std::vector<Number> fiber_sin_phi;
-  std::vector<Number> fiber_cos_phi;
-  Number              fiber_H_11;
-  Number              fiber_H_22;
-  Number              fiber_H_33;
-  Number              fiber_k_1;
-  Number              fiber_k_2;
 
   bool const orientation_vectors_provided;
 
@@ -362,8 +355,6 @@ private:
   mutable std::vector<VariableCoefficients<tensor>> fiber_structure_tensor;
   mutable std::vector<VariableCoefficients<tensor>> H_i_times_C_coefficients;
   mutable std::vector<VariableCoefficients<tensor>> C_times_H_i_coefficients;
-
-  Number fiber_numerical_upper_bound;
 };
 } // namespace Structure
 } // namespace ExaDG

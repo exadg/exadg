@@ -19,6 +19,8 @@
  *  ______________________________________________________________________
  */
 
+#define N_FIBER_FAMILIES 2
+
 // deal.II
 #include <deal.II/base/vectorization.h>
 #include <deal.II/fe/mapping_fe.h>
@@ -63,35 +65,12 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   Number const shear_modulus = data.shear_modulus;
   shear_modulus_stored       = dealii::make_vectorized_array<Number>(shear_modulus);
 
-  bulk_modulus = static_cast<Number>(data.bulk_modulus);
-
   if(shear_modulus_is_variable)
   {
     // Allocate vectors for variable coefficients and initialize with constant values.
     shear_modulus_coefficients.initialize(matrix_free, quad_index, false, false);
     shear_modulus_coefficients.set_coefficients(shear_modulus);
   }
-
-  // Store variable shear modulus and fiber orientation data.
-  fiber_sin_phi.resize(n_fiber_families);
-  fiber_cos_phi.resize(n_fiber_families);
-  for(unsigned int i = 0; i < n_fiber_families; i++)
-  {
-    AssertThrow(n_fiber_families <= 2,
-                dealii::ExcMessage(
-                  "Assuming potentially symmetrically dispersed fiber families. The fiber "
-                  "families >2 have the same mean fiber directions as fiber families 1 and 2."));
-    fiber_sin_phi[i] =
-      std::sin(pow(-1.0, i + 1) * data.fiber_angle_phi_in_degree * dealii::numbers::PI / 180.0);
-    fiber_cos_phi[i] =
-      std::cos(pow(-1.0, i + 1) * data.fiber_angle_phi_in_degree * dealii::numbers::PI / 180.0);
-  }
-
-  // Numerical upper bound for the fiber stiffness contribution.
-  fiber_numerical_upper_bound =
-    std::max(static_cast<Number>(1e10),
-             static_cast<Number>(data.fiber_k_1) * static_cast<Number>(data.fiber_k_1) *
-               static_cast<Number>(data.fiber_k_1));
 
   // Initialize linearization cache and fill with values corresponding to
   // the initial linearization vector assumed to be a zero displacement
@@ -108,12 +87,12 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     c1_coefficients.set_coefficients(-shear_modulus * ONE_THIRD * static_cast<Number>(dim));
     c2_coefficients.initialize(matrix_free, quad_index, false, false);
     c2_coefficients.set_coefficients(shear_modulus * TWO_NINTHS * static_cast<Number>(dim) +
-                                     bulk_modulus);
+                                     static_cast<Number>(data.bulk_modulus));
 
     // Set scalar linearization data for fiber contribution initially.
-    E_i_coefficients.resize(n_fiber_families);
-    c3_coefficients.resize(n_fiber_families);
-    for(unsigned int i = 0; i < n_fiber_families; i++)
+    E_i_coefficients.resize(N_FIBER_FAMILIES);
+    c3_coefficients.resize(N_FIBER_FAMILIES);
+    for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
     {
       E_i_coefficients[i].initialize(matrix_free, quad_index, false, false);
       E_i_coefficients[i].set_coefficients(0.0);
@@ -139,9 +118,9 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
         // Set tensorial linearization data for fiber contribution initially.
         // Note that these have to be corrected in cell_loop_set_coefficients().
-        H_i_times_C_coefficients.resize(n_fiber_families);
-        C_times_H_i_coefficients.resize(n_fiber_families);
-        for(unsigned int i = 0; i < n_fiber_families; i++)
+        H_i_times_C_coefficients.resize(N_FIBER_FAMILIES);
+        C_times_H_i_coefficients.resize(N_FIBER_FAMILIES);
+        for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
         {
           H_i_times_C_coefficients[i].initialize(matrix_free, quad_index, false, false);
           H_i_times_C_coefficients[i].set_coefficients(get_zero_tensor<dim, Number>());
@@ -299,7 +278,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   // Phi is the angle from the circumferential vector E_1 towards the longitudinal
   // vector E_2.
   vector                 M_3;
-  std::vector<vector>    M_1(n_fiber_families), M_2(n_fiber_families);
+  std::vector<vector>    M_1(N_FIBER_FAMILIES), M_2(N_FIBER_FAMILIES);
   dealii::Tensor<1, dim> E_1_default, E_2_default;
   for(unsigned int d = 0; d < dim; d++)
   {
@@ -308,9 +287,19 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     E_2_default[d]               = reciprocal_norm;
   }
 
+  AssertThrow(N_FIBER_FAMILIES <= 2,
+              dealii::ExcMessage(
+                "Using more than two fiber families, the mean directions overlap."));
+  std::vector<Number> fiber_sin_phi(N_FIBER_FAMILIES);
+  std::vector<Number> fiber_cos_phi(N_FIBER_FAMILIES);
   {
-    for(unsigned int i = 0; i < n_fiber_families; i++)
+    for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
     {
+      fiber_sin_phi[i] =
+        std::sin(pow(-1.0, i + 1) * data.fiber_angle_phi_in_degree * dealii::numbers::PI / 180.0);
+      fiber_cos_phi[i] =
+        std::cos(pow(-1.0, i + 1) * data.fiber_angle_phi_in_degree * dealii::numbers::PI / 180.0);
+
       M_1[i] = fiber_cos_phi[i] * E_1_default - fiber_sin_phi[i] * E_2_default;
       M_2[i] = fiber_sin_phi[i] * E_1_default + fiber_cos_phi[i] * E_2_default;
     }
@@ -322,8 +311,9 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   // Store only the minimal amount for the general case of having a field of
   // material coordinate systems. The mean fiber direction is always needed, since
   // I_i_star(M_1) is used as a fiber switch.
-  fiber_direction_M_1.resize(n_fiber_families);
-  for(unsigned int i = 0; i < n_fiber_families; i++)
+  fiber_direction_M_1.resize(N_FIBER_FAMILIES);
+
+  for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
   {
     fiber_direction_M_1[i].initialize(matrix_free, quad_index, false, false);
   }
@@ -331,8 +321,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   if constexpr(cache_level < 2)
   {
     // The structure tensor is reconstructed from M1 and M2 on the fly.
-    fiber_direction_M_2.resize(n_fiber_families);
-    for(unsigned int i = 0; i < n_fiber_families; i++)
+    fiber_direction_M_2.resize(N_FIBER_FAMILIES);
+    for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
     {
       fiber_direction_M_2[i].initialize(matrix_free, quad_index, false, false);
     }
@@ -340,8 +330,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   else
   {
     // The structure tensors are stored for each fiber family.
-    fiber_structure_tensor.resize(n_fiber_families);
-    for(unsigned int i = 0; i < n_fiber_families; i++)
+    fiber_structure_tensor.resize(N_FIBER_FAMILIES);
+    for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
     {
       fiber_structure_tensor[i].initialize(matrix_free, quad_index, false, false);
     }
@@ -414,7 +404,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
            (E_2_norm + tol)) *
             E_2;
 
-        for(unsigned int i = 0; i < n_fiber_families; i++)
+        for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
         {
           M_1[i] = fiber_cos_phi[i] * E_1 - fiber_sin_phi[i] * E_2;
           M_2[i] = fiber_sin_phi[i] * E_1 + fiber_cos_phi[i] * E_2;
@@ -431,7 +421,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       // corresponding stored data initialized wrongly before.
       if constexpr(cache_level < 2)
       {
-        for(unsigned int i = 0; i < n_fiber_families; i++)
+        for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
         {
           fiber_direction_M_1[i].set_coefficient_cell(cell, q, M_1[i]);
           fiber_direction_M_2[i].set_coefficient_cell(cell, q, M_2[i]);
@@ -442,7 +432,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
         // Fiber families have identical M_3 since they lie in a plane normal to it.
         M_3 = cross_product_3d(M_1[0], M_2[0]);
 
-        for(unsigned int i = 0; i < n_fiber_families; i++)
+        for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
         {
           fiber_direction_M_1[i].set_coefficient_cell(cell, q, M_1[i]);
 
@@ -482,7 +472,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
-    return ((0.5 * bulk_modulus) * compute_JJm1<Number, stable_formulation>(Jm1) -
+    return ((0.5 * static_cast<Number>(data.bulk_modulus)) *
+              compute_JJm1<Number, stable_formulation>(Jm1) -
             shear_modulus * ONE_THIRD * J_pow * get_I_1<dim, Number>(E, stable_formulation));
   }
   else
@@ -508,7 +499,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
-    return (bulk_modulus * (compute_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
+    return (static_cast<Number>(data.bulk_modulus) *
+              (compute_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
             TWO_NINTHS * shear_modulus * J_pow * get_I_1<dim, Number>(E, stable_formulation));
   }
   else
@@ -540,13 +532,13 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     if constexpr(stable_formulation)
     {
       c3 /* fiber_switch */ *= expm1_limited(static_cast<Number>(data.fiber_k_2) * E_i * E_i,
-                                             fiber_numerical_upper_bound) +
+                                             compute_numerical_upper_bound(data.fiber_k_1)) +
                                1.0;
     }
     else
     {
-      c3 /* fiber_switch */ *=
-        exp_limited(static_cast<Number>(data.fiber_k_2) * E_i * E_i, fiber_numerical_upper_bound);
+      c3 /* fiber_switch */ *= exp_limited(static_cast<Number>(data.fiber_k_2) * E_i * E_i,
+                                           compute_numerical_upper_bound(data.fiber_k_1));
     }
 
     return c3 * (2.0 * static_cast<Number>(data.fiber_k_1));
@@ -697,6 +689,18 @@ template<int dim,
          unsigned int check_type,
          bool         stable_formulation,
          unsigned int cache_level>
+inline Number
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
+  compute_numerical_upper_bound(Number const & fiber_k_1) const
+{
+  return (std::max(static_cast<Number>(1e10), fiber_k_1 * fiber_k_1 * fiber_k_1));
+}
+
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 void
 IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
   do_set_cell_linearization_data(
@@ -779,7 +783,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     // Fiber and tensorial linearization data.
     if constexpr(cache_level == 1)
     {
-      for(unsigned int i = 0; i < n_fiber_families; i++)
+      for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
       {
         vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
         vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
@@ -814,7 +818,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
       // Set scalar linearization data for fiber contribution and stresses.
       tensor S_fiber;
-      for(unsigned int i = 0; i < n_fiber_families; i++)
+      for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
       {
         vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
         tensor const H_i = fiber_structure_tensor[i].get_coefficient_cell(cell, q);
@@ -918,7 +922,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
         S = compute_S_ground_matrix_unstable(C_inv, J_pow, c1, shear_modulus_stored);
       }
 
-      for(unsigned int i = 0; i < n_fiber_families; i++)
+      for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
       {
         vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
         vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
@@ -945,7 +949,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
         S = compute_S_ground_matrix_unstable(C_inv, J_pow, c1, shear_modulus_stored);
       }
 
-      for(unsigned int i = 0; i < n_fiber_families; i++)
+      for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
       {
         vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
         vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
@@ -983,7 +987,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
   add_scaled_identity<dim, Number>(S,
                                    -ONE_THIRD * trace(S) +
-                                     (0.5 * bulk_modulus) *
+                                     (0.5 * static_cast<Number>(data.bulk_modulus)) *
                                        compute_JJm1<Number, stable_formulation>(Jm1));
 
   return (C_inv * S);
@@ -1103,7 +1107,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   add_scaled_identity(Dd_S, -shear_modulus_stored * TWO_THIRDS * J_pow * one_over_J_times_Dd_J);
 
   // Add fiber contribution.
-  for(unsigned int i = 0; i < n_fiber_families; i++)
+  for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
   {
     // Compute or load fiber switch.
     vector M_1_cache_level_0_1, M_2_cache_level_0_1;
@@ -1176,7 +1180,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
                                                               1.0);
 
       tensor tau;
-      for(unsigned int i = 0; i < n_fiber_families; i++)
+      for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
       {
         vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
         vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
@@ -1208,7 +1212,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     else
     {
       tensor tau;
-      for(unsigned int i = 0; i < n_fiber_families; i++)
+      for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
       {
         vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
         vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
@@ -1282,7 +1286,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
   add_scaled_identity<dim, Number>(tau,
                                    -TWO_THIRDS * shear_modulus * J_pow * trace(E) +
-                                     (0.5 * bulk_modulus) *
+                                     (0.5 * static_cast<Number>(data.bulk_modulus)) *
                                        compute_JJm1<Number, stable_formulation>(Jm1));
 
   return tau;
@@ -1377,7 +1381,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   add_scaled_identity(result, c2 * trace(symmetric_gradient_increment));
 
   // Add fiber contribution.
-  for(unsigned int i = 0; i < n_fiber_families; i++)
+  for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
   {
     // Compute or load fiber switch.
     vector M_1_cache_level_0_1, M_2_cache_level_0_1;
@@ -1426,7 +1430,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
               C_times_H_i;
 
     // The result is particularly prone to overflow.
-    bound_tensor(result, fiber_numerical_upper_bound);
+    bound_tensor(result, compute_numerical_upper_bound(data.fiber_k_1));
   }
 
   return result;

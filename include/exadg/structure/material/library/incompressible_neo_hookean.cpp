@@ -50,8 +50,6 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   Number const shear_modulus = data.shear_modulus;
   shear_modulus_stored       = dealii::make_vectorized_array<Number>(shear_modulus);
 
-  bulk_modulus = static_cast<Number>(data.bulk_modulus);
-
   if(shear_modulus_is_variable)
   {
     // allocate vectors for variable coefficients and initialize with constant values
@@ -81,7 +79,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
     c1_coefficients.set_coefficients(-shear_modulus * ONE_THIRD * static_cast<Number>(dim));
     c2_coefficients.initialize(matrix_free, quad_index, false, false);
     c2_coefficients.set_coefficients(shear_modulus * TWO_NINTHS * static_cast<Number>(dim) +
-                                     bulk_modulus);
+                                     static_cast<Number>(data.bulk_modulus));
 
     if(spatial_integration)
     {
@@ -328,7 +326,8 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
-    return ((0.5 * bulk_modulus) * compute_JJm1<Number, stable_formulation>(Jm1) -
+    return ((0.5 * static_cast<Number>(data.bulk_modulus)) *
+              compute_JJm1<Number, stable_formulation>(Jm1) -
             shear_modulus * ONE_THIRD * J_pow * get_I_1<dim, Number>(E, stable_formulation));
   }
   else
@@ -354,7 +353,8 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
-    return (bulk_modulus * (compute_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
+    return (static_cast<Number>(data.bulk_modulus) *
+              (compute_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
             TWO_NINTHS * shear_modulus * J_pow * get_I_1<dim, Number>(E, stable_formulation));
   }
   else
@@ -481,7 +481,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 
   add_scaled_identity<dim, Number>(S,
                                    -ONE_THIRD * trace(S) +
-                                     (0.5 * bulk_modulus) *
+                                     (0.5 * static_cast<Number>(data.bulk_modulus)) *
                                        compute_JJm1<Number, stable_formulation>(Jm1));
 
   return (C_inv * S);
@@ -665,7 +665,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 
   add_scaled_identity<dim, Number>(tau,
                                    -ONE_THIRD * trace(tau) +
-                                     (0.5 * bulk_modulus) *
+                                     (0.5 * static_cast<Number>(data.bulk_modulus)) *
                                        compute_JJm1<Number, stable_formulation>(Jm1));
 
   return tau;
