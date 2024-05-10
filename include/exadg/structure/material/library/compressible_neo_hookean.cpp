@@ -87,40 +87,40 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
 
     if constexpr(cache_level > 1)
     {
-      tensor const zero_tensor;
       if(spatial_integration)
       {
         kirchhoff_stress_coefficients.initialize(matrix_free, quad_index, false, false);
-        kirchhoff_stress_coefficients.set_coefficients(zero_tensor);
+        kirchhoff_stress_coefficients.set_coefficients(get_zero_tensor<dim, Number>());
 
         if(force_material_residual)
         {
           gradient_displacement_coefficients.initialize(matrix_free, quad_index, false, false);
-          gradient_displacement_coefficients.set_coefficients(zero_tensor);
+          gradient_displacement_coefficients.set_coefficients(get_zero_tensor<dim, Number>());
 
           second_piola_kirchhoff_stress_coefficients.initialize(matrix_free,
                                                                 quad_index,
                                                                 false,
                                                                 false);
-          second_piola_kirchhoff_stress_coefficients.set_coefficients(zero_tensor);
+          second_piola_kirchhoff_stress_coefficients.set_coefficients(
+            get_zero_tensor<dim, Number>());
         }
       }
       else
       {
         gradient_displacement_coefficients.initialize(matrix_free, quad_index, false, false);
-        gradient_displacement_coefficients.set_coefficients(zero_tensor);
+        gradient_displacement_coefficients.set_coefficients(get_zero_tensor<dim, Number>());
 
         second_piola_kirchhoff_stress_coefficients.initialize(matrix_free,
                                                               quad_index,
                                                               false,
                                                               false);
-        second_piola_kirchhoff_stress_coefficients.set_coefficients(zero_tensor);
+        second_piola_kirchhoff_stress_coefficients.set_coefficients(get_zero_tensor<dim, Number>());
 
         F_inv_coefficients.initialize(matrix_free, quad_index, false, false);
-        F_inv_coefficients.set_coefficients(get_identity<dim, Number>());
+        F_inv_coefficients.set_coefficients(get_identity_tensor<dim, Number>());
 
         C_inv_coefficients.initialize(matrix_free, quad_index, false, false);
-        C_inv_coefficients.set_coefficients(get_identity<dim, Number>());
+        C_inv_coefficients.set_coefficients(get_identity_tensor<dim, Number>());
       }
 
       AssertThrow(cache_level < 3, dealii::ExcMessage("Cache level > 2 not implemented."));
@@ -187,10 +187,10 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
 
     scalar Jm1;
     tensor F;
-    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(F,
-                                                                    Jm1,
-                                                                    Grad_d_lin,
-                                                                    true /* compute_J */);
+    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(F,
+                                                                        Jm1,
+                                                                        Grad_d_lin,
+                                                                        true /* compute_J */);
 
     // Overwrite computed values with admissible stored ones
     if constexpr(check_type == 2)
@@ -345,7 +345,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
     // Access the stored coefficients precomputed using the last linearization vector.
     scalar Jm1;
     tensor F;
-    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
       F, Jm1, gradient_displacement_cache_level_0_1, cache_level == 0 /* compute_J */);
 
     scalar const log_J = get_log_J<false /* force_evaluation*/>(Jm1, cell, q);
@@ -434,7 +434,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
   {
     scalar Jm1;
     tensor F;
-    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
       F, Jm1, gradient_displacement_cache_level_0_1, cache_level == 0 /* compute_J */);
 
     log_J = get_log_J<false /*force_evaluation*/>(Jm1, cell, q);
@@ -482,7 +482,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
     tensor F;
     if constexpr(cache_level == 0 or (not stable_formulation))
     {
-      get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+      compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
         F, Jm1, gradient_displacement_cache_level_0_1, cache_level == 0 /* compute_J */);
     }
 
@@ -570,7 +570,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
   {
     scalar Jm1;
     tensor F;
-    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
       F, Jm1, gradient_displacement_cache_level_0_1, true /* compute_J */);
 
     log_J = get_log_J<false /* force_evaluation */>(Jm1, cell, q);

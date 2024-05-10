@@ -91,43 +91,43 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 
     if constexpr(cache_level > 1)
     {
-      tensor const zero_tensor;
       if(spatial_integration)
       {
         kirchhoff_stress_coefficients.initialize(matrix_free, quad_index, false, false);
-        kirchhoff_stress_coefficients.set_coefficients(zero_tensor);
+        kirchhoff_stress_coefficients.set_coefficients(get_zero_tensor<dim, Number>());
 
         C_coefficients.initialize(matrix_free, quad_index, false, false);
-        C_coefficients.set_coefficients(get_identity<dim, Number>());
+        C_coefficients.set_coefficients(get_identity_tensor<dim, Number>());
 
         if(force_material_residual)
         {
           gradient_displacement_coefficients.initialize(matrix_free, quad_index, false, false);
-          gradient_displacement_coefficients.set_coefficients(zero_tensor);
+          gradient_displacement_coefficients.set_coefficients(get_zero_tensor<dim, Number>());
 
           second_piola_kirchhoff_stress_coefficients.initialize(matrix_free,
                                                                 quad_index,
                                                                 false,
                                                                 false);
-          second_piola_kirchhoff_stress_coefficients.set_coefficients(zero_tensor);
+          second_piola_kirchhoff_stress_coefficients.set_coefficients(
+            get_zero_tensor<dim, Number>());
         }
       }
       else
       {
         gradient_displacement_coefficients.initialize(matrix_free, quad_index, false, false);
-        gradient_displacement_coefficients.set_coefficients(zero_tensor);
+        gradient_displacement_coefficients.set_coefficients(get_zero_tensor<dim, Number>());
 
         second_piola_kirchhoff_stress_coefficients.initialize(matrix_free,
                                                               quad_index,
                                                               false,
                                                               false);
-        second_piola_kirchhoff_stress_coefficients.set_coefficients(zero_tensor);
+        second_piola_kirchhoff_stress_coefficients.set_coefficients(get_zero_tensor<dim, Number>());
 
         F_inv_coefficients.initialize(matrix_free, quad_index, false, false);
-        F_inv_coefficients.set_coefficients(get_identity<dim, Number>());
+        F_inv_coefficients.set_coefficients(get_identity_tensor<dim, Number>());
 
         C_inv_coefficients.initialize(matrix_free, quad_index, false, false);
-        C_inv_coefficients.set_coefficients(get_identity<dim, Number>());
+        C_inv_coefficients.set_coefficients(get_identity_tensor<dim, Number>());
       }
 
       AssertThrow(cache_level < 3, dealii::ExcMessage("Cache level > 2 not implemented."));
@@ -193,10 +193,10 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 
     scalar Jm1;
     tensor F;
-    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(F,
-                                                                    Jm1,
-                                                                    Grad_d_lin,
-                                                                    true /* compute_J */);
+    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(F,
+                                                                        Jm1,
+                                                                        Grad_d_lin,
+                                                                        true /* compute_J */);
 
     // Overwrite computed values with admissible stored ones
     if constexpr(check_type == 2)
@@ -328,7 +328,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
-    return ((0.5 * bulk_modulus) * get_JJm1<Number, stable_formulation>(Jm1) -
+    return ((0.5 * bulk_modulus) * compute_JJm1<Number, stable_formulation>(Jm1) -
             shear_modulus * one_third * J_pow * get_I_1<dim, Number>(E, stable_formulation));
   }
   else
@@ -354,7 +354,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
-    return (bulk_modulus * (get_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
+    return (bulk_modulus * (compute_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
             (2.0 * one_third * one_third) * shear_modulus * J_pow *
               get_I_1<dim, Number>(E, stable_formulation));
   }
@@ -424,7 +424,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 
     scalar Jm1;
     tensor F;
-    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
       F, Jm1, gradient_displacement_cache_level_0_1, cache_level == 0 /* compute_J */);
     if constexpr(cache_level == 1 and stable_formulation)
     {
@@ -480,8 +480,10 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   tensor S = get_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement,
                                                                    2.0 * shear_modulus * J_pow);
 
-  add_scaled_identity<dim, Number>(
-    S, -one_third * trace(S) + (0.5 * bulk_modulus) * get_JJm1<Number, stable_formulation>(Jm1));
+  add_scaled_identity<dim, Number>(S,
+                                   -one_third * trace(S) +
+                                     (0.5 * bulk_modulus) *
+                                       compute_JJm1<Number, stable_formulation>(Jm1));
 
   return (C_inv * S);
 }
@@ -540,7 +542,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   tensor E_cache_level_0;
   if constexpr(cache_level == 0)
   {
-    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
       E_cache_level_0 /* F */,
       Jm1_cache_level_0,
       gradient_displacement_cache_level_0_1,
@@ -609,7 +611,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 
     scalar Jm1;
     tensor F;
-    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
       F, Jm1, gradient_displacement_cache_level_0_1, cache_level == 0 /* compute_J */);
     if constexpr(cache_level == 1 and stable_formulation)
     {
@@ -666,7 +668,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   add_scaled_identity<dim, Number>(tau,
                                    -one_third * trace(tau) +
                                      (0.5 * bulk_modulus) *
-                                       get_JJm1<Number, stable_formulation>(Jm1));
+                                       compute_JJm1<Number, stable_formulation>(Jm1));
 
   return tau;
 }
@@ -725,7 +727,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   tensor E_cache_level_0;
   if constexpr(cache_level == 0)
   {
-    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
       result, Jm1_cache_level_0, gradient_displacement_cache_level_0_1, true /* compute_J */);
 
     E_cache_level_0 =

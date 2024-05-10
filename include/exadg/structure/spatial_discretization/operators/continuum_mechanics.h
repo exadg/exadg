@@ -146,17 +146,26 @@ inline DEAL_II_ALWAYS_INLINE //
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  get_identity()
+  get_identity_tensor()
 {
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> I;
-  add_scaled_identity<dim, Number, Number>(I, 1.0);
-  return I;
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> identity_tensor;
+  add_scaled_identity<dim, Number, Number>(identity_tensor, 1.0);
+  return identity_tensor;
+}
+
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  get_zero_tensor()
+{
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> zero_tensor;
+  return zero_tensor;
 }
 
 template<int dim, typename Number, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
-  get_Jm1(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement)
+  compute_Jm1(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement)
 {
   if constexpr(stable_formulation)
   {
@@ -202,7 +211,7 @@ inline DEAL_II_ALWAYS_INLINE //
 template<typename Number, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
-  get_JJm1(dealii::VectorizedArray<Number> const & Jm1)
+  compute_JJm1(dealii::VectorizedArray<Number> const & Jm1)
 {
   if constexpr(stable_formulation)
   {
@@ -232,7 +241,9 @@ inline DEAL_II_ALWAYS_INLINE //
   else
   {
     // I_1 = trace(C) = trace(2 * E + I)
-    return (trace(2.0 * E + get_identity<dim, Number>()));
+	dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> C = 2.0 * E;
+    add_scaled_identity<dim, Number, Number>(C, 1.0);
+    return trace(C);
   }
 }
 
@@ -310,7 +321,7 @@ inline DEAL_II_ALWAYS_INLINE //
 template<int dim, typename Number, unsigned int check_type, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
   void
-  get_modified_F_Jm1(
+  compute_modified_F_Jm1(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> &       F,
     dealii::VectorizedArray<Number> &                               Jm1,
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
@@ -320,7 +331,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if(compute_J)
   {
-    Jm1 = get_Jm1<dim, Number, stable_formulation>(gradient_displacement);
+    Jm1 = compute_Jm1<dim, Number, stable_formulation>(gradient_displacement);
   }
 
   // check_type 0 : Do not modify.
@@ -337,7 +348,7 @@ inline DEAL_II_ALWAYS_INLINE //
     if(not compute_J)
     {
       // Compute J - 1 to do any checking.
-      Jm1 = get_Jm1<dim, Number, stable_formulation>(gradient_displacement);
+      Jm1 = compute_Jm1<dim, Number, stable_formulation>(gradient_displacement);
     }
 
     Number tol = get_J_tol<Number>();

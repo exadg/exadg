@@ -523,17 +523,17 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
         {
           if(this->operator_data.stable_formulation)
           {
-            get_modified_F_Jm1<dim, Number, 0, true>(F,
-                                                     Jm1,
-                                                     Grad_d_lin_cache_level_0_1,
-                                                     true /* compute_J */);
+            compute_modified_F_Jm1<dim, Number, 0, true>(F,
+                                                         Jm1,
+                                                         Grad_d_lin_cache_level_0_1,
+                                                         true /* compute_J */);
           }
           else
           {
-            get_modified_F_Jm1<dim, Number, 0, false>(F,
-                                                      Jm1,
-                                                      Grad_d_lin_cache_level_0_1,
-                                                      true /* compute_J */);
+            compute_modified_F_Jm1<dim, Number, 0, false>(F,
+                                                          Jm1,
+                                                          Grad_d_lin_cache_level_0_1,
+                                                          true /* compute_J */);
           }
         }
         else
@@ -582,17 +582,17 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
         {
           if(this->operator_data.stable_formulation)
           {
-            get_modified_F_Jm1<dim, Number, 0, true>(F,
-                                                     Jm1,
-                                                     Grad_d_lin_cache_level_0_1,
-                                                     false /* compute_J */);
+            compute_modified_F_Jm1<dim, Number, 0, true>(F,
+                                                         Jm1,
+                                                         Grad_d_lin_cache_level_0_1,
+                                                         false /* compute_J */);
           }
           else
           {
-            get_modified_F_Jm1<dim, Number, 0, false>(F,
-                                                      Jm1,
-                                                      Grad_d_lin_cache_level_0_1,
-                                                      false /* compute_J */);
+            compute_modified_F_Jm1<dim, Number, 0, false>(F,
+                                                          Jm1,
+                                                          Grad_d_lin_cache_level_0_1,
+                                                          false /* compute_J */);
           }
         }
         else
@@ -657,19 +657,19 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
         {
           if(this->operator_data.stable_formulation)
           {
-            get_modified_F_Jm1<dim, Number, 0, true>(F_lin,
-                                                     Jm1_lin,
-                                                     Grad_d_lin_cache_level_0_1,
-                                                     this->operator_data.cache_level ==
-                                                       0 /* compute_J */);
+            compute_modified_F_Jm1<dim, Number, 0, true>(F_lin,
+                                                         Jm1_lin,
+                                                         Grad_d_lin_cache_level_0_1,
+                                                         this->operator_data.cache_level ==
+                                                           0 /* compute_J */);
           }
           else
           {
-            get_modified_F_Jm1<dim, Number, 0, false>(F_lin,
-                                                      Jm1_lin,
-                                                      Grad_d_lin_cache_level_0_1,
-                                                      this->operator_data.cache_level ==
-                                                        0 /* compute_J */);
+            compute_modified_F_Jm1<dim, Number, 0, false>(F_lin,
+                                                          Jm1_lin,
+                                                          Grad_d_lin_cache_level_0_1,
+                                                          this->operator_data.cache_level ==
+                                                            0 /* compute_J */);
           }
         }
         else
@@ -736,17 +736,17 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
           scalar Jm1_lin;
           if(this->operator_data.stable_formulation)
           {
-            get_modified_F_Jm1<dim, Number, 0, true>(F_lin,
-                                                     Jm1_lin,
-                                                     Grad_d_lin_cache_level_0_1,
-                                                     false /* compute_J */);
+            compute_modified_F_Jm1<dim, Number, 0, true>(F_lin,
+                                                         Jm1_lin,
+                                                         Grad_d_lin_cache_level_0_1,
+                                                         false /* compute_J */);
           }
           else
           {
-            get_modified_F_Jm1<dim, Number, 0, false>(F_lin,
-                                                      Jm1_lin,
-                                                      Grad_d_lin_cache_level_0_1,
-                                                      false /* compute_J */);
+            compute_modified_F_Jm1<dim, Number, 0, false>(F_lin,
+                                                          Jm1_lin,
+                                                          Grad_d_lin_cache_level_0_1,
+                                                          false /* compute_J */);
           }
         }
         else

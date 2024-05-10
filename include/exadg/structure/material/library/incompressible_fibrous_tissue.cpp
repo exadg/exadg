@@ -136,10 +136,10 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       if(spatial_integration)
       {
         kirchhoff_stress_coefficients.initialize(matrix_free, quad_index, false, false);
-        kirchhoff_stress_coefficients.set_coefficients(tensor_zero);
+        kirchhoff_stress_coefficients.set_coefficients(get_zero_tensor<dim, Number>());
 
         C_coefficients.initialize(matrix_free, quad_index, false, false);
-        C_coefficients.set_coefficients(I);
+        C_coefficients.set_coefficients(get_identity_tensor<dim, Number>());
 
         // Set tensorial linearization data for fiber contribution initially.
         // Note that these have to be corrected in cell_loop_set_coefficients().
@@ -148,39 +148,40 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
         for(unsigned int i = 0; i < n_fiber_families; i++)
         {
           H_i_times_C_coefficients[i].initialize(matrix_free, quad_index, false, false);
-          H_i_times_C_coefficients[i].set_coefficients(tensor_zero);
+          H_i_times_C_coefficients[i].set_coefficients(get_zero_tensor<dim, Number>());
           C_times_H_i_coefficients[i].initialize(matrix_free, quad_index, false, false);
-          C_times_H_i_coefficients[i].set_coefficients(tensor_zero);
+          C_times_H_i_coefficients[i].set_coefficients(get_zero_tensor<dim, Number>());
         }
 
         if(force_material_residual)
         {
           gradient_displacement_coefficients.initialize(matrix_free, quad_index, false, false);
-          gradient_displacement_coefficients.set_coefficients(tensor_zero);
+          gradient_displacement_coefficients.set_coefficients(get_zero_tensor<dim, Number>());
 
           second_piola_kirchhoff_stress_coefficients.initialize(matrix_free,
                                                                 quad_index,
                                                                 false,
                                                                 false);
-          second_piola_kirchhoff_stress_coefficients.set_coefficients(tensor_zero);
+          second_piola_kirchhoff_stress_coefficients.set_coefficients(
+            get_zero_tensor<dim, Number>());
         }
       }
       else
       {
         gradient_displacement_coefficients.initialize(matrix_free, quad_index, false, false);
-        gradient_displacement_coefficients.set_coefficients(tensor_zero);
+        gradient_displacement_coefficients.set_coefficients(get_zero_tensor<dim, Number>());
 
         second_piola_kirchhoff_stress_coefficients.initialize(matrix_free,
                                                               quad_index,
                                                               false,
                                                               false);
-        second_piola_kirchhoff_stress_coefficients.set_coefficients(tensor_zero);
+        second_piola_kirchhoff_stress_coefficients.set_coefficients(get_zero_tensor<dim, Number>());
 
         F_inv_coefficients.initialize(matrix_free, quad_index, false, false);
-        F_inv_coefficients.set_coefficients(I);
+        F_inv_coefficients.set_coefficients(get_identity_tensor<dim, Number>());
 
         C_inv_coefficients.initialize(matrix_free, quad_index, false, false);
-        C_inv_coefficients.set_coefficients(I);
+        C_inv_coefficients.set_coefficients(get_identity_tensor<dim, Number>());
       }
 
       AssertThrow(cache_level < 3, dealii::ExcMessage("Cache level > 2 not implemented."));
@@ -392,22 +393,30 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
         // factor_default = norm < tol ? 1.0 : 0.0
         scalar E_1_default_factor =
-          dealii::compare_and_apply_mask<dealii::SIMDComparison::less_than>(E_1_norm,
-                                                                            scalar_one * tol,
-                                                                            scalar_one,
-                                                                            scalar_zero);
+          dealii::compare_and_apply_mask<dealii::SIMDComparison::less_than>(
+            E_1_norm,
+            dealii::make_vectorized_array<Number>(static_cast<Number>(tol)),
+            dealii::make_vectorized_array<Number>(static_cast<Number>(1.0)),
+            dealii::make_vectorized_array<Number>(static_cast<Number>(0.0)));
 
         scalar E_2_default_factor =
-          dealii::compare_and_apply_mask<dealii::SIMDComparison::less_than>(E_2_norm,
-                                                                            scalar_one * tol,
-                                                                            scalar_one,
-                                                                            scalar_zero);
+          dealii::compare_and_apply_mask<dealii::SIMDComparison::less_than>(
+            E_2_norm,
+            dealii::make_vectorized_array<Number>(static_cast<Number>(tol)),
+            dealii::make_vectorized_array<Number>(static_cast<Number>(1.0)),
+            dealii::make_vectorized_array<Number>(static_cast<Number>(0.0)));
 
         // Add tol to norm to make sure we do not get undefined behavior.
-        E_1 = E_1_default_factor * E_1_default +
-              ((scalar_one - E_1_default_factor) / (E_1_norm + tol)) * E_1;
-        E_2 = E_2_default_factor * E_2_default +
-              ((scalar_one - E_2_default_factor) / (E_2_norm + tol)) * E_2;
+        E_1 =
+          E_1_default_factor * E_1_default +
+          ((dealii::make_vectorized_array<Number>(static_cast<Number>(1.0)) - E_1_default_factor) /
+           (E_1_norm + tol)) *
+            E_1;
+        E_2 =
+          E_2_default_factor * E_2_default +
+          ((dealii::make_vectorized_array<Number>(static_cast<Number>(1.0)) - E_2_default_factor) /
+           (E_2_norm + tol)) *
+            E_2;
 
         for(unsigned int i = 0; i < n_fiber_families; i++)
         {
@@ -477,7 +486,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
-    return ((0.5 * bulk_modulus) * get_JJm1<Number, stable_formulation>(Jm1) -
+    return ((0.5 * bulk_modulus) * compute_JJm1<Number, stable_formulation>(Jm1) -
             shear_modulus * one_third * J_pow * get_I_1<dim, Number>(E, stable_formulation));
   }
   else
@@ -503,7 +512,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
-    return (bulk_modulus * (get_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
+    return (bulk_modulus * (compute_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
             (2.0 * one_third * one_third) * shear_modulus * J_pow *
               get_I_1<dim, Number>(E, stable_formulation));
   }
@@ -643,7 +652,10 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
   // fiber_switch = I_i_star < 1 ? 0.0 : 1.0
   scalar fiber_switch = dealii::compare_and_apply_mask<dealii::SIMDComparison::less_than>(
-    I_i_star, scalar_one, scalar_zero, scalar_one);
+    I_i_star,
+    dealii::make_vectorized_array<Number>(static_cast<Number>(1.0)),
+    dealii::make_vectorized_array<Number>(static_cast<Number>(0.0)),
+    dealii::make_vectorized_array<Number>(static_cast<Number>(1.0)));
 
   return fiber_switch;
 }
@@ -670,9 +682,11 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     }
     else
     {
+      // Note that we add and subtract I to simulate computing C - I.
       tensor C = 2.0 * E;
       add_scaled_identity<dim, Number, Number>(C, 1.0);
-      return scalar_product(H_i, C - I);
+      add_scaled_identity<dim, Number, Number>(C, -1.0);
+      return scalar_product(H_i, C);
     }
   }
   else
@@ -706,10 +720,10 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
     scalar Jm1;
     tensor F;
-    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(F,
-                                                                    Jm1,
-                                                                    Grad_d_lin,
-                                                                    true /* compute_J */);
+    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(F,
+                                                                        Jm1,
+                                                                        Grad_d_lin,
+                                                                        true /* compute_J */);
 
     // Overwrite computed values with admissible stored ones
     if constexpr(check_type == 2)
@@ -876,7 +890,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
     scalar Jm1;
     tensor F;
-    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
       F, Jm1, gradient_displacement_cache_level_0_1, cache_level == 0 /* compute_J */);
     if constexpr(cache_level == 1 and stable_formulation)
     {
@@ -970,8 +984,10 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   tensor S = get_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement,
                                                                    2.0 * shear_modulus * J_pow);
 
-  add_scaled_identity<dim, Number>(
-    S, -one_third * trace(S) + (0.5 * bulk_modulus) * get_JJm1<Number, stable_formulation>(Jm1));
+  add_scaled_identity<dim, Number>(S,
+                                   -one_third * trace(S) +
+                                     (0.5 * bulk_modulus) *
+                                       compute_JJm1<Number, stable_formulation>(Jm1));
 
   return (C_inv * S);
 }
@@ -1042,7 +1058,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   tensor E_cache_level_0;
   if constexpr(cache_level == 0)
   {
-    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
       E_cache_level_0 /* F */,
       Jm1_cache_level_0,
       gradient_displacement_cache_level_0_1,
@@ -1176,7 +1192,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
       scalar Jm1;
       tensor F;
-      get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+      compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
         F, Jm1, gradient_displacement_cache_level_0_1, true /* compute_J */);
 
       scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
@@ -1211,7 +1227,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       {
         scalar Jm1;
         tensor F;
-        get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+        compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
           F, Jm1, gradient_displacement_cache_level_0_1, false /* compute_J */);
         Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
 
@@ -1226,7 +1242,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       {
         scalar Jm1;
         tensor F;
-        get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+        compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
           F, Jm1, gradient_displacement_cache_level_0_1, false /* compute_J */);
 
         scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
@@ -1271,7 +1287,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   add_scaled_identity<dim, Number>(tau,
                                    (-2.0 * one_third) * shear_modulus * J_pow * trace(E) +
                                      (0.5 * bulk_modulus) *
-                                       get_JJm1<Number, stable_formulation>(Jm1));
+                                       compute_JJm1<Number, stable_formulation>(Jm1));
 
   return tau;
 }
@@ -1331,11 +1347,12 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   tensor E, C;
   if constexpr(cache_level == 0)
   {
-    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
       result, Jm1_cache_level_0, gradient_displacement_cache_level_0_1, true /* compute_J */);
     E = get_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement_cache_level_0_1,
                                                               1.0);
-    C = 2.0 * E + I;
+    C = 2.0 * E;
+    add_scaled_identity<dim, Number, Number>(C, 1.0);
   }
   else
   {
