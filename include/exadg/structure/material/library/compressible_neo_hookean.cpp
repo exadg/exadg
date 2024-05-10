@@ -239,7 +239,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
       {
         if constexpr(stable_formulation)
         {
-          tensor const tau = compute_kirchhoff_stress_stable_formulation(Grad_d_lin,
+          tensor const tau = compute_tau_stable(Grad_d_lin,
                                                                          log_J,
                                                                          shear_modulus_stored,
                                                                          lambda_stored);
@@ -247,7 +247,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
         }
         else
         {
-          tensor const tau = compute_kirchhoff_stress_unstable_formulation(F,
+          tensor const tau = compute_tau_unstable(F,
                                                                            log_J,
                                                                            shear_modulus_stored,
                                                                            lambda_stored);
@@ -262,13 +262,13 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
           tensor const C_inv = F_inv * transpose(F_inv);
           if constexpr(stable_formulation)
           {
-            tensor const S = compute_second_piola_kirchhoff_stress_stable_formulation(
+            tensor const S = compute_S_stable(
               Grad_d_lin, C_inv, log_J, shear_modulus_stored, lambda_stored);
             second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
           }
           else
           {
-            tensor const S = compute_second_piola_kirchhoff_stress_unstable_formulation(
+            tensor const S = compute_S_unstable(
               C_inv, log_J, shear_modulus_stored, lambda_stored);
             second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
           }
@@ -286,13 +286,13 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
 
         if constexpr(stable_formulation)
         {
-          tensor const S = compute_second_piola_kirchhoff_stress_stable_formulation(
+          tensor const S = compute_S_stable(
             Grad_d_lin, C_inv, log_J, shear_modulus_stored, lambda_stored);
           second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
         }
         else
         {
-          tensor const S = compute_second_piola_kirchhoff_stress_unstable_formulation(
+          tensor const S = compute_S_unstable(
             C_inv, log_J, shear_modulus_stored, lambda_stored);
           second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
         }
@@ -364,12 +364,12 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
 
     if constexpr(stable_formulation)
     {
-      return compute_second_piola_kirchhoff_stress_stable_formulation(
+      return compute_S_stable(
         gradient_displacement_cache_level_0_1, C_inv, log_J, shear_modulus_stored, lambda_stored);
     }
     else
     {
-      return compute_second_piola_kirchhoff_stress_unstable_formulation(C_inv,
+      return compute_S_unstable(C_inv,
                                                                         log_J,
                                                                         shear_modulus_stored,
                                                                         lambda_stored);
@@ -388,7 +388,7 @@ template<int dim,
          unsigned int cache_level>
 inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
-  compute_second_piola_kirchhoff_stress_stable_formulation(tensor const & gradient_displacement,
+  compute_S_stable(tensor const & gradient_displacement,
                                                            tensor const & C_inv,
                                                            scalar const & log_J,
                                                            scalar const & shear_modulus,
@@ -409,7 +409,7 @@ template<int dim,
          unsigned int cache_level>
 inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
-  compute_second_piola_kirchhoff_stress_unstable_formulation(tensor const & C_inv,
+  compute_S_unstable(tensor const & C_inv,
                                                              scalar const & log_J,
                                                              scalar const & shear_modulus,
                                                              scalar const & lambda) const
@@ -507,14 +507,14 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
 
     if constexpr(stable_formulation)
     {
-      return compute_kirchhoff_stress_stable_formulation(gradient_displacement_cache_level_0_1,
+      return compute_tau_stable(gradient_displacement_cache_level_0_1,
                                                          log_J,
                                                          shear_modulus_stored,
                                                          lambda_stored);
     }
     else
     {
-      return compute_kirchhoff_stress_unstable_formulation(F,
+      return compute_tau_unstable(F,
                                                            log_J,
                                                            shear_modulus_stored,
                                                            lambda_stored);
@@ -533,7 +533,7 @@ template<int dim,
          unsigned int cache_level>
 inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
-  compute_kirchhoff_stress_stable_formulation(tensor const & gradient_displacement,
+  compute_tau_stable(tensor const & gradient_displacement,
                                               scalar const & log_J,
                                               scalar const & shear_modulus,
                                               scalar const & lambda) const
@@ -553,7 +553,7 @@ template<int dim,
          unsigned int cache_level>
 inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
-  compute_kirchhoff_stress_unstable_formulation(tensor const & F,
+  compute_tau_unstable(tensor const & F,
                                                 scalar const & log_J,
                                                 scalar const & shear_modulus,
                                                 scalar const & lambda) const

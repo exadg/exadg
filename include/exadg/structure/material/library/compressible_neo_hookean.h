@@ -162,29 +162,29 @@ private:
   get_log_J(scalar const & Jm1, unsigned int const cell, unsigned int const q) const;
 
   DEAL_II_ALWAYS_INLINE tensor
-  compute_second_piola_kirchhoff_stress_stable_formulation(tensor const & gradient_displacement,
+  compute_S_stable(tensor const & gradient_displacement,
                                                            tensor const & C_inv,
                                                            scalar const & log_J,
                                                            scalar const & shear_modulus,
                                                            scalar const & lambda) const;
 
   DEAL_II_ALWAYS_INLINE tensor
-  compute_second_piola_kirchhoff_stress_unstable_formulation(tensor const & C_inv,
+  compute_S_unstable(tensor const & C_inv,
                                                              scalar const & log_J,
                                                              scalar const & shear_modulus,
                                                              scalar const & lambda) const;
 
   DEAL_II_ALWAYS_INLINE tensor
-  compute_kirchhoff_stress_stable_formulation(tensor const & gradient_displacement,
-                                              scalar const & log_J,
-                                              scalar const & shear_modulus,
-                                              scalar const & lambda) const;
+  compute_tau_stable(tensor const & gradient_displacement,
+                     scalar const & log_J,
+                     scalar const & shear_modulus,
+                     scalar const & lambda) const;
 
   DEAL_II_ALWAYS_INLINE tensor
-  compute_kirchhoff_stress_unstable_formulation(tensor const & F,
-                                                scalar const & log_J,
-                                                scalar const & shear_modulus,
-                                                scalar const & lambda) const;
+  compute_tau_unstable(tensor const & F,
+                       scalar const & log_J,
+                       scalar const & shear_modulus,
+                       scalar const & lambda) const;
 
   unsigned int dof_index;
   unsigned int quad_index;
