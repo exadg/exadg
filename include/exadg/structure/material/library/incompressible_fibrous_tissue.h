@@ -363,8 +363,6 @@ private:
   mutable std::vector<VariableCoefficients<tensor>> H_i_times_C_coefficients;
   mutable std::vector<VariableCoefficients<tensor>> C_times_H_i_coefficients;
 
-  Number const one_third = 1.0 / 3.0;
-
   Number fiber_numerical_upper_bound;
 };
 } // namespace Structure

@@ -87,15 +87,11 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       std::cos(pow(-1.0, i + 1) * data.fiber_angle_phi_in_degree * dealii::numbers::PI / 180.0);
   }
 
-  fiber_H_11 = data.fiber_H_11;
-  fiber_H_22 = data.fiber_H_22;
-  fiber_H_33 = data.fiber_H_33;
-  fiber_k_1  = data.fiber_k_1;
-  fiber_k_2  = data.fiber_k_2;
-
   // Numerical upper bound for the fiber stiffness contribution.
   fiber_numerical_upper_bound =
-    std::max(static_cast<Number>(1e10), fiber_k_1 * fiber_k_1 * fiber_k_1);
+    std::max(static_cast<Number>(1e10),
+             static_cast<Number>(data.fiber_k_1) * static_cast<Number>(data.fiber_k_1) *
+               static_cast<Number>(data.fiber_k_1));
 
   // Initialize linearization cache and fill with values corresponding to
   // the initial linearization vector assumed to be a zero displacement
@@ -109,10 +105,10 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     J_pow_coefficients.set_coefficients(1.0);
 
     c1_coefficients.initialize(matrix_free, quad_index, false, false);
-    c1_coefficients.set_coefficients(-shear_modulus * one_third * static_cast<Number>(dim));
+    c1_coefficients.set_coefficients(-shear_modulus * ONE_THIRD * static_cast<Number>(dim));
     c2_coefficients.initialize(matrix_free, quad_index, false, false);
-    c2_coefficients.set_coefficients(
-      shear_modulus * one_third * 2.0 * one_third * static_cast<Number>(dim) + bulk_modulus);
+    c2_coefficients.set_coefficients(shear_modulus * TWO_NINTHS * static_cast<Number>(dim) +
+                                     bulk_modulus);
 
     // Set scalar linearization data for fiber contribution initially.
     E_i_coefficients.resize(n_fiber_families);
@@ -122,7 +118,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       E_i_coefficients[i].initialize(matrix_free, quad_index, false, false);
       E_i_coefficients[i].set_coefficients(0.0);
       c3_coefficients[i].initialize(matrix_free, quad_index, false, false);
-      c3_coefficients[i].set_coefficients(2.0 * fiber_k_1);
+      c3_coefficients[i].set_coefficients(2.0 * static_cast<Number>(data.fiber_k_1));
     }
 
     if(spatial_integration)
@@ -451,9 +447,9 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
           fiber_direction_M_1[i].set_coefficient_cell(cell, q, M_1[i]);
 
           // clang-format off
-          tensor const H_i = fiber_H_11 * outer_product(M_1[i], M_1[i])
-          	  	  	  	   + fiber_H_22 * outer_product(M_2[i], M_2[i])
-          	  	           + fiber_H_33 * outer_product(M_3, M_3);
+          tensor const H_i = data.fiber_H_11 * outer_product(M_1[i], M_1[i])
+          	  	  	  	   + data.fiber_H_22 * outer_product(M_2[i], M_2[i])
+          	  	           + data.fiber_H_33 * outer_product(M_3, M_3);
     	  fiber_structure_tensor[i].set_coefficient_cell(cell, q, H_i);
           // clang-format on
 
@@ -487,7 +483,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   if constexpr(cache_level == 0 or force_evaluation)
   {
     return ((0.5 * bulk_modulus) * compute_JJm1<Number, stable_formulation>(Jm1) -
-            shear_modulus * one_third * J_pow * get_I_1<dim, Number>(E, stable_formulation));
+            shear_modulus * ONE_THIRD * J_pow * get_I_1<dim, Number>(E, stable_formulation));
   }
   else
   {
@@ -513,8 +509,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   if constexpr(cache_level == 0 or force_evaluation)
   {
     return (bulk_modulus * (compute_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
-            (2.0 * one_third * one_third) * shear_modulus * J_pow *
-              get_I_1<dim, Number>(E, stable_formulation));
+            TWO_NINTHS * shear_modulus * J_pow * get_I_1<dim, Number>(E, stable_formulation));
   }
   else
   {
@@ -544,15 +539,17 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     // Enforce an upper bound for the computed value.
     if constexpr(stable_formulation)
     {
-      c3 /* fiber_switch */ *=
-        expm1_limited(fiber_k_2 * E_i * E_i, fiber_numerical_upper_bound) + 1.0;
+      c3 /* fiber_switch */ *= expm1_limited(static_cast<Number>(data.fiber_k_2) * E_i * E_i,
+                                             fiber_numerical_upper_bound) +
+                               1.0;
     }
     else
     {
-      c3 /* fiber_switch */ *= exp_limited(fiber_k_2 * E_i * E_i, fiber_numerical_upper_bound);
+      c3 /* fiber_switch */ *=
+        exp_limited(static_cast<Number>(data.fiber_k_2) * E_i * E_i, fiber_numerical_upper_bound);
     }
 
-    return c3 * (2.0 * fiber_k_1);
+    return c3 * (2.0 * static_cast<Number>(data.fiber_k_1));
   }
   else
   {
@@ -591,7 +588,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     }
     else
     {
-      return (pow(Jm1 + 1.0, static_cast<Number>(-2.0 * one_third)));
+      return (pow(Jm1 + 1.0, static_cast<Number>(-TWO_THIRDS)));
     }
   }
   else
@@ -616,9 +613,9 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   vector M_3 = cross_product_3d(M_1, M_2);
 
   // clang-format off
-  return (fiber_H_11 * outer_product(M_1, M_1) +
-          fiber_H_22 * outer_product(M_2, M_2) +
-          fiber_H_33 * outer_product(M_3, M_3));
+  return (data.fiber_H_11 * outer_product(M_1, M_1) +
+		  data.fiber_H_22 * outer_product(M_2, M_2) +
+		  data.fiber_H_33 * outer_product(M_3, M_3));
   // clang-format on
 }
 
@@ -985,7 +982,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
                                                                    2.0 * shear_modulus * J_pow);
 
   add_scaled_identity<dim, Number>(S,
-                                   -one_third * trace(S) +
+                                   -ONE_THIRD * trace(S) +
                                      (0.5 * bulk_modulus) *
                                        compute_JJm1<Number, stable_formulation>(Jm1));
 
@@ -1100,11 +1097,10 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
   tensor const transpose_gradient_increment_times_F = transpose(gradient_increment) * F;
 
-  Dd_S = C_inv * (c2 * one_over_J_times_Dd_J - ((2.0 * one_third) * shear_modulus_stored * J_pow) *
+  Dd_S = C_inv * (c2 * one_over_J_times_Dd_J - (TWO_THIRDS * shear_modulus_stored * J_pow) *
                                                  trace(transpose_gradient_increment_times_F));
   Dd_S += Dd_C_inv * c1;
-  add_scaled_identity(Dd_S,
-                      -shear_modulus_stored * (2.0 * one_third) * J_pow * one_over_J_times_Dd_J);
+  add_scaled_identity(Dd_S, -shear_modulus_stored * TWO_THIRDS * J_pow * one_over_J_times_Dd_J);
 
   // Add fiber contribution.
   for(unsigned int i = 0; i < n_fiber_families; i++)
@@ -1146,7 +1142,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     scalar const c3 =
       get_c3<false /* force_evaluation */>(M_1_cache_level_0_1, E_cache_level_0, E_i, i, cell, q);
 
-    Dd_S += H_i * (c3 * ((2.0 * fiber_k_2) * E_i * E_i + 1.0) *
+    Dd_S += H_i * (c3 * ((2.0 * static_cast<Number>(data.fiber_k_2)) * E_i * E_i + 1.0) *
                    scalar_product(H_i,
                                   transpose_gradient_increment_times_F +
                                     transpose(transpose_gradient_increment_times_F)));
@@ -1285,7 +1281,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   tau += (2.0 * shear_modulus * J_pow) * E;
 
   add_scaled_identity<dim, Number>(tau,
-                                   (-2.0 * one_third) * shear_modulus * J_pow * trace(E) +
+                                   -TWO_THIRDS * shear_modulus * J_pow * trace(E) +
                                      (0.5 * bulk_modulus) *
                                        compute_JJm1<Number, stable_formulation>(Jm1));
 
@@ -1377,7 +1373,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
   result = symmetric_gradient_increment * (-2.0 * c1);
   result +=
-    ((-4.0 * one_third) * shear_modulus_stored * J_pow * trace(symmetric_gradient_increment)) * C;
+    ((-4.0 * ONE_THIRD) * shear_modulus_stored * J_pow * trace(symmetric_gradient_increment)) * C;
   add_scaled_identity(result, c2 * trace(symmetric_gradient_increment));
 
   // Add fiber contribution.
@@ -1425,7 +1421,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       C_times_H_i = C_times_H_i_coefficients[i].get_coefficient_cell(cell, q);
     }
 
-    result += (2.0 * c3 * ((2.0 * fiber_k_2) * E_i * E_i + 1.0) *
+    result += (c3 * ((4.0 * static_cast<Number>(data.fiber_k_2)) * E_i * E_i + 2.0) *
                scalar_product(H_i_times_C, symmetric_gradient_increment)) *
               C_times_H_i;
 

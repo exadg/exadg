@@ -241,8 +241,6 @@ private:
   mutable VariableCoefficients<tensor> second_piola_kirchhoff_stress_coefficients;
   mutable VariableCoefficients<tensor> F_inv_coefficients;
   mutable VariableCoefficients<tensor> C_inv_coefficients;
-
-  Number const one_third = 1.0 / 3.0;
 };
 } // namespace Structure
 } // namespace ExaDG

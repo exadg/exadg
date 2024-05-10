@@ -78,10 +78,10 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
     J_pow_coefficients.set_coefficients(1.0);
 
     c1_coefficients.initialize(matrix_free, quad_index, false, false);
-    c1_coefficients.set_coefficients(-shear_modulus * one_third * static_cast<Number>(dim));
+    c1_coefficients.set_coefficients(-shear_modulus * ONE_THIRD * static_cast<Number>(dim));
     c2_coefficients.initialize(matrix_free, quad_index, false, false);
-    c2_coefficients.set_coefficients(
-      shear_modulus * one_third * 2.0 * one_third * static_cast<Number>(dim) + bulk_modulus);
+    c2_coefficients.set_coefficients(shear_modulus * TWO_NINTHS * static_cast<Number>(dim) +
+                                     bulk_modulus);
 
     if(spatial_integration)
     {
@@ -329,7 +329,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   if constexpr(cache_level == 0 or force_evaluation)
   {
     return ((0.5 * bulk_modulus) * compute_JJm1<Number, stable_formulation>(Jm1) -
-            shear_modulus * one_third * J_pow * get_I_1<dim, Number>(E, stable_formulation));
+            shear_modulus * ONE_THIRD * J_pow * get_I_1<dim, Number>(E, stable_formulation));
   }
   else
   {
@@ -355,8 +355,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   if constexpr(cache_level == 0 or force_evaluation)
   {
     return (bulk_modulus * (compute_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
-            (2.0 * one_third * one_third) * shear_modulus * J_pow *
-              get_I_1<dim, Number>(E, stable_formulation));
+            TWO_NINTHS * shear_modulus * J_pow * get_I_1<dim, Number>(E, stable_formulation));
   }
   else
   {
@@ -395,7 +394,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
     }
     else
     {
-      return (pow(Jm1 + 1.0, static_cast<Number>(-2.0 * one_third)));
+      return (pow(Jm1 + 1.0, static_cast<Number>(-TWO_NINTHS)));
     }
   }
   else
@@ -481,7 +480,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
                                                                    2.0 * shear_modulus * J_pow);
 
   add_scaled_identity<dim, Number>(S,
-                                   -one_third * trace(S) +
+                                   -ONE_THIRD * trace(S) +
                                      (0.5 * bulk_modulus) *
                                        compute_JJm1<Number, stable_formulation>(Jm1));
 
@@ -582,11 +581,10 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   tensor const Dd_C_inv =
     Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
 
-  Dd_S = C_inv * (c2 * one_over_J_times_Dd_J - ((2.0 * one_third) * shear_modulus_stored * J_pow) *
+  Dd_S = C_inv * (c2 * one_over_J_times_Dd_J - (TWO_THIRDS * shear_modulus_stored * J_pow) *
                                                  trace(transpose(gradient_increment) * F));
   Dd_S += Dd_C_inv * c1;
-  add_scaled_identity(Dd_S,
-                      -shear_modulus_stored * (2.0 * one_third) * J_pow * one_over_J_times_Dd_J);
+  add_scaled_identity(Dd_S, -shear_modulus_stored * TWO_THIRDS * J_pow * one_over_J_times_Dd_J);
 
   return Dd_S;
 }
@@ -666,7 +664,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
                                                                      2.0 * shear_modulus * J_pow);
 
   add_scaled_identity<dim, Number>(tau,
-                                   -one_third * trace(tau) +
+                                   -ONE_THIRD * trace(tau) +
                                      (0.5 * bulk_modulus) *
                                        compute_JJm1<Number, stable_formulation>(Jm1));
 
@@ -747,7 +745,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 
   result = symmetric_gradient_increment * (-2.0 * c1);
   result +=
-    ((-4.0 * one_third) * shear_modulus_stored * J_pow * trace(symmetric_gradient_increment)) * C;
+    ((-4.0 * ONE_THIRD) * shear_modulus_stored * J_pow * trace(symmetric_gradient_increment)) * C;
   add_scaled_identity(result, c2 * trace(symmetric_gradient_increment));
 
   return result;

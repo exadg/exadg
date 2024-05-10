@@ -22,6 +22,11 @@
 #ifndef INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_CONTINUUM_MECHANICS_H_
 #define INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_CONTINUUM_MECHANICS_H_
 
+#define ONE_THIRD 0.33333333333333333333
+#define TWO_THIRDS 0.33333333333333333333
+#define ONE_NINTH 0.11111111111111111111
+#define TWO_NINTHS 0.22222222222222222222
+
 // deal.II
 #include <deal.II/base/numbers.h>
 #include <deal.II/base/tensor.h>
@@ -241,7 +246,7 @@ inline DEAL_II_ALWAYS_INLINE //
   else
   {
     // I_1 = trace(C) = trace(2 * E + I)
-	dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> C = 2.0 * E;
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> C = 2.0 * E;
     add_scaled_identity<dim, Number, Number>(C, 1.0);
     return trace(C);
   }
@@ -389,10 +394,9 @@ inline DEAL_II_ALWAYS_INLINE //
               F[0][1][n] * F[1][0][n] * F[2][2][n] + F[0][1][n] * F[1][2][n] * F[2][0][n] +
               F[0][2][n] * F[1][0][n] * F[2][1][n] - F[0][2][n] * F[1][1][n] * F[2][0][n] - tol;
 
-            Number const one_third = 1.0 / 3.0;
-            Number const Q         = (b * b - 3.0 * c) * one_third * one_third;
+            Number const Q = (b * b - 3.0 * c) * ONE_NINTH;
             Number const R =
-              (2.0 * b * b * b - 9.0 * b * c + 27.0 * d) * 0.5 * one_third * one_third * one_third;
+              (2.0 * b * b * b - 9.0 * b * c + 27.0 * d) * 0.5 * ONE_NINTH * ONE_THIRD;
             Number const Qcubed = Q * Q * Q;
             Number const a4     = Qcubed - R * R;
 
@@ -403,11 +407,11 @@ inline DEAL_II_ALWAYS_INLINE //
               Number const sqrtQ = std::sqrt(Q);
 
               std::vector<Number> tmp(3);
-              tmp[0] = -2.0 * sqrtQ * std::cos(theta * one_third) - b * one_third;
-              tmp[1] = -2.0 * sqrtQ * std::cos((theta + 2.0 * dealii::numbers::PI) * one_third) -
-                       b * one_third;
-              tmp[2] = -2.0 * sqrtQ * std::cos((theta + 4.0 * dealii::numbers::PI) * one_third) -
-                       b * one_third;
+              tmp[0] = -2.0 * sqrtQ * std::cos(theta * ONE_THIRD) - b * ONE_THIRD;
+              tmp[1] = -2.0 * sqrtQ * std::cos((theta + 2.0 * dealii::numbers::PI) * ONE_THIRD) -
+                       b * ONE_THIRD;
+              tmp[2] = -2.0 * sqrtQ * std::cos((theta + 4.0 * dealii::numbers::PI) * ONE_THIRD) -
+                       b * ONE_THIRD;
 
               fac = std::numeric_limits<Number>::max();
               for(unsigned int i = 0; i < 3; ++i)
@@ -421,9 +425,9 @@ inline DEAL_II_ALWAYS_INLINE //
             else
             {
               // Single real root.
-              Number e = std::exp(one_third * std::log(std::sqrt(-a4) + std::abs(R)));
+              Number e = std::exp(ONE_THIRD * std::log(std::sqrt(-a4) + std::abs(R)));
               e        = R > 0 ? -e : e;
-              fac      = (e + Q / e) - b * one_third;
+              fac      = (e + Q / e) - b * ONE_THIRD;
             }
           }
           else
