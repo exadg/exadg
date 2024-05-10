@@ -471,14 +471,14 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   scalar const &     Jm1,
   scalar const &     J_pow,
   tensor const &     E,
-  scalar const &     shear_modulus_stored,
+  scalar const &     shear_modulus,
   unsigned int const cell,
   unsigned int const q) const
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
     return ((0.5 * bulk_modulus) * get_JJm1<Number, stable_formulation>(Jm1) -
-            shear_modulus_stored * one_third * J_pow * get_I_1<dim, Number>(E, stable_formulation));
+            shear_modulus * one_third * J_pow * get_I_1<dim, Number>(E, stable_formulation));
   }
   else
   {
@@ -497,14 +497,14 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   scalar const &     Jm1,
   scalar const &     J_pow,
   tensor const &     E,
-  scalar const &     shear_modulus_stored,
+  scalar const &     shear_modulus,
   unsigned int const cell,
   unsigned int const q) const
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
     return (bulk_modulus * (get_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
-            (2.0 * one_third * one_third) * shear_modulus_stored * J_pow *
+            (2.0 * one_third * one_third) * shear_modulus * J_pow *
               get_I_1<dim, Number>(E, stable_formulation));
   }
   else
@@ -802,25 +802,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       }
 
       // Set scalar linearization data for fiber contribution and stresses.
-      tensor tau, S;
-      if(spatial_integration)
-      {
-        tau = kirchhoff_stress(Grad_d_lin, cell, q, true /* force_evaluation */);
-      }
-
-      if(not spatial_integration or force_material_residual)
-      {
-        if constexpr(stable_formulation)
-        {
-          S = compute_S_ground_matrix_stable(Grad_d_lin, C_inv, J_pow, Jm1, shear_modulus_stored);
-        }
-        else
-        {
-          S = compute_S_ground_matrix_unstable(C_inv, J_pow, c1, shear_modulus_stored);
-        }
-      }
-
-      // Compute and store tau and S.
+      tensor S_fiber;
       for(unsigned int i = 0; i < n_fiber_families; i++)
       {
         vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
@@ -836,24 +818,39 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
         {
           H_i_times_C_coefficients[i].set_coefficient_cell(cell, q, H_i * C);
           C_times_H_i_coefficients[i].set_coefficient_cell(cell, q, C * H_i);
-
-          //			  tau += compute_tau_fiber_i()
         }
 
-        if(not spatial_integration or force_material_residual)
-        {
-          S += compute_S_fiber_i(c3, E_i, H_i);
-        }
+        // Note that both stress tensors require S_fiber.
+        S_fiber += compute_S_fiber_i(c3, E_i, H_i);
       }
 
       if(spatial_integration)
       {
-        kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
+        if constexpr(stable_formulation)
+        {
+          tensor const tau = compute_tau_stable(S_fiber, F, E, Jm1, J_pow, shear_modulus_stored);
+          kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
+        }
+        else
+        {
+          tensor const tau = compute_tau_unstable(S_fiber, F, J_pow, c1, shear_modulus_stored);
+          kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
+        }
       }
 
       if(not spatial_integration or force_material_residual)
       {
-        second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
+        if constexpr(stable_formulation)
+        {
+          S_fiber +=
+            compute_S_ground_matrix_stable(Grad_d_lin, C_inv, J_pow, Jm1, shear_modulus_stored);
+          second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S_fiber);
+        }
+        else
+        {
+          S_fiber += compute_S_ground_matrix_unstable(C_inv, J_pow, c1, shear_modulus_stored);
+          second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S_fiber);
+        }
       }
     }
   }
@@ -1157,118 +1154,162 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
                    unsigned int const q,
                    bool const         force_evaluation) const
 {
-  tensor tau;
-  if(cache_level < 2 or force_evaluation)
+  (void)force_evaluation;
+
+  if(cache_level < 2)
   {
     if(shear_modulus_is_variable)
     {
       shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
     }
 
-    scalar Jm1;
-    tensor F;
-    get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-      F,
-      Jm1,
-      gradient_displacement_cache_level_0_1,
-      cache_level == 0 or force_evaluation /* compute_J */);
-    if(cache_level == 1 and (not force_evaluation) and stable_formulation)
+    if constexpr(cache_level == 0)
     {
-      Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
-    }
-
-    tensor E;
-    if(cache_level == 0 or force_evaluation or stable_formulation)
-    {
-      E =
+      tensor const E =
         get_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement_cache_level_0_1,
                                                               1.0);
-    }
-    else
-    {
-      // Dummy E sufficient.
-    }
 
-    // Add fiber contribution.
-    for(unsigned int i = 0; i < n_fiber_families; i++)
-    {
-      // Compute or load fiber switch.
-      vector M_1, M_2_cache_level_0_1;
-      if(cache_level < 2 or force_evaluation)
+      tensor tau;
+      for(unsigned int i = 0; i < n_fiber_families; i++)
       {
-        M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+        vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+        vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+        tensor const H_i = compute_structure_tensor(M_1, M_2);
+        scalar const E_i = get_E_i<false /* force_evaluation */>(H_i, E, i, cell, q);
+        scalar const c3  = get_c3<false /* force_evaluation */>(M_1, E, E_i, i, cell, q);
+        tau += compute_S_fiber_i(c3, E_i, H_i);
+      }
 
-        if constexpr(cache_level < 2)
-        {
-          M_2_cache_level_0_1 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
-        }
+      scalar Jm1;
+      tensor F;
+      get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+        F, Jm1, gradient_displacement_cache_level_0_1, true /* compute_J */);
+
+      scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
+      if constexpr(stable_formulation)
+      {
+        tau = compute_tau_stable(tau, F, E, Jm1, J_pow, shear_modulus_stored);
       }
       else
       {
-        // Dummy M_1 and M_2 sufficient.
+        scalar const c1 =
+          get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
+        tau = compute_tau_unstable(tau, F, J_pow, c1, shear_modulus_stored);
       }
 
-      // Compute or load structure tensor.
-      tensor H_i;
-      if constexpr(cache_level < 2)
-      {
-        H_i = compute_structure_tensor(M_1, M_2_cache_level_0_1);
-      }
-      else
-      {
-        H_i = fiber_structure_tensor[i].get_coefficient_cell(cell, q);
-      }
-
-      // Compute or load fiber strain-like quantity.
-      scalar const E_i = get_E_i<false /* force_evaluation */>(H_i, E, i, cell, q);
-
-      // Compute or load c3 coefficient.
-      scalar const c3 = get_c3<false /* force_evaluation */>(M_1, E, E_i, i, cell, q);
-
-      // Add terms in non-push-forwarded form.
-      tau += (c3 * E_i) * H_i;
-    }
-
-    scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
-
-    // tau holds fiber terms in non-push-forwarded form, i.e.,
-    // sum_(j=4,6) c_3 * E_i * H_i
-    // to apply the push-forward only once for the sum of all terms.
-    if constexpr(stable_formulation)
-    {
-      // Push forward fiber contribution.
-      tau = F * tau * transpose(F);
-
-      // Add remaining terms.
-      tau += (2.0 * shear_modulus_stored * J_pow) * E;
-
-      add_scaled_identity<dim, Number>(tau,
-                                       (-2.0 * one_third) * shear_modulus_stored * J_pow *
-                                           trace(E) +
-                                         (0.5 * bulk_modulus) *
-                                           get_JJm1<Number, stable_formulation>(Jm1));
+      return tau;
     }
     else
     {
-      scalar const c1 =
-        get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
+      tensor tau;
+      for(unsigned int i = 0; i < n_fiber_families; i++)
+      {
+        vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+        vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+        tensor const H_i = compute_structure_tensor(M_1, M_2);
+        scalar const E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
+        scalar const c3  = c3_coefficients[i].get_coefficient_cell(cell, q);
 
-      // Add isochoric term, i.e.,
-      // mu * J^(-2/3) * I
-      // to apply push forward in next step.
-      add_scaled_identity(tau, shear_modulus_stored * J_pow);
+        tau += compute_S_fiber_i(c3, E_i, H_i);
+      }
 
-      // Push forward the summed terms.
-      tau = F * tau * transpose(F);
+      if constexpr(stable_formulation)
+      {
+        scalar Jm1;
+        tensor F;
+        get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+          F, Jm1, gradient_displacement_cache_level_0_1, false /* compute_J */);
+        Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
 
-      // Add the remaining term.
-      add_scaled_identity(tau, c1);
+        scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
+
+        tensor const E = get_E_scaled<dim, Number, Number, stable_formulation>(
+          gradient_displacement_cache_level_0_1, 1.0);
+
+        tau = compute_tau_stable(tau, F, E, Jm1, J_pow, shear_modulus_stored);
+      }
+      else
+      {
+        scalar Jm1;
+        tensor F;
+        get_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+          F, Jm1, gradient_displacement_cache_level_0_1, false /* compute_J */);
+
+        scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
+        scalar const c1    = c1_coefficients.get_coefficient_cell(cell, q);
+
+        tau = compute_tau_unstable(tau, F, J_pow, c1, shear_modulus_stored);
+      }
+
+      return tau;
     }
   }
   else
   {
-    tau = kirchhoff_stress_coefficients.get_coefficient_cell(cell, q);
+    return kirchhoff_stress_coefficients.get_coefficient_cell(cell, q);
   }
+}
+
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
+inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
+  compute_tau_stable(tensor const & S_fiber,
+                     tensor const & F,
+                     tensor const & E,
+                     scalar const & Jm1,
+                     scalar const & J_pow,
+                     scalar const & shear_modulus) const
+{
+  // Assume that `S_fiber` holds fiber term pull-back, i.e.,
+  // sum_(j=4,6) c_3 * E_i * H_i
+  // to apply the push-forward only once for the sum of all terms.
+
+  // Push forward fiber contribution.
+  tensor tau = F * S_fiber * transpose(F);
+
+  // Add remaining terms.
+  tau += (2.0 * shear_modulus * J_pow) * E;
+
+  add_scaled_identity<dim, Number>(tau,
+                                   (-2.0 * one_third) * shear_modulus * J_pow * trace(E) +
+                                     (0.5 * bulk_modulus) *
+                                       get_JJm1<Number, stable_formulation>(Jm1));
+
+  return tau;
+}
+
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
+inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
+  compute_tau_unstable(tensor const & S_fiber,
+                       tensor const & F,
+                       scalar const & J_pow,
+                       scalar const & c1,
+                       scalar const & shear_modulus) const
+{
+  // Assume that `S_fiber` holds fiber term pull-back, i.e.,
+  // sum_(j=4,6) c_3 * E_i * H_i
+  // to apply the push-forward only once for the sum of all terms.
+  tensor tau = S_fiber;
+
+  // Add isochoric term, i.e.,
+  // mu * J^(-2/3) * I
+  // to apply push forward in next step.
+  add_scaled_identity(tau, shear_modulus * J_pow);
+
+  // Push forward the summed terms.
+  tau = F * tau * transpose(F);
+
+  // Add the remaining term.
+  add_scaled_identity(tau, c1);
 
   return tau;
 }

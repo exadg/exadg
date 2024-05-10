@@ -237,7 +237,7 @@ private:
   get_c1(scalar const &     Jm1,
          scalar const &     J_pow,
          tensor const &     E,
-         scalar const &     shear_modulus_stored,
+         scalar const &     shear_modulus,
          unsigned int const cell,
          unsigned int const q) const;
 
@@ -246,7 +246,7 @@ private:
   get_c2(scalar const &     Jm1,
          scalar const &     J_pow,
          tensor const &     E,
-         scalar const &     shear_modulus_stored,
+         scalar const &     shear_modulus,
          unsigned int const cell,
          unsigned int const q) const;
 
@@ -293,17 +293,20 @@ private:
   DEAL_II_ALWAYS_INLINE tensor
   compute_S_fiber_i(scalar const & c3, scalar const & E_i, tensor const & H_i) const;
 
-  //  DEAL_II_ALWAYS_INLINE tensor
-  //  compute_kirchhoff_stress_stable_formulation(tensor const & gradient_displacement,
-  //                                              scalar const & Jm1,
-  //                                              scalar const & J_pow,
-  //                                              scalar const & shear_modulus) const;
-  //
-  //  DEAL_II_ALWAYS_INLINE tensor
-  //  compute_kirchhoff_stress_unstable_formulation(tensor const & F,
-  //                                                scalar const & J_pow,
-  //                                                scalar const & c1,
-  //                                                scalar const & shear_modulus) const;
+  DEAL_II_ALWAYS_INLINE tensor
+  compute_tau_stable(tensor const & S_fiber,
+                     tensor const & F,
+                     tensor const & E,
+                     scalar const & Jm1,
+                     scalar const & J_pow,
+                     scalar const & shear_modulus) const;
+
+  DEAL_II_ALWAYS_INLINE tensor
+  compute_tau_unstable(tensor const & S_fiber,
+                       tensor const & F,
+                       scalar const & J_pow,
+                       scalar const & c1,
+                       scalar const & shear_modulus) const;
 
   unsigned int dof_index;
   unsigned int quad_index;
