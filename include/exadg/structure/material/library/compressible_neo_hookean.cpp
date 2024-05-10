@@ -373,6 +373,27 @@ template<int dim,
          unsigned int check_type,
          bool         stable_formulation,
          unsigned int cache_level>
+dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
+  second_piola_kirchhoff_stress(unsigned int const cell, unsigned int const q) const
+{
+  if constexpr(cache_level < 2)
+  {
+    AssertThrow(cache_level > 1,
+                dealii::ExcMessage("This function implements loading a stored stress tensor."
+                                   "This `cache_level` does not store tensorial quantities."));
+  }
+  else
+  {
+    return second_piola_kirchhoff_stress_coefficients.get_coefficient_cell(cell, q);
+  }
+}
+
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::compute_S_stable(
   tensor const & gradient_displacement,
@@ -500,6 +521,30 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
     {
       return compute_tau_unstable(F, log_J, shear_modulus_stored, lambda_stored);
     }
+  }
+  else
+  {
+    AssertThrow(cache_level < 2,
+                dealii::ExcMessage("This function implements computing a stress tensor."
+                                   "This `cache_level` stores tensorial quantities."));
+  }
+}
+
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
+dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::kirchhoff_stress(
+  unsigned int const cell,
+  unsigned int const q) const
+{
+  if constexpr(cache_level < 2)
+  {
+    AssertThrow(cache_level > 1,
+                dealii::ExcMessage("This function implements loading a stored stress tensor."
+                                   "This `cache_level` does not store tensorial quantities."));
   }
   else
   {

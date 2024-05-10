@@ -198,6 +198,14 @@ StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(tensor const & gra
 
 template<int dim, typename Number>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(unsigned int const cell,
+                                                              unsigned int const q) const
+{
+  return Material<dim, Number>::second_piola_kirchhoff_stress(cell, q);
+}
+
+template<int dim, typename Number>
+dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_displacement_derivative(
   tensor const &     gradient_increment,
   tensor const &     gradient_displacement,

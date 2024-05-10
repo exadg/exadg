@@ -68,6 +68,22 @@ public:
   }
 
   /*
+   * Variant of the above function intended for loading a stored stress tensor.
+   */
+  virtual tensor
+  second_piola_kirchhoff_stress(unsigned int const cell, unsigned int const q) const
+  {
+    (void)cell;
+    (void)q;
+    AssertThrow(false,
+                dealii::ExcMessage("For a total Lagrangian formulation, "
+                                   "overwrite this method in derived class."));
+
+    tensor dummy;
+    return dummy;
+  }
+
+  /*
    * Total Lagrangian Formulation: evaluate the directional derivative with respect
    * to the displacement of the 2nd Piola-Kirchhoff stress tensor given gradient of
    * the displacement increment with respect to the reference configuration
@@ -105,6 +121,22 @@ public:
                    unsigned int const q) const
   {
     (void)gradient_displacement_cache_level_0_1;
+    (void)cell;
+    (void)q;
+    AssertThrow(false,
+                dealii::ExcMessage("For a Lagrangian formulation in spatial domain, "
+                                   "overwrite this method in derived class."));
+
+    tensor dummy;
+    return dummy;
+  }
+
+  /*
+   * Variant of the above function intended for loading a stored stress tensor.
+   */
+  virtual tensor
+  kirchhoff_stress(unsigned int const cell, unsigned int const q) const
+  {
     (void)cell;
     (void)q;
     AssertThrow(false,

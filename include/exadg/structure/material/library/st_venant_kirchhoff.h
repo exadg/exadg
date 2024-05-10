@@ -78,6 +78,9 @@ public:
                                 unsigned int const q) const final;
 
   tensor
+  second_piola_kirchhoff_stress(unsigned int const cell, unsigned int const q) const final;
+
+  tensor
   second_piola_kirchhoff_stress_displacement_derivative(tensor const &     gradient_increment,
                                                         tensor const &     gradient_displacement,
                                                         unsigned int const cell,

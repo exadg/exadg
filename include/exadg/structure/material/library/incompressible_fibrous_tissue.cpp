@@ -974,6 +974,27 @@ template<int dim,
          unsigned int check_type,
          bool         stable_formulation,
          unsigned int cache_level>
+dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
+  second_piola_kirchhoff_stress(unsigned int const cell, unsigned int const q) const
+{
+  if constexpr(cache_level < 2)
+  {
+    AssertThrow(cache_level > 1,
+                dealii::ExcMessage("This function implements loading a stored stress tensor."
+                                   "This `cache_level` does not store tensorial quantities."));
+  }
+  else
+  {
+    return second_piola_kirchhoff_stress_coefficients.get_coefficient_cell(cell, q);
+  }
+}
+
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
   compute_S_ground_matrix_stable(tensor const & gradient_displacement,
@@ -1166,7 +1187,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
                    unsigned int const cell,
                    unsigned int const q) const
 {
-  if(cache_level < 2)
+  if constexpr(cache_level < 2)
   {
     if(shear_modulus_is_variable)
     {
@@ -1253,6 +1274,27 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
       return tau;
     }
+  }
+  else
+  {
+    return kirchhoff_stress_coefficients.get_coefficient_cell(cell, q);
+  }
+}
+
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
+dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
+  kirchhoff_stress(unsigned int const cell, unsigned int const q) const
+{
+  if constexpr(cache_level < 2)
+  {
+    AssertThrow(cache_level > 1,
+                dealii::ExcMessage("This function implements loading a stored stress tensor."
+                                   "This `cache_level` does not store tensorial quantities."));
   }
   else
   {

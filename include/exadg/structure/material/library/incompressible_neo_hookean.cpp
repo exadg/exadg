@@ -468,6 +468,27 @@ template<int dim,
          unsigned int check_type,
          bool         stable_formulation,
          unsigned int cache_level>
+dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
+  second_piola_kirchhoff_stress(unsigned int const cell, unsigned int const q) const
+{
+  if constexpr(cache_level < 2)
+  {
+    AssertThrow(cache_level > 1,
+                dealii::ExcMessage("This function implements loading a stored stress tensor."
+                                   "This `cache_level` does not store tensorial quantities."));
+  }
+  else
+  {
+    return second_piola_kirchhoff_stress_coefficients.get_coefficient_cell(cell, q);
+  }
+}
+
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
 inline dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
   compute_S_stable(tensor const & gradient_displacement,
@@ -600,7 +621,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
                    unsigned int const cell,
                    unsigned int const q) const
 {
-  if(cache_level < 2)
+  if constexpr(cache_level < 2)
   {
     if(shear_modulus_is_variable)
     {
@@ -627,7 +648,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
     }
     else
     {
-      if(cache_level == 0)
+      if constexpr(cache_level == 0)
       {
         tensor const E = get_E_scaled<dim, Number, Number, stable_formulation>(
           gradient_displacement_cache_level_0_1, 1.0);
@@ -641,6 +662,27 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
         return compute_tau_unstable(F, J_pow, c1, shear_modulus_stored);
       }
     }
+  }
+  else
+  {
+    return kirchhoff_stress_coefficients.get_coefficient_cell(cell, q);
+  }
+}
+
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
+dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
+  kirchhoff_stress(unsigned int const cell, unsigned int const q) const
+{
+  if constexpr(cache_level < 2)
+  {
+    AssertThrow(cache_level > 1,
+                dealii::ExcMessage("This function implements loading a stored stress tensor."
+                                   "This `cache_level` does not store tensorial quantities."));
   }
   else
   {

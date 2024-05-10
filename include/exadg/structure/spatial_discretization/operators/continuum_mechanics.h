@@ -323,6 +323,167 @@ inline DEAL_II_ALWAYS_INLINE //
   return 0.001;
 }
 
+// Reconstruction of admissible deformation gradient F and Jacobian.
+// check_type 0   : Do not modify.
+// check_type 1   : Global quasi-Newton, update linearization vector only if the complete field is
+//                  valid everywhere (see nonlinear_operator: set_solution_linearization).
+// check_type > 2 : In-place modification, see `compute_modified_F_Jm1()` below.
+template<int dim, typename Number, unsigned int check_type, bool stable_formulation>
+inline DEAL_II_ALWAYS_INLINE //
+  void
+  reconstruct_admissible_F_Jm1(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> & F,
+                               dealii::VectorizedArray<Number> &                         Jm1)
+{
+  Number tol = get_J_tol<Number>();
+
+  for(unsigned int n = 0; n < dealii::VectorizedArray<Number>::size(); ++n)
+  {
+    if(Jm1[n] + 1.0 <= tol)
+    {
+      if constexpr(check_type == 3)
+      {
+        // check_type 3 : Only return J = tol, while F is not modified.
+        Jm1[n] = tol - 1.0;
+      }
+      else if constexpr(check_type == 4)
+      {
+        // check_type 4 : Always update, but enforce J = tol by adding a scaled unit matrix.
+        // Scale factor determined by solving for the positive root of the quadratic/cubic
+        // polynomial via an exact formula.
+        Number fac;
+        if constexpr(dim == 2)
+        {
+          // Find positive root of x^2 + p * x + q = 0.
+          // The smaller root will always be negative related to complete self-penetration of the
+          // deformation state, which we are not interested in.
+          Number const p = F[0][0][n] + F[1][1][n];
+          Number const q = F[0][0][n] * F[1][1][n] - F[0][1][n] * F[1][0][n] - tol;
+          fac            = -p * 0.5 + sqrt(p * p * 0.25 - q);
+        }
+        else if constexpr(dim == 3)
+        {
+          // Find smallest real-valued positive root of x^3 + b * x^2 + c * x + d = 0.
+          Number const b = F[0][0][n] + F[1][1][n] + F[2][2][n];
+          Number const c = F[0][0][n] * F[1][1][n] - F[0][1][n] * F[1][0][n] +
+                           F[0][0][n] * F[2][2][n] - F[0][2][n] * F[2][0][n] +
+                           F[1][1][n] * F[2][2][n] - F[1][2][n] * F[2][1][n];
+          Number const d =
+            F[0][0][n] * F[1][1][n] * F[2][2][n] - F[0][0][n] * F[1][2][n] * F[2][1][n] -
+            F[0][1][n] * F[1][0][n] * F[2][2][n] + F[0][1][n] * F[1][2][n] * F[2][0][n] +
+            F[0][2][n] * F[1][0][n] * F[2][1][n] - F[0][2][n] * F[1][1][n] * F[2][0][n] - tol;
+
+          Number const Q = (b * b - 3.0 * c) * ONE_NINTH;
+          Number const R = (2.0 * b * b * b - 9.0 * b * c + 27.0 * d) * 0.5 * ONE_NINTH * ONE_THIRD;
+          Number const Qcubed = Q * Q * Q;
+          Number const a4     = Qcubed - R * R;
+
+          if(a4 > 0)
+          {
+            // Three real roots, return smallest positive one.
+            Number const theta = std::acos(R / std::sqrt(Qcubed));
+            Number const sqrtQ = std::sqrt(Q);
+
+            std::vector<Number> tmp(3);
+            tmp[0] = -2.0 * sqrtQ * std::cos(theta * ONE_THIRD) - b * ONE_THIRD;
+            tmp[1] = -2.0 * sqrtQ * std::cos((theta + 2.0 * dealii::numbers::PI) * ONE_THIRD) -
+                     b * ONE_THIRD;
+            tmp[2] = -2.0 * sqrtQ * std::cos((theta + 4.0 * dealii::numbers::PI) * ONE_THIRD) -
+                     b * ONE_THIRD;
+
+            fac = std::numeric_limits<Number>::max();
+            for(unsigned int i = 0; i < 3; ++i)
+            {
+              if(tmp[i] > 0 and tmp[i] < fac)
+              {
+                fac = tmp[i];
+              }
+            }
+          }
+          else
+          {
+            // Single real root.
+            Number e = std::exp(ONE_THIRD * std::log(std::sqrt(-a4) + std::abs(R)));
+            e        = R > 0 ? -e : e;
+            fac      = (e + Q / e) - b * ONE_THIRD;
+          }
+        }
+        else
+        {
+          AssertThrow(dim != 2 and dim != 3,
+                      dealii::ExcMessage("Unexpected dim. Choose dim == 2 or dim == 3."));
+        }
+
+        for(unsigned int d = 0; d < dim; ++d)
+        {
+          F[d][d][n] += fac;
+        }
+
+        // J = tol follows by construction.
+        Jm1[n] = tol - 1.0;
+      }
+      else if constexpr(check_type == 5)
+      {
+        // check_type 5 : Always update, but enforce J = tol by adding a scaled unit matrix.
+        // Scale factor determined by solving for the positive root of the quadratic/cubic
+        // polynomial via a Newton solver.
+        Number fac;
+        bool   converged;
+        if constexpr(dim == 2)
+        {
+          // Find positive root of x^2 + p * x + q = 0.
+          Number const p = F[0][0][n] + F[1][1][n];
+          Number const q = F[0][0][n] * F[1][1][n] - F[0][1][n] * F[1][0][n] - tol;
+          std::tie(fac, converged) =
+            solve_polynomial_newton<Number>(0, 1.0, p, q, tol * tol, tol, 5, 0.0);
+        }
+        else if constexpr(dim == 3)
+        {
+          // Find smallest real-valued positive root of x^3 + b * x^2 + c * x + d = 0.
+          Number const b = F[0][0][n] + F[1][1][n] + F[2][2][n];
+          Number const c = F[0][0][n] * F[1][1][n] - F[0][1][n] * F[1][0][n] +
+                           F[0][0][n] * F[2][2][n] - F[0][2][n] * F[2][0][n] +
+                           F[1][1][n] * F[2][2][n] - F[1][2][n] * F[2][1][n];
+          Number const d =
+            F[0][0][n] * F[1][1][n] * F[2][2][n] - F[0][0][n] * F[1][2][n] * F[2][1][n] -
+            F[0][1][n] * F[1][0][n] * F[2][2][n] + F[0][1][n] * F[1][2][n] * F[2][0][n] +
+            F[0][2][n] * F[1][0][n] * F[2][1][n] - F[0][2][n] * F[1][1][n] * F[2][0][n] - tol;
+          std::tie(fac, converged) =
+            solve_polynomial_newton<Number>(1.0, b, c, d, tol * tol, tol, 5, 0.0);
+        }
+        else
+        {
+          AssertThrow(dim != 2 and dim != 3,
+                      dealii::ExcMessage("Unexpected dim. Choose dim == 2 or dim == 3."));
+        }
+
+        if(converged)
+        {
+          for(unsigned int d = 0; d < dim; ++d)
+          {
+            F[d][d][n] += fac;
+          }
+        }
+        else
+        {
+          std::cout << "Newton algorithm did not converge.\n";
+        }
+
+        // J = tol follows by construction.
+        Jm1[n] = tol - 1.0;
+      }
+      else if(check_type == 6)
+      {
+        // check_type 6 : always update, but enforce J = tol by eigenvalue decomposition.
+        AssertThrow(false, dealii::ExcNotImplemented());
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("This check_type is not defined."));
+      }
+    }
+  }
+}
+
 template<int dim, typename Number, unsigned int check_type, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
   void
@@ -339,15 +500,6 @@ inline DEAL_II_ALWAYS_INLINE //
     Jm1 = compute_Jm1<dim, Number, stable_formulation>(gradient_displacement);
   }
 
-  // check_type 0 : Do not modify.
-
-  // check_type 1 : Global quasi-Newton, update linearization vector only if the complete field is
-  // valid everywhere (see nonlinear_operator: set_solution_linearization).
-
-  // check_type 2 : Just update F and J values, if J > 0, see set_cell_linearization_data(),
-  // otherwise keep the old values which are initialized with a zero displacement field at
-  // simulation start.
-
   if constexpr(check_type > 2)
   {
     if(not compute_J)
@@ -355,155 +507,71 @@ inline DEAL_II_ALWAYS_INLINE //
       // Compute J - 1 to do any checking.
       Jm1 = compute_Jm1<dim, Number, stable_formulation>(gradient_displacement);
     }
+    reconstruct_admissible_F_Jm1(F, Jm1);
+  }
+}
 
+template<int dim, typename Number, unsigned int check_type, bool stable_formulation, bool compute_J>
+inline DEAL_II_ALWAYS_INLINE //
+  void
+  compute_modified_F_Jm1(
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> &       F,
+    dealii::VectorizedArray<Number> &                               Jm1,
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement)
+{
+  F = get_F(gradient_displacement);
+
+  if constexpr(compute_J)
+  {
+    Jm1 = compute_Jm1<dim, Number, stable_formulation>(gradient_displacement);
+  }
+
+  if constexpr(check_type > 2)
+  {
+    if constexpr(not compute_J)
+    {
+      // Compute J - 1 to do any checking.
+      Jm1 = compute_Jm1<dim, Number, stable_formulation>(gradient_displacement);
+    }
+    reconstruct_admissible_F_Jm1(F, Jm1);
+  }
+}
+
+template<int dim, typename Number, unsigned int check_type, bool stable_formulation>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  compute_modified_F(
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement)
+{
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> F = get_F(gradient_displacement);
+
+  if constexpr(check_type > 2)
+  {
+    // Compute J - 1 to do any checking.
+    dealii::VectorizedArray<Number> Jm1 =
+      compute_Jm1<dim, Number, stable_formulation>(gradient_displacement);
+
+    reconstruct_admissible_F_Jm1(F, Jm1);
+  }
+}
+
+template<int dim, typename Number, unsigned int check_type, bool stable_formulation>
+inline DEAL_II_ALWAYS_INLINE //
+  void
+  compute_modified_Jm1(dealii::VectorizedArray<Number> const & Jm1)
+{
+  if constexpr(check_type > 2)
+  {
     Number tol = get_J_tol<Number>();
 
-    for(unsigned int n = 0; n < dealii::VectorizedArray<Number>::size(); ++n)
+    if constexpr(check_type < 6)
     {
-      if(Jm1[n] + 1.0 <= tol)
-      {
-        if constexpr(check_type == 3)
-        {
-          // check_type 3 : Only return J = tol, while F is not modified.
-          Jm1[n] = tol - 1.0;
-        }
-        else if constexpr(check_type == 4)
-        {
-          // check_type 4 : Always update, but enforce J = tol by adding a scaled unit matrix.
-          // Scale factor determined by solving for the positive root of the quadratic/cubic
-          // polynomial via an exact formula.
-          Number fac;
-          if constexpr(dim == 2)
-          {
-            // Find positive root of x^2 + p * x + q = 0.
-            // The smaller root will always be negative related to complete self-penetration of the
-            // deformation state, which we are not interested in.
-            Number const p = F[0][0][n] + F[1][1][n];
-            Number const q = F[0][0][n] * F[1][1][n] - F[0][1][n] * F[1][0][n] - tol;
-            fac            = -p * 0.5 + sqrt(p * p * 0.25 - q);
-          }
-          else if constexpr(dim == 3)
-          {
-            // Find smallest real-valued positive root of x^3 + b * x^2 + c * x + d = 0.
-            Number const b = F[0][0][n] + F[1][1][n] + F[2][2][n];
-            Number const c = F[0][0][n] * F[1][1][n] - F[0][1][n] * F[1][0][n] +
-                             F[0][0][n] * F[2][2][n] - F[0][2][n] * F[2][0][n] +
-                             F[1][1][n] * F[2][2][n] - F[1][2][n] * F[2][1][n];
-            Number const d =
-              F[0][0][n] * F[1][1][n] * F[2][2][n] - F[0][0][n] * F[1][2][n] * F[2][1][n] -
-              F[0][1][n] * F[1][0][n] * F[2][2][n] + F[0][1][n] * F[1][2][n] * F[2][0][n] +
-              F[0][2][n] * F[1][0][n] * F[2][1][n] - F[0][2][n] * F[1][1][n] * F[2][0][n] - tol;
-
-            Number const Q = (b * b - 3.0 * c) * ONE_NINTH;
-            Number const R =
-              (2.0 * b * b * b - 9.0 * b * c + 27.0 * d) * 0.5 * ONE_NINTH * ONE_THIRD;
-            Number const Qcubed = Q * Q * Q;
-            Number const a4     = Qcubed - R * R;
-
-            if(a4 > 0)
-            {
-              // Three real roots, return smallest positive one.
-              Number const theta = std::acos(R / std::sqrt(Qcubed));
-              Number const sqrtQ = std::sqrt(Q);
-
-              std::vector<Number> tmp(3);
-              tmp[0] = -2.0 * sqrtQ * std::cos(theta * ONE_THIRD) - b * ONE_THIRD;
-              tmp[1] = -2.0 * sqrtQ * std::cos((theta + 2.0 * dealii::numbers::PI) * ONE_THIRD) -
-                       b * ONE_THIRD;
-              tmp[2] = -2.0 * sqrtQ * std::cos((theta + 4.0 * dealii::numbers::PI) * ONE_THIRD) -
-                       b * ONE_THIRD;
-
-              fac = std::numeric_limits<Number>::max();
-              for(unsigned int i = 0; i < 3; ++i)
-              {
-                if(tmp[i] > 0 and tmp[i] < fac)
-                {
-                  fac = tmp[i];
-                }
-              }
-            }
-            else
-            {
-              // Single real root.
-              Number e = std::exp(ONE_THIRD * std::log(std::sqrt(-a4) + std::abs(R)));
-              e        = R > 0 ? -e : e;
-              fac      = (e + Q / e) - b * ONE_THIRD;
-            }
-          }
-          else
-          {
-            AssertThrow(dim != 2 and dim != 3,
-                        dealii::ExcMessage("Unexpected dim. Choose dim == 2 or dim == 3."));
-          }
-
-          for(unsigned int d = 0; d < dim; ++d)
-          {
-            F[d][d][n] += fac;
-          }
-
-          // J = tol follows by construction.
-          Jm1[n] = tol - 1.0;
-        }
-        else if constexpr(check_type == 5)
-        {
-          // check_type 5 : Always update, but enforce J = tol by adding a scaled unit matrix.
-          // Scale factor determined by solving for the positive root of the quadratic/cubic
-          // polynomial via a Newton solver.
-          Number fac;
-          bool   converged;
-          if constexpr(dim == 2)
-          {
-            // Find positive root of x^2 + p * x + q = 0.
-            Number const p = F[0][0][n] + F[1][1][n];
-            Number const q = F[0][0][n] * F[1][1][n] - F[0][1][n] * F[1][0][n] - tol;
-            std::tie(fac, converged) =
-              solve_polynomial_newton<Number>(0, 1.0, p, q, tol * tol, tol, 5, 0.0);
-          }
-          else if constexpr(dim == 3)
-          {
-            // Find smallest real-valued positive root of x^3 + b * x^2 + c * x + d = 0.
-            Number const b = F[0][0][n] + F[1][1][n] + F[2][2][n];
-            Number const c = F[0][0][n] * F[1][1][n] - F[0][1][n] * F[1][0][n] +
-                             F[0][0][n] * F[2][2][n] - F[0][2][n] * F[2][0][n] +
-                             F[1][1][n] * F[2][2][n] - F[1][2][n] * F[2][1][n];
-            Number const d =
-              F[0][0][n] * F[1][1][n] * F[2][2][n] - F[0][0][n] * F[1][2][n] * F[2][1][n] -
-              F[0][1][n] * F[1][0][n] * F[2][2][n] + F[0][1][n] * F[1][2][n] * F[2][0][n] +
-              F[0][2][n] * F[1][0][n] * F[2][1][n] - F[0][2][n] * F[1][1][n] * F[2][0][n] - tol;
-            std::tie(fac, converged) =
-              solve_polynomial_newton<Number>(1.0, b, c, d, tol * tol, tol, 5, 0.0);
-          }
-          else
-          {
-            AssertThrow(dim != 2 and dim != 3,
-                        dealii::ExcMessage("Unexpected dim. Choose dim == 2 or dim == 3."));
-          }
-
-          if(converged)
-          {
-            for(unsigned int d = 0; d < dim; ++d)
-            {
-              F[d][d][n] += fac;
-            }
-          }
-          else
-          {
-            std::cout << "Newton algorithm did not converge.\n";
-          }
-
-          // J = tol follows by construction.
-          Jm1[n] = tol - 1.0;
-        }
-        else if(check_type == 6)
-        {
-          // check_type 6 : always update, but enforce J = tol by eigenvalue decomposition.
-          AssertThrow(false, dealii::ExcNotImplemented());
-        }
-        else
-        {
-          AssertThrow(false, dealii::ExcMessage("This check_type is not defined."));
-        }
-      }
+      return std::max(Jm1, dealii::make_vectorized_array(static_cast<Number>(tol - 1.0)));
+    }
+    else
+    {
+      AssertThrow(check_type < 6,
+                  dealii::ExcMessage("Correction of Jm1 not implemented this `check_type`."));
     }
   }
 }
