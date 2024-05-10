@@ -500,9 +500,6 @@ evaluate_material(
 {
   typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> Tensor;
 
-  // Note that we do not want to force_evaluation,
-  // but load as much as is stored depending on the cache_level.
-  bool constexpr force_evaluation = false;
   std::vector<Tensor> evaluation(2);
   execution_time_stress_jacobian.resize(2);
 
@@ -517,15 +514,11 @@ evaluate_material(
         {
           if(spatial_integration)
           {
-            evaluation[0] =
-              material.kirchhoff_stress(gradient_displacement, cell, q, force_evaluation);
+            evaluation[0] = material.kirchhoff_stress(gradient_displacement, cell, q);
           }
           else
           {
-            evaluation[0] = material.second_piola_kirchhoff_stress(gradient_displacement,
-                                                                   cell,
-                                                                   q,
-                                                                   force_evaluation);
+            evaluation[0] = material.second_piola_kirchhoff_stress(gradient_displacement, cell, q);
           }
         }
       }
