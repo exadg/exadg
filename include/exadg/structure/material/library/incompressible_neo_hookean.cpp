@@ -421,26 +421,19 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
       shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
     }
 
-    scalar Jm1;
-    tensor F;
-    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-      F, Jm1, gradient_displacement_cache_level_0_1, cache_level == 0 /* compute_J */);
-    if constexpr(cache_level == 1 and stable_formulation)
+    if constexpr(cache_level == 0)
     {
-      Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
-    }
-
-    tensor const F_inv = invert(F);
-    tensor const C_inv = F_inv * transpose(F_inv);
-    scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
-    if constexpr(stable_formulation)
-    {
-      return compute_S_stable(
-        gradient_displacement_cache_level_0_1, C_inv, J_pow, Jm1, shear_modulus_stored);
-    }
-    else
-    {
-      if constexpr(cache_level == 0)
+      auto const [F, Jm1] = compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+        gradient_displacement_cache_level_0_1);
+      tensor const F_inv = invert(F);
+      tensor const C_inv = F_inv * transpose(F_inv);
+      scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
+      if constexpr(stable_formulation)
+      {
+        return compute_S_stable(
+          gradient_displacement_cache_level_0_1, C_inv, J_pow, Jm1, shear_modulus_stored);
+      }
+      else
       {
         tensor const E = compute_E_scaled<dim, Number, Number, stable_formulation>(
           gradient_displacement_cache_level_0_1, 1.0);
@@ -448,6 +441,20 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
           get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
 
         return compute_S_unstable(C_inv, J_pow, c1, shear_modulus_stored);
+      }
+    }
+    else
+    {
+      tensor const F = compute_modified_F<dim, Number, check_type, stable_formulation>(
+        gradient_displacement_cache_level_0_1);
+      tensor const F_inv = invert(F);
+      tensor const C_inv = F_inv * transpose(F_inv);
+      scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
+      if constexpr(stable_formulation)
+      {
+        scalar const Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
+        return compute_S_stable(
+          gradient_displacement_cache_level_0_1, C_inv, J_pow, Jm1, shear_modulus_stored);
       }
       else
       {
@@ -541,73 +548,95 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
     unsigned int const cell,
     unsigned int const q) const
 {
-  tensor Dd_S;
-
   if(shear_modulus_is_variable)
   {
     shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
   }
 
-  tensor F;
-  if constexpr(cache_level < 2)
-  {
-    F = gradient_displacement_cache_level_0_1;
-  }
-  else
-  {
-    F = gradient_displacement_coefficients.get_coefficient_cell(cell, q);
-  }
-  add_scaled_identity<dim, Number, Number>(F, 1.0);
-
-  scalar Jm1_cache_level_0;
-  tensor E_cache_level_0;
   if constexpr(cache_level == 0)
   {
-    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-      E_cache_level_0 /* F */,
-      Jm1_cache_level_0,
-      gradient_displacement_cache_level_0_1,
-      true /* compute_J */);
-
-    E_cache_level_0 = compute_E_scaled<dim, Number, Number, stable_formulation>(
+    auto const [F, Jm1] = compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+      gradient_displacement_cache_level_0_1);
+    tensor const E = compute_E_scaled<dim, Number, Number, stable_formulation>(
       gradient_displacement_cache_level_0_1, 1.0);
+    scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
+    scalar const c1 =
+      get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
+    scalar const c2 =
+      get_c2<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
+    tensor const F_inv = invert(F);
+    tensor const C_inv = F_inv * transpose(F_inv);
+
+    tensor const F_inv_times_gradient_increment = F_inv * gradient_increment;
+    scalar const one_over_J_times_Dd_J          = trace(F_inv_times_gradient_increment);
+    tensor const Dd_F_inv_times_transpose_F_inv = -F_inv_times_gradient_increment * C_inv;
+    tensor const Dd_C_inv =
+      Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
+
+    tensor Dd_S =
+      C_inv * (c2 * one_over_J_times_Dd_J - (TWO_THIRDS * shear_modulus_stored * J_pow) *
+                                              trace(transpose(gradient_increment) * F));
+    Dd_S += Dd_C_inv * c1;
+    add_scaled_identity(Dd_S, -shear_modulus_stored * TWO_THIRDS * J_pow * one_over_J_times_Dd_J);
+
+    return Dd_S;
+  }
+  else if constexpr(cache_level == 1)
+  {
+    tensor const F = compute_modified_F<dim, Number, check_type, stable_formulation>(
+      gradient_displacement_cache_level_0_1);
+    scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
+    scalar const c1    = c1_coefficients.get_coefficient_cell(cell, q);
+    scalar const c2    = c2_coefficients.get_coefficient_cell(cell, q);
+    tensor const F_inv = invert(F);
+    tensor const C_inv = F_inv * transpose(F_inv);
+
+    tensor const F_inv_times_gradient_increment = F_inv * gradient_increment;
+    scalar const one_over_J_times_Dd_J          = trace(F_inv_times_gradient_increment);
+    tensor const Dd_F_inv_times_transpose_F_inv = -F_inv_times_gradient_increment * C_inv;
+    tensor const Dd_C_inv =
+      Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
+
+    tensor Dd_S =
+      C_inv * (c2 * one_over_J_times_Dd_J - (TWO_THIRDS * shear_modulus_stored * J_pow) *
+                                              trace(transpose(gradient_increment) * F));
+    Dd_S += Dd_C_inv * c1;
+    add_scaled_identity(Dd_S, -shear_modulus_stored * TWO_THIRDS * J_pow * one_over_J_times_Dd_J);
+
+    return Dd_S;
   }
   else
   {
-    // Dummy Jm1 and E sufficient.
+    // TODO compare these variants
+    // tensor const F = compute_modified_F<dim, Number, check_type,
+    // stable_formulation>(gradient_displacement_cache_level_0_1);
+    tensor const F = compute_modified_F<dim, Number, check_type, stable_formulation>(
+      gradient_displacement_coefficients.get_coefficient_cell(cell, q));
+
+    scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
+    scalar const c1    = c1_coefficients.get_coefficient_cell(cell, q);
+    scalar const c2    = c2_coefficients.get_coefficient_cell(cell, q);
+
+    // TODO compare these variants
+    // tensor const F_inv = invert(F);
+    // tensor const C_inv = F_inv * transpose(F_inv);
+    tensor const F_inv = F_inv_coefficients.get_coefficient_cell(cell, q);
+    tensor const C_inv = C_inv_coefficients.get_coefficient_cell(cell, q);
+
+    tensor const F_inv_times_gradient_increment = F_inv * gradient_increment;
+    scalar const one_over_J_times_Dd_J          = trace(F_inv_times_gradient_increment);
+    tensor const Dd_F_inv_times_transpose_F_inv = -F_inv_times_gradient_increment * C_inv;
+    tensor const Dd_C_inv =
+      Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
+
+    tensor Dd_S =
+      C_inv * (c2 * one_over_J_times_Dd_J - (TWO_THIRDS * shear_modulus_stored * J_pow) *
+                                              trace(transpose(gradient_increment) * F));
+    Dd_S += Dd_C_inv * c1;
+    add_scaled_identity(Dd_S, -shear_modulus_stored * TWO_THIRDS * J_pow * one_over_J_times_Dd_J);
+
+    return Dd_S;
   }
-
-  scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1_cache_level_0, cell, q);
-  scalar const c1    = get_c1<false /* force_evaluation */>(
-    Jm1_cache_level_0, J_pow, E_cache_level_0, shear_modulus_stored, cell, q);
-  scalar const c2 = get_c2<false /* force_evaluation */>(
-    Jm1_cache_level_0, J_pow, E_cache_level_0, shear_modulus_stored, cell, q);
-
-  tensor F_inv, C_inv;
-  if constexpr(cache_level < 2)
-  {
-    F_inv = invert(F);
-    C_inv = F_inv * transpose(F_inv);
-  }
-  else
-  {
-    F_inv = F_inv_coefficients.get_coefficient_cell(cell, q);
-    C_inv = C_inv_coefficients.get_coefficient_cell(cell, q);
-  }
-
-  tensor const F_inv_times_gradient_increment = F_inv * gradient_increment;
-
-  scalar const one_over_J_times_Dd_J          = trace(F_inv_times_gradient_increment);
-  tensor const Dd_F_inv_times_transpose_F_inv = -F_inv_times_gradient_increment * C_inv;
-  tensor const Dd_C_inv =
-    Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
-
-  Dd_S = C_inv * (c2 * one_over_J_times_Dd_J - (TWO_THIRDS * shear_modulus_stored * J_pow) *
-                                                 trace(transpose(gradient_increment) * F));
-  Dd_S += Dd_C_inv * c1;
-  add_scaled_identity(Dd_S, -shear_modulus_stored * TWO_THIRDS * J_pow * one_over_J_times_Dd_J);
-
-  return Dd_S;
 }
 
 template<int dim,
@@ -628,37 +657,51 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
       shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
     }
 
-    scalar Jm1;
-    tensor F;
-    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-      F, Jm1, gradient_displacement_cache_level_0_1, cache_level == 0 /* compute_J */);
-    if constexpr(cache_level == 1 and stable_formulation)
+    if constexpr(cache_level == 0)
     {
-      Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
-    }
-
-    scalar const J_pow = get_J_pow<false /* force_evaluation*/>(Jm1, cell, q);
-
-    if constexpr(stable_formulation)
-    {
-      return compute_tau_stable(gradient_displacement_cache_level_0_1,
-                                Jm1,
-                                J_pow,
-                                shear_modulus_stored);
-    }
-    else
-    {
-      if constexpr(cache_level == 0)
+      if constexpr(stable_formulation)
       {
-        tensor const E = compute_E_scaled<dim, Number, Number, stable_formulation>(
-          gradient_displacement_cache_level_0_1, 1.0);
-        scalar const c1 =
-          get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
-        return compute_tau_unstable(F, J_pow, c1, shear_modulus_stored);
+        scalar const Jm1 = compute_modified_Jm1<dim, Number, check_type, stable_formulation>(
+          gradient_displacement_cache_level_0_1);
+        scalar const J_pow = get_J_pow<false /* force_evaluation*/>(Jm1, cell, q);
+
+        return compute_tau_stable(gradient_displacement_cache_level_0_1,
+                                  Jm1,
+                                  J_pow,
+                                  shear_modulus_stored);
       }
       else
       {
-        scalar const c1 = c1_coefficients.get_coefficient_cell(cell, q);
+        auto const [F, Jm1] = compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+          gradient_displacement_cache_level_0_1);
+        scalar const J_pow = get_J_pow<false /* force_evaluation*/>(Jm1, cell, q);
+        tensor const E     = compute_E_scaled<dim, Number, Number, stable_formulation>(
+          gradient_displacement_cache_level_0_1, 1.0);
+        scalar const c1 =
+          get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
+
+        return compute_tau_unstable(F, J_pow, c1, shear_modulus_stored);
+      }
+    }
+    else
+    {
+      if constexpr(stable_formulation)
+      {
+        scalar const Jm1   = Jm1_coefficients.get_coefficient_cell(cell, q);
+        scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
+
+        return compute_tau_stable(gradient_displacement_cache_level_0_1,
+                                  Jm1,
+                                  J_pow,
+                                  shear_modulus_stored);
+      }
+      else
+      {
+        tensor const F = compute_modified_F<dim, Number, cache_level, stable_formulation>(
+          gradient_displacement_cache_level_0_1);
+        scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
+        scalar const c1    = c1_coefficients.get_coefficient_cell(cell, q);
+
         return compute_tau_unstable(F, J_pow, c1, shear_modulus_stored);
       }
     }
@@ -746,52 +789,61 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
                           unsigned int const cell,
                           unsigned int const q) const
 {
-  tensor result;
-
   if(shear_modulus_is_variable)
   {
     shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
   }
 
-  tensor C;
-  if constexpr(cache_level < 2)
-  {
-    tensor F = gradient_displacement_cache_level_0_1;
-    add_scaled_identity<dim, Number, Number>(F, 1.0);
-    C = transpose(F) * F;
-  }
-  else
-  {
-    C = C_coefficients.get_coefficient_cell(cell, q);
-  }
-
-  scalar Jm1_cache_level_0;
-  tensor E_cache_level_0;
   if constexpr(cache_level == 0)
   {
-    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-      result, Jm1_cache_level_0, gradient_displacement_cache_level_0_1, true /* compute_J */);
-
-    E_cache_level_0 = compute_E_scaled<dim, Number, Number, stable_formulation>(
+    auto const [F, Jm1] = compute_modified_F_Jm1<dim, Number, cache_level, stable_formulation>(
+      gradient_displacement_cache_level_0_1);
+    tensor const E = compute_E_scaled<dim, Number, Number, stable_formulation>(
       gradient_displacement_cache_level_0_1, 1.0);
+    scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
+    scalar const c1 =
+      get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
+    scalar const c2 =
+      get_c2<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
+
+    tensor result = symmetric_gradient_increment * (-2.0 * c1);
+    result +=
+      ((-4.0 * ONE_THIRD) * shear_modulus_stored * J_pow * trace(symmetric_gradient_increment)) *
+      (transpose(F) * F);
+    add_scaled_identity(result, c2 * trace(symmetric_gradient_increment));
+
+    return result;
   }
-  else
+  else if constexpr(cache_level == 1)
   {
-    // Dummy E and Jm1 sufficient.
+    tensor const F = compute_modified_F<dim, Number, cache_level, stable_formulation>(
+      gradient_displacement_cache_level_0_1);
+    scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
+    scalar const c1    = c1_coefficients.get_coefficient_cell(cell, q);
+    scalar const c2    = c2_coefficients.get_coefficient_cell(cell, q);
+
+    tensor result = symmetric_gradient_increment * (-2.0 * c1);
+    result +=
+      ((-4.0 * ONE_THIRD) * shear_modulus_stored * J_pow * trace(symmetric_gradient_increment)) *
+      (transpose(F) * F);
+    add_scaled_identity(result, c2 * trace(symmetric_gradient_increment));
+
+    return result;
   }
+  else if constexpr(cache_level == 2)
+  {
+    tensor const C     = C_coefficients.get_coefficient_cell(cell, q);
+    scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
+    scalar const c1    = c1_coefficients.get_coefficient_cell(cell, q);
+    scalar const c2    = c2_coefficients.get_coefficient_cell(cell, q);
 
-  scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1_cache_level_0, cell, q);
-  scalar const c1    = get_c1<false /* force_evaluation */>(
-    Jm1_cache_level_0, J_pow, E_cache_level_0, shear_modulus_stored, cell, q);
-  scalar const c2 = get_c2<false /* force_evaluation */>(
-    Jm1_cache_level_0, J_pow, E_cache_level_0, shear_modulus_stored, cell, q);
+    tensor result = symmetric_gradient_increment * (-2.0 * c1);
+    result +=
+      ((-4.0 * ONE_THIRD) * shear_modulus_stored * J_pow * trace(symmetric_gradient_increment)) * C;
+    add_scaled_identity(result, c2 * trace(symmetric_gradient_increment));
 
-  result = symmetric_gradient_increment * (-2.0 * c1);
-  result +=
-    ((-4.0 * ONE_THIRD) * shear_modulus_stored * J_pow * trace(symmetric_gradient_increment)) * C;
-  add_scaled_identity(result, c2 * trace(symmetric_gradient_increment));
-
-  return result;
+    return result;
+  }
 }
 
 template<int dim,
