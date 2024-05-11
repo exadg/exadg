@@ -527,7 +527,7 @@ inline DEAL_II_ALWAYS_INLINE //
 }
 
 // This version always returns F and Jm1 after potential modification.
-template<int dim, typename Number, unsigned int check_type, bool stable_formulation, bool compute_J>
+template<int dim, typename Number, unsigned int check_type, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
   std::tuple<dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>,
              dealii::VectorizedArray<Number>>
@@ -540,11 +540,6 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if constexpr(check_type > 1)
   {
-    if constexpr(not compute_J)
-    {
-      // Compute J - 1 to do any checking.
-      Jm1 = compute_Jm1<dim, Number, stable_formulation>(gradient_displacement);
-    }
     reconstruct_admissible_F_Jm1(F, Jm1);
   }
 

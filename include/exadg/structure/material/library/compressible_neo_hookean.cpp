@@ -330,7 +330,7 @@ template<int dim,
          unsigned int cache_level>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>::
-  second_piola_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
+  second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
                                 unsigned int const cell,
                                 unsigned int const q) const
 {
@@ -342,24 +342,41 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
       lambda_stored        = lambda_coefficients.get_coefficient_cell(cell, q);
     }
 
-    // Access the stored coefficients precomputed using the last linearization vector.
-    scalar Jm1;
-    tensor F;
-    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-      F, Jm1, gradient_displacement_cache_level_0_1, cache_level == 0 /* compute_J */);
-
-    scalar const log_J = get_log_J<false /* force_evaluation*/>(Jm1, cell, q);
-    tensor const F_inv = invert(F);
-    tensor const C_inv = F_inv * transpose(F_inv);
-
-    if constexpr(stable_formulation)
+    if constexpr(cache_level == 0)
     {
-      return compute_S_stable(
-        gradient_displacement_cache_level_0_1, C_inv, log_J, shear_modulus_stored, lambda_stored);
+      auto const [F, Jm1] =
+        compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(gradient_displacement);
+      scalar const log_J = get_log_J<false /* force_evaluation*/>(Jm1, cell, q);
+      tensor const F_inv = invert(F);
+      tensor const C_inv = F_inv * transpose(F_inv);
+
+      if constexpr(stable_formulation)
+      {
+        return compute_S_stable(
+          gradient_displacement, C_inv, log_J, shear_modulus_stored, lambda_stored);
+      }
+      else
+      {
+        return compute_S_unstable(C_inv, log_J, shear_modulus_stored, lambda_stored);
+      }
     }
     else
     {
-      return compute_S_unstable(C_inv, log_J, shear_modulus_stored, lambda_stored);
+      tensor const F =
+        compute_modified_F<dim, Number, check_type, stable_formulation>(gradient_displacement);
+      scalar const log_J = log_J_coefficients.get_coefficient_cell(cell, q);
+      tensor const F_inv = invert(F);
+      tensor const C_inv = F_inv * transpose(F_inv);
+
+      if constexpr(stable_formulation)
+      {
+        return compute_S_stable(
+          gradient_displacement, C_inv, log_J, shear_modulus_stored, lambda_stored);
+      }
+      else
+      {
+        return compute_S_unstable(C_inv, log_J, shear_modulus_stored, lambda_stored);
+      }
     }
   }
   else
@@ -450,35 +467,55 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
   }
 
   // Access the stored coefficients precomputed using the last linearization vector.
-  scalar log_J;
-  tensor F_inv, C_inv;
-  if constexpr(cache_level < 2)
+  if constexpr(cache_level == 0)
   {
-    scalar Jm1;
-    tensor F;
-    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-      F, Jm1, gradient_displacement_cache_level_0_1, cache_level == 0 /* compute_J */);
+    auto const [F, Jm1] = compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+      gradient_displacement_cache_level_0_1);
+    scalar const log_J = get_log_J<false /*force_evaluation*/>(Jm1, cell, q);
+    tensor const F_inv = invert(F);
+    tensor const C_inv = F_inv * transpose(F_inv);
 
-    log_J = get_log_J<false /*force_evaluation*/>(Jm1, cell, q);
-    F_inv = invert(F);
-    C_inv = F_inv * transpose(F_inv);
+    tensor const F_inv_times_gradient_increment = F_inv * gradient_increment;
+    scalar const one_over_J_times_Dd_J          = trace(F_inv_times_gradient_increment);
+    tensor const Dd_F_inv_times_transpose_F_inv = -F_inv_times_gradient_increment * C_inv;
+    tensor const Dd_C_inv =
+      Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
+
+    return ((2.0 * lambda_stored * log_J - shear_modulus_stored) * Dd_C_inv +
+            (2.0 * lambda_stored * one_over_J_times_Dd_J) * C_inv);
+  }
+  else if constexpr(cache_level == 1)
+  {
+    tensor const F = compute_modified_F<dim, Number, check_type, stable_formulation>(
+      gradient_displacement_cache_level_0_1);
+    scalar const log_J = log_J_coefficients.get_coefficient_cell(cell, q);
+    tensor const F_inv = invert(F);
+    tensor const C_inv = F_inv * transpose(F_inv);
+
+    tensor const F_inv_times_gradient_increment = F_inv * gradient_increment;
+    scalar const one_over_J_times_Dd_J          = trace(F_inv_times_gradient_increment);
+    tensor const Dd_F_inv_times_transpose_F_inv = -F_inv_times_gradient_increment * C_inv;
+    tensor const Dd_C_inv =
+      Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
+
+    return ((2.0 * lambda_stored * log_J - shear_modulus_stored) * Dd_C_inv +
+            (2.0 * lambda_stored * one_over_J_times_Dd_J) * C_inv);
   }
   else
   {
-    log_J = log_J_coefficients.get_coefficient_cell(cell, q);
-    F_inv = F_inv_coefficients.get_coefficient_cell(cell, q);
-    C_inv = C_inv_coefficients.get_coefficient_cell(cell, q);
+    scalar const log_J = log_J_coefficients.get_coefficient_cell(cell, q);
+    tensor const F_inv = F_inv_coefficients.get_coefficient_cell(cell, q);
+    tensor const C_inv = C_inv_coefficients.get_coefficient_cell(cell, q);
+
+    tensor const F_inv_times_gradient_increment = F_inv * gradient_increment;
+    scalar const one_over_J_times_Dd_J          = trace(F_inv_times_gradient_increment);
+    tensor const Dd_F_inv_times_transpose_F_inv = -F_inv_times_gradient_increment * C_inv;
+    tensor const Dd_C_inv =
+      Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
+
+    return ((2.0 * lambda_stored * log_J - shear_modulus_stored) * Dd_C_inv +
+            (2.0 * lambda_stored * one_over_J_times_Dd_J) * C_inv);
   }
-
-  tensor const F_inv_times_gradient_increment = F_inv * gradient_increment;
-
-  scalar const one_over_J_times_Dd_J          = trace(F_inv_times_gradient_increment);
-  tensor const Dd_F_inv_times_transpose_F_inv = -F_inv_times_gradient_increment * C_inv;
-  tensor const Dd_C_inv =
-    Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
-
-  return ((2.0 * lambda_stored * log_J - shear_modulus_stored) * Dd_C_inv +
-          (2.0 * lambda_stored * one_over_J_times_Dd_J) * C_inv);
 }
 
 template<int dim,
@@ -500,27 +537,43 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
       lambda_stored        = lambda_coefficients.get_coefficient_cell(cell, q);
     }
 
-    scalar Jm1;
-    tensor F;
-    if constexpr(cache_level == 0 or (not stable_formulation))
+    if constexpr(cache_level == 0)
     {
-      compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-        F, Jm1, gradient_displacement_cache_level_0_1, cache_level == 0 /* compute_J */);
-    }
-
-    // Access the stored coefficients precomputed using the last linearization vector.
-    scalar const log_J = get_log_J<false /* force_evaluation */>(Jm1, cell, q);
-
-    if constexpr(stable_formulation)
-    {
-      return compute_tau_stable(gradient_displacement_cache_level_0_1,
-                                log_J,
-                                shear_modulus_stored,
-                                lambda_stored);
+      if constexpr(stable_formulation)
+      {
+        scalar const Jm1 = compute_modified_Jm1<dim, Number, check_type, stable_formulation>(
+          gradient_displacement_cache_level_0_1);
+        scalar const log_J = get_log_J<false /* force_evaluation */>(Jm1, cell, q);
+        return compute_tau_stable(gradient_displacement_cache_level_0_1,
+                                  log_J,
+                                  shear_modulus_stored,
+                                  lambda_stored);
+      }
+      else
+      {
+        auto const [F, Jm1] = compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+          gradient_displacement_cache_level_0_1);
+        scalar const log_J = get_log_J<false /* force_evaluation */>(Jm1, cell, q);
+        return compute_tau_unstable(F, log_J, shear_modulus_stored, lambda_stored);
+      }
     }
     else
     {
-      return compute_tau_unstable(F, log_J, shear_modulus_stored, lambda_stored);
+      scalar const log_J = log_J_coefficients.get_coefficient_cell(cell, q);
+
+      if constexpr(stable_formulation)
+      {
+        return compute_tau_stable(gradient_displacement_cache_level_0_1,
+                                  log_J,
+                                  shear_modulus_stored,
+                                  lambda_stored);
+      }
+      else
+      {
+        tensor const F = compute_modified_F<dim, Number, check_type, stable_formulation>(
+          gradient_displacement_cache_level_0_1);
+        return compute_tau_unstable(F, log_J, shear_modulus_stored, lambda_stored);
+      }
     }
   }
   else
@@ -609,28 +662,26 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
     lambda_stored        = lambda_coefficients.get_coefficient_cell(cell, q);
   }
 
-  // Access the stored coefficients precomputed using the last linearization vector.
-  scalar log_J;
   if constexpr(cache_level == 0)
   {
-    scalar Jm1;
-    tensor F;
-    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-      F, Jm1, gradient_displacement_cache_level_0_1, true /* compute_J */);
+    scalar const Jm1 = compute_modified_Jm1<dim, Number, check_type, stable_formulation>(
+      gradient_displacement_cache_level_0_1);
+    scalar const log_J = get_log_J<false /* force_evaluation */>(Jm1, cell, q);
+    tensor       result =
+      (2.0 * (shear_modulus_stored - 2.0 * lambda_stored * log_J)) * symmetric_gradient_increment;
+    add_scaled_identity(result, 2.0 * lambda_stored * trace(symmetric_gradient_increment));
 
-    log_J = get_log_J<false /* force_evaluation */>(Jm1, cell, q);
+    return result;
   }
   else
   {
-    log_J = log_J_coefficients.get_coefficient_cell(cell, q);
+    scalar const log_J = log_J_coefficients.get_coefficient_cell(cell, q);
+    tensor       result =
+      (2.0 * (shear_modulus_stored - 2.0 * lambda_stored * log_J)) * symmetric_gradient_increment;
+    add_scaled_identity(result, 2.0 * lambda_stored * trace(symmetric_gradient_increment));
+
+    return result;
   }
-
-  tensor result =
-    (2.0 * (shear_modulus_stored - 2.0 * lambda_stored * log_J)) * symmetric_gradient_increment;
-
-  add_scaled_identity(result, 2.0 * lambda_stored * trace(symmetric_gradient_increment));
-
-  return result;
 }
 
 template<int dim,
