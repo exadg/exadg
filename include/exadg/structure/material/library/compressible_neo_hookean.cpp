@@ -380,8 +380,9 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
   if constexpr(cache_level < 2)
   {
     AssertThrow(cache_level > 1,
-                dealii::ExcMessage("This function implements loading a stored stress tensor."
-                                   "This `cache_level` does not store tensorial quantities."));
+                dealii::ExcMessage("This function implements loading a stored stress tensor, but "
+                                   "this `cache_level` does not store tensorial quantities."));
+    return (std::numeric_limits<Number>::quiet_NaN() * get_identity_tensor<dim, Number>());
   }
   else
   {
@@ -524,9 +525,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
   }
   else
   {
-    AssertThrow(cache_level < 2,
-                dealii::ExcMessage("This function implements computing a stress tensor."
-                                   "This `cache_level` stores tensorial quantities."));
+    return kirchhoff_stress_coefficients.get_coefficient_cell(cell, q);
   }
 }
 
@@ -543,8 +542,9 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
   if constexpr(cache_level < 2)
   {
     AssertThrow(cache_level > 1,
-                dealii::ExcMessage("This function implements loading a stored stress tensor."
-                                   "This `cache_level` does not store tensorial quantities."));
+                dealii::ExcMessage("This function implements loading a stored stress tensor, but "
+                                   "this `cache_level` does not store tensorial quantities."));
+    return (std::numeric_limits<Number>::quiet_NaN() * get_identity_tensor<dim, Number>());
   }
   else
   {

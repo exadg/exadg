@@ -475,8 +475,9 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   if constexpr(cache_level < 2)
   {
     AssertThrow(cache_level > 1,
-                dealii::ExcMessage("This function implements loading a stored stress tensor."
-                                   "This `cache_level` does not store tensorial quantities."));
+                dealii::ExcMessage("This function implements loading a stored stress tensor, but "
+                                   "this `cache_level` does not store tensorial quantities."));
+    return (std::numeric_limits<Number>::quiet_NaN() * get_identity_tensor<dim, Number>());
   }
   else
   {
@@ -681,8 +682,9 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   if constexpr(cache_level < 2)
   {
     AssertThrow(cache_level > 1,
-                dealii::ExcMessage("This function implements loading a stored stress tensor."
-                                   "This `cache_level` does not store tensorial quantities."));
+                dealii::ExcMessage("This function implements loading a stored stress tensor, but "
+                                   "this `cache_level` does not store tensorial quantities."));
+    return (std::numeric_limits<Number>::quiet_NaN() * get_identity_tensor<dim, Number>());
   }
   else
   {
