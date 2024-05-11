@@ -486,6 +486,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
 }
 
+// This version always F and potentially Jm1 (depending on `compute_J`) after potential modification.
 template<int dim, typename Number, unsigned int check_type, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
   void
@@ -513,6 +514,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
 }
 
+// This version always F and Jm1 after potential modification.
 template<int dim, typename Number, unsigned int check_type, bool stable_formulation, bool compute_J>
 inline DEAL_II_ALWAYS_INLINE //
   void
@@ -539,6 +541,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
 }
 
+// This version returns only F after potential modification.
 template<int dim, typename Number, unsigned int check_type, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
@@ -557,6 +560,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
 }
 
+// This version returns only Jm1 = max(J - 1, tol - 1) as by construction.
 template<int dim, typename Number, unsigned int check_type, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
   void
