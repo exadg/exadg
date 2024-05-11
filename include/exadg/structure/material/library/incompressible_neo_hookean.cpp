@@ -239,7 +239,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
       one_over_J_coefficients.set_coefficient_cell(cell, q, 1.0 / (Jm1 + 1.0));
     }
 
-    tensor const E = get_E_scaled<dim, Number, Number, stable_formulation>(Grad_d_lin, 1.0);
+    tensor const E = compute_E_scaled<dim, Number, Number, stable_formulation>(Grad_d_lin, 1.0);
     scalar const c1 =
       get_c1<true /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
     scalar const c2 =
@@ -328,7 +328,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   {
     return ((0.5 * static_cast<Number>(data.bulk_modulus)) *
               compute_JJm1<Number, stable_formulation>(Jm1) -
-            shear_modulus * ONE_THIRD * J_pow * get_I_1<dim, Number>(E, stable_formulation));
+            shear_modulus * ONE_THIRD * J_pow * compute_I_1<dim, Number>(E, stable_formulation));
   }
   else
   {
@@ -355,7 +355,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   {
     return (static_cast<Number>(data.bulk_modulus) *
               (compute_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
-            TWO_NINTHS * shear_modulus * J_pow * get_I_1<dim, Number>(E, stable_formulation));
+            TWO_NINTHS * shear_modulus * J_pow * compute_I_1<dim, Number>(E, stable_formulation));
   }
   else
   {
@@ -442,7 +442,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
     {
       if constexpr(cache_level == 0)
       {
-        tensor const E = get_E_scaled<dim, Number, Number, stable_formulation>(
+        tensor const E = compute_E_scaled<dim, Number, Number, stable_formulation>(
           gradient_displacement_cache_level_0_1, 1.0);
         scalar const c1 =
           get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
@@ -498,8 +498,8 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
                    scalar const & Jm1,
                    scalar const & shear_modulus) const
 {
-  tensor S = get_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement,
-                                                                   2.0 * shear_modulus * J_pow);
+  tensor S = compute_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement,
+                                                                       2.0 * shear_modulus * J_pow);
 
   add_scaled_identity<dim, Number>(S,
                                    -ONE_THIRD * trace(S) +
@@ -569,9 +569,8 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
       gradient_displacement_cache_level_0_1,
       true /* compute_J */);
 
-    E_cache_level_0 =
-      get_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement_cache_level_0_1,
-                                                            1.0);
+    E_cache_level_0 = compute_E_scaled<dim, Number, Number, stable_formulation>(
+      gradient_displacement_cache_level_0_1, 1.0);
   }
   else
   {
@@ -651,7 +650,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
     {
       if constexpr(cache_level == 0)
       {
-        tensor const E = get_E_scaled<dim, Number, Number, stable_formulation>(
+        tensor const E = compute_E_scaled<dim, Number, Number, stable_formulation>(
           gradient_displacement_cache_level_0_1, 1.0);
         scalar const c1 =
           get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
@@ -704,8 +703,9 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
                      scalar const & J_pow,
                      scalar const & shear_modulus) const
 {
-  tensor tau = get_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement,
-                                                                     2.0 * shear_modulus * J_pow);
+  tensor tau =
+    compute_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement,
+                                                              2.0 * shear_modulus * J_pow);
 
   add_scaled_identity<dim, Number>(tau,
                                    -ONE_THIRD * trace(tau) +
@@ -772,9 +772,8 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
     compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
       result, Jm1_cache_level_0, gradient_displacement_cache_level_0_1, true /* compute_J */);
 
-    E_cache_level_0 =
-      get_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement_cache_level_0_1,
-                                                            1.0);
+    E_cache_level_0 = compute_E_scaled<dim, Number, Number, stable_formulation>(
+      gradient_displacement_cache_level_0_1, 1.0);
   }
   else
   {

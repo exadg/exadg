@@ -403,8 +403,8 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
   scalar const & shear_modulus,
   scalar const & lambda) const
 {
-  tensor S = get_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement,
-                                                                   2.0 * shear_modulus);
+  tensor S = compute_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement,
+                                                                       2.0 * shear_modulus);
 
   add_scaled_identity(S, 2.0 * lambda * log_J);
 

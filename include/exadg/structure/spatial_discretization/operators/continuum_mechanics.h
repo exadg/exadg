@@ -128,7 +128,7 @@ inline DEAL_II_ALWAYS_INLINE //
 template<int dim, typename Number, typename TypeScale, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  get_E_scaled(
+  compute_E_scaled(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
     TypeScale const &                                               scale)
 {
@@ -237,8 +237,8 @@ inline DEAL_II_ALWAYS_INLINE //
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
-  get_I_1(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
-          bool const                                                      stable_formulation)
+  compute_I_1(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
+              bool const                                                      stable_formulation)
 {
   if(stable_formulation)
   {
