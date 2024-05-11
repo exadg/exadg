@@ -297,7 +297,7 @@ NonLinearOperator<dim, Number>::cell_loop_nonlinear(
     // Since the vector we cell_loop_nonlinear() on is the most recent iterate, this is only
     // needed for the spatial integration approach. In do_cell_integral_nonlinear(), only the
     // spatial approach requires an updated integrator_lin.
-    if(this->operator_data.spatial_integration and
+    if(this->operator_data.spatial_integration and this->operator_data.cache_level < 2 and
        (not this->operator_data.force_material_residual))
     {
       integrator_lin->reinit(cell);
@@ -498,132 +498,174 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
 {
   std::shared_ptr<Material<dim, Number>> material = this->material_handler.get_material();
 
+  unsigned int constexpr check_type = 0;
+  AssertThrow(this->operator_data.check_type == 0,
+              dealii::ExcMessage("A `check_type` > 0 is currently not implemented here."));
+
+  AssertThrow(this->operator_data.cache_level < 3,
+              dealii::ExcMessage("We expect a `cache_level` in [0,1,2]."));
+
   if(this->operator_data.spatial_integration and (not this->operator_data.force_material_residual))
   {
-    // loop over all quadrature points
-    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+    // The residual is evaluated in the spatial configuration.
+    if(this->operator_data.cache_level == 0)
     {
-      // material gradient of the linearization vector only needed for cache_level 0 or 1
-      tensor Grad_d_lin_cache_level_0_1;
-      if(this->operator_data.cache_level < 2)
+      if(this->operator_data.stable_formulation)
       {
-        Grad_d_lin_cache_level_0_1 = integrator_lin->get_gradient(q);
+        for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+        {
+          tensor const Grad_d_lin = integrator_lin->get_gradient(q);
+          scalar const Jm1 =
+            compute_modified_Jm1<dim, Number, check_type, true /* stable_formulation */>(
+              Grad_d_lin);
+          scalar const one_over_J = 1.0 / (Jm1 + 1.0);
+          tensor const tau =
+            material->kirchhoff_stress(Grad_d_lin, integrator.get_current_cell_index(), q);
+
+          integrator.submit_gradient(tau * one_over_J, q);
+
+          if(this->operator_data.unsteady)
+          {
+            integrator.submit_value((this->scaling_factor_mass * this->operator_data.density *
+                                     one_over_J) *
+                                      integrator.get_value(q),
+                                    q);
+          }
+        }
       }
       else
       {
-        // dummy Grad_d_lin sufficient
-      }
-
-      scalar one_over_J;
-      if(this->operator_data.cache_level == 0)
-      {
-        scalar Jm1;
-        tensor F;
-        if(this->operator_data.check_type == 0)
+        for(unsigned int q = 0; q < integrator.n_q_points; ++q)
         {
-          if(this->operator_data.stable_formulation)
+          tensor const Grad_d_lin = integrator_lin->get_gradient(q);
+          scalar const Jm1 =
+            compute_modified_Jm1<dim, Number, check_type, true /* stable_formulation */>(
+              Grad_d_lin);
+          scalar const one_over_J = 1.0 / (Jm1 + 1.0);
+          tensor const tau =
+            material->kirchhoff_stress(Grad_d_lin, integrator.get_current_cell_index(), q);
+
+          integrator.submit_gradient(tau * one_over_J, q);
+
+          if(this->operator_data.unsteady)
           {
-            compute_modified_F_Jm1<dim, Number, 0, true>(F,
-                                                         Jm1,
-                                                         Grad_d_lin_cache_level_0_1,
-                                                         true /* compute_J */);
-          }
-          else
-          {
-            compute_modified_F_Jm1<dim, Number, 0, false>(F,
-                                                          Jm1,
-                                                          Grad_d_lin_cache_level_0_1,
-                                                          true /* compute_J */);
+            integrator.submit_value((this->scaling_factor_mass * this->operator_data.density *
+                                     one_over_J) *
+                                      integrator.get_value(q),
+                                    q);
           }
         }
-        else
+      }
+    }
+    else if(this->operator_data.cache_level == 1)
+    {
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        tensor const Grad_d_lin = integrator_lin->get_gradient(q);
+        scalar const one_over_J = material->one_over_J(integrator.get_current_cell_index(), q);
+        tensor const tau =
+          material->kirchhoff_stress(Grad_d_lin, integrator.get_current_cell_index(), q);
+
+        integrator.submit_gradient(tau * one_over_J, q);
+
+        if(this->operator_data.unsteady)
         {
-          AssertThrow(this->operator_data.check_type == 0,
-                      dealii::ExcMessage("Currently not implemented."));
+          integrator.submit_value((this->scaling_factor_mass * this->operator_data.density *
+                                   one_over_J) *
+                                    integrator.get_value(q),
+                                  q);
         }
-        one_over_J = 1.0 / (Jm1 + 1.0);
       }
-      else
+    }
+    else if(this->operator_data.cache_level == 2)
+    {
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
-        one_over_J = material->one_over_J(integrator.get_current_cell_index(), q);
-      }
+        scalar const one_over_J = material->one_over_J(integrator.get_current_cell_index(), q);
+        tensor const tau = material->kirchhoff_stress(integrator.get_current_cell_index(), q);
 
-      // Kirchhoff stresses
-      tensor const tau = material->kirchhoff_stress(Grad_d_lin_cache_level_0_1,
-                                                    integrator.get_current_cell_index(),
-                                                    q);
+        integrator.submit_gradient(tau * one_over_J, q);
 
-      // integral over spatial domain
-      integrator.submit_gradient(tau * one_over_J, q);
-
-      if(this->operator_data.unsteady)
-      {
-        integrator.submit_value((this->scaling_factor_mass * this->operator_data.density *
-                                 one_over_J) *
-                                  integrator.get_value(q),
-                                q);
+        if(this->operator_data.unsteady)
+        {
+          integrator.submit_value((this->scaling_factor_mass * this->operator_data.density *
+                                   one_over_J) *
+                                    integrator.get_value(q),
+                                  q);
+        }
       }
     }
   }
   else
   {
-    // loop over all quadrature points
-    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+    // The residual is evaluated in the material configuration.
+    if(this->operator_data.cache_level < 2)
     {
-      // material gradient of the linearization vector and deformation gradient only needed for
-      // cache_level 0 or 1
-      tensor Grad_d_lin_cache_level_0_1, F;
-      if(this->operator_data.cache_level < 2)
+      if(this->operator_data.stable_formulation)
       {
-        Grad_d_lin_cache_level_0_1 = integrator.get_gradient(q);
-        scalar Jm1;
+        for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+        {
+          tensor const Grad_d_lin = integrator.get_gradient(q);
+          tensor const F =
+            compute_modified_F<dim, Number, check_type, true /* stable_formulation */>(Grad_d_lin);
+          tensor const S =
+            material->second_piola_kirchhoff_stress(Grad_d_lin,
+                                                    integrator.get_current_cell_index(),
+                                                    q);
 
-        if(this->operator_data.check_type == 0)
-        {
-          if(this->operator_data.stable_formulation)
+          integrator.submit_gradient(F * S, q);
+
+          if(this->operator_data.unsteady)
           {
-            compute_modified_F_Jm1<dim, Number, 0, true>(F,
-                                                         Jm1,
-                                                         Grad_d_lin_cache_level_0_1,
-                                                         false /* compute_J */);
+            integrator.submit_value((this->scaling_factor_mass * this->operator_data.density) *
+                                      integrator.get_value(q),
+                                    q);
           }
-          else
-          {
-            compute_modified_F_Jm1<dim, Number, 0, false>(F,
-                                                          Jm1,
-                                                          Grad_d_lin_cache_level_0_1,
-                                                          false /* compute_J */);
-          }
-        }
-        else
-        {
-          AssertThrow(this->operator_data.check_type == 0,
-                      dealii::ExcMessage("Currently not implemented."));
         }
       }
       else
       {
-        // dummy Grad_d_lin sufficient
-        F = material->gradient_displacement(integrator.get_current_cell_index(), q);
-        add_scaled_identity(F, 1.0);
+        for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+        {
+          tensor const Grad_d_lin = integrator.get_gradient(q);
+          tensor const F =
+            compute_modified_F<dim, Number, check_type, false /* stable_formulation */>(Grad_d_lin);
+          tensor const S =
+            material->second_piola_kirchhoff_stress(Grad_d_lin,
+                                                    integrator.get_current_cell_index(),
+                                                    q);
+
+          integrator.submit_gradient(F * S, q);
+
+          if(this->operator_data.unsteady)
+          {
+            integrator.submit_value((this->scaling_factor_mass * this->operator_data.density) *
+                                      integrator.get_value(q),
+                                    q);
+          }
+        }
       }
-
-      // 2nd Piola-Kirchhoff stresses
-      tensor const S = material->second_piola_kirchhoff_stress(Grad_d_lin_cache_level_0_1,
-                                                               integrator.get_current_cell_index(),
-                                                               q);
-
-      // 1st Piola-Kirchhoff stresses P = F * S
-      tensor const P = F * S;
-
-      // Grad_v : P
-      integrator.submit_gradient(P, q);
-
-      if(this->operator_data.unsteady)
+    }
+    else if(this->operator_data.cache_level == 2)
+    {
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
-        integrator.submit_value((this->scaling_factor_mass * this->operator_data.density) *
-                                  integrator.get_value(q),
-                                q);
+        // TODO: compare these variants.
+        // tensor F = add_scaled_identitiy<dim,Number>(integrator.get_gradient(q), 1.0);
+        tensor F = material->gradient_displacement(integrator.get_current_cell_index(), q);
+
+        add_scaled_identity(F, 1.0);
+        tensor const S =
+          material->second_piola_kirchhoff_stress(integrator.get_current_cell_index(), q);
+
+        integrator.submit_gradient(F * S, q);
+
+        if(this->operator_data.unsteady)
+        {
+          integrator.submit_value((this->scaling_factor_mass * this->operator_data.density) *
+                                    integrator.get_value(q),
+                                  q);
+        }
       }
     }
   }
