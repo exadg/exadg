@@ -381,7 +381,7 @@ NonLinearOperator<dim, Number>::cell_loop_valid_deformation(
       tensor const Grad_d = integrator.get_gradient(q);
 
       // material deformation gradient
-      tensor const F = get_F(Grad_d);
+      tensor const F = compute_F(Grad_d);
       scalar const J = determinant(F);
       for(unsigned int v = 0; v < J.size(); ++v)
       {
@@ -466,7 +466,7 @@ NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
 
     if(this->operator_data.pull_back_traction)
     {
-      tensor const F = get_F(integrator.get_gradient(q));
+      tensor const F = compute_F(integrator.get_gradient(q));
       vector const N = integrator.get_normal_vector(q);
       // da/dA * n = det F F^{-T} * N := n_star
       // -> da/dA = n_star.norm()

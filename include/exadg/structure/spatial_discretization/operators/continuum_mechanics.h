@@ -118,7 +118,7 @@ inline DEAL_II_ALWAYS_INLINE //
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  get_F(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement)
+  compute_F(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement)
 {
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> F = gradient_displacement;
   add_scaled_identity<dim, Number, Number>(F, 1.0);
@@ -142,7 +142,7 @@ inline DEAL_II_ALWAYS_INLINE //
   else
   {
     // E = 0.5 * (F^T * F - I)
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> E = get_F(gradient_displacement);
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> E = compute_F(gradient_displacement);
 
     E = transpose(E) * E;
     add_scaled_identity<dim, Number, Number>(E, -1.0);
@@ -209,7 +209,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else
   {
-    return (determinant(get_F(gradient_displacement)) - 1.0);
+    return (determinant(compute_F(gradient_displacement)) - 1.0);
   }
 }
 
@@ -496,7 +496,7 @@ inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
     bool const                                                      compute_J)
 {
-  F = get_F(gradient_displacement);
+  F = compute_F(gradient_displacement);
 
   if(compute_J)
   {
@@ -523,7 +523,7 @@ inline DEAL_II_ALWAYS_INLINE //
     dealii::VectorizedArray<Number> &                               Jm1,
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement)
 {
-  F = get_F(gradient_displacement);
+  F = compute_F(gradient_displacement);
 
   if constexpr(compute_J)
   {
@@ -548,7 +548,7 @@ inline DEAL_II_ALWAYS_INLINE //
   compute_modified_F(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement)
 {
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> F = get_F(gradient_displacement);
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> F = compute_F(gradient_displacement);
 
   if constexpr(check_type > 2)
   {

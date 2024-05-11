@@ -91,7 +91,7 @@ BodyForceOperator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const 
 
       if(data.pull_back_body_force)
       {
-        auto F = get_F<dim, Number>(integrator.get_gradient(q));
+        auto F = compute_F<dim, Number>(integrator.get_gradient(q));
         // b_0 = dv/dV * b = det(F) * b
         b *= determinant(F);
       }
