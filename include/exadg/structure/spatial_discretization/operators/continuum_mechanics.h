@@ -29,6 +29,9 @@
 #define TWO_NINTHS 0.22222222222222222222
 // clang-format on
 
+// C++
+#include <tuple>
+
 // deal.II
 #include <deal.II/base/numbers.h>
 #include <deal.II/base/tensor.h>
@@ -494,7 +497,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
 }
 
-// This version always F and potentially Jm1 (depending on `compute_J`) after potential
+// This version always returns F and potentially Jm1 (depending on `compute_J`) after potential
 // modification.
 template<int dim, typename Number, unsigned int check_type, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
@@ -523,21 +526,17 @@ inline DEAL_II_ALWAYS_INLINE //
   }
 }
 
-// This version always F and Jm1 after potential modification.
+// This version always returns F and Jm1 after potential modification.
 template<int dim, typename Number, unsigned int check_type, bool stable_formulation, bool compute_J>
 inline DEAL_II_ALWAYS_INLINE //
-  void
+  std::tuple<dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>,
+             dealii::VectorizedArray<Number>>
   compute_modified_F_Jm1(
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> &       F,
-    dealii::VectorizedArray<Number> &                               Jm1,
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement)
 {
-  F = compute_F(gradient_displacement);
-
-  if constexpr(compute_J)
-  {
-    Jm1 = compute_Jm1<dim, Number, stable_formulation>(gradient_displacement);
-  }
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> F = compute_F(gradient_displacement);
+  dealii::VectorizedArray<Number>                         Jm1 =
+    compute_Jm1<dim, Number, stable_formulation>(gradient_displacement);
 
   if constexpr(check_type > 1)
   {
@@ -548,6 +547,8 @@ inline DEAL_II_ALWAYS_INLINE //
     }
     reconstruct_admissible_F_Jm1(F, Jm1);
   }
+
+  return {F, Jm1};
 }
 
 // This version returns only F after potential modification.
