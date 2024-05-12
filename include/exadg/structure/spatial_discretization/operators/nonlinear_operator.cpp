@@ -813,11 +813,9 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
     {
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
-        tensor const Grad_d_lin = integrator_lin->get_gradient(q);
         tensor const grad_delta = integrator.get_gradient(q);
         tensor const delta_tau =
           material->contract_with_J_times_C(0.5 * (grad_delta + transpose(grad_delta)),
-                                            Grad_d_lin,
                                             integrator.get_current_cell_index(),
                                             q);
         scalar const one_over_J_lin = material->one_over_J(integrator.get_current_cell_index(), q);

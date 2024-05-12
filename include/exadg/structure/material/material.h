@@ -91,11 +91,10 @@ public:
    * `gradient_displacement`.
    */
   virtual tensor
-  second_piola_kirchhoff_stress_displacement_derivative(
-    tensor const &     gradient_increment,
-    tensor const &     gradient_displacement,
-    unsigned int const cell,
-    unsigned int const q) const
+  second_piola_kirchhoff_stress_displacement_derivative(tensor const &     gradient_increment,
+                                                        tensor const &     gradient_displacement,
+                                                        unsigned int const cell,
+                                                        unsigned int const q) const
   {
     (void)gradient_increment;
     (void)gradient_displacement;
@@ -154,12 +153,28 @@ public:
    */
   virtual tensor
   contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
-                          tensor const &     gradient_displacement_cache_level_0_1,
+                          tensor const &     gradient_displacement,
                           unsigned int const cell,
                           unsigned int const q) const
   {
     (void)symmetric_gradient_increment;
-    (void)gradient_displacement_cache_level_0_1;
+    (void)gradient_displacement;
+    (void)cell;
+    (void)q;
+    AssertThrow(false,
+                dealii::ExcMessage("For a Lagrangian formulation in spatial domain, "
+                                   "overwrite this method in derived class."));
+
+    tensor dummy;
+    return dummy;
+  }
+
+  virtual tensor
+  contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
+                          unsigned int const cell,
+                          unsigned int const q) const
+  {
+    (void)symmetric_gradient_increment;
     (void)cell;
     (void)q;
     AssertThrow(false,
