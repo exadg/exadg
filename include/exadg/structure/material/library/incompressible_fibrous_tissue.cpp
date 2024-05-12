@@ -56,12 +56,12 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     quad_index(quad_index),
     data(data),
     bulk_modulus(data.bulk_modulus),
-	fiber_k_1(data.fiber_k_1),
-	fiber_k_2(data.fiber_k_2),
-	fiber_angle_phi_in_degree(data.fiber_angle_phi_in_degree),
-	fiber_H_11(data.fiber_H_11),
-	fiber_H_22(data.fiber_H_22),
-	fiber_H_33(data.fiber_H_33),
+    fiber_k_1(data.fiber_k_1),
+    fiber_k_2(data.fiber_k_2),
+    fiber_angle_phi_in_degree(data.fiber_angle_phi_in_degree),
+    fiber_H_11(data.fiber_H_11),
+    fiber_H_22(data.fiber_H_22),
+    fiber_H_33(data.fiber_H_33),
     orientation_vectors_provided(data.e1_orientations != nullptr or
                                  data.e2_orientations != nullptr),
     shear_modulus_is_variable(data.shear_modulus_function != nullptr),
@@ -479,8 +479,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
-    return ((0.5 * bulk_modulus) *
-              compute_JJm1<Number, stable_formulation>(Jm1) -
+    return ((0.5 * bulk_modulus) * compute_JJm1<Number, stable_formulation>(Jm1) -
             shear_modulus * ONE_THIRD * J_pow * compute_I_1<dim, Number>(E, stable_formulation));
   }
   else
@@ -506,8 +505,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
-    return (bulk_modulus *
-              (compute_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
+    return (bulk_modulus * (compute_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
             TWO_NINTHS * shear_modulus * J_pow * compute_I_1<dim, Number>(E, stable_formulation));
   }
   else
@@ -538,14 +536,13 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     // Enforce an upper bound for the computed value.
     if constexpr(stable_formulation)
     {
-      c3 /* fiber_switch */ *= expm1_limited(fiber_k_2 * E_i * E_i,
-                                             compute_numerical_upper_bound(fiber_k_1)) +
-                               1.0;
+      c3 /* fiber_switch */ *=
+        expm1_limited(fiber_k_2 * E_i * E_i, compute_numerical_upper_bound(fiber_k_1)) + 1.0;
     }
     else
     {
-      c3 /* fiber_switch */ *= exp_limited(fiber_k_2 * E_i * E_i,
-                                           compute_numerical_upper_bound(fiber_k_1));
+      c3 /* fiber_switch */ *=
+        exp_limited(fiber_k_2 * E_i * E_i, compute_numerical_upper_bound(fiber_k_1));
     }
 
     return c3 * (2.0 * fiber_k_1);
