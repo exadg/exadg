@@ -115,17 +115,17 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
         gradient_displacement_coefficients.initialize(matrix_free, quad_index, false, false);
         gradient_displacement_coefficients.set_coefficients(get_zero_tensor<dim, Number>());
 
-        second_piola_kirchhoff_stress_coefficients.initialize(matrix_free,
-                                                              quad_index,
-                                                              false,
-                                                              false);
-        second_piola_kirchhoff_stress_coefficients.set_coefficients(get_zero_tensor<dim, Number>());
-
         F_inv_coefficients.initialize(matrix_free, quad_index, false, false);
         F_inv_coefficients.set_coefficients(get_identity_tensor<dim, Number>());
 
         C_inv_coefficients.initialize(matrix_free, quad_index, false, false);
         C_inv_coefficients.set_coefficients(get_identity_tensor<dim, Number>());
+
+        second_piola_kirchhoff_stress_coefficients.initialize(matrix_free,
+                                                              quad_index,
+                                                              false,
+                                                              false);
+        second_piola_kirchhoff_stress_coefficients.set_coefficients(get_zero_tensor<dim, Number>());
       }
 
       AssertThrow(cache_level < 3, dealii::ExcMessage("Cache level > 2 not implemented."));
@@ -388,7 +388,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
     }
     else
     {
-      return (pow(Jm1 + 1.0, static_cast<Number>(-TWO_NINTHS)));
+      return (pow(Jm1 + 1.0, static_cast<Number>(-TWO_THIRDS)));
     }
   }
   else

@@ -146,8 +146,7 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     // E = 0.5 * (F^T * F - I)
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> E = compute_F(gradient_displacement);
-
-    E = transpose(E) * E;
+    E                                                         = transpose(E) * E;
     add_scaled_identity<dim, Number, Number>(E, -1.0);
     return (E * (0.5 * scale));
   }
