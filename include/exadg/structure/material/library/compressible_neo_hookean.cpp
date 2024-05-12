@@ -381,6 +381,9 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
   }
   else
   {
+    AssertThrow(cache_level < 2,
+                dealii::ExcMessage("This `cache_level` stores tensorial quantities, "
+                                   "use the dedicated function."));
     return second_piola_kirchhoff_stress_coefficients.get_coefficient_cell(cell, q);
   }
 }

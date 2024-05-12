@@ -889,81 +889,106 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
     }
 
-    scalar Jm1;
-    tensor F;
-    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-      F, Jm1, gradient_displacement_cache_level_0_1, cache_level == 0 /* compute_J */);
-    if constexpr(cache_level == 1 and stable_formulation)
-    {
-      Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
-    }
-
-    tensor const F_inv = invert(F);
-    tensor const C_inv = F_inv * transpose(F_inv);
-    scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
-
     if constexpr(cache_level == 0)
     {
-      tensor const E = compute_E_scaled<dim, Number, Number, stable_formulation>(
+      auto const [F, Jm1] = compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+        gradient_displacement_cache_level_0_1);
+      tensor const F_inv = invert(F);
+      tensor const C_inv = F_inv * transpose(F_inv);
+      scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
+      tensor const E     = compute_E_scaled<dim, Number, Number, stable_formulation>(
         gradient_displacement_cache_level_0_1, 1.0);
 
-      tensor S;
       if constexpr(stable_formulation)
       {
-        S = compute_S_ground_matrix_stable(
+        tensor S = compute_S_ground_matrix_stable(
           gradient_displacement_cache_level_0_1, C_inv, J_pow, Jm1, shear_modulus_stored);
+
+        for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
+        {
+          vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+          vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+          tensor const H_i = compute_structure_tensor(M_1, M_2);
+          scalar const E_i = get_E_i<false /* force_evaluation */>(H_i, E, i, cell, q);
+          scalar const c3  = get_c3<false /* force_evaluation */>(M_1, E, E_i, i, cell, q);
+          S += compute_S_fiber_i(c3, E_i, H_i);
+        }
+
+        return S;
       }
       else
       {
         scalar const c1 =
           get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
 
-        S = compute_S_ground_matrix_unstable(C_inv, J_pow, c1, shear_modulus_stored);
-      }
+        tensor S = compute_S_ground_matrix_unstable(C_inv, J_pow, c1, shear_modulus_stored);
 
-      for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
-      {
-        vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
-        vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
-        tensor const H_i = compute_structure_tensor(M_1, M_2);
-        scalar const E_i = get_E_i<false /* force_evaluation */>(H_i, E, i, cell, q);
-        scalar const c3  = get_c3<false /* force_evaluation */>(M_1, E, E_i, i, cell, q);
-        S += compute_S_fiber_i(c3, E_i, H_i);
-      }
+        for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
+        {
+          vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+          vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+          tensor const H_i = compute_structure_tensor(M_1, M_2);
+          scalar const E_i = get_E_i<false /* force_evaluation */>(H_i, E, i, cell, q);
+          scalar const c3  = get_c3<false /* force_evaluation */>(M_1, E, E_i, i, cell, q);
+          S += compute_S_fiber_i(c3, E_i, H_i);
+        }
 
-      return S;
+        return S;
+      }
     }
     else
     {
-      tensor S;
+      tensor const F = compute_modified_F<dim, Number, check_type, stable_formulation>(
+        gradient_displacement_cache_level_0_1);
+      tensor const F_inv = invert(F);
+      scalar const Jm1   = Jm1_coefficients.get_coefficient_cell(cell, q);
+      tensor const C_inv = F_inv * transpose(F_inv);
+      scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
+
       if constexpr(stable_formulation)
       {
-        S = compute_S_ground_matrix_stable(
+        tensor S = compute_S_ground_matrix_stable(
           gradient_displacement_cache_level_0_1, C_inv, J_pow, Jm1, shear_modulus_stored);
+
+        for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
+        {
+          vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+          vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+          tensor const H_i = compute_structure_tensor(M_1, M_2);
+          scalar const E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
+          scalar const c3  = c3_coefficients[i].get_coefficient_cell(cell, q);
+
+          S += compute_S_fiber_i(c3, E_i, H_i);
+        }
+
+        return S;
       }
       else
       {
         scalar const c1 = c1_coefficients.get_coefficient_cell(cell, q);
 
-        S = compute_S_ground_matrix_unstable(C_inv, J_pow, c1, shear_modulus_stored);
+        tensor S = compute_S_ground_matrix_unstable(C_inv, J_pow, c1, shear_modulus_stored);
+
+        for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
+        {
+          vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+          vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+          tensor const H_i = compute_structure_tensor(M_1, M_2);
+          scalar const E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
+          scalar const c3  = c3_coefficients[i].get_coefficient_cell(cell, q);
+
+          S += compute_S_fiber_i(c3, E_i, H_i);
+        }
+
+        return S;
       }
-
-      for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
-      {
-        vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
-        vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
-        tensor const H_i = compute_structure_tensor(M_1, M_2);
-        scalar const E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
-        scalar const c3  = c3_coefficients[i].get_coefficient_cell(cell, q);
-
-        S += compute_S_fiber_i(c3, E_i, H_i);
-      }
-
-      return S;
     }
   }
   else
   {
+    AssertThrow(cache_level < 2,
+                dealii::ExcMessage("This `cache_level` stores tensorial quantities, "
+                                   "use the dedicated function."));
     return second_piola_kirchhoff_stress_coefficients.get_coefficient_cell(cell, q);
   }
 }
@@ -1058,121 +1083,131 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     unsigned int const cell,
     unsigned int const q) const
 {
-  tensor Dd_S;
-
   if(shear_modulus_is_variable)
   {
     shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
   }
 
-  tensor F;
-  if constexpr(cache_level < 2)
-  {
-    F = gradient_displacement_cache_level_0_1;
-  }
-  else
-  {
-    F = gradient_displacement_coefficients.get_coefficient_cell(cell, q);
-  }
-  add_scaled_identity<dim, Number, Number>(F, 1.0);
 
-  scalar Jm1_cache_level_0;
-  tensor E_cache_level_0;
-  if constexpr(cache_level == 0)
+  if(cache_level == 0)
   {
-    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-      E_cache_level_0 /* F */,
-      Jm1_cache_level_0,
-      gradient_displacement_cache_level_0_1,
-      true /* compute_J */);
-
-    E_cache_level_0 = compute_E_scaled<dim, Number, Number, stable_formulation>(
+    auto const [F, Jm1] = compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
+      gradient_displacement_cache_level_0_1);
+    tensor const E = compute_E_scaled<dim, Number, Number, stable_formulation>(
       gradient_displacement_cache_level_0_1, 1.0);
+    scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
+    scalar const c1 =
+      get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
+    scalar const c2 =
+      get_c2<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
+    tensor const F_inv = invert(F);
+    tensor const C_inv = F_inv * transpose(F_inv);
+
+    tensor const F_inv_times_gradient_increment = F_inv * gradient_increment;
+    scalar const one_over_J_times_Dd_J          = trace(F_inv_times_gradient_increment);
+    tensor const Dd_F_inv_times_transpose_F_inv = -F_inv_times_gradient_increment * C_inv;
+    tensor const Dd_C_inv =
+      Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
+    tensor const transpose_gradient_increment_times_F = transpose(gradient_increment) * F;
+
+    tensor Dd_S =
+      C_inv * (c2 * one_over_J_times_Dd_J - (TWO_THIRDS * shear_modulus_stored * J_pow) *
+                                              trace(transpose_gradient_increment_times_F));
+    Dd_S += Dd_C_inv * c1;
+    add_scaled_identity(Dd_S, -shear_modulus_stored * TWO_THIRDS * J_pow * one_over_J_times_Dd_J);
+
+    for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
+    {
+      vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+      vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+      tensor const H_i = compute_structure_tensor(M_1, M_2);
+      scalar const E_i = get_E_i<false /* force_evaluation */>(H_i, E, i, cell, q);
+      scalar const c3  = get_c3<false /* force_evaluation */>(M_1, E, E_i, i, cell, q);
+
+      Dd_S += H_i * (c3 * ((2.0 * static_cast<Number>(data.fiber_k_2)) * E_i * E_i + 1.0) *
+                     scalar_product(H_i,
+                                    transpose_gradient_increment_times_F +
+                                      transpose(transpose_gradient_increment_times_F)));
+    }
+
+    return Dd_S;
+  }
+  else if(cache_level == 1)
+  {
+    tensor const F = compute_modified_F<dim, Number, check_type, stable_formulation>(
+      gradient_displacement_cache_level_0_1);
+    scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
+    scalar const c1    = c1_coefficients.get_coefficient_cell(cell, q);
+    scalar const c2    = c2_coefficients.get_coefficient_cell(cell, q);
+    tensor const F_inv = invert(F);
+    tensor const C_inv = F_inv * transpose(F_inv);
+
+    tensor const F_inv_times_gradient_increment = F_inv * gradient_increment;
+    scalar const one_over_J_times_Dd_J          = trace(F_inv_times_gradient_increment);
+    tensor const Dd_F_inv_times_transpose_F_inv = -F_inv_times_gradient_increment * C_inv;
+    tensor const Dd_C_inv =
+      Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
+    tensor const transpose_gradient_increment_times_F = transpose(gradient_increment) * F;
+
+    tensor Dd_S =
+      C_inv * (c2 * one_over_J_times_Dd_J - (TWO_THIRDS * shear_modulus_stored * J_pow) *
+                                              trace(transpose_gradient_increment_times_F));
+    Dd_S += Dd_C_inv * c1;
+    add_scaled_identity(Dd_S, -shear_modulus_stored * TWO_THIRDS * J_pow * one_over_J_times_Dd_J);
+
+    for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
+    {
+      vector const M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+      vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+      tensor const H_i = compute_structure_tensor(M_1, M_2);
+      scalar const E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
+      scalar const c3  = c3_coefficients[i].get_coefficient_cell(cell, q);
+
+      Dd_S += H_i * (c3 * ((2.0 * static_cast<Number>(data.fiber_k_2)) * E_i * E_i + 1.0) *
+                     scalar_product(H_i,
+                                    transpose_gradient_increment_times_F +
+                                      transpose(transpose_gradient_increment_times_F)));
+    }
+
+    return Dd_S;
   }
   else
   {
-    // Dummy Jm1 and E sufficient.
-  }
+    tensor const F = compute_modified_F<dim, Number, check_type, stable_formulation>(
+      gradient_displacement_cache_level_0_1);
+    scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
+    scalar const c1    = c1_coefficients.get_coefficient_cell(cell, q);
+    scalar const c2    = c2_coefficients.get_coefficient_cell(cell, q);
+    tensor const F_inv = F_inv_coefficients.get_coefficient_cell(cell, q);
+    tensor const C_inv = C_inv_coefficients.get_coefficient_cell(cell, q);
 
-  scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1_cache_level_0, cell, q);
-  scalar const c1    = get_c1<false /* force_evaluation */>(
-    Jm1_cache_level_0, J_pow, E_cache_level_0, shear_modulus_stored, cell, q);
-  scalar const c2 = get_c2<false /* force_evaluation */>(
-    Jm1_cache_level_0, J_pow, E_cache_level_0, shear_modulus_stored, cell, q);
+    tensor const F_inv_times_gradient_increment = F_inv * gradient_increment;
+    scalar const one_over_J_times_Dd_J          = trace(F_inv_times_gradient_increment);
+    tensor const Dd_F_inv_times_transpose_F_inv = -F_inv_times_gradient_increment * C_inv;
+    tensor const Dd_C_inv =
+      Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
+    tensor const transpose_gradient_increment_times_F = transpose(gradient_increment) * F;
 
-  tensor F_inv, C_inv;
-  if constexpr(cache_level < 2)
-  {
-    F_inv = invert(F);
-    C_inv = F_inv * transpose(F_inv);
-  }
-  else
-  {
-    F_inv = F_inv_coefficients.get_coefficient_cell(cell, q);
-    C_inv = C_inv_coefficients.get_coefficient_cell(cell, q);
-  }
+    tensor Dd_S =
+      C_inv * (c2 * one_over_J_times_Dd_J - (TWO_THIRDS * shear_modulus_stored * J_pow) *
+                                              trace(transpose_gradient_increment_times_F));
+    Dd_S += Dd_C_inv * c1;
+    add_scaled_identity(Dd_S, -shear_modulus_stored * TWO_THIRDS * J_pow * one_over_J_times_Dd_J);
 
-  tensor const F_inv_times_gradient_increment = F_inv * gradient_increment;
-
-  scalar const one_over_J_times_Dd_J          = trace(F_inv_times_gradient_increment);
-  tensor const Dd_F_inv_times_transpose_F_inv = -F_inv_times_gradient_increment * C_inv;
-  tensor const Dd_C_inv =
-    Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
-
-  tensor const transpose_gradient_increment_times_F = transpose(gradient_increment) * F;
-
-  Dd_S = C_inv * (c2 * one_over_J_times_Dd_J - (TWO_THIRDS * shear_modulus_stored * J_pow) *
-                                                 trace(transpose_gradient_increment_times_F));
-  Dd_S += Dd_C_inv * c1;
-  add_scaled_identity(Dd_S, -shear_modulus_stored * TWO_THIRDS * J_pow * one_over_J_times_Dd_J);
-
-  // Add fiber contribution.
-  for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
-  {
-    // Compute or load fiber switch.
-    vector M_1_cache_level_0_1, M_2_cache_level_0_1;
-    tensor E_cache_level_0;
-    if constexpr(cache_level < 2)
+    for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
     {
-      M_1_cache_level_0_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
-      M_2_cache_level_0_1 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+      tensor const H_i = fiber_structure_tensor[i].get_coefficient_cell(cell, q);
+      scalar const E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
+      scalar const c3  = c3_coefficients[i].get_coefficient_cell(cell, q);
 
-      if constexpr(cache_level == 0)
-      {
-        E_cache_level_0 = compute_E_scaled<dim, Number, Number, stable_formulation>(
-          gradient_displacement_cache_level_0_1, 1.0);
-      }
-    }
-    else
-    {
-      // Dummy M_1, M_2 and C sufficient.
+      Dd_S += H_i * (c3 * ((2.0 * static_cast<Number>(data.fiber_k_2)) * E_i * E_i + 1.0) *
+                     scalar_product(H_i,
+                                    transpose_gradient_increment_times_F +
+                                      transpose(transpose_gradient_increment_times_F)));
     }
 
-    // Compute or load structure tensor.
-    tensor H_i;
-    if constexpr(cache_level < 2)
-    {
-      H_i = compute_structure_tensor(M_1_cache_level_0_1, M_2_cache_level_0_1);
-    }
-    else
-    {
-      H_i = fiber_structure_tensor[i].get_coefficient_cell(cell, q);
-    }
-
-    // Compute or load fiber strain-like quantity.
-    scalar const E_i = get_E_i<false /* force_evaluation */>(H_i, E_cache_level_0, i, cell, q);
-
-    // Compute or load c3 coefficient.
-    scalar const c3 =
-      get_c3<false /* force_evaluation */>(M_1_cache_level_0_1, E_cache_level_0, E_i, i, cell, q);
-
-    Dd_S += H_i * (c3 * ((2.0 * static_cast<Number>(data.fiber_k_2)) * E_i * E_i + 1.0) *
-                   scalar_product(H_i,
-                                  transpose_gradient_increment_times_F +
-                                    transpose(transpose_gradient_increment_times_F)));
+    return Dd_S;
   }
-
-  return Dd_S;
 }
 
 template<int dim,

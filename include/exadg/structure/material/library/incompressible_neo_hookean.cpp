@@ -466,6 +466,9 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   }
   else
   {
+    AssertThrow(cache_level < 2,
+                dealii::ExcMessage("This `cache_level` stores tensorial quantities, "
+                                   "use the dedicated function."));
     return second_piola_kirchhoff_stress_coefficients.get_coefficient_cell(cell, q);
   }
 }
@@ -607,12 +610,8 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   }
   else
   {
-    // TODO compare these variants
-    // tensor const F = compute_modified_F<dim, Number, check_type,
-    // stable_formulation>(gradient_displacement_cache_level_0_1);
     tensor const F = compute_modified_F<dim, Number, check_type, stable_formulation>(
-      gradient_displacement_coefficients.get_coefficient_cell(cell, q));
-
+      gradient_displacement_cache_level_0_1);
     scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
     scalar const c1    = c1_coefficients.get_coefficient_cell(cell, q);
     scalar const c2    = c2_coefficients.get_coefficient_cell(cell, q);
@@ -830,7 +829,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 
     return result;
   }
-  else if constexpr(cache_level == 2)
+  else
   {
     tensor const C     = C_coefficients.get_coefficient_cell(cell, q);
     scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
