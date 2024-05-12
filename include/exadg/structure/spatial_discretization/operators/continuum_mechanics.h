@@ -332,16 +332,17 @@ inline DEAL_II_ALWAYS_INLINE //
 // check_type 0   : Do not modify.
 // check_type 1   : Global quasi-Newton, update linearization vector only if the complete field is
 //                  valid everywhere (see nonlinear_operator: set_solution_linearization).
-// check_type > 1 : In-place modification, see `compute_modified_F_Jm1()` below.
+// check_type 2   : Local quasi-Newtzon, update use old F and J if the current one is invalid.
+// check_type >2  : In-place modification, see `compute_modified_F_Jm1()` below.
 template<int dim, typename Number, unsigned int check_type, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
   void
   reconstruct_admissible_F_Jm1(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> & F,
                                dealii::VectorizedArray<Number> &                         Jm1)
 {
-  if constexpr(check_type < 2)
+  if constexpr(check_type < 3)
   {
-    AssertThrow(check_type > 1,
+    AssertThrow(check_type > 2,
                 dealii::ExcMessage("Reconstruction of F and J at quadrature point "
                                    "level not intended for `check_type` in [0, 1]."));
   }
@@ -353,14 +354,14 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     if(Jm1[n] + 1.0 <= tol)
     {
-      if constexpr(check_type == 2)
+      if constexpr(check_type == 3)
       {
-        // check_type 2 : Only return J = tol, while F is not modified.
+        // check_type 3 : Only return J = tol, while F is not modified.
         Jm1[n] = tol - 1.0;
       }
-      else if constexpr(check_type == 3)
+      else if constexpr(check_type == 4)
       {
-        // check_type 3 : Always update, but enforce J = tol by adding a scaled unit matrix.
+        // check_type 4 : Always update, but enforce J = tol by adding a scaled unit matrix.
         // Scale factor determined by solving for the positive root of the quadratic/cubic
         // polynomial via an exact formula.
         Number fac;
@@ -434,9 +435,9 @@ inline DEAL_II_ALWAYS_INLINE //
         // J = tol follows by construction.
         Jm1[n] = tol - 1.0;
       }
-      else if constexpr(check_type == 4)
+      else if constexpr(check_type == 5)
       {
-        // check_type 4 : Always update, but enforce J = tol by adding a scaled unit matrix.
+        // check_type 5 : Always update, but enforce J = tol by adding a scaled unit matrix.
         // Scale factor determined by solving for the positive root of the quadratic/cubic
         // polynomial via a Newton solver.
         Number fac;
@@ -484,9 +485,9 @@ inline DEAL_II_ALWAYS_INLINE //
         // J = tol follows by construction.
         Jm1[n] = tol - 1.0;
       }
-      else if(check_type == 5)
+      else if(check_type == 6)
       {
-        // check_type 5 : always update, but enforce J = tol by eigenvalue decomposition.
+        // check_type 6 : always update, but enforce J = tol by eigenvalue decomposition.
         AssertThrow(false, dealii::ExcNotImplemented());
       }
       else
@@ -497,34 +498,13 @@ inline DEAL_II_ALWAYS_INLINE //
   }
 }
 
-// This version always returns F and potentially Jm1 (depending on `compute_J`) after potential
-// modification.
-template<int dim, typename Number, unsigned int check_type, bool stable_formulation>
-inline DEAL_II_ALWAYS_INLINE //
-  void
-  compute_modified_F_Jm1(
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> &       F,
-    dealii::VectorizedArray<Number> &                               Jm1,
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
-    bool const                                                      compute_J)
-{
-  F = compute_F(gradient_displacement);
-
-  if(compute_J)
-  {
-    Jm1 = compute_Jm1<dim, Number, stable_formulation>(gradient_displacement);
-  }
-
-  if constexpr(check_type > 1)
-  {
-    if(not compute_J)
-    {
-      // Compute J - 1 to do any checking.
-      Jm1 = compute_Jm1<dim, Number, stable_formulation>(gradient_displacement);
-    }
-    reconstruct_admissible_F_Jm1(F, Jm1);
-  }
-}
+// The following functions return F and J after potential modification
+// and can be seen as utility functions. Note that in order to check
+// the admissibility of the deformation gradient F, we need to compute
+// the Jacobian J, regardless of possible return value. Therefore,
+// several versions are implemented below, where the `check_type` is
+// templated, such that no additional work/initialization is done within
+// these functions for check_type < 3.
 
 // This version always returns F and Jm1 after potential modification.
 template<int dim, typename Number, unsigned int check_type, bool stable_formulation>
@@ -538,7 +518,7 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>                         Jm1 =
     compute_Jm1<dim, Number, stable_formulation>(gradient_displacement);
 
-  if constexpr(check_type > 1)
+  if constexpr(check_type > 2)
   {
     reconstruct_admissible_F_Jm1(F, Jm1);
   }
@@ -553,7 +533,7 @@ inline DEAL_II_ALWAYS_INLINE //
   compute_modified_F(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement)
 {
-  if constexpr(check_type < 2)
+  if constexpr(check_type < 3)
   {
     return compute_F(gradient_displacement);
   }
@@ -561,7 +541,6 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> F = compute_F(gradient_displacement);
 
-    // Compute J - 1 to do any checking.
     dealii::VectorizedArray<Number> Jm1 =
       compute_Jm1<dim, Number, stable_formulation>(gradient_displacement);
 
@@ -578,7 +557,7 @@ inline DEAL_II_ALWAYS_INLINE //
   compute_modified_Jm1(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement)
 {
-  if constexpr(check_type < 2)
+  if constexpr(check_type < 3)
   {
     return compute_Jm1<dim, Number, stable_formulation>(gradient_displacement);
   }
@@ -588,13 +567,13 @@ inline DEAL_II_ALWAYS_INLINE //
       compute_Jm1<dim, Number, stable_formulation>(gradient_displacement);
     Number tol = get_J_tol<Number>();
 
-    if constexpr(check_type < 5)
+    if constexpr(check_type < 6)
     {
       return std::max(Jm1, dealii::make_vectorized_array(static_cast<Number>(tol - 1.0)));
     }
     else
     {
-      AssertThrow(check_type < 5,
+      AssertThrow(check_type < 6,
                   dealii::ExcMessage("Correction of Jm1 not implemented this `check_type`."));
       return dealii::make_vectorized_array(std::numeric_limits<Number>::quiet_NaN());
     }

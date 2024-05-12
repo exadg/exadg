@@ -718,13 +718,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     }
 
     tensor Grad_d_lin = integrator_lin->get_gradient(q);
-
-    scalar Jm1;
-    tensor F;
-    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(F,
-                                                                        Jm1,
-                                                                        Grad_d_lin,
-                                                                        true /* compute_J */);
+    auto [F, Jm1] = compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(Grad_d_lin);
 
     // Overwrite computed values with admissible stored ones
     if constexpr(check_type == 2)
@@ -1245,12 +1239,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
         tau += compute_S_fiber_i(c3, E_i, H_i);
       }
 
-      scalar Jm1;
-      tensor F;
-      compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(F,
-                                                                          Jm1,
-                                                                          gradient_displacement,
-                                                                          true /* compute_J */);
+      auto const [F, Jm1] =
+        compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(gradient_displacement);
 
       scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
       if constexpr(stable_formulation)
@@ -1282,16 +1272,10 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
       if constexpr(stable_formulation)
       {
-        scalar Jm1;
-        tensor F;
-        compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(F,
-                                                                            Jm1,
-                                                                            gradient_displacement,
-                                                                            false /* compute_J */);
-        Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
-
+        tensor const F =
+          compute_modified_F<dim, Number, check_type, stable_formulation>(gradient_displacement);
+        scalar const Jm1   = Jm1_coefficients.get_coefficient_cell(cell, q);
         scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
-
         tensor const E =
           compute_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement, 1.0);
 
@@ -1299,13 +1283,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       }
       else
       {
-        scalar Jm1;
-        tensor F;
-        compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(F,
-                                                                            Jm1,
-                                                                            gradient_displacement,
-                                                                            false /* compute_J */);
-
+        tensor const F =
+          compute_modified_F<dim, Number, check_type, stable_formulation>(gradient_displacement);
         scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
         scalar const c1    = c1_coefficients.get_coefficient_cell(cell, q);
 
