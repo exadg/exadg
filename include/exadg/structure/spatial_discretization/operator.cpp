@@ -965,8 +965,7 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   // solve nonlinear problem
   auto const iter = newton_solver->solve(sol, update);
 
-  // TODO
-  // This call should not be necessary: The constraints have already been set
+  // TODO: This call should not be necessary: The constraints have already been set
   // before the nonlinear solver is called and no contributions to the constrained
   // degrees of freedom should be added in the Newton solver by the linearized solver
   // (because the residual vector forming the rhs of the linearized problem is zero

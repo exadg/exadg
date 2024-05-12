@@ -898,7 +898,7 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       {
         for(unsigned int q = 0; q < integrator.n_q_points; ++q)
         {
-          // TODO: compare these variants
+          // TODO: compare these variants.
           // tensor const Grad_d_lin = integrator_lin->get_gradient(q);
           tensor const Grad_d_lin =
             material->gradient_displacement(integrator.get_current_cell_index(), q);
@@ -927,7 +927,7 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       {
         for(unsigned int q = 0; q < integrator.n_q_points; ++q)
         {
-          // TODO: compare these variants
+          // TODO: compare these variants.
           // tensor const Grad_d_lin = integrator_lin->get_gradient(q);
           tensor const Grad_d_lin =
             material->gradient_displacement(integrator.get_current_cell_index(), q);
