@@ -490,6 +490,7 @@ template<int dim, typename Number>
 std::vector<dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>>
 evaluate_material(
   Material<dim, Number> const &                                   material,
+  unsigned int const                                              cache_level,
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_increment,
   unsigned int const                                              n_cell_batches,
@@ -514,11 +515,26 @@ evaluate_material(
         {
           if(spatial_integration)
           {
-            evaluation[0] = material.kirchhoff_stress(gradient_displacement, cell, q);
+            if(cache_level < 2)
+            {
+              evaluation[0] = material.kirchhoff_stress(gradient_displacement, cell, q);
+            }
+            else
+            {
+              evaluation[0] = material.kirchhoff_stress(cell, q);
+            }
           }
           else
           {
-            evaluation[0] = material.second_piola_kirchhoff_stress(gradient_displacement, cell, q);
+            if(cache_level < 2)
+            {
+              evaluation[0] =
+                material.second_piola_kirchhoff_stress(gradient_displacement, cell, q);
+            }
+            else
+            {
+              evaluation[0] = material.second_piola_kirchhoff_stress(cell, q);
+            }
           }
         }
       }
@@ -542,10 +558,17 @@ evaluate_material(
         {
           if(spatial_integration)
           {
-            evaluation[1] = material.contract_with_J_times_C(symmetric_gradient_increment,
-                                                             gradient_displacement,
-                                                             cell,
-                                                             q);
+            if(cache_level < 2)
+            {
+              evaluation[1] = material.contract_with_J_times_C(symmetric_gradient_increment,
+                                                               gradient_displacement,
+                                                               cell,
+                                                               q);
+            }
+            else
+            {
+              evaluation[1] = material.contract_with_J_times_C(gradient_displacement, cell, q);
+            }
           }
           else
           {
@@ -735,6 +758,7 @@ main(int argc, char ** argv)
               std::vector<double>              time_double(2), time_float(2);
               std::vector<tensor_double> const evaluation_double =
                 evaluate_material<dim, double>(*material_double,
+                                               cache_level,
                                                gradient_displacement_double,
                                                gradient_increment_double,
                                                matrix_free_double.n_cell_batches(),
@@ -745,6 +769,7 @@ main(int argc, char ** argv)
 
               std::vector<tensor_float> const evaluation_float =
                 evaluate_material<dim, float>(*material_float,
+                                              cache_level,
                                               gradient_displacement_float,
                                               gradient_increment_float,
                                               matrix_free_float.n_cell_batches(),
@@ -822,7 +847,7 @@ main(int argc, char ** argv)
                                           ExaDG::Utilities::enum_to_string(material_type) + ".txt";
 
             std::ofstream fstream;
-            size_t const  fstream_buffer_size = 256 * 1024; // TODO measure if this has any effect.
+            size_t const  fstream_buffer_size = 256 * 1024;
             char          fstream_buffer[fstream_buffer_size];
             fstream.rdbuf()->pubsetbuf(fstream_buffer, fstream_buffer_size);
             fstream.open(file_name.c_str(), std::ios::trunc);
