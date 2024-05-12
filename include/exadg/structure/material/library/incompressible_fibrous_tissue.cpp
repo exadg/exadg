@@ -1089,7 +1089,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   }
 
 
-  if(cache_level == 0)
+  if constexpr(cache_level == 0)
   {
     auto const [F, Jm1] = compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
       gradient_displacement_cache_level_0_1);
@@ -1132,7 +1132,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
     return Dd_S;
   }
-  else if(cache_level == 1)
+  else if constexpr(cache_level == 1)
   {
     tensor const F = compute_modified_F<dim, Number, check_type, stable_formulation>(
       gradient_displacement_cache_level_0_1);
@@ -1173,6 +1173,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   }
   else
   {
+    // Note that we could load F, but F is needed in the nonlinear operator regardless,
+    // so we pass it in and use it here instead of loading it twice and not passing it.
     tensor const F = compute_modified_F<dim, Number, check_type, stable_formulation>(
       gradient_displacement_cache_level_0_1);
     scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
@@ -1415,104 +1417,108 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
                           unsigned int const cell,
                           unsigned int const q) const
 {
-  tensor result;
-
   if(shear_modulus_is_variable)
   {
     shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
   }
 
-  scalar Jm1_cache_level_0;
-  tensor E, C;
   if constexpr(cache_level == 0)
   {
-    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-      result, Jm1_cache_level_0, gradient_displacement_cache_level_0_1, true /* compute_J */);
-    E = compute_E_scaled<dim, Number, Number, stable_formulation>(
+    scalar const Jm1 = compute_modified_Jm1<dim, Number, check_type, stable_formulation>(
+      gradient_displacement_cache_level_0_1);
+    tensor const E = compute_E_scaled<dim, Number, Number, stable_formulation>(
       gradient_displacement_cache_level_0_1, 1.0);
-    C = 2.0 * E;
+    tensor C = 2.0 * E;
     add_scaled_identity<dim, Number, Number>(C, 1.0);
+    scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
+    scalar const c1 =
+      get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
+    scalar const c2 =
+      get_c2<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
+
+    tensor result = symmetric_gradient_increment * (-2.0 * c1);
+    result +=
+      ((-4.0 * ONE_THIRD) * shear_modulus_stored * J_pow * trace(symmetric_gradient_increment)) * C;
+    add_scaled_identity(result, c2 * trace(symmetric_gradient_increment));
+
+    for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
+    {
+      vector const M_1         = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+      vector const M_2         = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+      tensor const H_i         = compute_structure_tensor(M_1, M_2);
+      scalar const E_i         = get_E_i<false /* force_evaluation */>(H_i, E, i, cell, q);
+      scalar const c3          = get_c3<false /* force_evaluation */>(M_1, E, E_i, i, cell, q);
+      tensor const H_i_times_C = H_i * C;
+      tensor const C_times_H_i = C * H_i;
+
+      result += (c3 * ((4.0 * static_cast<Number>(data.fiber_k_2)) * E_i * E_i + 2.0) *
+                 scalar_product(H_i_times_C, symmetric_gradient_increment)) *
+                C_times_H_i;
+    }
+
+    bound_tensor(result, compute_numerical_upper_bound(data.fiber_k_1));
+    return result;
+  }
+  else if constexpr(cache_level == 1)
+  {
+    tensor const F = compute_modified_F<dim, Number, check_type, stable_formulation>(
+      gradient_displacement_cache_level_0_1);
+    tensor const C     = transpose(F) * F;
+    scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
+    scalar const c1    = c1_coefficients.get_coefficient_cell(cell, q);
+    scalar const c2    = c2_coefficients.get_coefficient_cell(cell, q);
+
+    tensor result = symmetric_gradient_increment * (-2.0 * c1);
+    result +=
+      ((-4.0 * ONE_THIRD) * shear_modulus_stored * J_pow * trace(symmetric_gradient_increment)) * C;
+    add_scaled_identity(result, c2 * trace(symmetric_gradient_increment));
+
+    for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
+    {
+      vector const M_1         = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+      vector const M_2         = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+      tensor const H_i         = compute_structure_tensor(M_1, M_2);
+      scalar const E_i         = E_i_coefficients[i].get_coefficient_cell(cell, q);
+      scalar const c3          = c3_coefficients[i].get_coefficient_cell(cell, q);
+      tensor const H_i_times_C = H_i * C;
+      tensor const C_times_H_i = C * H_i;
+
+      result += (c3 * ((4.0 * static_cast<Number>(data.fiber_k_2)) * E_i * E_i + 2.0) *
+                 scalar_product(H_i_times_C, symmetric_gradient_increment)) *
+                C_times_H_i;
+    }
+
+    bound_tensor(result, compute_numerical_upper_bound(data.fiber_k_1));
+    return result;
   }
   else
   {
-    // Dummy E and Jm1 sufficient.
-    if constexpr(cache_level == 1)
-    {
-      tensor F = gradient_displacement_cache_level_0_1;
-      add_scaled_identity<dim, Number, Number>(F, 1.0);
-      C = transpose(F) * F;
-    }
-    else
-    {
-      C = C_coefficients.get_coefficient_cell(cell, q);
-    }
-  }
+    tensor const C     = C_coefficients.get_coefficient_cell(cell, q);
+    scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
+    scalar const c1    = c1_coefficients.get_coefficient_cell(cell, q);
+    scalar const c2    = c2_coefficients.get_coefficient_cell(cell, q);
 
-  scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1_cache_level_0, cell, q);
-  scalar const c1    = get_c1<false /* force_evaluation */>(
-    Jm1_cache_level_0, J_pow, E, shear_modulus_stored, cell, q);
-  scalar const c2 = get_c2<false /* force_evaluation */>(
-    Jm1_cache_level_0, J_pow, E, shear_modulus_stored, cell, q);
+    tensor result = symmetric_gradient_increment * (-2.0 * c1);
+    result +=
+      ((-4.0 * ONE_THIRD) * shear_modulus_stored * J_pow * trace(symmetric_gradient_increment)) * C;
+    add_scaled_identity(result, c2 * trace(symmetric_gradient_increment));
 
-  result = symmetric_gradient_increment * (-2.0 * c1);
-  result +=
-    ((-4.0 * ONE_THIRD) * shear_modulus_stored * J_pow * trace(symmetric_gradient_increment)) * C;
-  add_scaled_identity(result, c2 * trace(symmetric_gradient_increment));
+    for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
+    {
+      tensor const H_i         = fiber_structure_tensor[i].get_coefficient_cell(cell, q);
+      scalar const E_i         = E_i_coefficients[i].get_coefficient_cell(cell, q);
+      scalar const c3          = c3_coefficients[i].get_coefficient_cell(cell, q);
+      tensor const H_i_times_C = H_i_times_C_coefficients[i].get_coefficient_cell(cell, q);
+      tensor const C_times_H_i = C_times_H_i_coefficients[i].get_coefficient_cell(cell, q);
 
-  // Add fiber contribution.
-  for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
-  {
-    // Compute or load fiber switch.
-    vector M_1_cache_level_0_1, M_2_cache_level_0_1;
-    if constexpr(cache_level < 2)
-    {
-      M_1_cache_level_0_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
-      M_2_cache_level_0_1 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
-    }
-    else
-    {
-      // Dummy M_1 and M_2 sufficient.
+      result += (c3 * ((4.0 * static_cast<Number>(data.fiber_k_2)) * E_i * E_i + 2.0) *
+                 scalar_product(H_i_times_C, symmetric_gradient_increment)) *
+                C_times_H_i;
     }
 
-    // Compute or load structure tensor.
-    tensor H_i;
-    if constexpr(cache_level < 2)
-    {
-      H_i = compute_structure_tensor(M_1_cache_level_0_1, M_2_cache_level_0_1);
-    }
-    else
-    {
-      H_i = fiber_structure_tensor[i].get_coefficient_cell(cell, q);
-    }
-
-    // Compute or load fiber strain-like quantity.
-    scalar const E_i = get_E_i<false /* force_evaluation */>(H_i, E, i, cell, q);
-
-    // Compute or load c3 coefficient.
-    scalar const c3 = get_c3<false /* force_evaluation */>(M_1_cache_level_0_1, E, E_i, i, cell, q);
-
-    // Compute or load H_i * C tensor.
-    tensor H_i_times_C, C_times_H_i;
-    if constexpr(cache_level < 2)
-    {
-      H_i_times_C = H_i * C;
-      C_times_H_i = C * H_i;
-    }
-    else
-    {
-      H_i_times_C = H_i_times_C_coefficients[i].get_coefficient_cell(cell, q);
-      C_times_H_i = C_times_H_i_coefficients[i].get_coefficient_cell(cell, q);
-    }
-
-    result += (c3 * ((4.0 * static_cast<Number>(data.fiber_k_2)) * E_i * E_i + 2.0) *
-               scalar_product(H_i_times_C, symmetric_gradient_increment)) *
-              C_times_H_i;
-
-    // The result is particularly prone to overflow.
     bound_tensor(result, compute_numerical_upper_bound(data.fiber_k_1));
+    return result;
   }
-
-  return result;
 }
 
 template<int dim,
