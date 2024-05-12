@@ -878,7 +878,7 @@ template<int dim,
          unsigned int cache_level>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
-  second_piola_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
+  second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
                                 unsigned int const cell,
                                 unsigned int const q) const
 {
@@ -892,17 +892,17 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     if constexpr(cache_level == 0)
     {
       auto const [F, Jm1] = compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-        gradient_displacement_cache_level_0_1);
+    		  gradient_displacement);
       tensor const F_inv = invert(F);
       tensor const C_inv = F_inv * transpose(F_inv);
       scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
       tensor const E     = compute_E_scaled<dim, Number, Number, stable_formulation>(
-        gradient_displacement_cache_level_0_1, 1.0);
+    		  gradient_displacement, 1.0);
 
       if constexpr(stable_formulation)
       {
         tensor S = compute_S_ground_matrix_stable(
-          gradient_displacement_cache_level_0_1, C_inv, J_pow, Jm1, shear_modulus_stored);
+        		gradient_displacement, C_inv, J_pow, Jm1, shear_modulus_stored);
 
         for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
         {
@@ -939,7 +939,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     else
     {
       tensor const F = compute_modified_F<dim, Number, check_type, stable_formulation>(
-        gradient_displacement_cache_level_0_1);
+    		  gradient_displacement);
       tensor const F_inv = invert(F);
       scalar const Jm1   = Jm1_coefficients.get_coefficient_cell(cell, q);
       tensor const C_inv = F_inv * transpose(F_inv);
@@ -948,7 +948,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       if constexpr(stable_formulation)
       {
         tensor S = compute_S_ground_matrix_stable(
-          gradient_displacement_cache_level_0_1, C_inv, J_pow, Jm1, shear_modulus_stored);
+        		gradient_displacement, C_inv, J_pow, Jm1, shear_modulus_stored);
 
         for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
         {
@@ -1079,7 +1079,7 @@ dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
   second_piola_kirchhoff_stress_displacement_derivative(
     tensor const &     gradient_increment,
-    tensor const &     gradient_displacement_cache_level_0_1,
+    tensor const &     gradient_displacement,
     unsigned int const cell,
     unsigned int const q) const
 {
@@ -1092,9 +1092,9 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   if constexpr(cache_level == 0)
   {
     auto const [F, Jm1] = compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-      gradient_displacement_cache_level_0_1);
+    		gradient_displacement);
     tensor const E = compute_E_scaled<dim, Number, Number, stable_formulation>(
-      gradient_displacement_cache_level_0_1, 1.0);
+    		gradient_displacement, 1.0);
     scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
     scalar const c1 =
       get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
@@ -1135,7 +1135,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   else if constexpr(cache_level == 1)
   {
     tensor const F = compute_modified_F<dim, Number, check_type, stable_formulation>(
-      gradient_displacement_cache_level_0_1);
+    		gradient_displacement);
     scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
     scalar const c1    = c1_coefficients.get_coefficient_cell(cell, q);
     scalar const c2    = c2_coefficients.get_coefficient_cell(cell, q);
@@ -1176,7 +1176,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     // Note that we could load F, but F is needed in the nonlinear operator regardless,
     // so we pass it in and use it here instead of loading it twice and not passing it.
     tensor const F = compute_modified_F<dim, Number, check_type, stable_formulation>(
-      gradient_displacement_cache_level_0_1);
+    		gradient_displacement);
     scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
     scalar const c1    = c1_coefficients.get_coefficient_cell(cell, q);
     scalar const c2    = c2_coefficients.get_coefficient_cell(cell, q);
@@ -1219,7 +1219,7 @@ template<int dim,
          unsigned int cache_level>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
-  kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
+  kirchhoff_stress(tensor const &     gradient_displacement,
                    unsigned int const cell,
                    unsigned int const q) const
 {
@@ -1233,7 +1233,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     if constexpr(cache_level == 0)
     {
       tensor const E = compute_E_scaled<dim, Number, Number, stable_formulation>(
-        gradient_displacement_cache_level_0_1, 1.0);
+    		  gradient_displacement, 1.0);
 
       tensor tau;
       for(unsigned int i = 0; i < N_FIBER_FAMILIES; i++)
@@ -1249,7 +1249,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       scalar Jm1;
       tensor F;
       compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-        F, Jm1, gradient_displacement_cache_level_0_1, true /* compute_J */);
+        F, Jm1, gradient_displacement, true /* compute_J */);
 
       scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
       if constexpr(stable_formulation)
@@ -1284,13 +1284,13 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
         scalar Jm1;
         tensor F;
         compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-          F, Jm1, gradient_displacement_cache_level_0_1, false /* compute_J */);
+          F, Jm1, gradient_displacement, false /* compute_J */);
         Jm1 = Jm1_coefficients.get_coefficient_cell(cell, q);
 
         scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
 
         tensor const E = compute_E_scaled<dim, Number, Number, stable_formulation>(
-          gradient_displacement_cache_level_0_1, 1.0);
+        		gradient_displacement, 1.0);
 
         tau = compute_tau_stable(tau, F, E, Jm1, J_pow, shear_modulus_stored);
       }
@@ -1299,7 +1299,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
         scalar Jm1;
         tensor F;
         compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(
-          F, Jm1, gradient_displacement_cache_level_0_1, false /* compute_J */);
+          F, Jm1, gradient_displacement, false /* compute_J */);
 
         scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
         scalar const c1    = c1_coefficients.get_coefficient_cell(cell, q);

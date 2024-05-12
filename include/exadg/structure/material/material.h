@@ -52,11 +52,11 @@ public:
    * (not to be confused with the deformation gradient).
    */
   virtual tensor
-  second_piola_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
+  second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
                                 unsigned int const cell,
                                 unsigned int const q) const
   {
-    (void)gradient_displacement_cache_level_0_1;
+    (void)gradient_displacement;
     (void)cell;
     (void)q;
     AssertThrow(false,
@@ -87,18 +87,18 @@ public:
    * Total Lagrangian Formulation: evaluate the directional derivative with respect
    * to the displacement of the 2nd Piola-Kirchhoff stress tensor given gradient of
    * the displacement increment with respect to the reference configuration
-   * "gradient_increment" and deformation gradient at the current linearization point
-   * "deformation_gradient".
+   * `gradient_increment` and the gradient of the current linearization point
+   * `gradient_displacement`.
    */
   virtual tensor
   second_piola_kirchhoff_stress_displacement_derivative(
     tensor const &     gradient_increment,
-    tensor const &     gradient_displacement_cache_level_0_1,
+    tensor const &     gradient_displacement,
     unsigned int const cell,
     unsigned int const q) const
   {
     (void)gradient_increment;
-    (void)gradient_displacement_cache_level_0_1;
+    (void)gradient_displacement;
     (void)cell;
     (void)q;
     AssertThrow(false,
@@ -116,11 +116,11 @@ public:
    * (not to be confused with the deformation gradient).
    */
   virtual tensor
-  kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
+  kirchhoff_stress(tensor const &     gradient_displacement,
                    unsigned int const cell,
                    unsigned int const q) const
   {
-    (void)gradient_displacement_cache_level_0_1;
+    (void)gradient_displacement;
     (void)cell;
     (void)q;
     AssertThrow(false,

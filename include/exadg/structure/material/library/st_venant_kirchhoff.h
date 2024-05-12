@@ -73,7 +73,7 @@ public:
                     bool const                              large_deformation);
 
   tensor
-  second_piola_kirchhoff_stress(tensor const &     gradient_displacement_cache_level_0_1,
+  second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
                                 unsigned int const cell,
                                 unsigned int const q) const final;
 
