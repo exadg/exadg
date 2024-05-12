@@ -321,6 +321,13 @@ private:
   unsigned int quad_index;
 
   IncompressibleFibrousTissueData<dim> const & data;
+  Number const bulk_modulus;
+  Number const fiber_k_1;
+  Number const fiber_k_2;
+  Number const fiber_angle_phi_in_degree;
+  Number const fiber_H_11;
+  Number const fiber_H_22;
+  Number const fiber_H_33;
 
   mutable scalar shear_modulus_stored;
 

@@ -222,6 +222,7 @@ private:
   unsigned int quad_index;
 
   IncompressibleNeoHookeanData<dim> const & data;
+  Number const                              bulk_modulus;
 
   mutable scalar shear_modulus_stored;
 
