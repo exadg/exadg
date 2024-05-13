@@ -443,7 +443,7 @@ logspace(Number const & min_scale, Number const & max_scale, unsigned int const 
   return vector;
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, bool use_random_sign>
 dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
 get_random_tensor(Number scale)
 {
@@ -459,9 +459,15 @@ get_random_tensor(Number scale)
         static_cast<Number>(std::rand()) / static_cast<Number>(RAND_MAX);
       Number const random_number_0c1_1c0 = 0.1 + (random_number_0c0_1c0 / 0.9);
 
-      Number const random_sign = random_number_0c0_1c0 > 0.5 ? 1.0 : -1.0;
-
-      random_tensor[i][j] = scale * random_number_0c1_1c0 * random_sign;
+      if constexpr(use_random_sign)
+      {
+        Number const random_sign = random_number_0c0_1c0 > 0.5 ? 1.0 : -1.0;
+        random_tensor[i][j]      = scale * random_number_0c1_1c0 * random_sign;
+      }
+      else
+      {
+        random_tensor[i][j] = scale * random_number_0c1_1c0;
+      }
     }
   }
 
@@ -607,7 +613,9 @@ main(int argc, char ** argv)
                                      dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
     // Perform the stability test or measure the evaluation time.
-    bool constexpr stab_test = false;
+    bool constexpr stab_test       = true;
+    bool constexpr use_max_err     = true;
+    bool constexpr use_random_sign = true;
 
     unsigned int const cache_level = stab_test ? 0 : 0 /* 0, 1, 2 */;
 
@@ -741,9 +749,9 @@ main(int argc, char ** argv)
             {
               // Generate pseudo-random gradient of the displacement field.
               tensor_float const gradient_displacement_float =
-                get_random_tensor<dim, float>(grad_u_scale[i]);
+                get_random_tensor<dim, float, use_random_sign>(grad_u_scale[i]);
               tensor_float const gradient_increment_float =
-                get_random_tensor<dim, float>(grad_increment_scale);
+                get_random_tensor<dim, float, use_random_sign>(grad_increment_scale);
 
               // Deep copy the tensor entries casting to *representable*
               // double type to have the *same* random number.
@@ -806,8 +814,10 @@ main(int argc, char ** argv)
                     evaluation_float[k]);
                 diff_evaluation -= evaluation_double[k];
 
-                // Maximum relative error in the |tensor|_inf norm.
-                bool constexpr use_max_err     = true;
+                // Maximum/minimum relative error in the |tensor|_inf norm.
+                // Note that we might be interested in the minimum, since sampled
+                // Grad(u) might not yield reasonable J close to 1. Alternatively,
+                // disable the fast Newton solvers and run tests.
                 double constexpr use_abs_error = 0.0;
                 double rel_norm_evaluation     = use_max_err ? 1e-20 : 1e+20;
                 for(unsigned int l = 0; l < dim; ++l)
@@ -852,7 +862,8 @@ main(int argc, char ** argv)
             fstream.rdbuf()->pubsetbuf(fstream_buffer, fstream_buffer_size);
             fstream.open(file_name.c_str(), std::ios::trunc);
 
-            fstream << "  relative errors in stress and stress derivative,\n"
+            std::string const min_max_str = use_max_err ? "MAXIMAL" : "MINIMAL";
+            fstream << "  " << min_max_str << " relative errors in stress and stress derivative,\n"
                     << "  grad_increment_scale = 1 / h_e^2 , h_e = " << h_e << "\n"
                     << "  in |.| = max_(samples){ | T_f64 - T_f32 |inf / |T_f64|inf }\n"
                     << "  grad_u_scl    |stress|      |Jacobian|\n";
