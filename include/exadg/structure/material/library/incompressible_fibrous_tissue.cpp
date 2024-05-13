@@ -534,16 +534,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     scalar c3 = compute_fiber_switch(M_1, E);
 
     // Enforce an upper bound for the computed value.
-    if constexpr(stable_formulation)
-    {
-      c3 /* fiber_switch */ *=
-        expm1_limited(fiber_k_2 * E_i * E_i, compute_numerical_upper_bound(fiber_k_1)) + 1.0;
-    }
-    else
-    {
-      c3 /* fiber_switch */ *=
-        exp_limited(fiber_k_2 * E_i * E_i, compute_numerical_upper_bound(fiber_k_1));
-    }
+    c3 /* fiber_switch */ *=
+      exp_limited(fiber_k_2 * E_i * E_i, compute_numerical_upper_bound(fiber_k_1));
 
     return c3 * (2.0 * fiber_k_1);
   }
