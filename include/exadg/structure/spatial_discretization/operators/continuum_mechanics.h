@@ -23,10 +23,11 @@
 #define INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_CONTINUUM_MECHANICS_H_
 
 // clang-format off
-#define ONE_THIRD  0.33333333333333333333
-#define TWO_THIRDS 0.66666666666666666666
-#define ONE_NINTH  0.11111111111111111111
-#define TWO_NINTHS 0.22222222222222222222
+#define ONE_THIRD   0.33333333333333333333
+#define TWO_THIRDS  0.66666666666666666666
+#define FOUR_THIRDS 1.33333333333333333333
+#define ONE_NINTH   0.11111111111111111111
+#define TWO_NINTHS  0.22222222222222222222
 // clang-format on
 
 // C++
@@ -56,20 +57,63 @@ inline DEAL_II_ALWAYS_INLINE //
   }
 }
 
-template<typename Number>
+// Compute f(x) = log(1 + x)
+template<typename Number, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
-  log1p(dealii::VectorizedArray<Number> const & x)
+  fast_approx_log1p(dealii::VectorizedArray<Number> const & x)
 {
-  Number values[dealii::VectorizedArray<Number>::size()];
-  for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
-  {
-    values[i] = std::log1p(x[i]);
-  }
+  unsigned int constexpr option = 1;
 
-  dealii::VectorizedArray<Number> out;
-  out.load(&values[0]);
-  return out;
+  if constexpr(option == 0)
+  {
+    Number values[dealii::VectorizedArray<Number>::size()];
+    for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
+    {
+      if constexpr(stable_formulation)
+      {
+        values[i] = std::log1p(x[i]);
+      }
+      else
+      {
+        values[i] = std::log(1.0 + x[i]);
+      }
+    }
+
+    dealii::VectorizedArray<Number> out;
+    out.load(&values[0]);
+    return out;
+  }
+  else if constexpr(option == 1)
+  {
+    // Use Taylor expansions proposed by
+    // Shakeri et al. [https://arxiv.org/pdf/2401.13196]
+    // log(1 + x) = 2 * sum_(n = 1 to inf) (x / (2 + x))^(2*n+1) / (2*n+1)
+    unsigned int constexpr n_terms = 6;
+    Number two_over_2np1[n_terms];
+    for(unsigned int i = 0; i < n_terms; ++i)
+    {
+      two_over_2np1[i] = 2.0 / (2 * static_cast<Number>(i) + 1.0);
+    }
+
+    dealii::VectorizedArray<Number> const x_over_2px               = x / (2.0 + x);
+    dealii::VectorizedArray<Number>       out                      = two_over_2np1[0] * x_over_2px;
+    dealii::VectorizedArray<Number>       last_power_of_x_over_2px = x_over_2px;
+
+    for(unsigned int i = 1; i < n_terms; ++i)
+    {
+      last_power_of_x_over_2px *= last_power_of_x_over_2px;
+      out += two_over_2np1[i] * last_power_of_x_over_2px * x_over_2px;
+    }
+
+    return out;
+  }
+  else if constexpr(option == 2)
+  {
+    // Use ideas from Proell et al. [https://arxiv.org/pdf/2402.17580].
+    AssertThrow(option < 2, dealii::ExcMessage("This option has not been implemented yet."));
+    return (dealii::make_vectorized_array(std::numeric_limits<Number>::quiet_NaN()));
+  }
 }
 
 template<typename Number>
@@ -81,11 +125,13 @@ inline DEAL_II_ALWAYS_INLINE //
   for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
   {
     values[i] = std::expm1(x[i]);
-    values[i] = std::min(values[i], upper_bound);
   }
 
   dealii::VectorizedArray<Number> out;
   out.load(&values[0]);
+
+  out = std::min(out, dealii::make_vectorized_array(upper_bound));
+
   return out;
 }
 
@@ -98,12 +144,67 @@ inline DEAL_II_ALWAYS_INLINE //
   for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
   {
     values[i] = std::exp(x[i]);
-    values[i] = std::min(values[i], upper_bound);
   }
 
   dealii::VectorizedArray<Number> out;
   out.load(&values[0]);
+
+  out = std::min(out, dealii::make_vectorized_array(upper_bound));
+
   return out;
+}
+
+// Compute f(x) = (1 + x)^e
+template<typename Number, bool stable_formulation>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<Number>
+  fast_approx_powp1(dealii::VectorizedArray<Number> const & x, Number const & e)
+{
+  unsigned int constexpr option = 1;
+
+  if constexpr(option == 0)
+  {
+    // Just use pow().
+    return pow(1.0 + x, e);
+  }
+  else if(option == 1)
+  {
+    // Loop over the vectorized array's entries:
+    // (x + 1)^e = exp( e * log(x + 1)),
+    // which is numerically unstable for x -> 0
+    // or
+    // (x + 1)^e = exp( e * logp1(x)),
+    // which is numerically stable for x -> 0.
+    Number values[dealii::VectorizedArray<Number>::size()];
+    for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
+    {
+      if constexpr(stable_formulation)
+      {
+        values[i] = std::exp(e * std::log1p(x[i]));
+      }
+      else
+      {
+        values[i] = std::exp(e * std::log(1.0 + x[i]));
+      }
+    }
+
+    dealii::VectorizedArray<Number> out;
+    out.load(&values[0]);
+    return out;
+  }
+  else if(option == 2)
+  {
+    // Use Taylor expansions for exp(x) and log1p(x) similar to
+    // Shakeri et al. [https://arxiv.org/pdf/2401.13196]
+    AssertThrow(option < 2, dealii::ExcMessage("This option has not been implemented yet."));
+    return (dealii::make_vectorized_array(std::numeric_limits<Number>::quiet_NaN()));
+  }
+  else if constexpr(option == 3)
+  {
+    // Use ideas from Proell et al. [https://arxiv.org/pdf/2402.17580].
+    AssertThrow(option < 3, dealii::ExcMessage("This option has not been implemented yet."));
+    return (dealii::make_vectorized_array(std::numeric_limits<Number>::quiet_NaN()));
+  }
 }
 
 template<int dim, typename Number, typename TypeScale>
@@ -519,7 +620,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if constexpr(check_type > 2)
   {
-    reconstruct_admissible_F_Jm1(F, Jm1);
+    reconstruct_admissible_F_Jm1<dim, Number, check_type, stable_formulation>(F, Jm1);
   }
 
   return {F, Jm1};
@@ -543,7 +644,7 @@ inline DEAL_II_ALWAYS_INLINE //
     dealii::VectorizedArray<Number> Jm1 =
       compute_Jm1<dim, Number, stable_formulation>(gradient_displacement);
 
-    reconstruct_admissible_F_Jm1(F, Jm1);
+    reconstruct_admissible_F_Jm1<dim, Number, check_type, stable_formulation>(F, Jm1);
 
     return F;
   }

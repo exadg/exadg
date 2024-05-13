@@ -569,22 +569,42 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   {
     if constexpr(cache_level == 0)
     {
-      // Compute the third root of J^2 via an in-place Newton method.
-      // J^2 = 1 is a good initial guess, since we enforce this value
-      // implicitly via the constitutive model. We hard-code 3 iterations,
-      // which were in most tests enough, but this might be risky and
-      // not pay off enough for cache-level > 1 since we are storing
-      // this variable anyways.
-      scalar J_pow  = dealii::make_vectorized_array(static_cast<Number>(1.0));
-      scalar J_sqrd = (Jm1 * Jm1 + 2.0 * Jm1 + 1.0);
-      J_pow -= (J_pow * J_pow * J_pow - J_sqrd) / (3.0 * J_pow * J_pow);
-      J_pow -= (J_pow * J_pow * J_pow - J_sqrd) / (3.0 * J_pow * J_pow);
-      J_pow -= (J_pow * J_pow * J_pow - J_sqrd) / (3.0 * J_pow * J_pow);
-      return (1.0 / J_pow);
+      // Compute the inverse third root of J^2 via Newton's method:
+      //
+      // f(x) = x - J^(-2/3) = 0
+      // or equivalently
+      // f(x) = x^(-3) - J^2 = 0
+      // with
+      // f'(x) = - 3 x^(-4)
+      // and hence the Newton update
+      // x_np1 = 4/3 * x_n - J^2/3 * x_n^4.
+      //
+      // J^(-2/3) = 1 is a good initial guess, since we enforce J = 1
+      // implicitly via the constitutive model. We hard-code 3 steps,
+      // which were in most tests enough, but might be risky and hence
+      // not pay off enough for cache_level > 1 since we are storing
+      // related variables anyways.
+
+      scalar const J_sqrd_over_three = (Jm1 * Jm1 + 2.0 * Jm1 + 1.0) * ONE_THIRD;
+
+      // The first iteration simplifies due to the initial guess x_0 = 1.0.
+      scalar J_pow = dealii::make_vectorized_array(static_cast<Number>(FOUR_THIRDS));
+      J_pow -= J_sqrd_over_three;
+
+      // The remaining Newton iterations are identical.
+      scalar J_pow_to_the_fourth = J_pow * J_pow;
+      J_pow_to_the_fourth *= J_pow_to_the_fourth;
+      J_pow = FOUR_THIRDS * J_pow - J_sqrd_over_three * J_pow_to_the_fourth;
+
+      J_pow_to_the_fourth = J_pow * J_pow;
+      J_pow_to_the_fourth *= J_pow_to_the_fourth;
+      J_pow = FOUR_THIRDS * J_pow - J_sqrd_over_three * J_pow_to_the_fourth;
+
+      return J_pow;
     }
     else
     {
-      return (pow(Jm1 + 1.0, static_cast<Number>(-TWO_THIRDS)));
+      return fast_approx_powp1<Number, stable_formulation>(Jm1, static_cast<Number>(-TWO_THIRDS));
     }
   }
   else

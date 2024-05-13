@@ -302,14 +302,7 @@ CompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_level>
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
-    if constexpr(stable_formulation)
-    {
-      return log1p(Jm1);
-    }
-    else
-    {
-      return log(Jm1 + 1.0);
-    }
+    return fast_approx_log1p<Number, stable_formulation>(Jm1);
   }
   else
   {
