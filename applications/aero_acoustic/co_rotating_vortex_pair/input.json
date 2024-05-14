@@ -17,13 +17,13 @@
         "SourceTermWithConvection": "false",
         "BlendInSourceTerm": "true",
         "FluidToAcousticCouplingStrategy": "ConservativeInterpolation",
-        "AcousticFromAnalyticalCFDSolution" : "false",
-        "AcousticFromAnalyticalSourceTerm" : "true"
+        "AcousticSourceTermComputation": "FromAnalyticSourceTerm"
     },
     "Application": {
         "StartTimeAcousticsInVortexRotations": "0.05",
         "EndTimeInVortexRotations": "0.5",
         "CFLFluid": "0.3",
+        "TemporalDiscretizationFluid": "InterpolateAnalyticalSolution",
         "CFLAcoustics": "0.25",
         "SpeedOfSound": "12.0",
         "AdditionalCFDRefinementsAroundSource": "0",

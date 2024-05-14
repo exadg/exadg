@@ -67,13 +67,7 @@ Driver<dim, Number>::setup()
   {
     dealii::Timer timer_local;
 
-    fluid->setup(application->fluid,
-                 application->parameters.compute_acoustic_from_analytical_cfd_solution or
-                   application->parameters.compute_acoustic_from_analytical_source_term,
-                 application->field_functions->analytical_cfd_solution_velocity,
-                 application->field_functions->analytical_cfd_solution_pressure,
-                 mpi_comm,
-                 is_test);
+    fluid->setup(application->fluid, mpi_comm, is_test);
 
     timer_tree.insert({"AeroAcoustic", "Setup", "Fluid"}, timer_local.wall_time());
   }
@@ -93,11 +87,17 @@ Driver<dim, Number>::setup_volume_coupling()
 
     pcout << std::endl << "Setup volume coupling fluid -> acoustic ..." << std::endl;
 
-    volume_coupling.setup(application->parameters,
-                          acoustic,
-                          fluid,
-                          application->field_functions,
-                          application->parameters.compute_acoustic_from_analytical_source_term);
+    if(application->parameters.acoustic_source_term_computation ==
+       AcousticSourceTermComputation::FromAnalyticSourceTerm)
+    {
+      AssertThrow(
+        application->fluid->get_parameters().temporal_discretization ==
+          IncNS::TemporalDiscretization::InterpolateAnalyticalSolution,
+        dealii::ExcMessage(
+          "Computing source term from analytical solution requires IncNS::TemporalDiscretization::InterpolateAnalyticalSolution"));
+    }
+
+    volume_coupling.setup(application->parameters, acoustic, fluid, application->field_functions);
 
     pcout << std::endl << "... done!" << std::endl;
 

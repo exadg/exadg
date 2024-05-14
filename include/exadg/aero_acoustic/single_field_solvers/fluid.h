@@ -23,7 +23,6 @@
 #define INCLUDE_EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_FLUID_H_
 
 // IncNS
-#include <exadg/aero_acoustic/single_field_solvers/analytical_time_int_fluid.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
@@ -58,11 +57,8 @@ public:
 
   void
   setup(std::shared_ptr<FluidAeroAcoustic::ApplicationBase<dim, Number>> application,
-        bool const                             compute_acoustic_from_analytical_cfd_solution,
-        std::shared_ptr<dealii::Function<dim>> analytical_cfd_solution_velocity,
-        std::shared_ptr<dealii::Function<dim>> analytical_cfd_solution_pressure,
-        MPI_Comm const                         mpi_comm,
-        bool const                             is_test)
+        MPI_Comm const                                                   mpi_comm,
+        bool const                                                       is_test)
   {
     // setup application
     application->setup(grid, mapping, multigrid_mappings);
@@ -90,25 +86,12 @@ public:
                 dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
     // initialize time_integrator
-    if(compute_acoustic_from_analytical_cfd_solution)
-    {
-      time_integrator =
-        std::make_shared<IncNS::TimeIntAnalytic<dim, Number>>(pde_operator,
-                                                              nullptr /*no ALE*/,
-                                                              postprocessor,
-                                                              application->get_parameters(),
-                                                              mpi_comm,
-                                                              is_test);
-    }
-    else
-    {
-      time_integrator = IncNS::create_time_integrator<dim, Number>(pde_operator,
-                                                                   nullptr /*no ALE*/,
-                                                                   postprocessor,
-                                                                   application->get_parameters(),
-                                                                   mpi_comm,
-                                                                   is_test);
-    }
+    time_integrator = IncNS::create_time_integrator<dim, Number>(pde_operator,
+                                                                 nullptr /*no ALE*/,
+                                                                 postprocessor,
+                                                                 application->get_parameters(),
+                                                                 mpi_comm,
+                                                                 is_test);
 
     time_integrator->setup(application->get_parameters().restarted_simulation);
 

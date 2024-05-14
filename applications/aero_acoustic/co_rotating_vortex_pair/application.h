@@ -325,6 +325,9 @@ public:
 
       // TEMPORAL DISCRETIZATION
       prm.add_parameter("CFLFluid", this->param.cfl, "Courant Number.");
+      prm.add_parameter("CFLFluidTemporalDiscretizationFluid",
+                        this->param.temporal_discretization,
+                        "Temporal discretization of the fluid.");
 
       // APPLICATION SPECIFIC QUNATITIES
       prm.add_parameter("AdditionalCFDRefinementsAroundSource",
@@ -369,7 +372,6 @@ public:
 
     // TEMPORAL DISCRETIZATION
     this->param.solver_type                     = SolverType::Unsteady;
-    this->param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
     this->param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     this->param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     this->param.order_time_integrator           = 2;
