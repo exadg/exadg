@@ -197,9 +197,6 @@ private:
                   dealii::ExcMessage("No blend-in function provided."));
     }
 
-    if(data.blend_in_function)
-      data.blend_in_function->set_time(time);
-
     bool const space_dependent_scaling =
       data.blend_in_function != nullptr ? data.blend_in_function->varies_in_space(time) : false;
     Number const pure_temporal_scaling_factor =
@@ -208,7 +205,7 @@ private:
     if(space_dependent_scaling)
     {
       return [&](qpoint const & q) {
-        return FunctionEvaluator<0, dim, Number>::value(*data.blend_in_function, q);
+        return FunctionEvaluator<0, dim, Number>::value(*data.blend_in_function, q, time);
       };
     }
     else
