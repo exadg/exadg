@@ -2215,6 +2215,7 @@ OperatorBase<dim, Number, n_components>::internal_compute_factorized_additive_sc
 
         // store the cell matrix and renumber lexicographic
         auto & lapack_matrix = matrices[cell * vectorization_length + v];
+        lapack_matrix.reinit(dofs_per_cell);
 
         auto const & lex_to_hier =
           matrix_free->get_shape_info(this->data.dof_index).lexicographic_numbering;
