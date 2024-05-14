@@ -430,33 +430,24 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
     }
     else
     {
-      matrix_free->loop(&This::cell_loop_diagonal,
-                        &This::face_loop_diagonal,
-                        &This::boundary_face_loop_diagonal,
-                        this,
-                        diagonal,
-                        diagonal);
+      dealii::MatrixFreeTools::compute_diagonal(*matrix_free,
+                                                diagonal,
+                                                &This::cell_compute_diagonal_matrix,
+                                                &This::face_compute_diagonal_matrix,
+                                                &This::boundary_face_compute_diagonal_matrix,
+                                                this,
+                                                data.dof_index,
+                                                data.quad_index);
     }
   }
   else
   {
-    dealii::MatrixFreeTools::
-      compute_diagonal<dim, -1, 0, n_components, Number, dealii::VectorizedArray<Number>>(
-        *matrix_free,
-        diagonal,
-        [&](auto & integrator) -> void {
-          // TODO: this is currently done for every column, but would only be necessary
-          // once per cell
-          this->reinit_cell_derived(integrator, integrator.get_current_cell_index());
-
-          integrator.evaluate(integrator_flags.cell_evaluate);
-
-          this->do_cell_integral(integrator);
-
-          integrator.integrate(integrator_flags.cell_integrate);
-        },
-        data.dof_index,
-        data.quad_index);
+    dealii::MatrixFreeTools::compute_diagonal(*matrix_free,
+                                              diagonal,
+                                              &This::cell_compute_diagonal_matrix,
+                                              this,
+                                              data.dof_index,
+                                              data.quad_index);
   }
 }
 
@@ -822,26 +813,28 @@ void
 OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix(
   SparseMatrix & system_matrix) const
 {
-  // assemble matrix locally on each process
-  if(evaluate_face_integrals() and is_dg)
+  if(is_dg and evaluate_face_integrals())
   {
-    matrix_free->loop(&This::cell_loop_calculate_system_matrix,
-                      &This::face_loop_calculate_system_matrix,
-                      &This::boundary_face_loop_calculate_system_matrix,
-                      this,
-                      system_matrix,
-                      system_matrix);
+    dealii::MatrixFreeTools::compute_matrix(*matrix_free,
+                                            matrix_free->get_affine_constraints(),
+                                            system_matrix,
+                                            &This::cell_compute_diagonal_matrix,
+                                            &This::face_compute_diagonal_matrix,
+                                            &This::boundary_face_compute_diagonal_matrix,
+                                            this,
+                                            data.dof_index,
+                                            data.quad_index);
   }
   else
   {
-    matrix_free->cell_loop(&This::cell_loop_calculate_system_matrix,
-                           this,
-                           system_matrix,
-                           system_matrix);
+    dealii::MatrixFreeTools::compute_matrix(*matrix_free,
+                                            matrix_free->get_affine_constraints(),
+                                            system_matrix,
+                                            &This::cell_compute_diagonal_matrix,
+                                            this,
+                                            data.dof_index,
+                                            data.quad_index);
   }
-
-  // communicate overlapping matrix parts
-  system_matrix.compress(dealii::VectorOperation::add);
 }
 
 template<int dim, typename Number, int n_components>
@@ -1302,154 +1295,57 @@ OperatorBase<dim, Number, n_components>::face_loop_empty(
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::cell_loop_diagonal(
-  dealii::MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                            dst,
-  VectorType const &                      src,
-  Range const &                           range) const
+OperatorBase<dim, Number, n_components>::cell_compute_diagonal_matrix(
+  IntegratorCell & integrator) const
 {
-  (void)src;
+  // TODO: this is currently done for every column, but would only be necessary
+  // once per cell
+  this->reinit_cell_derived(integrator, integrator.get_current_cell_index());
 
-  IntegratorCell integrator =
-    IntegratorCell(matrix_free, this->data.dof_index, this->data.quad_index);
+  integrator.evaluate(integrator_flags.cell_evaluate);
 
-  // create temporal array for local diagonal
-  unsigned int const                                     dofs_per_cell = integrator.dofs_per_cell;
-  dealii::AlignedVector<dealii::VectorizedArray<Number>> local_diag(dofs_per_cell);
+  this->do_cell_integral(integrator);
 
-  for(auto cell = range.first; cell < range.second; ++cell)
-  {
-    this->reinit_cell(integrator, cell);
-
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
-    {
-      // write standard basis into dof values of dealii::FEEvaluation
-      this->create_standard_basis(j, integrator);
-
-      integrator.evaluate(integrator_flags.cell_evaluate);
-
-      this->do_cell_integral(integrator);
-
-      integrator.integrate(integrator_flags.cell_integrate);
-
-      // extract single value from result vector and temporally store it
-      local_diag[j] = integrator.begin_dof_values()[j];
-    }
-    // copy local diagonal entries into dof values of dealii::FEEvaluation ...
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      integrator.begin_dof_values()[j] = local_diag[j];
-
-    // ... and write it back to global vector
-    integrator.distribute_local_to_global(dst);
-  }
+  integrator.integrate(integrator_flags.cell_integrate);
 }
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::face_loop_diagonal(
-  dealii::MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                            dst,
-  VectorType const &                      src,
-  Range const &                           range) const
+OperatorBase<dim, Number, n_components>::face_compute_diagonal_matrix(
+  IntegratorFace & integrator_m,
+  IntegratorFace & integrator_p) const
 {
-  (void)src;
+  unsigned int const face = integrator_m.get_current_cell_index();
 
-  IntegratorFace integrator_m =
-    IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
-  IntegratorFace integrator_p =
-    IntegratorFace(matrix_free, false, this->data.dof_index, this->data.quad_index);
+  // TODO: this is currently done for every column, but would only be necessary
+  // once per cell
+  this->reinit_face_derived(integrator_m, integrator_p, face);
 
-  // create temporal array for local diagonal
-  unsigned int const                                     dofs_per_cell = integrator_m.dofs_per_cell;
-  dealii::AlignedVector<dealii::VectorizedArray<Number>> local_diag(dofs_per_cell);
+  integrator_m.evaluate(integrator_flags.face_evaluate);
 
-  for(auto face = range.first; face < range.second; ++face)
-  {
-    this->reinit_face(integrator_m, integrator_p, face);
+  this->do_face_int_integral(integrator_m, integrator_p);
 
-    // interior face
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
-    {
-      this->create_standard_basis(j, integrator_m);
-
-      integrator_m.evaluate(integrator_flags.face_evaluate);
-
-      this->do_face_int_integral(integrator_m, integrator_p);
-
-      integrator_m.integrate(integrator_flags.face_integrate);
-
-      local_diag[j] = integrator_m.begin_dof_values()[j];
-    }
-
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      integrator_m.begin_dof_values()[j] = local_diag[j];
-
-    integrator_m.distribute_local_to_global(dst);
-
-    // exterior face
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
-    {
-      this->create_standard_basis(j, integrator_p);
-
-      integrator_p.evaluate(integrator_flags.face_evaluate);
-
-      this->do_face_ext_integral(integrator_m, integrator_p);
-
-      integrator_p.integrate(integrator_flags.face_integrate);
-
-      local_diag[j] = integrator_p.begin_dof_values()[j];
-    }
-
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      integrator_p.begin_dof_values()[j] = local_diag[j];
-
-    integrator_p.distribute_local_to_global(dst);
-  }
+  integrator_m.integrate(integrator_flags.face_integrate);
 }
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::boundary_face_loop_diagonal(
-  dealii::MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                            dst,
-  VectorType const &                      src,
-  Range const &                           range) const
+OperatorBase<dim, Number, n_components>::boundary_face_compute_diagonal_matrix(
+  IntegratorFace & integrator_m) const
 {
-  (void)src;
+  unsigned int const face = integrator_m.get_current_cell_index();
 
-  IntegratorFace integrator_m =
-    IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
+  // TODO: this is currently done for every column, but would only be necessary
+  // once per cell
+  this->reinit_boundary_face_derived(integrator_m, face);
 
-  // create temporal array for local diagonal
-  unsigned int const                                     dofs_per_cell = integrator_m.dofs_per_cell;
-  dealii::AlignedVector<dealii::VectorizedArray<Number>> local_diag(dofs_per_cell);
+  integrator_m.evaluate(integrator_flags.face_evaluate);
 
-  for(unsigned int face = range.first; face < range.second; face++)
-  {
-    auto bid = matrix_free.get_boundary_id(face);
+  auto const bid = matrix_free->get_boundary_id(face);
+  this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
 
-    this->reinit_boundary_face(integrator_m, face);
-
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
-    {
-      this->create_standard_basis(j, integrator_m);
-
-      integrator_m.evaluate(integrator_flags.face_evaluate);
-
-      this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
-
-      integrator_m.integrate(integrator_flags.face_integrate);
-
-      local_diag[j] = integrator_m.begin_dof_values()[j];
-    }
-
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      integrator_m.begin_dof_values()[j] = local_diag[j];
-
-    integrator_m.distribute_local_to_global(dst);
-  }
+  integrator_m.integrate(integrator_flags.face_integrate);
 }
-
 
 template<int dim, typename Number, int n_components>
 void
@@ -1793,306 +1689,6 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_block_diagonal(
                 integrator_m.begin_dof_values()[i][v];
         }
       }
-    }
-  }
-}
-
-template<int dim, typename Number, int n_components>
-template<typename SparseMatrix>
-void
-OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix(
-  dealii::MatrixFree<dim, Number> const & matrix_free,
-  SparseMatrix &                          dst,
-  SparseMatrix const &                    src,
-  Range const &                           range) const
-{
-  (void)src;
-
-  IntegratorCell integrator =
-    IntegratorCell(matrix_free, this->data.dof_index, this->data.quad_index);
-
-  unsigned int const dofs_per_cell = integrator.dofs_per_cell;
-
-  for(auto cell = range.first; cell < range.second; ++cell)
-  {
-    unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_cell_batch(cell);
-
-    // create a temporal full matrix for the local element matrix of each ...
-    // cell of each macro cell and ...
-    FullMatrix_ matrices[vectorization_length];
-    // set their size
-    std::fill_n(matrices, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
-
-    this->reinit_cell(integrator, cell);
-
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
-    {
-      this->create_standard_basis(j, integrator);
-
-      integrator.evaluate(integrator_flags.cell_evaluate);
-
-      this->do_cell_integral(integrator);
-
-      integrator.integrate(integrator_flags.cell_integrate);
-
-      for(unsigned int i = 0; i < dofs_per_cell; ++i)
-        for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          matrices[v](i, j) = integrator.begin_dof_values()[i][v];
-    }
-
-    // finally assemble local matrices into global matrix
-    for(unsigned int v = 0; v < n_filled_lanes; v++)
-    {
-      auto cell_v = matrix_free.get_cell_iterator(cell, v);
-
-      std::vector<dealii::types::global_dof_index> dof_indices(dofs_per_cell);
-      if(is_mg)
-        cell_v->get_mg_dof_indices(dof_indices);
-      else
-        cell_v->get_dof_indices(dof_indices);
-
-      if(not is_dg)
-      {
-        // in the case of CG: shape functions are not ordered lexicographically
-        // see (https://www.dealii.org/8.5.1/doxygen/deal.II/classFE__Q.html)
-        // so we have to fix the order
-        auto temp = dof_indices;
-        for(unsigned int j = 0; j < dof_indices.size(); j++)
-          dof_indices[j] =
-            temp[matrix_free.get_shape_info(this->data.dof_index).lexicographic_numbering[j]];
-      }
-
-      // choose the version of distribute_local_to_global with a single
-      // `dof_indices` argument to indicate that we write to a diagonal block
-      // of the matrix (vs 2 for off-diagonal ones); this implies a non-zero
-      // entry is added to the diagonal of constrained matrix rows, ensuring
-      // positive definiteness
-      constraint_double.distribute_local_to_global(matrices[v], dof_indices, dst);
-    }
-  }
-}
-
-template<int dim, typename Number, int n_components>
-template<typename SparseMatrix>
-void
-OperatorBase<dim, Number, n_components>::face_loop_calculate_system_matrix(
-  dealii::MatrixFree<dim, Number> const & matrix_free,
-  SparseMatrix &                          dst,
-  SparseMatrix const &                    src,
-  Range const &                           range) const
-{
-  (void)src;
-
-  IntegratorFace integrator_m =
-    IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
-  IntegratorFace integrator_p =
-    IntegratorFace(matrix_free, false, this->data.dof_index, this->data.quad_index);
-
-  unsigned int const dofs_per_cell = integrator_m.dofs_per_cell;
-
-  // There are four matrices: M_mm, M_mp, M_pm, M_pp with M_mm, M_pp denoting
-  // the block diagonal matrices for elements m,p and M_mp, M_pm the matrices
-  // related to the coupling of neighboring elements. In the following, both
-  // M_mm and M_mp are called matrices_m and both M_pm and M_pp are called
-  // matrices_p so that we only have to store two matrices (matrices_m,
-  // matrices_p) instead of four. This is possible since we compute M_mm, M_pm
-  // in a first step (by varying solution functions on element m), and M_mp,
-  // M_pp in a second step (by varying solution functions on element p).
-
-  // create two local matrix: first one tested by test functions on element m and ...
-  FullMatrix_ matrices_m[vectorization_length];
-  std::fill_n(matrices_m, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
-  // ... the other tested by test functions on element p
-  FullMatrix_ matrices_p[vectorization_length];
-  std::fill_n(matrices_p, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
-
-  for(auto face = range.first; face < range.second; ++face)
-  {
-    // determine number of filled vector lanes
-    unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_face_batch(face);
-
-    this->reinit_face(integrator_m, integrator_p, face);
-
-    // process minus trial function
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
-    {
-      // write standard basis into dof values of first dealii::FEFaceEvaluation and
-      // clear dof values of second dealii::FEFaceEvaluation
-      this->create_standard_basis(j, integrator_m, integrator_p);
-
-      integrator_m.evaluate(integrator_flags.face_evaluate);
-      integrator_p.evaluate(integrator_flags.face_evaluate);
-
-      this->do_face_integral(integrator_m, integrator_p);
-
-      integrator_m.integrate(integrator_flags.face_integrate);
-      integrator_p.integrate(integrator_flags.face_integrate);
-
-      // insert result vector into local matrix u1_v1
-      for(unsigned int i = 0; i < dofs_per_cell; ++i)
-        for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          matrices_m[v](i, j) = integrator_m.begin_dof_values()[i][v];
-
-      // insert result vector into local matrix  u1_v2
-      for(unsigned int i = 0; i < dofs_per_cell; ++i)
-        for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          matrices_p[v](i, j) = integrator_p.begin_dof_values()[i][v];
-    }
-
-    // save local matrices into global matrix
-    for(unsigned int v = 0; v < n_filled_lanes; v++)
-    {
-      auto const cell_number_m = matrix_free.get_face_info(face).cells_interior[v];
-      auto const cell_number_p = matrix_free.get_face_info(face).cells_exterior[v];
-
-      auto cell_m = matrix_free.get_cell_iterator(cell_number_m / vectorization_length,
-                                                  cell_number_m % vectorization_length);
-      auto cell_p = matrix_free.get_cell_iterator(cell_number_p / vectorization_length,
-                                                  cell_number_p % vectorization_length);
-
-      // get position in global matrix
-      std::vector<dealii::types::global_dof_index> dof_indices_m(dofs_per_cell);
-      std::vector<dealii::types::global_dof_index> dof_indices_p(dofs_per_cell);
-      if(is_mg)
-      {
-        cell_m->get_mg_dof_indices(dof_indices_m);
-        cell_p->get_mg_dof_indices(dof_indices_p);
-      }
-      else
-      {
-        cell_m->get_dof_indices(dof_indices_m);
-        cell_p->get_dof_indices(dof_indices_p);
-      }
-
-      // save M_mm
-      constraint_double.distribute_local_to_global(matrices_m[v], dof_indices_m, dst);
-      // save M_pm
-      constraint_double.distribute_local_to_global(matrices_p[v],
-                                                   dof_indices_p,
-                                                   dof_indices_m,
-                                                   dst);
-    }
-
-    // process positive trial function
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
-    {
-      // write standard basis into dof values of first dealii::FEFaceEvaluation and
-      // clear dof values of second dealii::FEFaceEvaluation
-      this->create_standard_basis(j, integrator_p, integrator_m);
-
-      integrator_m.evaluate(integrator_flags.face_evaluate);
-      integrator_p.evaluate(integrator_flags.face_evaluate);
-
-      this->do_face_integral(integrator_m, integrator_p);
-
-      integrator_m.integrate(integrator_flags.face_integrate);
-      integrator_p.integrate(integrator_flags.face_integrate);
-
-      // insert result vector into local matrix M_mp
-      for(unsigned int i = 0; i < dofs_per_cell; ++i)
-        for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          matrices_m[v](i, j) = integrator_m.begin_dof_values()[i][v];
-
-      // insert result vector into local matrix  M_pp
-      for(unsigned int i = 0; i < dofs_per_cell; ++i)
-        for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          matrices_p[v](i, j) = integrator_p.begin_dof_values()[i][v];
-    }
-
-    // save local matrices into global matrix
-    for(unsigned int v = 0; v < n_filled_lanes; v++)
-    {
-      auto const cell_number_m = matrix_free.get_face_info(face).cells_interior[v];
-      auto const cell_number_p = matrix_free.get_face_info(face).cells_exterior[v];
-
-      auto cell_m = matrix_free.get_cell_iterator(cell_number_m / vectorization_length,
-                                                  cell_number_m % vectorization_length);
-      auto cell_p = matrix_free.get_cell_iterator(cell_number_p / vectorization_length,
-                                                  cell_number_p % vectorization_length);
-
-      // get position in global matrix
-      std::vector<dealii::types::global_dof_index> dof_indices_m(dofs_per_cell);
-      std::vector<dealii::types::global_dof_index> dof_indices_p(dofs_per_cell);
-      if(is_mg)
-      {
-        cell_m->get_mg_dof_indices(dof_indices_m);
-        cell_p->get_mg_dof_indices(dof_indices_p);
-      }
-      else
-      {
-        cell_m->get_dof_indices(dof_indices_m);
-        cell_p->get_dof_indices(dof_indices_p);
-      }
-
-      // save M_mp
-      constraint_double.distribute_local_to_global(matrices_m[v],
-                                                   dof_indices_m,
-                                                   dof_indices_p,
-                                                   dst);
-      // save M_pp
-      constraint_double.distribute_local_to_global(matrices_p[v], dof_indices_p, dst);
-    }
-  }
-}
-
-template<int dim, typename Number, int n_components>
-template<typename SparseMatrix>
-void
-OperatorBase<dim, Number, n_components>::boundary_face_loop_calculate_system_matrix(
-  dealii::MatrixFree<dim, Number> const & matrix_free,
-  SparseMatrix &                          dst,
-  SparseMatrix const &                    src,
-  Range const &                           range) const
-{
-  (void)src;
-
-  IntegratorFace integrator_m =
-    IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
-
-  unsigned int const dofs_per_cell = integrator_m.dofs_per_cell;
-
-  for(auto face = range.first; face < range.second; ++face)
-  {
-    unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_face_batch(face);
-
-    // create temporary matrices for local blocks
-    FullMatrix_ matrices[vectorization_length];
-    std::fill_n(matrices, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
-
-    this->reinit_boundary_face(integrator_m, face);
-
-    auto bid = matrix_free.get_boundary_id(face);
-
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
-    {
-      this->create_standard_basis(j, integrator_m);
-
-      integrator_m.evaluate(integrator_flags.face_evaluate);
-
-      this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
-
-      integrator_m.integrate(integrator_flags.face_integrate);
-
-      for(unsigned int i = 0; i < dofs_per_cell; ++i)
-        for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          matrices[v](i, j) = integrator_m.begin_dof_values()[i][v];
-    }
-
-    // save local matrices into global matrix
-    for(unsigned int v = 0; v < n_filled_lanes; v++)
-    {
-      unsigned int const cell_number = matrix_free.get_face_info(face).cells_interior[v];
-
-      auto cell_v = matrix_free.get_cell_iterator(cell_number / vectorization_length,
-                                                  cell_number % vectorization_length);
-
-      std::vector<dealii::types::global_dof_index> dof_indices(dofs_per_cell);
-      if(is_mg)
-        cell_v->get_mg_dof_indices(dof_indices);
-      else
-        cell_v->get_dof_indices(dof_indices);
-
-      constraint_double.distribute_local_to_global(matrices[v], dof_indices, dst);
     }
   }
 }
