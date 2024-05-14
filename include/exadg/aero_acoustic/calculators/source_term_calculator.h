@@ -113,7 +113,7 @@ private:
 
     Number rho = static_cast<Number>(data.density);
 
-    auto apply_scaling = get_scaling_function();
+    auto get_scaling_factor = get_scaling_function();
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -132,7 +132,7 @@ private:
           scalar flux = -rho * dpdt.get_value(q) + u.get_value(q) * p.get_gradient(q);
 
           if(data.blend_in)
-            apply_scaling(flux, dpdt.quadrature_point(q));
+            flux *= get_scaling_factor(dpdt.quadrature_point(q));
 
           dpdt.submit_value(flux, q);
         }
@@ -144,7 +144,7 @@ private:
           scalar flux = -rho * dpdt.get_value(q);
 
           if(data.blend_in)
-            apply_scaling(flux, dpdt.quadrature_point(q));
+            flux *= get_scaling_factor(dpdt.quadrature_point(q));
 
           dpdt.submit_value(flux, q);
         }
@@ -164,7 +164,7 @@ private:
 
     Number rho = static_cast<Number>(data.density);
 
-    auto apply_scaling = get_scaling_function();
+    auto get_scaling_factor = get_scaling_function();
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -176,7 +176,7 @@ private:
                                                                       dpdt.quadrature_point(q));
 
         if(data.blend_in)
-          apply_scaling(flux, dpdt.quadrature_point(q));
+          flux *= get_scaling_factor(dpdt.quadrature_point(q));
 
         dpdt.submit_value(flux, q);
       }
@@ -185,7 +185,7 @@ private:
     }
   }
 
-  std::function<void(scalar &, qpoint const &)>
+  std::function<scalar(qpoint const &)>
   get_scaling_function() const
   {
     // In case we blend in the source term, we check if the scaling is space dependent. Only in that
@@ -207,16 +207,15 @@ private:
 
     if(space_dependent_scaling)
     {
-      return [&](scalar & flux, qpoint const & q) {
-        flux *= FunctionEvaluator<0, dim, Number>::value(*data.blend_in_function, q);
+      return [&](qpoint const & q) {
+        return FunctionEvaluator<0, dim, Number>::value(*data.blend_in_function, q);
       };
     }
     else
     {
       // capture scaling factor by copy
-      return [pure_temporal_scaling_factor](scalar & flux, qpoint const &) {
-        flux *= pure_temporal_scaling_factor;
-      };
+      return
+        [pure_temporal_scaling_factor](qpoint const &) { return pure_temporal_scaling_factor; };
     }
   }
 
