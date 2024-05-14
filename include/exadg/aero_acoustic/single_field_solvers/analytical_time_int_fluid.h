@@ -143,7 +143,7 @@ private:
   void
   solve_steady_problem() final
   {
-    AssertThrow(false, dealii::ExcMessage("Aero-Acustic not implemented for steady problem."));
+    AssertThrow(false, dealii::ExcMessage("TimeIntAnalytic not implemented for steady problem."));
   }
 
 
