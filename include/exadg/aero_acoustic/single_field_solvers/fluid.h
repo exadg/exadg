@@ -92,44 +92,11 @@ public:
     // initialize time_integrator
     if(compute_acoustic_from_analytical_cfd_solution)
     {
-      auto interpolate_analytical_solution =
-        [&, analytical_cfd_solution_velocity, analytical_cfd_solution_pressure](
-          VectorType & velocity, VectorType & pressure, double const time) {
-          velocity.zero_out_ghost_values();
-          pressure.zero_out_ghost_values();
-
-          analytical_cfd_solution_velocity->set_time(time);
-          analytical_cfd_solution_pressure->set_time(time);
-
-          // This is necessary if Number == float
-          using VectorTypeDouble = dealii::LinearAlgebra::distributed::Vector<double>;
-
-          VectorTypeDouble velocity_double;
-          VectorTypeDouble pressure_double;
-          velocity_double = velocity;
-          pressure_double = pressure;
-
-          dealii::VectorTools::interpolate(*pde_operator->get_mapping(),
-                                           pde_operator->get_dof_handler_u(),
-                                           *(analytical_cfd_solution_velocity),
-                                           velocity_double);
-
-          dealii::VectorTools::interpolate(*pde_operator->get_mapping(),
-                                           pde_operator->get_dof_handler_p(),
-                                           *(analytical_cfd_solution_pressure),
-                                           pressure_double);
-
-          velocity = velocity_double;
-          pressure = pressure_double;
-        };
-
-
       time_integrator =
         std::make_shared<IncNS::TimeIntAnalytic<dim, Number>>(pde_operator,
                                                               nullptr /*no ALE*/,
                                                               postprocessor,
                                                               application->get_parameters(),
-                                                              interpolate_analytical_solution,
                                                               mpi_comm,
                                                               is_test);
     }

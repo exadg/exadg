@@ -593,6 +593,12 @@ public:
     this->field_functions->initial_solution_pressure =
       std::make_shared<AnalyticalSolutionPressure<dim>>(intensity, r_0, r_c);
 
+    this->field_functions->analytical_solution_velocity =
+      std::make_shared<FluidAeroAcoustic::AnalyticalSolutionVelocity<dim>>(intensity, r_0, r_c);
+
+    this->field_functions->analytical_solution_pressure =
+      std::make_shared<FluidAeroAcoustic::AnalyticalSolutionPressure<dim>>(intensity, r_0, r_c);
+
     this->field_functions->right_hand_side =
       std::make_shared<dealii::Functions::ZeroFunction<dim>>(dim);
   }
@@ -797,12 +803,6 @@ private:
       std::make_shared<BlendInFunction<dim>>(this->acoustic->get_parameters().start_time,
                                              0.1 * (this->acoustic->get_parameters().end_time -
                                                     this->acoustic->get_parameters().start_time));
-
-    this->field_functions->analytical_cfd_solution_velocity =
-      std::make_shared<FluidAeroAcoustic::AnalyticalSolutionVelocity<dim>>(intensity, r_0, r_c);
-
-    this->field_functions->analytical_cfd_solution_pressure =
-      std::make_shared<FluidAeroAcoustic::AnalyticalSolutionPressure<dim>>(intensity, r_0, r_c);
 
     this->field_functions->analytical_aero_acoustic_source_term =
       std::make_shared<AnalyticalSourceTerm<dim>>(source_term_with_convection, intensity, r_0, r_c);

@@ -51,6 +51,12 @@ struct FieldFunctions
   std::shared_ptr<dealii::Function<dim>> analytical_solution_pressure;
 
   /*
+   * Analytical solution of the velocity. It is e.g. used by TimeIntInterpolateAnalyticalSolution
+   * that interpolates the analytical solution instead of computing the solution.
+   */
+  std::shared_ptr<dealii::Function<dim>> analytical_solution_velocity;
+
+  /*
    * The function right_hand_side is used to evaluate the body force term on the right-hand side of
    * the momentum equation of the incompressible Navier-Stokes equations.
    */

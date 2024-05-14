@@ -40,17 +40,13 @@ class TimeIntAnalytic : public TimeIntBDF<dim, Number>
   using Operator   = SpatialOperatorBase<dim, Number>;
 
 public:
-  TimeIntAnalytic(
-    std::shared_ptr<Operator>                       operator_in,
-    std::shared_ptr<HelpersALE<dim, Number> const>  helpers_ale_in,
-    std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
-    Parameters const &                              param_in,
-    std::function<void(VectorType & velocity, VectorType & pressure, double const time)>
-                     interpolate_analytical_solution_in,
-    MPI_Comm const & mpi_comm_in,
-    bool const       is_test_in)
+  TimeIntAnalytic(std::shared_ptr<Operator>                       operator_in,
+                  std::shared_ptr<HelpersALE<dim, Number> const>  helpers_ale_in,
+                  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
+                  Parameters const &                              param_in,
+                  MPI_Comm const &                                mpi_comm_in,
+                  bool const                                      is_test_in)
     : Base(operator_in, helpers_ale_in, postprocessor_in, param_in, mpi_comm_in, is_test_in),
-      interpolate_analytical_solution(interpolate_analytical_solution_in),
       velocity(this->order),
       pressure(this->order)
   {
@@ -125,7 +121,9 @@ private:
   void
   do_timestep_solve() final
   {
-    interpolate_analytical_solution(velocity_np, pressure_np, this->get_next_time());
+    this->operator_base->interpolate_analytical_solution(velocity_np,
+                                                         pressure_np,
+                                                         this->get_next_time());
   }
 
   void
@@ -153,9 +151,10 @@ private:
     if(this->param.ale_formulation)
       this->helpers_ale->move_grid(this->get_time());
 
-    interpolate_analytical_solution(velocity[0], pressure[0], this->get_time());
+    this->operator_base->interpolate_analytical_solution(velocity[0],
+                                                         pressure[0],
+                                                         this->get_time());
   }
-
 
   void
   initialize_former_multistep_dof_vectors() final
@@ -166,7 +165,9 @@ private:
       if(this->param.ale_formulation)
         this->helpers_ale->move_grid(this->get_previous_time(i));
 
-      interpolate_analytical_solution(velocity[i], pressure[i], this->get_previous_time(i));
+      this->operator_base->interpolate_analytical_solution(velocity[i],
+                                                           pressure[i],
+                                                           this->get_previous_time(i));
     }
   }
 
@@ -181,10 +182,6 @@ private:
   {
     pressure[i] = pressure_in;
   }
-
-  std::function<void(VectorType & velocity, VectorType & pressure, double const time)>
-    interpolate_analytical_solution;
-
 
   std::vector<VectorType> velocity;
   std::vector<VectorType> pressure;
