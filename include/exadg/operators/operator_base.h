@@ -576,6 +576,15 @@ private:
    * Calculate diagonal.
    */
   void
+  cell_compute_diagonal_matrix(IntegratorCell & integrator) const;
+
+  void
+  face_compute_diagonal_matrix(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
+
+  void
+  boundary_face_compute_diagonal_matrix(IntegratorFace & integrator_m) const;
+
+  void
   cell_based_loop_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
                            VectorType &                            dst,
                            VectorType const &                      src,

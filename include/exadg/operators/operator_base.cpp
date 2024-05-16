@@ -430,71 +430,24 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
     }
     else
     {
-      dealii::MatrixFreeTools::
-        compute_diagonal<dim, -1, 0, n_components, Number, dealii::VectorizedArray<Number>>(
-          *matrix_free,
-          diagonal,
-          [&](auto & integrator) -> void {
-            // TODO: this is currently done for every column, but would only be necessary
-            // once per cell
-            this->reinit_cell_derived(integrator, integrator.get_current_cell_index());
-
-            integrator.evaluate(integrator_flags.cell_evaluate);
-
-            this->do_cell_integral(integrator);
-
-            integrator.integrate(integrator_flags.cell_integrate);
-          },
-          [&](auto & integrator_m, auto & integrator_p) -> void {
-            unsigned int const face = integrator_m.get_current_cell_index();
-
-            // TODO: this is currently done for every column, but would only be necessary
-            // once per cell
-            this->reinit_face_derived(integrator_m, integrator_p, face);
-
-            integrator_m.evaluate(integrator_flags.face_evaluate);
-
-            this->do_face_int_integral(integrator_m, integrator_p);
-
-            integrator_m.integrate(integrator_flags.face_integrate);
-          },
-          [&](auto & integrator_m) -> void {
-            unsigned int const face = integrator_m.get_current_cell_index();
-
-            // TODO: this is currently done for every column, but would only be necessary
-            // once per cell
-            this->reinit_boundary_face_derived(integrator_m, face);
-
-            integrator_m.evaluate(integrator_flags.face_evaluate);
-
-            auto const bid = matrix_free->get_boundary_id(face);
-            this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
-
-            integrator_m.integrate(integrator_flags.face_integrate);
-          },
-          data.dof_index,
-          data.quad_index);
+      dealii::MatrixFreeTools::compute_diagonal(*matrix_free,
+                                                diagonal,
+                                                &This::cell_compute_diagonal_matrix,
+                                                &This::face_compute_diagonal_matrix,
+                                                &This::boundary_face_compute_diagonal_matrix,
+                                                this,
+                                                data.dof_index,
+                                                data.quad_index);
     }
   }
   else
   {
-    dealii::MatrixFreeTools::
-      compute_diagonal<dim, -1, 0, n_components, Number, dealii::VectorizedArray<Number>>(
-        *matrix_free,
-        diagonal,
-        [&](auto & integrator) -> void {
-          // TODO: this is currently done for every column, but would only be necessary
-          // once per cell
-          this->reinit_cell_derived(integrator, integrator.get_current_cell_index());
-
-          integrator.evaluate(integrator_flags.cell_evaluate);
-
-          this->do_cell_integral(integrator);
-
-          integrator.integrate(integrator_flags.cell_integrate);
-        },
-        data.dof_index,
-        data.quad_index);
+    dealii::MatrixFreeTools::compute_diagonal(*matrix_free,
+                                              diagonal,
+                                              &This::cell_compute_diagonal_matrix,
+                                              this,
+                                              data.dof_index,
+                                              data.quad_index);
   }
 }
 
@@ -862,72 +815,25 @@ OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix(
 {
   if(is_dg and evaluate_face_integrals())
   {
-    dealii::MatrixFreeTools::
-      compute_matrix<dim, -1, 0, n_components, Number, dealii::VectorizedArray<Number>>(
-        *matrix_free,
-        matrix_free->get_affine_constraints(),
-        system_matrix,
-        [&](auto & integrator) -> void {
-          // TODO: this is currently done for every column, but would only be necessary
-          // once per cell
-          this->reinit_cell_derived(integrator, integrator.get_current_cell_index());
-
-          integrator.evaluate(integrator_flags.cell_evaluate);
-
-          this->do_cell_integral(integrator);
-
-          integrator.integrate(integrator_flags.cell_integrate);
-        },
-        [&](auto & integrator_m, auto & integrator_p) -> void {
-          unsigned int const face = integrator_m.get_current_cell_index();
-
-          // TODO: this is currently done for every column, but would only be necessary
-          // once per cell
-          this->reinit_face_derived(integrator_m, integrator_p, face);
-
-          integrator_m.evaluate(integrator_flags.face_evaluate);
-
-          this->do_face_int_integral(integrator_m, integrator_p);
-
-          integrator_m.integrate(integrator_flags.face_integrate);
-        },
-        [&](auto & integrator_m) -> void {
-          unsigned int const face = integrator_m.get_current_cell_index();
-
-          // TODO: this is currently done for every column, but would only be necessary
-          // once per cell
-          this->reinit_boundary_face_derived(integrator_m, face);
-
-          integrator_m.evaluate(integrator_flags.face_evaluate);
-
-          auto const bid = matrix_free->get_boundary_id(face);
-          this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
-
-          integrator_m.integrate(integrator_flags.face_integrate);
-        },
-        data.dof_index,
-        data.quad_index);
+    dealii::MatrixFreeTools::compute_matrix(*matrix_free,
+                                            matrix_free->get_affine_constraints(),
+                                            system_matrix,
+                                            &This::cell_compute_diagonal_matrix,
+                                            &This::face_compute_diagonal_matrix,
+                                            &This::boundary_face_compute_diagonal_matrix,
+                                            this,
+                                            data.dof_index,
+                                            data.quad_index);
   }
   else
   {
-    dealii::MatrixFreeTools::
-      compute_matrix<dim, -1, 0, n_components, Number, dealii::VectorizedArray<Number>>(
-        *matrix_free,
-        matrix_free->get_affine_constraints(),
-        system_matrix,
-        [&](auto & integrator) -> void {
-          // TODO: this is currently done for every column, but would only be necessary
-          // once per cell
-          this->reinit_cell_derived(integrator, integrator.get_current_cell_index());
-
-          integrator.evaluate(integrator_flags.cell_evaluate);
-
-          this->do_cell_integral(integrator);
-
-          integrator.integrate(integrator_flags.cell_integrate);
-        },
-        data.dof_index,
-        data.quad_index);
+    dealii::MatrixFreeTools::compute_matrix(*matrix_free,
+                                            matrix_free->get_affine_constraints(),
+                                            system_matrix,
+                                            &This::cell_compute_diagonal_matrix,
+                                            this,
+                                            data.dof_index,
+                                            data.quad_index);
   }
 }
 
@@ -1387,6 +1293,59 @@ OperatorBase<dim, Number, n_components>::face_loop_empty(
   // do nothing
 }
 
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::cell_compute_diagonal_matrix(
+  IntegratorCell & integrator) const
+{
+  // TODO: this is currently done for every column, but would only be necessary
+  // once per cell
+  this->reinit_cell_derived(integrator, integrator.get_current_cell_index());
+
+  integrator.evaluate(integrator_flags.cell_evaluate);
+
+  this->do_cell_integral(integrator);
+
+  integrator.integrate(integrator_flags.cell_integrate);
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::face_compute_diagonal_matrix(
+  IntegratorFace & integrator_m,
+  IntegratorFace & integrator_p) const
+{
+  unsigned int const face = integrator_m.get_current_cell_index();
+
+  // TODO: this is currently done for every column, but would only be necessary
+  // once per cell
+  this->reinit_face_derived(integrator_m, integrator_p, face);
+
+  integrator_m.evaluate(integrator_flags.face_evaluate);
+
+  this->do_face_int_integral(integrator_m, integrator_p);
+
+  integrator_m.integrate(integrator_flags.face_integrate);
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::boundary_face_compute_diagonal_matrix(
+  IntegratorFace & integrator_m) const
+{
+  unsigned int const face = integrator_m.get_current_cell_index();
+
+  // TODO: this is currently done for every column, but would only be necessary
+  // once per cell
+  this->reinit_boundary_face_derived(integrator_m, face);
+
+  integrator_m.evaluate(integrator_flags.face_evaluate);
+
+  auto const bid = matrix_free->get_boundary_id(face);
+  this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
+
+  integrator_m.integrate(integrator_flags.face_integrate);
+}
 
 template<int dim, typename Number, int n_components>
 void
