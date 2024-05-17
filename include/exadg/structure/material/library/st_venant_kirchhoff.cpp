@@ -140,12 +140,12 @@ StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients(
 }
 
 template<int dim, typename Number>
-dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
 StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_symmetrize(tensor const &     strain,
                                                                          unsigned int const cell,
                                                                          unsigned int const q) const
 {
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> S;
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> S;
 
   if(E_is_variable)
   {
@@ -154,6 +154,7 @@ StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_symmetrize(tensor 
     f2 = f2_coefficients.get_coefficient_cell(cell, q);
   }
 
+  // Since we return a dealii::SymmetricTensor, we only need to set symmetric entries once.
   if(dim == 3)
   {
     S[0][0] = f0 * strain[0][0] + f1 * (strain[1][1] + strain[2][2]);
@@ -162,23 +163,19 @@ StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_symmetrize(tensor 
     S[0][1] = f2 * (strain[0][1] + strain[1][0]);
     S[1][2] = f2 * (strain[1][2] + strain[2][1]);
     S[0][2] = f2 * (strain[0][2] + strain[2][0]);
-    S[1][0] = S[0][1];
-    S[2][1] = S[1][2];
-    S[2][0] = S[0][2];
   }
   else
   {
     S[0][0] = f0 * strain[0][0] + f1 * strain[1][1];
     S[1][1] = f1 * strain[0][0] + f0 * strain[1][1];
     S[0][1] = f2 * (strain[0][1] + strain[1][0]);
-    S[1][0] = S[0][1];
   }
 
   return S;
 }
 
 template<int dim, typename Number>
-dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
 StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(tensor const & gradient_displacement,
                                                               unsigned int const cell,
                                                               unsigned int const q) const
@@ -198,7 +195,7 @@ StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(tensor const & gra
 }
 
 template<int dim, typename Number>
-dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
 StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(unsigned int const cell,
                                                               unsigned int const q) const
 {
@@ -206,7 +203,7 @@ StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(unsigned int const
 }
 
 template<int dim, typename Number>
-dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
 StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_displacement_derivative(
   tensor const &     gradient_increment,
   tensor const &     gradient_displacement,

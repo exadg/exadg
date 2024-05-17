@@ -36,6 +36,7 @@
 // deal.II
 #include <deal.II/base/numbers.h>
 #include <deal.II/base/tensor.h>
+#include <deal.II/base/symmetric_tensor.h>
 #include <deal.II/physics/transformations.h>
 
 namespace ExaDG
@@ -45,12 +46,12 @@ namespace Structure
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   void
-  bound_tensor(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> & tensor,
-               Number const &                                            upper_bound)
+  bound_tensor(dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> & tensor,
+               Number const &                                                     upper_bound)
 {
   for(unsigned int i = 0; i < dim; ++i)
   {
-    for(unsigned int j = 0; j < dim; ++j)
+    for(unsigned int j = i; j < dim; ++j)
     {
       tensor[i][j] = std::min(tensor[i][j], dealii::make_vectorized_array(upper_bound));
     }
@@ -188,13 +189,275 @@ inline DEAL_II_ALWAYS_INLINE //
   }
 }
 
+// Create a symmetric tensor from a a tensor H plus H^T
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
+  compute_H_plus_HT(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & H)
+{
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> result;
+
+  for(unsigned int i = 0; i < dim; ++i)
+  {
+    for(unsigned int j = i; j < dim; ++j)
+    {
+      result[i][j] = H[i][j] + H[j][i];
+    }
+  }
+
+  if constexpr(false)
+  {
+    if(dealii::VectorizedArray<Number>::size() == 4) // test for doubles only.
+    {
+      dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> check   = H + transpose(H);
+      dealii::VectorizedArray<Number>                         sum_err = 0.0;
+      for(unsigned int i = 0; i < dim; ++i)
+      {
+        for(unsigned int j = 0; j < dim; ++j)
+        {
+          sum_err += std::abs(check[i][j] - result[i][j]);
+        }
+      }
+      std::cout << "(1) sum_err = " << sum_err << "\n";
+    }
+  }
+
+  return result;
+}
+
+// Create a symmetric tensor from a a tensor H^T times H
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
+  compute_HT_times_H(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & H)
+{
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> result;
+
+  for(unsigned int i = 0; i < dim; ++i)
+  {
+    for(unsigned int j = i; j < dim; ++j)
+    {
+      for(unsigned int k = 0; k < dim; ++k)
+      {
+        result[i][j] += /* HT[i][k] */ H[k][i] * H[k][j];
+      }
+    }
+  }
+
+  if constexpr(false)
+  {
+    if(dealii::VectorizedArray<Number>::size() == 4) // test for doubles only.
+    {
+      dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> check   = transpose(H) * H;
+      dealii::VectorizedArray<Number>                         sum_err = 0.0;
+      for(unsigned int i = 0; i < dim; ++i)
+      {
+        for(unsigned int j = 0; j < dim; ++j)
+        {
+          sum_err += std::abs(check[i][j] - result[i][j]);
+        }
+      }
+      std::cout << "(2) sum_err = " << sum_err << "\n";
+    }
+  }
+
+  return result;
+}
+
+// Create a symmetric tensor from a a tensor H times H^T
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
+  compute_H_times_HT(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & H)
+{
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> result;
+
+  for(unsigned int i = 0; i < dim; ++i)
+  {
+    for(unsigned int j = i; j < dim; ++j)
+    {
+      for(unsigned int k = 0; k < dim; ++k)
+      {
+        result[i][j] += H[i][k] * H[j][k] /* HT[k][j] */;
+      }
+    }
+  }
+
+  if constexpr(false)
+  {
+    if(dealii::VectorizedArray<Number>::size() == 4) // test for doubles only.
+    {
+      dealii::VectorizedArray<Number> sum_err = 0.0;
+
+      dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> check = H * transpose(H);
+      for(unsigned int i = 0; i < dim; ++i)
+      {
+        for(unsigned int j = 0; j < dim; ++j)
+        {
+          sum_err += std::abs(check[i][j] - result[i][j]);
+        }
+      }
+      std::cout << "(3) sum_err = " << sum_err << "\n";
+    }
+  }
+
+  return result;
+}
+
+// Compute the symmetric(!) product of two symmetric tensors:
+// C = A * B, with A = A^T, B = B^T *and additionally* C = C^T
+// Note that this is a special case, since in general, we have
+// C^T = (A * B)^T = B^T * A = B * A != A * B.
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
+  compute_symmetric_product(
+    dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> const & A,
+    dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> const & B)
+{
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> result;
+  for(unsigned int i = 0; i < dim; ++i)
+  {
+    for(unsigned int j = i; j < dim; ++j)
+    {
+      for(unsigned int k = 0; k < dim; ++k)
+      {
+        result[i][j] += A[i][k] * B[k][j];
+      }
+    }
+  }
+
+  if constexpr(false)
+  {
+    if(dealii::VectorizedArray<Number>::size() == 4) // test for doubles only.
+    {
+      dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> A_, B_;
+      for(unsigned int i = 0; i < dim; ++i)
+      {
+        for(unsigned int j = 0; j < dim; ++j)
+        {
+          A_[i][j] = A[i][j];
+          B_[i][j] = B[i][j];
+        }
+      }
+
+      dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> check;
+
+      for(unsigned int i = 0; i < dim; ++i)
+      {
+        for(unsigned int j = 0; j < dim; ++j)
+        {
+          check[i][j] = A_[i][0] * B_[0][j];
+          for(unsigned int k = 1; k < dim; ++k)
+          {
+            check[i][j] += A[i][k] * B[k][j];
+          }
+        }
+      }
+
+      dealii::VectorizedArray<Number> sum_err = 0.0, sym_err = 0.0, magn = 0.0;
+      for(unsigned int i = 0; i < dim; ++i)
+      {
+        for(unsigned int j = 0; j < dim; ++j)
+        {
+          magn += std::abs(check[i][j]);
+          sym_err += std::abs(A_[i][j] - A[j][i]) + std::abs(B_[i][j] - B[j][i]);
+          sum_err += std::abs(check[i][j] - result[i][j]);
+        }
+      }
+      std::cout << "(4) sum_err = " << sum_err << ", sym_err = " << sym_err
+                << ", magn = " << magn / static_cast<Number>(dim * dim) << "\n";
+    }
+  }
+
+  return result;
+}
+
+// Compute the push-forward of a symmetric tensor, i.e.,
+// tau = F * S * F^T,
+// with S being symmetric, and therefore symmetric tau.
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
+  compute_push_forward(dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> const & S,
+                       dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const &          F)
+{
+  // Compute the non-symmetric S * F^T, since we do not want to recompute
+  // the components for the triple matrix product.
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> S_times_FT;
+  for(unsigned int i = 0; i < dim; ++i)
+  {
+    for(unsigned int j = 0; j < dim; ++j)
+    {
+      for(unsigned int k = 0; k < dim; ++k)
+      {
+        S_times_FT[i][j] += S[i][k] * F[j][k] /* FT[k][j] */;
+      }
+    }
+  }
+
+  // Compute the remaining product, exploit symmetry of the result.
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> result;
+  for(unsigned int i = 0; i < dim; ++i)
+  {
+    for(unsigned int j = i; j < dim; ++j)
+    {
+      for(unsigned int k = 0; k < dim; ++k)
+      {
+        result[i][j] += F[i][k] * S_times_FT[k][j];
+      }
+    }
+  }
+
+  if constexpr(false)
+  {
+    if(dealii::VectorizedArray<Number>::size() == 4) // test for doubles only.
+    {
+      dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> S_;
+      for(unsigned int i = 0; i < dim; ++i)
+      {
+        for(unsigned int j = 0; j < dim; ++j)
+        {
+          S_[i][j] = S[i][j];
+        }
+      }
+
+      dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> check = F * S_ * transpose(F);
+
+      dealii::VectorizedArray<Number> sum_err = 0.0;
+      for(unsigned int i = 0; i < dim; ++i)
+      {
+        for(unsigned int j = 0; j < dim; ++j)
+        {
+          sum_err += std::abs(check[i][j] - result[i][j]);
+        }
+      }
+      std::cout << "(5) sum_err = " << sum_err << "\n";
+    }
+  }
+
+  return result;
+}
+
 template<int dim, typename Number, typename TypeScale>
 inline DEAL_II_ALWAYS_INLINE //
   void
   add_scaled_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> & tmp,
                       TypeScale const &                                         scale)
 {
-  for(unsigned int i = 0; i < dim; i++)
+  for(unsigned int i = 0; i < dim; ++i)
+  {
+    tmp[i][i] = tmp[i][i] + scale;
+  }
+}
+
+template<int dim, typename Number, typename TypeScale>
+inline DEAL_II_ALWAYS_INLINE //
+  void
+  add_scaled_identity(dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> & tmp,
+                      TypeScale const &                                                  scale)
+{
+  for(unsigned int i = 0; i < dim; ++i)
   {
     tmp[i][i] = tmp[i][i] + scale;
   }
@@ -206,13 +469,22 @@ inline DEAL_II_ALWAYS_INLINE //
   compute_F(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement)
 {
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> F = gradient_displacement;
-  add_scaled_identity<dim, Number, Number>(F, 1.0);
+  add_scaled_identity(F, static_cast<Number>(1.0));
   return F;
 }
 
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
+  compute_C_inv(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & F_inv)
+{
+  return compute_H_times_HT<dim, Number>(F_inv);
+}
+
+
 template<int dim, typename Number, typename TypeScale, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
   compute_E_scaled(
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
     TypeScale const &                                               scale)
@@ -221,15 +493,15 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     // E = 0.5 * (H + H^T + H^T * H)
     // where H = gradient_displacement
-    return ((0.5 * scale) * (gradient_displacement + transpose(gradient_displacement) +
-                             transpose(gradient_displacement) * gradient_displacement));
+    return ((0.5 * scale) *
+            (compute_H_plus_HT(gradient_displacement) + compute_HT_times_H(gradient_displacement)));
   }
   else
   {
     // E = 0.5 * (F^T * F - I)
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> E = compute_F(gradient_displacement);
-    E                                                         = transpose(E) * E;
-    add_scaled_identity<dim, Number, Number>(E, -1.0);
+    dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> E =
+      compute_HT_times_H(compute_F(gradient_displacement));
+    add_scaled_identity(E, static_cast<Number>(-1.0));
     return (E * (0.5 * scale));
   }
 }
@@ -240,7 +512,17 @@ inline DEAL_II_ALWAYS_INLINE //
   get_identity_tensor()
 {
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> identity_tensor;
-  add_scaled_identity<dim, Number, Number>(identity_tensor, 1.0);
+  add_scaled_identity(identity_tensor, static_cast<Number>(1.0));
+  return identity_tensor;
+}
+
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
+  get_identity_symmetric_tensor()
+{
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> identity_tensor;
+  add_scaled_identity(identity_tensor, static_cast<Number>(1.0));
   return identity_tensor;
 }
 
@@ -250,6 +532,15 @@ inline DEAL_II_ALWAYS_INLINE //
   get_zero_tensor()
 {
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> zero_tensor;
+  return zero_tensor;
+}
+
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
+  get_zero_symmetric_tensor()
+{
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> zero_tensor;
   return zero_tensor;
 }
 
@@ -321,8 +612,8 @@ inline DEAL_II_ALWAYS_INLINE //
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
-  compute_I_1(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
-              bool const                                                      stable_formulation)
+  compute_I_1(dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> const & E,
+              bool const stable_formulation)
 {
   if(stable_formulation)
   {
@@ -332,8 +623,8 @@ inline DEAL_II_ALWAYS_INLINE //
   else
   {
     // I_1 = trace(C) = trace(2 * E + I)
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> C = 2.0 * E;
-    add_scaled_identity<dim, Number, Number>(C, 1.0);
+    dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> C = 2.0 * E;
+    add_scaled_identity(C, static_cast<Number>(1.0));
     return trace(C);
   }
 }

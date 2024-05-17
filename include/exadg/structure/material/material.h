@@ -39,8 +39,9 @@ template<int dim, typename Number>
 class Material
 {
 public:
-  typedef dealii::VectorizedArray<Number>                         scalar;
-  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
+  typedef dealii::VectorizedArray<Number>                                  scalar;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>          tensor;
+  typedef dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> symmetric_tensor;
 
   virtual ~Material()
   {
@@ -51,7 +52,7 @@ public:
    * the gradient of the displacement field with respect to the reference configuration
    * (not to be confused with the deformation gradient).
    */
-  virtual tensor
+  virtual symmetric_tensor
   second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
                                 unsigned int const cell,
                                 unsigned int const q) const
@@ -63,14 +64,14 @@ public:
                 dealii::ExcMessage("For a total Lagrangian formulation,"
                                    "overwrite this method in derived class."));
 
-    tensor dummy;
+    symmetric_tensor dummy;
     return dummy;
   }
 
   /*
    * Variant of the above function intended for loading a stored stress tensor.
    */
-  virtual tensor
+  virtual symmetric_tensor
   second_piola_kirchhoff_stress(unsigned int const cell, unsigned int const q) const
   {
     (void)cell;
@@ -79,7 +80,7 @@ public:
                 dealii::ExcMessage("For a total Lagrangian formulation, "
                                    "overwrite this method in derived class."));
 
-    tensor dummy;
+    symmetric_tensor dummy;
     return dummy;
   }
 
@@ -90,7 +91,7 @@ public:
    * `gradient_increment` and the gradient of the current linearization point
    * `gradient_displacement`.
    */
-  virtual tensor
+  virtual symmetric_tensor
   second_piola_kirchhoff_stress_displacement_derivative(tensor const &     gradient_increment,
                                                         tensor const &     gradient_displacement,
                                                         unsigned int const cell,
@@ -104,7 +105,7 @@ public:
                 dealii::ExcMessage("For a total Lagrangian formulation, "
                                    "overwrite this method in derived class."));
 
-    tensor dummy;
+    symmetric_tensor dummy;
     return dummy;
   }
 
@@ -114,7 +115,7 @@ public:
    * displacement field with respect to the reference configuration
    * (not to be confused with the deformation gradient).
    */
-  virtual tensor
+  virtual symmetric_tensor
   kirchhoff_stress(tensor const &     gradient_displacement,
                    unsigned int const cell,
                    unsigned int const q) const
@@ -126,14 +127,14 @@ public:
                 dealii::ExcMessage("For a Lagrangian formulation in spatial domain, "
                                    "overwrite this method in derived class."));
 
-    tensor dummy;
+    symmetric_tensor dummy;
     return dummy;
   }
 
   /*
    * Variant of the above function intended for loading a stored stress tensor.
    */
-  virtual tensor
+  virtual symmetric_tensor
   kirchhoff_stress(unsigned int const cell, unsigned int const q) const
   {
     (void)cell;
@@ -142,7 +143,7 @@ public:
                 dealii::ExcMessage("For a Lagrangian formulation in spatial domain, "
                                    "overwrite this method in derived class."));
 
-    tensor dummy;
+    symmetric_tensor dummy;
     return dummy;
   }
 
@@ -151,11 +152,11 @@ public:
    * operation J*c:(X), where c is the spatial tangent tensor and X is a symmetric
    * second order tensor.
    */
-  virtual tensor
-  contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
-                          tensor const &     gradient_displacement,
-                          unsigned int const cell,
-                          unsigned int const q) const
+  virtual symmetric_tensor
+  contract_with_J_times_C(symmetric_tensor const & symmetric_gradient_increment,
+                          tensor const &           gradient_displacement,
+                          unsigned int const       cell,
+                          unsigned int const       q) const
   {
     (void)symmetric_gradient_increment;
     (void)gradient_displacement;
@@ -165,14 +166,14 @@ public:
                 dealii::ExcMessage("For a Lagrangian formulation in spatial domain, "
                                    "overwrite this method in derived class."));
 
-    tensor dummy;
+    symmetric_tensor dummy;
     return dummy;
   }
 
-  virtual tensor
-  contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
-                          unsigned int const cell,
-                          unsigned int const q) const
+  virtual symmetric_tensor
+  contract_with_J_times_C(symmetric_tensor const & symmetric_gradient_increment,
+                          unsigned int const       cell,
+                          unsigned int const       q) const
   {
     (void)symmetric_gradient_increment;
     (void)cell;
@@ -181,7 +182,7 @@ public:
                 dealii::ExcMessage("For a Lagrangian formulation in spatial domain, "
                                    "overwrite this method in derived class."));
 
-    tensor dummy;
+    symmetric_tensor dummy;
     return dummy;
   }
 

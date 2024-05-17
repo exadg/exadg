@@ -107,9 +107,10 @@ public:
   typedef std::pair<unsigned int, unsigned int>              Range;
   typedef CellIntegrator<dim, dim, Number>                   IntegratorCell;
 
-  typedef dealii::VectorizedArray<Number>                         scalar;
-  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
-  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
+  typedef dealii::VectorizedArray<Number>                                  scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>          vector;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>          tensor;
+  typedef dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> symmetric_tensor;
 
   IncompressibleFibrousTissue(dealii::MatrixFree<dim, Number> const &      matrix_free,
                               unsigned int const                           dof_index,
@@ -178,38 +179,38 @@ public:
    *                     0 else.
    *
    */
-  tensor
+  symmetric_tensor
   second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
                                 unsigned int const cell,
                                 unsigned int const q) const final;
 
-  tensor
+  symmetric_tensor
   second_piola_kirchhoff_stress(unsigned int const cell, unsigned int const q) const final;
 
-  tensor
+  symmetric_tensor
   second_piola_kirchhoff_stress_displacement_derivative(tensor const &     gradient_increment,
                                                         tensor const &     gradient_displacement,
                                                         unsigned int const cell,
                                                         unsigned int const q) const final;
 
-  tensor
+  symmetric_tensor
   kirchhoff_stress(tensor const &     gradient_displacement,
                    unsigned int const cell,
                    unsigned int const q) const final;
 
-  tensor
+  symmetric_tensor
   kirchhoff_stress(unsigned int const cell, unsigned int const q) const final;
 
-  tensor
-  contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
-                          tensor const &     gradient_displacement,
-                          unsigned int const cell,
-                          unsigned int const q) const final;
+  symmetric_tensor
+  contract_with_J_times_C(symmetric_tensor const & symmetric_gradient_increment,
+                          tensor const &           gradient_displacement,
+                          unsigned int const       cell,
+                          unsigned int const       q) const final;
 
-  tensor
-  contract_with_J_times_C(tensor const &     symmetric_gradient_increment,
-                          unsigned int const cell,
-                          unsigned int const q) const final;
+  symmetric_tensor
+  contract_with_J_times_C(symmetric_tensor const & symmetric_gradient_increment,
+                          unsigned int const       cell,
+                          unsigned int const       q) const final;
 
   /*
    * Store linearization data depending on cache level.
@@ -240,82 +241,82 @@ private:
    */
   template<bool force_evaluation>
   DEAL_II_ALWAYS_INLINE scalar
-  get_c1(scalar const &     Jm1,
-         scalar const &     J_pow,
-         tensor const &     E,
-         scalar const &     shear_modulus,
-         unsigned int const cell,
-         unsigned int const q) const;
+  get_c1(scalar const &           Jm1,
+         scalar const &           J_pow,
+         symmetric_tensor const & E,
+         scalar const &           shear_modulus,
+         unsigned int const       cell,
+         unsigned int const       q) const;
 
   template<bool force_evaluation>
   DEAL_II_ALWAYS_INLINE scalar
-  get_c2(scalar const &     Jm1,
-         scalar const &     J_pow,
-         tensor const &     E,
-         scalar const &     shear_modulus,
-         unsigned int const cell,
-         unsigned int const q) const;
+  get_c2(scalar const &           Jm1,
+         scalar const &           J_pow,
+         symmetric_tensor const & E,
+         scalar const &           shear_modulus,
+         unsigned int const       cell,
+         unsigned int const       q) const;
 
   template<bool force_evaluation>
   DEAL_II_ALWAYS_INLINE scalar
-  get_c3(vector const &     M_1,
-         tensor const &     E,
-         scalar const &     E_i,
-         unsigned int const i,
-         unsigned int const cell,
-         unsigned int const q) const;
+  get_c3(vector const &           M_1,
+         symmetric_tensor const & E,
+         scalar const &           E_i,
+         unsigned int const       i,
+         unsigned int const       cell,
+         unsigned int const       q) const;
 
   template<bool force_evaluation>
   DEAL_II_ALWAYS_INLINE scalar
   get_J_pow(scalar const & Jm1, unsigned int const cell, unsigned int const q) const;
 
-  DEAL_II_ALWAYS_INLINE tensor
+  DEAL_II_ALWAYS_INLINE symmetric_tensor
   compute_structure_tensor(vector const & M_1, vector const & M_2) const;
 
   DEAL_II_ALWAYS_INLINE scalar
-  compute_fiber_switch(vector const & M_1, tensor const & E) const;
+  compute_fiber_switch(vector const & M_1, symmetric_tensor const & E) const;
 
   template<bool force_evaluation>
   DEAL_II_ALWAYS_INLINE scalar
-  get_E_i(tensor const &     H_i,
-          tensor const &     E,
-          unsigned int const i,
-          unsigned int const cell,
-          unsigned int const q) const;
+  get_E_i(symmetric_tensor const & H_i,
+          symmetric_tensor const & E,
+          unsigned int const       i,
+          unsigned int const       cell,
+          unsigned int const       q) const;
 
   DEAL_II_ALWAYS_INLINE Number
   compute_numerical_upper_bound(Number const & fiber_k_1) const;
 
-  DEAL_II_ALWAYS_INLINE tensor
-  compute_S_ground_matrix_stable(tensor const & gradient_displacement,
-                                 tensor const & C_inv,
-                                 scalar const & J_pow,
-                                 scalar const & Jm1,
-                                 scalar const & shear_modulus) const;
+  DEAL_II_ALWAYS_INLINE symmetric_tensor
+  compute_S_ground_matrix_stable(tensor const &           gradient_displacement,
+                                 symmetric_tensor const & C_inv,
+                                 scalar const &           J_pow,
+                                 scalar const &           Jm1,
+                                 scalar const &           shear_modulus) const;
 
-  DEAL_II_ALWAYS_INLINE tensor
-  compute_S_ground_matrix_unstable(tensor const & C_inv,
-                                   scalar const & J_pow,
-                                   scalar const & c1,
-                                   scalar const & shear_modulus) const;
+  DEAL_II_ALWAYS_INLINE symmetric_tensor
+  compute_S_ground_matrix_unstable(symmetric_tensor const & C_inv,
+                                   scalar const &           J_pow,
+                                   scalar const &           c1,
+                                   scalar const &           shear_modulus) const;
 
-  DEAL_II_ALWAYS_INLINE tensor
-  compute_S_fiber_i(scalar const & c3, scalar const & E_i, tensor const & H_i) const;
+  DEAL_II_ALWAYS_INLINE symmetric_tensor
+  compute_S_fiber_i(scalar const & c3, scalar const & E_i, symmetric_tensor const & H_i) const;
 
-  DEAL_II_ALWAYS_INLINE tensor
-  compute_tau_stable(tensor const & S_fiber,
-                     tensor const & F,
-                     tensor const & E,
-                     scalar const & Jm1,
-                     scalar const & J_pow,
-                     scalar const & shear_modulus) const;
+  DEAL_II_ALWAYS_INLINE symmetric_tensor
+  compute_tau_stable(symmetric_tensor const & S_fiber,
+                     tensor const &           F,
+                     symmetric_tensor const & E,
+                     scalar const &           Jm1,
+                     scalar const &           J_pow,
+                     scalar const &           shear_modulus) const;
 
-  DEAL_II_ALWAYS_INLINE tensor
-  compute_tau_unstable(tensor const & S_fiber,
-                       tensor const & F,
-                       scalar const & J_pow,
-                       scalar const & c1,
-                       scalar const & shear_modulus) const;
+  DEAL_II_ALWAYS_INLINE symmetric_tensor
+  compute_tau_unstable(symmetric_tensor const & S_fiber,
+                       tensor const &           F,
+                       scalar const &           J_pow,
+                       scalar const &           c1,
+                       scalar const &           shear_modulus) const;
 
   unsigned int dof_index;
   unsigned int quad_index;
@@ -361,16 +362,15 @@ private:
   mutable std::vector<VariableCoefficients<scalar>> E_i_coefficients;
 
   // tensor cache level
-  mutable VariableCoefficients<tensor> kirchhoff_stress_coefficients;
-  mutable VariableCoefficients<tensor> C_coefficients;
+  mutable VariableCoefficients<symmetric_tensor> kirchhoff_stress_coefficients;
+  mutable VariableCoefficients<symmetric_tensor> C_coefficients;
 
-  mutable VariableCoefficients<tensor> second_piola_kirchhoff_stress_coefficients;
-  mutable VariableCoefficients<tensor> F_inv_coefficients;
-  mutable VariableCoefficients<tensor> C_inv_coefficients;
+  mutable VariableCoefficients<symmetric_tensor> second_piola_kirchhoff_stress_coefficients;
+  mutable VariableCoefficients<tensor>           F_inv_coefficients;
+  mutable VariableCoefficients<symmetric_tensor> C_inv_coefficients;
 
-  mutable std::vector<VariableCoefficients<tensor>> fiber_structure_tensor;
-  mutable std::vector<VariableCoefficients<tensor>> H_i_times_C_coefficients;
-  mutable std::vector<VariableCoefficients<tensor>> C_times_H_i_coefficients;
+  mutable std::vector<VariableCoefficients<symmetric_tensor>> fiber_structure_tensor;
+  mutable std::vector<VariableCoefficients<symmetric_tensor>> F_times_H_i_times_FT_coefficients;
 };
 } // namespace Structure
 } // namespace ExaDG

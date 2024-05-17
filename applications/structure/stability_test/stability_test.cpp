@@ -296,12 +296,12 @@ setup_material(MaterialType                            material_type,
       // a = 3.62, b = 34.3 for medial tissue lead to the H_ii below,
       // while the k_1 coefficient is scaled relative to the shear modulus
       // (for medial tissue, e.g., 62.1 kPa).
-      double const fiber_angle_phi_in_degree = 27.47;                            // [deg]
-      double const fiber_H_11                = 0.9168;                           // [-]
-      double const fiber_H_22                = 0.0759;                           // [-]
-      double const fiber_H_33                = 0.0073;                           // [-]
-      double const fiber_k_1                 = 1.4e3 * (shear_modulus / 62.1e3); // [Pa]
-      double const fiber_k_2                 = 22.1;                             // [-]
+      double const fiber_angle_phi_in_degree = 27.47;                                  // [deg]
+      double const fiber_H_11                = 0.9168;                                 // [-]
+      double const fiber_H_22                = 0.0759;                                 // [-]
+      double const fiber_H_33                = 0.0073;                                 // [-]
+      double const fiber_k_1                 = 0.0 * 1.4e3 * (shear_modulus / 62.1e3); // [Pa]
+      double const fiber_k_2                 = 22.1;                                   // [-]
 
       // Read the orientation files from binary format.
       typedef typename IncompressibleFibrousTissueData<dim>::VectorType VectorType;
@@ -492,8 +492,27 @@ tensor_cast_shallow(dealii::Tensor<2, dim, dealii::VectorizedArray<NumberIn>> co
   return tensor_out;
 }
 
+template<int dim, typename NumberIn, typename NumberOut>
+dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<NumberOut>>
+symmetric_tensor_cast_shallow(
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<NumberIn>> const & tensor_in)
+{
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<NumberOut>> tensor_out;
+
+  for(unsigned int i = 0; i < dim; ++i)
+  {
+    for(unsigned int j = i; j < dim; ++j)
+    {
+      // Copy and cast only the very first entry from `tensor_in` to `tensor_out`.
+      tensor_out[i][j][0] = static_cast<NumberOut>(tensor_in[i][j][0]);
+    }
+  }
+
+  return tensor_out;
+}
+
 template<int dim, typename Number>
-std::vector<dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>>
+std::vector<dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>>
 evaluate_material(
   Material<dim, Number> const &                                   material,
   unsigned int const                                              cache_level,
@@ -505,9 +524,9 @@ evaluate_material(
   std::vector<double> &                                           execution_time_stress_jacobian,
   unsigned int const                                              n_executions_timer)
 {
-  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> Tensor;
+  typedef dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> symmetric_tensor;
 
-  std::vector<Tensor> evaluation(2);
+  std::vector<symmetric_tensor> evaluation(2);
   execution_time_stress_jacobian.resize(2);
 
   // Stress computation and timing.
@@ -551,8 +570,7 @@ evaluate_material(
   }
 
   // Jacobian computation and timing.
-  Tensor const symmetric_gradient_increment =
-    0.5 * (gradient_increment + transpose(gradient_increment));
+  symmetric_tensor const symmetric_gradient_increment = symmetrize(gradient_increment);
 
   {
     auto timer_start = std::chrono::steady_clock::now();
@@ -573,7 +591,8 @@ evaluate_material(
             }
             else
             {
-              evaluation[1] = material.contract_with_J_times_C(gradient_displacement, cell, q);
+              evaluation[1] =
+                material.contract_with_J_times_C(symmetric_gradient_increment, cell, q);
             }
           }
           else
@@ -602,8 +621,10 @@ main(int argc, char ** argv)
 
   unsigned int constexpr dim = 3;
 
-  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<double>> tensor_double;
-  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<float>>  tensor_float;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<double>>          tensor_double;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<float>>           tensor_float;
+  typedef dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<double>> symmetric_tensor_double;
+  typedef dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<float>>  symmetric_tensor_float;
 
   try
   {
@@ -613,7 +634,7 @@ main(int argc, char ** argv)
                                      dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
     // Perform the stability test or measure the evaluation time.
-    bool constexpr stab_test       = true;
+    bool constexpr stab_test       = false;
     bool constexpr use_max_err     = true;
     bool constexpr use_random_sign = true;
 
@@ -763,8 +784,8 @@ main(int argc, char ** argv)
                   gradient_increment_float);
 
               // Compute stresses and derivatives.
-              std::vector<double>              time_double(2), time_float(2);
-              std::vector<tensor_double> const evaluation_double =
+              std::vector<double>                        time_double(2), time_float(2);
+              std::vector<symmetric_tensor_double> const evaluation_double =
                 evaluate_material<dim, double>(*material_double,
                                                cache_level,
                                                gradient_displacement_double,
@@ -775,7 +796,7 @@ main(int argc, char ** argv)
                                                time_double,
                                                n_executions_timer);
 
-              std::vector<tensor_float> const evaluation_float =
+              std::vector<symmetric_tensor_float> const evaluation_float =
                 evaluate_material<dim, float>(*material_float,
                                               cache_level,
                                               gradient_displacement_float,
@@ -809,8 +830,8 @@ main(int argc, char ** argv)
               for(unsigned int k = 0; k < evaluation_double.size(); ++k)
               {
                 // Cast first entry of computed tensor to double from *representable* float.
-                tensor_double diff_evaluation =
-                  tensor_cast_shallow<dim, float /*NumberIn*/, double /*NumberOut*/>(
+                symmetric_tensor_double diff_evaluation =
+                  symmetric_tensor_cast_shallow<dim, float /*NumberIn*/, double /*NumberOut*/>(
                     evaluation_float[k]);
                 diff_evaluation -= evaluation_double[k];
 
@@ -822,7 +843,7 @@ main(int argc, char ** argv)
                 double rel_norm_evaluation     = use_max_err ? 1e-20 : 1e+20;
                 for(unsigned int l = 0; l < dim; ++l)
                 {
-                  for(unsigned int m = 0; m < dim; ++m)
+                  for(unsigned int m = l; m < dim; ++m)
                   {
                     double const rel_norm =
                       std::abs((diff_evaluation[l][m][0] + 1e-40) /

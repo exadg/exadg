@@ -63,8 +63,9 @@ public:
   typedef std::pair<unsigned int, unsigned int>              Range;
   typedef CellIntegrator<dim, dim, Number>                   IntegratorCell;
 
-  typedef dealii::VectorizedArray<Number>                         scalar;
-  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
+  typedef dealii::VectorizedArray<Number>                                  scalar;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>          tensor;
+  typedef dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> symmetric_tensor;
 
   StVenantKirchhoff(dealii::MatrixFree<dim, Number> const & matrix_free,
                     unsigned int const                      dof_index,
@@ -72,15 +73,15 @@ public:
                     StVenantKirchhoffData<dim> const &      data,
                     bool const                              large_deformation);
 
-  tensor
+  symmetric_tensor
   second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
                                 unsigned int const cell,
                                 unsigned int const q) const final;
 
-  tensor
+  symmetric_tensor
   second_piola_kirchhoff_stress(unsigned int const cell, unsigned int const q) const final;
 
-  tensor
+  symmetric_tensor
   second_piola_kirchhoff_stress_displacement_derivative(tensor const &     gradient_increment,
                                                         tensor const &     gradient_displacement,
                                                         unsigned int const cell,
@@ -107,7 +108,7 @@ private:
    * Sij = f2 * (Eij + Eji),    for i, j = 1, ..., dim and i != j.
    * The latter symmetrizes the off-diagonal entries in the strain argument to reduce computations.
    */
-  tensor
+  symmetric_tensor
   second_piola_kirchhoff_stress_symmetrize(tensor const &     strain,
                                            unsigned int const cell,
                                            unsigned int const q) const;

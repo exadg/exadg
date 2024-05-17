@@ -520,8 +520,8 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
           scalar const Jm1_lin =
             compute_modified_Jm1<dim, Number, check_type, true /* stable_formulation */>(
               Grad_d_lin);
-          scalar const one_over_J_lin = 1.0 / (Jm1_lin + 1.0);
-          tensor const tau_lin =
+          scalar const           one_over_J_lin = 1.0 / (Jm1_lin + 1.0);
+          symmetric_tensor const tau_lin =
             material->kirchhoff_stress(Grad_d_lin, integrator.get_current_cell_index(), q);
 
           integrator.submit_gradient(tau_lin * one_over_J_lin, q);
@@ -543,15 +543,15 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
           scalar const Jm1_lin =
             compute_modified_Jm1<dim, Number, check_type, true /* stable_formulation */>(
               Grad_d_lin);
-          scalar const one_over_J_lin = 1.0 / (Jm1_lin + 1.0);
-          tensor const tau_lin =
+          scalar const           one_over_J_lin = 1.0 / (Jm1_lin + 1.0);
+          symmetric_tensor const tau_lin =
             material->kirchhoff_stress(Grad_d_lin, integrator.get_current_cell_index(), q);
 
           integrator.submit_gradient(tau_lin * one_over_J_lin, q);
 
           if(this->operator_data.unsteady)
           {
-            integrator.submit_value((this->scaling_factor_mass * this->operator_data.density *
+            integrator.submit_value(((this->scaling_factor_mass * this->operator_data.density) *
                                      one_over_J_lin) *
                                       integrator.get_value(q),
                                     q);
@@ -565,14 +565,14 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
       {
         tensor const Grad_d_lin     = integrator_lin->get_gradient(q);
         scalar const one_over_J_lin = material->one_over_J(integrator.get_current_cell_index(), q);
-        tensor const tau_lin =
+        symmetric_tensor const tau_lin =
           material->kirchhoff_stress(Grad_d_lin, integrator.get_current_cell_index(), q);
 
         integrator.submit_gradient(tau_lin * one_over_J_lin, q);
 
         if(this->operator_data.unsteady)
         {
-          integrator.submit_value((this->scaling_factor_mass * this->operator_data.density *
+          integrator.submit_value(((this->scaling_factor_mass * this->operator_data.density) *
                                    one_over_J_lin) *
                                     integrator.get_value(q),
                                   q);
@@ -584,13 +584,14 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         scalar const one_over_J_lin = material->one_over_J(integrator.get_current_cell_index(), q);
-        tensor const tau_lin = material->kirchhoff_stress(integrator.get_current_cell_index(), q);
+        symmetric_tensor const tau_lin =
+          material->kirchhoff_stress(integrator.get_current_cell_index(), q);
 
         integrator.submit_gradient(tau_lin * one_over_J_lin, q);
 
         if(this->operator_data.unsteady)
         {
-          integrator.submit_value((this->scaling_factor_mass * this->operator_data.density *
+          integrator.submit_value(((this->scaling_factor_mass * this->operator_data.density) *
                                    one_over_J_lin) *
                                     integrator.get_value(q),
                                   q);
@@ -612,7 +613,7 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
           tensor const Grad_d_lin = integrator.get_gradient(q);
           tensor const F_lin =
             compute_modified_F<dim, Number, check_type, true /* stable_formulation */>(Grad_d_lin);
-          tensor const S_lin =
+          symmetric_tensor const S_lin =
             material->second_piola_kirchhoff_stress(Grad_d_lin,
                                                     integrator.get_current_cell_index(),
                                                     q);
@@ -634,7 +635,7 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
           tensor const Grad_d_lin = integrator.get_gradient(q);
           tensor const F_lin =
             compute_modified_F<dim, Number, check_type, false /* stable_formulation */>(Grad_d_lin);
-          tensor const S_lin =
+          symmetric_tensor const S_lin =
             material->second_piola_kirchhoff_stress(Grad_d_lin,
                                                     integrator.get_current_cell_index(),
                                                     q);
@@ -664,7 +665,7 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
           tensor const F_lin =
             compute_modified_F<dim, Number, check_type, true /* stable_formulation */>(Grad_d_lin);
 
-          tensor const S_lin =
+          symmetric_tensor const S_lin =
             material->second_piola_kirchhoff_stress(integrator.get_current_cell_index(), q);
 
           integrator.submit_gradient(F_lin * S_lin, q);
@@ -689,7 +690,7 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
           tensor const F_lin =
             compute_modified_F<dim, Number, check_type, false /* stable_formulation */>(Grad_d_lin);
 
-          tensor const S_lin =
+          symmetric_tensor const S_lin =
             material->second_piola_kirchhoff_stress(integrator.get_current_cell_index(), q);
 
           integrator.submit_gradient(F_lin * S_lin, q);
@@ -728,25 +729,22 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       {
         for(unsigned int q = 0; q < integrator.n_q_points; ++q)
         {
-          tensor const Grad_d_lin = integrator_lin->get_gradient(q);
-          tensor const grad_delta = integrator.get_gradient(q);
-          tensor const delta_tau =
-            material->contract_with_J_times_C(0.5 * (grad_delta + transpose(grad_delta)),
-                                              Grad_d_lin,
-                                              integrator.get_current_cell_index(),
-                                              q);
+          tensor const           Grad_d_lin = integrator_lin->get_gradient(q);
+          tensor const           grad_delta = integrator.get_gradient(q);
+          symmetric_tensor const delta_tau  = material->contract_with_J_times_C(
+            symmetrize(grad_delta), Grad_d_lin, integrator.get_current_cell_index(), q);
           scalar const Jm1_lin =
             compute_modified_Jm1<dim, Number, check_type, true /* stable_formulation */>(
               Grad_d_lin);
-          scalar const one_over_J_lin = 1.0 / (Jm1_lin + 1.0);
-          tensor const tau_lin =
+          scalar const           one_over_J_lin = 1.0 / (Jm1_lin + 1.0);
+          symmetric_tensor const tau_lin =
             material->kirchhoff_stress(Grad_d_lin, integrator.get_current_cell_index(), q);
 
           integrator.submit_gradient((delta_tau + grad_delta * tau_lin) * one_over_J_lin, q);
 
           if(this->operator_data.unsteady)
           {
-            integrator.submit_value((this->scaling_factor_mass * this->operator_data.density *
+            integrator.submit_value(((this->scaling_factor_mass * this->operator_data.density) *
                                      one_over_J_lin) *
                                       integrator.get_value(q),
                                     q);
@@ -757,25 +755,22 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
       {
         for(unsigned int q = 0; q < integrator.n_q_points; ++q)
         {
-          tensor const Grad_d_lin = integrator_lin->get_gradient(q);
-          tensor const grad_delta = integrator.get_gradient(q);
-          tensor const delta_tau =
-            material->contract_with_J_times_C(0.5 * (grad_delta + transpose(grad_delta)),
-                                              Grad_d_lin,
-                                              integrator.get_current_cell_index(),
-                                              q);
+          tensor const           Grad_d_lin = integrator_lin->get_gradient(q);
+          tensor const           grad_delta = integrator.get_gradient(q);
+          symmetric_tensor const delta_tau  = material->contract_with_J_times_C(
+            symmetrize(grad_delta), Grad_d_lin, integrator.get_current_cell_index(), q);
           scalar const Jm1_lin =
             compute_modified_Jm1<dim, Number, check_type, false /* stable_formulation */>(
               Grad_d_lin);
-          scalar const one_over_J_lin = 1.0 / (Jm1_lin + 1.0);
-          tensor const tau_lin =
+          scalar const           one_over_J_lin = 1.0 / (Jm1_lin + 1.0);
+          symmetric_tensor const tau_lin =
             material->kirchhoff_stress(Grad_d_lin, integrator.get_current_cell_index(), q);
 
           integrator.submit_gradient((delta_tau + grad_delta * tau_lin) * one_over_J_lin, q);
 
           if(this->operator_data.unsteady)
           {
-            integrator.submit_value((this->scaling_factor_mass * this->operator_data.density *
+            integrator.submit_value(((this->scaling_factor_mass * this->operator_data.density) *
                                      one_over_J_lin) *
                                       integrator.get_value(q),
                                     q);
@@ -787,22 +782,19 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
     {
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
-        tensor const Grad_d_lin = integrator_lin->get_gradient(q);
-        tensor const grad_delta = integrator.get_gradient(q);
-        tensor const delta_tau =
-          material->contract_with_J_times_C(0.5 * (grad_delta + transpose(grad_delta)),
-                                            Grad_d_lin,
-                                            integrator.get_current_cell_index(),
-                                            q);
+        tensor const           Grad_d_lin = integrator_lin->get_gradient(q);
+        tensor const           grad_delta = integrator.get_gradient(q);
+        symmetric_tensor const delta_tau  = material->contract_with_J_times_C(
+          symmetrize(grad_delta), Grad_d_lin, integrator.get_current_cell_index(), q);
         scalar const one_over_J_lin = material->one_over_J(integrator.get_current_cell_index(), q);
-        tensor const tau_lin =
+        symmetric_tensor const tau_lin =
           material->kirchhoff_stress(Grad_d_lin, integrator.get_current_cell_index(), q);
 
         integrator.submit_gradient((delta_tau + grad_delta * tau_lin) * one_over_J_lin, q);
 
         if(this->operator_data.unsteady)
         {
-          integrator.submit_value((this->scaling_factor_mass * this->operator_data.density *
+          integrator.submit_value(((this->scaling_factor_mass * this->operator_data.density) *
                                    one_over_J_lin) *
                                     integrator.get_value(q),
                                   q);
@@ -813,18 +805,19 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
     {
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
-        tensor const grad_delta = integrator.get_gradient(q);
-        tensor const delta_tau =
-          material->contract_with_J_times_C(0.5 * (grad_delta + transpose(grad_delta)),
+        tensor const           grad_delta = integrator.get_gradient(q);
+        symmetric_tensor const delta_tau =
+          material->contract_with_J_times_C(symmetrize(grad_delta),
                                             integrator.get_current_cell_index(),
                                             q);
         scalar const one_over_J_lin = material->one_over_J(integrator.get_current_cell_index(), q);
-        tensor const tau_lin = material->kirchhoff_stress(integrator.get_current_cell_index(), q);
+        symmetric_tensor const tau_lin =
+          material->kirchhoff_stress(integrator.get_current_cell_index(), q);
         integrator.submit_gradient((delta_tau + grad_delta * tau_lin) * one_over_J_lin, q);
 
         if(this->operator_data.unsteady)
         {
-          integrator.submit_value((this->scaling_factor_mass * this->operator_data.density *
+          integrator.submit_value(((this->scaling_factor_mass * this->operator_data.density) *
                                    one_over_J_lin) *
                                     integrator.get_value(q),
                                   q);
@@ -845,7 +838,7 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
           tensor const Grad_delta = integrator.get_gradient(q);
           tensor const F_lin =
             compute_modified_F<dim, Number, check_type, true /* stable_formulation */>(Grad_d_lin);
-          tensor const S_lin =
+          symmetric_tensor const S_lin =
             material->second_piola_kirchhoff_stress(Grad_d_lin,
                                                     integrator.get_current_cell_index(),
                                                     q);
@@ -872,7 +865,7 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
           tensor const Grad_delta = integrator.get_gradient(q);
           tensor const F_lin =
             compute_modified_F<dim, Number, check_type, false /* stable_formulation */>(Grad_d_lin);
-          tensor const S_lin =
+          symmetric_tensor const S_lin =
             material->second_piola_kirchhoff_stress(Grad_d_lin,
                                                     integrator.get_current_cell_index(),
                                                     q);
@@ -906,7 +899,7 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
           tensor const Grad_delta = integrator.get_gradient(q);
           tensor const F_lin =
             compute_modified_F<dim, Number, check_type, true /*stable_formulation*/>(Grad_d_lin);
-          tensor const S_lin =
+          symmetric_tensor const S_lin =
             material->second_piola_kirchhoff_stress(integrator.get_current_cell_index(), q);
           tensor const delta_P =
             Grad_delta * S_lin +
@@ -935,7 +928,7 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
           tensor const Grad_delta = integrator.get_gradient(q);
           tensor const F_lin =
             compute_modified_F<dim, Number, check_type, false /*stable_formulation*/>(Grad_d_lin);
-          tensor const S_lin =
+          symmetric_tensor const S_lin =
             material->second_piola_kirchhoff_stress(integrator.get_current_cell_index(), q);
           tensor const delta_P =
             Grad_delta * S_lin +
