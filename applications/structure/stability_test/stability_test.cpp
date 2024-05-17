@@ -296,12 +296,12 @@ setup_material(MaterialType                            material_type,
       // a = 3.62, b = 34.3 for medial tissue lead to the H_ii below,
       // while the k_1 coefficient is scaled relative to the shear modulus
       // (for medial tissue, e.g., 62.1 kPa).
-      double const fiber_angle_phi_in_degree = 27.47;                                  // [deg]
-      double const fiber_H_11                = 0.9168;                                 // [-]
-      double const fiber_H_22                = 0.0759;                                 // [-]
-      double const fiber_H_33                = 0.0073;                                 // [-]
-      double const fiber_k_1                 = 0.0 * 1.4e3 * (shear_modulus / 62.1e3); // [Pa]
-      double const fiber_k_2                 = 22.1;                                   // [-]
+      double const fiber_angle_phi_in_degree = 27.47;                            // [deg]
+      double const fiber_H_11                = 0.9168;                           // [-]
+      double const fiber_H_22                = 0.0759;                           // [-]
+      double const fiber_H_33                = 0.0073;                           // [-]
+      double const fiber_k_1                 = 1.4e3 * (shear_modulus / 62.1e3); // [Pa]
+      double const fiber_k_2                 = 22.1;                             // [-]
 
       // Read the orientation files from binary format.
       typedef typename IncompressibleFibrousTissueData<dim>::VectorType VectorType;
@@ -634,7 +634,7 @@ main(int argc, char ** argv)
                                      dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
     // Perform the stability test or measure the evaluation time.
-    bool constexpr stab_test       = false;
+    bool constexpr stab_test       = true;
     bool constexpr use_max_err     = true;
     bool constexpr use_random_sign = true;
 

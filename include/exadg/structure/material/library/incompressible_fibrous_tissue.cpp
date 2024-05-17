@@ -151,18 +151,18 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
         gradient_displacement_coefficients.initialize(matrix_free, quad_index, false, false);
         gradient_displacement_coefficients.set_coefficients(get_zero_tensor<dim, Number>());
 
+        F_inv_coefficients.initialize(matrix_free, quad_index, false, false);
+        F_inv_coefficients.set_coefficients(get_identity_tensor<dim, Number>());
+
+        C_inv_coefficients.initialize(matrix_free, quad_index, false, false);
+        C_inv_coefficients.set_coefficients(get_identity_symmetric_tensor<dim, Number>());
+
         second_piola_kirchhoff_stress_coefficients.initialize(matrix_free,
                                                               quad_index,
                                                               false,
                                                               false);
         second_piola_kirchhoff_stress_coefficients.set_coefficients(
           get_zero_symmetric_tensor<dim, Number>());
-
-        F_inv_coefficients.initialize(matrix_free, quad_index, false, false);
-        F_inv_coefficients.set_coefficients(get_identity_tensor<dim, Number>());
-
-        C_inv_coefficients.initialize(matrix_free, quad_index, false, false);
-        C_inv_coefficients.set_coefficients(get_identity_symmetric_tensor<dim, Number>());
       }
 
       AssertThrow(cache_level < 3, dealii::ExcMessage("Cache level > 2 not implemented."));
@@ -550,7 +550,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
-    if constexpr(cache_level == 0)
+    if constexpr(false) // ##+ cache_level == 0)
     {
       // Compute the inverse third root of J^2 via Newton's method:
       //
@@ -807,8 +807,6 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       one_over_J_coefficients.set_coefficient_cell(cell, q, 1.0 / (Jm1 + 1.0));
     }
 
-    symmetric_tensor const C = compute_HT_times_H(F);
-
     symmetric_tensor const E =
       compute_E_scaled<dim, Number, Number, stable_formulation>(Grad_d_lin, 1.0);
     scalar const c1 =
@@ -842,6 +840,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       // Set all but the fiber and stress linearization data.
       if(spatial_integration)
       {
+    	symmetric_tensor const C = compute_HT_times_H(F);
         C_coefficients.set_coefficient_cell(cell, q, C);
         if(force_material_residual)
         {

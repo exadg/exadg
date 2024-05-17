@@ -64,7 +64,7 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
   fast_approx_log1p(dealii::VectorizedArray<Number> const & x)
 {
-  unsigned int constexpr option = 1;
+  unsigned int constexpr option = 0; // ##+ 1;
 
   if constexpr(option == 0)
   {
@@ -142,7 +142,7 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
   fast_approx_powp1(dealii::VectorizedArray<Number> const & x, Number const & e)
 {
-  unsigned int constexpr option = 1;
+  unsigned int constexpr option = 0; // ##+ 1;
 
   if constexpr(option == 0)
   {
