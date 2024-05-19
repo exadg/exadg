@@ -287,10 +287,12 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   vector                 M_3;
   std::vector<vector>    M_1(N_FIBER_FAMILIES), M_2(N_FIBER_FAMILIES);
   dealii::Tensor<1, dim> E_1_default, E_2_default;
-  E_1_default *= 0.0;
-  E_2_default *= 0.0;
-  E_1_default[0] = 1.0;
-  E_2_default[1] = 1.0;
+  for(unsigned int d = 0; d < dim; d++)
+  {
+    Number const reciprocal_norm = 1.0 / std::sqrt(static_cast<Number>(dim));
+    E_1_default[d]               = reciprocal_norm;
+    E_2_default[d]               = reciprocal_norm;
+  }
 
   AssertThrow(N_FIBER_FAMILIES <= 2,
               dealii::ExcMessage(
@@ -1155,7 +1157,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     symmetric_tensor Dd_S =
       C_inv * (c2 * one_over_J_times_Dd_J - (TWO_THIRDS * shear_modulus_stored * J_pow) *
                                               trace(transpose_gradient_increment_times_F));
-    Dd_S += Dd_C_inv * c1;
+    Dd_S += c1 * Dd_C_inv;
     add_scaled_identity(Dd_S, -shear_modulus_stored * TWO_THIRDS * J_pow * one_over_J_times_Dd_J);
 
     for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
@@ -1191,7 +1193,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     symmetric_tensor Dd_S =
       C_inv * (c2 * one_over_J_times_Dd_J - (TWO_THIRDS * shear_modulus_stored * J_pow) *
                                               trace(transpose_gradient_increment_times_F));
-    Dd_S += Dd_C_inv * c1;
+    Dd_S += c1 * Dd_C_inv;
     add_scaled_identity(Dd_S, -shear_modulus_stored * TWO_THIRDS * J_pow * one_over_J_times_Dd_J);
 
     for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
@@ -1203,7 +1205,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       scalar const           c3  = c3_coefficients[i].get_coefficient_cell(cell, q);
 
       Dd_S += H_i * (c3 * ((2.0 * fiber_k_2) * E_i * E_i + 1.0) *
-                     scalar_product(H_i, compute_H_times_HT(transpose_gradient_increment_times_F)));
+                     scalar_product(H_i, compute_H_plus_HT(transpose_gradient_increment_times_F)));
     }
 
     return Dd_S;
@@ -1229,7 +1231,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     symmetric_tensor Dd_S =
       C_inv * (c2 * one_over_J_times_Dd_J - (TWO_THIRDS * shear_modulus_stored * J_pow) *
                                               trace(transpose_gradient_increment_times_F));
-    Dd_S += Dd_C_inv * c1;
+    Dd_S += c1 * Dd_C_inv;
     add_scaled_identity(Dd_S, -shear_modulus_stored * TWO_THIRDS * J_pow * one_over_J_times_Dd_J);
 
     for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
