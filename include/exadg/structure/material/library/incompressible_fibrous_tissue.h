@@ -51,6 +51,7 @@ struct IncompressibleFibrousTissueData : public MaterialData
     double const &                                 fiber_H_33,
     double const &                                 fiber_k_1,
     double const &                                 fiber_k_2,
+    double const &                                 fiber_switch_limit,
     std::shared_ptr<std::vector<VectorType> const> e1_orientations,
     std::shared_ptr<std::vector<VectorType> const> e2_orientations,
     std::vector<unsigned int> const                degree_per_level,
@@ -67,6 +68,7 @@ struct IncompressibleFibrousTissueData : public MaterialData
       fiber_H_33(fiber_H_33),
       fiber_k_1(fiber_k_1),
       fiber_k_2(fiber_k_2),
+      fiber_switch_limit(fiber_switch_limit),
       e1_orientations(e1_orientations),
       e2_orientations(e2_orientations),
       degree_per_level(degree_per_level),
@@ -86,6 +88,7 @@ struct IncompressibleFibrousTissueData : public MaterialData
   double fiber_H_33;
   double fiber_k_1;
   double fiber_k_2;
+  double fiber_switch_limit;
 
   std::shared_ptr<std::vector<VectorType> const> e1_orientations;
   std::shared_ptr<std::vector<VectorType> const> e2_orientations;
@@ -329,6 +332,7 @@ private:
   Number const                                 fiber_H_11;
   Number const                                 fiber_H_22;
   Number const                                 fiber_H_33;
+  Number const                                 fiber_switch_limit;
 
   mutable scalar shear_modulus_stored;
 

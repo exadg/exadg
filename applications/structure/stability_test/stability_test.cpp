@@ -302,6 +302,7 @@ setup_material(MaterialType                            material_type,
       double const fiber_H_33                = 0.0073;                           // [-]
       double const fiber_k_1                 = 1.4e3 * (shear_modulus / 62.1e3); // [Pa]
       double const fiber_k_2                 = 22.1;                             // [-]
+      double const fiber_switch_limit        = 0.0;                              // [-]
 
       // Read the orientation files from binary format.
       typedef typename IncompressibleFibrousTissueData<dim>::VectorType VectorType;
@@ -323,6 +324,7 @@ setup_material(MaterialType                            material_type,
                                                       fiber_H_33,
                                                       fiber_k_1,
                                                       fiber_k_2,
+                                                      fiber_switch_limit,
                                                       nullptr /* e1_ori */,
                                                       nullptr /* e2_ori */,
                                                       {} /* degree_per_level */,
@@ -634,7 +636,7 @@ main(int argc, char ** argv)
                                      dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
     // Perform the stability test or measure the evaluation time.
-    bool constexpr stab_test       = true;
+    bool constexpr stab_test       = false;
     bool constexpr use_max_err     = true;
     bool constexpr use_random_sign = true;
 

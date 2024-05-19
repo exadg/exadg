@@ -64,7 +64,7 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
   fast_approx_log1p(dealii::VectorizedArray<Number> const & x)
 {
-  unsigned int constexpr option = 0; // ##+ 1;
+  unsigned int constexpr option = 1;
 
   if constexpr(option == 0)
   {
@@ -94,7 +94,7 @@ inline DEAL_II_ALWAYS_INLINE //
     Number two_over_2np1[n_terms];
     for(unsigned int i = 0; i < n_terms; ++i)
     {
-      two_over_2np1[i] = 2.0 / (2 * static_cast<Number>(i) + 1.0);
+      two_over_2np1[i] = 2.0 / (2.0 * static_cast<Number>(i) + 1.0);
     }
 
     dealii::VectorizedArray<Number> const x_over_2px               = x / (2.0 + x);
@@ -142,7 +142,7 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
   fast_approx_powp1(dealii::VectorizedArray<Number> const & x, Number const & e)
 {
-  unsigned int constexpr option = 0; // ##+ 1;
+  unsigned int constexpr option = 0;
 
   if constexpr(option == 0)
   {

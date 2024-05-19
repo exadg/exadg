@@ -228,78 +228,77 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 
     Jm1_coefficients.set_coefficient_cell(cell, q, Jm1);
 
-     scalar const J_pow = get_J_pow<true /* force_evaluation */>(Jm1, cell, q);
-     J_pow_coefficients.set_coefficient_cell(cell, q, J_pow);
+    scalar const J_pow = get_J_pow<true /* force_evaluation */>(Jm1, cell, q);
+    J_pow_coefficients.set_coefficient_cell(cell, q, J_pow);
 
-     if(spatial_integration)
-     {
-       one_over_J_coefficients.set_coefficient_cell(cell, q, 1.0 / (Jm1 + 1.0));
-     }
+    if(spatial_integration)
+    {
+      one_over_J_coefficients.set_coefficient_cell(cell, q, 1.0 / (Jm1 + 1.0));
+    }
 
-     symmetric_tensor const E =
-       compute_E_scaled<dim, Number, Number, stable_formulation>(Grad_d_lin, 1.0);
-     scalar const c1 =
-       get_c1<true /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
-     scalar const c2 =
-       get_c2<true /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
+    symmetric_tensor const E =
+      compute_E_scaled<dim, Number, Number, stable_formulation>(Grad_d_lin, 1.0);
+    scalar const c1 =
+      get_c1<true /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
+    scalar const c2 =
+      get_c2<true /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
 
-     c1_coefficients.set_coefficient_cell(cell, q, c1);
-     c2_coefficients.set_coefficient_cell(cell, q, c2);
+    c1_coefficients.set_coefficient_cell(cell, q, c1);
+    c2_coefficients.set_coefficient_cell(cell, q, c2);
 
-     // Tensorial linearization data.
-     if constexpr(cache_level > 1)
-     {
-       tensor const           F_inv = invert(F);
-       symmetric_tensor const C_inv = compute_C_inv(F_inv);
+    // Tensorial linearization data.
+    if constexpr(cache_level > 1)
+    {
+      tensor const           F_inv = invert(F);
+      symmetric_tensor const C_inv = compute_C_inv(F_inv);
 
-       // Set all but the fiber and stress linearization data.
-       if(spatial_integration)
-       {
-     	symmetric_tensor const C = compute_HT_times_H(F);
-         C_coefficients.set_coefficient_cell(cell, q, C);
-         if(force_material_residual)
-         {
-           gradient_displacement_coefficients.set_coefficient_cell(cell, q, Grad_d_lin);
-         }
-       }
-       else
-       {
-         gradient_displacement_coefficients.set_coefficient_cell(cell, q, Grad_d_lin);
-         F_inv_coefficients.set_coefficient_cell(cell, q, F_inv);
-         C_inv_coefficients.set_coefficient_cell(cell, q, C_inv);
-       }
+      // Set all but the fiber and stress linearization data.
+      if(spatial_integration)
+      {
+        symmetric_tensor const C = compute_HT_times_H(F);
+        C_coefficients.set_coefficient_cell(cell, q, C);
+        if(force_material_residual)
+        {
+          gradient_displacement_coefficients.set_coefficient_cell(cell, q, Grad_d_lin);
+        }
+      }
+      else
+      {
+        gradient_displacement_coefficients.set_coefficient_cell(cell, q, Grad_d_lin);
+        F_inv_coefficients.set_coefficient_cell(cell, q, F_inv);
+        C_inv_coefficients.set_coefficient_cell(cell, q, C_inv);
+      }
 
-       if(spatial_integration)
-       {
-         if constexpr(stable_formulation)
-         {
-           symmetric_tensor const tau =
-             compute_tau_stable(Grad_d_lin, Jm1, J_pow, shear_modulus_stored);
-           kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
-         }
-         else
-         {
-           symmetric_tensor const tau =
-             compute_tau_unstable(F, J_pow, c1, shear_modulus_stored);
-           kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
-         }
-       }
+      if(spatial_integration)
+      {
+        if constexpr(stable_formulation)
+        {
+          symmetric_tensor const tau =
+            compute_tau_stable(Grad_d_lin, Jm1, J_pow, shear_modulus_stored);
+          kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
+        }
+        else
+        {
+          symmetric_tensor const tau = compute_tau_unstable(F, J_pow, c1, shear_modulus_stored);
+          kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
+        }
+      }
 
-       if(not spatial_integration or force_material_residual)
-       {
-         if constexpr(stable_formulation)
-         {
-           symmetric_tensor const S =
-             compute_S_stable(Grad_d_lin, C_inv, J_pow, Jm1, shear_modulus_stored);
-           second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
-         }
-         else
-         {
+      if(not spatial_integration or force_material_residual)
+      {
+        if constexpr(stable_formulation)
+        {
+          symmetric_tensor const S =
+            compute_S_stable(Grad_d_lin, C_inv, J_pow, Jm1, shear_modulus_stored);
+          second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
+        }
+        else
+        {
           symmetric_tensor const S = compute_S_unstable(C_inv, J_pow, c1, shear_modulus_stored);
-           second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
-         }
-       }
-     }
+          second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S);
+        }
+      }
+    }
   }
 }
 
@@ -369,7 +368,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
-    if constexpr(false) // ##+ cache_level == 0)
+    if constexpr(cache_level == 0)
     {
       // Compute the inverse third root of J^2 via Newton's method:
       //

@@ -62,6 +62,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     fiber_H_11(data.fiber_H_11),
     fiber_H_22(data.fiber_H_22),
     fiber_H_33(data.fiber_H_33),
+    fiber_switch_limit(data.fiber_switch_limit),
     orientation_vectors_provided(data.e1_orientations != nullptr or
                                  data.e2_orientations != nullptr),
     shear_modulus_is_variable(data.shear_modulus_function != nullptr),
@@ -522,13 +523,11 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
-    scalar c3 = compute_fiber_switch(M_1, E);
+    scalar const fiber_switch = compute_fiber_switch(M_1, E);
 
     // Enforce an upper bound for the computed value.
-    c3 /* fiber_switch */ *=
-      exp_limited(fiber_k_2 * E_i * E_i, compute_numerical_upper_bound(fiber_k_1));
-
-    return c3 * (2.0 * fiber_k_1);
+    return (fiber_switch * (2.0 * fiber_k_1) *
+            exp_limited(fiber_k_2 * E_i * E_i, compute_numerical_upper_bound(fiber_k_1)));
   }
   else
   {
@@ -550,7 +549,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
-    if constexpr(false) // ##+ cache_level == 0)
+    if constexpr(cache_level == 0)
     {
       // Compute the inverse third root of J^2 via Newton's method:
       //
@@ -640,23 +639,23 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   if constexpr(stable_formulation)
   {
     // I_i_star = 2 * (M_1 (x) M_1) : E + tr(M_1 (x) M_1)
-    scalar I_i_star;
+    scalar I_i_star = 0.0;
     for(unsigned int i = 0; i < dim; ++i)
     {
       // Diagonal part of 2 * (M_1 (x) M_1) : E and tr(M_1 (x) M_1)
-      I_i_star += M_1[i] * M_1[i] * (1.0 + 2.0 * E[i][i]);
+      I_i_star += M_1[i] * M_1[i] * (2.0 * E[i][i] + 1.0);
 
       // Off-diagonal part, use symmetry.
-      for(unsigned int j = i; j < dim; ++j)
+      for(unsigned int j = i + 1; j < dim; ++j)
       {
         I_i_star += 4.0 * M_1[i] * M_1[j] * E[i][j];
       }
     }
 
-    // fiber_switch = I_i_star < 1 ? 0.0 : 1.0
+    // fiber_switch = I_i_star < fiber_switch_limit ? 0.0 : 1.0
     scalar const fiber_switch = dealii::compare_and_apply_mask<dealii::SIMDComparison::less_than>(
       I_i_star,
-      dealii::make_vectorized_array<Number>(static_cast<Number>(1.0)),
+      dealii::make_vectorized_array<Number>(fiber_switch_limit),
       dealii::make_vectorized_array<Number>(static_cast<Number>(0.0)),
       dealii::make_vectorized_array<Number>(static_cast<Number>(1.0)));
 
@@ -668,23 +667,23 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     symmetric_tensor C = 2.0 * E;
     add_scaled_identity(C, static_cast<Number>(1.0));
 
-    scalar I_i_star;
+    scalar I_i_star = 0.0;
     for(unsigned int i = 0; i < dim; ++i)
     {
       // Diagonal part of (M_1 (x) M_1) : C
       I_i_star += M_1[i] * M_1[i] * C[i][i];
 
       // Off-diagonal part, use symmetry.
-      for(unsigned int j = i; j < dim; ++j)
+      for(unsigned int j = i + 1; j < dim; ++j)
       {
         I_i_star += 2.0 * M_1[i] * M_1[j] * C[i][j];
       }
     }
 
-    // fiber_switch = I_i_star < 1 ? 0.0 : 1.0
+    // fiber_switch = I_i_star < fiber_switch_limit ? 0.0 : 1.0
     scalar const fiber_switch = dealii::compare_and_apply_mask<dealii::SIMDComparison::less_than>(
       I_i_star,
-      dealii::make_vectorized_array<Number>(static_cast<Number>(1.0)),
+      dealii::make_vectorized_array<Number>(fiber_switch_limit),
       dealii::make_vectorized_array<Number>(static_cast<Number>(0.0)),
       dealii::make_vectorized_array<Number>(static_cast<Number>(1.0)));
 
@@ -717,8 +716,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       // Note that we add and subtract I to simulate computing C - I.
       symmetric_tensor C = 2.0 * E;
       add_scaled_identity(C, static_cast<Number>(1.0));
-      add_scaled_identity(C, static_cast<Number>(-1.0));
-      return scalar_product(H_i, C);
+      return scalar_product(H_i, C - get_identity_symmetric_tensor<dim, Number>());
     }
   }
   else
@@ -840,7 +838,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       // Set all but the fiber and stress linearization data.
       if(spatial_integration)
       {
-    	symmetric_tensor const C = compute_HT_times_H(F);
+        symmetric_tensor const C = compute_HT_times_H(F);
         C_coefficients.set_coefficient_cell(cell, q, C);
         if(force_material_residual)
         {
