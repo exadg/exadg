@@ -6,6 +6,7 @@ import math
 import matplotlib.pyplot as plt
 import glob, os   
 import re
+import scipy.interpolate
    
 if __name__ == "__main__":
 
@@ -38,8 +39,8 @@ if __name__ == "__main__":
     plt.loglog([0.0, 1e20], [1e-0, 1e-0], label=None, color='black', \
     linestyle='dotted', linewidth=1.0)
 
-    os.chdir("/home/richardschussnig/dealii-candi/exadg/build/applications/structure/stability_test/")
-    #os.chdir("/home/richard/dealii-candi/exadg/build/applications/structure/stability_test/")
+    #os.chdir("/home/richardschussnig/dealii-candi/exadg/build/applications/structure/stability_test/")
+    os.chdir("/home/richard/dealii-candi/exadg/build/applications/structure/stability_test/")
     for file in glob.glob("stability_forward_test_*"):
     
         print("Parsing file:")
@@ -123,44 +124,49 @@ if __name__ == "__main__":
             else:
                 line_color = 'tab:orange'
  
-        line_width = 1.0
+        line_width = 0.5
+        abbreviation_material_model = ""
         if material_model == "StVenantKirchhoff":
             if skip_STVK:
                 continue
-            line_width = 0.5
+            line_width = 1
+            abbreviation_material_model = "STVK"
         elif material_model == "CompressibleNeoHookean":
             if skip_cNH:
                 continue
-            line_width = 1.0
+            line_width = 1
+            abbreviation_material_model = "cNH"
         elif material_model == "IncompressibleNeoHookean":
             if skip_iNH:
                 continue
-            line_width = 1.5
+            line_width = 1
+            abbreviation_material_model = "iNH"
         elif material_model == "IncompressibleFibrousTissue":
             if skip_iHGO:
                 continue
-            line_width = 2.0
+            line_width = 1
+            abbreviation_material_model = "gHGO"
             
         if not skip_stress:
-            plt.loglog(rows[:,0], rows[:,1], label=material_model + ', ' + Omega_0_or_t + \
+            plt.loglog(rows[:,0], rows[:,1], label=abbreviation_material_model + ', ' + Omega_0_or_t + \
             ', stable: ' + stable_formulation + ', |stress|', color=line_color, \
             linestyle=line_style_stress, linewidth=line_width)
         
         if not skip_jacobian:
-            plt.loglog(rows[:,0], rows[:,2], label=material_model + ', ' + Omega_0_or_t + \
+            plt.loglog(rows[:,0], rows[:,2], label=abbreviation_material_model + ', ' + Omega_0_or_t + \
             ', stable: ' + stable_formulation + ', |Jacobian|', color=line_color, \
             linestyle=line_style_jacobian, linewidth=line_width)
  
-    plt.title("Relativer Fehler $\epsilon_\mathrm{rel} = \mathrm{max}_i || (.)_\mathrm{f64} - (.)_\mathrm{f32} ||_\infty / ||(.)_\mathrm{f64}||_\infty$")
+    plt.title("Relative error $\epsilon_\mathrm{rel} = \mathrm{max}_i || (.)_\mathrm{f64} - (.)_\mathrm{f32} ||_\infty / ||(.)_\mathrm{f64}||_\infty$")
     plt.legend()
 
     plt.xlabel('Grad $\mathbf{u}$ scale')
-    plt.ylabel('Relativer Fehler $\epsilon_\mathrm{rel}$')
+    plt.ylabel('Relative error $\epsilon_\mathrm{rel}$')
 
     x_min = 1e-8
-    x_max = 1e3
-    y_min = 1e-10
-    y_max = 1e3
+    x_max = 1.0 # 1e3
+    y_min = 1e-8
+    y_max = 1e6
     plt.xlim(xmin=x_min, xmax=x_max)
     plt.ylim(ymin=y_min, ymax=y_max)
     plt.show()
