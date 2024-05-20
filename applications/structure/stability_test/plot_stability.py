@@ -129,22 +129,22 @@ if __name__ == "__main__":
         if material_model == "StVenantKirchhoff":
             if skip_STVK:
                 continue
-            line_width = 1
+            line_width = 0.5
             abbreviation_material_model = "STVK"
         elif material_model == "CompressibleNeoHookean":
             if skip_cNH:
                 continue
-            line_width = 1
+            line_width = 0.5
             abbreviation_material_model = "cNH"
         elif material_model == "IncompressibleNeoHookean":
             if skip_iNH:
                 continue
-            line_width = 1
+            line_width = 0.5
             abbreviation_material_model = "iNH"
         elif material_model == "IncompressibleFibrousTissue":
             if skip_iHGO:
                 continue
-            line_width = 1
+            line_width = 0.5
             abbreviation_material_model = "gHGO"
             
         if not skip_stress:
@@ -165,8 +165,8 @@ if __name__ == "__main__":
 
     x_min = 1e-8
     x_max = 1.0 # 1e3
-    y_min = 1e-8
-    y_max = 1e6
+    y_min = 1e-7
+    y_max = 1e5
     plt.xlim(xmin=x_min, xmax=x_max)
     plt.ylim(ymin=y_min, ymax=y_max)
     plt.show()

@@ -189,7 +189,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
 }
 
-// Create a symmetric tensor from a a tensor H plus H^T
+// Create a symmetric tensor from a tensor H plus H^T
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
@@ -225,7 +225,7 @@ inline DEAL_II_ALWAYS_INLINE //
   return result;
 }
 
-// Create a symmetric tensor from a a tensor H^T times H
+// Create a symmetric tensor from a tensor H^T times H
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
@@ -264,7 +264,7 @@ inline DEAL_II_ALWAYS_INLINE //
   return result;
 }
 
-// Create a symmetric tensor from a a tensor H times H^T
+// Create a symmetric tensor from a tensor H times H^T
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
@@ -316,6 +316,7 @@ inline DEAL_II_ALWAYS_INLINE //
     dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> const & B)
 {
   dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> result;
+
   for(unsigned int i = 0; i < dim; ++i)
   {
     for(unsigned int j = i; j < dim; ++j)
