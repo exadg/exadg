@@ -1160,16 +1160,14 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     tensor const           F_inv = invert(F);
     symmetric_tensor const C_inv = compute_C_inv(F_inv);
 
-    tensor const           F_inv_times_gradient_increment = F_inv * gradient_increment;
-    scalar const           one_over_J_times_Dd_J          = trace(F_inv_times_gradient_increment);
-    tensor const           Dd_F_inv_times_transpose_F_inv = -F_inv_times_gradient_increment * C_inv;
-    symmetric_tensor const Dd_C_inv = compute_H_plus_HT(Dd_F_inv_times_transpose_F_inv);
-    tensor const           transpose_gradient_increment_times_F = transpose(gradient_increment) * F;
+    tensor const F_inv_times_gradient_increment       = F_inv * gradient_increment;
+    scalar const one_over_J_times_Dd_J                = trace(F_inv_times_gradient_increment);
+    tensor const transpose_gradient_increment_times_F = transpose(gradient_increment) * F;
 
     symmetric_tensor Dd_S =
       C_inv * (c2 * one_over_J_times_Dd_J - (TWO_THIRDS * shear_modulus_stored * J_pow) *
                                               trace(transpose_gradient_increment_times_F));
-    Dd_S += c1 * Dd_C_inv;
+    Dd_S += c1 * compute_H_plus_HT(-F_inv_times_gradient_increment * C_inv);
     add_scaled_identity(Dd_S, -shear_modulus_stored * TWO_THIRDS * J_pow * one_over_J_times_Dd_J);
 
     for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
@@ -1196,16 +1194,14 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     tensor const           F_inv = invert(F);
     symmetric_tensor const C_inv = compute_C_inv(F_inv);
 
-    tensor const           F_inv_times_gradient_increment = F_inv * gradient_increment;
-    scalar const           one_over_J_times_Dd_J          = trace(F_inv_times_gradient_increment);
-    tensor const           Dd_F_inv_times_transpose_F_inv = -F_inv_times_gradient_increment * C_inv;
-    symmetric_tensor const Dd_C_inv = compute_H_plus_HT(Dd_F_inv_times_transpose_F_inv);
-    tensor const           transpose_gradient_increment_times_F = transpose(gradient_increment) * F;
+    tensor const F_inv_times_gradient_increment       = F_inv * gradient_increment;
+    scalar const one_over_J_times_Dd_J                = trace(F_inv_times_gradient_increment);
+    tensor const transpose_gradient_increment_times_F = transpose(gradient_increment) * F;
 
     symmetric_tensor Dd_S =
       C_inv * (c2 * one_over_J_times_Dd_J - (TWO_THIRDS * shear_modulus_stored * J_pow) *
                                               trace(transpose_gradient_increment_times_F));
-    Dd_S += c1 * Dd_C_inv;
+    Dd_S += c1 * compute_H_plus_HT(-F_inv_times_gradient_increment * C_inv);
     add_scaled_identity(Dd_S, -shear_modulus_stored * TWO_THIRDS * J_pow * one_over_J_times_Dd_J);
 
     for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
@@ -1234,16 +1230,14 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     tensor const           F_inv = F_inv_coefficients.get_coefficient_cell(cell, q);
     symmetric_tensor const C_inv = C_inv_coefficients.get_coefficient_cell(cell, q);
 
-    tensor const           F_inv_times_gradient_increment = F_inv * gradient_increment;
-    scalar const           one_over_J_times_Dd_J          = trace(F_inv_times_gradient_increment);
-    tensor const           Dd_F_inv_times_transpose_F_inv = -F_inv_times_gradient_increment * C_inv;
-    symmetric_tensor const Dd_C_inv = compute_H_plus_HT(Dd_F_inv_times_transpose_F_inv);
-    tensor const           transpose_gradient_increment_times_F = transpose(gradient_increment) * F;
+    tensor const F_inv_times_gradient_increment       = F_inv * gradient_increment;
+    scalar const one_over_J_times_Dd_J                = trace(F_inv_times_gradient_increment);
+    tensor const transpose_gradient_increment_times_F = transpose(gradient_increment) * F;
 
     symmetric_tensor Dd_S =
       C_inv * (c2 * one_over_J_times_Dd_J - (TWO_THIRDS * shear_modulus_stored * J_pow) *
                                               trace(transpose_gradient_increment_times_F));
-    Dd_S += c1 * Dd_C_inv;
+    Dd_S += c1 * compute_H_plus_HT(-F_inv_times_gradient_increment * C_inv);
     add_scaled_identity(Dd_S, -shear_modulus_stored * TWO_THIRDS * J_pow * one_over_J_times_Dd_J);
 
     for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
