@@ -641,18 +641,23 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   if constexpr(stable_formulation)
   {
     // I_i_star = 2 * (M_1 (x) M_1) : E + tr(M_1 (x) M_1)
-    scalar I_i_star = 0.0;
-    for(unsigned int i = 0; i < dim; ++i)
+    // clang-format off
+    // Unrolled diagonal part:
+    scalar I_i_star = M_1[0] * M_1[0] * (2.0 * E[0][0] + 1.0);
+    I_i_star       += M_1[1] * M_1[1] * (2.0 * E[1][1] + 1.0);
+    if constexpr(dim == 3)
     {
-      // Diagonal part of 2 * (M_1 (x) M_1) : E and tr(M_1 (x) M_1)
-      I_i_star += M_1[i] * M_1[i] * (2.0 * E[i][i] + 1.0);
-
-      // Off-diagonal part, use symmetry.
-      for(unsigned int j = i + 1; j < dim; ++j)
-      {
-        I_i_star += 4.0 * M_1[i] * M_1[j] * E[i][j];
-      }
+      I_i_star     += M_1[2] * M_1[2] * (2.0 * E[2][2] + 1.0);
     }
+
+    // Unrolled off-diagonal part, use symmetry:
+    I_i_star   += 4.0 * M_1[0] * M_1[1] * E[0][1];
+    if constexpr(dim == 3)
+    {
+      I_i_star += 4.0 * M_1[0] * M_1[2] * E[0][2];
+      I_i_star += 4.0 * M_1[1] * M_1[2] * E[1][2];
+    }
+    // clang-format on
 
     // fiber_switch = I_i_star < fiber_switch_limit ? 0.0 : 1.0
     scalar const fiber_switch = dealii::compare_and_apply_mask<dealii::SIMDComparison::less_than>(
@@ -669,18 +674,23 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     symmetric_tensor C = 2.0 * E;
     add_scaled_identity(C, static_cast<Number>(1.0));
 
-    scalar I_i_star = 0.0;
-    for(unsigned int i = 0; i < dim; ++i)
+    // clang-format off
+    // Unrolled diagonal part:
+    scalar I_i_star = M_1[0] * M_1[0] * C[0][0];
+    I_i_star       += M_1[1] * M_1[1] * C[1][1];
+    if constexpr(dim == 3)
     {
-      // Diagonal part of (M_1 (x) M_1) : C
-      I_i_star += M_1[i] * M_1[i] * C[i][i];
-
-      // Off-diagonal part, use symmetry.
-      for(unsigned int j = i + 1; j < dim; ++j)
-      {
-        I_i_star += 2.0 * M_1[i] * M_1[j] * C[i][j];
-      }
+      I_i_star     += M_1[2] * M_1[2] * C[2][2];
     }
+
+    // Unrolled off-diagonal part, use symmetry:
+    I_i_star   += 2.0 * M_1[0] * M_1[1] * C[0][1];
+    if constexpr(dim == 3)
+    {
+      I_i_star += 2.0 * M_1[0] * M_1[2] * C[0][2];
+      I_i_star += 2.0 * M_1[1] * M_1[2] * C[1][2];
+    }
+    // clang-format on
 
     // fiber_switch = I_i_star < fiber_switch_limit ? 0.0 : 1.0
     scalar const fiber_switch = dealii::compare_and_apply_mask<dealii::SIMDComparison::less_than>(
@@ -952,6 +962,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
           symmetric_tensor const H_i = compute_structure_tensor(M_1, M_2);
           scalar const           E_i = get_E_i<false /* force_evaluation */>(H_i, E, i, cell, q);
           scalar const           c3 = get_c3<false /* force_evaluation */>(M_1, E, E_i, i, cell, q);
+
           S += compute_S_fiber_i(c3, E_i, H_i);
         }
 
@@ -972,6 +983,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
           symmetric_tensor const H_i = compute_structure_tensor(M_1, M_2);
           scalar const           E_i = get_E_i<false /* force_evaluation */>(H_i, E, i, cell, q);
           scalar const           c3 = get_c3<false /* force_evaluation */>(M_1, E, E_i, i, cell, q);
+
           S += compute_S_fiber_i(c3, E_i, H_i);
         }
 
@@ -1279,6 +1291,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
         symmetric_tensor const H_i = compute_structure_tensor(M_1, M_2);
         scalar const           E_i = get_E_i<false /* force_evaluation */>(H_i, E, i, cell, q);
         scalar const           c3  = get_c3<false /* force_evaluation */>(M_1, E, E_i, i, cell, q);
+
         tau += compute_S_fiber_i(c3, E_i, H_i);
       }
 
