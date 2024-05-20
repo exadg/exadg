@@ -94,7 +94,7 @@ inline DEAL_II_ALWAYS_INLINE //
     Number two_over_2np1[n_terms];
     for(unsigned int i = 0; i < n_terms; ++i)
     {
-      two_over_2np1[i] = 2.0 / (2.0 * static_cast<Number>(i) + 1.0);
+      two_over_2np1[i] = 2.0 / static_cast<Number>(2 * i + 1);
     }
 
     dealii::VectorizedArray<Number> const x_over_2px               = x / (2.0 + x);
