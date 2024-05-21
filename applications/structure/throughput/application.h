@@ -273,6 +273,7 @@ private:
       double const fiber_H_33                = 0.0073;                         // [-]
       double const fiber_k_1                 = 1.4e3 / 62.1e3 * shear_modulus; // [Pa]
       double const fiber_k_2                 = 22.1;                           // [-]
+      double const fiber_switch_limit        = 0.0;                            // [-]
 
       this->material_descriptor->insert(
         Pair(0,
@@ -285,6 +286,7 @@ private:
                                                       fiber_H_33,
                                                       fiber_k_1,
                                                       fiber_k_2,
+                                                      fiber_switch_limit,
                                                       {},
                                                       {},
                                                       {},

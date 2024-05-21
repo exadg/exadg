@@ -224,24 +224,6 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
     linearization = 1.0;
   }
 
-  //  const std::function<void(void)> operator_evaluation = [&](void) {
-  //    if(operator_type == OperatorType::Evaluate)
-  //    {
-  //      pde_operator->evaluate_elasticity_operator(dst, src, 1.0, 0.0);
-  //    }
-  //    else if(operator_type == OperatorType::Apply)
-  //    {
-  //      pde_operator->apply_elasticity_operator(dst, src, linearization, 1.0, 0.0);
-  //    }
-  //  };
-
-  // do the measurements
-  //  double const wall_time = measure_operator_evaluation_time(operator_evaluation,
-  //                                                            application->get_parameters().degree,
-  //                                                            n_repetitions_inner,
-  //                                                            n_repetitions_outer,
-  //                                                            mpi_comm);
-
   double wall_time = std::numeric_limits<double>::max();
   {
     dealii::Timer global_timer;
