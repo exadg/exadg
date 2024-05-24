@@ -28,6 +28,7 @@
 #define FOUR_THIRDS 1.33333333333333333333
 #define ONE_NINTH   0.11111111111111111111
 #define TWO_NINTHS  0.22222222222222222222
+#define LOG2E       1.442695040888963387
 // clang-format on
 
 // C++
@@ -117,19 +118,198 @@ inline DEAL_II_ALWAYS_INLINE //
   }
 }
 
+namespace Internal
+{
+// Coefficients for fast approximate `exp()` function, see
+// Proell et al. [https://arxiv.org/pdf/2402.17580].
+constexpr std::array<double, 8> COEFF_EXP = {{1.21307181188968e-10,
+                                              0.30685281026575,
+                                              -0.240226342399359,
+                                              -0.0555053313414954,
+                                              -0.0096135243288483,
+                                              -0.00134288475963084,
+                                              -0.000143131744483589,
+                                              -2.1595656126349e-05}};
+
+// Bitshift constants: 2^52, 2^52 * 1023, 2^23, 2^23 * 127.
+constexpr double TWO_POW_52            = 4503599627370496;
+constexpr double TWO_POW_52_TIMES_1023 = 4607182418800017408;
+constexpr float  TWO_POW_23            = 8388608;
+constexpr float  TWO_POW_23_TIMES_127  = 1065353216;
+
+} // namespace Internal
+
+#if DEAL_II_VECTORIZATION_WIDTH_IN_BITS >= 512 && defined(__AVX512F__)
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<double, 8>
+  floor(const dealii::VectorizedArray<double, 8> & in)
+{
+  dealii::VectorizedArray<double, 8> out;
+
+  out.data = _mm512_roundscale_pd(in.data, _MM_FROUND_TO_NEG_INF);
+
+  return out;
+}
+#endif
+
+#if DEAL_II_VECTORIZATION_WIDTH_IN_BITS >= 256 && defined(__AVX__)
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<double, 4>
+  floor(const dealii::VectorizedArray<double, 4> & in)
+{
+  dealii::VectorizedArray<double, 4> out;
+
+  out.data = _mm256_floor_pd(in.data);
+
+  return out;
+}
+#endif
+
+template<typename VectorizedArrayType, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArrayType
+  fma(Number const x, VectorizedArrayType const y, Number const z)
+{
+  VectorizedArrayType out = z;
+
+  out += x * y;
+
+  return out;
+}
+
+#if DEAL_II_VECTORIZATION_WIDTH_IN_BITS >= 512 && defined(__AVX512F__)
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<double, 8>
+  type_cast(const dealii::VectorizedArray<double, 8> & in)
+{
+  dealii::VectorizedArray<double, 8> out;
+
+  __m512i integer = _mm512_cvt_roundpd_epi64(in.data, _MM_FROUND_NO_EXC);
+  out.data        = _mm512_castsi512_pd(integer);
+
+  return out;
+}
+#endif
+
+#if DEAL_II_VECTORIZATION_WIDTH_IN_BITS >= 256 && defined(__AVX__)
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<double, 4>
+  type_cast(const dealii::VectorizedArray<double, 4> & in)
+{
+  dealii::VectorizedArray<double, 4> out;
+
+  double double_values[4];
+  in.store(&double_values[0]);
+  int64_t int_values[4];
+  for(int i = 0; i < 4; i++)
+  {
+    int_values[i] = static_cast<int64_t>(double_values[i]);
+  }
+  out.data = _mm256_castsi256_pd(_mm256_loadu_si256((__m256i *)int_values));
+
+  return out;
+}
+#endif
+
+#if DEAL_II_VECTORIZATION_WIDTH_IN_BITS >= 128 && defined(__SSE2__)
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<double, 2>
+  type_cast(const dealii::VectorizedArray<double, 2> & in)
+{
+  dealii::VectorizedArray<double, 2> out;
+
+  double double_values[2];
+  in.store(&double_values[0]);
+  int64_t int_values[2];
+  for(int i = 0; i < 2; i++)
+  {
+    int_values[i] = static_cast<int64_t>(double_values[i]);
+  }
+  out.data = _mm_castsi128_pd(_mm_loadu_si128((__m128i *)int_values));
+
+  return out;
+}
+#endif
+
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<double, 1>
+  type_cast(const dealii::VectorizedArray<double, 1> & in)
+{
+  dealii::VectorizedArray<double, 1> out;
+
+  auto result = static_cast<int64_t>(in.data);
+  std::memcpy(&out.data, &result, sizeof(out.data));
+
+  return out;
+}
+
+// Fast approximate `exp()` function, see
+// Proell et al. [https://arxiv.org/pdf/2402.17580].
+template<typename Number>
+static constexpr inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<Number>
+  fast_approx_exp(dealii::VectorizedArray<Number> x)
+{
+  x *= LOG2E;
+
+  dealii::VectorizedArray<Number> fractional_part = x - floor(x);
+
+  dealii::VectorizedArray<Number> fractional_part2 = fractional_part * fractional_part;
+  dealii::VectorizedArray<Number> fractional_part4 = fractional_part2 * fractional_part2;
+  x -= fma(fma(fma(Internal::COEFF_EXP[7], fractional_part, Internal::COEFF_EXP[6]),
+               fractional_part2,
+               fma(Internal::COEFF_EXP[5], fractional_part, Internal::COEFF_EXP[4])),
+           fractional_part4,
+           fma(fma(Internal::COEFF_EXP[3], fractional_part, Internal::COEFF_EXP[2]),
+               fractional_part2,
+               fma(Internal::COEFF_EXP[1], fractional_part, Internal::COEFF_EXP[0])));
+
+  if constexpr(std::is_same_v<Number, double>)
+  {
+    dealii::VectorizedArray<Number> result =
+      type_cast(Internal::TWO_POW_52 * x + Internal::TWO_POW_52_TIMES_1023);
+    return result;
+  }
+  else if constexpr(std::is_same_v<Number, float>)
+  {
+    dealii::VectorizedArray<Number> result =
+      type_cast(Internal::TWO_POW_23 * x + Internal::TWO_POW_23_TIMES_127);
+    return result;
+  }
+  else
+  {
+    return dealii::make_vectorized_array(std::numeric_limits<Number>::quiet_NaN());
+  }
+}
+
 template<typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
   exp_limited(dealii::VectorizedArray<Number> const & x, Number const & upper_bound)
 {
-  Number values[dealii::VectorizedArray<Number>::size()];
-  for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
-  {
-    values[i] = std::exp(x[i]);
-  }
-
   dealii::VectorizedArray<Number> out;
-  out.load(&values[0]);
+  if constexpr(std::is_same_v<Number, double>)
+  {
+    out = fast_approx_exp(x);
+
+    if constexpr(true)
+    {
+      Number max_rel_err = 0.0;
+      for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
+      {
+        max_rel_err =
+          std::max(max_rel_err, std::abs(std::exp(x[i]) - out[i]) / std::abs(std::exp(x[i])));
+      }
+      std::cout << "(0) max_rel_err = " << max_rel_err << "\n";
+    }
+  }
+  else
+  {
+    for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
+    {
+      out[i] = std::exp(x[i]);
+    }
+  }
 
   out = std::min(out, dealii::make_vectorized_array(upper_bound));
 
