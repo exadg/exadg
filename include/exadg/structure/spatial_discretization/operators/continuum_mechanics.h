@@ -142,11 +142,22 @@ constexpr float  TWO_POW_23_TIMES_127  = 1065353216;
 #if DEAL_II_VECTORIZATION_WIDTH_IN_BITS >= 512 && defined(__AVX512F__)
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<double, 8>
-  floor(const dealii::VectorizedArray<double, 8> & in)
+  floor(dealii::VectorizedArray<double, 8> const & in)
 {
   dealii::VectorizedArray<double, 8> out;
 
   out.data = _mm512_roundscale_pd(in.data, _MM_FROUND_TO_NEG_INF);
+
+  return out;
+}
+
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<float, 16>
+  floor(dealii::VectorizedArray<float, 16> const & in)
+{
+  dealii::VectorizedArray<float, 16> out;
+
+  out.data = _mm512_roundscale_ps(in.data, _MM_FROUND_TO_NEG_INF);
 
   return out;
 }
@@ -155,11 +166,22 @@ inline DEAL_II_ALWAYS_INLINE //
 #if DEAL_II_VECTORIZATION_WIDTH_IN_BITS >= 256 && defined(__AVX__)
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<double, 4>
-  floor(const dealii::VectorizedArray<double, 4> & in)
+  floor(dealii::VectorizedArray<double, 4> const & in)
 {
   dealii::VectorizedArray<double, 4> out;
 
   out.data = _mm256_floor_pd(in.data);
+
+  return out;
+}
+
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<float, 8>
+  floor(dealii::VectorizedArray<float, 8> const & in)
+{
+  dealii::VectorizedArray<float, 8> out;
+
+  out.data = _mm256_floor_ps(in.data);
 
   return out;
 }
@@ -180,7 +202,7 @@ inline DEAL_II_ALWAYS_INLINE //
 #if DEAL_II_VECTORIZATION_WIDTH_IN_BITS >= 512 && defined(__AVX512F__)
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<double, 8>
-  type_cast(const dealii::VectorizedArray<double, 8> & in)
+  type_cast(dealii::VectorizedArray<double, 8> const & in)
 {
   dealii::VectorizedArray<double, 8> out;
 
@@ -189,23 +211,53 @@ inline DEAL_II_ALWAYS_INLINE //
 
   return out;
 }
+
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<float, 16>
+  type_cast(dealii::VectorizedArray<float, 16> const & in)
+{
+  dealii::VectorizedArray<float, 16> out;
+
+  __m512i integer = _mm512_cvt_roundps_epi64(in.data, _MM_FROUND_NO_EXC);
+  out.data        = _mm512_castsi512_ps(integer);
+
+  return out;
+}
 #endif
 
 #if DEAL_II_VECTORIZATION_WIDTH_IN_BITS >= 256 && defined(__AVX__)
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<double, 4>
-  type_cast(const dealii::VectorizedArray<double, 4> & in)
+  type_cast(dealii::VectorizedArray<double, 4> const & in)
 {
   dealii::VectorizedArray<double, 4> out;
 
   double double_values[4];
   in.store(&double_values[0]);
   int64_t int_values[4];
-  for(int i = 0; i < 4; i++)
+  for(unsigned int i = 0; i < 4; ++i)
   {
     int_values[i] = static_cast<int64_t>(double_values[i]);
   }
   out.data = _mm256_castsi256_pd(_mm256_loadu_si256((__m256i *)int_values));
+
+  return out;
+}
+
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::VectorizedArray<float, 8>
+  type_cast(dealii::VectorizedArray<float, 8> const & in)
+{
+  dealii::VectorizedArray<float, 8> out;
+
+  float float_values[8];
+  in.store(&float_values[0]);
+  int32_t int_values[8];
+  for(unsigned int i = 0; i < 8; ++i)
+  {
+    int_values[i] = static_cast<int32_t>(float_values[i]);
+  }
+  out.data = _mm256_castsi256_ps(_mm256_loadu_si256((__m256i *)int_values));
 
   return out;
 }
@@ -214,14 +266,14 @@ inline DEAL_II_ALWAYS_INLINE //
 #if DEAL_II_VECTORIZATION_WIDTH_IN_BITS >= 128 && defined(__SSE2__)
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<double, 2>
-  type_cast(const dealii::VectorizedArray<double, 2> & in)
+  type_cast(dealii::VectorizedArray<double, 2> const & in)
 {
   dealii::VectorizedArray<double, 2> out;
 
   double double_values[2];
   in.store(&double_values[0]);
   int64_t int_values[2];
-  for(int i = 0; i < 2; i++)
+  for(unsigned int i = 0; i < 2; ++i)
   {
     int_values[i] = static_cast<int64_t>(double_values[i]);
   }
@@ -229,15 +281,43 @@ inline DEAL_II_ALWAYS_INLINE //
 
   return out;
 }
-#endif
 
 inline DEAL_II_ALWAYS_INLINE //
-  dealii::VectorizedArray<double, 1>
-  type_cast(const dealii::VectorizedArray<double, 1> & in)
+  dealii::VectorizedArray<float, 4>
+  type_cast(dealii::VectorizedArray<float, 4> const & in)
+{
+  dealii::VectorizedArray<float, 4> out;
+
+  float float_values[4];
+  in.store(&float_values[0]);
+  int32_t int_values[4];
+  for(unsigned int i = 0; i < 4; ++i)
+  {
+    int_values[i] = static_cast<int32_t>(float_values[i]);
+  }
+  out.data = _mm_castsi128_ps(_mm_loadu_si128((__m128i *)int_values));
+
+  return out;
+}
+#endif
+
+inline DEAL_II_ALWAYS_INLINE dealii::VectorizedArray<double, 1>
+                             type_cast(dealii::VectorizedArray<double, 1> const & in)
 {
   dealii::VectorizedArray<double, 1> out;
 
   auto result = static_cast<int64_t>(in.data);
+  std::memcpy(&out.data, &result, sizeof(out.data));
+
+  return out;
+}
+
+inline DEAL_II_ALWAYS_INLINE dealii::VectorizedArray<float, 1>
+                             type_cast(dealii::VectorizedArray<float, 1> const & in)
+{
+  dealii::VectorizedArray<float, 1> out;
+
+  auto result = static_cast<int32_t>(in.data);
   std::memcpy(&out.data, &result, sizeof(out.data));
 
   return out;
@@ -288,11 +368,11 @@ inline DEAL_II_ALWAYS_INLINE //
   exp_limited(dealii::VectorizedArray<Number> const & x, Number const & upper_bound)
 {
   dealii::VectorizedArray<Number> out;
-  if constexpr(std::is_same_v<Number, double>)
+  if constexpr(true) // std::is_same_v<Number, double>)
   {
     out = fast_approx_exp(x);
 
-    if constexpr(true)
+    if constexpr(std::is_same_v<Number, double>)
     {
       Number max_rel_err = 0.0;
       for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
@@ -300,7 +380,18 @@ inline DEAL_II_ALWAYS_INLINE //
         max_rel_err =
           std::max(max_rel_err, std::abs(std::exp(x[i]) - out[i]) / std::abs(std::exp(x[i])));
       }
-      std::cout << "(0) max_rel_err = " << max_rel_err << "\n";
+      std::cout << "(0) max_rel_err = " << max_rel_err << " (double)\n";
+    }
+
+    if constexpr(std::is_same_v<Number, float>)
+    {
+      Number max_rel_err = 0.0;
+      for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
+      {
+        max_rel_err =
+          std::max(max_rel_err, std::abs(std::exp(x[i]) - out[i]) / std::abs(std::exp(x[i])));
+      }
+      std::cout << "(0) max_rel_err = " << max_rel_err << " (float)\n";
     }
   }
   else
