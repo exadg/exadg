@@ -144,6 +144,8 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<double, 8>
   floor(dealii::VectorizedArray<double, 8> const & in)
 {
+  std::cout << "not tested. (1)\n";
+
   dealii::VectorizedArray<double, 8> out;
 
   out.data = _mm512_roundscale_pd(in.data, _MM_FROUND_TO_NEG_INF);
@@ -155,6 +157,8 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<float, 16>
   floor(dealii::VectorizedArray<float, 16> const & in)
 {
+  std::cout << "not tested. (2)\n";
+
   dealii::VectorizedArray<float, 16> out;
 
   out.data = _mm512_roundscale_ps(in.data, _MM_FROUND_TO_NEG_INF);
@@ -204,6 +208,8 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<double, 8>
   type_cast(dealii::VectorizedArray<double, 8> const & in)
 {
+  std::cout << "not tested. (6)\n";
+
   dealii::VectorizedArray<double, 8> out;
 
   __m512i integer = _mm512_cvt_roundpd_epi64(in.data, _MM_FROUND_NO_EXC);
@@ -216,6 +222,8 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<float, 16>
   type_cast(dealii::VectorizedArray<float, 16> const & in)
 {
+  std::cout << "not tested. (7)\n";
+
   dealii::VectorizedArray<float, 16> out;
 
   __m512i integer = _mm512_cvt_roundps_epi64(in.data, _MM_FROUND_NO_EXC);
@@ -268,6 +276,8 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<double, 2>
   type_cast(dealii::VectorizedArray<double, 2> const & in)
 {
+  std::cout << "not tested. (10)\n";
+
   dealii::VectorizedArray<double, 2> out;
 
   double double_values[2];
@@ -286,6 +296,8 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<float, 4>
   type_cast(dealii::VectorizedArray<float, 4> const & in)
 {
+  std::cout << "not tested. (11)\n";
+
   dealii::VectorizedArray<float, 4> out;
 
   float float_values[4];
@@ -304,6 +316,8 @@ inline DEAL_II_ALWAYS_INLINE //
 inline DEAL_II_ALWAYS_INLINE dealii::VectorizedArray<double, 1>
                              type_cast(dealii::VectorizedArray<double, 1> const & in)
 {
+  std::cout << "not tested. (12)\n";
+
   dealii::VectorizedArray<double, 1> out;
 
   auto result = static_cast<int64_t>(in.data);
@@ -315,6 +329,8 @@ inline DEAL_II_ALWAYS_INLINE dealii::VectorizedArray<double, 1>
 inline DEAL_II_ALWAYS_INLINE dealii::VectorizedArray<float, 1>
                              type_cast(dealii::VectorizedArray<float, 1> const & in)
 {
+  std::cout << "not tested. (13)\n";
+
   dealii::VectorizedArray<float, 1> out;
 
   auto result = static_cast<int32_t>(in.data);
@@ -367,12 +383,14 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
   exp_limited(dealii::VectorizedArray<Number> const & x, Number const & upper_bound)
 {
+  bool constexpr option = 0;
+
   dealii::VectorizedArray<Number> out;
-  if constexpr(true) // std::is_same_v<Number, double>)
+  if constexpr(option == 0)
   {
     out = fast_approx_exp(x);
 
-    if constexpr(std::is_same_v<Number, double>)
+    if constexpr(false and std::is_same_v<Number, double>)
     {
       Number max_rel_err = 0.0;
       for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
@@ -383,7 +401,7 @@ inline DEAL_II_ALWAYS_INLINE //
       std::cout << "(0) max_rel_err = " << max_rel_err << " (double)\n";
     }
 
-    if constexpr(std::is_same_v<Number, float>)
+    if constexpr(false and std::is_same_v<Number, float>)
     {
       Number max_rel_err = 0.0;
       for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
