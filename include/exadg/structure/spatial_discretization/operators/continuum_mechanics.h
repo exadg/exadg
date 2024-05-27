@@ -90,7 +90,9 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     // Use Taylor expansions proposed by
     // Shakeri et al. [https://arxiv.org/pdf/2401.13196]
-    // log(1 + x) = 2 * sum_(n = 1 to inf) (x / (2 + x))^(2*n+1) / (2*n+1)
+    // log1p(x) = log(1 + x) = 2 * sum_(n = 0 to inf) (x / (2 + x))^(2*n+1) / (2*n+1)
+    // Note that the point of evolution is x = 0, since we aim to evaluate
+    // log1p(Jm1) = log(1 + J - 1) = log(J) ~= log1p(0)
     unsigned int constexpr n_terms = 6;
     Number two_over_2np1[n_terms];
     for(unsigned int i = 0; i < n_terms; ++i)
@@ -99,13 +101,25 @@ inline DEAL_II_ALWAYS_INLINE //
     }
 
     dealii::VectorizedArray<Number> const x_over_2px               = x / (2.0 + x);
-    dealii::VectorizedArray<Number>       out                      = two_over_2np1[0] * x_over_2px;
     dealii::VectorizedArray<Number>       last_power_of_x_over_2px = x_over_2px;
 
+    // First iteration = initialization.
+    dealii::VectorizedArray<Number> out = two_over_2np1[0] * x_over_2px;
     for(unsigned int i = 1; i < n_terms; ++i)
     {
       last_power_of_x_over_2px *= last_power_of_x_over_2px;
       out += two_over_2np1[i] * last_power_of_x_over_2px * x_over_2px;
+    }
+
+    if constexpr(false) // test for doubles and float
+    {
+      Number max_rel_err = 0.0;
+      for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
+      {
+        max_rel_err =
+          std::max(max_rel_err, std::abs(out[i] - std::log1p(x[i])) / std::abs(std::log1p(x[i])));
+      }
+      std::cout << "max_rel_err = " << max_rel_err << "\n";
     }
 
     return out;

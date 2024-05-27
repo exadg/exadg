@@ -39,8 +39,8 @@ if __name__ == "__main__":
     plt.loglog([0.0, 1e20], [1e-0, 1e-0], label=None, color='black', \
     linestyle='dotted', linewidth=1.0)
 
-    #os.chdir("/home/richardschussnig/dealii-candi/exadg/build/applications/structure/stability_test/")
-    os.chdir("/home/richard/dealii-candi/exadg/build/applications/structure/stability_test/")
+    os.chdir("/home/richardschussnig/dealii-candi/exadg/build/applications/structure/stability_test/")
+    #os.chdir("/home/richard/dealii-candi/exadg/build/applications/structure/stability_test/")
     for file in glob.glob("stability_forward_test_*"):
     
         print("Parsing file:")
