@@ -991,9 +991,6 @@ SpatialOperatorBase<dim, Number>::interpolate_analytical_solution(VectorType & v
   AssertThrow(field_functions->analytical_solution_pressure,
               dealii::ExcMessage("FieldFunctions::analytical_solution_pressure not set"));
 
-  velocity.zero_out_ghost_values();
-  pressure.zero_out_ghost_values();
-
   field_functions->analytical_solution_velocity->set_time(time);
   field_functions->analytical_solution_pressure->set_time(time);
 
