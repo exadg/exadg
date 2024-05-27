@@ -23,7 +23,6 @@ var searchData=
   ['timeintmultistepbase_20',['TimeIntMultistepBase',['../classExaDG_1_1TimeIntMultistepBase.html',1,'ExaDG']]],
   ['timertree_21',['TimerTree',['../classExaDG_1_1TimerTree.html',1,'ExaDG']]],
   ['turbulencemodel_22',['TurbulenceModel',['../classExaDG_1_1IncNS_1_1TurbulenceModel.html',1,'ExaDG::IncNS']]],
-  ['turbulencemodel_3c_20dim_2c_20double_20_3e_23',['TurbulenceModel&lt; dim, double &gt;',['../classExaDG_1_1IncNS_1_1TurbulenceModel.html',1,'ExaDG::IncNS']]],
-  ['turbulencemodeldata_24',['TurbulenceModelData',['../structExaDG_1_1IncNS_1_1TurbulenceModelData.html',1,'ExaDG::IncNS']]],
-  ['turbulentchanneldata_25',['TurbulentChannelData',['../structExaDG_1_1TurbulentChannelData.html',1,'ExaDG']]]
+  ['turbulencemodeldata_23',['TurbulenceModelData',['../structExaDG_1_1IncNS_1_1TurbulenceModelData.html',1,'ExaDG::IncNS']]],
+  ['turbulentchanneldata_24',['TurbulentChannelData',['../structExaDG_1_1TurbulentChannelData.html',1,'ExaDG']]]
 ];

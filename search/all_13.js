@@ -29,7 +29,6 @@ var searchData=
   ['triangulation_26',['triangulation',['../classExaDG_1_1Grid.html#a5655b41ce6108b3c3e50a5eb7fb2bcf5',1,'ExaDG::Grid']]],
   ['trigger_5fcoarsening_5fand_5frefinement_5fnow_27',['trigger_coarsening_and_refinement_now',['../namespaceExaDG.html#ad6601cf08fa17111a7d7f5345a562915',1,'ExaDG']]],
   ['turbulencemodel_28',['TurbulenceModel',['../classExaDG_1_1IncNS_1_1TurbulenceModel.html',1,'ExaDG::IncNS']]],
-  ['turbulencemodel_3c_20dim_2c_20double_20_3e_29',['TurbulenceModel&lt; dim, double &gt;',['../classExaDG_1_1IncNS_1_1TurbulenceModel.html',1,'ExaDG::IncNS']]],
-  ['turbulencemodeldata_30',['TurbulenceModelData',['../structExaDG_1_1IncNS_1_1TurbulenceModelData.html',1,'ExaDG::IncNS']]],
-  ['turbulentchanneldata_31',['TurbulentChannelData',['../structExaDG_1_1TurbulentChannelData.html',1,'ExaDG']]]
+  ['turbulencemodeldata_29',['TurbulenceModelData',['../structExaDG_1_1IncNS_1_1TurbulenceModelData.html',1,'ExaDG::IncNS']]],
+  ['turbulentchanneldata_30',['TurbulentChannelData',['../structExaDG_1_1TurbulentChannelData.html',1,'ExaDG']]]
 ];
