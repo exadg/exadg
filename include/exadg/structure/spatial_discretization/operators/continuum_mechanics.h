@@ -144,7 +144,7 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<double, 8>
   floor(dealii::VectorizedArray<double, 8> const & in)
 {
-  std::cout << "not tested. (1)\n";
+  std::cout << "This has not been tested. (1)\n";
 
   dealii::VectorizedArray<double, 8> out;
 
@@ -157,7 +157,7 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<float, 16>
   floor(dealii::VectorizedArray<float, 16> const & in)
 {
-  std::cout << "not tested. (2)\n";
+  std::cout << "This has not been tested. (2)\n";
 
   dealii::VectorizedArray<float, 16> out;
 
@@ -208,7 +208,7 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<double, 8>
   type_cast(dealii::VectorizedArray<double, 8> const & in)
 {
-  std::cout << "not tested. (6)\n";
+  std::cout << "This has not been tested. (3)\n";
 
   dealii::VectorizedArray<double, 8> out;
 
@@ -222,7 +222,7 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<float, 16>
   type_cast(dealii::VectorizedArray<float, 16> const & in)
 {
-  std::cout << "not tested. (7)\n";
+  std::cout << "This has not been tested. (4)\n";
 
   dealii::VectorizedArray<float, 16> out;
 
@@ -276,7 +276,7 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<double, 2>
   type_cast(dealii::VectorizedArray<double, 2> const & in)
 {
-  std::cout << "not tested. (10)\n";
+  std::cout << "This has not been tested. (5)\n";
 
   dealii::VectorizedArray<double, 2> out;
 
@@ -296,7 +296,7 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<float, 4>
   type_cast(dealii::VectorizedArray<float, 4> const & in)
 {
-  std::cout << "not tested. (11)\n";
+  std::cout << "This has not been tested. (6)\n";
 
   dealii::VectorizedArray<float, 4> out;
 
@@ -316,7 +316,7 @@ inline DEAL_II_ALWAYS_INLINE //
 inline DEAL_II_ALWAYS_INLINE dealii::VectorizedArray<double, 1>
                              type_cast(dealii::VectorizedArray<double, 1> const & in)
 {
-  std::cout << "not tested. (12)\n";
+  std::cout << "This has not been tested. (7)\n";
 
   dealii::VectorizedArray<double, 1> out;
 
@@ -329,7 +329,7 @@ inline DEAL_II_ALWAYS_INLINE dealii::VectorizedArray<double, 1>
 inline DEAL_II_ALWAYS_INLINE dealii::VectorizedArray<float, 1>
                              type_cast(dealii::VectorizedArray<float, 1> const & in)
 {
-  std::cout << "not tested. (13)\n";
+  std::cout << "This has not been tested. (8)\n";
 
   dealii::VectorizedArray<float, 1> out;
 
@@ -350,15 +350,26 @@ static constexpr inline DEAL_II_ALWAYS_INLINE //
 
   dealii::VectorizedArray<Number> fractional_part = x - floor(x);
 
-  dealii::VectorizedArray<Number> fractional_part2 = fractional_part * fractional_part;
-  dealii::VectorizedArray<Number> fractional_part4 = fractional_part2 * fractional_part2;
-  x -= fma(fma(fma(Internal::COEFF_EXP[7], fractional_part, Internal::COEFF_EXP[6]),
-               fractional_part2,
-               fma(Internal::COEFF_EXP[5], fractional_part, Internal::COEFF_EXP[4])),
-           fractional_part4,
-           fma(fma(Internal::COEFF_EXP[3], fractional_part, Internal::COEFF_EXP[2]),
-               fractional_part2,
-               fma(Internal::COEFF_EXP[1], fractional_part, Internal::COEFF_EXP[0])));
+  bool constexpr use_8_else_4_terms = false;
+  if constexpr(use_8_else_4_terms)
+  {
+    dealii::VectorizedArray<Number> fractional_part2 = fractional_part * fractional_part;
+    dealii::VectorizedArray<Number> fractional_part4 = fractional_part2 * fractional_part2;
+    x -= fma(fma(fma(Internal::COEFF_EXP[7], fractional_part, Internal::COEFF_EXP[6]),
+                 fractional_part2,
+                 fma(Internal::COEFF_EXP[5], fractional_part, Internal::COEFF_EXP[4])),
+             fractional_part4,
+             fma(fma(Internal::COEFF_EXP[3], fractional_part, Internal::COEFF_EXP[2]),
+                 fractional_part2,
+                 fma(Internal::COEFF_EXP[1], fractional_part, Internal::COEFF_EXP[0])));
+  }
+  else
+  {
+    dealii::VectorizedArray<Number> fractional_part2 = fractional_part * fractional_part;
+    x -= fma(fma(Internal::COEFF_EXP[3], fractional_part, Internal::COEFF_EXP[2]),
+             fractional_part2,
+             fma(Internal::COEFF_EXP[1], fractional_part, Internal::COEFF_EXP[0]));
+  }
 
   if constexpr(std::is_same_v<Number, double>)
   {
@@ -390,7 +401,7 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     out = fast_approx_exp(x);
 
-    if constexpr(false and std::is_same_v<Number, double>)
+    if constexpr(true) // test for doubles and float
     {
       Number max_rel_err = 0.0;
       for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
@@ -398,18 +409,8 @@ inline DEAL_II_ALWAYS_INLINE //
         max_rel_err =
           std::max(max_rel_err, std::abs(std::exp(x[i]) - out[i]) / std::abs(std::exp(x[i])));
       }
-      std::cout << "(0) max_rel_err = " << max_rel_err << " (double)\n";
-    }
-
-    if constexpr(false and std::is_same_v<Number, float>)
-    {
-      Number max_rel_err = 0.0;
-      for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
-      {
-        max_rel_err =
-          std::max(max_rel_err, std::abs(std::exp(x[i]) - out[i]) / std::abs(std::exp(x[i])));
-      }
-      std::cout << "(0) max_rel_err = " << max_rel_err << " (float)\n";
+      std::string const number_type_str = std::is_same_v<Number, double> ? "double" : "float";
+      std::cout << "(0) max_rel_err = " << max_rel_err << " (" << number_type_str << ")\n";
     }
   }
   else
