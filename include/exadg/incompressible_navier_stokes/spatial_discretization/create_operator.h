@@ -71,7 +71,7 @@ create_operator(std::shared_ptr<Grid<dim> const>                      grid,
                                                                         field,
                                                                         mpi_comm);
   }
-  else if(parameters.temporal_discretization == TemporalDiscretization::BDFPressureCorrection ||
+  else if(parameters.temporal_discretization == TemporalDiscretization::BDFPressureCorrection or
           // we can not instantiate the base class and instantiate an arbitrary deriving
           // class for InterpolateAnalyticalSolution.
           parameters.temporal_discretization ==
