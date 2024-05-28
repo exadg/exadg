@@ -21,12 +21,12 @@
 
 // deal.II
 #include <deal.II/fe/fe_values.h>
-#include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
 #include <exadg/convection_diffusion/preconditioners/multigrid_preconditioner.h>
 #include <exadg/convection_diffusion/spatial_discretization/operator.h>
 #include <exadg/convection_diffusion/spatial_discretization/project_velocity.h>
+#include <exadg/functions_and_boundary_conditions/interpolate.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/operators/finite_element.h>
 #include <exadg/operators/grid_related_time_step_restrictions.h>
@@ -551,19 +551,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::interpolate_velocity(VectorType & velocity, double const time) const
 {
-  field_functions->velocity->set_time(time);
-
-  // This is necessary if Number == float
-  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-
-  VectorTypeDouble vector_double;
-  vector_double = velocity;
-
-  dealii::VectorTools::interpolate(get_dof_handler_velocity(),
-                                   *(field_functions->velocity),
-                                   vector_double);
-
-  velocity = vector_double;
+  Utilities::interpolate(get_dof_handler_velocity(), *(field_functions->velocity), velocity, time);
 }
 
 template<int dim, typename Number>
@@ -587,17 +575,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::prescribe_initial_conditions(VectorType & src, double const time) const
 {
-  field_functions->initial_solution->set_time(time);
-
-  // This is necessary if Number == float
-  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-
-  VectorTypeDouble src_double;
-  src_double = src;
-
-  dealii::VectorTools::interpolate(dof_handler, *(field_functions->initial_solution), src_double);
-
-  src = src_double;
+  Utilities::interpolate(dof_handler, *(field_functions->initial_solution), src, time);
 }
 
 template<int dim, typename Number>
