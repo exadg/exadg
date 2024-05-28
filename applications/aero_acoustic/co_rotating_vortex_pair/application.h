@@ -325,7 +325,7 @@ public:
 
       // TEMPORAL DISCRETIZATION
       prm.add_parameter("CFLFluid", this->param.cfl, "Courant Number.");
-      prm.add_parameter("CFLFluidTemporalDiscretizationFluid",
+      prm.add_parameter("TemporalDiscretizationFluid",
                         this->param.temporal_discretization,
                         "Temporal discretization of the fluid.");
 
