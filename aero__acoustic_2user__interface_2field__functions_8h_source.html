@@ -141,13 +141,19 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="comment">   * space for a given time.</span></div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  std::shared_ptr&lt;Utilities::SpatialAwareFunction&lt;dim&gt;&gt; source_term_blend_in;</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>};</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span><span class="comment">   * The actual analytical aero acoustic source term that can be used to compute</span></div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span><span class="comment">   * acoustic propagation.</span></div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  std::shared_ptr&lt;dealii::Function&lt;dim&gt;&gt; analytical_aero_acoustic_source_term;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>};</div>
 </div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>} <span class="comment">// namespace AeroAcoustic</span></div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_AERO_ACOUSTIC_USER_INTERFACE_FIELD_FUNCTIONS_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>} <span class="comment">// namespace AeroAcoustic</span></div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_AERO_ACOUSTIC_USER_INTERFACE_FIELD_FUNCTIONS_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 <div class="ttc" id="astructExaDG_1_1AeroAcoustic_1_1FieldFunctions_html"><div class="ttname"><a href="structExaDG_1_1AeroAcoustic_1_1FieldFunctions.html">ExaDG::AeroAcoustic::FieldFunctions</a></div><div class="ttdef"><b>Definition</b> field_functions.h:33</div></div>
 </div><!-- fragment --></div><!-- contents -->
