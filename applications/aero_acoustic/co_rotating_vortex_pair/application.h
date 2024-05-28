@@ -325,6 +325,9 @@ public:
 
       // TEMPORAL DISCRETIZATION
       prm.add_parameter("CFLFluid", this->param.cfl, "Courant Number.");
+      prm.add_parameter("TemporalDiscretizationFluid",
+                        this->param.temporal_discretization,
+                        "Temporal discretization of the fluid.");
 
       // APPLICATION SPECIFIC QUNATITIES
       prm.add_parameter("AdditionalCFDRefinementsAroundSource",
@@ -369,7 +372,6 @@ public:
 
     // TEMPORAL DISCRETIZATION
     this->param.solver_type                     = SolverType::Unsteady;
-    this->param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
     this->param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     this->param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     this->param.order_time_integrator           = 2;
@@ -387,9 +389,12 @@ public:
       (this->param.end_time - this->param.start_time) / 100;
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.mapping_degree          = this->param.degree_u;
-    this->param.degree_p                = DegreePressure::MixedOrder;
+    this->param.grid.triangulation_type           = TriangulationType::Distributed;
+    this->param.grid.create_coarse_triangulations = additional_refinements_around_source > 0;
+
+    this->param.mapping_degree              = this->param.degree_u;
+    this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
+    this->param.degree_p                    = DegreePressure::MixedOrder;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -590,6 +595,12 @@ public:
     this->field_functions->initial_solution_pressure =
       std::make_shared<AnalyticalSolutionPressure<dim>>(intensity, r_0, r_c);
 
+    this->field_functions->analytical_solution_velocity =
+      std::make_shared<FluidAeroAcoustic::AnalyticalSolutionVelocity<dim>>(intensity, r_0, r_c);
+
+    this->field_functions->analytical_solution_pressure =
+      std::make_shared<FluidAeroAcoustic::AnalyticalSolutionPressure<dim>>(intensity, r_0, r_c);
+
     this->field_functions->right_hand_side =
       std::make_shared<dealii::Functions::ZeroFunction<dim>>(dim);
   }
@@ -673,6 +684,102 @@ private:
   double const end;
 };
 
+template<int dim>
+class AnalyticalSourceTerm : public dealii::Function<dim>
+{
+public:
+  AnalyticalSourceTerm(bool const   source_term_with_convection,
+                       double const intensity,
+                       double const r_0,
+                       double const r_c)
+    : dealii::Function<dim>(1, 0.0),
+      source_term_with_convection(source_term_with_convection),
+      pi(dealii::numbers::PI),
+      intensity(intensity),
+      r_0(r_0),
+      r_c(r_c),
+      omega(2.0 * pi / CoRotVortexPair::compute_rotation_period(intensity, r_0)),
+      period(CoRotVortexPair::compute_rotation_period(intensity, r_0))
+  {
+  }
+
+  double
+  value(dealii::Point<dim> const & p, unsigned int const) const final
+  {
+    double const r     = p.norm();
+    double const t     = this->get_time();
+    double const theta = std::atan2(p[1], p[0]);
+
+    double const f1 =
+      r_0 * r_0 * (r_0 * r_0 + r_c * r_c - r * r * std::cos(2.0 * omega * t - 2.0 * theta));
+
+    double const f2 =
+      r * r *
+      (std::pow(r_c * r_c + r * r, 2) + std::pow(r_0, 4) -
+       2.0 * r_0 * r_0 * (r * r + r_c * r_c) * std::cos(2.0 * omega * t - 2.0 * theta));
+
+    double const g = std::pow(r * r + r_0 * r_0 + r_c * r_c, 2) -
+                     4.0 * r * r * r_0 * r_0 * std::pow(std::cos(omega * t - theta), 2);
+
+    double const dt_f1 = -2.0 * r * r * r_0 * r_0 * omega * std::sin(2.0 * theta - 2.0 * omega * t);
+
+    double const dt_f2 = -4.0 * r * r * r_0 * r_0 * omega * (r_c * r_c + r * r) *
+                         std::sin(2.0 * theta - 2.0 * omega * t);
+
+    double const dt_g =
+      -8.0 * r * r * r_0 * r_0 * omega * std::sin(theta - omega * t) * std::cos(theta - omega * t);
+
+    double const ddt_1 = (dt_f1 * g - f1 * dt_g) / (g * g);
+    double const ddt_2 = (dt_f2 * g - 2.0 * f2 * dt_g) / (g * g * g);
+
+    if(not source_term_with_convection)
+      return intensity * omega / pi * ddt_1 + 0.5 * intensity * intensity / (pi * pi) * ddt_2;
+
+    double const dr_f1     = -2.0 * r * r_0 * r_0 * std::cos(2.0 * theta - 2.0 * t * omega);
+    double const dtheta_f1 = 2.0 * r * r * r_0 * r_0 * std::sin(2.0 * theta - 2.0 * t * omega);
+
+
+    double const dr_f2 =
+      2.0 * r *
+      (std::pow(r_c, 4) -
+       2.0 * r_0 * r_0 * (r_c * r_c + 2.0 * r * r) * std::cos(2.0 * theta - 2.0 * t * omega) +
+       4.0 * r_c * r_c * r * r + 3.0 * std::pow(r, 4) + std::pow(r_0, 4));
+    double const dtheta_f2 =
+      4.0 * r * r * r_0 * r_0 * (r_c * r_c + r * r) * std::sin(2.0 * theta - 2.0 * omega * t);
+
+    double const dr_g =
+      4.0 * r *
+      (r_c * r_c + r * r - 2.0 * r_0 * r_0 * std::pow(std::cos(theta - omega * t), 2) + r_0 * r_0);
+    double const dtheta_g =
+      8.0 * r * r * r_0 * r_0 * std::sin(theta - omega * t) * std::cos(theta - omega * t);
+
+    double const w_r =
+      intensity * r * r_0 * r_0 * std::sin(2.0 * omega * t - 2.0 * theta) / (pi * g);
+
+    double const w_theta =
+      intensity * r * (r * r + r_c * r_c - r_0 * r_0 * std::cos(2.0 * omega * t - 2.0 * theta)) /
+      (pi * g);
+
+
+    double const DDt_1 = ddt_1 + (dr_f1 * g - f1 * dr_g) / (g * g) * w_r +
+                         (dtheta_f1 * g - f1 * dtheta_g) / (r * g * g + 1e-16) * w_theta;
+
+    double const DDt_2 = ddt_2 + (dr_f2 * g - 2.0 * f2 * dr_g) / (g * g * g) * w_r +
+                         (dtheta_f2 * g - 2.0 * f2 * dtheta_g) / (r * g * g * g + 1e-16) * w_theta;
+
+    return intensity * omega / pi * DDt_1 + 0.5 * intensity * intensity / (pi * pi) * DDt_2;
+  }
+
+private:
+  bool const   source_term_with_convection;
+  double const pi;
+  double const intensity;
+  double const r_0;
+  double const r_c;
+  double const omega;
+  double const period;
+};
+
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
@@ -698,7 +805,47 @@ private:
       std::make_shared<BlendInFunction<dim>>(this->acoustic->get_parameters().start_time,
                                              0.1 * (this->acoustic->get_parameters().end_time -
                                                     this->acoustic->get_parameters().start_time));
+
+    this->field_functions->analytical_aero_acoustic_source_term =
+      std::make_shared<AnalyticalSourceTerm<dim>>(source_term_with_convection, intensity, r_0, r_c);
   }
+
+  void
+  add_parameters(dealii::ParameterHandler & prm) final
+  {
+    ApplicationBase<dim, Number>::add_parameters(prm);
+
+    prm.enter_subsection("Application");
+    {
+      prm.add_parameter("VortexRadius",
+                        r_0,
+                        "Distance of vortices to center.",
+                        dealii::Patterns::Double(1e-12));
+
+      prm.add_parameter("VortexCoreRadius",
+                        r_c,
+                        "Vortex core radius for Scully model.",
+                        dealii::Patterns::Double(1e-12));
+
+      prm.add_parameter("Intensity", intensity, "Intensity.", dealii::Patterns::Double(1e-12));
+    }
+    prm.leave_subsection();
+
+    prm.enter_subsection("ApplicationAeroAcoustic");
+    {
+      prm.add_parameter("SourceTermWithConvection",
+                        source_term_with_convection,
+                        "Source term contains convective effects.",
+                        dealii::Patterns::Bool());
+    }
+    prm.leave_subsection();
+  }
+
+
+  bool   source_term_with_convection = true;
+  double intensity                   = 7.54;
+  double r_0                         = 1.0;
+  double r_c                         = 0.1 * r_0;
 };
 } // namespace AeroAcoustic
 

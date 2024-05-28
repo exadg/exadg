@@ -47,6 +47,12 @@ struct FieldFunctions
    * space for a given time.
    */
   std::shared_ptr<Utilities::SpatialAwareFunction<dim>> source_term_blend_in;
+
+  /*
+   * The actual analytical aero acoustic source term that can be used to compute
+   * acoustic propagation.
+   */
+  std::shared_ptr<dealii::Function<dim>> analytical_aero_acoustic_source_term;
 };
 
 } // namespace AeroAcoustic

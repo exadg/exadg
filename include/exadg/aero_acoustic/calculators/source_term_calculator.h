@@ -45,6 +45,9 @@ class SourceTermCalculator
   using CellIntegratorScalar = CellIntegrator<dim, 1, Number>;
   using CellIntegratorVector = CellIntegrator<dim, dim, Number>;
 
+  using scalar = dealii::VectorizedArray<Number>;
+  using qpoint = dealii::Point<dim, dealii::VectorizedArray<Number>>;
+
 public:
   SourceTermCalculator() : matrix_free(nullptr), time(std::numeric_limits<double>::min())
   {
@@ -57,6 +60,21 @@ public:
     matrix_free = &matrix_free_in;
     data        = data_in;
   }
+
+  void
+  evaluate_integrate(VectorType &            dst,
+                     dealii::Function<dim> & analytical_source_term,
+                     double const            evaluation_time)
+  {
+    time = evaluation_time;
+
+    dst.zero_out_ghost_values();
+
+    analytical_source_term.set_time(time);
+
+    matrix_free->cell_loop(&This::compute_source_term, this, dst, analytical_source_term, true);
+  }
+
 
   void
   evaluate_integrate(VectorType &       dst,
@@ -95,24 +113,7 @@ private:
 
     Number rho = static_cast<Number>(data.density);
 
-    // In case we blend in the source term, we check if the scaling is space dependent. Only in that
-    // case we have to evaluate the function in every equadrature point. Otherwise the scaling
-    // is purely temporal and constant during this function.
-    if(data.blend_in)
-      AssertThrow(data.blend_in_function != nullptr,
-                  dealii::ExcMessage("No blend-in function provided."));
-
-    bool const space_dependent_scaling =
-      data.blend_in_function != nullptr ? data.blend_in_function->varies_in_space(time) : false;
-    Number const pure_temporal_scaling_factor =
-      (not space_dependent_scaling) ? data.blend_in_function->compute_time_factor(time) : 1.0;
-
-    auto apply_scaling = [&](auto & flux, auto const & q) {
-      if(space_dependent_scaling)
-        flux *= FunctionEvaluator<0, dim, Number>::value(*data.blend_in_function, q, time);
-      else
-        flux *= pure_temporal_scaling_factor;
-    };
+    auto get_scaling_factor = get_scaling_function();
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -128,10 +129,10 @@ private:
 
         for(unsigned int q = 0; q < dpdt.n_q_points; ++q)
         {
-          auto flux = -rho * dpdt.get_value(q) + u.get_value(q) * p.get_gradient(q);
+          scalar flux = -rho * dpdt.get_value(q) + u.get_value(q) * p.get_gradient(q);
 
           if(data.blend_in)
-            apply_scaling(flux, dpdt.quadrature_point(q));
+            flux *= get_scaling_factor(dpdt.quadrature_point(q));
 
           dpdt.submit_value(flux, q);
         }
@@ -140,10 +141,10 @@ private:
       {
         for(unsigned int q = 0; q < dpdt.n_q_points; ++q)
         {
-          auto flux = -rho * dpdt.get_value(q);
+          scalar flux = -rho * dpdt.get_value(q);
 
           if(data.blend_in)
-            apply_scaling(flux, dpdt.quadrature_point(q));
+            flux *= get_scaling_factor(dpdt.quadrature_point(q));
 
           dpdt.submit_value(flux, q);
         }
@@ -152,6 +153,69 @@ private:
       dpdt.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
+
+  void
+  compute_source_term(dealii::MatrixFree<dim, Number> const &       matrix_free_in,
+                      VectorType &                                  dst,
+                      dealii::Function<dim> const &                 analytical_source_term,
+                      std::pair<unsigned int, unsigned int> const & cell_range) const
+  {
+    CellIntegratorScalar dpdt(matrix_free_in, data.dof_index_pressure, data.quad_index);
+
+    Number rho = static_cast<Number>(data.density);
+
+    auto get_scaling_factor = get_scaling_function();
+
+    for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
+    {
+      dpdt.reinit(cell);
+
+      for(unsigned int q = 0; q < dpdt.n_q_points; ++q)
+      {
+        scalar flux = -rho * FunctionEvaluator<0, dim, Number>::value(analytical_source_term,
+                                                                      dpdt.quadrature_point(q));
+
+        if(data.blend_in)
+          flux *= get_scaling_factor(dpdt.quadrature_point(q));
+
+        dpdt.submit_value(flux, q);
+      }
+
+      dpdt.integrate_scatter(dealii::EvaluationFlags::values, dst);
+    }
+  }
+
+  std::function<scalar(qpoint const &)>
+  get_scaling_function() const
+  {
+    // In case we blend in the source term, we check if the scaling is space dependent. Only in that
+    // case we have to evaluate the function in every equadrature point. Otherwise the scaling
+    // is purely temporal and constant during this function.
+    if(data.blend_in)
+    {
+      AssertThrow(data.blend_in_function != nullptr,
+                  dealii::ExcMessage("No blend-in function provided."));
+    }
+
+    bool const space_dependent_scaling =
+      data.blend_in_function != nullptr ? data.blend_in_function->varies_in_space(time) : false;
+    Number const pure_temporal_scaling_factor =
+      (not space_dependent_scaling) ? data.blend_in_function->compute_time_factor(time) : 1.0;
+
+    if(space_dependent_scaling)
+    {
+      return [&](qpoint const & q) {
+        return FunctionEvaluator<0, dim, Number>::value(*data.blend_in_function, q, time);
+      };
+    }
+    else
+    {
+      // capture scaling factor by copy
+      return
+        [pure_temporal_scaling_factor](qpoint const &) { return pure_temporal_scaling_factor; };
+    }
+  }
+
 
   dealii::MatrixFree<dim, Number> const * matrix_free;
 

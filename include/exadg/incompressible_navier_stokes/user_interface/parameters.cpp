@@ -690,6 +690,9 @@ Parameters::involves_h_multigrid() const
       }
     }
   }
+  else if(temporal_discretization == TemporalDiscretization::InterpolateAnalyticalSolution)
+  {
+  }
   else
   {
     AssertThrow(false, dealii::ExcMessage("not implemented."));

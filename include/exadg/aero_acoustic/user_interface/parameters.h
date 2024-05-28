@@ -36,6 +36,21 @@ enum class FluidToAcousticCouplingStrategy
   ConservativeInterpolation
 };
 
+enum class AcousticSourceTermComputation
+{
+  Undefined,
+  FromFluid,
+  // In case the aero-acoustic source term is known analytically do not compute a
+  // CFD, but interpolate the surce term to the CFD grid and use the given coupling
+  // strategy to transfer the source term. If this coupling strategy is set
+  // IncNS::TemporalDiscretization has to be InterpolateAnalyticalSolution.
+  // The analytical source term is interpolated as is, i.e. at the point of
+  // interpolation there is no check if source_term_with_convection is true. It is
+  // the resposibility of the user to make sure the source term includes convection
+  // or not.
+  FromAnalyticSourceTerm
+};
+
 class Parameters
 {
 public:
@@ -43,7 +58,8 @@ public:
     : density(-1.0),
       source_term_with_convection(false),
       blend_in_source_term(false),
-      fluid_to_acoustic_coupling_strategy(FluidToAcousticCouplingStrategy::Undefined)
+      fluid_to_acoustic_coupling_strategy(FluidToAcousticCouplingStrategy::Undefined),
+      acoustic_source_term_computation(AcousticSourceTermComputation::Undefined)
   {
   }
 
@@ -54,6 +70,9 @@ public:
 
     AssertThrow(fluid_to_acoustic_coupling_strategy != FluidToAcousticCouplingStrategy::Undefined,
                 dealii::ExcMessage("Coupling strategy has to be set."));
+
+    AssertThrow(acoustic_source_term_computation != AcousticSourceTermComputation::Undefined,
+                dealii::ExcMessage("Source term computation has to be set."));
   }
 
   void
@@ -64,6 +83,7 @@ public:
     print_parameter(pcout, "Source term has convective part", source_term_with_convection);
     print_parameter(pcout, "Blend in source term", blend_in_source_term);
     print_parameter(pcout, "Fluid to acoustic coupling", fluid_to_acoustic_coupling_strategy);
+    print_parameter(pcout, "Acoustic source term compuation", acoustic_source_term_computation);
   }
 
   void
@@ -91,6 +111,12 @@ public:
                         "Volume coupling strategy from the fluid to the acoustic field.",
                         Patterns::Enum<FluidToAcousticCouplingStrategy>(),
                         true);
+
+      prm.add_parameter("AcousticSourceTermComputation",
+                        acoustic_source_term_computation,
+                        "How to compute the acustic source term.",
+                        Patterns::Enum<AcousticSourceTermComputation>(),
+                        true);
     }
     prm.leave_subsection();
   }
@@ -108,6 +134,9 @@ public:
 
   // Strategy to couple from fluid to acoustic
   FluidToAcousticCouplingStrategy fluid_to_acoustic_coupling_strategy;
+
+  // How to compute the acustic source term
+  AcousticSourceTermComputation acoustic_source_term_computation;
 };
 
 } // namespace AeroAcoustic

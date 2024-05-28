@@ -125,7 +125,8 @@ enum class TemporalDiscretization
   Undefined,
   BDFDualSplittingScheme,
   BDFPressureCorrection,
-  BDFCoupledSolution
+  BDFCoupledSolution,
+  InterpolateAnalyticalSolution
 };
 
 /*

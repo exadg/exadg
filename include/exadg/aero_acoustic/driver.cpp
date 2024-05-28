@@ -87,6 +87,16 @@ Driver<dim, Number>::setup_volume_coupling()
 
     pcout << std::endl << "Setup volume coupling fluid -> acoustic ..." << std::endl;
 
+    if(application->parameters.acoustic_source_term_computation ==
+       AcousticSourceTermComputation::FromAnalyticSourceTerm)
+    {
+      AssertThrow(
+        application->fluid->get_parameters().temporal_discretization ==
+          IncNS::TemporalDiscretization::InterpolateAnalyticalSolution,
+        dealii::ExcMessage(
+          "Computing source term from analytical solution requires IncNS::TemporalDiscretization::InterpolateAnalyticalSolution"));
+    }
+
     volume_coupling.setup(application->parameters, acoustic, fluid, application->field_functions);
 
     pcout << std::endl << "... done!" << std::endl;

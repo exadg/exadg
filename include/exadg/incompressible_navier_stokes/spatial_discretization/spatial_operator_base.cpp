@@ -982,6 +982,42 @@ SpatialOperatorBase<dim, Number>::prescribe_initial_conditions(VectorType & velo
 
 template<int dim, typename Number>
 void
+SpatialOperatorBase<dim, Number>::interpolate_analytical_solution(VectorType & velocity,
+                                                                  VectorType & pressure,
+                                                                  double const time) const
+{
+  AssertThrow(field_functions->analytical_solution_velocity,
+              dealii::ExcMessage("FieldFunctions::analytical_solution_velocity not set"));
+  AssertThrow(field_functions->analytical_solution_pressure,
+              dealii::ExcMessage("FieldFunctions::analytical_solution_pressure not set"));
+
+  field_functions->analytical_solution_velocity->set_time(time);
+  field_functions->analytical_solution_pressure->set_time(time);
+
+  // This is necessary if Number == float
+  using VectorTypeDouble = dealii::LinearAlgebra::distributed::Vector<double>;
+
+  VectorTypeDouble velocity_double;
+  VectorTypeDouble pressure_double;
+  velocity_double = velocity;
+  pressure_double = pressure;
+
+  dealii::VectorTools::interpolate(*get_mapping(),
+                                   get_dof_handler_u(),
+                                   *(field_functions->analytical_solution_velocity),
+                                   velocity_double);
+
+  dealii::VectorTools::interpolate(*get_mapping(),
+                                   get_dof_handler_p(),
+                                   *(field_functions->analytical_solution_pressure),
+                                   pressure_double);
+
+  velocity = velocity_double;
+  pressure = pressure_double;
+}
+
+template<int dim, typename Number>
+void
 SpatialOperatorBase<dim, Number>::interpolate_stress_bc(VectorType &       stress,
                                                         VectorType const & velocity,
                                                         VectorType const & pressure) const

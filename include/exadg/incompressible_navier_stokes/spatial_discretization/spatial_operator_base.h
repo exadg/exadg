@@ -238,6 +238,14 @@ public:
                                VectorType & pressure,
                                double const time) const;
 
+  /*
+   * Interpolate analytical solution functions.
+   */
+  void
+  interpolate_analytical_solution(VectorType & velocity,
+                                  VectorType & pressure,
+                                  double const time) const;
+
   // FSI: coupling fluid -> structure
   // fills a DoF-vector (velocity) with values of traction on fluid-structure interface
   void
