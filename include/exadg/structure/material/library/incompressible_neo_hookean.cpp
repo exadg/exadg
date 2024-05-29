@@ -320,7 +320,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   if constexpr(cache_level == 0 or force_evaluation)
   {
     return ((0.5 * bulk_modulus) * compute_JJm1<Number, stable_formulation>(Jm1) -
-            shear_modulus * ONE_THIRD * J_pow * compute_I_1<dim, Number>(E, stable_formulation));
+            shear_modulus * ONE_THIRD * J_pow * compute_I_1<dim, Number, stable_formulation>(E));
   }
   else
   {
@@ -346,7 +346,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
   if constexpr(cache_level == 0 or force_evaluation)
   {
     return (bulk_modulus * (compute_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
-            TWO_NINTHS * shear_modulus * J_pow * compute_I_1<dim, Number>(E, stable_formulation));
+            TWO_NINTHS * shear_modulus * J_pow * compute_I_1<dim, Number, stable_formulation>(E));
   }
   else
   {

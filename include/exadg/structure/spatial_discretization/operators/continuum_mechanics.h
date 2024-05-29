@@ -943,13 +943,12 @@ inline DEAL_II_ALWAYS_INLINE //
 
 // Compute I_1 = trace(C) in a numerically stable manner, which is based on E, or in the standard
 // fashion.
-template<int dim, typename Number>
+template<int dim, typename Number, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
-  compute_I_1(dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> const & E,
-              bool const stable_formulation)
+  compute_I_1(dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> const & E)
 {
-  if(stable_formulation)
+  if constexpr(stable_formulation)
   {
     // I_1 = trace(C) = 2 * trace(E) + trace(I)
     return (2.0 * trace(E) + static_cast<Number>(dim));

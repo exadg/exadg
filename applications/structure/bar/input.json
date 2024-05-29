@@ -24,7 +24,7 @@
         "LoadIncrement": "0.1",
         "UseVolumeForce": "false",
         "VolumeForce": "1.0",
-        "SpatialIntegration": "false",
+        "SpatialIntegration": "true",
         "ForceMaterialResidual": "false",
         "StableFormulation": "true",
         "CacheLevel": "2",
