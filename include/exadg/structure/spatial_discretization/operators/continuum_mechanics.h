@@ -100,16 +100,24 @@ inline DEAL_II_ALWAYS_INLINE //
       two_over_2np1[i] = 2.0 / static_cast<Number>(2 * i + 1);
     }
 
-    dealii::VectorizedArray<Number> const x_over_2px               = x / (2.0 + x);
-    dealii::VectorizedArray<Number>       last_power_of_x_over_2px = x_over_2px;
+    dealii::VectorizedArray<Number> const x_over_2px = x / (2.0 + x);
+    dealii::VectorizedArray<Number>       last_power_of_x_over_2px(static_cast<Number>(1.0));
 
     // First iteration = initialization.
     dealii::VectorizedArray<Number> out = two_over_2np1[0] * x_over_2px;
     for(unsigned int i = 1; i < n_terms; ++i)
     {
-      last_power_of_x_over_2px *= last_power_of_x_over_2px;
+      last_power_of_x_over_2px *= x_over_2px * x_over_2px;
       out += two_over_2np1[i] * last_power_of_x_over_2px * x_over_2px;
     }
+
+    // The argument x in log1p(x) = log(x+1) has to be larger than -1.
+    // out = x > x_limit ? out : -inf
+    out = dealii::compare_and_apply_mask<dealii::SIMDComparison::greater_than>(
+      x,
+      dealii::make_vectorized_array<Number>(static_cast<Number>(-1.0)),
+      out,
+      dealii::make_vectorized_array<Number>(-std::numeric_limits<Number>::infinity()));
 
     if constexpr(false) // test for doubles and float
     {
@@ -119,7 +127,11 @@ inline DEAL_II_ALWAYS_INLINE //
         max_rel_err =
           std::max(max_rel_err, std::abs(out[i] - std::log1p(x[i])) / std::abs(std::log1p(x[i])));
       }
-      std::cout << "max_rel_err = " << max_rel_err << "\n";
+      std::string const number_type_str = std::is_same_v<Number, double> ? "double" : "float";
+      if(max_rel_err > 1e-5)
+      {
+        std::cout << "(0) max_rel_err = " << max_rel_err << " (" << number_type_str << ")\n";
+      }
     }
 
     return out;
@@ -406,12 +418,12 @@ static constexpr inline DEAL_II_ALWAYS_INLINE //
   }
 }
 
-template<typename Number, unsigned int option>
+template<typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
   exp_limited(dealii::VectorizedArray<Number> const & x, Number const & upper_bound)
 {
-  //  bool constexpr option = 0;
+  bool constexpr option = 0;
 
   dealii::VectorizedArray<Number> out;
   if constexpr(option == 0)
@@ -438,7 +450,7 @@ inline DEAL_II_ALWAYS_INLINE //
   // Bound result with supplied upper limit.
   out = std::min(out, dealii::make_vectorized_array(upper_bound));
 
-  if constexpr(true and option == 0) // test for doubles and float
+  if constexpr(false and option == 0) // test for doubles and float
   {
     Number max_rel_err = 0.0;
     for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
@@ -450,11 +462,8 @@ inline DEAL_II_ALWAYS_INLINE //
       max_rel_err = std::max(max_rel_err, std::abs(limited_abs_exp_x - out[i]) / limited_abs_exp_x);
     }
 
-    if(max_rel_err > 1e-9)
-    {
-      std::string const number_type_str = std::is_same_v<Number, double> ? "double" : "float";
-      std::cout << "(0) max_rel_err = " << max_rel_err << " (" << number_type_str << ")\n";
-    }
+    std::string const number_type_str = std::is_same_v<Number, double> ? "double" : "float";
+    std::cout << "(9) max_rel_err = " << max_rel_err << " (" << number_type_str << ")\n";
   }
 
   return out;
@@ -531,7 +540,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if constexpr(false)
   {
-    if(dealii::VectorizedArray<Number>::size() == 4) // test for doubles only.
+    if constexpr(std::is_same_v<Number, double>)
     {
       dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> check   = H + transpose(H);
       dealii::VectorizedArray<Number>                         sum_err = 0.0;
@@ -542,7 +551,7 @@ inline DEAL_II_ALWAYS_INLINE //
           sum_err += std::abs(check[i][j] - result[i][j]);
         }
       }
-      std::cout << "(1) sum_err = " << sum_err << "\n";
+      std::cout << "(10) sum_err = " << sum_err << "\n";
     }
   }
 
@@ -570,7 +579,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if constexpr(false)
   {
-    if(dealii::VectorizedArray<Number>::size() == 4) // test for doubles only.
+    if constexpr(std::is_same_v<Number, double>)
     {
       dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> check   = transpose(H) * H;
       dealii::VectorizedArray<Number>                         sum_err = 0.0;
@@ -581,7 +590,7 @@ inline DEAL_II_ALWAYS_INLINE //
           sum_err += std::abs(check[i][j] - result[i][j]);
         }
       }
-      std::cout << "(2) sum_err = " << sum_err << "\n";
+      std::cout << "(11) sum_err = " << sum_err << "\n";
     }
   }
 
@@ -609,7 +618,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if constexpr(false)
   {
-    if(dealii::VectorizedArray<Number>::size() == 4) // test for doubles only.
+    if constexpr(std::is_same_v<Number, double>)
     {
       dealii::VectorizedArray<Number> sum_err = 0.0;
 
@@ -621,7 +630,7 @@ inline DEAL_II_ALWAYS_INLINE //
           sum_err += std::abs(check[i][j] - result[i][j]);
         }
       }
-      std::cout << "(3) sum_err = " << sum_err << "\n";
+      std::cout << "(12) sum_err = " << sum_err << "\n";
     }
   }
 
@@ -654,7 +663,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if constexpr(false)
   {
-    if(dealii::VectorizedArray<Number>::size() == 4) // test for doubles only.
+    if constexpr(std::is_same_v<Number, double>)
     {
       dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> A_, B_;
       for(unsigned int i = 0; i < dim; ++i)
@@ -690,7 +699,7 @@ inline DEAL_II_ALWAYS_INLINE //
           sum_err += std::abs(check[i][j] - result[i][j]);
         }
       }
-      std::cout << "(4) sum_err = " << sum_err << ", sym_err = " << sym_err
+      std::cout << "(13) sum_err = " << sum_err << ", sym_err = " << sym_err
                 << ", magn = " << magn / static_cast<Number>(dim * dim) << "\n";
     }
   }
@@ -736,7 +745,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if constexpr(false)
   {
-    if(dealii::VectorizedArray<Number>::size() == 4) // test for doubles only.
+    if constexpr(std::is_same_v<Number, double>)
     {
       dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> S_;
       for(unsigned int i = 0; i < dim; ++i)
@@ -757,7 +766,7 @@ inline DEAL_II_ALWAYS_INLINE //
           sum_err += std::abs(check[i][j] - result[i][j]);
         }
       }
-      std::cout << "(5) sum_err = " << sum_err << "\n";
+      std::cout << "(14) sum_err = " << sum_err << "\n";
     }
   }
 

@@ -167,9 +167,9 @@ if __name__ == "__main__":
     plt.ylabel('Relative error $\epsilon_\mathrm{rel}$')
 
     x_min = 1e-8
-    x_max = 1e3   # 1.0
-    y_min = 1e-21 # 1e-7
-    y_max = 1e21  # 1e5
+    x_max = 1e2  # 1e0
+    y_min = 1e-7 # 1e-21
+    y_max = 1e4  # 1e21
     plt.xlim(xmin=x_min, xmax=x_max)
     plt.ylim(ymin=y_min, ymax=y_max)
 
