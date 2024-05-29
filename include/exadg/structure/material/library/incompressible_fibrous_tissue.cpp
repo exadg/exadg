@@ -551,7 +551,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
-    if constexpr(false) // cache_level == 0) // ##+ removed temporarily for stability test
+    if constexpr(cache_level == 0)
     {
       // Compute the inverse third root of J^2 via Newton's method:
       //
