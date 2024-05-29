@@ -48,9 +48,9 @@ interpolate(dealii::DoFHandler<dim, spacedim> const &          dof_handler,
   else
   {
     VectorType<FunctionNumber> vec_fn;
-    vec_fn = vec;
+    vec_fn.reinit(vec);
     dealii::VectorTools::interpolate(dof_handler, function, vec_fn);
-    vec = vec_fn;
+    vec.copy_locally_owned_data_from(vec_fn);
   }
 }
 
@@ -84,9 +84,9 @@ interpolate(dealii::Mapping<dim, spacedim> const &             mapping,
   else
   {
     VectorType<FunctionNumber> vec_fn;
-    vec_fn = vec;
+    vec_fn.reinit(vec);
     dealii::VectorTools::interpolate(mapping, dof_handler, function, vec_fn);
-    vec = vec_fn;
+    vec.copy_locally_owned_data_from(vec_fn);
   }
 }
 

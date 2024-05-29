@@ -123,9 +123,6 @@ private:
   void
   do_timestep_solve() final
   {
-    velocity_np.zero_out_ghost_values();
-    pressure_np.zero_out_ghost_values();
-
     this->operator_base->interpolate_analytical_solution(velocity_np,
                                                          pressure_np,
                                                          this->get_next_time());
