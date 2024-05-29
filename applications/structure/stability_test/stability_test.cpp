@@ -636,7 +636,7 @@ main(int argc, char ** argv)
                                      dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
     // Perform the stability test or measure the evaluation time.
-    bool constexpr stab_test       = true;
+    bool constexpr stab_test       = false;
     bool constexpr use_max_err     = true;
     bool constexpr use_random_sign = true;
 
