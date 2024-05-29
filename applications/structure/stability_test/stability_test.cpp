@@ -648,7 +648,7 @@ main(int argc, char ** argv)
     std::vector<double> grad_u_scale{{1e-2}};
     if(stab_test)
     {
-      grad_u_scale = logspace(1e-8, 1e+2, n_points_over_log_scale);
+      grad_u_scale = logspace(1e-8, 1e+3, n_points_over_log_scale);
     }
 
     double constexpr h_e                  = 1e-3;
@@ -786,8 +786,8 @@ main(int argc, char ** argv)
                   gradient_increment_float);
 
               // Compute stresses and derivatives.
-              std::vector<double>                        time_double(2), time_float(2);
-              std::vector<symmetric_tensor_double> const evaluation_double =
+              std::vector<double>                                  time_double(2), time_float(2);
+              std::vector<symmetric_tensor_double> /* ##+ const */ evaluation_double =
                 evaluate_material<dim, double>(*material_double,
                                                cache_level,
                                                gradient_displacement_double,
@@ -798,7 +798,7 @@ main(int argc, char ** argv)
                                                time_double,
                                                n_executions_timer);
 
-              std::vector<symmetric_tensor_float> const evaluation_float =
+              std::vector<symmetric_tensor_float> /* ##+ const */ evaluation_float =
                 evaluate_material<dim, float>(*material_float,
                                               cache_level,
                                               gradient_displacement_float,
@@ -831,11 +831,36 @@ main(int argc, char ** argv)
                           dealii::ExcMessage("Expecting stress and derivative."));
               for(unsigned int k = 0; k < evaluation_double.size(); ++k)
               {
+                auto const x_double = dealii::make_vectorized_array(grad_u_scale[i]);
+                auto const x_float =
+                  dealii::make_vectorized_array(static_cast<float>(grad_u_scale[i]));
+
+                // overwrite the double and float evaluations with std::exp() per component
+                // ##+
+                evaluation_float[k] =
+                  get_identity_symmetric_tensor<dim, float>() *
+                  exp_limited<float, 0 /* option */>(x_float, static_cast<float>(10e10));
+
+                // ##+
+                evaluation_double[k] =
+                  get_identity_symmetric_tensor<dim, double>() *
+                  exp_limited<double, 1 /* option */>(x_double, static_cast<double>(10e10));
+
                 // Cast first entry of computed tensor to double from *representable* float.
                 symmetric_tensor_double diff_evaluation =
                   symmetric_tensor_cast_shallow<dim, float /*NumberIn*/, double /*NumberOut*/>(
                     evaluation_float[k]);
+
                 diff_evaluation -= evaluation_double[k];
+
+                //                // check the basic form of the approximation.
+                //                auto const x_double =
+                //                dealii::make_vectorized_array(grad_u_scale[i]); diff_evaluation =
+                //                get_identity_symmetric_tensor<dim,double>() * (
+                //				exp_limited<double, 0 /* option */>(x_double, static_cast<double>(10e10))
+                //				-
+                //				exp_limited<double, 1 /* option */>(x_double, static_cast<double>(10e10))
+                //                );
 
                 // Maximum/minimum relative error in the |tensor|_inf norm.
                 // Note that we might be interested in the minimum, since sampled

@@ -151,6 +151,13 @@ constexpr double TWO_POW_52_TIMES_1023 = 4607182418800017408;
 constexpr float  TWO_POW_23            = 8388608;
 constexpr float  TWO_POW_23_TIMES_127  = 1065353216;
 
+// Maximum argument for the fast_exp() function such that float representations do not overflow.
+// This is 38/log10(e) for single precision, double precision allows up to 308/log10(e) for the
+// argument.
+
+constexpr double MAX_ABS_EXP_ARG_DOUBLE = 709.196208642;
+constexpr float  MAX_ABS_EXP_ARG_SINGLE = 87.4982335338;
+
 } // namespace Internal
 
 #if DEAL_II_VECTORIZATION_WIDTH_IN_BITS >= 512 && defined(__AVX512F__)
@@ -387,15 +394,11 @@ static constexpr inline DEAL_II_ALWAYS_INLINE //
 
   if constexpr(std::is_same_v<Number, double>)
   {
-    dealii::VectorizedArray<Number> result =
-      type_cast(Internal::TWO_POW_52 * x + Internal::TWO_POW_52_TIMES_1023);
-    return result;
+    return type_cast(Internal::TWO_POW_52 * x + Internal::TWO_POW_52_TIMES_1023);
   }
   else if constexpr(std::is_same_v<Number, float>)
   {
-    dealii::VectorizedArray<Number> result =
-      type_cast(Internal::TWO_POW_23 * x + Internal::TWO_POW_23_TIMES_127);
-    return result;
+    return type_cast(Internal::TWO_POW_23 * x + Internal::TWO_POW_23_TIMES_127);
   }
   else
   {
@@ -403,29 +406,26 @@ static constexpr inline DEAL_II_ALWAYS_INLINE //
   }
 }
 
-template<typename Number>
+template<typename Number, unsigned int option>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>
   exp_limited(dealii::VectorizedArray<Number> const & x, Number const & upper_bound)
 {
-  bool constexpr option = 0;
+  //  bool constexpr option = 0;
 
   dealii::VectorizedArray<Number> out;
   if constexpr(option == 0)
   {
     out = fast_approx_exp(x);
 
-    if constexpr(true) // test for doubles and float
-    {
-      Number max_rel_err = 0.0;
-      for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
-      {
-        max_rel_err =
-          std::max(max_rel_err, std::abs(std::exp(x[i]) - out[i]) / std::abs(std::exp(x[i])));
-      }
-      std::string const number_type_str = std::is_same_v<Number, double> ? "double" : "float";
-      std::cout << "(0) max_rel_err = " << max_rel_err << " (" << number_type_str << ")\n";
-    }
+    // Enforce the upper bound based on the single precision upper limit to the argument
+    // such that the result would overflow single precision.
+    // out = x < x_limit ? out : limit
+    out = dealii::compare_and_apply_mask<dealii::SIMDComparison::less_than>(
+      x,
+      dealii::make_vectorized_array<Number>(static_cast<Number>(Internal::MAX_ABS_EXP_ARG_SINGLE)),
+      out,
+      dealii::make_vectorized_array<Number>(upper_bound));
   }
   else
   {
@@ -435,7 +435,27 @@ inline DEAL_II_ALWAYS_INLINE //
     }
   }
 
+  // Bound result with supplied upper limit.
   out = std::min(out, dealii::make_vectorized_array(upper_bound));
+
+  if constexpr(true and option == 0) // test for doubles and float
+  {
+    Number max_rel_err = 0.0;
+    for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
+    {
+      Number const abs_exp_x = x[i] < static_cast<Number>(Internal::MAX_ABS_EXP_ARG_SINGLE) ?
+                                 std::abs(std::exp(x[i])) :
+                                 upper_bound;
+      Number const limited_abs_exp_x = std::min(abs_exp_x, upper_bound);
+      max_rel_err = std::max(max_rel_err, std::abs(limited_abs_exp_x - out[i]) / limited_abs_exp_x);
+    }
+
+    if(max_rel_err > 1e-9)
+    {
+      std::string const number_type_str = std::is_same_v<Number, double> ? "double" : "float";
+      std::cout << "(0) max_rel_err = " << max_rel_err << " (" << number_type_str << ")\n";
+    }
+  }
 
   return out;
 }

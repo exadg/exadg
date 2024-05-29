@@ -67,9 +67,12 @@ if __name__ == "__main__":
             # print(row)
             for i in range(len(row)):
                 val = float(row[i])
-                rows[idx_line-n_header_lines-1, i] = val
                 if math.isinf(val) or math.isnan(val):
                     contained_infinite_values = True
+                if val > 1e20:
+                    val = 1e20
+
+                rows[idx_line-n_header_lines-1, i] = val
 
         if contained_infinite_values:
             print("INF/NAN VALUES IN: " + file + "\n")
@@ -164,10 +167,14 @@ if __name__ == "__main__":
     plt.ylabel('Relative error $\epsilon_\mathrm{rel}$')
 
     x_min = 1e-8
-    x_max = 1.0 # 1e3
-    y_min = 1e-7
-    y_max = 1e5
+    x_max = 1e3   # 1.0
+    y_min = 1e-21 # 1e-7
+    y_max = 1e21  # 1e5
     plt.xlim(xmin=x_min, xmax=x_max)
     plt.ylim(ymin=y_min, ymax=y_max)
+
+    # plt.autoscale(enable=True, axis='x', tight=True)
+    # plt.autoscale(enable=True, axis='y', tight=True)
+
     plt.show()
     
