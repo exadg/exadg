@@ -27,7 +27,7 @@
         "SpatialIntegration": "true",
         "ForceMaterialResidual": "false",
         "StableFormulation": "true",
-        "CacheLevel": "2",
+        "CacheLevel": "0",
         "CheckType": "0",
         "MappingStrength": "0.20",
         "BoundaryType": "Dirichlet",

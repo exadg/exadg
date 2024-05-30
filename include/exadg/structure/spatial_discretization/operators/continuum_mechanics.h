@@ -832,11 +832,35 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else
   {
-    // E = 0.5 * (F^T * F - I)
+    // E = 0.5 * (C - I) = 0.5 * (F^T * F - I)
     dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> E =
       compute_HT_times_H(compute_F(gradient_displacement));
     add_scaled_identity(E, static_cast<Number>(-1.0));
     return (E * (0.5 * scale));
+  }
+}
+
+template<int dim, typename Number, typename TypeScale, bool stable_formulation>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
+  compute_e_scaled(
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
+    TypeScale const &                                               scale)
+{
+  if constexpr(stable_formulation)
+  {
+    // e = 0.5 * (H + H^T + H*H^T)
+    // where H = gradient_displacement
+    return ((0.5 * scale) *
+            (compute_H_plus_HT(gradient_displacement) + compute_H_times_HT(gradient_displacement)));
+  }
+  else
+  {
+    // e = 0.5 * (b - I)
+    dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> e =
+      compute_H_times_HT(compute_F(gradient_displacement));
+    add_scaled_identity(e, static_cast<Number>(-1.0));
+    return (e * (0.5 * scale));
   }
 }
 

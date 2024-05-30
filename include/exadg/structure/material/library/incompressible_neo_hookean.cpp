@@ -745,7 +745,7 @@ IncompressibleNeoHookean<dim, Number, check_type, stable_formulation, cache_leve
                      scalar const & shear_modulus) const
 {
   symmetric_tensor tau =
-    compute_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement,
+    compute_e_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement,
                                                               2.0 * shear_modulus * J_pow);
 
   add_scaled_identity(tau,

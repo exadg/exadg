@@ -892,8 +892,10 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       {
         if constexpr(stable_formulation)
         {
+          symmetric_tensor const e =
+            compute_e_scaled<dim, Number, Number, stable_formulation>(Grad_d_lin, 1.0);
           symmetric_tensor const tau =
-            compute_tau_stable(S_fiber, F, E, Jm1, J_pow, shear_modulus_stored);
+            compute_tau_stable(S_fiber, F, e, Jm1, J_pow, shear_modulus_stored);
           kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
         }
         else
@@ -1295,7 +1297,9 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
       if constexpr(stable_formulation)
       {
-        tau = compute_tau_stable(tau, F, E, Jm1, J_pow, shear_modulus_stored);
+        symmetric_tensor const e =
+          compute_e_scaled<dim, Number, Number, stable_formulation>(gradient_displacement, 1.0);
+        tau = compute_tau_stable(tau, F, e, Jm1, J_pow, shear_modulus_stored);
       }
       else
       {
@@ -1326,10 +1330,10 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
           compute_modified_F<dim, Number, check_type, stable_formulation>(gradient_displacement);
         scalar const           Jm1   = Jm1_coefficients.get_coefficient_cell(cell, q);
         scalar const           J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
-        symmetric_tensor const E =
-          compute_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement, 1.0);
+        symmetric_tensor const e =
+          compute_e_scaled<dim, Number, Number, stable_formulation>(gradient_displacement, 1.0);
 
-        tau = compute_tau_stable(tau, F, E, Jm1, J_pow, shear_modulus_stored);
+        tau = compute_tau_stable(tau, F, e, Jm1, J_pow, shear_modulus_stored);
       }
       else
       {
@@ -1387,7 +1391,7 @@ inline dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
 IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
   compute_tau_stable(symmetric_tensor const & S_fiber,
                      tensor const &           F,
-                     symmetric_tensor const & E,
+                     symmetric_tensor const & e,
                      scalar const &           Jm1,
                      scalar const &           J_pow,
                      scalar const &           shear_modulus) const
@@ -1400,10 +1404,10 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   symmetric_tensor tau = compute_push_forward(S_fiber, F);
 
   // Add remaining terms.
-  tau += (2.0 * shear_modulus * J_pow) * E;
+  tau += (2.0 * shear_modulus * J_pow) * e;
 
   add_scaled_identity(tau,
-                      -TWO_THIRDS * shear_modulus * J_pow * trace(E) +
+                      -TWO_THIRDS * shear_modulus * J_pow * trace(e) +
                         (0.5 * bulk_modulus) * compute_JJm1<Number, stable_formulation>(Jm1));
 
   return tau;

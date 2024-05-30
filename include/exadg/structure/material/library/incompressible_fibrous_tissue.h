@@ -309,7 +309,7 @@ private:
   DEAL_II_ALWAYS_INLINE symmetric_tensor
   compute_tau_stable(symmetric_tensor const & S_fiber,
                      tensor const &           F,
-                     symmetric_tensor const & E,
+                     symmetric_tensor const & e,
                      scalar const &           Jm1,
                      scalar const &           J_pow,
                      scalar const &           shear_modulus) const;
