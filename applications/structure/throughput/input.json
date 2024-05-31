@@ -25,6 +25,7 @@
         "WeakDamping": "0.0",
         "SpatialIntegration": "true",
         "ForceMaterialResidual": "false",
+        "StableFormulation": "true",
         "CacheLevel": "2",
         "CheckType": "0",
         "MappingStrength": "0.0"
