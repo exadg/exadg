@@ -177,8 +177,6 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<double, 8>
   floor(dealii::VectorizedArray<double, 8> const & in)
 {
-  std::cout << "This has not been tested. (1)\n";
-
   dealii::VectorizedArray<double, 8> out;
 
   out.data = _mm512_roundscale_pd(in.data, _MM_FROUND_TO_NEG_INF);
@@ -190,8 +188,6 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<float, 16>
   floor(dealii::VectorizedArray<float, 16> const & in)
 {
-  std::cout << "This has not been tested. (2)\n";
-
   dealii::VectorizedArray<float, 16> out;
 
   out.data = _mm512_roundscale_ps(in.data, _MM_FROUND_TO_NEG_INF);
@@ -241,8 +237,6 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<double, 8>
   type_cast(dealii::VectorizedArray<double, 8> const & in)
 {
-  std::cout << "This has not been tested. (3)\n";
-
   dealii::VectorizedArray<double, 8> out;
 
   __m512i integer = _mm512_cvt_roundpd_epi64(in.data, _MM_FROUND_NO_EXC);
@@ -255,11 +249,9 @@ inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<float, 16>
   type_cast(dealii::VectorizedArray<float, 16> const & in)
 {
-  std::cout << "This has not been tested. (4)\n";
-
   dealii::VectorizedArray<float, 16> out;
 
-  __m512i integer = _mm512_cvt_roundps_epi64(in.data, _MM_FROUND_NO_EXC);
+  __m512i integer = _mm512_cvt_roundps_epi32(in.data, _MM_FROUND_NO_EXC);
   out.data        = _mm512_castsi512_ps(integer);
 
   return out;
