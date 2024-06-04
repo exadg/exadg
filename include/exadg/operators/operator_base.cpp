@@ -2120,12 +2120,12 @@ OperatorBase<dim, Number, n_components>::compute_factorized_additive_schwarz_mat
 {
 #ifdef DEAL_II_WITH_TRILINOS
   internal_compute_factorized_additive_schwarz_matrices<dealii::TrilinosWrappers::SparseMatrix>();
-#elif DEAL_II_WITH_PETSC
+#elif defined(DEAL_II_WITH_PETSC)
   internal_compute_factorized_additive_schwarz_matrices<dealii::PETScWrappers::MPI::SparseMatrix>();
 #else
   AssertThrow(
     n_mpi_processes == 1,
-    ExcMessage(
+    dealii::ExcMessage(
       "If you want to use this function in parallel you have to compile deal.II with either "
       "Trilinos or Petsc support for distributed sparse matrices."));
   internal_compute_factorized_additive_schwarz_matrices<dealii::SparseMatrix>();
