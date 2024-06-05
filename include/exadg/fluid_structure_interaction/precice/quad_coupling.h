@@ -245,7 +245,7 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data_factory(
   dealii::EvaluationFlags::EvaluationFlags const                      flags,
   std::function<value_type(FEFaceIntegrator &, unsigned int)> const & get_write_value)
 {
-  Assert(write_data_id != -1, dealii::ExcNotInitialized());
+  Assert(write_data_name != "", dealii::ExcNotInitialized());
   Assert(coupling_nodes_ids.size() > 0, dealii::ExcNotInitialized());
   // Similar as in define_coupling_mesh
   FEFaceIntegrator phi(this->matrix_free, true, mf_dof_index, mf_quad_index);
@@ -253,6 +253,7 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data_factory(
   // In order to unroll the vectorization
   std::array<double, data_dim * VectorizedArrayType::size()> unrolled_local_data;
   (void)unrolled_local_data;
+  (void)write_data_name;
 
   auto index = coupling_nodes_ids.begin();
 

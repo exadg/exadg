@@ -172,6 +172,9 @@ ExaDGCoupling<dim, data_dim, VectorizedArrayType>::read_data(
                               {&coupling_nodes_ids[start_index], array_size},
                               associated_time,
                               {&array_solution[0][0], array_size});
+#else
+(void)data_name;
+(void)associated_time;
 #endif
       start_index += array_size;
     }
