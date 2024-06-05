@@ -295,7 +295,7 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data_factory(
                                  write_data_name,
                                  {index->data(), static_cast<std::size_t>(active_faces)},
                                  {unrolled_local_data.data(),
-                                  static_cast<std::size_t>(active_faces * data_dim) });
+                                  static_cast<std::size_t>(active_faces * data_dim)});
 #else
         (void)active_faces;
 #endif
