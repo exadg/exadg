@@ -104,19 +104,18 @@ public:
   write_data(dealii::LinearAlgebra::distributed::Vector<double> const & data_vector,
              std::string const &                                        data_name) = 0;
 
-
-  virtual void
-  read_block_data(std::string const & data_name) const;
+   virtual void
+  read_data(std::string const & data_name, double associated_time) const;
 
   /**
-   * @brief Queries data IDs from preCICE for the given read data name
+   * @brief Registers the the given read data name (for logging only)
    * @param read_data_name
    */
   void
   add_read_data(std::string const & read_data_name);
 
   /**
-   * @brief Queries data IDs from preCICE for the given write data name
+   * @brief Registers the the given read data name (for logging only)
    * @param write_data_name
    */
   void
@@ -152,8 +151,8 @@ protected:
   std::string const mesh_name;
 
   // Map between data ID (preCICE) and the data name
-  std::map<std::string, int> read_data_map;
-  std::map<std::string, int> write_data_map;
+  std::set<std::string> read_data_map;
+  std::set<std::string> write_data_map;
 
   dealii::types::boundary_id const dealii_boundary_surface_id;
 
@@ -195,6 +194,7 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 void
 CouplingBase<dim, data_dim, VectorizedArrayType>::add_read_data(std::string const & read_data_name)
 {
+  // Strictly speaking not necessary anymore, but we can keep it for debugging and logging reasons
   Assert(mesh_name != "", dealii::ExcNotInitialized());
   read_data_map.insert({read_data_name});
 }
@@ -206,7 +206,7 @@ void
 CouplingBase<dim, data_dim, VectorizedArrayType>::add_write_data(
   std::string const & write_data_name)
 {
-  // TODO: Probably not required at all
+  // Strictly speaking not necessary anymore, but we can keep it for debugging and logging reasons
   Assert(mesh_name != "", dealii::ExcNotInitialized());
   write_data_map.insert({write_data_name});
 }
@@ -233,7 +233,7 @@ CouplingBase<dim, data_dim, VectorizedArrayType>::process_coupling_mesh()
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-CouplingBase<dim, data_dim, VectorizedArrayType>::read_block_data(std::string const &) const
+CouplingBase<dim, data_dim, VectorizedArrayType>::read_data(std::string const &, double) const
 {
   AssertThrow(false, dealii::ExcNotImplemented());
 }

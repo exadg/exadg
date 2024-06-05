@@ -161,11 +161,17 @@ public:
   void
   write_data(std::string const & write_mesh_name,
              std::string const & write_data_name,
-             VectorType const &  write_data,
-             double const        computed_timestep_length);
+             VectorType const &  write_data);
 
+ /**
+  * @brief Read data from preCICE with the given data_name at the given relative
+  *        read time.
+  *
+  * @param data_name Name of the data field to write
+  * @param associated_time Have a look at precice::Participant::readData for a detailed explanation
+  */
   void
-  read_block_data(std::string const & mesh_name, const std::string & data_name) const;
+  read_data(std::string const & mesh_name, const std::string & data_name, double associated_time) const;
 
   /**
    * @brief is_coupling_ongoing Calls the preCICE API function isCouplingOnGoing
@@ -349,8 +355,7 @@ void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::write_data(
   std::string const & write_mesh_name,
   std::string const & write_data_name,
-  VectorType const &  dealii_to_precice,
-  double const        computed_timestep_length)
+  VectorType const &  dealii_to_precice)
 {
 #ifdef EXADG_WITH_PRECICE
   writer.at(write_mesh_name)->write_data(dealii_to_precice, write_data_name);
@@ -358,7 +363,6 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::write_data(
   (void)write_mesh_name;
   (void)write_data_name;
   (void)dealii_to_precice;
-  (void)computed_timestep_length;
 #endif
 }
 
@@ -381,11 +385,12 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::advance(
 
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 void
-Adapter<dim, data_dim, VectorType, VectorizedArrayType>::read_block_data(
+Adapter<dim, data_dim, VectorType, VectorizedArrayType>::read_data(
   std::string const & mesh_name,
-  std::string const & data_name) const
+  std::string const & data_name,
+  double associated_time) const
 {
-  reader.at(mesh_name)->read_block_data(data_name);
+  reader.at(mesh_name)->read_data(data_name, associated_time);
 }
 
 

@@ -220,16 +220,7 @@ DoFCoupling<dim, data_dim, VectorizedArrayType>::write_data(
 
 #ifdef EXADG_WITH_PRECICE
     // and pass them to preCICE
-    if constexpr(data_dim > 1)
-    {
-      this->precice->writeVectorData(write_data_id, coupling_nodes_ids[i], write_data.data());
-    }
-    else
-    {
-      this->precice->writeScalarData(write_data_id, coupling_nodes_ids[i], write_data[0]);
-    }
-#else
-    (void)write_data_id;
+    this->precice->writeData(this->mesh_name, data_name, {&coupling_nodes_ids[i], 1}, write_data);
 #endif
   }
 }

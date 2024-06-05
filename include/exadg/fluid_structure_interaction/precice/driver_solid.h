@@ -134,12 +134,10 @@ public:
       // store_solution needs to be true for compatibility
       structure->time_integrator->advance_one_timestep_partitioned_solve(is_new_time_window);
       // send displacement data to ale
-      coupling_structure_to_ale(structure->time_integrator->get_displacement_np(),
-                                structure->time_integrator->get_time_step_size());
+      coupling_structure_to_ale(structure->time_integrator->get_displacement_np());
 
       // send velocity boundary condition to fluid
-      coupling_structure_to_fluid(structure->time_integrator->get_velocity_np(),
-                                  structure->time_integrator->get_time_step_size());
+      coupling_structure_to_fluid(structure->time_integrator->get_velocity_np());
 
       // TODO: Add synchronization for the time-step size here. For now, we only allow a constant
       // time-step size
@@ -207,30 +205,27 @@ public:
 
 private:
   void
-  coupling_structure_to_ale(VectorType const & displacement_structure,
-                            double const       time_step_size) const
+  coupling_structure_to_ale(VectorType const & displacement_structure) const
   {
     this->precice->write_data(this->precice_parameters.write_mesh_name,
                               this->precice_parameters.displacement_data_name,
-                              displacement_structure,
-                              time_step_size);
+                              displacement_structure);
   }
 
   void
-  coupling_structure_to_fluid(VectorType const & velocity_structure,
-                              double const       time_step_size) const
+  coupling_structure_to_fluid(VectorType const & velocity_structure) const
   {
     this->precice->write_data(this->precice_parameters.write_mesh_name,
                               this->precice_parameters.velocity_data_name,
-                              velocity_structure,
-                              time_step_size);
+                              velocity_structure);
   }
 
   void
   coupling_fluid_to_structure() const
   {
-    this->precice->read_block_data(this->precice_parameters.read_mesh_name,
-                                   this->precice_parameters.stress_data_name);
+    this->precice->read_data(this->precice_parameters.read_mesh_name,
+                             this->precice_parameters.stress_data_name,
+                             structure->time_integrator->get_time_step_size());
   }
 
   // the solver

@@ -91,7 +91,7 @@ private:
   void
   write_data_factory(
     dealii::LinearAlgebra::distributed::Vector<double> const &          data_vector,
-    int const                                                           write_data_id,
+  std::string const &                                                           write_data_name,
     dealii::EvaluationFlags::EvaluationFlags const                      flags,
     std::function<value_type(FEFaceIntegrator &, unsigned int)> const & get_write_value);
 
@@ -180,9 +180,8 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
 
 #ifdef EXADG_WITH_PRECICE
       this->precice->setMeshVertices(this->mesh_name,
-                                     active_faces,
-                                     unrolled_vertices.data(),
-                                     node_ids.data());
+                                     {unrolled_vertices.data(), active_faces},
+                                     {node_ids.data(), active_faces});
 #else
       (void)active_faces;
 #endif
@@ -215,19 +214,17 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data(
   dealii::LinearAlgebra::distributed::Vector<double> const & data_vector,
   std::string const &                                        data_name)
 {
-  int const write_data_id = this->write_data_map.at(data_name);
-
   switch(this->write_data_type)
   {
     case WriteDataType::values_on_q_points:
       write_data_factory(data_vector,
-                         write_data_id,
+                         data_name,
                          dealii::EvaluationFlags::values,
                          [](auto & phi, auto q_point) { return phi.get_value(q_point); });
       break;
     case WriteDataType::normal_gradients_on_q_points:
       write_data_factory(data_vector,
-                         write_data_id,
+                         data_name,
                          dealii::EvaluationFlags::gradients,
                          [](auto & phi, auto q_point) {
                            return phi.get_normal_derivative(q_point);
@@ -244,7 +241,7 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 void
 QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data_factory(
   dealii::LinearAlgebra::distributed::Vector<double> const &          data_vector,
-  int const                                                           write_data_id,
+  std::string const &                                                           write_data_name,
   dealii::EvaluationFlags::EvaluationFlags const                      flags,
   std::function<value_type(FEFaceIntegrator &, unsigned int)> const & get_write_value)
 {
@@ -292,22 +289,21 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data_factory(
             unrolled_local_data[d + data_dim * v] = local_data[d][v];
 
 #ifdef EXADG_WITH_PRECICE
-        this->precice->writeBlockVectorData(write_data_id,
-                                            active_faces,
-                                            index->data(),
-                                            unrolled_local_data.data());
+        this->precice->writeData(this->mesh_name,
+                                 write_data_name,
+                                 {index->data(),active_faces},
+                                 {unrolled_local_data.data(), active_faces});
 #else
         (void)active_faces;
-        (void)write_data_id;
 #endif
       }
       else
       {
 #ifdef EXADG_WITH_PRECICE
-        this->precice->writeBlockScalarData(write_data_id,
-                                            active_faces,
-                                            index->data(),
-                                            &local_data[0]);
+        this->precice->writeData(this->mesh_name,
+                                 write_data_name,
+                                 {index->data(),active_faces},
+                                 {&local_data[0], active_faces});
 #endif
       }
     }
