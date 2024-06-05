@@ -45,7 +45,7 @@ public:
   ExaDGCoupling(
     dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
 #ifdef EXADG_WITH_PRECICE
-    std::shared_ptr<precice::SolverInterface> precice,
+    std::shared_ptr<precice::Participant> precice,
 #endif
     std::string const                                          mesh_name,
     std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data_,
@@ -90,7 +90,7 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 ExaDGCoupling<dim, data_dim, VectorizedArrayType>::ExaDGCoupling(
   dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
 #ifdef EXADG_WITH_PRECICE
-  std::shared_ptr<precice::SolverInterface> precice,
+  std::shared_ptr<precice::Participant> precice,
 #endif
   std::string const                                          mesh_name,
   std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data_,

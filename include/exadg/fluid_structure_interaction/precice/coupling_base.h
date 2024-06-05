@@ -33,7 +33,7 @@
 
 // preCICE
 #ifdef EXADG_WITH_PRECICE
-#  include <precice/SolverInterface.hpp>
+#  include <precice/precice.hpp>
 #endif
 
 namespace ExaDG
@@ -67,7 +67,7 @@ class CouplingBase
 public:
   CouplingBase(dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
 #ifdef EXADG_WITH_PRECICE
-               std::shared_ptr<precice::SolverInterface> precice,
+               std::shared_ptr<precice::Participant> precice,
 #endif
                std::string const                mesh_name,
                dealii::types::boundary_id const surface_id);
@@ -145,7 +145,7 @@ protected:
 
   /// public precice solverinterface
 #ifdef EXADG_WITH_PRECICE
-  std::shared_ptr<precice::SolverInterface> precice;
+  std::shared_ptr<precice::Participant> precice;
 #endif
 
   /// Configuration parameters
@@ -169,7 +169,7 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 CouplingBase<dim, data_dim, VectorizedArrayType>::CouplingBase(
   dealii::MatrixFree<dim, double, VectorizedArrayType> const & matrix_free_,
 #ifdef EXADG_WITH_PRECICE
-  std::shared_ptr<precice::SolverInterface> precice,
+  std::shared_ptr<precice::Participant> precice,
 #endif
   std::string const                mesh_name,
   dealii::types::boundary_id const surface_id)

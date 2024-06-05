@@ -40,7 +40,7 @@
 
 // preCICE
 #ifdef EXADG_WITH_PRECICE
-#  include <precice/SolverInterface.hpp>
+#  include <precice/precice.hpp>
 #endif
 
 #include <ostream>
@@ -185,10 +185,10 @@ public:
 
 
 private:
-  // public precice solverinterface, needed in order to steer the time loop
+  // public precice participant, needed in order to steer the time loop
   // inside the solver.
 #ifdef EXADG_WITH_PRECICE
-  std::shared_ptr<precice::SolverInterface> precice;
+  std::shared_ptr<precice::Participant> precice;
 #endif
 
   /// The objects handling reading and writing data
@@ -212,12 +212,10 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::Adapter(ParameterClass 
 {
 #ifdef EXADG_WITH_PRECICE
   precice =
-    std::make_shared<precice::SolverInterface>(parameters.participant_name,
-                                               parameters.config_file,
-                                               dealii::Utilities::MPI::this_mpi_process(mpi_comm),
-                                               dealii::Utilities::MPI::n_mpi_processes(mpi_comm));
-
-  AssertThrow(dim == precice->getDimensions(), dealii::ExcInternalError());
+    std::make_shared<precice::Participant>(parameters.participant_name,
+                                           parameters.config_file,
+                                           dealii::Utilities::MPI::this_mpi_process(mpi_comm),
+                                           dealii::Utilities::MPI::n_mpi_processes(mpi_comm));
 #else
   (void)parameters;
   (void)mpi_comm;

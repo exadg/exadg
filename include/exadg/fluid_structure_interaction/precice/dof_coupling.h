@@ -45,7 +45,7 @@ class DoFCoupling : public CouplingBase<dim, data_dim, VectorizedArrayType>
 public:
   DoFCoupling(dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
 #ifdef EXADG_WITH_PRECICE
-              std::shared_ptr<precice::SolverInterface> precice,
+              std::shared_ptr<precice::Participant> precice,
 #endif
               std::string const                mesh_name,
               dealii::types::boundary_id const surface_id,
@@ -90,7 +90,7 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 DoFCoupling<dim, data_dim, VectorizedArrayType>::DoFCoupling(
   dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
 #ifdef EXADG_WITH_PRECICE
-  std::shared_ptr<precice::SolverInterface> precice,
+  std::shared_ptr<precice::Participant> precice,
 #endif
   std::string const                mesh_name,
   dealii::types::boundary_id const surface_id,
