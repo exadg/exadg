@@ -136,7 +136,7 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 void
 QuadCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
 {
-  Assert(this->mesh_id != -1, dealii::ExcNotInitialized());
+  Assert(this->mesh_name != "", dealii::ExcNotInitialized());
 
   // In order to avoid that we define the surface multiple times when reader
   // and writer refer to the same object
@@ -179,7 +179,7 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
           unrolled_vertices[d + dim * v] = local_vertex[d][v];
 
 #ifdef EXADG_WITH_PRECICE
-      this->precice->setMeshVertices(this->mesh_id,
+      this->precice->setMeshVertices(this->mesh_name,
                                      active_faces,
                                      unrolled_vertices.data(),
                                      node_ids.data());
@@ -198,13 +198,13 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
   // Consistency check: the number of IDs we stored is equal or greater than
   // the IDs preCICE knows
   Assert(size * VectorizedArrayType::size() >=
-           static_cast<unsigned int>(this->precice->getMeshVertexSize(this->mesh_id)),
+           static_cast<unsigned int>(this->precice->getMeshVertexSize(this->mesh_name)),
          dealii::ExcInternalError());
 
   if(this->read_data_map.size() > 0)
-    this->print_info(true, this->precice->getMeshVertexSize(this->mesh_id));
+    this->print_info(true, this->precice->getMeshVertexSize(this->mesh_name));
   if(this->write_data_map.size() > 0)
-    this->print_info(false, this->precice->getMeshVertexSize(this->mesh_id));
+    this->print_info(false, this->precice->getMeshVertexSize(this->mesh_name));
 #endif
 }
 

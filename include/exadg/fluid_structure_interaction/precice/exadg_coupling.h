@@ -111,7 +111,7 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 void
 ExaDGCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
 {
-  Assert(this->mesh_id != -1, dealii::ExcNotInitialized());
+  Assert(this->mesh_name != "", dealii::ExcNotInitialized());
   Assert(interface_data.get() != nullptr, dealii::ExcNotInitialized());
 
   // In order to avoid that we define the surface multiple times when reader
@@ -141,9 +141,9 @@ ExaDGCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
 
 #ifdef EXADG_WITH_PRECICE
   if(this->read_data_map.size() > 0)
-    this->print_info(true, this->precice->getMeshVertexSize(this->mesh_id));
+    this->print_info(true, this->precice->getMeshVertexSize(this->mesh_name));
   if(this->write_data_map.size() > 0)
-    this->print_info(false, this->precice->getMeshVertexSize(this->mesh_id));
+    this->print_info(false, this->precice->getMeshVertexSize(this->mesh_name));
 #endif
 }
 

@@ -111,7 +111,7 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 void
 DoFCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
 {
-  Assert(this->mesh_id != -1, dealii::ExcNotInitialized());
+  Assert(this->mesh_name != "", dealii::ExcNotInitialized());
 
   // In order to avoid that we define the surface multiple times when reader
   // and writer refer to the same object
@@ -182,7 +182,7 @@ DoFCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
 
       // pass node coordinates to precice
 #ifdef EXADG_WITH_PRECICE
-    int const precice_id = this->precice->setMeshVertex(this->mesh_id, nodes_position.data());
+    int const precice_id = this->precice->setMeshVertex(this->mesh_name, nodes_position);
 #else
     int const precice_id = 0;
 #endif
@@ -191,9 +191,9 @@ DoFCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
 
 #ifdef EXADG_WITH_PRECICE
   if(this->read_data_map.size() > 0)
-    this->print_info(true, this->precice->getMeshVertexSize(this->mesh_id));
+    this->print_info(true, this->precice->getMeshVertexSize(this->mesh_name));
   if(this->write_data_map.size() > 0)
-    this->print_info(false, this->precice->getMeshVertexSize(this->mesh_id));
+    this->print_info(false, this->precice->getMeshVertexSize(this->mesh_name));
 #endif
 }
 
@@ -205,8 +205,7 @@ DoFCoupling<dim, data_dim, VectorizedArrayType>::write_data(
   dealii::LinearAlgebra::distributed::Vector<double> const & data_vector,
   std::string const &                                        data_name)
 {
-  int const write_data_id = this->write_data_map.at(data_name);
-  Assert(write_data_id != -1, dealii::ExcNotInitialized());
+  Assert(data_name != "", dealii::ExcNotInitialized());
   Assert(coupling_nodes_ids.size() > 0, dealii::ExcNotInitialized());
 
   std::array<double, data_dim> write_data;

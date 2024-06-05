@@ -150,7 +150,7 @@ protected:
 
   /// Configuration parameters
   std::string const mesh_name;
-  int               mesh_id;
+
   // Map between data ID (preCICE) and the data name
   std::map<std::string, int> read_data_map;
   std::map<std::string, int> write_data_map;
@@ -183,13 +183,10 @@ CouplingBase<dim, data_dim, VectorizedArrayType>::CouplingBase(
 {
 #ifdef EXADG_WITH_PRECICE
   Assert(precice.get() != nullptr, dealii::ExcNotInitialized());
-
-  // Ask preCICE already in the constructor for the IDs
-  mesh_id = precice->getMeshID(mesh_name);
+  AssertThrow(dim == precice->getMeshDimensions(mesh_name), dealii::ExcInternalError());
 #else
   AssertThrow(false,
               dealii::ExcMessage("EXADG_WITH_PRECICE has to be activated to use this code."));
-  mesh_id                 = 0;
 #endif
 }
 
@@ -198,13 +195,8 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 void
 CouplingBase<dim, data_dim, VectorizedArrayType>::add_read_data(std::string const & read_data_name)
 {
-  Assert(mesh_id != -1, dealii::ExcNotInitialized());
-#ifdef EXADG_WITH_PRECICE
-  int const read_data_id = precice->getDataID(read_data_name, mesh_id);
-#else
-  int const read_data_id  = 0;
-#endif
-  read_data_map.insert({read_data_name, read_data_id});
+  Assert(mesh_name != "", dealii::ExcNotInitialized());
+  read_data_map.insert({read_data_name});
 }
 
 
@@ -214,13 +206,9 @@ void
 CouplingBase<dim, data_dim, VectorizedArrayType>::add_write_data(
   std::string const & write_data_name)
 {
-  Assert(mesh_id != -1, dealii::ExcNotInitialized());
-#ifdef EXADG_WITH_PRECICE
-  int const write_data_id = precice->getDataID(write_data_name, mesh_id);
-#else
-  int const write_data_id = 0;
-#endif
-  write_data_map.insert({write_data_name, write_data_id});
+  // TODO: Probably not required at all
+  Assert(mesh_name != "", dealii::ExcNotInitialized());
+  write_data_map.insert({write_data_name});
 }
 
 
@@ -259,13 +247,19 @@ CouplingBase<dim, data_dim, VectorizedArrayType>::print_info(bool const         
   dealii::ConditionalOStream pcout(std::cout,
                                    dealii::Utilities::MPI::this_mpi_process(
                                      matrix_free.get_dof_handler().get_communicator()) == 0);
-  auto const                 map = (reader ? read_data_map : write_data_map);
 
-  auto        names      = map.begin();
-  std::string data_names = names->first;
-  ++names;
-  for(; names != map.end(); ++names)
-    data_names += std::string(", ") + names->first;
+  auto const & names = (reader ? read_data_map : write_data_map);
+  std::string  data_names;
+  if(!names.empty())
+  {
+    auto iter  = names.begin();
+    data_names = *iter;
+    ++iter;
+    for(; iter != names.end(); ++iter)
+    {
+      data_names += ", " + *iter;
+    }
+  }
 
   pcout << "--     Data " << (reader ? "reading" : "writing") << ":\n"
         << "--     . data name(s): " << data_names << "\n"
