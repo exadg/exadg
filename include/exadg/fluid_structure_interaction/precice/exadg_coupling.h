@@ -133,7 +133,7 @@ ExaDGCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
     // Set the vertices
 #ifdef EXADG_WITH_PRECICE
     this->precice->setMeshVertices(this->mesh_name,
-                                   {&points[0][0], points.size()},
+                                   {&points[0][0], points.size() * dim},
                                    {&coupling_nodes_ids[start_index], points.size()});
 #endif
   }
@@ -170,7 +170,7 @@ ExaDGCoupling<dim, data_dim, VectorizedArrayType>::read_data(std::string const &
                               data_name,
                               {&coupling_nodes_ids[start_index], array_size},
                               associated_time,
-                              {&array_solution[0][0], array_size});
+                              {&array_solution[0][0], array_size * data_dim});
 #else
       (void)data_name;
       (void)associated_time;

@@ -181,7 +181,7 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
 #ifdef EXADG_WITH_PRECICE
       this->precice->setMeshVertices(this->mesh_name,
                                      {unrolled_vertices.data(),
-                                      static_cast<std::size_t>(active_faces)},
+                                      static_cast<std::size_t>(active_faces * dim)},
                                      {node_ids.data(), static_cast<std::size_t>(active_faces)});
 #else
       (void)active_faces;
@@ -295,7 +295,7 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data_factory(
                                  write_data_name,
                                  {index->data(), static_cast<std::size_t>(active_faces)},
                                  {unrolled_local_data.data(),
-                                  static_cast<std::size_t>(active_faces)});
+                                  static_cast<std::size_t>(active_faces * data_dim) });
 #else
         (void)active_faces;
 #endif
