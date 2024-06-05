@@ -163,15 +163,17 @@ public:
              std::string const & write_data_name,
              VectorType const &  write_data);
 
- /**
-  * @brief Read data from preCICE with the given data_name at the given relative
-  *        read time.
-  *
-  * @param data_name Name of the data field to write
-  * @param associated_time Have a look at precice::Participant::readData for a detailed explanation
-  */
+  /**
+   * @brief Read data from preCICE with the given data_name at the given relative
+   *        read time.
+   *
+   * @param data_name Name of the data field to write
+   * @param associated_time Have a look at precice::Participant::readData for a detailed explanation
+   */
   void
-  read_data(std::string const & mesh_name, const std::string & data_name, double associated_time) const;
+  read_data(std::string const & mesh_name,
+            const std::string & data_name,
+            double              associated_time) const;
 
   /**
    * @brief is_coupling_ongoing Calls the preCICE API function isCouplingOnGoing
@@ -322,7 +324,8 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_read_surface(
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::initialize_precice(
-  VectorType const & dealii_to_precice, std::string const & data_name)
+  VectorType const &  dealii_to_precice,
+  std::string const & data_name)
 {
 #ifdef EXADG_WITH_PRECICE
   // if(not dealii_to_precice.has_ghost_elements())
@@ -385,10 +388,9 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::advance(
 
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 void
-Adapter<dim, data_dim, VectorType, VectorizedArrayType>::read_data(
-  std::string const & mesh_name,
-  std::string const & data_name,
-  double associated_time) const
+Adapter<dim, data_dim, VectorType, VectorizedArrayType>::read_data(std::string const & mesh_name,
+                                                                   std::string const & data_name,
+                                                                   double associated_time) const
 {
   reader.at(mesh_name)->read_data(data_name, associated_time);
 }

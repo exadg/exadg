@@ -133,7 +133,7 @@ ExaDGCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
     // Set the vertices
 #ifdef EXADG_WITH_PRECICE
     this->precice->setMeshVertices(this->mesh_name,
-                                   {&points[0][0],points.size()},
+                                   {&points[0][0], points.size()},
                                    {&coupling_nodes_ids[start_index], points.size()});
 #endif
   }
@@ -149,9 +149,8 @@ ExaDGCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-ExaDGCoupling<dim, data_dim, VectorizedArrayType>::read_data(
-  std::string const & data_name,
-  double associated_time) const
+ExaDGCoupling<dim, data_dim, VectorizedArrayType>::read_data(std::string const & data_name,
+                                                             double associated_time) const
 {
   Assert(interface_data.get() != nullptr, dealii::ExcNotInitialized());
 
@@ -173,8 +172,8 @@ ExaDGCoupling<dim, data_dim, VectorizedArrayType>::read_data(
                               associated_time,
                               {&array_solution[0][0], array_size});
 #else
-(void)data_name;
-(void)associated_time;
+      (void)data_name;
+      (void)associated_time;
 #endif
       start_index += array_size;
     }

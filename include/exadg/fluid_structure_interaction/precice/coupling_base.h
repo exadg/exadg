@@ -104,7 +104,7 @@ public:
   write_data(dealii::LinearAlgebra::distributed::Vector<double> const & data_vector,
              std::string const &                                        data_name) = 0;
 
-   virtual void
+  virtual void
   read_data(std::string const & data_name, double associated_time) const;
 
   /**
