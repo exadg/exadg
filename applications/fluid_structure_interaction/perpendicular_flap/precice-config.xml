@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<precice-configuration dimensions="2">
+<precice-configuration>
   <log>
     <sink
       filter="%Severity% > debug and %Rank% = 0"
@@ -11,23 +11,23 @@
   <data:vector name="Displacement" />
   <data:vector name="Velocity" />
 
-  <mesh name="Fluid-Mesh-read">
+  <mesh name="Fluid-Mesh-read" dimensions="2">
     <use-data name="Velocity" />
   </mesh>
 
-  <mesh name="Fluid-Mesh-write">
+  <mesh name="Fluid-Mesh-write" dimensions="2">
     <use-data name="Stress" />
   </mesh>
 
-  <mesh name="ALE-Mesh">
+  <mesh name="ALE-Mesh" dimensions="2">
     <use-data name="Displacement" />
   </mesh>
 
-  <mesh name="Solid-Mesh-read">
+  <mesh name="Solid-Mesh-read" dimensions="2">
     <use-data name="Stress" />
   </mesh>
 
-  <mesh name="Solid-Mesh-write">
+  <mesh name="Solid-Mesh-write" dimensions="2">
     <use-data name="Displacement" />
     <use-data name="Velocity" />
   </mesh>
@@ -69,7 +69,7 @@
     </mapping:rbf>
   </participant>
 
-  <m2n:sockets from="Fluid" to="Solid" exchange-directory=".." />
+  <m2n:sockets acceptor="Fluid" connector="Solid" exchange-directory=".." />
 
   <coupling-scheme:serial-explicit>
     <time-window-size value="0.01" />
