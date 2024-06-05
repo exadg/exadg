@@ -98,9 +98,10 @@ public:
    *             individual configuration and preCICE determines it
    *             automatically. In many cases, this data will just represent
    *             your initial condition.
+   * @param[in]  data_name Name of the initial data to be handed over to preCICE
    */
   void
-  initialize_precice(VectorType const & dealii_to_precice);
+  initialize_precice(VectorType const & dealii_to_precice, std::string const & data_name);
 
   void
   add_write_surface(dealii::types::boundary_id const                             surface_id,
@@ -315,27 +316,20 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::add_read_surface(
 template<int dim, int data_dim, typename VectorType, typename VectorizedArrayType>
 void
 Adapter<dim, data_dim, VectorType, VectorizedArrayType>::initialize_precice(
-  VectorType const & dealii_to_precice)
+  VectorType const & dealii_to_precice, std::string const & data_name)
 {
 #ifdef EXADG_WITH_PRECICE
   // if(not dealii_to_precice.has_ghost_elements())
   //   dealii_to_precice.update_ghost_values();
 
+  // write initial writeData to preCICE if required
+  if(precice->requiresInitialData())
+  {
+    writer[0]->write_data(dealii_to_precice, data_name);
+  }
+
   // Initialize preCICE internally
   precice->initialize();
-
-  // Only the writer needs potentially to process the coupling mesh, if the
-  // mapping is carried out in the solver
-  // writer->process_coupling_mesh();
-
-  // write initial writeData to preCICE if required
-  if(precice->isActionRequired(precice::constants::actionWriteInitialData()))
-  {
-    writer[0]->write_data(dealii_to_precice, "");
-
-    precice->markActionFulfilled(precice::constants::actionWriteInitialData());
-  }
-  precice->initializeData();
 
   // Maybe, read block-wise and work with an AlignedVector since the read data
   // (forces) is multiple times required during the Newton iteration
@@ -346,6 +340,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::initialize_precice(
   //                                   read_data.data());
 #else
   (void)dealii_to_precice;
+  (void)data_name;
 #endif
 }
 
@@ -358,8 +353,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::write_data(
   double const        computed_timestep_length)
 {
 #ifdef EXADG_WITH_PRECICE
-  if(precice->isWriteDataRequired(computed_timestep_length))
-    writer.at(write_mesh_name)->write_data(dealii_to_precice, write_data_name);
+  writer.at(write_mesh_name)->write_data(dealii_to_precice, write_data_name);
 #else
   (void)write_mesh_name;
   (void)write_data_name;
@@ -404,10 +398,9 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::save_current_state_if_r
 #ifdef EXADG_WITH_PRECICE
   // First, we let preCICE check, whether we need to store the variables.
   // Then, the data is stored in the class
-  if(precice->isActionRequired(precice::constants::actionWriteIterationCheckpoint()))
+  if(precice->requiresWritingCheckpoint())
   {
     save_state();
-    precice->markActionFulfilled(precice::constants::actionWriteIterationCheckpoint());
   }
 #else
   (void)save_state;
@@ -424,10 +417,9 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::reload_old_state_if_req
 #ifdef EXADG_WITH_PRECICE
   // In case we need to reload a state, we just take the internally stored
   // data vectors and write then in to the input data
-  if(precice->isActionRequired(precice::constants::actionReadIterationCheckpoint()))
+  if(precice->requiresReadingCheckpoint())
   {
     reload_old_state();
-    precice->markActionFulfilled(precice::constants::actionReadIterationCheckpoint());
   }
 #else
   (void)reload_old_state;

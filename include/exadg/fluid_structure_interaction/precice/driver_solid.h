@@ -94,7 +94,7 @@ public:
     // initialize preCICE with initial displacement data
     VectorType displacement_structure;
     structure->pde_operator->initialize_dof_vector(displacement_structure);
-    this->precice->initialize_precice(displacement_structure);
+    this->precice->initialize_precice(displacement_structure, this->precice_parameters.displacement_data_name);
   }
 
 

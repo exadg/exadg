@@ -124,7 +124,7 @@ public:
     // initialize preCICE with initial stress data
     VectorType initial_stress;
     fluid->pde_operator->initialize_vector_velocity(initial_stress);
-    this->precice->initialize_precice(initial_stress);
+    this->precice->initialize_precice(initial_stress, this->precice_parameters.stress_data_name);
   }
 
 
