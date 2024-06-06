@@ -58,7 +58,7 @@ MultigridPreconditioner<dim, Number>::initialize(
                    false /*operator_is_singular*/,
                    dirichlet_bc,
                    dirichlet_bc_component_mask,
-                   false /* initialize_preconditioners */);
+                   nonlinear == false /* initialize_preconditioners */);
 }
 
 template<int dim, typename Number>
