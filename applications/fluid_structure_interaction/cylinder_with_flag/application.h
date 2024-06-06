@@ -423,8 +423,6 @@ private:
 
       create_triangulation(tria);
 
-      tria.set_all_manifold_ids(0);
-
       // vectors of manifold_ids and face_ids
       unsigned int const        manifold_id_start = 10;
       std::vector<unsigned int> manifold_ids;
@@ -976,8 +974,6 @@ private:
       (void)vector_local_refinements;
 
       create_triangulation_structure(tria);
-
-      tria.set_all_manifold_ids(0);
 
       // vectors of manifold_ids and face_ids
       unsigned int const        manifold_id_start = 10;

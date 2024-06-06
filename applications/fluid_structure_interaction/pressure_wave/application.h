@@ -319,8 +319,6 @@ private:
       /*
        *  MANIFOLDS
        */
-      tria.set_all_manifold_ids(0);
-
       // first fill vectors of manifold_ids and face_ids
       std::vector<unsigned int> manifold_ids;
       std::vector<unsigned int> face_ids;
