@@ -64,11 +64,11 @@ Operator<dim, Number>::Operator(
 {
   pcout << std::endl << "Construct convection-diffusion operator ..." << std::endl;
 
-  fe = create_finite_element<dim>(ElementType::Hypercube, true, 1, param.degree);
+  fe = create_finite_element<dim>(param.grid.element_type, true, 1, param.degree);
 
   if(needs_own_dof_handler_velocity())
   {
-    fe_velocity = create_finite_element<dim>(ElementType::Hypercube, true, dim, param.degree);
+    fe_velocity = create_finite_element<dim>(param.grid.element_type, true, dim, param.degree);
     dof_handler_velocity = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
   }
 
@@ -575,6 +575,8 @@ Operator<dim, Number>::project_velocity(VectorType & velocity, double const time
   InverseMassOperatorData inverse_mass_operator_data_l2_projection;
   inverse_mass_operator_data_l2_projection.dof_index  = get_dof_index_velocity();
   inverse_mass_operator_data_l2_projection.quad_index = get_quad_index();
+
+  inverse_mass_operator_data_l2_projection.parameters = this->param.inverse_mass_operator;
 
   l2_projection.apply(*matrix_free,
                       inverse_mass_operator_data_l2_projection,
