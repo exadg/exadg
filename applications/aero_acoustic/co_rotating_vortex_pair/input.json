@@ -26,7 +26,7 @@
         "TemporalDiscretizationFluid": "InterpolateAnalyticalSolution",
         "CFLAcoustics": "0.25",
         "SpeedOfSound": "12.0",
-        "AdditionalCFDRefinementsAroundSource": "0",
+        "AdditionalCFDRefinementsAroundSource": "1",
         "DomainRadiusFluid": "2.0",
         "DomainRadiusAcoustics": "20.0",
         "Intensity": "7.54",

@@ -536,12 +536,25 @@ public:
         refine_triangulation_around_center(tria, additional_refinements_around_source, 1.5 * r_0);
       };
 
+    // triangulation
     GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
                                                             this->param.grid,
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {});
+
+    // triangulation for hanging nodes
+    if(additional_refinements_around_source > 0)
+    {
+      GridUtilities::create_coarse_triangulations_after_coarsening_and_refinement(
+        *grid.triangulation,
+        grid.periodic_face_pairs,
+        grid.coarse_triangulations,
+        grid.coarse_periodic_face_pairs,
+        this->param.grid,
+        false);
+    }
 
     // mappings
     GridUtilities::create_mapping_with_multigrid(mapping,
