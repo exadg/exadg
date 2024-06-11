@@ -145,8 +145,6 @@ create_sphere_grid(dealii::Triangulation<dim> & tria,
     tria4, {1, 1, 1}, lower_left, upper_right, false);
 
   dealii::GridGenerator::merge_triangulations({&tria1, &tria2, &tria3, &tria4}, tria_ser);
-  tria_ser.reset_all_manifolds();
-  tria.set_all_manifold_ids(0);
 
   // Set cells near sphere to spherical manifold for first round of refinement
   for(auto const & cell : tria_ser.active_cell_iterators())

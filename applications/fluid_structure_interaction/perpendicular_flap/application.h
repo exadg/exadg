@@ -346,8 +346,6 @@ private:
 
         create_triangulation(tria);
 
-        tria.set_all_manifold_ids(0);
-
         for(auto cell : tria.cell_iterators())
         {
           for(auto const & f : cell->face_indices())
@@ -720,8 +718,6 @@ public:
         (void)vector_local_refinements;
 
         create_triangulation(tria);
-
-        tria.set_all_manifold_ids(0);
 
         for(auto cell : tria.cell_iterators())
         {
