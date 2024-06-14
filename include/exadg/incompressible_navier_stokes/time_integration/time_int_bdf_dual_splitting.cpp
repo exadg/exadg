@@ -740,8 +740,8 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
 
     // solve linear system of equations
     bool const update_preconditioner =
-      this->param.update_preconditioner_viscous and
-      ((this->time_step_number - 1) % this->param.update_preconditioner_viscous_every_time_steps ==
+      this->param.update_preconditioner_momentum and
+      ((this->time_step_number - 1) % this->param.update_preconditioner_momentum_every_time_steps ==
        0);
 
     unsigned int const n_iter = pde_operator->solve_viscous(
