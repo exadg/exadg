@@ -22,12 +22,67 @@
 #ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_PROJECTION_METHODS_H_
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_PROJECTION_METHODS_H_
 
+#include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_momentum.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
+#include <exadg/solvers_and_preconditioners/newton/newton_solver.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
 
 namespace ExaDG
 {
 namespace IncNS
 {
+// forward declaration
+template<int dim, typename Number>
+class OperatorProjectionMethods;
+
+template<int dim, typename Number>
+class NonlinearMomentumOperator
+{
+private:
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef OperatorProjectionMethods<dim, Number> PDEOperator;
+
+public:
+  NonlinearMomentumOperator()
+    : pde_operator(nullptr), rhs_vector(nullptr), time(0.0), scaling_factor_mass(1.0)
+  {
+  }
+
+  void
+  initialize(PDEOperator const & pde_operator)
+  {
+    this->pde_operator = &pde_operator;
+  }
+
+  void
+  update(VectorType const & rhs_vector, double const & time, double const & scaling_factor)
+  {
+    this->rhs_vector          = &rhs_vector;
+    this->time                = time;
+    this->scaling_factor_mass = scaling_factor;
+  }
+
+  /*
+   * The implementation of the Newton solver requires a function called
+   * 'evaluate_residual'.
+   */
+  void
+  evaluate_residual(VectorType & dst, VectorType const & src)
+  {
+    pde_operator->evaluate_nonlinear_residual(dst, src, rhs_vector, time, scaling_factor_mass);
+  }
+
+private:
+  PDEOperator const * pde_operator;
+
+  VectorType const * rhs_vector;
+  double             time;
+  double             scaling_factor_mass;
+};
+
 /*
  * Base class for projection-type incompressible Navier-Stokes solvers such as the high-order dual
  * splitting (velocity-correction) scheme or pressure correction schemes.
@@ -109,6 +164,16 @@ public:
   void
   apply_laplace_operator(VectorType & dst, VectorType const & src) const;
 
+  /*
+   * This function evaluates the nonlinear residual.
+   */
+  virtual void
+  evaluate_nonlinear_residual(VectorType &       dst,
+                              VectorType const & src,
+                              VectorType const * rhs_vector,
+                              double const &     time,
+                              double const &     scaling_factor_mass) const = 0;
+
 protected:
   // Pressure Poisson equation (operator, preconditioner, solver).
   Poisson::LaplaceOperator<dim, Number, 1> laplace_operator;
@@ -116,6 +181,29 @@ protected:
   std::shared_ptr<PreconditionerBase<Number>> preconditioner_pressure_poisson;
 
   std::shared_ptr<Krylov::SolverBase<VectorType>> pressure_poisson_solver;
+
+  /*
+   * Momentum equation.
+   */
+
+  // Nonlinear operator and solver
+  NonlinearMomentumOperator<dim, Number> nonlinear_operator;
+
+  std::shared_ptr<Newton::Solver<VectorType,
+                                 NonlinearMomentumOperator<dim, Number>,
+                                 MomentumOperator<dim, Number>,
+                                 Krylov::SolverBase<VectorType>>>
+    momentum_newton_solver;
+
+  // linear solver (momentum_operator serves as linear operator)
+  std::shared_ptr<PreconditionerBase<Number>>     momentum_preconditioner;
+  std::shared_ptr<Krylov::SolverBase<VectorType>> momentum_linear_solver;
+
+  void
+  setup_momentum_preconditioner();
+
+  void
+  setup_momentum_solver();
 
 private:
   void

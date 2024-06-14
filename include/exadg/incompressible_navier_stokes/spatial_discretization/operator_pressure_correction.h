@@ -23,62 +23,11 @@
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_PRESSURE_CORRECTION_H_
 
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_projection_methods.h>
-#include <exadg/solvers_and_preconditioners/newton/newton_solver.h>
 
 namespace ExaDG
 {
 namespace IncNS
 {
-// forward declaration
-template<int dim, typename Number>
-class OperatorPressureCorrection;
-
-template<int dim, typename Number>
-class NonlinearMomentumOperator
-{
-private:
-  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
-
-  typedef OperatorPressureCorrection<dim, Number> PDEOperator;
-
-public:
-  NonlinearMomentumOperator()
-    : pde_operator(nullptr), rhs_vector(nullptr), time(0.0), scaling_factor_mass(1.0)
-  {
-  }
-
-  void
-  initialize(PDEOperator const & pde_operator)
-  {
-    this->pde_operator = &pde_operator;
-  }
-
-  void
-  update(VectorType const & rhs_vector, double const & time, double const & scaling_factor)
-  {
-    this->rhs_vector          = &rhs_vector;
-    this->time                = time;
-    this->scaling_factor_mass = scaling_factor;
-  }
-
-  /*
-   * The implementation of the Newton solver requires a function called
-   * 'evaluate_residual'.
-   */
-  void
-  evaluate_residual(VectorType & dst, VectorType const & src)
-  {
-    pde_operator->evaluate_nonlinear_residual(dst, src, rhs_vector, time, scaling_factor_mass);
-  }
-
-private:
-  PDEOperator const * pde_operator;
-
-  VectorType const * rhs_vector;
-  double             time;
-  double             scaling_factor_mass;
-};
-
 template<int dim, typename Number = double>
 class OperatorPressureCorrection : public OperatorProjectionMethods<dim, Number>
 {
@@ -167,7 +116,7 @@ public:
                               VectorType const & src,
                               VectorType const * rhs_vector,
                               double const &     time,
-                              double const &     scaling_factor_mass) const;
+                              double const &     scaling_factor_mass) const final;
 
   /*
    * This function evaluates the nonlinear residual of the steady Navier-Stokes equations (momentum
@@ -224,18 +173,6 @@ public:
   interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time) const;
 
 private:
-  void
-  setup_preconditioners_and_solvers() final;
-
-  /*
-   * Setup of momentum solver (operator, preconditioner, solver).
-   */
-  void
-  setup_momentum_preconditioner();
-
-  void
-  setup_momentum_solver();
-
   /*
    * Setup of inverse mass operator for pressure.
    */
@@ -266,23 +203,6 @@ private:
     Range const &                           face_range) const;
 
   InverseMassOperator<dim, 1, Number> inverse_mass_pressure;
-
-  /*
-   * Momentum equation.
-   */
-
-  // Nonlinear operator and solver
-  NonlinearMomentumOperator<dim, Number> nonlinear_operator;
-
-  std::shared_ptr<Newton::Solver<VectorType,
-                                 NonlinearMomentumOperator<dim, Number>,
-                                 MomentumOperator<dim, Number>,
-                                 Krylov::SolverBase<VectorType>>>
-    momentum_newton_solver;
-
-  // linear solver (momentum_operator serves as linear operator)
-  std::shared_ptr<PreconditionerBase<Number>>     momentum_preconditioner;
-  std::shared_ptr<Krylov::SolverBase<VectorType>> momentum_linear_solver;
 };
 
 } // namespace IncNS

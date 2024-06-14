@@ -137,18 +137,6 @@ public:
   interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time) const;
 
 private:
-  void
-  setup_preconditioners_and_solvers() final;
-
-  /*
-   * Setup of Helmholtz solver.
-   */
-  void
-  setup_helmholtz_preconditioner();
-
-  void
-  setup_helmholtz_solver();
-
   /*
    * rhs pressure Poisson equation
    */
@@ -228,12 +216,22 @@ private:
     Range const &                           face_range) const;
 
 
-  /*
-   * Viscous step (Helmholtz-like equation).
-   */
-  std::shared_ptr<PreconditionerBase<Number>> helmholtz_preconditioner;
+  // TODO
+  void
+  evaluate_nonlinear_residual(VectorType &       dst,
+                              VectorType const & src,
+                              VectorType const * rhs_vector,
+                              double const &     time,
+                              double const &     scaling_factor_mass) const final
+  {
+    (void)dst;
+    (void)src;
+    (void)rhs_vector;
+    (void)time;
+    (void)scaling_factor_mass;
 
-  std::shared_ptr<Krylov::SolverBase<VectorType>> helmholtz_solver;
+    AssertThrow(false, dealii::ExcMessage("not implemented."));
+  }
 };
 
 } // namespace IncNS
