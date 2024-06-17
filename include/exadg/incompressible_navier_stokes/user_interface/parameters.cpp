@@ -418,6 +418,20 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
                   "Only the standard integration rule is supported for variable viscosity. "
                   "Variable viscosity with multiple integration rules is not yet implemented."));
 
+  // PROJECTION METHODS
+  if(preconditioner_momentum == MomentumPreconditioner::Multigrid)
+  {
+    AssertThrow(multigrid_operator_type_momentum != MultigridOperatorType::Undefined,
+                dealii::ExcMessage("Parameter must be defined"));
+
+    if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+    {
+      AssertThrow(multigrid_operator_type_momentum !=
+                    MultigridOperatorType::ReactionConvectionDiffusion,
+                  dealii::ExcMessage("Invalid parameter. Convective term is treated explicitly."));
+    }
+  }
+
   // HIGH-ORDER DUAL SPLITTING SCHEME
   if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
@@ -468,19 +482,6 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
 
     AssertThrow(order_pressure_extrapolation <= order_time_integrator,
                 dealii::ExcMessage("Invalid parameter order_pressure_extrapolation!"));
-
-    if(preconditioner_momentum == MomentumPreconditioner::Multigrid)
-    {
-      AssertThrow(multigrid_operator_type_momentum != MultigridOperatorType::Undefined,
-                  dealii::ExcMessage("Parameter must be defined"));
-
-      if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
-      {
-        AssertThrow(
-          multigrid_operator_type_momentum != MultigridOperatorType::ReactionConvectionDiffusion,
-          dealii::ExcMessage("Invalid parameter. Convective term is treated explicitly."));
-      }
-    }
   }
 
   // COUPLED NAVIER-STOKES SOLVER
