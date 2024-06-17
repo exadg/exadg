@@ -348,13 +348,15 @@ private:
       this->param.order_time_integrator <= 2 ? this->param.order_time_integrator : 2;
     this->param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
 
-    // viscous step
-    this->param.solver_viscous         = SolverViscous::CG;
-    this->param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-6);
-    this->param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; // Multigrid;
-    this->param.multigrid_data_viscous.type                   = MultigridType::hMG;
-    this->param.multigrid_data_viscous.smoother_data.smoother = MultigridSmoother::Chebyshev;
-    this->param.update_preconditioner_viscous                 = false;
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      this->param.solver_momentum         = SolverMomentum::CG;
+      this->param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-6);
+      this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
+      this->param.multigrid_data_momentum.type                   = MultigridType::hMG;
+      this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Chebyshev;
+      this->param.update_preconditioner_momentum                 = false;
+    }
 
 
     // PRESSURE-CORRECTION SCHEME
@@ -365,29 +367,31 @@ private:
     this->param.rotational_formulation = true;
 
     // momentum step
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      // Newton solver
+      this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-6); // TODO
 
-    // Newton solver
-    this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-6); // TODO
+      // linear solver
+      this->param.solver_momentum                = SolverMomentum::FGMRES;
+      this->param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-6, 100);
+      this->param.update_preconditioner_momentum = false;
+      this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
+      this->param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
 
-    // linear solver
-    this->param.solver_momentum                = SolverMomentum::FGMRES;
-    this->param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-6, 100);
-    this->param.update_preconditioner_momentum = false;
-    this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
-    this->param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
+      // Jacobi smoother data
+      //  this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
+      //  this->param.multigrid_data_momentum.smoother_data.preconditioner =
+      //  PreconditionerSmoother::BlockJacobi;
+      //  this->param.multigrid_data_momentum.smoother_data.iterations = 5;
+      //  this->param.multigrid_data_momentum.coarse_problem.solver =
+      //  MultigridCoarseGridSolver::GMRES;
 
-    // Jacobi smoother data
-    //  this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
-    //  this->param.multigrid_data_momentum.smoother_data.preconditioner =
-    //  PreconditionerSmoother::BlockJacobi;
-    //  this->param.multigrid_data_momentum.smoother_data.iterations = 5;
-    //  this->param.multigrid_data_momentum.coarse_problem.solver =
-    //  MultigridCoarseGridSolver::GMRES;
-
-    // Chebyshev smoother data
-    this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Chebyshev;
-    this->param.multigrid_data_momentum.coarse_problem.solver =
-      MultigridCoarseGridSolver::Chebyshev;
+      // Chebyshev smoother data
+      this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Chebyshev;
+      this->param.multigrid_data_momentum.coarse_problem.solver =
+        MultigridCoarseGridSolver::Chebyshev;
+    }
 
 
     // COUPLED NAVIER-STOKES SOLVER

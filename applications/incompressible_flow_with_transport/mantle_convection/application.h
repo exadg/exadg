@@ -213,10 +213,14 @@ private:
     this->param.order_extrapolation_pressure_nbc =
       this->param.order_time_integrator <= 2 ? this->param.order_time_integrator : 2;
 
-    // viscous step
-    this->param.solver_viscous              = SolverViscous::CG;
-    this->param.solver_data_viscous         = SolverData(1000, 1.e-30, reltol);
-    this->param.multigrid_data_viscous.type = MultigridType::cphMG;
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      this->param.solver_momentum                  = SolverMomentum::CG;
+      this->param.solver_data_momentum             = SolverData(1000, 1.e-30, reltol);
+      this->param.preconditioner_momentum          = MomentumPreconditioner::Multigrid;
+      this->param.multigrid_data_momentum.type     = MultigridType::cphMG;
+      this->param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
+    }
 
 
     // PRESSURE-CORRECTION SCHEME
@@ -226,16 +230,18 @@ private:
     this->param.rotational_formulation       = true;
 
     // momentum step
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      // Newton solver
+      this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-30, reltol);
 
-    // Newton solver
-    this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-30, reltol);
-
-    // linear solver
-    this->param.solver_momentum                  = SolverMomentum::CG;
-    this->param.solver_data_momentum             = SolverData(1e4, 1.e-30, reltol, 100);
-    this->param.preconditioner_momentum          = MomentumPreconditioner::Multigrid;
-    this->param.multigrid_data_momentum.type     = MultigridType::cphMG;
-    this->param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
+      // linear solver
+      this->param.solver_momentum                  = SolverMomentum::CG;
+      this->param.solver_data_momentum             = SolverData(1e4, 1.e-30, reltol, 100);
+      this->param.preconditioner_momentum          = MomentumPreconditioner::Multigrid;
+      this->param.multigrid_data_momentum.type     = MultigridType::cphMG;
+      this->param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
+    }
 
     // COUPLED NAVIER-STOKES SOLVER
 
