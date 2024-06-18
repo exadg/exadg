@@ -656,17 +656,12 @@ Parameters::involves_h_multigrid() const
       }
     }
 
-    // viscous step for dual splitting scheme
-    if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme or
-       temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    // momentum step
+    if(viscous_problem() or implicit_convective_problem())
     {
-      if(viscous_problem() or (convective_problem() and
-                               treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
+      if(involves_h_multigrid_momentum_step())
       {
-        if(involves_h_multigrid_momentum_step())
-        {
-          use_global_coarsening = true;
-        }
+        use_global_coarsening = true;
       }
     }
   }
@@ -746,7 +741,9 @@ Parameters::print(dealii::ConditionalOStream const & pcout, std::string const & 
   if(solver_type == SolverType::Steady or
      (solver_type == SolverType::Unsteady and
       temporal_discretization == TemporalDiscretization::BDFCoupledSolution))
+  {
     print_parameters_coupled_solver(pcout);
+  }
 }
 
 void
@@ -1076,8 +1073,7 @@ Parameters::print_parameters_dual_splitting(dealii::ConditionalOStream const & p
   print_parameters_projection_step(pcout);
 
   // momentum step
-  // TODO
-  if(this->viscous_problem())
+  if(viscous_problem() or implicit_convective_problem())
   {
     print_parameters_momentum_step(pcout);
   }
@@ -1090,8 +1086,8 @@ Parameters::print_parameters_momentum_step(dealii::ConditionalOStream const & pc
   pcout << std::endl << "  Momentum step:" << std::endl;
 
   // Newton solver
-  if(equation_type == EquationType::NavierStokes and
-     treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+
+  if(nonlinear_problem_has_to_be_solved())
   {
     pcout << "  Newton solver:" << std::endl;
 
@@ -1113,9 +1109,7 @@ Parameters::print_parameters_momentum_step(dealii::ConditionalOStream const & pc
 
   if(update_preconditioner_momentum == true)
   {
-    // if a nonlinear problem has to be solved
-    if(equation_type == EquationType::NavierStokes and
-       treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+    if(nonlinear_problem_has_to_be_solved())
     {
       print_parameter(pcout,
                       "Update every Newton iterations",
@@ -1172,9 +1166,7 @@ Parameters::print_parameters_coupled_solver(dealii::ConditionalOStream const & p
 
   // Newton solver
 
-  // if a nonlinear problem has to be solved
-  if(equation_type == EquationType::NavierStokes and
-     treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+  if(nonlinear_problem_has_to_be_solved())
   {
     pcout << "Newton solver:" << std::endl;
 
@@ -1196,9 +1188,7 @@ Parameters::print_parameters_coupled_solver(dealii::ConditionalOStream const & p
 
   if(update_preconditioner_coupled == true)
   {
-    // if a nonlinear problem has to be solved
-    if(equation_type == EquationType::NavierStokes and
-       treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+    if(nonlinear_problem_has_to_be_solved())
     {
       print_parameter(pcout,
                       "Update every Newton iterations",
