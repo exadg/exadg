@@ -357,7 +357,7 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
   /*
    *  explicit variable viscosity update executed prior to calculation of rhs_momentum
    */
-  if(this->param.viscosity_is_variable() and
+  if(this->param.viscous_problem() and this->param.viscosity_is_variable() and
      this->param.treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit)
   {
     dealii::Timer timer_viscosity_update;
@@ -524,7 +524,7 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_momentum(VectorType & rhs)
    *  inhomogeneous parts of boundary face integrals of the viscous operator
    *  have to be shifted to the right-hand side of the equation.
    */
-  if(this->param.viscous_problem() && not(this->param.nonlinear_problem_has_to_be_solved()))
+  if(this->param.viscous_problem() and not(this->param.nonlinear_problem_has_to_be_solved()))
   {
     pde_operator->rhs_add_viscous_term(rhs, this->get_next_time());
   }
