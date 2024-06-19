@@ -131,13 +131,6 @@ public:
   update_after_grid_motion(bool const update_matrix_free) override;
 
   /*
-   * This function evaluates the rhs-contribution of the viscous term and adds the result to the
-   * dst-vector.
-   */
-  void
-  do_rhs_add_viscous_term(VectorType & dst, double const time) const;
-
-  /*
    * Pressure Poisson equation: This function evaluates the inhomogeneous parts of boundary face
    * integrals of the negative Laplace operator and adds the result to the dst-vector.
    */
@@ -165,14 +158,44 @@ public:
   apply_laplace_operator(VectorType & dst, VectorType const & src) const;
 
   /*
+   * Momentum step:
+   */
+
+  /*
+   * Momentum step is a linear system of equations
+   */
+  unsigned int
+  solve_linear_momentum_equation(VectorType &       solution,
+                                 VectorType const & rhs,
+                                 bool const &       update_preconditioner,
+                                 double const &     scaling_factor_mass);
+
+  /*
+   * This function evaluates the rhs-contribution of the viscous term and adds the result to the
+   * dst-vector.
+   */
+  void
+  rhs_add_viscous_term(VectorType & dst, double const time) const;
+
+  /*
+   * Momentum step is a non-linear system of equations
+   */
+  std::tuple<unsigned int, unsigned int>
+  solve_nonlinear_momentum_equation(VectorType &       dst,
+                                    VectorType const & rhs_vector,
+                                    double const &     time,
+                                    bool const &       update_preconditioner,
+                                    double const &     scaling_factor_mass);
+
+  /*
    * This function evaluates the nonlinear residual.
    */
-  virtual void
+  void
   evaluate_nonlinear_residual(VectorType &       dst,
                               VectorType const & src,
                               VectorType const * rhs_vector,
                               double const &     time,
-                              double const &     scaling_factor_mass) const = 0;
+                              double const &     scaling_factor_mass) const;
 
 protected:
   // Pressure Poisson equation (operator, preconditioner, solver).

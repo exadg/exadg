@@ -571,35 +571,6 @@ OperatorDualSplitting<dim, Number>::solve_pressure(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-OperatorDualSplitting<dim, Number>::rhs_add_viscous_term(VectorType & dst,
-                                                         double const evaluation_time) const
-{
-  ProjectionBase::do_rhs_add_viscous_term(dst, evaluation_time);
-}
-
-template<int dim, typename Number>
-unsigned int
-OperatorDualSplitting<dim, Number>::solve_viscous(VectorType &       dst,
-                                                  VectorType const & src,
-                                                  bool const &       update_preconditioner,
-                                                  double const &     factor)
-{
-  // Update operator
-  this->momentum_operator.set_scaling_factor_mass_operator(factor);
-
-  // Note that there is no need to set the evaluation time for the momentum_operator
-  // because this function is only called if the convective term is not considered
-  // in the momentum_operator (Stokes eq. or explicit treatment of convective term).
-
-  this->momentum_linear_solver->update_preconditioner(update_preconditioner);
-
-  unsigned int n_iter = this->momentum_linear_solver->solve(dst, src);
-
-  return n_iter;
-}
-
-template<int dim, typename Number>
-void
 OperatorDualSplitting<dim, Number>::interpolate_velocity_dirichlet_bc(VectorType &   dst,
                                                                       double const & time) const
 {

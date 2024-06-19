@@ -78,47 +78,6 @@ public:
   update_after_grid_motion(bool const update_matrix_free) final;
 
   /*
-   * Momentum step:
-   */
-
-  /*
-   * Stokes equations or convective term treated explicitly: solve linear system of equations
-   */
-  unsigned int
-  solve_linear_momentum_equation(VectorType &       solution,
-                                 VectorType const & rhs,
-                                 bool const &       update_preconditioner,
-                                 double const &     scaling_factor_mass);
-
-  /*
-   * Calculation of right-hand side vector:
-   */
-
-  // viscous term
-  void
-  rhs_add_viscous_term(VectorType & dst, double const time) const;
-
-  /*
-   * Convective term treated implicitly: solve non-linear system of equations
-   */
-  std::tuple<unsigned int, unsigned int>
-  solve_nonlinear_momentum_equation(VectorType &       dst,
-                                    VectorType const & rhs_vector,
-                                    double const &     time,
-                                    bool const &       update_preconditioner,
-                                    double const &     scaling_factor_mass);
-
-  /*
-   * This function evaluates the nonlinear residual.
-   */
-  void
-  evaluate_nonlinear_residual(VectorType &       dst,
-                              VectorType const & src,
-                              VectorType const * rhs_vector,
-                              double const &     time,
-                              double const &     scaling_factor_mass) const final;
-
-  /*
    * This function evaluates the nonlinear residual of the steady Navier-Stokes equations (momentum
    * equation and continuity equation).
    */

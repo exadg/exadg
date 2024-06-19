@@ -116,14 +116,6 @@ public:
   void
   apply_helmholtz_operator(VectorType & dst, VectorType const & src) const;
 
-  void
-  rhs_add_viscous_term(VectorType & dst, double const time) const;
-
-  unsigned int
-  solve_viscous(VectorType &       dst,
-                VectorType const & src,
-                bool const &       update_preconditioner,
-                double const &     scaling_factor_mass);
 
   /*
    * Fill a DoF vector with velocity Dirichlet values on Dirichlet boundaries.
@@ -214,24 +206,6 @@ private:
     VectorType &                            dst,
     VectorType const &                      src,
     Range const &                           face_range) const;
-
-
-  // TODO
-  void
-  evaluate_nonlinear_residual(VectorType &       dst,
-                              VectorType const & src,
-                              VectorType const * rhs_vector,
-                              double const &     time,
-                              double const &     scaling_factor_mass) const final
-  {
-    (void)dst;
-    (void)src;
-    (void)rhs_vector;
-    (void)time;
-    (void)scaling_factor_mass;
-
-    AssertThrow(false, dealii::ExcMessage("not implemented."));
-  }
 };
 
 } // namespace IncNS

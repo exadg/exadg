@@ -744,7 +744,7 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
       ((this->time_step_number - 1) % this->param.update_preconditioner_momentum_every_time_steps ==
        0);
 
-    unsigned int const n_iter = pde_operator->solve_viscous(
+    unsigned int const n_iter = pde_operator->solve_linear_momentum_equation(
       velocity_np, rhs, update_preconditioner, this->get_scaling_factor_time_derivative_term());
     iterations_viscous.first += 1;
     iterations_viscous.second += n_iter;
