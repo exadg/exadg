@@ -696,37 +696,13 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
   dealii::Timer timer;
   timer.restart();
 
-  if(this->param.viscous_problem())
+  // in case we need to iteratively solve a linear or nonlinear system of equations
+  if(this->param.viscous_problem() or this->param.implicit_convective_problem())
   {
-    // if a variable viscosity is used: update
-    // viscosity model before calculating rhs_viscous
-    if(this->param.viscosity_is_variable())
-    {
-      dealii::Timer timer_viscosity_update;
-      timer_viscosity_update.restart();
-
-      // extrapolate velocity to time t_n+1 and use this velocity field to
-      // update the viscosity model (to recalculate the variable viscosity)
-      VectorType velocity_extrapolated(velocity[0]);
-      velocity_extrapolated = 0;
-      for(unsigned int i = 0; i < velocity.size(); ++i)
-        velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
-
-      pde_operator->update_viscosity(velocity_extrapolated);
-
-      if(this->print_solver_info() and not(this->is_test))
-      {
-        this->pcout << std::endl << "Update of variable viscosity:";
-        print_wall_time(this->pcout, timer_viscosity_update.wall_time());
-      }
-    }
-
-    VectorType rhs(velocity_np);
-    // compute right-hand-side vector
-    rhs_viscous(rhs);
+    // store the velocity vector that is needed to compute the rhs vector
+    VectorType velocity_rhs = velocity_np;
 
     // Extrapolate old solution to get a good initial estimate for the solver.
-    // Note that this has to be done after calling rhs_viscous()!
     if(this->use_extrapolation)
     {
       velocity_np = 0;
@@ -738,31 +714,83 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
       velocity_np = velocity_viscous_last_iter;
     }
 
-    // solve linear system of equations
     bool const update_preconditioner =
       this->param.update_preconditioner_momentum and
       ((this->time_step_number - 1) % this->param.update_preconditioner_momentum_every_time_steps ==
        0);
 
-    unsigned int const n_iter = pde_operator->solve_linear_momentum_equation(
-      velocity_np, rhs, update_preconditioner, this->get_scaling_factor_time_derivative_term());
-    iterations_viscous.first += 1;
-    iterations_viscous.second += n_iter;
+    if(this->param.nonlinear_problem_has_to_be_solved())
+    {
+      /*
+       *  Calculate the vector that is constant when solving the nonlinear momentum equation
+       *  (where constant means that the vector does not change from one Newton iteration
+       *  to the next, i.e., it does not depend on the current solution of the nonlinear solver)
+       */
+      VectorType rhs(velocity_rhs);
+      rhs_viscous(rhs, velocity_rhs);
+
+      // solve non-linear system of equations
+      auto const iter = pde_operator->solve_nonlinear_momentum_equation(
+        velocity_np,
+        rhs,
+        this->get_next_time(),
+        update_preconditioner,
+        this->get_scaling_factor_time_derivative_term());
+
+      // TODO: update iterations and print solver info
+    }
+    else // linear problem
+    {
+      AssertThrow(this->param.viscous_problem(), dealii::ExcMessage("Should not arrive here."));
+
+      // if a variable viscosity is used: update
+      // viscosity model before calculating rhs_viscous
+      if(this->param.viscosity_is_variable())
+      {
+        AssertThrow(this->param.treatment_of_variable_viscosity ==
+                      TreatmentOfVariableViscosity::Explicit,
+                    dealii::ExcMessage("Should not arrive here."));
+
+        dealii::Timer timer_viscosity_update;
+        timer_viscosity_update.restart();
+
+        pde_operator->update_viscosity(velocity_np);
+
+        if(this->print_solver_info() and not(this->is_test))
+        {
+          this->pcout << std::endl << "Update of variable viscosity:";
+          print_wall_time(this->pcout, timer_viscosity_update.wall_time());
+        }
+      }
+
+      /*
+       *  Calculate the right-hand side of the linear system of equations.
+       */
+      VectorType rhs(velocity_rhs);
+      rhs_viscous(rhs, velocity_rhs);
+
+      // solve linear system of equations
+      unsigned int const n_iter = pde_operator->solve_linear_momentum_equation(
+        velocity_np, rhs, update_preconditioner, this->get_scaling_factor_time_derivative_term());
+      iterations_viscous.first += 1;
+      iterations_viscous.second += n_iter;
+
+      if(this->print_solver_info() and not(this->is_test))
+      {
+        this->pcout << std::endl << "Solve viscous step:";
+        print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
+      }
+    }
 
     if(this->store_solution)
       velocity_viscous_last_iter = velocity_np;
-
-    // write output
-    if(this->print_solver_info() and not(this->is_test))
-    {
-      this->pcout << std::endl << "Solve viscous step:";
-      print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
-    }
   }
-  else // inviscid
+  else // no viscous term and no implicit convective term, i.e. there is nothing to do in this step
+       // of the dual splitting scheme
   {
     // nothing to do
-    AssertThrow(this->param.equation_type == EquationType::Euler,
+    AssertThrow(this->param.equation_type == EquationType::Euler and
+                  this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit,
                 dealii::ExcMessage("Logical error."));
   }
 
@@ -771,12 +799,15 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
 
 template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::rhs_viscous(VectorType & rhs) const
+TimeIntBDFDualSplitting<dim, Number>::rhs_viscous(VectorType &       rhs,
+                                                  VectorType const & velocity_rhs) const
 {
+  // TODO extend this function for the case of an implicit convective term
+
   /*
    *  I. apply mass operator
    */
-  pde_operator->apply_mass_operator(rhs, velocity_np);
+  pde_operator->apply_mass_operator(rhs, velocity_rhs);
   rhs *= this->bdf.get_gamma0() / this->get_time_step_size();
 
   /*
