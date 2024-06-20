@@ -350,8 +350,19 @@ private:
 
     if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
-      this->param.solver_momentum         = SolverMomentum::CG;
-      this->param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-6);
+      if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+      {
+        this->param.solver_momentum      = SolverMomentum::CG;
+        this->param.solver_data_momentum = SolverData(1000, 1.e-12, 1.e-6);
+      }
+      else
+      {
+        // Newton solver
+        this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-10, 1.e-6);
+        this->param.solver_momentum             = SolverMomentum::GMRES;
+        this->param.solver_data_momentum        = SolverData(1000, 1.e-12, 1.e-6);
+      }
+
       this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
       this->param.multigrid_data_momentum.type                   = MultigridType::hMG;
       this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Chebyshev;
@@ -370,7 +381,7 @@ private:
     if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
     {
       // Newton solver
-      this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-6); // TODO
+      this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-6);
 
       // linear solver
       this->param.solver_momentum                = SolverMomentum::FGMRES;
