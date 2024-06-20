@@ -171,7 +171,11 @@ private:
     iterations_pressure;
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */>
     iterations_projection;
-  std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations_viscous;
+  std::pair<
+    unsigned int /* calls */,
+    std::tuple<unsigned long long, unsigned long long> /* iteration counts {Newton, linear} */>
+    iterations_viscous;
+
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations_penalty;
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations_mass;
 

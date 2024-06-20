@@ -47,7 +47,7 @@ TimeIntBDFDualSplitting<dim, Number>::TimeIntBDFDualSplitting(
     velocity_dbc(this->order),
     iterations_pressure({0, 0}),
     iterations_projection({0, 0}),
-    iterations_viscous({0, 0}),
+    iterations_viscous({0, {0, 0}}),
     iterations_penalty({0, 0}),
     iterations_mass({0, 0}),
     extra_pressure_nbc(this->param.order_extrapolation_pressure_nbc,
@@ -737,7 +737,18 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
         update_preconditioner,
         this->get_scaling_factor_time_derivative_term());
 
-      // TODO: update iterations and print solver info
+      iterations_viscous.first += 1;
+      std::get<0>(iterations_viscous.second) += std::get<0>(iter);
+      std::get<1>(iterations_viscous.second) += std::get<1>(iter);
+
+      if(this->print_solver_info() and not(this->is_test))
+      {
+        this->pcout << std::endl << "Solve momentum step:";
+        print_solver_info_nonlinear(this->pcout,
+                                    std::get<0>(iter),
+                                    std::get<1>(iter),
+                                    timer.wall_time());
+      }
     }
     else // linear problem
     {
@@ -773,7 +784,7 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
       unsigned int const n_iter = pde_operator->solve_linear_momentum_equation(
         velocity_np, rhs, update_preconditioner, this->get_scaling_factor_time_derivative_term());
       iterations_viscous.first += 1;
-      iterations_viscous.second += n_iter;
+      std::get<1>(iterations_viscous.second) += n_iter;
 
       if(this->print_solver_info() and not(this->is_test))
       {
@@ -984,20 +995,47 @@ template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::print_iterations() const
 {
-  std::vector<std::string> names = {"Convective step",
-                                    "Pressure step",
-                                    "Projection step",
-                                    "Viscous step"};
+  std::vector<std::string> names;
+  std::vector<double>      iterations_avg;
 
-  std::vector<double> iterations_avg;
-  iterations_avg.resize(4);
-  iterations_avg[0] = 0.0;
-  iterations_avg[1] =
-    (double)iterations_pressure.second / std::max(1., (double)iterations_pressure.first);
-  iterations_avg[2] =
-    (double)iterations_projection.second / std::max(1., (double)iterations_projection.first);
-  iterations_avg[3] =
-    (double)iterations_viscous.second / std::max(1., (double)iterations_viscous.first);
+  if(this->param.nonlinear_problem_has_to_be_solved())
+  {
+    names = {"Convective step",
+             "Pressure step",
+             "Projection step",
+             "Viscous step (nonlinear)",
+             "Viscous step (accumulated)",
+             "Viscous step (linear per nonlinear)"};
+
+    iterations_avg.resize(6);
+    iterations_avg[0] = 0.0;
+    iterations_avg[1] =
+      (double)iterations_pressure.second / std::max(1., (double)iterations_pressure.first);
+    iterations_avg[2] =
+      (double)iterations_projection.second / std::max(1., (double)iterations_projection.first);
+    iterations_avg[3] = (double)std::get<0>(iterations_viscous.second) /
+                        std::max(1., (double)iterations_viscous.first);
+    iterations_avg[4] = (double)std::get<1>(iterations_viscous.second) /
+                        std::max(1., (double)iterations_viscous.first);
+
+    if(iterations_avg[3] > std::numeric_limits<double>::min())
+      iterations_avg[5] = iterations_avg[4] / iterations_avg[3];
+    else
+      iterations_avg[5] = iterations_avg[4];
+  }
+  else
+  {
+    names = {"Convective step", "Pressure step", "Projection step", "Viscous step"};
+
+    iterations_avg.resize(4);
+    iterations_avg[0] = 0.0;
+    iterations_avg[1] =
+      (double)iterations_pressure.second / std::max(1., (double)iterations_pressure.first);
+    iterations_avg[2] =
+      (double)iterations_projection.second / std::max(1., (double)iterations_projection.first);
+    iterations_avg[3] = (double)std::get<1>(iterations_viscous.second) /
+                        std::max(1., (double)iterations_viscous.first);
+  }
 
   if(this->param.spatial_discretization == SpatialDiscretization::HDIV)
   {
