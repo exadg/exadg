@@ -813,18 +813,24 @@ void
 TimeIntBDFDualSplitting<dim, Number>::rhs_viscous(VectorType &       rhs,
                                                   VectorType const & velocity_rhs) const
 {
-  // TODO extend this function for the case of an implicit convective term
-
   /*
    *  I. apply mass operator
    */
   pde_operator->apply_mass_operator(rhs, velocity_rhs);
   rhs *= this->bdf.get_gamma0() / this->get_time_step_size();
 
-  /*
-   *  II. inhomogeneous parts of boundary face integrals of viscous operator
-   */
-  pde_operator->rhs_add_viscous_term(rhs, this->get_next_time());
+  if(this->param.nonlinear_problem_has_to_be_solved())
+  {
+    // for a nonlinear problem, inhomogeneous contributions are taken into account when evaluating
+    // the nonlinear residual
+  }
+  else
+  {
+    /*
+     *  II. inhomogeneous parts of boundary face integrals of viscous operator
+     */
+    pde_operator->rhs_add_viscous_term(rhs, this->get_next_time());
+  }
 }
 
 template<int dim, typename Number>
