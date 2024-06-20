@@ -342,8 +342,7 @@ TimeIntBDFDualSplitting<dim, Number>::convective_step()
   velocity_np = 0.0;
 
   // compute convective term and extrapolate convective term (if not Stokes equations)
-  if(this->param.convective_problem() and
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  if(this->param.convective_problem())
   {
     if(this->param.ale_formulation)
     {
@@ -409,8 +408,7 @@ TimeIntBDFDualSplitting<dim, Number>::evaluate_convective_term()
   dealii::Timer timer;
   timer.restart();
 
-  if(this->param.convective_problem() and
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  if(this->param.convective_problem())
   {
     if(this->param.ale_formulation == false) // Eulerian case
     {
