@@ -821,6 +821,13 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_viscous(VectorType &       rhs,
   {
     // for a nonlinear problem, inhomogeneous contributions are taken into account when evaluating
     // the nonlinear residual
+
+    // compensate for explicit convective term
+    if(this->param.convective_problem())
+    {
+      for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
+        rhs.add(this->extra.get_beta(i), this->vec_convective_term[i]);
+    }
   }
   else
   {
