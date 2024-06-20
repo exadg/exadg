@@ -468,10 +468,6 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
                   formulation_convective_term_bc ==
                     FormulationConvectiveTerm::ConvectiveFormulation,
                 dealii::ExcMessage("Not implemented."));
-
-    AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::Implicit,
-                dealii::ExcMessage("An implicit treatment of the convective term is not possible "
-                                   "in combination with the dual splitting scheme."));
   }
 
   // PRESSURE-CORRECTION SCHEME
