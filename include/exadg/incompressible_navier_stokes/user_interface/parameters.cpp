@@ -590,7 +590,23 @@ Parameters::viscosity_is_variable() const
 }
 
 bool
-Parameters::implicit_convective_problem() const
+Parameters::non_explicit_convective_problem() const
+{
+  if(convective_problem())
+  {
+    if(solver_type == SolverType::Steady or
+       (solver_type == SolverType::Unsteady and
+        (treatment_of_convective_term != TreatmentOfConvectiveTerm::Explicit)))
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool
+Parameters::implicit_nonlinear_convective_problem() const
 {
   if(convective_problem())
   {
@@ -615,7 +631,7 @@ Parameters::nonlinear_viscous_problem() const
 bool
 Parameters::nonlinear_problem_has_to_be_solved() const
 {
-  return (implicit_convective_problem() or nonlinear_viscous_problem());
+  return (implicit_nonlinear_convective_problem() or nonlinear_viscous_problem());
 }
 
 bool
@@ -669,7 +685,7 @@ Parameters::involves_h_multigrid() const
     }
 
     // momentum step
-    if(viscous_problem() or implicit_convective_problem())
+    if(viscous_problem() or non_explicit_convective_problem())
     {
       if(involves_h_multigrid_momentum_step())
       {
@@ -1085,7 +1101,7 @@ Parameters::print_parameters_dual_splitting(dealii::ConditionalOStream const & p
   print_parameters_projection_step(pcout);
 
   // momentum step
-  if(viscous_problem() or implicit_convective_problem())
+  if(viscous_problem() or non_explicit_convective_problem())
   {
     print_parameters_momentum_step(pcout);
   }

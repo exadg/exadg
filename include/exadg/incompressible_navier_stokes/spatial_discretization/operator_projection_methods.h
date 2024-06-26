@@ -167,6 +167,7 @@ public:
   unsigned int
   solve_linear_momentum_equation(VectorType &       solution,
                                  VectorType const & rhs,
+                                 VectorType const & transport_velocity,
                                  bool const &       update_preconditioner,
                                  double const &     scaling_factor_mass);
 

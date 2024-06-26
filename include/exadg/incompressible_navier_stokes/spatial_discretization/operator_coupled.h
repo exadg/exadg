@@ -261,6 +261,7 @@ public:
   unsigned int
   solve_linear_problem(BlockVectorType &       dst,
                        BlockVectorType const & src,
+                       VectorType const &      transport_velocity,
                        bool const &            update_preconditioner,
                        double const &          scaling_factor_mass = 1.0);
 
@@ -313,7 +314,9 @@ public:
    * problems.
    */
   void
-  rhs_linear_problem(BlockVectorType & dst, double const & time = 0.0) const;
+  rhs_linear_problem(BlockVectorType &  dst,
+                     VectorType const & transport_velocity,
+                     double const &     time = 0.0) const;
 
   /*
    * Block preconditioner

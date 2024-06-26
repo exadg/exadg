@@ -467,9 +467,13 @@ unsigned int
 OperatorProjectionMethods<dim, Number>::solve_linear_momentum_equation(
   VectorType &       solution,
   VectorType const & rhs,
+  VectorType const & transport_velocity,
   bool const &       update_preconditioner,
   double const &     scaling_factor_mass)
 {
+  // TODO: linearly implicit convective term
+  (void)transport_velocity;
+
   // We do not need to set the time here, because time affects the operator only in the form of
   // boundary conditions. The result of such boundary condition evaluations is handed over to this
   // function via the vector rhs.
@@ -530,7 +534,7 @@ OperatorProjectionMethods<dim, Number>::evaluate_nonlinear_residual(
   this->mass_operator.apply_scale(dst, scaling_factor_mass, src);
 
   // implicitly treated convective term
-  if(this->param.implicit_convective_problem())
+  if(this->param.implicit_nonlinear_convective_problem())
   {
     this->convective_operator.evaluate_nonlinear_operator_add(dst, src, time);
   }

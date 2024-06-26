@@ -259,11 +259,11 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
       pde_operator->evaluate_add_body_force_term(rhs, this->get_next_time());
 
     // Add the convective term to the right-hand side of the equations
-    // if the convective term is treated explicitly (additive decomposition):
-    // add extrapolation of convective term to the rhs (-> minus sign!)
+    // if the convective term is treated explicitly
     if(this->param.convective_problem() and
        this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
     {
+      // add extrapolation of convective term to the rhs (-> minus sign!)
       for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
         rhs.add(-this->extra.get_beta(i), this->vec_convective_term[i]);
     }
@@ -295,16 +295,16 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
     BlockVectorType rhs_vector;
     pde_operator->initialize_block_vector_velocity_pressure(rhs_vector);
 
-    // calculate rhs vector for the Stokes problem, i.e., the convective term is neglected in this
-    // step
+    // calculate rhs vector for the linear problem, with contributions from the convective term for
+    // a linearly implicit formulation
     pde_operator->rhs_linear_problem(rhs_vector, this->get_next_time());
 
     // Add the convective term to the right-hand side of the equations
-    // if the convective term is treated explicitly (additive decomposition):
-    // add extrapolation of convective term to the rhs (-> minus sign!)
+    // if the convective term is treated explicitly
     if(this->param.convective_problem() and
        this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
     {
+      // add extrapolation of convective term to the rhs (-> minus sign!)
       for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
         rhs_vector.block(0).add(-this->extra.get_beta(i), this->vec_convective_term[i]);
     }

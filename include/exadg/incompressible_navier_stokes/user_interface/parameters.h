@@ -61,7 +61,10 @@ public:
   viscosity_is_variable() const;
 
   bool
-  implicit_convective_problem() const;
+  non_explicit_convective_problem() const;
+
+  bool
+  implicit_nonlinear_convective_problem() const;
 
   bool
   nonlinear_viscous_problem() const;

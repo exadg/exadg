@@ -695,7 +695,7 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
   timer.restart();
 
   // in case we need to iteratively solve a linear or nonlinear system of equations
-  if(this->param.viscous_problem() or this->param.implicit_convective_problem())
+  if(this->param.viscous_problem() or this->param.non_explicit_convective_problem())
   {
     // store the velocity vector that is needed to compute the rhs vector
     VectorType velocity_rhs = velocity_np;
@@ -743,7 +743,8 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
        *  to the next, i.e., it does not depend on the current solution of the nonlinear solver)
        */
       VectorType rhs(velocity_rhs);
-      rhs_viscous(rhs, velocity_rhs);
+      VectorType transport_velocity_dummy;
+      rhs_viscous(rhs, velocity_rhs, transport_velocity_dummy);
 
       // solve non-linear system of equations
       auto const iter = pde_operator->solve_nonlinear_momentum_equation(
@@ -768,17 +769,25 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
     }
     else // linear problem
     {
-      AssertThrow(this->param.viscous_problem(), dealii::ExcMessage("Should not arrive here."));
+      // linearly implicit convective term: use extrapolated/stored velocity as transport velocity
+      VectorType transport_velocity;
+      if(this->param.convective_problem() and
+         this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+        transport_velocity = velocity_np;
 
       /*
        *  Calculate the right-hand side of the linear system of equations.
        */
       VectorType rhs(velocity_rhs);
-      rhs_viscous(rhs, velocity_rhs);
+      rhs_viscous(rhs, velocity_rhs, transport_velocity);
 
       // solve linear system of equations
       unsigned int const n_iter = pde_operator->solve_linear_momentum_equation(
-        velocity_np, rhs, update_preconditioner, this->get_scaling_factor_time_derivative_term());
+        velocity_np,
+        rhs,
+        transport_velocity,
+        update_preconditioner,
+        this->get_scaling_factor_time_derivative_term());
       iterations_viscous.first += 1;
       std::get<1>(iterations_viscous.second) += n_iter;
 
@@ -792,8 +801,8 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
     if(this->store_solution)
       velocity_viscous_last_iter = velocity_np;
   }
-  else // no viscous term and no implicit convective term, i.e. there is nothing to do in this step
-       // of the dual splitting scheme
+  else // no viscous term and no (linearly) implicit convective term, i.e. there is nothing to do in
+       // this step of the dual splitting scheme
   {
     // nothing to do
     AssertThrow(this->param.equation_type == EquationType::Euler and
@@ -807,12 +816,13 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
 template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::rhs_viscous(VectorType &       rhs,
-                                                  VectorType const & velocity_rhs) const
+                                                  VectorType const & velocity_mass_operator,
+                                                  VectorType const & transport_velocity) const
 {
   /*
    *  I. apply mass operator
    */
-  pde_operator->apply_mass_operator(rhs, velocity_rhs);
+  pde_operator->apply_mass_operator(rhs, velocity_mass_operator);
   rhs *= this->bdf.get_gamma0() / this->get_time_step_size();
 
   if(this->param.nonlinear_problem_has_to_be_solved())
@@ -839,6 +849,7 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_viscous(VectorType &       rhs,
         rhs.add(this->extra.get_beta(i), this->vec_convective_term[i]);
 
       // TODO: compute inhomogeneous contributions of linearly implicit convective term
+      (void)transport_velocity;
       AssertThrow(false, dealii::ExcMessage("not implemented."));
     }
 
