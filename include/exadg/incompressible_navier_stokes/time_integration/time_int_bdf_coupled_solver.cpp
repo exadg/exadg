@@ -177,7 +177,7 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
   }
 
   // explicit viscosity update
-  if(this->param.viscosity_is_variable() and
+  if(this->viscous_problem() and this->param.viscosity_is_variable() and
      this->param.treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit)
   {
     dealii::Timer timer_viscosity_update;
