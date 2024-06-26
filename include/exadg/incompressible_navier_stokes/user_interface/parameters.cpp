@@ -264,6 +264,11 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
       dealii::ExcMessage(
         "ALE formulation only implemented for equations that include the convective operator, "
         "e.g., ALE is currently not available for the Stokes equations."));
+
+    AssertThrow(
+      treatment_of_convective_term != TreatmentOfConvectiveTerm::LinearlyImplicit,
+      dealii::ExcMessage(
+        "ALE formulation is currently not implemented for a linearly implicit convective term."));
   }
 
   // PHYSICAL QUANTITIES

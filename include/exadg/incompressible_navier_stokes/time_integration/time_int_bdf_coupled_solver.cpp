@@ -297,7 +297,7 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
 
     // calculate rhs vector for the Stokes problem, i.e., the convective term is neglected in this
     // step
-    pde_operator->rhs_stokes_problem(rhs_vector, this->get_next_time());
+    pde_operator->rhs_linear_problem(rhs_vector, this->get_next_time());
 
     // Add the convective term to the right-hand side of the equations
     // if the convective term is treated explicitly (additive decomposition):
@@ -313,10 +313,10 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
     pde_operator->apply_mass_operator_add(rhs_vector.block(0), sum_alphai_ui);
 
     unsigned int const n_iter =
-      pde_operator->solve_linear_stokes_problem(solution_np,
-                                                rhs_vector,
-                                                update_preconditioner,
-                                                this->get_scaling_factor_time_derivative_term());
+      pde_operator->solve_linear_problem(solution_np,
+                                         rhs_vector,
+                                         update_preconditioner,
+                                         this->get_scaling_factor_time_derivative_term());
 
     iterations.first += 1;
     std::get<1>(iterations.second) += n_iter;

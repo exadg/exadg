@@ -166,10 +166,10 @@ OperatorCoupled<dim, Number>::set_scaling_factor_continuity(double const scaling
 
 template<int dim, typename Number>
 unsigned int
-OperatorCoupled<dim, Number>::solve_linear_stokes_problem(BlockVectorType &       dst,
-                                                          BlockVectorType const & src,
-                                                          bool const &   update_preconditioner,
-                                                          double const & scaling_factor_mass)
+OperatorCoupled<dim, Number>::solve_linear_problem(BlockVectorType &       dst,
+                                                   BlockVectorType const & src,
+                                                   bool const &            update_preconditioner,
+                                                   double const &          scaling_factor_mass)
 {
   // Update momentum operator
   // We do not need to set the time here, because time affects the operator only in the form of
@@ -184,14 +184,24 @@ OperatorCoupled<dim, Number>::solve_linear_stokes_problem(BlockVectorType &     
 
 template<int dim, typename Number>
 void
-OperatorCoupled<dim, Number>::rhs_stokes_problem(BlockVectorType & dst, double const & time) const
+OperatorCoupled<dim, Number>::rhs_linear_problem(BlockVectorType & dst, double const & time) const
 {
   // velocity-block
   this->gradient_operator.rhs(dst.block(0), time);
   dst.block(0) *= scaling_factor_continuity;
 
-  this->viscous_operator.set_time(time);
-  this->viscous_operator.rhs_add(dst.block(0));
+  if(this->param.viscous_problem())
+  {
+    this->viscous_operator.set_time(time);
+    this->viscous_operator.rhs_add(dst.block(0));
+  }
+
+  if(this->param.convective_problem() and
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+  {
+    // TODO: compute inhomogeneous contributions of linearly implicit convective term
+    AssertThrow(false, dealii::ExcMessage("not implemented."));
+  }
 
   if(this->param.apply_penalty_terms_in_postprocessing_step == false)
   {

@@ -820,15 +820,28 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_viscous(VectorType &       rhs,
     // for a nonlinear problem, inhomogeneous contributions are taken into account when evaluating
     // the nonlinear residual
 
-    // compensate for explicit convective term
     if(this->param.convective_problem())
     {
+      // compensate for explicit convective term taken into account in the first sub-step of the
+      // dual-splitting scheme
       for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
         rhs.add(this->extra.get_beta(i), this->vec_convective_term[i]);
     }
   }
   else
   {
+    if(this->param.convective_problem() and
+       this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+    {
+      // compensate for explicit convective term taken into account in the first sub-step of the
+      // dual-splitting scheme
+      for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
+        rhs.add(this->extra.get_beta(i), this->vec_convective_term[i]);
+
+      // TODO: compute inhomogeneous contributions of linearly implicit convective term
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
+    }
+
     /*
      *  II. inhomogeneous parts of boundary face integrals of viscous operator
      */

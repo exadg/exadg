@@ -496,22 +496,29 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_momentum(VectorType & rhs)
    *  Convective term formulated explicitly (additive decomposition):
    *  Evaluate convective term and add extrapolation of convective term to the rhs
    */
-  if(this->param.convective_problem() and
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  if(this->param.convective_problem())
   {
-    if(this->param.ale_formulation)
+    if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
     {
-      for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
+      if(this->param.ale_formulation)
       {
-        // in a general setting, we only know the boundary conditions at time t_{n+1}
-        pde_operator->evaluate_convective_term(this->vec_convective_term[i],
-                                               velocity[i],
-                                               this->get_next_time());
+        for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
+        {
+          // in a general setting, we only know the boundary conditions at time t_{n+1}
+          pde_operator->evaluate_convective_term(this->vec_convective_term[i],
+                                                 velocity[i],
+                                                 this->get_next_time());
+        }
       }
+
+      for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
+        rhs.add(-this->extra.get_beta(i), this->vec_convective_term[i]);
     }
 
-    for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
-      rhs.add(-this->extra.get_beta(i), this->vec_convective_term[i]);
+    if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+    {
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
+    }
   }
 
   /*

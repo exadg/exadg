@@ -178,10 +178,10 @@ DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_pro
   else // linear problem
   {
     // calculate rhs vector
-    pde_operator->rhs_stokes_problem(rhs_vector, time);
+    pde_operator->rhs_linear_problem(rhs_vector, time);
 
     // solve coupled system of equations
-    unsigned int const n_iter = pde_operator->solve_linear_stokes_problem(
+    unsigned int const n_iter = pde_operator->solve_linear_problem(
       solution, rhs_vector, this->param.update_preconditioner_coupled, time);
 
     if(print_solver_info(time, unsteady_problem) and not(this->is_test))
