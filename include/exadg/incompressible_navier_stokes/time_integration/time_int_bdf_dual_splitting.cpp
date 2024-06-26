@@ -715,7 +715,7 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
     /*
      *  update variable viscosity
      */
-    if(this->viscous_problem() and this->param.viscosity_is_variable() and
+    if(this->param.viscous_problem() and this->param.viscosity_is_variable() and
        this->param.treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit)
     {
       dealii::Timer timer_viscosity_update;
