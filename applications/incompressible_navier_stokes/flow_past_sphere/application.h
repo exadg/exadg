@@ -191,11 +191,13 @@ public:
     this->param.order_extrapolation_pressure_nbc =
       this->param.order_time_integrator <= 2 ? this->param.order_time_integrator : 2;
 
-    // viscous step
-    this->param.solver_viscous                = SolverViscous::CG;
-    this->param.solver_data_viscous           = SolverData(1000, ABS_TOL, REL_TOL);
-    this->param.preconditioner_viscous        = PreconditionerViscous::InverseMassMatrix;
-    this->param.update_preconditioner_viscous = false;
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      this->param.solver_momentum                = SolverMomentum::CG;
+      this->param.solver_data_momentum           = SolverData(1000, ABS_TOL, REL_TOL);
+      this->param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
+      this->param.update_preconditioner_momentum = false;
+    }
 
     // PRESSURE-CORRECTION SCHEME
 
@@ -204,30 +206,32 @@ public:
     this->param.rotational_formulation       = true;
 
     // momentum step
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      // Newton solver
+      this->param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
-    // Newton solver
-    this->param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
+      // linear solver
+      this->param.solver_momentum      = SolverMomentum::FGMRES;
+      this->param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
 
-    // linear solver
-    this->param.solver_momentum      = SolverMomentum::FGMRES;
-    this->param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
+      this->param.update_preconditioner_momentum                   = true;
+      this->param.update_preconditioner_momentum_every_newton_iter = 10;
+      this->param.update_preconditioner_momentum_every_time_steps  = 10;
 
-    this->param.update_preconditioner_momentum                   = true;
-    this->param.update_preconditioner_momentum_every_newton_iter = 10;
-    this->param.update_preconditioner_momentum_every_time_steps  = 10;
-
-    this->param.preconditioner_momentum = MomentumPreconditioner::Multigrid;
-    this->param.multigrid_operator_type_momentum =
-      MultigridOperatorType::ReactionConvectionDiffusion;
-    this->param.multigrid_data_momentum.type                   = MultigridType::phMG;
-    this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
-    this->param.multigrid_data_momentum.smoother_data.preconditioner =
-      PreconditionerSmoother::BlockJacobi;
-    this->param.multigrid_data_momentum.smoother_data.iterations        = 1;
-    this->param.multigrid_data_momentum.smoother_data.relaxation_factor = 0.7;
-    this->param.multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
-    this->param.multigrid_data_momentum.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::BlockJacobi;
+      this->param.preconditioner_momentum = MomentumPreconditioner::Multigrid;
+      this->param.multigrid_operator_type_momentum =
+        MultigridOperatorType::ReactionConvectionDiffusion;
+      this->param.multigrid_data_momentum.type                   = MultigridType::phMG;
+      this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
+      this->param.multigrid_data_momentum.smoother_data.preconditioner =
+        PreconditionerSmoother::BlockJacobi;
+      this->param.multigrid_data_momentum.smoother_data.iterations        = 1;
+      this->param.multigrid_data_momentum.smoother_data.relaxation_factor = 0.7;
+      this->param.multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
+      this->param.multigrid_data_momentum.coarse_problem.preconditioner =
+        MultigridCoarseGridPreconditioner::BlockJacobi;
+    }
 
     // COUPLED NAVIER-STOKES SOLVER
 

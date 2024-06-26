@@ -101,6 +101,9 @@ private:
   print_parameters_projection_step(dealii::ConditionalOStream const & pcout) const;
 
   void
+  print_parameters_momentum_step(dealii::ConditionalOStream const & pcout) const;
+
+  void
   print_parameters_dual_splitting(dealii::ConditionalOStream const & pcout) const;
 
   void
@@ -124,9 +127,6 @@ private:
   // projection methods
   bool
   involves_h_multigrid_pressure_step() const;
-
-  bool
-  involves_h_multigrid_viscous_step() const;
 
   bool
   involves_h_multigrid_momentum_step() const;
@@ -555,57 +555,7 @@ public:
   // iterative solution procedure is used for block diagonal preconditioner)
   SolverData solver_data_block_diagonal_projection;
 
-  /**************************************************************************************/
-  /*                                                                                    */
-  /*                        HIGH-ORDER DUAL SPLITTING SCHEME                            */
-  /*                                                                                    */
-  /**************************************************************************************/
-
-  // FORMULATIONS
-
-  // order of extrapolation of viscous term and convective term in pressure Neumann BC
-  unsigned int order_extrapolation_pressure_nbc;
-
-  // description: see enum declaration
-  // The formulation of the convective term in the boundary conditions for the dual
-  // splitting scheme (there are two occurrences, the g_u_hat term
-  // arising from the divergence term on the right-hand side of the pressure Poisson
-  // equation as well as the pressure NBC for the dual splitting scheme)can be chosen
-  // independently from the type of formulation used for the discretization of the
-  // convective term in the Navier-Stokes equations.
-  // As a default parameter, FormulationConvectiveTerm::ConvectiveFormulation is
-  // used (exploiting that div(u)=0 holds in the continuous case).
-  FormulationConvectiveTerm formulation_convective_term_bc;
-
-  // CONVECTIVE STEP
-
-  // VISCOUS STEP
-
-  // description: see enum declaration
-  SolverViscous solver_viscous;
-
-  // solver data for viscous step
-  SolverData solver_data_viscous;
-
-  // description: see enum declaration
-  PreconditionerViscous preconditioner_viscous;
-
-  // update preconditioner before solving the viscous step
-  bool update_preconditioner_viscous;
-
-  // Update preconditioner every ... time steps.
-  // This variable is only used if update_preconditioner_viscous is true.
-  unsigned int update_preconditioner_viscous_every_time_steps;
-
-  // description: see declaration of MultigridData
-  MultigridData multigrid_data_viscous;
-
-
-  /**************************************************************************************/
-  /*                                                                                    */
-  /*                            PRESSURE-CORRECTION SCHEME                              */
-  /*                                                                                    */
-  /**************************************************************************************/
+  // MOMENTUM STEP
 
   // Newton solver data
   Newton::SolverData newton_solver_data_momentum;
@@ -637,6 +587,34 @@ public:
 
   // description: see enum declaration
   MultigridOperatorType multigrid_operator_type_momentum;
+
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                        HIGH-ORDER DUAL SPLITTING SCHEME                            */
+  /*                                                                                    */
+  /**************************************************************************************/
+
+  // FORMULATIONS
+
+  // order of extrapolation of viscous term and convective term in pressure Neumann BC
+  unsigned int order_extrapolation_pressure_nbc;
+
+  // description: see enum declaration
+  // The formulation of the convective term in the boundary conditions for the dual
+  // splitting scheme (there are two occurrences, the g_u_hat term
+  // arising from the divergence term on the right-hand side of the pressure Poisson
+  // equation as well as the pressure NBC for the dual splitting scheme)can be chosen
+  // independently from the type of formulation used for the discretization of the
+  // convective term in the Navier-Stokes equations.
+  // As a default parameter, FormulationConvectiveTerm::ConvectiveFormulation is
+  // used (exploiting that div(u)=0 holds in the continuous case).
+  FormulationConvectiveTerm formulation_convective_term_bc;
+
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                            PRESSURE-CORRECTION SCHEME                              */
+  /*                                                                                    */
+  /**************************************************************************************/
 
   // order of pressure extrapolation in case of incremental formulation
   // a value of 0 corresponds to non-incremental formulation

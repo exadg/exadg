@@ -401,37 +401,6 @@ enum class PreconditionerProjection
   Multigrid
 };
 
-/*
- *  Solver type for solution of viscous step:
- *
- *  use CG (conjugate gradient) method as default and GMRES if the problem
- *  is non-symmetric (Divergence formulation of viscous term, but note that often
- *  CG also works in this case).
- *  FGMRES might be necessary if a Krylov method is used inside the preconditioner
- *  (e.g., as multigrid smoother or as multigrid coarse grid solver).
- */
-enum class SolverViscous
-{
-  CG,
-  GMRES,
-  FGMRES
-};
-
-/*
- *  Preconditioner type for solution of viscous step:
- *
- *  Use InverseMassMatrix as default. As a rule of thumb, only try other
- *  preconditioners if the number of iterations is significantly larger than 10.
- */
-enum class PreconditionerViscous
-{
-  None,
-  InverseMassMatrix,
-  PointJacobi,
-  BlockJacobi,
-  Multigrid
-};
-
 /**************************************************************************************/
 /*                                                                                    */
 /*                             PRESSURE-CORRECTION SCHEME                             */

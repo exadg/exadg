@@ -340,83 +340,90 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
   dealii::Timer timer;
   timer.restart();
 
-  // Extrapolate old solutions to get a good initial estimate for the solver.
-  if(this->use_extrapolation)
+  // in case we need to iteratively solve a linear or nonlinear system of equations
+  if(this->param.viscous_problem() or this->param.implicit_convective_problem())
   {
-    velocity_np = 0.0;
-    for(unsigned int i = 0; i < velocity.size(); ++i)
+    // Extrapolate old solutions to get a good initial estimate for the solver.
+    if(this->use_extrapolation)
     {
-      velocity_np.add(this->extra.get_beta(i), velocity[i]);
+      velocity_np = 0.0;
+      for(unsigned int i = 0; i < velocity.size(); ++i)
+      {
+        velocity_np.add(this->extra.get_beta(i), velocity[i]);
+      }
     }
-  }
-  else
-  {
-    velocity_np = velocity_momentum_last_iter;
-  }
-
-  /*
-   *  explicit variable viscosity update executed prior to calculation of rhs_momentum
-   */
-  if(this->param.viscosity_is_variable() and
-     this->param.treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit)
-  {
-    dealii::Timer timer_viscosity_update;
-    timer_viscosity_update.restart();
-
-    pde_operator->update_viscosity(velocity_np);
-
-    if(this->print_solver_info() and not(this->is_test))
+    else
     {
-      this->pcout << std::endl << "Update of variable viscosity:";
-      print_wall_time(this->pcout, timer_viscosity_update.wall_time());
+      velocity_np = velocity_momentum_last_iter;
     }
-  }
 
-  /*
-   *  Calculate the right-hand side of the linear system of equations
-   *  or the vector that is constant when solving the nonlinear momentum equation
-   *  (where constant means that the vector does not change from one Newton iteration
-   *  to the next, i.e., it does not depend on the current solution of the nonlinear solver)
-   */
-  VectorType rhs(velocity_np);
-  rhs_momentum(rhs);
+    bool const update_preconditioner =
+      this->param.update_preconditioner_momentum and
+      ((this->time_step_number - 1) % this->param.update_preconditioner_momentum_every_time_steps ==
+       0);
 
-  /*
-   *  Solve the linear or nonlinear problem.
-   */
-
-  bool const update_preconditioner =
-    this->param.update_preconditioner_momentum and
-    ((this->time_step_number - 1) % this->param.update_preconditioner_momentum_every_time_steps ==
-     0);
-
-  if(this->param.nonlinear_problem_has_to_be_solved())
-  {
-    // solve non-linear system of equations
-    auto const iter = pde_operator->solve_nonlinear_momentum_equation(
-      velocity_np,
-      rhs,
-      this->get_next_time(),
-      update_preconditioner,
-      this->get_scaling_factor_time_derivative_term());
-
-    iterations_momentum.first += 1;
-    std::get<0>(iterations_momentum.second) += std::get<0>(iter);
-    std::get<1>(iterations_momentum.second) += std::get<1>(iter);
-
-    if(this->print_solver_info() and not(this->is_test))
+    if(this->param.nonlinear_problem_has_to_be_solved())
     {
-      this->pcout << std::endl << "Solve momentum step:";
-      print_solver_info_nonlinear(this->pcout,
-                                  std::get<0>(iter),
-                                  std::get<1>(iter),
-                                  timer.wall_time());
+      /*
+       *  Calculate the vector that is constant when solving the nonlinear momentum equation
+       *  (where constant means that the vector does not change from one Newton iteration
+       *  to the next, i.e., it does not depend on the current solution of the nonlinear solver)
+       */
+      VectorType rhs(velocity_np);
+      rhs_momentum(rhs);
+
+      // solve non-linear system of equations
+      auto const iter = pde_operator->solve_nonlinear_momentum_equation(
+        velocity_np,
+        rhs,
+        this->get_next_time(),
+        update_preconditioner,
+        this->get_scaling_factor_time_derivative_term());
+
+      iterations_momentum.first += 1;
+      std::get<0>(iterations_momentum.second) += std::get<0>(iter);
+      std::get<1>(iterations_momentum.second) += std::get<1>(iter);
+
+      if(this->print_solver_info() and not(this->is_test))
+      {
+        this->pcout << std::endl << "Solve momentum step:";
+        print_solver_info_nonlinear(this->pcout,
+                                    std::get<0>(iter),
+                                    std::get<1>(iter),
+                                    timer.wall_time());
+      }
     }
-  }
-  else // linear problem
-  {
-    if(this->param.viscous_problem())
+    else // linear problem
     {
+      AssertThrow(this->param.viscous_problem(), dealii::ExcMessage("Should not arrive here."));
+
+      /*
+       *  update variable viscosity prior to calculation of rhs_momentum
+       */
+      if(this->param.viscosity_is_variable())
+      {
+        AssertThrow(this->param.treatment_of_variable_viscosity ==
+                      TreatmentOfVariableViscosity::Explicit,
+                    dealii::ExcMessage("Should not arrive here."));
+
+        dealii::Timer timer_viscosity_update;
+        timer_viscosity_update.restart();
+
+        pde_operator->update_viscosity(velocity_np);
+
+        if(this->print_solver_info() and not(this->is_test))
+        {
+          this->pcout << std::endl << "Update of variable viscosity:";
+          print_wall_time(this->pcout, timer_viscosity_update.wall_time());
+        }
+      }
+
+      /*
+       *  Calculate the right-hand side of the linear system of equations.
+       */
+      VectorType rhs(velocity_np);
+      rhs_momentum(rhs);
+
       // solve linear system of equations
       unsigned int n_iter = pde_operator->solve_linear_momentum_equation(
         velocity_np, rhs, update_preconditioner, this->get_scaling_factor_time_derivative_term());
@@ -430,21 +437,28 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
         print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
       }
     }
-    else // Euler equations
-    {
-      pde_operator->apply_inverse_mass_operator(velocity_np, rhs);
-      velocity_np *= this->get_time_step_size() / this->bdf.get_gamma0();
 
-      if(this->print_solver_info() and not(this->is_test))
-      {
-        this->pcout << std::endl << "Explicit momentum step:";
-        print_wall_time(this->pcout, timer.wall_time());
-      }
+    if(this->store_solution)
+      velocity_momentum_last_iter = velocity_np;
+  }
+  else // no viscous term and no implicit convective term, i.e. we only need to invert the mass
+       // matrix
+  {
+    /*
+     *  Calculate the right-hand side vector.
+     */
+    VectorType rhs(velocity_np);
+    rhs_momentum(rhs);
+
+    pde_operator->apply_inverse_mass_operator(velocity_np, rhs);
+    velocity_np *= this->get_time_step_size() / this->bdf.get_gamma0();
+
+    if(this->print_solver_info() and not(this->is_test))
+    {
+      this->pcout << std::endl << "Explicit momentum step:";
+      print_wall_time(this->pcout, timer.wall_time());
     }
   }
-
-  if(this->store_solution)
-    velocity_momentum_last_iter = velocity_np;
 
   this->timer_tree->insert({"Timeloop", "Momentum step"}, timer.wall_time());
 }
@@ -524,7 +538,7 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_momentum(VectorType & rhs)
    *  inhomogeneous parts of boundary face integrals of the viscous operator
    *  have to be shifted to the right-hand side of the equation.
    */
-  if(this->param.viscous_problem() && not(this->param.nonlinear_problem_has_to_be_solved()))
+  if(this->param.viscous_problem() and not(this->param.nonlinear_problem_has_to_be_solved()))
   {
     pde_operator->rhs_add_viscous_term(rhs, this->get_next_time());
   }
