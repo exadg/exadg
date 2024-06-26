@@ -308,6 +308,14 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
   {
     AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::Undefined,
                 dealii::ExcMessage("parameter must be defined"));
+
+    if(treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+    {
+      AssertThrow(
+        nonlinear_viscous_problem() == false,
+        dealii::ExcMessage(
+          "The combination of a linearly implicit convective term and a nonlinear viscous term is currently not implemented. Choose e.g. an implicit formulation of the convective term."));
+    }
   }
 
   AssertThrow(calculation_of_time_step_size != TimeStepCalculation::Undefined,
