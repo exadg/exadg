@@ -179,7 +179,11 @@ OperatorCoupled<dim, Number>::solve_linear_problem(BlockVectorType &       dst,
   this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
 
   // linearly implicit convective term
-  this->momentum_operator.set_solution_linearization(transport_velocity);
+  if(this->param.convective_problem() and
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+  {
+    this->momentum_operator.set_solution_linearization(transport_velocity);
+  }
 
   linear_solver->update_preconditioner(update_preconditioner);
 
