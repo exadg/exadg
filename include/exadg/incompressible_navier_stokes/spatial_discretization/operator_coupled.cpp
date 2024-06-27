@@ -172,14 +172,14 @@ OperatorCoupled<dim, Number>::solve_linear_problem(BlockVectorType &       dst,
                                                    bool const &            update_preconditioner,
                                                    double const &          scaling_factor_mass)
 {
-  // TODO: linearly implicit convective term
-  (void)transport_velocity;
-
   // Update momentum operator
   // We do not need to set the time here, because time affects the operator only in the form of
   // boundary conditions. The result of such boundary condition evaluations is handed over to this
   // function via the vector src.
   this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
+
+  // linearly implicit convective term
+  this->momentum_operator.set_solution_linearization(transport_velocity);
 
   linear_solver->update_preconditioner(update_preconditioner);
 
