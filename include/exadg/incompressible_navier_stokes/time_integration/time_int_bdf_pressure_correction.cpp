@@ -357,6 +357,24 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
       velocity_np = velocity_momentum_last_iter;
     }
 
+    /*
+     *  update variable viscosity
+     */
+    if(this->param.viscous_problem() and this->param.viscosity_is_variable() and
+       this->param.treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit)
+    {
+      dealii::Timer timer_viscosity_update;
+      timer_viscosity_update.restart();
+
+      pde_operator->update_viscosity(velocity_np);
+
+      if(this->print_solver_info() and not(this->is_test))
+      {
+        this->pcout << std::endl << "Update of variable viscosity:";
+        print_wall_time(this->pcout, timer_viscosity_update.wall_time());
+      }
+    }
+
     bool const update_preconditioner =
       this->param.update_preconditioner_momentum and
       ((this->time_step_number - 1) % this->param.update_preconditioner_momentum_every_time_steps ==
@@ -396,27 +414,6 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
     else // linear problem
     {
       AssertThrow(this->param.viscous_problem(), dealii::ExcMessage("Should not arrive here."));
-
-      /*
-       *  update variable viscosity prior to calculation of rhs_momentum
-       */
-      if(this->param.viscosity_is_variable())
-      {
-        AssertThrow(this->param.treatment_of_variable_viscosity ==
-                      TreatmentOfVariableViscosity::Explicit,
-                    dealii::ExcMessage("Should not arrive here."));
-
-        dealii::Timer timer_viscosity_update;
-        timer_viscosity_update.restart();
-
-        pde_operator->update_viscosity(velocity_np);
-
-        if(this->print_solver_info() and not(this->is_test))
-        {
-          this->pcout << std::endl << "Update of variable viscosity:";
-          print_wall_time(this->pcout, timer_viscosity_update.wall_time());
-        }
-      }
 
       /*
        *  Calculate the right-hand side of the linear system of equations.
