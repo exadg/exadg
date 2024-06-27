@@ -205,9 +205,9 @@ OperatorCoupled<dim, Number>::rhs_linear_problem(BlockVectorType &  dst,
   if(this->param.convective_problem() and
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
   {
-    // TODO: compute inhomogeneous contributions of linearly implicit convective term
-    (void)transport_velocity;
-    AssertThrow(false, dealii::ExcMessage("not implemented."));
+    this->convective_operator.set_velocity_ptr(transport_velocity);
+    this->convective_operator.set_time(time);
+    this->convective_operator.rhs_add(dst.block(0));
   }
 
   if(this->param.apply_penalty_terms_in_postprocessing_step == false)

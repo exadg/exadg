@@ -528,15 +528,12 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_momentum(VectorType &       rhs,
 
     if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
     {
-      // TODO: compute inhomogeneous contributions of linearly implicit convective term
-      (void)transport_velocity;
-      AssertThrow(false, dealii::ExcMessage("not implemented."));
+      pde_operator->rhs_add_convective_term(rhs, transport_velocity, this->get_next_time());
     }
   }
 
   /*
-   *  calculate sum (alpha_i/dt * u_i): This term is relevant for both the explicit
-   *  and the implicit formulation of the convective term
+   *  calculate sum (alpha_i/dt * u_i) and apply mass operator to this vector
    */
   VectorType sum_alphai_ui(velocity[0]);
 

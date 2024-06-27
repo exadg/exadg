@@ -417,6 +417,18 @@ OperatorProjectionMethods<dim, Number>::rhs_add_viscous_term(VectorType & dst,
 
 template<int dim, typename Number>
 void
+OperatorProjectionMethods<dim, Number>::rhs_add_convective_term(
+  VectorType &       dst,
+  VectorType const & transport_velocity,
+  double const       time) const
+{
+  this->convective_operator.set_velocity_ptr(transport_velocity);
+  this->convective_operator.set_time(time);
+  this->convective_operator.rhs_add(dst);
+}
+
+template<int dim, typename Number>
+void
 OperatorProjectionMethods<dim, Number>::do_rhs_ppe_laplace_add(VectorType &   dst,
                                                                double const & time) const
 {

@@ -179,6 +179,16 @@ public:
   rhs_add_viscous_term(VectorType & dst, double const time) const;
 
   /*
+   * This function evaluates the rhs-contribution of the convective term and adds the result to the
+   * dst-vector. This functions is only used for a "linearly implicit formulation" of the convective
+   * term.
+   */
+  void
+  rhs_add_convective_term(VectorType &       dst,
+                          VectorType const & transport_velocity,
+                          double const       time) const;
+
+  /*
    * Momentum step is a non-linear system of equations
    */
   std::tuple<unsigned int, unsigned int>

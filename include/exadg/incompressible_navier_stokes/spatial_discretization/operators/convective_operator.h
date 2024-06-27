@@ -827,7 +827,11 @@ public:
 private:
   ConvectiveKernelData data;
 
+  // linearization velocity for nonlinear problems or transport velocity for "linearly implicit
+  // formulation" of convective term
   lazy_ptr<VectorType> velocity;
+
+  // grid velocity for ALE problems
   lazy_ptr<VectorType> grid_velocity;
 
   std::shared_ptr<IntegratorCell> integrator_velocity;

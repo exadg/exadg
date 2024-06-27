@@ -822,7 +822,7 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_viscous(VectorType &       rhs,
                                                   VectorType const & transport_velocity) const
 {
   /*
-   *  I. apply mass operator
+   *  apply mass operator
    */
   pde_operator->apply_mass_operator(rhs, velocity_mass_operator);
   rhs *= this->bdf.get_gamma0() / this->get_time_step_size();
@@ -850,13 +850,12 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_viscous(VectorType &       rhs,
       for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
         rhs.add(this->extra.get_beta(i), this->vec_convective_term[i]);
 
-      // TODO: compute inhomogeneous contributions of linearly implicit convective term
-      (void)transport_velocity;
-      AssertThrow(false, dealii::ExcMessage("not implemented."));
+      // compute inhomogeneous contributions of linearly implicit convective term
+      pde_operator->rhs_add_convective_term(rhs, transport_velocity, this->get_next_time());
     }
 
     /*
-     *  II. inhomogeneous parts of boundary face integrals of viscous operator
+     *  inhomogeneous parts of boundary face integrals of viscous operator
      */
     pde_operator->rhs_add_viscous_term(rhs, this->get_next_time());
   }
