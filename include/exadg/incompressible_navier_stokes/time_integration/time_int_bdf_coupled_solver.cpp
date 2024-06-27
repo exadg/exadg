@@ -292,12 +292,21 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
   }
   else // linear problem
   {
+    // linearly implicit convective term: use extrapolated/stored velocity as transport velocity
+    VectorType transport_velocity;
+    if(this->param.convective_problem() and
+       this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+    {
+      transport_velocity = solution_np.block(0);
+    }
+
+
     BlockVectorType rhs_vector;
     pde_operator->initialize_block_vector_velocity_pressure(rhs_vector);
 
     // calculate rhs vector for the linear problem, with contributions from the convective term for
     // a linearly implicit formulation
-    pde_operator->rhs_linear_problem(rhs_vector, this->get_next_time());
+    pde_operator->rhs_linear_problem(rhs_vector, transport_velocity, this->get_next_time());
 
     // Add the convective term to the right-hand side of the equations
     // if the convective term is treated explicitly
@@ -315,6 +324,7 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
     unsigned int const n_iter =
       pde_operator->solve_linear_problem(solution_np,
                                          rhs_vector,
+                                         transport_velocity,
                                          update_preconditioner,
                                          this->get_scaling_factor_time_derivative_term());
 
