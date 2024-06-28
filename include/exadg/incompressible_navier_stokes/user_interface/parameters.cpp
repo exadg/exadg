@@ -412,7 +412,7 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
     }
   }
 
-  if(viscosity_is_variable() and nonlinear_problem_has_to_be_solved())
+  if(nonlinear_viscous_problem())
     AssertThrow(quad_rule_linearization == QuadratureRuleLinearization::Standard,
                 dealii::ExcMessage(
                   "Only the standard integration rule is supported for variable viscosity. "
