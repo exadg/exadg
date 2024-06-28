@@ -817,7 +817,7 @@ SpatialOperatorBase<dim, Number>::get_quad_index_velocity_linearized() const
   }
   else if(param.quad_rule_linearization == QuadratureRuleLinearization::Overintegration32k)
   {
-    if(param.nonlinear_problem_has_to_be_solved())
+    if(param.implicit_convective_problem())
       return get_quad_index_velocity_nonlinear();
     else
       return get_quad_index_velocity_linear();
