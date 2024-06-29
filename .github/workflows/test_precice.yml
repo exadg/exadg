@@ -37,8 +37,8 @@ jobs:
       - name: Install preCICE
         run: |
           sudo apt-get -y update
-          wget https://github.com/precice/precice/releases/download/v2.3.0/libprecice2_2.3.0_focal.deb
-          sudo apt-get -y install ./libprecice2_2.3.0_focal.deb
+          wget https://github.com/precice/precice/releases/download/v3.1.1/libprecice3_3.1.1_focal.deb
+          sudo apt-get -y install ./libprecice3_3.1.1_focal.deb
 
       - name: Compile
         run: |

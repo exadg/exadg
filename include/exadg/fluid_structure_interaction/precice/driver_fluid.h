@@ -124,7 +124,7 @@ public:
     // initialize preCICE with initial stress data
     VectorType initial_stress;
     fluid->pde_operator->initialize_vector_velocity(initial_stress);
-    this->precice->initialize_precice(initial_stress);
+    this->precice->initialize_precice(initial_stress, this->precice_parameters.stress_data_name);
   }
 
 
@@ -271,16 +271,18 @@ private:
   coupling_structure_to_ale() const
   {
     // TODO: parametrize names
-    this->precice->read_block_data(this->precice_parameters.ale_mesh_name,
-                                   this->precice_parameters.displacement_data_name);
+    this->precice->read_data(this->precice_parameters.ale_mesh_name,
+                             this->precice_parameters.displacement_data_name,
+                             fluid->time_integrator->get_time_step_size());
   }
 
   void
   coupling_structure_to_fluid() const
   {
     // TODO: parametrize names
-    this->precice->read_block_data(this->precice_parameters.read_mesh_name,
-                                   this->precice_parameters.velocity_data_name);
+    this->precice->read_data(this->precice_parameters.read_mesh_name,
+                             this->precice_parameters.velocity_data_name,
+                             fluid->time_integrator->get_time_step_size());
   }
 
   void
@@ -295,8 +297,7 @@ private:
     stress_fluid *= -1.0;
     this->precice->write_data(this->precice_parameters.write_mesh_name,
                               this->precice_parameters.stress_data_name,
-                              stress_fluid,
-                              fluid->time_integrator->get_time_step_size());
+                              stress_fluid);
   }
 
   // solver

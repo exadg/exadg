@@ -7,79 +7,76 @@
       enabled="true" />
   </log>
 
-  <solver-interface dimensions="2">
-    <data:vector name="Stress" />
-    <data:vector name="Displacement" />
-    <data:vector name="Velocity" />
+  <data:vector name="Stress" />
+  <data:vector name="Displacement" />
+  <data:vector name="Velocity" />
 
-    <mesh name="Fluid-Mesh-read">
-      <use-data name="Velocity" />
-    </mesh>
+  <mesh name="Fluid-Mesh-read" dimensions="2">
+    <use-data name="Velocity" />
+  </mesh>
 
-    <mesh name="Fluid-Mesh-write">
-      <use-data name="Stress" />
-    </mesh>
+  <mesh name="Fluid-Mesh-write" dimensions="2">
+    <use-data name="Stress" />
+  </mesh>
 
-    <mesh name="ALE-Mesh">
-      <use-data name="Displacement" />
-    </mesh>
+  <mesh name="ALE-Mesh" dimensions="2">
+    <use-data name="Displacement" />
+  </mesh>
 
-    <mesh name="Solid-Mesh-read">
-      <use-data name="Stress" />
-    </mesh>
+  <mesh name="Solid-Mesh-read" dimensions="2">
+    <use-data name="Stress" />
+  </mesh>
 
-    <mesh name="Solid-Mesh-write">
-      <use-data name="Displacement" />
-      <use-data name="Velocity" />
-    </mesh>
-    
-    <participant name="Fluid">
-      <use-mesh name="Fluid-Mesh-read" provide="yes" />
-      <use-mesh name="Fluid-Mesh-write" provide="yes" />
-      <use-mesh name="ALE-Mesh" provide="yes" />
-      <use-mesh name="Solid-Mesh-write" from="Solid" />
-      <write-data name="Stress" mesh="Fluid-Mesh-write" />
-      <read-data name="Velocity" mesh="Fluid-Mesh-read" />
-      <read-data name="Displacement" mesh="ALE-Mesh" />
-      <mapping:rbf-volume-splines
-        direction="read"
-        from="Solid-Mesh-write"
-        to="Fluid-Mesh-read"
-        use-qr-decomposition="true"
-        constraint="consistent" />
-      <mapping:rbf-volume-splines
-        direction="read"
-        from="Solid-Mesh-write"
-        to="ALE-Mesh"
-        use-qr-decomposition="true"
-        constraint="consistent" />
-    </participant>
+  <mesh name="Solid-Mesh-write" dimensions="2">
+    <use-data name="Displacement" />
+    <use-data name="Velocity" />
+  </mesh>
 
-    <participant name="Solid">
-      <use-mesh name="Solid-Mesh-read" provide="yes" />
-      <use-mesh name="Solid-Mesh-write" provide="yes" />
-      <use-mesh name="Fluid-Mesh-write" from="Fluid" />
-      <write-data name="Displacement" mesh="Solid-Mesh-write"/>
-      <write-data name="Velocity" mesh="Solid-Mesh-write" />
-      <read-data name="Stress" mesh="Solid-Mesh-read" />
-      <watch-point mesh="Solid-Mesh-write" name="Flap-Tip" coordinate="0.0;1" />
-      <mapping:rbf-volume-splines
-        direction="read"
-        from="Fluid-Mesh-write"
-        to="Solid-Mesh-read"
-        use-qr-decomposition="true"
-        constraint="consistent" />
-    </participant>
+  <participant name="Fluid">
+    <provide-mesh name="Fluid-Mesh-read" />
+    <provide-mesh name="Fluid-Mesh-write" />
+    <provide-mesh name="ALE-Mesh" />
+    <receive-mesh name="Solid-Mesh-write" from="Solid" />
+    <write-data name="Stress" mesh="Fluid-Mesh-write" />
+    <read-data name="Velocity" mesh="Fluid-Mesh-read" />
+    <read-data name="Displacement" mesh="ALE-Mesh" />
+    <mapping:rbf
+      direction="read"
+      from="Solid-Mesh-write"
+      to="Fluid-Mesh-read"
+      constraint="consistent">
+      <basis-function:volume-splines />
+    </mapping:rbf>
+    <mapping:rbf direction="read" from="Solid-Mesh-write" to="ALE-Mesh" constraint="consistent">
+      <basis-function:volume-splines />
+    </mapping:rbf>
+  </participant>
 
-    <m2n:sockets from="Fluid" to="Solid" exchange-directory=".." />
+  <participant name="Solid">
+    <provide-mesh name="Solid-Mesh-read" />
+    <provide-mesh name="Solid-Mesh-write" />
+    <receive-mesh name="Fluid-Mesh-write" from="Fluid" />
+    <write-data name="Displacement" mesh="Solid-Mesh-write" />
+    <write-data name="Velocity" mesh="Solid-Mesh-write" />
+    <read-data name="Stress" mesh="Solid-Mesh-read" />
+    <watch-point mesh="Solid-Mesh-write" name="Flap-Tip" coordinate="0.0;1" />
+    <mapping:rbf
+      direction="read"
+      from="Fluid-Mesh-write"
+      to="Solid-Mesh-read"
+      constraint="consistent">
+      <basis-function:volume-splines />
+    </mapping:rbf>
+  </participant>
 
-    <coupling-scheme:serial-explicit>
-      <time-window-size value="0.01" />
-      <max-time value="5" />
-      <participants first="Fluid" second="Solid" />
-      <exchange data="Stress" mesh="Fluid-Mesh-write" from="Fluid" to="Solid" />
-      <exchange data="Displacement" mesh="Solid-Mesh-write" from="Solid" to="Fluid" />
-      <exchange data="Velocity" mesh="Solid-Mesh-write" from="Solid" to="Fluid" />
-    </coupling-scheme:serial-explicit>
-  </solver-interface>
+  <m2n:sockets acceptor="Fluid" connector="Solid" exchange-directory=".." />
+
+  <coupling-scheme:serial-explicit>
+    <time-window-size value="0.01" />
+    <max-time value="5" />
+    <participants first="Fluid" second="Solid" />
+    <exchange data="Stress" mesh="Fluid-Mesh-write" from="Fluid" to="Solid" />
+    <exchange data="Displacement" mesh="Solid-Mesh-write" from="Solid" to="Fluid" />
+    <exchange data="Velocity" mesh="Solid-Mesh-write" from="Solid" to="Fluid" />
+  </coupling-scheme:serial-explicit>
 </precice-configuration>

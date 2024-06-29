@@ -43,7 +43,7 @@ class QuadCoupling : public CouplingBase<dim, data_dim, VectorizedArrayType>
 public:
   QuadCoupling(dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
 #ifdef EXADG_WITH_PRECICE
-               std::shared_ptr<precice::SolverInterface> precice,
+               std::shared_ptr<precice::Participant> precice,
 #endif
                std::string const                mesh_name,
                dealii::types::boundary_id const surface_id,
@@ -91,7 +91,7 @@ private:
   void
   write_data_factory(
     dealii::LinearAlgebra::distributed::Vector<double> const &          data_vector,
-    int const                                                           write_data_id,
+    std::string const &                                                 write_data_name,
     dealii::EvaluationFlags::EvaluationFlags const                      flags,
     std::function<value_type(FEFaceIntegrator &, unsigned int)> const & get_write_value);
 
@@ -113,7 +113,7 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 QuadCoupling<dim, data_dim, VectorizedArrayType>::QuadCoupling(
   dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
 #ifdef EXADG_WITH_PRECICE
-  std::shared_ptr<precice::SolverInterface> precice,
+  std::shared_ptr<precice::Participant> precice,
 #endif
   std::string const                mesh_name,
   dealii::types::boundary_id const surface_id,
@@ -136,7 +136,7 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 void
 QuadCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
 {
-  Assert(this->mesh_id != -1, dealii::ExcNotInitialized());
+  Assert(this->mesh_name != "", dealii::ExcNotInitialized());
 
   // In order to avoid that we define the surface multiple times when reader
   // and writer refer to the same object
@@ -179,10 +179,10 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
           unrolled_vertices[d + dim * v] = local_vertex[d][v];
 
 #ifdef EXADG_WITH_PRECICE
-      this->precice->setMeshVertices(this->mesh_id,
-                                     active_faces,
-                                     unrolled_vertices.data(),
-                                     node_ids.data());
+      this->precice->setMeshVertices(this->mesh_name,
+                                     {unrolled_vertices.data(),
+                                      static_cast<std::size_t>(active_faces * dim)},
+                                     {node_ids.data(), static_cast<std::size_t>(active_faces)});
 #else
       (void)active_faces;
 #endif
@@ -198,13 +198,13 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
   // Consistency check: the number of IDs we stored is equal or greater than
   // the IDs preCICE knows
   Assert(size * VectorizedArrayType::size() >=
-           static_cast<unsigned int>(this->precice->getMeshVertexSize(this->mesh_id)),
+           static_cast<unsigned int>(this->precice->getMeshVertexSize(this->mesh_name)),
          dealii::ExcInternalError());
 
   if(this->read_data_map.size() > 0)
-    this->print_info(true, this->precice->getMeshVertexSize(this->mesh_id));
+    this->print_info(true, this->precice->getMeshVertexSize(this->mesh_name));
   if(this->write_data_map.size() > 0)
-    this->print_info(false, this->precice->getMeshVertexSize(this->mesh_id));
+    this->print_info(false, this->precice->getMeshVertexSize(this->mesh_name));
 #endif
 }
 
@@ -215,19 +215,17 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data(
   dealii::LinearAlgebra::distributed::Vector<double> const & data_vector,
   std::string const &                                        data_name)
 {
-  int const write_data_id = this->write_data_map.at(data_name);
-
   switch(this->write_data_type)
   {
     case WriteDataType::values_on_q_points:
       write_data_factory(data_vector,
-                         write_data_id,
+                         data_name,
                          dealii::EvaluationFlags::values,
                          [](auto & phi, auto q_point) { return phi.get_value(q_point); });
       break;
     case WriteDataType::normal_gradients_on_q_points:
       write_data_factory(data_vector,
-                         write_data_id,
+                         data_name,
                          dealii::EvaluationFlags::gradients,
                          [](auto & phi, auto q_point) {
                            return phi.get_normal_derivative(q_point);
@@ -244,11 +242,11 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 void
 QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data_factory(
   dealii::LinearAlgebra::distributed::Vector<double> const &          data_vector,
-  int const                                                           write_data_id,
+  std::string const &                                                 write_data_name,
   dealii::EvaluationFlags::EvaluationFlags const                      flags,
   std::function<value_type(FEFaceIntegrator &, unsigned int)> const & get_write_value)
 {
-  Assert(write_data_id != -1, dealii::ExcNotInitialized());
+  Assert(write_data_name != "", dealii::ExcNotInitialized());
   Assert(coupling_nodes_ids.size() > 0, dealii::ExcNotInitialized());
   // Similar as in define_coupling_mesh
   FEFaceIntegrator phi(this->matrix_free, true, mf_dof_index, mf_quad_index);
@@ -256,6 +254,7 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data_factory(
   // In order to unroll the vectorization
   std::array<double, data_dim * VectorizedArrayType::size()> unrolled_local_data;
   (void)unrolled_local_data;
+  (void)write_data_name;
 
   auto index = coupling_nodes_ids.begin();
 
@@ -292,22 +291,22 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::write_data_factory(
             unrolled_local_data[d + data_dim * v] = local_data[d][v];
 
 #ifdef EXADG_WITH_PRECICE
-        this->precice->writeBlockVectorData(write_data_id,
-                                            active_faces,
-                                            index->data(),
-                                            unrolled_local_data.data());
+        this->precice->writeData(this->mesh_name,
+                                 write_data_name,
+                                 {index->data(), static_cast<std::size_t>(active_faces)},
+                                 {unrolled_local_data.data(),
+                                  static_cast<std::size_t>(active_faces * data_dim)});
 #else
         (void)active_faces;
-        (void)write_data_id;
 #endif
       }
       else
       {
 #ifdef EXADG_WITH_PRECICE
-        this->precice->writeBlockScalarData(write_data_id,
-                                            active_faces,
-                                            index->data(),
-                                            &local_data[0]);
+        this->precice->writeData(this->mesh_name,
+                                 write_data_name,
+                                 {index->data(), static_cast<std::size_t>(active_faces)},
+                                 {&local_data[0], static_cast<std::size_t>(active_faces)});
 #endif
       }
     }
