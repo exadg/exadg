@@ -463,8 +463,10 @@ get_random_tensor(Number scale)
 
       if constexpr(use_random_sign)
       {
-        Number const random_sign = random_number_0c0_1c0 > 0.5 ? 1.0 : -1.0;
-        random_tensor[i][j]      = scale * random_number_0c1_1c0 * random_sign;
+        // Generate second random number for random sign.
+        Number random_sign  = static_cast<Number>(std::rand()) / static_cast<Number>(RAND_MAX);
+        random_sign         = random_sign > 0.5 ? 1.0 : -1.0;
+        random_tensor[i][j] = scale * random_number_0c1_1c0 * random_sign;
       }
       else
       {
@@ -636,7 +638,7 @@ main(int argc, char ** argv)
                                      dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
     // Perform the stability test or measure the evaluation time.
-    bool constexpr stab_test       = false;
+    bool constexpr stab_test       = true;
     bool constexpr use_max_err     = true;
     bool constexpr use_random_sign = true;
 

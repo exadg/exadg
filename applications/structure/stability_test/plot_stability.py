@@ -13,10 +13,10 @@ if __name__ == "__main__":
     skip_jacobian = False
     skip_stress = False
 
-    skip_STVK = True
+    skip_STVK = not True
     skip_cNH  = True
     skip_iNH  = True
-    skip_iHGO = not True
+    skip_iHGO = True
     skip_spatial_integration  = False
     skip_material_integration = False
     skip_stable_formulation   = False
@@ -39,8 +39,8 @@ if __name__ == "__main__":
     plt.loglog([0.0, 1e20], [1e-0, 1e-0], label=None, color='black', \
     linestyle='dotted', linewidth=1.0)
 
-    os.chdir("/home/richardschussnig/dealii-candi/exadg/build/applications/structure/stability_test/")
-    #os.chdir("/home/richard/dealii-candi/exadg/build/applications/structure/stability_test/")
+    #os.chdir("/home/richardschussnig/dealii-candi/exadg/build/applications/structure/stability_test/")
+    os.chdir("/home/richard/dealii-candi/exadg/build/applications/structure/stability_test/")
     for file in glob.glob("stability_forward_test_*"):
     
         print("Parsing file:")
@@ -133,7 +133,7 @@ if __name__ == "__main__":
             if skip_STVK:
                 continue
             line_width = 0.5
-            abbreviation_material_model = "STVK"
+            abbreviation_material_model = "St.Venant-Kirchhoff"
         elif material_model == "CompressibleNeoHookean":
             if skip_cNH:
                 continue
@@ -148,16 +148,16 @@ if __name__ == "__main__":
             if skip_iHGO:
                 continue
             line_width = 0.5
-            abbreviation_material_model = "gHGO"
+            abbreviation_material_model = "fiber"
             
         if not skip_stress:
             plt.loglog(rows[:,0], rows[:,1], label=abbreviation_material_model + ', ' + Omega_0_or_t + \
-            ', stable: ' + stable_formulation + ', |stress|', color=line_color, \
+            ', stable: ' + stable_formulation + ', stress', color=line_color, \
             linestyle=line_style_stress, linewidth=line_width)
         
         if not skip_jacobian:
             plt.loglog(rows[:,0], rows[:,2], label=abbreviation_material_model + ', ' + Omega_0_or_t + \
-            ', stable: ' + stable_formulation + ', |Jacobian|', color=line_color, \
+            ', stable: ' + stable_formulation + ', D/Du stress', color=line_color, \
             linestyle=line_style_jacobian, linewidth=line_width)
  
     plt.title("Relative error $\epsilon_\mathrm{rel} = \mathrm{max}_i || (.)_\mathrm{f64} - (.)_\mathrm{f32} ||_\infty / ||(.)_\mathrm{f64}||_\infty$")
