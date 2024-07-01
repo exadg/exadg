@@ -412,11 +412,13 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
     }
   }
 
-  if(nonlinear_viscous_problem())
+  if(viscous_problem() and viscosity_is_variable())
+  {
     AssertThrow(quad_rule_linearization == QuadratureRuleLinearization::Standard,
                 dealii::ExcMessage(
                   "Only the standard integration rule is supported for variable viscosity. "
                   "Variable viscosity with multiple integration rules is not yet implemented."));
+  }
 
   // PROJECTION METHODS
   if(preconditioner_momentum == MomentumPreconditioner::Multigrid)
