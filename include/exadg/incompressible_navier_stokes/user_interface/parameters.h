@@ -457,6 +457,9 @@ public:
   // be the same. Hence, although this parameter speeds up the operator evaluation (i.e.
   // the wall time per iteration), it is unclear whether a lower order quadrature rule
   // really allows to achieve a more efficient method overall.
+  // Note that if the convective term is not involved in the momentum operator, this
+  // parameter does not have any effect and the standard quadrature rule will be used
+  // for the momentum operator.
   QuadratureRuleLinearization quad_rule_linearization;
 
   /**************************************************************************************/
