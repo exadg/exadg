@@ -237,7 +237,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  get_dof_index_pressure() <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span> </div>
 <div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span></div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>  get_quad_index_velocity_linear() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>  get_quad_index_velocity_standard() <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span> </div>
 <div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span></div>
 <div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>  get_quad_index_pressure() <span class="keyword">const</span>;</div>
@@ -247,7 +247,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>  get_dof_index_velocity_scalar() <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span> </div>
 <div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span></div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  get_quad_index_velocity_nonlinear() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  get_quad_index_velocity_overintegration() <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span> </div>
 <div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span></div>
 <div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>  get_quad_index_velocity_gauss_lobatto() <span class="keyword">const</span>;</div>
@@ -592,11 +592,11 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00511" name="l00511"></a><span class="lineno">  511</span>  std::string <span class="keyword">const</span> dof_index_p        = <span class="stringliteral">&quot;pressure&quot;</span>;</div>
 <div class="line"><a id="l00512" name="l00512"></a><span class="lineno">  512</span>  std::string <span class="keyword">const</span> dof_index_u_scalar = <span class="stringliteral">&quot;velocity_scalar&quot;</span>;</div>
 <div class="line"><a id="l00513" name="l00513"></a><span class="lineno">  513</span> </div>
-<div class="line"><a id="l00514" name="l00514"></a><span class="lineno">  514</span>  std::string <span class="keyword">const</span> quad_index_u               = <span class="stringliteral">&quot;velocity&quot;</span>;</div>
-<div class="line"><a id="l00515" name="l00515"></a><span class="lineno">  515</span>  std::string <span class="keyword">const</span> quad_index_p               = <span class="stringliteral">&quot;pressure&quot;</span>;</div>
-<div class="line"><a id="l00516" name="l00516"></a><span class="lineno">  516</span>  std::string <span class="keyword">const</span> quad_index_u_nonlinear     = <span class="stringliteral">&quot;velocity_nonlinear&quot;</span>;</div>
-<div class="line"><a id="l00517" name="l00517"></a><span class="lineno">  517</span>  std::string <span class="keyword">const</span> quad_index_u_gauss_lobatto = <span class="stringliteral">&quot;velocity_gauss_lobatto&quot;</span>;</div>
-<div class="line"><a id="l00518" name="l00518"></a><span class="lineno">  518</span>  std::string <span class="keyword">const</span> quad_index_p_gauss_lobatto = <span class="stringliteral">&quot;pressure_gauss_lobatto&quot;</span>;</div>
+<div class="line"><a id="l00514" name="l00514"></a><span class="lineno">  514</span>  std::string <span class="keyword">const</span> quad_index_u                 = <span class="stringliteral">&quot;velocity&quot;</span>;</div>
+<div class="line"><a id="l00515" name="l00515"></a><span class="lineno">  515</span>  std::string <span class="keyword">const</span> quad_index_p                 = <span class="stringliteral">&quot;pressure&quot;</span>;</div>
+<div class="line"><a id="l00516" name="l00516"></a><span class="lineno">  516</span>  std::string <span class="keyword">const</span> quad_index_u_overintegration = <span class="stringliteral">&quot;velocity_overintegration&quot;</span>;</div>
+<div class="line"><a id="l00517" name="l00517"></a><span class="lineno">  517</span>  std::string <span class="keyword">const</span> quad_index_u_gauss_lobatto   = <span class="stringliteral">&quot;velocity_gauss_lobatto&quot;</span>;</div>
+<div class="line"><a id="l00518" name="l00518"></a><span class="lineno">  518</span>  std::string <span class="keyword">const</span> quad_index_p_gauss_lobatto   = <span class="stringliteral">&quot;pressure_gauss_lobatto&quot;</span>;</div>
 <div class="line"><a id="l00519" name="l00519"></a><span class="lineno">  519</span> </div>
 <div class="line"><a id="l00520" name="l00520"></a><span class="lineno">  520</span>  std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt; <span class="keyword">const</span>&gt;     matrix_free_data;</div>
 <div class="line"><a id="l00521" name="l00521"></a><span class="lineno">  521</span>  std::shared_ptr&lt;dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span>&gt; matrix_free;</div>
@@ -757,7 +757,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00676" name="l00676"></a><span class="lineno">  676</span> </div>
 <div class="line"><a id="l00677" name="l00677"></a><span class="lineno">  677</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_ \</span></div>
 <div class="line"><a id="l00678" name="l00678"></a><span class="lineno">  678</span><span class="comment">        */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1IncNS_1_1SpatialOperatorBase_html_a746fffe45a58d19e2a59a596391ba804"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html#a746fffe45a58d19e2a59a596391ba804">ExaDG::IncNS::SpatialOperatorBase::setup</a></div><div class="ttdeci">void setup()</div><div class="ttdef"><b>Definition</b> spatial_operator_base.cpp:676</div></div>
+<div class="ttc" id="aclassExaDG_1_1IncNS_1_1SpatialOperatorBase_html_a746fffe45a58d19e2a59a596391ba804"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html#a746fffe45a58d19e2a59a596391ba804">ExaDG::IncNS::SpatialOperatorBase::setup</a></div><div class="ttdeci">void setup()</div><div class="ttdef"><b>Definition</b> spatial_operator_base.cpp:677</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
