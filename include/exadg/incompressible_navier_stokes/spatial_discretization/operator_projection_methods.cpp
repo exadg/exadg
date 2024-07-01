@@ -266,7 +266,7 @@ OperatorProjectionMethods<dim, Number>::setup_momentum_preconditioner()
   {
     InverseMassOperatorData inverse_mass_operator_data;
     inverse_mass_operator_data.dof_index  = this->get_dof_index_velocity();
-    inverse_mass_operator_data.quad_index = this->get_quad_index_velocity_linear();
+    inverse_mass_operator_data.quad_index = this->get_quad_index_velocity_standard();
     inverse_mass_operator_data.parameters = this->param.inverse_mass_preconditioner;
 
     momentum_preconditioner =

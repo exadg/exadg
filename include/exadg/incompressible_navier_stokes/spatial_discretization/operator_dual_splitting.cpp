@@ -170,7 +170,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
 {
   unsigned int const dof_index_velocity = this->get_dof_index_velocity();
   unsigned int const dof_index_pressure = this->get_dof_index_pressure();
-  unsigned int const quad_index         = this->get_quad_index_velocity_nonlinear();
+  unsigned int const quad_index         = this->get_quad_index_velocity_overintegration();
 
   FaceIntegratorU velocity(matrix_free, true, dof_index_velocity, quad_index);
   FaceIntegratorP pressure(matrix_free, true, dof_index_pressure, quad_index);
@@ -274,7 +274,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_numerical_time_derivative_
 {
   unsigned int dof_index_velocity  = this->get_dof_index_velocity();
   unsigned int dof_index_pressure  = this->get_dof_index_pressure();
-  unsigned int quad_index_velocity = this->get_quad_index_velocity_linear();
+  unsigned int quad_index_velocity = this->get_quad_index_velocity_standard();
 
   FaceIntegratorU integrator_velocity(data, true, dof_index_velocity, quad_index_velocity);
   FaceIntegratorP integrator_pressure(data, true, dof_index_pressure, quad_index_velocity);
@@ -411,7 +411,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_boundary_fa
 {
   unsigned int const dof_index_velocity = this->get_dof_index_velocity();
   unsigned int const dof_index_pressure = this->get_dof_index_pressure();
-  unsigned int const quad_index         = this->get_quad_index_velocity_nonlinear();
+  unsigned int const quad_index         = this->get_quad_index_velocity_overintegration();
 
   FaceIntegratorU velocity(matrix_free, true, dof_index_velocity, quad_index);
   FaceIntegratorP pressure(matrix_free, true, dof_index_pressure, quad_index);
@@ -506,7 +506,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary_face(
 {
   unsigned int const dof_index_velocity = this->get_dof_index_velocity();
   unsigned int const dof_index_pressure = this->get_quad_index_pressure();
-  unsigned int const quad_index         = this->get_quad_index_velocity_linear();
+  unsigned int const quad_index         = this->get_quad_index_velocity_standard();
 
   FaceIntegratorU omega(matrix_free, true, dof_index_velocity, quad_index);
 
