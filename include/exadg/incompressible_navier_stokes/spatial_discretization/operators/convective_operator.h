@@ -37,6 +37,7 @@ struct ConvectiveKernelData
 {
   ConvectiveKernelData()
     : formulation(FormulationConvectiveTerm::DivergenceFormulation),
+      temporal_treatment(TreatmentOfConvectiveTerm::Implicit),
       upwind_factor(1.0),
       use_outflow_bc(false),
       type_dirichlet_bc(TypeDirichletBCs::Mirror),
@@ -45,6 +46,8 @@ struct ConvectiveKernelData
   }
 
   FormulationConvectiveTerm formulation;
+
+  TreatmentOfConvectiveTerm temporal_treatment;
 
   double upwind_factor;
 
@@ -333,26 +336,55 @@ public:
   /*
    * Volume flux, i.e., the term occurring in the volume integral. The volume flux depends on the
    * formulation used for the convective term, and is therefore implemented separately for the
-   * different formulations
+   * different formulations (divergence formulation vs. convective formulation). Note that these
+   * functions are called by the linearized or linearly implicit convective operator, but not by
+   * the nonlinear convective operator.
    */
   inline DEAL_II_ALWAYS_INLINE //
     tensor
-    get_volume_flux_linearized_divergence_formulation(vector const &     delta_u,
-                                                      unsigned int const q) const
+    get_volume_flux_divergence_formulation(vector const & delta_u, unsigned int const q) const
   {
+    // u denotes the point of linearization for the linearized problem (of the nonlinear implicit
+    // operator) or the transport velocity for the linearly implicit problem
     vector u = get_velocity_cell(q);
-    tensor F = outer_product(u, delta_u);
+
+    // flux
+    tensor F;
+
+    if(data.temporal_treatment == TreatmentOfConvectiveTerm::Implicit)
+    {
+      // linearization of nonlinear convective term
+
+      F = outer_product(u, delta_u);
+      F = F + transpose(F);
+    }
+    else if(data.temporal_treatment == TreatmentOfConvectiveTerm::LinearlyImplicit)
+    {
+      F = outer_product(delta_u, u);
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("not implemented"));
+    }
+
 
     // minus sign due to integration by parts
-    return -(F + transpose(F));
+    return -F;
   }
 
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    get_volume_flux_linearized_convective_formulation(vector const &     delta_u,
-                                                      tensor const &     grad_delta_u,
-                                                      unsigned int const q) const
+    get_volume_flux_convective_formulation(vector const &     delta_u,
+                                           tensor const &     grad_delta_u,
+                                           unsigned int const q) const
   {
+    // u denotes the point of linearization for the linearized problem (of the nonlinear implicit
+    // operator) or the transport velocity for the linearly implicit problem in case no ALE
+    // formulation is used.
+
+    // The velocity w also takes into account the grid velocity u_grid in case of an ALE
+    // formulation.
+
     // w = u
     vector w      = get_velocity_cell(q);
     tensor grad_u = get_velocity_gradient_cell(q);
@@ -361,9 +393,27 @@ public:
     if(data.ale)
       w -= get_grid_velocity_cell(q);
 
-    // plus sign since the strong formulation is used, i.e.
-    // integration by parts is performed twice
-    vector F = grad_u * delta_u + grad_delta_u * w;
+    // flux
+    vector F;
+
+    if(data.temporal_treatment == TreatmentOfConvectiveTerm::Implicit)
+    {
+      // linearization of nonlinear convective term
+
+      // plus sign since the strong formulation is used, i.e.
+      // integration by parts is performed twice
+      F = grad_u * delta_u + grad_delta_u * w;
+    }
+    else if(data.temporal_treatment == TreatmentOfConvectiveTerm::LinearlyImplicit)
+    {
+      // plus sign since the strong formulation is used, i.e.
+      // integration by parts is performed twice
+      F = grad_delta_u * w;
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("not implemented"));
+    }
 
     return F;
   }
@@ -650,26 +700,27 @@ public:
   /*
    *  Calculate Lax-Friedrichs flux for nonlinear operator (linear transport).
    */
-  inline DEAL_II_ALWAYS_INLINE //
-    vector
-    calculate_lax_friedrichs_flux_linear_transport(vector const & uM,
-                                                   vector const & uP,
-                                                   vector const & wM,
-                                                   vector const & wP,
-                                                   vector const & normalM) const
-  {
-    scalar wM_n = wM * normalM;
-    scalar wP_n = wP * normalM;
-
-    vector average_normal_flux =
-      dealii::make_vectorized_array<Number>(0.5) * (uM * wM_n + uP * wP_n);
-
-    vector jump_value = uM - uP;
-
-    scalar lambda = calculate_lambda(wM_n, wP_n);
-
-    return (average_normal_flux + 0.5 * lambda * jump_value);
-  }
+  // TODO not needed currently
+  //  inline DEAL_II_ALWAYS_INLINE //
+  //    vector
+  //    calculate_lax_friedrichs_flux_linear_transport(vector const & uM,
+  //                                                   vector const & uP,
+  //                                                   vector const & wM,
+  //                                                   vector const & wP,
+  //                                                   vector const & normalM) const
+  //  {
+  //    scalar wM_n = wM * normalM;
+  //    scalar wP_n = wP * normalM;
+  //
+  //    vector average_normal_flux =
+  //      dealii::make_vectorized_array<Number>(0.5) * (uM * wM_n + uP * wP_n);
+  //
+  //    vector jump_value = uM - uP;
+  //
+  //    scalar lambda = calculate_lambda(wM_n, wP_n);
+  //
+  //    return (average_normal_flux + 0.5 * lambda * jump_value);
+  //  }
 
   /*
    *  Calculate Lax-Friedrichs flux for linearized operator (divergence formulation).

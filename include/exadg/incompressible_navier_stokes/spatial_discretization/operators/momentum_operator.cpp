@@ -314,14 +314,12 @@ MomentumOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
       if(operator_data.convective_kernel_data.formulation ==
          FormulationConvectiveTerm::DivergenceFormulation)
       {
-        gradient_flux +=
-          convective_kernel->get_volume_flux_linearized_divergence_formulation(value, q);
+        gradient_flux += convective_kernel->get_volume_flux_divergence_formulation(value, q);
       }
       else if(operator_data.convective_kernel_data.formulation ==
               FormulationConvectiveTerm::ConvectiveFormulation)
       {
-        value_flux +=
-          convective_kernel->get_volume_flux_linearized_convective_formulation(value, gradient, q);
+        value_flux += convective_kernel->get_volume_flux_convective_formulation(value, gradient, q);
       }
       else
       {

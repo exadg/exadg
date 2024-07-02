@@ -427,7 +427,7 @@ ConvectiveOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) c
 
     if(operator_data.kernel_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
     {
-      tensor flux = kernel->get_volume_flux_linearized_divergence_formulation(delta_u, q);
+      tensor flux = kernel->get_volume_flux_divergence_formulation(delta_u, q);
 
       integrator.submit_gradient(flux, q);
     }
@@ -436,8 +436,7 @@ ConvectiveOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) c
     {
       tensor grad_delta_u = integrator.get_gradient(q);
 
-      vector flux =
-        kernel->get_volume_flux_linearized_convective_formulation(delta_u, grad_delta_u, q);
+      vector flux = kernel->get_volume_flux_convective_formulation(delta_u, grad_delta_u, q);
 
       integrator.submit_value(flux, q);
     }
