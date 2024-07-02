@@ -493,12 +493,7 @@ public:
       flux = calculate_upwind_flux(uM, uP, average_u_normal);
 
       if(boundary_type == BoundaryTypeU::Neumann and data.use_outflow_bc == true)
-      {
-        if(data.ale == false)
-          apply_outflow_bc(flux, uM * normalM);
-        else
-          apply_outflow_bc(flux, (uM - u_grid) * normalM);
-      }
+        apply_outflow_bc(flux, average_u_normal);
 
       // second term appears since the strong formulation is implemented (integration by parts
       // is performed twice)
@@ -520,19 +515,32 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     std::tuple<vector, vector>
-    calculate_flux_linearized_interior_and_neighbor(vector const &     uM,
-                                                    vector const &     uP,
-                                                    vector const &     delta_uM,
-                                                    vector const &     delta_uP,
-                                                    vector const &     normalM,
-                                                    unsigned int const q) const
+    calculate_flux_linear_operator_interior_and_neighbor(vector const &     uM,
+                                                         vector const &     uP,
+                                                         vector const &     delta_uM,
+                                                         vector const &     delta_uP,
+                                                         vector const &     normalM,
+                                                         unsigned int const q) const
   {
     vector fluxM, fluxP;
 
     if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
     {
-      fluxM = calculate_lax_friedrichs_flux_linearized(uM, uP, delta_uM, delta_uP, normalM);
-      fluxP = -fluxM;
+      if(data.temporal_treatment == TreatmentOfConvectiveTerm::Implicit)
+      {
+        // linearization of nonlinear convective term
+
+        fluxM = calculate_lax_friedrichs_flux_linearized(uM, uP, delta_uM, delta_uP, normalM);
+        fluxP = -fluxM;
+      }
+      else if(data.temporal_treatment == TreatmentOfConvectiveTerm::LinearlyImplicit)
+      {
+        AssertThrow(false, dealii::ExcMessage("not implemented"));
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("not implemented"));
+      }
     }
     else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
     {
@@ -540,19 +548,44 @@ public:
       if(data.ale)
         u_grid = get_grid_velocity_face(q);
 
-      vector flux = calculate_upwind_flux_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);
+      if(data.temporal_treatment == TreatmentOfConvectiveTerm::Implicit)
+      {
+        // linearization of nonlinear convective term
 
-      scalar average_u_normal = 0.5 * (uM + uP) * normalM;
-      if(data.ale)
-        average_u_normal -= u_grid * normalM;
+        vector flux = calculate_upwind_flux_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);
 
-      scalar average_delta_u_normal = 0.5 * (delta_uM + delta_uP) * normalM;
+        scalar average_u_normal = 0.5 * (uM + uP) * normalM;
+        if(data.ale)
+          average_u_normal -= u_grid * normalM;
 
-      // second term appears since the strong formulation is implemented (integration by parts
-      // is performed twice)
-      fluxM = flux - average_u_normal * delta_uM - average_delta_u_normal * uM;
-      // opposite signs since n⁺ = - n⁻
-      fluxP = -flux + average_u_normal * delta_uP + average_delta_u_normal * uP;
+        scalar average_delta_u_normal = 0.5 * (delta_uM + delta_uP) * normalM;
+
+        // second term appears since the strong formulation is implemented (integration by parts
+        // is performed twice)
+        fluxM = flux - average_u_normal * delta_uM - average_delta_u_normal * uM;
+        // opposite signs since n⁺ = - n⁻
+        fluxP = -flux + average_u_normal * delta_uP + average_delta_u_normal * uP;
+      }
+      else if(data.temporal_treatment == TreatmentOfConvectiveTerm::LinearlyImplicit)
+      {
+        // linearly implicit convective term
+
+        vector flux;
+        scalar average_u_normal = 0.5 * (uM + uP) * normalM;
+        if(data.ale)
+          average_u_normal -= u_grid * normalM;
+
+        flux = calculate_upwind_flux(delta_uM, delta_uP, average_u_normal);
+
+        // a second term is needed since the strong formulation is implemented (integration by parts
+        // twice)
+        fluxM = flux - average_u_normal * delta_uM;
+        fluxP = -flux + average_u_normal * delta_uP; // opposite signs since n⁺ = - n⁻
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("not implemented"));
+      }
     }
     else
     {
@@ -568,18 +601,30 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    calculate_flux_linearized_interior(vector const &     uM,
-                                       vector const &     uP,
-                                       vector const &     delta_uM,
-                                       vector const &     delta_uP,
-                                       vector const &     normalM,
-                                       unsigned int const q) const
+    calculate_flux_linear_operator_interior(vector const &     uM,
+                                            vector const &     uP,
+                                            vector const &     delta_uM,
+                                            vector const &     delta_uP,
+                                            vector const &     normalM,
+                                            unsigned int const q) const
   {
     vector flux;
 
     if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
     {
-      flux = calculate_lax_friedrichs_flux_linearized(uM, uP, delta_uM, delta_uP, normalM);
+      if(data.temporal_treatment == TreatmentOfConvectiveTerm::Implicit)
+      {
+        // linearization of nonlinear convective term
+        flux = calculate_lax_friedrichs_flux_linearized(uM, uP, delta_uM, delta_uP, normalM);
+      }
+      else if(data.temporal_treatment == TreatmentOfConvectiveTerm::LinearlyImplicit)
+      {
+        AssertThrow(false, dealii::ExcMessage("not implemented"));
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("not implemented"));
+      }
     }
     else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
     {
@@ -587,18 +632,42 @@ public:
       if(data.ale)
         u_grid = get_grid_velocity_face(q);
 
-      flux = calculate_upwind_flux_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);
+      if(data.temporal_treatment == TreatmentOfConvectiveTerm::Implicit)
+      {
+        // linearization of nonlinear convective term
 
-      scalar average_u_normal = 0.5 * (uM + uP) * normalM;
+        flux = calculate_upwind_flux_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);
 
-      if(data.ale)
-        average_u_normal -= u_grid * normalM;
+        scalar average_u_normal = 0.5 * (uM + uP) * normalM;
 
-      scalar average_delta_u_normal = 0.5 * (delta_uM + delta_uP) * normalM;
+        if(data.ale)
+          average_u_normal -= u_grid * normalM;
 
-      // second term appears since the strong formulation is implemented (integration by parts
-      // is performed twice)
-      flux = flux - average_u_normal * delta_uM - average_delta_u_normal * uM;
+        scalar average_delta_u_normal = 0.5 * (delta_uM + delta_uP) * normalM;
+
+        // second term appears since the strong formulation is implemented (integration by parts
+        // is performed twice)
+        flux = flux - average_u_normal * delta_uM - average_delta_u_normal * uM;
+      }
+      else if(data.temporal_treatment == TreatmentOfConvectiveTerm::LinearlyImplicit)
+      {
+        // linearly implicit convective term
+
+        vector flux;
+        scalar average_u_normal = 0.5 * (uM + uP) * normalM;
+        if(data.ale)
+          average_u_normal -= u_grid * normalM;
+
+        flux = calculate_upwind_flux(delta_uM, delta_uP, average_u_normal);
+
+        // a second term is needed since the strong formulation is implemented (integration by parts
+        // twice)
+        flux = flux - average_u_normal * delta_uM;
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("not implemented"));
+      }
     }
     else
     {
@@ -616,22 +685,34 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    calculate_flux_linearized_boundary(vector const &        uM,
-                                       vector const &        uP,
-                                       vector const &        delta_uM,
-                                       vector const &        delta_uP,
-                                       vector const &        normalM,
-                                       BoundaryTypeU const & boundary_type,
-                                       unsigned int const    q) const
+    calculate_flux_linear_operator_boundary(vector const &        uM,
+                                            vector const &        uP,
+                                            vector const &        delta_uM,
+                                            vector const &        delta_uP,
+                                            vector const &        normalM,
+                                            BoundaryTypeU const & boundary_type,
+                                            unsigned int const    q) const
   {
     vector flux;
 
     if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
     {
-      flux = calculate_lax_friedrichs_flux_linearized(uM, uP, delta_uM, delta_uP, normalM);
+      if(data.temporal_treatment == TreatmentOfConvectiveTerm::Implicit)
+      {
+        // linearization of nonlinear convective term
+        flux = calculate_lax_friedrichs_flux_linearized(uM, uP, delta_uM, delta_uP, normalM);
 
-      if(boundary_type == BoundaryTypeU::Neumann and data.use_outflow_bc == true)
-        apply_outflow_bc(flux, uM * normalM);
+        if(boundary_type == BoundaryTypeU::Neumann and data.use_outflow_bc == true)
+          apply_outflow_bc(flux, uM * normalM);
+      }
+      else if(data.temporal_treatment == TreatmentOfConvectiveTerm::LinearlyImplicit)
+      {
+        AssertThrow(false, dealii::ExcMessage("not implemented"));
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("not implemented"));
+      }
     }
     else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
     {
@@ -639,20 +720,46 @@ public:
       if(data.ale)
         u_grid = get_grid_velocity_face(q);
 
-      flux = calculate_upwind_flux_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);
+      if(data.temporal_treatment == TreatmentOfConvectiveTerm::Implicit)
+      {
+        // linearization of nonlinear convective term
+        flux = calculate_upwind_flux_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);
 
-      if(boundary_type == BoundaryTypeU::Neumann and data.use_outflow_bc == true)
-        apply_outflow_bc(flux, uM * normalM);
+        scalar average_u_normal = 0.5 * (uM + uP) * normalM;
+        if(data.ale)
+          average_u_normal -= u_grid * normalM;
 
-      scalar average_u_normal = 0.5 * (uM + uP) * normalM;
-      if(data.ale)
-        average_u_normal -= u_grid * normalM;
+        if(boundary_type == BoundaryTypeU::Neumann and data.use_outflow_bc == true)
+          apply_outflow_bc(flux, average_u_normal);
 
-      scalar average_delta_u_normal = 0.5 * (delta_uM + delta_uP) * normalM;
+        scalar average_delta_u_normal = 0.5 * (delta_uM + delta_uP) * normalM;
 
-      // second term appears since the strong formulation is implemented (integration by parts
-      // is performed twice)
-      flux = flux - average_u_normal * delta_uM - average_delta_u_normal * uM;
+        // second term appears since the strong formulation is implemented (integration by parts
+        // is performed twice)
+        flux = flux - average_u_normal * delta_uM - average_delta_u_normal * uM;
+      }
+      else if(data.temporal_treatment == TreatmentOfConvectiveTerm::LinearlyImplicit)
+      {
+        // linearly implicit convective term
+
+        vector flux;
+        scalar average_u_normal = 0.5 * (uM + uP) * normalM;
+        if(data.ale)
+          average_u_normal -= u_grid * normalM;
+
+        flux = calculate_upwind_flux(delta_uM, delta_uP, average_u_normal);
+
+        if(boundary_type == BoundaryTypeU::Neumann and data.use_outflow_bc == true)
+          apply_outflow_bc(flux, average_u_normal);
+
+        // a second term is needed since the strong formulation is implemented (integration by parts
+        // twice)
+        flux = flux - average_u_normal * delta_uM;
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("not implemented"));
+      }
     }
     else
     {
@@ -751,7 +858,9 @@ public:
   }
 
   /*
-   *  Calculate upwind flux for nonlinear operator (convective formulation).
+   * Convective formulation: Calculate upwind flux given an average normal velocity. This function
+   * is used for the nonlinear operator and for the linearly implicit treatment of the convective
+   * term.
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
@@ -768,30 +877,7 @@ public:
   }
 
   /*
-   * outflow BC according to Gravemeier et al. (2012)
-   */
-  inline DEAL_II_ALWAYS_INLINE //
-    void
-    apply_outflow_bc(vector & flux, scalar const & uM_n) const
-  {
-    // we need a factor indicating whether we have inflow or outflow
-    // on the Neumann part of the boundary.
-    // outflow: factor = 1.0 (do nothing, neutral element of multiplication)
-    // inflow:  factor = 0.0 (set convective flux to zero)
-    scalar outflow_indicator = dealii::make_vectorized_array<Number>(1.0);
-
-    for(unsigned int v = 0; v < dealii::VectorizedArray<Number>::size(); ++v)
-    {
-      if(uM_n[v] < 0.0) // backflow at outflow boundary
-        outflow_indicator[v] = 0.0;
-    }
-
-    // set flux to zero in case of backflow
-    flux = outflow_indicator * flux;
-  }
-
-  /*
-   *  Calculate upwind flux for linearized operator (convective formulation).
+   *  Convective formulation: Calculate upwind flux for linearized operator.
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
@@ -816,6 +902,29 @@ public:
     return (average_normal_velocity * delta_average_velocity +
             delta_average_normal_velocity * average_velocity +
             data.upwind_factor * 0.5 * std::abs(average_normal_velocity) * jump_value);
+  }
+
+  /*
+   * outflow BC according to Gravemeier et al. (2012)
+   */
+  inline DEAL_II_ALWAYS_INLINE //
+    void
+    apply_outflow_bc(vector & flux, scalar const & normal_velocity) const
+  {
+    // we need a factor indicating whether we have inflow or outflow
+    // on the Neumann part of the boundary.
+    // outflow: factor = 1.0 (do nothing, neutral element of multiplication)
+    // inflow:  factor = 0.0 (set convective flux to zero)
+    scalar outflow_indicator = dealii::make_vectorized_array<Number>(1.0);
+
+    for(unsigned int v = 0; v < dealii::VectorizedArray<Number>::size(); ++v)
+    {
+      if(normal_velocity[v] < 0.0) // backflow at outflow boundary
+        outflow_indicator[v] = 0.0;
+    }
+
+    // set flux to zero in case of backflow
+    flux = outflow_indicator * flux;
   }
 
   /*
