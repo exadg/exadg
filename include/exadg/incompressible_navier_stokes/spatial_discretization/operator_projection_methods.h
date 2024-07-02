@@ -167,6 +167,7 @@ public:
   unsigned int
   solve_linear_momentum_equation(VectorType &       solution,
                                  VectorType const & rhs,
+                                 VectorType const & transport_velocity,
                                  bool const &       update_preconditioner,
                                  double const &     scaling_factor_mass);
 
@@ -176,6 +177,16 @@ public:
    */
   void
   rhs_add_viscous_term(VectorType & dst, double const time) const;
+
+  /*
+   * This function evaluates the rhs-contribution of the convective term and adds the result to the
+   * dst-vector. This functions is only used for a "linearly implicit formulation" of the convective
+   * term.
+   */
+  void
+  rhs_add_convective_term(VectorType &       dst,
+                          VectorType const & transport_velocity,
+                          double const       time) const;
 
   /*
    * Momentum step is a non-linear system of equations

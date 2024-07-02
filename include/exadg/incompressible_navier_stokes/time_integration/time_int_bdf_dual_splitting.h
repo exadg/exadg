@@ -128,7 +128,9 @@ private:
   viscous_step();
 
   void
-  rhs_viscous(VectorType & rhs, VectorType const & velocity_rhs) const;
+  rhs_viscous(VectorType &       rhs,
+              VectorType const & velocity_mass_operator,
+              VectorType const & transport_velocity) const;
 
   void
   solve_steady_problem() final;
