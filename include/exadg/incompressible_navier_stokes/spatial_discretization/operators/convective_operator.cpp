@@ -348,14 +348,15 @@ ConvectiveOperator<dim, Number>::do_boundary_integral_nonlinear_operator(
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
     vector u_m = integrator.get_value(q);
-    vector u_p = calculate_exterior_value_nonlinear(u_m,
-                                                    q,
-                                                    integrator,
-                                                    boundary_type,
-                                                    operator_data.kernel_data.type_dirichlet_bc,
-                                                    boundary_id,
-                                                    operator_data.bc,
-                                                    this->time);
+    vector u_p = calculate_exterior_value_convective(u_m,
+                                                     q,
+                                                     integrator,
+                                                     OperatorType::full,
+                                                     boundary_type,
+                                                     operator_data.kernel_data.type_dirichlet_bc,
+                                                     boundary_id,
+                                                     operator_data.bc,
+                                                     this->time);
 
     vector normal_m = integrator.get_normal_vector(q);
 
@@ -555,33 +556,39 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(
   OperatorType const &               operator_type,
   dealii::types::boundary_id const & boundary_id) const
 {
-  // make sure that this function is only accessed for OperatorType::homogeneous
-  AssertThrow(
-    operator_type == OperatorType::homogeneous,
-    dealii::ExcMessage(
-      "For the linearized convective operator, only OperatorType::homogeneous makes sense."));
-
   BoundaryTypeU boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
-    vector delta_u_m = integrator.get_value(q);
+    // use function calculate_interior_value() instead of integrator.get_value() since OperatorType
+    // might be homogeneous or inhomogeneous
+    vector delta_u_m = calculate_interior_value(q, integrator, operator_type);
+
     vector delta_u_p =
-      kernel->calculate_exterior_value_linearized(delta_u_m, q, integrator, boundary_type);
+      calculate_exterior_value_convective(delta_u_m,
+                                          q,
+                                          integrator,
+                                          operator_type,
+                                          boundary_type,
+                                          operator_data.kernel_data.type_dirichlet_bc,
+                                          boundary_id,
+                                          operator_data.bc,
+                                          this->time);
 
     vector u_m = kernel->get_velocity_m(q);
     vector u_p;
 
     if(operator_data.kernel_data.temporal_treatment == TreatmentOfConvectiveTerm::Implicit)
     {
-      u_p = calculate_exterior_value_nonlinear(u_m,
-                                               q,
-                                               integrator,
-                                               boundary_type,
-                                               operator_data.kernel_data.type_dirichlet_bc,
-                                               boundary_id,
-                                               operator_data.bc,
-                                               this->time);
+      u_p = calculate_exterior_value_convective(u_m,
+                                                q,
+                                                integrator,
+                                                OperatorType::full,
+                                                boundary_type,
+                                                operator_data.kernel_data.type_dirichlet_bc,
+                                                boundary_id,
+                                                operator_data.bc,
+                                                this->time);
     }
     else if(operator_data.kernel_data.temporal_treatment ==
             TreatmentOfConvectiveTerm::LinearlyImplicit)

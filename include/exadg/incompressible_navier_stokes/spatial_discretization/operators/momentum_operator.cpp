@@ -565,17 +565,14 @@ MomentumOperator<dim, Number>::do_boundary_integral(
   OperatorType const &               operator_type,
   dealii::types::boundary_id const & boundary_id) const
 {
-  // make sure that this function is only accessed for OperatorType::homogeneous
-  AssertThrow(
-    operator_type == OperatorType::homogeneous,
-    dealii::ExcMessage(
-      "For the linearized momentum operator, only OperatorType::homogeneous makes sense."));
-
   BoundaryTypeU boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
-    vector value_m = integrator.get_value(q);
+    // use function calculate_interior_value() instead of integrator.get_value() since OperatorType
+    // might be homogeneous or inhomogeneous
+    vector value_m = calculate_interior_value(q, integrator, operator_type);
+
     vector value_p;
     vector normal_m = integrator.get_normal_vector(q);
 
@@ -587,10 +584,16 @@ MomentumOperator<dim, Number>::do_boundary_integral(
       // value_p is calculated differently for the convective term and the viscous term (e.g. for
       // the convective term we distinguish between the mirror principle vs. direct imposition of
       // boundary conditions while we always use the mirror principle for the viscous term)
-      value_p = convective_kernel->calculate_exterior_value_linearized(value_m,
-                                                                       q,
-                                                                       integrator,
-                                                                       boundary_type);
+      value_p =
+        calculate_exterior_value_convective(value_m,
+                                            q,
+                                            integrator,
+                                            operator_type,
+                                            boundary_type,
+                                            operator_data.convective_kernel_data.type_dirichlet_bc,
+                                            boundary_id,
+                                            operator_data.bc,
+                                            this->time);
 
       vector u_m = convective_kernel->get_velocity_m(q);
       vector u_p;
@@ -598,15 +601,16 @@ MomentumOperator<dim, Number>::do_boundary_integral(
       if(operator_data.convective_kernel_data.temporal_treatment ==
          TreatmentOfConvectiveTerm::Implicit)
       {
-        u_p =
-          calculate_exterior_value_nonlinear(u_m,
-                                             q,
-                                             integrator,
-                                             boundary_type,
-                                             operator_data.convective_kernel_data.type_dirichlet_bc,
-                                             boundary_id,
-                                             operator_data.bc,
-                                             this->time);
+        u_p = calculate_exterior_value_convective(
+          u_m,
+          q,
+          integrator,
+          OperatorType::full,
+          boundary_type,
+          operator_data.convective_kernel_data.type_dirichlet_bc,
+          boundary_id,
+          operator_data.bc,
+          this->time);
       }
       else if(operator_data.convective_kernel_data.temporal_treatment ==
               TreatmentOfConvectiveTerm::LinearlyImplicit)
