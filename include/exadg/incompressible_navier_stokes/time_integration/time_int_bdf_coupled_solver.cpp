@@ -300,7 +300,6 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
       transport_velocity = solution_np.block(0);
     }
 
-
     BlockVectorType rhs_vector;
     pde_operator->initialize_block_vector_velocity_pressure(rhs_vector);
 

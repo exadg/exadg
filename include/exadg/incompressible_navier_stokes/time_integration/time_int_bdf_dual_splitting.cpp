@@ -827,36 +827,29 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_viscous(VectorType &       rhs,
   pde_operator->apply_mass_operator(rhs, velocity_mass_operator);
   rhs *= this->bdf.get_gamma0() / this->get_time_step_size();
 
+  // compensate for explicit convective term taken into account in the first sub-step of the
+  // dual-splitting scheme
+  if(this->param.non_explicit_convective_problem())
+  {
+    for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
+      rhs.add(this->extra.get_beta(i), this->vec_convective_term[i]);
+  }
+
   if(this->param.nonlinear_problem_has_to_be_solved())
   {
     // for a nonlinear problem, inhomogeneous contributions are taken into account when evaluating
     // the nonlinear residual
-
-    if(this->param.convective_problem())
-    {
-      // compensate for explicit convective term taken into account in the first sub-step of the
-      // dual-splitting scheme
-      for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
-        rhs.add(this->extra.get_beta(i), this->vec_convective_term[i]);
-    }
   }
-  else
+  else // linear problem
   {
+    // compute inhomogeneous contributions of linearly implicit convective term
     if(this->param.convective_problem() and
        this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
     {
-      // compensate for explicit convective term taken into account in the first sub-step of the
-      // dual-splitting scheme
-      for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
-        rhs.add(this->extra.get_beta(i), this->vec_convective_term[i]);
-
-      // compute inhomogeneous contributions of linearly implicit convective term
       pde_operator->rhs_add_convective_term(rhs, transport_velocity, this->get_next_time());
     }
 
-    /*
-     *  inhomogeneous parts of boundary face integrals of viscous operator
-     */
+    // inhomogeneous parts of boundary face integrals of viscous operator
     pde_operator->rhs_add_viscous_term(rhs, this->get_next_time());
   }
 }
@@ -1042,7 +1035,7 @@ TimeIntBDFDualSplitting<dim, Number>::print_iterations() const
              "Viscous step (linear per nonlinear)"};
 
     iterations_avg.resize(6);
-    iterations_avg[0] = 0.0;
+    iterations_avg[0] = 0.0; // explicit convective step
     iterations_avg[1] =
       (double)iterations_pressure.second / std::max(1., (double)iterations_pressure.first);
     iterations_avg[2] =
@@ -1062,7 +1055,7 @@ TimeIntBDFDualSplitting<dim, Number>::print_iterations() const
     names = {"Convective step", "Pressure step", "Projection step", "Viscous step"};
 
     iterations_avg.resize(4);
-    iterations_avg[0] = 0.0;
+    iterations_avg[0] = 0.0; // explicit convective step
     iterations_avg[1] =
       (double)iterations_pressure.second / std::max(1., (double)iterations_pressure.first);
     iterations_avg[2] =

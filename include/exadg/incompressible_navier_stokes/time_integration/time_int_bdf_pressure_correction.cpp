@@ -418,7 +418,9 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
       VectorType transport_velocity;
       if(this->param.convective_problem() and
          this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+      {
         transport_velocity = velocity_np;
+      }
 
       /*
        *  Calculate the right-hand side of the linear system of equations.
