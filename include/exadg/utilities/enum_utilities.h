@@ -22,6 +22,8 @@
 #ifndef INCLUDE_EXADG_UTILITIES_ENUM_UTILITIES_H_
 #define INCLUDE_EXADG_UTILITIES_ENUM_UTILITIES_H_
 
+#include <vector>
+
 #include <boost/algorithm/string/join.hpp>
 #include <magic_enum/magic_enum.hpp>
 
