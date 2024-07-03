@@ -535,27 +535,6 @@ create_triangulation_with_multigrid(
                                         lambda_create_triangulation,
                                         data.n_refine_global,
                                         vector_local_refinements);
-
-    // Make sure that we create coarse triangulations in case of meshes with hanging nodes.
-    if(grid.triangulation->has_hanging_nodes())
-    {
-      AssertThrow(data.create_coarse_triangulations == true,
-                  dealii::ExcMessage(
-                    "You need to set GridData::create_coarse_triangulations = true "
-                    "in order to use h-multigrid for meshes with hanging nodes."));
-    }
-
-    // create coarse triangulations
-    if(data.create_coarse_triangulations)
-    {
-      GridUtilities::create_coarse_triangulations(*grid.triangulation,
-                                                  grid.periodic_face_pairs,
-                                                  grid.coarse_triangulations,
-                                                  grid.coarse_periodic_face_pairs,
-                                                  data,
-                                                  lambda_create_triangulation,
-                                                  vector_local_refinements);
-    }
   }
   else
   {
@@ -563,6 +542,26 @@ create_triangulation_with_multigrid(
     // triangulation only.
     GridUtilities::create_triangulation<dim>(
       grid, mpi_comm, data, lambda_create_triangulation, vector_local_refinements);
+  }
+
+  // Make sure that we create coarse triangulations in case of meshes with hanging nodes.
+  if(grid.triangulation->has_hanging_nodes())
+  {
+    AssertThrow(data.create_coarse_triangulations == true,
+                dealii::ExcMessage("You need to set GridData::create_coarse_triangulations = true "
+                                   "in order to use h-multigrid for meshes with hanging nodes."));
+  }
+
+  // create coarse triangulations
+  if(data.create_coarse_triangulations)
+  {
+    GridUtilities::create_coarse_triangulations(*grid.triangulation,
+                                                grid.periodic_face_pairs,
+                                                grid.coarse_triangulations,
+                                                grid.coarse_periodic_face_pairs,
+                                                data,
+                                                lambda_create_triangulation,
+                                                vector_local_refinements);
   }
 }
 

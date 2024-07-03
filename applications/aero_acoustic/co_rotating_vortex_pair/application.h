@@ -424,20 +424,6 @@ public:
 
     // pressure Poisson equation
     this->param.solver_pressure_poisson              = SolverPressurePoisson::CG;
-    this->param.solver_data_pressure_poisson         = SolverData(1e4, 1.e-12, 1.e-6, 100);
-    this->param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
-    this->param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
-    this->param.multigrid_data_pressure_poisson.smoother_data.smoother =
-      MultigridSmoother::Chebyshev;
-    this->param.multigrid_data_pressure_poisson.smoother_data.preconditioner =
-      PreconditionerSmoother::PointJacobi;
-    this->param.multigrid_data_pressure_poisson.coarse_problem.solver =
-      MultigridCoarseGridSolver::Chebyshev;
-    this->param.multigrid_data_pressure_poisson.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::PointJacobi;
-
-    // pressure Poisson equation
-    this->param.solver_pressure_poisson              = SolverPressurePoisson::CG;
     this->param.solver_data_pressure_poisson         = SolverData(1000, ABS_TOL, REL_TOL, 100);
     this->param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
     this->param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
@@ -445,6 +431,10 @@ public:
       MultigridCoarseGridSolver::CG;
     this->param.multigrid_data_pressure_poisson.coarse_problem.preconditioner =
       MultigridCoarseGridPreconditioner::AMG;
+    this->param.multigrid_data_pressure_poisson.smoother_data.smoother =
+      MultigridSmoother::Chebyshev;
+    this->param.multigrid_data_pressure_poisson.smoother_data.preconditioner =
+      PreconditionerSmoother::PointJacobi;
 
     // projection step
     this->param.solver_projection         = SolverProjection::CG;
@@ -543,18 +533,6 @@ public:
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {});
-
-    // triangulation for hanging nodes
-    if(additional_refinements_around_source > 0)
-    {
-      GridUtilities::create_coarse_triangulations_after_coarsening_and_refinement(
-        *grid.triangulation,
-        grid.periodic_face_pairs,
-        grid.coarse_triangulations,
-        grid.coarse_periodic_face_pairs,
-        this->param.grid,
-        false);
-    }
 
     // mappings
     GridUtilities::create_mapping_with_multigrid(mapping,
