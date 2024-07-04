@@ -104,28 +104,6 @@ ConvectiveOperator<dim, Number>::evaluate_nonlinear_operator_add(VectorType &   
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::rhs(VectorType & dst) const
-{
-  (void)dst;
-
-  AssertThrow(false,
-              dealii::ExcMessage(
-                "The function rhs() does not make sense for the convective operator."));
-}
-
-template<int dim, typename Number>
-void
-ConvectiveOperator<dim, Number>::rhs_add(VectorType & dst) const
-{
-  (void)dst;
-
-  AssertThrow(false,
-              dealii::ExcMessage(
-                "The function rhs_add() does not make sense for the convective operator."));
-}
-
-template<int dim, typename Number>
-void
 ConvectiveOperator<dim, Number>::evaluate(VectorType & dst, VectorType const & src) const
 {
   (void)dst;

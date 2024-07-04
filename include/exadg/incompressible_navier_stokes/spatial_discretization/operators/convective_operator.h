@@ -508,7 +508,7 @@ public:
   }
 
   /*
-   *  Calculates the flux for linearized operator on interior faces. This function is needed for
+   *  Calculates the flux for linear operator on interior faces. This function is needed for
    * face-centric loops and the flux is therefore computed on both sides of an interior face. The
    * interior flux (element m) is the first element in the tuple, the exterior flux (element p,
    * neighbor) is the second element in the tuple.
@@ -535,7 +535,8 @@ public:
       }
       else if(data.temporal_treatment == TreatmentOfConvectiveTerm::LinearlyImplicit)
       {
-        AssertThrow(false, dealii::ExcMessage("not implemented"));
+        fluxM = calculate_lax_friedrichs_flux_linear_transport(uM, uP, delta_uM, delta_uP, normalM);
+        fluxP = -fluxM;
       }
       else
       {
@@ -596,7 +597,7 @@ public:
   }
 
   /*
-   *  Calculates the flux for linearized operator on interior faces. Only the flux on element e⁻ is
+   *  Calculates the flux for linear operator on interior faces. Only the flux on element e⁻ is
    * computed.
    */
   inline DEAL_II_ALWAYS_INLINE //
@@ -619,7 +620,7 @@ public:
       }
       else if(data.temporal_treatment == TreatmentOfConvectiveTerm::LinearlyImplicit)
       {
-        AssertThrow(false, dealii::ExcMessage("not implemented"));
+        flux = calculate_lax_friedrichs_flux_linear_transport(uM, uP, delta_uM, delta_uP, normalM);
       }
       else
       {
@@ -678,7 +679,7 @@ public:
   }
 
   /*
-   *  Calculates the flux for linearized operator on boundary faces. The only reason why this
+   *  Calculates the flux for linear operator on boundary faces. The only reason why this
    * function has to be implemented separately is the fact that the flux computation used on
    * interior faces has to be "corrected" if a special outflow boundary condition is used on Neumann
    * boundaries that is able to deal with backflow.
@@ -707,7 +708,10 @@ public:
       }
       else if(data.temporal_treatment == TreatmentOfConvectiveTerm::LinearlyImplicit)
       {
-        AssertThrow(false, dealii::ExcMessage("not implemented"));
+        flux = calculate_lax_friedrichs_flux_linear_transport(uM, uP, delta_uM, delta_uP, normalM);
+
+        if(boundary_type == BoundaryTypeU::Neumann and data.use_outflow_bc == true)
+          apply_outflow_bc(flux, uM * normalM);
       }
       else
       {
@@ -770,7 +774,8 @@ public:
   }
 
   /*
-   *  Lax-Friedrichs flux (divergence formulation)
+   *  Divergence formulation:
+   *  Lax-Friedrichs flux
    *  Calculation of lambda according to Shahbazi et al.:
    *  lambda = max ( max |lambda(flux_jacobian_M)| , max |lambda(flux_jacobian_P)| )
    *         = max ( | 2*(uM)^T*normal | , | 2*(uP)^T*normal | )
@@ -783,7 +788,7 @@ public:
   }
 
   /*
-   *  Calculate Lax-Friedrichs flux for nonlinear operator (divergence formulation).
+   *  Divergence formulation: Calculate Lax-Friedrichs flux for nonlinear operator.
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
@@ -805,32 +810,34 @@ public:
   }
 
   /*
-   *  Calculate Lax-Friedrichs flux for nonlinear operator (linear transport).
+   *  Divergence formulation: Calculate Lax-Friedrichs flux for linearly implicit formulation
+   * (linear transport with transport velocity w).
    */
-  // TODO not needed currently
-  //  inline DEAL_II_ALWAYS_INLINE //
-  //    vector
-  //    calculate_lax_friedrichs_flux_linear_transport(vector const & uM,
-  //                                                   vector const & uP,
-  //                                                   vector const & wM,
-  //                                                   vector const & wP,
-  //                                                   vector const & normalM) const
-  //  {
-  //    scalar wM_n = wM * normalM;
-  //    scalar wP_n = wP * normalM;
-  //
-  //    vector average_normal_flux =
-  //      dealii::make_vectorized_array<Number>(0.5) * (uM * wM_n + uP * wP_n);
-  //
-  //    vector jump_value = uM - uP;
-  //
-  //    scalar lambda = calculate_lambda(wM_n, wP_n);
-  //
-  //    return (average_normal_flux + 0.5 * lambda * jump_value);
-  //  }
+  inline DEAL_II_ALWAYS_INLINE //
+    vector
+    calculate_lax_friedrichs_flux_linear_transport(vector const & wM,
+                                                   vector const & wP,
+                                                   vector const & uM,
+                                                   vector const & uP,
+                                                   vector const & normalM) const
+  {
+    scalar wM_n = wM * normalM;
+    scalar wP_n = wP * normalM;
+
+    vector average_normal_flux =
+      dealii::make_vectorized_array<Number>(0.5) * (uM * wM_n + uP * wP_n);
+
+    vector jump_value = uM - uP;
+
+    // the function calculate_lambda() is for the nonlinear operator with quadratic nonlinearity. In
+    // case of linear transport, lambda is reduced by a factor of 2.
+    scalar lambda = 0.5 * calculate_lambda(wM_n, wP_n);
+
+    return (average_normal_flux + 0.5 * lambda * jump_value);
+  }
 
   /*
-   *  Calculate Lax-Friedrichs flux for linearized operator (divergence formulation).
+   *  Divergence formulation:  Calculate Lax-Friedrichs flux for linearized operator.
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
@@ -1023,12 +1030,6 @@ public:
 
   // these functions are not implemented for the convective operator. They only have to exist
   // due to the definition of the base class.
-  void
-  rhs(VectorType & dst) const final;
-
-  void
-  rhs_add(VectorType & dst) const final;
-
   void
   evaluate(VectorType & dst, VectorType const & src) const final;
 
