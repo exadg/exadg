@@ -42,7 +42,6 @@ Physical quantities:
 
 Temporal discretization:
   Temporal discretization method:            BDFCoupledSolution
-  Treatment of convective term:              Explicit
   Calculation of time step size:             CFL
   Adaptive time stepping:                    true
   Adaptive time stepping limiting factor:    1.2000e+00
@@ -52,6 +51,7 @@ Temporal discretization:
   Temporal refinements:                      0
   Order of time integration scheme:          2
   Start with low order method:               false
+  Treatment of convective term:              Explicit
   Solver information:
   Interval physical time:                    1.0000e+01
   Interval wall time:                        1.7977e+308
