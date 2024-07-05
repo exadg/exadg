@@ -637,8 +637,14 @@ Parameters::involves_h_multigrid() const
       }
     }
   }
+  // TODO: we currently treat TemporalDiscretization::InterpolateAnalyticalSolution as a splitting
+  // scheme, since the implementation creates a spatial operator related to the pressure-correction
+  // scheme in case of InterpolateAnalyticalSolution. This is only a temporary solution and we need
+  // to write a separate class SpatialOperatorInterpolateAnalyticalSolution that does not create
+  // preconditioners (including multigrid)
   else if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme or
-          temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+          temporal_discretization == TemporalDiscretization::BDFPressureCorrection or
+          temporal_discretization == TemporalDiscretization::InterpolateAnalyticalSolution)
   {
     // pressure step is the same for both time discretization schemes
     if(involves_h_multigrid_pressure_step())
@@ -663,9 +669,6 @@ Parameters::involves_h_multigrid() const
         use_global_coarsening = true;
       }
     }
-  }
-  else if(temporal_discretization == TemporalDiscretization::InterpolateAnalyticalSolution)
-  {
   }
   else
   {
