@@ -608,7 +608,7 @@ Parameters::nonlinear_problem_has_to_be_solved() const
 bool
 Parameters::involves_h_multigrid() const
 {
-  bool use_global_coarsening = false;
+  bool involves_h_mg = false;
 
   // Coupled solver
   if(solver_type == SolverType::Steady or
@@ -618,13 +618,13 @@ Parameters::involves_h_multigrid() const
     // block preconditioner: velocity block
     if(involves_h_multigrid_velocity_block())
     {
-      use_global_coarsening = true;
+      involves_h_mg = true;
     }
 
     // only those Schur complement preconditioners that involve multigrid
     if(involves_h_multigrid_pressure_block())
     {
-      use_global_coarsening = true;
+      involves_h_mg = true;
     }
 
     // if an additional penalty step has to be solved
@@ -633,7 +633,7 @@ Parameters::involves_h_multigrid() const
     {
       if(involves_h_multigrid_penalty_step())
       {
-        use_global_coarsening = true;
+        involves_h_mg = true;
       }
     }
   }
@@ -643,7 +643,7 @@ Parameters::involves_h_multigrid() const
     // pressure step is the same for both time discretization schemes
     if(involves_h_multigrid_pressure_step())
     {
-      use_global_coarsening = true;
+      involves_h_mg = true;
     }
 
     // penalty step is the same for both discretization schemes
@@ -651,7 +651,7 @@ Parameters::involves_h_multigrid() const
     {
       if(involves_h_multigrid_penalty_step())
       {
-        use_global_coarsening = true;
+        involves_h_mg = true;
       }
     }
 
@@ -660,7 +660,7 @@ Parameters::involves_h_multigrid() const
     {
       if(involves_h_multigrid_momentum_step())
       {
-        use_global_coarsening = true;
+        involves_h_mg = true;
       }
     }
   }
@@ -672,7 +672,7 @@ Parameters::involves_h_multigrid() const
     AssertThrow(false, dealii::ExcMessage("not implemented."));
   }
 
-  return use_global_coarsening;
+  return involves_h_mg;
 }
 
 
@@ -1251,21 +1251,21 @@ Parameters::print_parameters_coupled_solver(dealii::ConditionalOStream const & p
 bool
 Parameters::involves_h_multigrid_velocity_block() const
 {
-  bool use_global_coarsening = false;
+  bool involves_h_mg = false;
 
   if(preconditioner_velocity_block == MomentumPreconditioner::Multigrid and
      multigrid_data_velocity_block.involves_h_transfer())
   {
-    use_global_coarsening = true;
+    involves_h_mg = true;
   }
 
-  return use_global_coarsening;
+  return involves_h_mg;
 }
 
 bool
 Parameters::involves_h_multigrid_pressure_block() const
 {
-  bool use_global_coarsening = false;
+  bool involves_h_mg = false;
 
   if(preconditioner_pressure_block == SchurComplementPreconditioner::LaplaceOperator or
      preconditioner_pressure_block == SchurComplementPreconditioner::CahouetChabard or
@@ -1273,53 +1273,53 @@ Parameters::involves_h_multigrid_pressure_block() const
   {
     if(multigrid_data_pressure_block.involves_h_transfer())
     {
-      use_global_coarsening = true;
+      involves_h_mg = true;
     }
   }
 
-  return use_global_coarsening;
+  return involves_h_mg;
 }
 
 bool
 Parameters::involves_h_multigrid_penalty_step() const
 {
-  bool use_global_coarsening = false;
+  bool involves_h_mg = false;
 
   if(preconditioner_projection == PreconditionerProjection::Multigrid and
      multigrid_data_projection.involves_h_transfer())
   {
-    use_global_coarsening = true;
+    involves_h_mg = true;
   }
 
-  return use_global_coarsening;
+  return involves_h_mg;
 }
 
 bool
 Parameters::involves_h_multigrid_pressure_step() const
 {
-  bool use_global_coarsening = false;
+  bool involves_h_mg = false;
 
   if(preconditioner_pressure_poisson == PreconditionerPressurePoisson::Multigrid and
      multigrid_data_pressure_poisson.involves_h_transfer())
   {
-    use_global_coarsening = true;
+    involves_h_mg = true;
   }
 
-  return use_global_coarsening;
+  return involves_h_mg;
 }
 
 bool
 Parameters::involves_h_multigrid_momentum_step() const
 {
-  bool use_global_coarsening = false;
+  bool involves_h_mg = false;
 
   if(preconditioner_momentum == MomentumPreconditioner::Multigrid and
      multigrid_data_momentum.involves_h_transfer())
   {
-    use_global_coarsening = true;
+    involves_h_mg = true;
   }
 
-  return use_global_coarsening;
+  return involves_h_mg;
 }
 
 } // namespace IncNS
