@@ -748,6 +748,12 @@ Parameters::print(dealii::ConditionalOStream const & pcout, std::string const & 
 void
 Parameters::print_parameters_mathematical_model(dealii::ConditionalOStream const & pcout) const
 {
+  // nothing to print if we bypass the PDE solver by
+  // TemporalDiscretization::InterpolateAnalyticalSolution
+  if(solver_type == SolverType::Unsteady and
+     temporal_discretization == TemporalDiscretization::InterpolateAnalyticalSolution)
+    return;
+
   pcout << std::endl << "Mathematical model:" << std::endl;
 
   print_parameter(pcout, "Problem type", problem_type);
@@ -789,6 +795,12 @@ Parameters::print_parameters_physical_quantities(dealii::ConditionalOStream cons
     print_parameter(pcout, "End time", end_time);
   }
 
+  // nothing to print if we bypass the PDE solver by
+  // TemporalDiscretization::InterpolateAnalyticalSolution
+  if(solver_type == SolverType::Unsteady and
+     temporal_discretization == TemporalDiscretization::InterpolateAnalyticalSolution)
+    return;
+
   // viscosity
   print_parameter(pcout, "Viscosity", viscosity);
 
@@ -808,10 +820,6 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
   pcout << std::endl << "Temporal discretization:" << std::endl;
 
   print_parameter(pcout, "Temporal discretization method", temporal_discretization);
-  print_parameter(pcout, "Treatment of convective term", treatment_of_convective_term);
-
-  if(this->viscosity_is_variable())
-    print_parameter(pcout, "Treatment of nonlinear viscosity", treatment_of_variable_viscosity);
 
   print_parameter(pcout, "Calculation of time step size", calculation_of_time_step_size);
 
@@ -835,8 +843,20 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
 
   print_parameter(pcout, "Maximum number of time steps", max_number_of_time_steps);
   print_parameter(pcout, "Temporal refinements", n_refine_time);
+
+  // nothing to print if we bypass the PDE solver by
+  // TemporalDiscretization::InterpolateAnalyticalSolution
+  if(solver_type == SolverType::Unsteady and
+     temporal_discretization == TemporalDiscretization::InterpolateAnalyticalSolution)
+    return;
+
   print_parameter(pcout, "Order of time integration scheme", order_time_integrator);
   print_parameter(pcout, "Start with low order method", start_with_low_order);
+
+  print_parameter(pcout, "Treatment of convective term", treatment_of_convective_term);
+
+  if(this->viscosity_is_variable())
+    print_parameter(pcout, "Treatment of nonlinear viscosity", treatment_of_variable_viscosity);
 
   if(problem_type == ProblemType::Steady)
   {
@@ -885,6 +905,12 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
   }
 
   print_parameter(pcout, "Polynomial degree pressure", degree_p);
+
+  // nothing to print if we bypass the PDE solver by
+  // TemporalDiscretization::InterpolateAnalyticalSolution
+  if(solver_type == SolverType::Unsteady and
+     temporal_discretization == TemporalDiscretization::InterpolateAnalyticalSolution)
+    return;
 
   if(this->convective_problem())
   {
@@ -960,6 +986,12 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
 void
 Parameters::print_parameters_numerical_parameters(dealii::ConditionalOStream const & pcout) const
 {
+  // nothing to print if we bypass the PDE solver by
+  // TemporalDiscretization::InterpolateAnalyticalSolution
+  if(solver_type == SolverType::Unsteady and
+     temporal_discretization == TemporalDiscretization::InterpolateAnalyticalSolution)
+    return;
+
   pcout << std::endl << "Numerical parameters:" << std::endl;
 
   print_parameter(pcout,
@@ -1052,6 +1084,12 @@ Parameters::print_parameters_projection_step(dealii::ConditionalOStream const & 
 void
 Parameters::print_parameters_dual_splitting(dealii::ConditionalOStream const & pcout) const
 {
+  // nothing to print if we bypass the PDE solver by
+  // TemporalDiscretization::InterpolateAnalyticalSolution
+  if(solver_type == SolverType::Unsteady and
+     temporal_discretization == TemporalDiscretization::InterpolateAnalyticalSolution)
+    return;
+
   pcout << std::endl << "High-order dual splitting scheme:" << std::endl;
 
   // formulations
@@ -1131,6 +1169,12 @@ Parameters::print_parameters_momentum_step(dealii::ConditionalOStream const & pc
 void
 Parameters::print_parameters_pressure_correction(dealii::ConditionalOStream const & pcout) const
 {
+  // nothing to print if we bypass the PDE solver by
+  // TemporalDiscretization::InterpolateAnalyticalSolution
+  if(solver_type == SolverType::Unsteady and
+     temporal_discretization == TemporalDiscretization::InterpolateAnalyticalSolution)
+    return;
+
   pcout << std::endl << "Pressure-correction scheme:" << std::endl;
 
   // formulations of pressure-correction scheme
@@ -1155,6 +1199,12 @@ Parameters::print_parameters_pressure_correction(dealii::ConditionalOStream cons
 void
 Parameters::print_parameters_coupled_solver(dealii::ConditionalOStream const & pcout) const
 {
+  // nothing to print if we bypass the PDE solver by
+  // TemporalDiscretization::InterpolateAnalyticalSolution
+  if(solver_type == SolverType::Unsteady and
+     temporal_discretization == TemporalDiscretization::InterpolateAnalyticalSolution)
+    return;
+
   pcout << std::endl << "Coupled Navier-Stokes solver:" << std::endl;
 
   print_parameter(pcout, "Use scaling of continuity equation", use_scaling_continuity);
