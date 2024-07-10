@@ -360,11 +360,23 @@ SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
                                      field + quad_index_u_overintegration);
 
   // TODO create these quadrature rules only when needed
-  matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree_u + 1),
-                                     field + quad_index_u_gauss_lobatto);
-  matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.get_degree_p(param.degree_u) +
-                                                              1),
-                                     field + quad_index_p_gauss_lobatto);
+  if(param.grid.element_type == ElementType::Hypercube)
+  {
+    matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree_u + 1),
+                                       field + quad_index_u_nodal_points);
+    matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.get_degree_p(param.degree_u) +
+                                                                1),
+                                       field + quad_index_p_nodal_points);
+  }
+  else if(param.grid.element_type == ElementType::Simplex)
+  {
+    matrix_free_data.insert_quadrature(dealii::Quadrature<dim>(
+                                         dof_handler_u_scalar.get_fe().get_unit_support_points()),
+                                       field + quad_index_u_nodal_points);
+    matrix_free_data.insert_quadrature(dealii::Quadrature<dim>(
+                                         dof_handler_p.get_fe().get_unit_support_points()),
+                                       field + quad_index_p_nodal_points);
+  }
 }
 
 template<int dim, typename Number>
@@ -377,7 +389,7 @@ SpatialOperatorBase<dim, Number>::initialize_dirichlet_cached_bc()
     std::vector<unsigned int> quad_indices;
     quad_indices.emplace_back(get_quad_index_velocity_standard());
     quad_indices.emplace_back(get_quad_index_velocity_overintegration());
-    quad_indices.emplace_back(get_quad_index_velocity_gauss_lobatto());
+    quad_indices.emplace_back(get_quad_index_velocity_nodal_points());
 
     interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<1, dim, double>>();
     interface_data_dirichlet_cached->setup(*matrix_free,
@@ -796,16 +808,16 @@ SpatialOperatorBase<dim, Number>::get_quad_index_velocity_overintegration() cons
 
 template<int dim, typename Number>
 unsigned int
-SpatialOperatorBase<dim, Number>::get_quad_index_velocity_gauss_lobatto() const
+SpatialOperatorBase<dim, Number>::get_quad_index_velocity_nodal_points() const
 {
-  return matrix_free_data->get_quad_index(field + quad_index_u_gauss_lobatto);
+  return matrix_free_data->get_quad_index(field + quad_index_u_nodal_points);
 }
 
 template<int dim, typename Number>
 unsigned int
-SpatialOperatorBase<dim, Number>::get_quad_index_pressure_gauss_lobatto() const
+SpatialOperatorBase<dim, Number>::get_quad_index_pressure_nodal_points() const
 {
-  return matrix_free_data->get_quad_index(field + quad_index_p_gauss_lobatto);
+  return matrix_free_data->get_quad_index(field + quad_index_p_nodal_points);
 }
 
 template<int dim, typename Number>
@@ -1823,7 +1835,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
 {
   unsigned int const dof_index_u = this->get_dof_index_velocity();
   unsigned int const dof_index_p = this->get_dof_index_pressure();
-  unsigned int const quad_index  = this->get_quad_index_velocity_gauss_lobatto();
+  unsigned int const quad_index  = this->get_quad_index_velocity_nodal_points();
 
   FaceIntegratorU integrator_u(matrix_free, true, dof_index_u, quad_index);
   FaceIntegratorP integrator_p(matrix_free, true, dof_index_p, quad_index);

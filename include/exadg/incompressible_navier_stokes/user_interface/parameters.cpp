@@ -548,13 +548,6 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
                                    "nonlinear regarding the unknown velocity field) is currently "
                                    "not implemented for the dual splitting scheme."));
   }
-
-  // SIMPLEX ELEMENTS
-  if(grid.element_type == ElementType::Simplex)
-  {
-    AssertThrow(temporal_discretization == TemporalDiscretization::BDFCoupledSolution,
-                dealii::ExcMessage("Only BDFCoupledSolution is supported for simplex elements."));
-  }
 }
 
 bool
