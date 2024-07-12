@@ -218,7 +218,7 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
   pde_operator->initialize_dof_vector(dst);
   src = 1.0;
 
-  if(application->get_parameters().large_deformation and operator_type == OperatorType::Apply)
+  if(application->get_parameters().large_deformation)
   {
     pde_operator->initialize_dof_vector(linearization);
     linearization = 1.0;
@@ -248,15 +248,18 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
           if(operator_type == OperatorType::Evaluate)
           {
             // No linearization data update in evaluate_elasticity_operator().
-            pde_operator->set_solution_linearization(linearization);
+            if(application->get_parameters().large_deformation)
+            {
+              pde_operator->set_solution_linearization(linearization);
+            }
             pde_operator->evaluate_elasticity_operator(dst, src, 1.0, 0.0);
           }
           else if(operator_type == OperatorType::Apply)
           {
-            if(i == 0)
+            if(i == 0 and application->get_parameters().large_deformation)
             {
-              // This also calls set_solution_linearization(),
-              // which updates the storage of the material models.
+              // This also calls set_solution_linearization(), which updates
+              // the storage of the material models in the nonlinear case.
               pde_operator->apply_elasticity_operator(dst, src, linearization, 1.0, 0.0);
             }
             else
