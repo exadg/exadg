@@ -215,6 +215,9 @@ Operator<dim, Number>::setup_operators()
   operator_data.dof_index               = get_dof_index();
   operator_data.quad_index              = get_quad_index();
   operator_data.dof_index_inhomogeneous = get_dof_index_periodicity_and_hanging_node_constraints();
+  operator_data.use_matrix_based_vmult  = param.use_matrix_based_implementation;
+  operator_data.sparse_matrix_type      = param.sparse_matrix_type;
+
   if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
     AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
@@ -252,7 +255,10 @@ Operator<dim, Number>::setup_operators()
     mass_data.dof_index               = get_dof_index();
     mass_data.dof_index_inhomogeneous = get_dof_index_periodicity_and_hanging_node_constraints();
     mass_data.quad_index              = get_quad_index();
-    mass_data.bc                      = boundary_descriptor;
+    mass_data.use_matrix_based_vmult  = param.use_matrix_based_implementation;
+    mass_data.sparse_matrix_type      = param.sparse_matrix_type;
+
+    mass_data.bc = boundary_descriptor;
 
     mass_operator.initialize(*matrix_free, affine_constraints, mass_data);
 
