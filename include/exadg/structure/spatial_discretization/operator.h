@@ -141,6 +141,8 @@ public:
   {
     this->scaling_factor_mass = scaling_factor_mass;
     this->time                = time;
+
+    pde_operator->update_elasticity_operator(scaling_factor_mass, time);
   }
 
   /*
@@ -150,7 +152,7 @@ public:
   void
   vmult(VectorType & dst, VectorType const & src) const
   {
-    pde_operator->apply_linearized_operator(dst, src, scaling_factor_mass, time);
+    pde_operator->apply_linearized_operator(dst, src);
   }
 
 private:
@@ -247,10 +249,7 @@ public:
   set_solution_linearization(VectorType const & vector) const;
 
   void
-  apply_linearized_operator(VectorType &       dst,
-                            VectorType const & src,
-                            double const       factor,
-                            double const       time) const;
+  assemble_matrix_if_necessary_for_linear_elasticity_operator() const;
 
   void
   evaluate_elasticity_operator(VectorType &       dst,
@@ -259,11 +258,10 @@ public:
                                double const       time) const;
 
   void
-  apply_elasticity_operator(VectorType &       dst,
-                            VectorType const & src,
-                            VectorType const & linearization,
-                            double const       factor,
-                            double const       time) const;
+  update_elasticity_operator(double const factor, double const time) const;
+
+  void
+  apply_elasticity_operator(VectorType & dst, VectorType const & src) const;
 
   /*
    * This function solves the system of equations for nonlinear problems. This function needs to

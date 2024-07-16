@@ -268,6 +268,9 @@ public:
   void
   apply_add(VectorType & dst, VectorType const & src) const;
 
+  void
+  assemble_matrix_if_necessary() const;
+
   /*
    * Matrix-based version of the apply function. This function is used if use_matrix_based_vmult =
    * true.
@@ -756,11 +759,11 @@ private:
 
   // sparse matrices for matrix-based vmult
 #ifdef DEAL_II_WITH_TRILINOS
-  dealii::TrilinosWrappers::SparseMatrix system_matrix_trilinos;
+  mutable dealii::TrilinosWrappers::SparseMatrix system_matrix_trilinos;
 #endif
 
 #ifdef DEAL_II_WITH_PETSC
-  dealii::PETScWrappers::MPI::SparseMatrix system_matrix_petsc;
+  mutable dealii::PETScWrappers::MPI::SparseMatrix system_matrix_petsc;
 
   // PETSc vector objects to avoid re-allocation in every vmult() operation
   mutable Vec petsc_vector_src;

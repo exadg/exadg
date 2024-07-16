@@ -85,53 +85,6 @@ OperatorBase<dim, Number, n_components>::reinit(
     this->matrix_free->get_dof_handler(this->data.dof_index);
 
   n_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(dof_handler.get_communicator());
-
-  if(this->data.use_matrix_based_vmult)
-  {
-    if(this->data.sparse_matrix_type == SparseMatrixType::Trilinos)
-    {
-#ifdef DEAL_II_WITH_TRILINOS
-      init_system_matrix(system_matrix_trilinos, dof_handler.get_communicator());
-      calculate_system_matrix(system_matrix_trilinos);
-#else
-      AssertThrow(
-        false,
-        dealii::ExcMessage(
-          "Make sure that DEAL_II_WITH_TRILINOS is activated if you want to use SparseMatrixType::Trilinos."));
-#endif
-    }
-    else if(this->data.sparse_matrix_type == SparseMatrixType::PETSc)
-    {
-#ifdef DEAL_II_WITH_PETSC
-      init_system_matrix(system_matrix_petsc, dof_handler.get_communicator());
-      calculate_system_matrix(system_matrix_petsc);
-
-      if(system_matrix_petsc.m() > 0)
-      {
-        // get vector partitioner
-        dealii::LinearAlgebra::distributed::Vector<Number> vector;
-        initialize_dof_vector(vector);
-        VecCreateMPI(system_matrix_petsc.get_mpi_communicator(),
-                     vector.get_partitioner()->locally_owned_size(),
-                     PETSC_DETERMINE,
-                     &petsc_vector_dst);
-        VecCreateMPI(system_matrix_petsc.get_mpi_communicator(),
-                     vector.get_partitioner()->locally_owned_size(),
-                     PETSC_DETERMINE,
-                     &petsc_vector_src);
-      }
-#else
-      AssertThrow(
-        false,
-        dealii::ExcMessage(
-          "Make sure that DEAL_II_WITH_PETSC is activated if you want to use SparseMatrixType::PETSc."));
-#endif
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("not implemented."));
-    }
-  }
 }
 
 template<int dim, typename Number, int n_components>
@@ -356,6 +309,61 @@ OperatorBase<dim, Number, n_components>::apply_add(VectorType & dst, VectorType 
         matrix_free->get_constrained_dofs(this->data.dof_index))
     {
       dst.local_element(constrained_index) += src.local_element(constrained_index);
+    }
+  }
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::assemble_matrix_if_necessary() const
+{
+  if(this->data.use_matrix_based_vmult)
+  {
+    dealii::DoFHandler<dim> const & dof_handler =
+      this->matrix_free->get_dof_handler(this->data.dof_index);
+
+    if(this->data.sparse_matrix_type == SparseMatrixType::Trilinos)
+    {
+#ifdef DEAL_II_WITH_TRILINOS
+      init_system_matrix(system_matrix_trilinos, dof_handler.get_communicator());
+      calculate_system_matrix(system_matrix_trilinos);
+#else
+      AssertThrow(
+        false,
+        dealii::ExcMessage(
+          "Make sure that DEAL_II_WITH_TRILINOS is activated if you want to use SparseMatrixType::Trilinos."));
+#endif
+    }
+    else if(this->data.sparse_matrix_type == SparseMatrixType::PETSc)
+    {
+#ifdef DEAL_II_WITH_PETSC
+      init_system_matrix(system_matrix_petsc, dof_handler.get_communicator());
+      calculate_system_matrix(system_matrix_petsc);
+
+      if(system_matrix_petsc.m() > 0)
+      {
+        // get vector partitioner
+        dealii::LinearAlgebra::distributed::Vector<Number> vector;
+        initialize_dof_vector(vector);
+        VecCreateMPI(system_matrix_petsc.get_mpi_communicator(),
+                     vector.get_partitioner()->locally_owned_size(),
+                     PETSC_DETERMINE,
+                     &petsc_vector_dst);
+        VecCreateMPI(system_matrix_petsc.get_mpi_communicator(),
+                     vector.get_partitioner()->locally_owned_size(),
+                     PETSC_DETERMINE,
+                     &petsc_vector_src);
+      }
+#else
+      AssertThrow(
+        false,
+        dealii::ExcMessage(
+          "Make sure that DEAL_II_WITH_PETSC is activated if you want to use SparseMatrixType::PETSc."));
+#endif
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
     }
   }
 }
