@@ -368,13 +368,30 @@ OperatorBase<dim, Number, n_components>::apply_matrix_based(VectorType &       d
   if(this->data.sparse_matrix_type == SparseMatrixType::Trilinos)
   {
 #ifdef DEAL_II_WITH_TRILINOS
-    system_matrix_trilinos.vmult(dst, src);
+    if constexpr(std::is_same_v<Number, double>)
+    {
+      system_matrix_trilinos.vmult(dst, src);
+    }
+    else
+    {
+      // create temporal vectors of type double
+      dealii::LinearAlgebra::distributed::Vector<double> dst_double, src_double;
+      dst_double.reinit(dst, false);
+      src_double.reinit(src, true);
+      src_double = src;
+
+      system_matrix_trilinos.vmult(dst_double, src_double);
+
+      // convert: double -> Number
+      dst.copy_locally_owned_data_from(dst_double);
+    }
 #endif
   }
   else if(this->data.sparse_matrix_type == SparseMatrixType::PETSc)
   {
 #ifdef DEAL_II_WITH_PETSC
     if(system_matrix_petsc.m() > 0)
+    {
       apply_petsc_operation(dst,
                             src,
                             petsc_vector_dst,
@@ -383,6 +400,7 @@ OperatorBase<dim, Number, n_components>::apply_matrix_based(VectorType &       d
                                 dealii::PETScWrappers::VectorBase const & petsc_src) {
                               system_matrix_petsc.vmult(petsc_dst, petsc_src);
                             });
+    }
 #endif
   }
   else
@@ -396,7 +414,8 @@ void
 OperatorBase<dim, Number, n_components>::apply_matrix_based_add(VectorType &       dst,
                                                                 VectorType const & src) const
 {
-  VectorType tmp(dst);
+  VectorType tmp;
+  tmp.reinit(dst, false);
 
   apply_matrix_based(tmp, src);
 
