@@ -146,14 +146,20 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::vmult(VectorType & dst, VectorType const & src) const
 {
-  this->apply(dst, src);
+  if(this->data.use_matrix_based_vmult)
+    this->apply_matrix_based(dst, src);
+  else
+    this->apply(dst, src);
 }
 
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::vmult_add(VectorType & dst, VectorType const & src) const
 {
-  this->apply_add(dst, src);
+  if(this->data.use_matrix_based_vmult)
+    this->apply_matrix_based_add(dst, src);
+  else
+    this->apply_add(dst, src);
 }
 
 template<int dim, typename Number, int n_components>
@@ -304,6 +310,20 @@ OperatorBase<dim, Number, n_components>::apply_add(VectorType & dst, VectorType 
       dst.local_element(constrained_index) += src.local_element(constrained_index);
     }
   }
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::apply_matrix_based(VectorType &       dst,
+                                                            VectorType const & src) const
+{
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::apply_matrix_based_add(VectorType &       dst,
+                                                                VectorType const & src) const
+{
 }
 
 template<int dim, typename Number, int n_components>

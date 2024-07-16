@@ -61,6 +61,7 @@ struct OperatorBaseData
     : dof_index(0),
       dof_index_inhomogeneous(dealii::numbers::invalid_unsigned_int),
       quad_index(0),
+      use_matrix_based_vmult(false),
       operator_is_singular(false),
       use_cell_based_loops(false),
       implement_block_diagonal_preconditioner_matrix_free(false),
@@ -78,6 +79,10 @@ struct OperatorBaseData
   unsigned int dof_index_inhomogeneous;
 
   unsigned int quad_index;
+
+  // this parameter can be used to use sparse matrices for the vmult() operation. The default
+  // case is to use a matrix-free implementation, i.e. use_matrix_based_vmult = false.
+  bool use_matrix_based_vmult;
 
   // Solution of linear systems of equations and preconditioning
   bool operator_is_singular;
@@ -246,6 +251,19 @@ public:
    */
   void
   apply_add(VectorType & dst, VectorType const & src) const;
+
+  /*
+   * Matrix-based version of the apply function. This function is used if use_matrix_based_vmult =
+   * true.
+   */
+  void
+  apply_matrix_based(VectorType & dst, VectorType const & src) const;
+
+  /*
+   * See function apply_matrix_based() for a description.
+   */
+  void
+  apply_matrix_based_add(VectorType & dst, VectorType const & src) const;
 
   /*
    * evaluate inhomogeneous parts of operator related to inhomogeneous boundary face integrals.
