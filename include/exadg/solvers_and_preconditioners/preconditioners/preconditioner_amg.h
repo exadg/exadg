@@ -259,8 +259,8 @@ private:
   BoomerData boomer_data;
 
   // PETSc vector objects to avoid re-allocation in every vmult() operation
-  mutable VectorTypePETSc petsc_vector_src;
-  mutable VectorTypePETSc petsc_vector_dst;
+  mutable Vec petsc_vector_src;
+  mutable Vec petsc_vector_dst;
 };
 #endif
 

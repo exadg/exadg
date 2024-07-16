@@ -29,23 +29,17 @@ namespace ExaDG
 {
 #ifdef DEAL_II_WITH_PETSC
 /*
- * A typedef to make use of PETSc data structure clearer
- */
-typedef Vec VectorTypePETSc;
-
-/*
  *  This function wraps the copy of a PETSc object (sparse matrix,
  *  preconditioner) with a dealii::LinearAlgebra::distributed::Vector, taking
- *  pre-allocated PETSc vector objects (with struct name `Vec`, aka
- *  VectorTypePETSc) for the temporary operations
+ *  pre-allocated PETSc vector objects (with struct name `Vec`) for the temporary operations
  */
 template<typename VectorType>
 void
 apply_petsc_operation(
   VectorType &                                                   dst,
   VectorType const &                                             src,
-  VectorTypePETSc &                                              petsc_vector_dst,
-  VectorTypePETSc &                                              petsc_vector_src,
+  Vec &                                                          petsc_vector_dst,
+  Vec &                                                          petsc_vector_src,
   std::function<void(dealii::PETScWrappers::VectorBase &,
                      dealii::PETScWrappers::VectorBase const &)> petsc_operation)
 {
@@ -72,7 +66,7 @@ apply_petsc_operation(
     AssertThrow(ierr == 0, dealii::ExcPETScError(ierr));
   }
 
-  // wrap `Vec` (aka VectorTypePETSc) into VectorBase (without copying data)
+  // wrap `Vec` into VectorBase (without copying data)
   dealii::PETScWrappers::VectorBase petsc_dst(petsc_vector_dst);
   dealii::PETScWrappers::VectorBase petsc_src(petsc_vector_src);
 
@@ -103,7 +97,7 @@ apply_petsc_operation(
 /*
  *  This function wraps the copy of a PETSc object (sparse matrix,
  *  preconditioner) with a dealii::LinearAlgebra::distributed::Vector,
- *  allocating a PETSc vectors and then calling the other function
+ *  allocating PETSc vectors and then calling the other function
  */
 template<typename VectorType>
 void
@@ -114,7 +108,7 @@ apply_petsc_operation(
   std::function<void(dealii::PETScWrappers::VectorBase &,
                      dealii::PETScWrappers::VectorBase const &)> petsc_operation)
 {
-  VectorTypePETSc petsc_vector_dst, petsc_vector_src;
+  Vec petsc_vector_dst, petsc_vector_src;
   VecCreateMPI(petsc_mpi_communicator,
                dst.get_partitioner()->locally_owned_size(),
                PETSC_DETERMINE,

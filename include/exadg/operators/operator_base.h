@@ -49,6 +49,7 @@
 #include <exadg/utilities/lazy_ptr.h>
 
 #include <exadg/operators/elementwise_operator.h>
+#include <exadg/operators/enum_types.h>
 #include <exadg/operators/integrator_flags.h>
 #include <exadg/operators/mapping_flags.h>
 #include <exadg/operators/operator_type.h>
@@ -62,6 +63,7 @@ struct OperatorBaseData
       dof_index_inhomogeneous(dealii::numbers::invalid_unsigned_int),
       quad_index(0),
       use_matrix_based_vmult(false),
+      sparse_matrix_type(SparseMatrixType::Undefined),
       operator_is_singular(false),
       use_cell_based_loops(false),
       implement_block_diagonal_preconditioner_matrix_free(false),
@@ -83,6 +85,8 @@ struct OperatorBaseData
   // this parameter can be used to use sparse matrices for the vmult() operation. The default
   // case is to use a matrix-free implementation, i.e. use_matrix_based_vmult = false.
   bool use_matrix_based_vmult;
+
+  SparseMatrixType sparse_matrix_type;
 
   // Solution of linear systems of equations and preconditioning
   bool operator_is_singular;
@@ -119,6 +123,18 @@ public:
 
   virtual ~OperatorBase()
   {
+    if(data.sparse_matrix_type == SparseMatrixType::PETSc)
+    {
+#ifdef DEAL_II_WITH_PETSC
+      if(system_matrix_petsc.m() > 0)
+      {
+        PetscErrorCode ierr = VecDestroy(&petsc_vector_dst);
+        AssertThrow(ierr == 0, dealii::ExcPETScError(ierr));
+        ierr = VecDestroy(&petsc_vector_src);
+        AssertThrow(ierr == 0, dealii::ExcPETScError(ierr));
+      }
+#endif
+    }
   }
 
   /*
@@ -737,6 +753,19 @@ private:
   mutable VectorType weights;
 
   unsigned int n_mpi_processes;
+
+  // sparse matrices for matrix-based vmult
+#ifdef DEAL_II_WITH_TRILINOS
+  dealii::TrilinosWrappers::SparseMatrix system_matrix_trilinos;
+#endif
+
+#ifdef DEAL_II_WITH_PETSC
+  dealii::PETScWrappers::MPI::SparseMatrix system_matrix_petsc;
+
+  // PETSc vector objects to avoid re-allocation in every vmult() operation
+  mutable Vec petsc_vector_src;
+  mutable Vec petsc_vector_dst;
+#endif
 };
 } // namespace ExaDG
 
