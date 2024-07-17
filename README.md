@@ -36,33 +36,19 @@ make -j<N>
 
 Please feel free to start a [discussion](https://github.com/exadg/exadg/discussions) to ask questions, share ideas, or get advice. In case you plan major contributions to the project, we suggest to start a discussion in an early stage of your work to make sure that your efforts are well-directed.
 
-## Publications
+## Citing this work
 
-Please consider citing the following paper for acknowledging this software contribution:
+Please consider citing this github project in scientific contributions for acknowledging this software contribution.
 
-```
-@InProceedings{ExaDG2020,
-title     = {{ExaDG}: High-Order Discontinuous {G}alerkin for the Exa-Scale},
-author    = {Arndt, Daniel and Fehn, Niklas and Kanschat, Guido and Kormann, Katharina 
-             and Kronbichler, Martin and Munch, Peter and Wall, Wolfgang A. and Witte, Julius},
-editor    = {Bungartz, Hans-Joachim and Reiz, Severin and Uekermann, Benjamin 
-             and Neumann, Philipp and Nagel, Wolfgang E.},
-booktitle = {Software for Exascale Computing - SPPEXA 2016-2019},
-year      = {2020},
-publisher = {Springer International Publishing},
-address   = {Cham},
-pages     = {189--224}
-}
-```
-A detailed list of publications can be found on the wiki page [Publications](https://github.com/exadg/exadg/wiki/Publications).
+There is currently no paper dedicated to the software project **ExaDG**. A detailed list of publications with information on **ExaDG** and its numerical methods can be found on the wiki page [Publications](https://github.com/exadg/exadg/wiki/Publications). The most comprehensive overview of **ExaDG** is currently provided in [Fehn (2021)](https://mediatum.ub.tum.de/1601025).
 
 ## Authors
 
 ExaDG's principal developers are:
 
-- [Niklas Fehn](https://www.epc.ed.tum.de/lnm/staff/niklas-fehn/) ([@nfehn](https://github.com/nfehn)), University of Augsburg, DE
-- [Martin Kronbichler](https://www.uni-augsburg.de/en/fakultaet/mntf/math/prof/hpc/team/kronbichler/) ([@kronbichler](https://github.com/kronbichler)), University of Augsburg, DE
-- [Peter Munch](https://www.uni-augsburg.de/en/fakultaet/mntf/math/prof/hpc/team/munch/) ([@peterrum](https://github.com/peterrum)), University of Augsburg, DE
+- [Niklas Fehn](https://www.epc.ed.tum.de/lnm/staff/niklas-fehn/) ([@nfehn](https://github.com/nfehn))
+- [Martin Kronbichler](https://www.uni-augsburg.de/en/fakultaet/mntf/math/prof/hpc/team/kronbichler/) ([@kronbichler](https://github.com/kronbichler))
+- [Peter Munch](https://www.uni-augsburg.de/en/fakultaet/mntf/math/prof/hpc/team/munch/) ([@peterrum](https://github.com/peterrum))
 
 ## License
 
