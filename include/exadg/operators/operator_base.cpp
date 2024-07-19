@@ -30,8 +30,8 @@
 #include <exadg/operators/operator_base.h>
 #include <exadg/solvers_and_preconditioners/utilities/block_jacobi_matrices.h>
 #include <exadg/solvers_and_preconditioners/utilities/invert_diagonal.h>
-#include <exadg/solvers_and_preconditioners/utilities/verify_calculation_of_diagonal.h>
 #include <exadg/solvers_and_preconditioners/utilities/linear_algebra_utilities.h>
+#include <exadg/solvers_and_preconditioners/utilities/verify_calculation_of_diagonal.h>
 
 namespace ExaDG
 {
