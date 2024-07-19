@@ -30,8 +30,8 @@
 
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
-#include <exadg/solvers_and_preconditioners/utilities/petsc_operation.h>
 #include <exadg/utilities/print_functions.h>
+#include <exadg/solvers_and_preconditioners/utilities/linear_algebra_utilities.h>
 
 namespace ExaDG
 {

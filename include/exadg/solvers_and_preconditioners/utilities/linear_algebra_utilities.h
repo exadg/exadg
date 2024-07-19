@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_PETSCOPERATION_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_PETSCOPERATION_H_
+#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_LINEAR_ALGEBRA_UTILITIES_H_
+#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_LINEAR_ALGEBRA_UTILITIES_H_
 
 #include <deal.II/base/exceptions.h>
 #include <deal.II/lac/la_parallel_vector.h>
@@ -164,4 +164,4 @@ apply_function_in_double_precision(
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_INVERTDIAGONAL_H_ */
+#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_LINEAR_ALGEBRA_UTILITIES_H_ */

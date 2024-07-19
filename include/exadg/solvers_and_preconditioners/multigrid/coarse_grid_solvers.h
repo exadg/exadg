@@ -39,7 +39,7 @@
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
 #include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
-#include <exadg/solvers_and_preconditioners/utilities/petsc_operation.h>
+#include <exadg/solvers_and_preconditioners/utilities/linear_algebra_utilities.h>
 
 namespace ExaDG
 {
