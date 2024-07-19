@@ -13,31 +13,32 @@ if __name__ == "__main__":
     skip_jacobian = False
     skip_stress = False
 
-    skip_STVK = not True
+    skip_STVK = True
     skip_cNH  = True
     skip_iNH  = True
-    skip_iHGO = True
+    skip_iHGO = not True
     skip_spatial_integration  = False
     skip_material_integration = False
     skip_stable_formulation   = False
     skip_unstable_formulation = False
 
+    sampling = 10
+
     # Read the all the txt files and plot the stability test results
     plt.figure()
 
     # plot horizontal lines at specific error margins
-    plt.loglog([0.0, 1e20], [1e-5, 1e-5], label=None, color='black', \
-    linestyle='dotted', linewidth=1.0)
-    plt.loglog([0.0, 1e20], [1e-4, 1e-4], label=None, color='black', \
-    linestyle='dotted', linewidth=1.0)
-    plt.loglog([0.0, 1e20], [1e-3, 1e-3], label=None, color='black', \
-    linestyle='dotted', linewidth=1.0)
-    plt.loglog([0.0, 1e20], [1e-2, 1e-2], label=None, color='black', \
-    linestyle='dotted', linewidth=1.0)
-    plt.loglog([0.0, 1e20], [1e-1, 1e-1], label=None, color='black', \
-    linestyle='dotted', linewidth=1.0)
-    plt.loglog([0.0, 1e20], [1e-0, 1e-0], label=None, color='black', \
-    linestyle='dotted', linewidth=1.0)
+    #plt.loglog([0.0, 1e20], [1e-6, 1e-6], label=None, color='black', linestyle='dotted', linewidth=1.0)
+    plt.loglog([0.0, 1e20], [1e-5, 1e-5], label=None, color='black', linestyle='dotted', linewidth=1.0)
+    #plt.loglog([0.0, 1e20], [1e-4, 1e-4], label=None, color='black', linestyle='dotted', linewidth=1.0)
+    plt.loglog([0.0, 1e20], [1e-3, 1e-3], label=None, color='black', linestyle='dotted', linewidth=1.0)
+    #plt.loglog([0.0, 1e20], [1e-2, 1e-2], label=None, color='black', linestyle='dotted', linewidth=1.0)
+    plt.loglog([0.0, 1e20], [1e-1, 1e-1], label=None, color='black', linestyle='dotted', linewidth=1.0)
+    #plt.loglog([0.0, 1e20], [1e-0, 1e-0], label=None, color='black', linestyle='dotted', linewidth=1.0)
+    plt.loglog([0.0, 1e20], [1e+1, 1e+1], label=None, color='black', linestyle='dotted', linewidth=1.0)
+    #plt.loglog([0.0, 1e20], [1e+2, 1e+2], label=None, color='black', linestyle='dotted', linewidth=1.0)
+    plt.loglog([0.0, 1e20], [1e+3, 1e+3], label=None, color='black', linestyle='dotted', linewidth=1.0)
+    #plt.loglog([0.0, 1e20], [1e+4, 1e+4], label=None, color='black', linestyle='dotted', linewidth=1.0)
 
     #os.chdir("/home/richardschussnig/dealii-candi/exadg/build/applications/structure/stability_test/")
     os.chdir("/home/richard/dealii-candi/exadg/build/applications/structure/stability_test/")
@@ -95,9 +96,11 @@ if __name__ == "__main__":
         material_model = file[int(underscore_indices[8]+1):int(point_idx-3)]     
 
         if stable_formulation == '1':
+            stable_formulation_lgd_entry = "stable"
             if skip_stable_formulation:
                 continue
         else:
+            stable_formulation_lgd_entry = "standard"        
             if skip_unstable_formulation:
                 continue
             
@@ -127,47 +130,47 @@ if __name__ == "__main__":
             else:
                 line_color = 'tab:orange'
  
-        line_width = 0.5
+        line_width = 1.0
         abbreviation_material_model = ""
         if material_model == "StVenantKirchhoff":
             if skip_STVK:
                 continue
-            line_width = 0.5
+            #line_width = 0.5
             abbreviation_material_model = "St.Venant-Kirchhoff"
         elif material_model == "CompressibleNeoHookean":
             if skip_cNH:
                 continue
-            line_width = 0.5
+            #line_width = 0.5
             abbreviation_material_model = "cNH"
         elif material_model == "IncompressibleNeoHookean":
             if skip_iNH:
                 continue
-            line_width = 0.5
+            #line_width = 0.5
             abbreviation_material_model = "iNH"
         elif material_model == "IncompressibleFibrousTissue":
             if skip_iHGO:
                 continue
-            line_width = 0.5
+            #line_width = 0.5
             abbreviation_material_model = "fiber"
             
         if not skip_stress:
-            plt.loglog(rows[:,0], rows[:,1], label=abbreviation_material_model + ', ' + Omega_0_or_t + \
-            ', stable: ' + stable_formulation + ', stress', color=line_color, \
+            plt.loglog(rows[1:-1:sampling,0], rows[1:-1:sampling,1], label=abbreviation_material_model + ', ' + Omega_0_or_t + \
+            ', ' + stable_formulation_lgd_entry + ', stress', color=line_color, \
             linestyle=line_style_stress, linewidth=line_width)
         
         if not skip_jacobian:
-            plt.loglog(rows[:,0], rows[:,2], label=abbreviation_material_model + ', ' + Omega_0_or_t + \
-            ', stable: ' + stable_formulation + ', D/Du stress', color=line_color, \
+            plt.loglog(rows[1:-1:sampling,0], rows[1:-1:sampling,2], label=abbreviation_material_model + ', ' + Omega_0_or_t + \
+            ', ' + stable_formulation_lgd_entry + ', D/Du stress', color=line_color, \
             linestyle=line_style_jacobian, linewidth=line_width)
  
-    plt.title("Relative error $\epsilon_\mathrm{rel} = \mathrm{max}_i || (.)_\mathrm{f64} - (.)_\mathrm{f32} ||_\infty / ||(.)_\mathrm{f64}||_\infty$")
+    #plt.title("Relative error $\epsilon_\mathrm{rel} = \mathrm{max}_i || (.)_\mathrm{f64} - (.)_\mathrm{f32} ||_\infty / ||(.)_\mathrm{f64}||_\infty$")
     plt.legend()
 
     plt.xlabel('Grad $\mathbf{u}$ scale')
     plt.ylabel('Relative error $\epsilon_\mathrm{rel}$')
 
     x_min = 1e-8
-    x_max = 1e2  # 1e0
+    x_max = 1e1  # 1e0
     y_min = 1e-7 # 1e-21
     y_max = 1e4  # 1e21
     plt.xlim(xmin=x_min, xmax=x_max)
