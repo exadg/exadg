@@ -107,12 +107,6 @@ public:
     }
   }
 
-  dealii::TrilinosWrappers::SparseMatrix const &
-  get_system_matrix()
-  {
-    return system_matrix;
-  }
-
   void
   vmult(VectorType & dst, VectorType const & src) const override
   {
@@ -193,12 +187,6 @@ public:
     }
   }
 
-  dealii::PETScWrappers::MPI::SparseMatrix const &
-  get_system_matrix()
-  {
-    return system_matrix;
-  }
-
   void
   vmult(VectorType & dst, VectorType const & src) const override
   {
@@ -253,7 +241,7 @@ private:
     }
   }
 
-  // reference to matrix-free operator
+  // reference to MultigridOperator
   Operator const & pde_operator;
 
   BoomerData boomer_data;

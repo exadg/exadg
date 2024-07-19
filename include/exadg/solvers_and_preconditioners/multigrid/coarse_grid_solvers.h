@@ -207,7 +207,7 @@ public:
         src_tri.reinit(r, true);
         src_tri.copy_locally_owned_data_from(r);
 
-        std::shared_ptr<PreconditionerML<Operator, NumberAMG>> coarse_operator =
+        std::shared_ptr<PreconditionerML<Operator, NumberAMG>> preconditioner_ml =
           std::dynamic_pointer_cast<PreconditionerML<Operator, NumberAMG>>(preconditioner_amg);
 
         dealii::ReductionControl solver_control(additional_data.solver_data.max_iter,
@@ -217,7 +217,7 @@ public:
         if(additional_data.solver_type == KrylovSolverType::CG)
         {
           dealii::SolverCG<VectorTypeAMG> solver(solver_control);
-          solver.solve(coarse_operator->system_matrix, dst_tri, src_tri, *preconditioner_amg);
+          solver.solve(preconditioner_ml->system_matrix, dst_tri, src_tri, *preconditioner_amg);
         }
         else if(additional_data.solver_type == KrylovSolverType::GMRES)
         {
@@ -226,7 +226,7 @@ public:
           gmres_data.right_preconditioning = true;
 
           dealii::SolverGMRES<VectorTypeAMG> solver(solver_control, gmres_data);
-          solver.solve(coarse_operator->system_matrix, dst_tri, src_tri, *preconditioner_amg);
+          solver.solve(preconditioner_ml->system_matrix, dst_tri, src_tri, *preconditioner_amg);
         }
         else
         {
@@ -240,43 +240,41 @@ public:
       else if(additional_data.amg_data.amg_type == AMGType::BoomerAMG)
       {
 #ifdef DEAL_II_WITH_PETSC
-        apply_petsc_operation(
-          dst,
-          src,
+        std::shared_ptr<PreconditionerBoomerAMG<Operator, NumberAMG>> preconditioner_boomer =
           std::dynamic_pointer_cast<PreconditionerBoomerAMG<Operator, NumberAMG>>(
-            preconditioner_amg)
-            ->system_matrix.get_mpi_communicator(),
-          [&](dealii::PETScWrappers::VectorBase &       petsc_dst,
-              dealii::PETScWrappers::VectorBase const & petsc_src) {
-            std::shared_ptr<PreconditionerBoomerAMG<Operator, NumberAMG>> coarse_operator =
-              std::dynamic_pointer_cast<PreconditionerBoomerAMG<Operator, NumberAMG>>(
-                preconditioner_amg);
+            preconditioner_amg);
 
-            dealii::ReductionControl solver_control(additional_data.solver_data.max_iter,
-                                                    additional_data.solver_data.abs_tol,
-                                                    additional_data.solver_data.rel_tol);
+        apply_petsc_operation(dst,
+                              src,
+                              preconditioner_boomer->system_matrix.get_mpi_communicator(),
+                              [&](dealii::PETScWrappers::VectorBase &       petsc_dst,
+                                  dealii::PETScWrappers::VectorBase const & petsc_src) {
+                                dealii::ReductionControl solver_control(
+                                  additional_data.solver_data.max_iter,
+                                  additional_data.solver_data.abs_tol,
+                                  additional_data.solver_data.rel_tol);
 
-            if(additional_data.solver_type == KrylovSolverType::CG)
-            {
-              dealii::PETScWrappers::SolverCG solver(solver_control);
-              solver.solve(coarse_operator->system_matrix,
-                           petsc_dst,
-                           petsc_src,
-                           coarse_operator->amg);
-            }
-            else if(additional_data.solver_type == KrylovSolverType::GMRES)
-            {
-              dealii::PETScWrappers::SolverGMRES solver(solver_control);
-              solver.solve(coarse_operator->system_matrix,
-                           petsc_dst,
-                           petsc_src,
-                           coarse_operator->amg);
-            }
-            else
-            {
-              AssertThrow(false, dealii::ExcMessage("Not implemented."));
-            }
-          });
+                                if(additional_data.solver_type == KrylovSolverType::CG)
+                                {
+                                  dealii::PETScWrappers::SolverCG solver(solver_control);
+                                  solver.solve(preconditioner_boomer->system_matrix,
+                                               petsc_dst,
+                                               petsc_src,
+                                               preconditioner_boomer->amg);
+                                }
+                                else if(additional_data.solver_type == KrylovSolverType::GMRES)
+                                {
+                                  dealii::PETScWrappers::SolverGMRES solver(solver_control);
+                                  solver.solve(preconditioner_boomer->system_matrix,
+                                               petsc_dst,
+                                               petsc_src,
+                                               preconditioner_boomer->amg);
+                                }
+                                else
+                                {
+                                  AssertThrow(false, dealii::ExcMessage("Not implemented."));
+                                }
+                              });
 #endif
       }
       else
