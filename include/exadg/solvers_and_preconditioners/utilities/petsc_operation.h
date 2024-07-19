@@ -23,6 +23,7 @@
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_PETSCOPERATION_H_
 
 #include <deal.II/base/exceptions.h>
+#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/lac/petsc_vector.h>
 
 namespace ExaDG
@@ -126,6 +127,40 @@ apply_petsc_operation(
   AssertThrow(ierr == 0, dealii::ExcPETScError(ierr));
 }
 #endif
+
+
+/**
+ * Certain functionality of e.g. Trilinos is only available in double precision. The aim of this
+ * function is to hide this circumstance from the user code (that uses the template parameter
+ * Number) and to perform Number -> double conversions and then call the double-version of a certain
+ * Trilinos functionality.
+ */
+template<typename Number>
+void
+apply_function_in_double_precision(
+  dealii::LinearAlgebra::distributed::Vector<Number> &                            dst,
+  dealii::LinearAlgebra::distributed::Vector<Number> const &                      src,
+  std::function<void(dealii::LinearAlgebra::distributed::Vector<double> &,
+                     dealii::LinearAlgebra::distributed::Vector<double> const &)> operation)
+{
+  if constexpr(std::is_same_v<Number, double>)
+  {
+    operation(dst, src);
+  }
+  else
+  {
+    // create temporal vectors of type double
+    dealii::LinearAlgebra::distributed::Vector<double> dst_double, src_double;
+    dst_double.reinit(dst, false); // zero entries
+    src_double.reinit(src, true);  // do not zero entries
+    src_double = src;
+
+    operation(dst_double, src_double);
+
+    // convert: double -> Number
+    dst.copy_locally_owned_data_from(dst_double);
+  }
+}
 
 } // namespace ExaDG
 

@@ -376,23 +376,13 @@ OperatorBase<dim, Number, n_components>::apply_matrix_based(VectorType &       d
   if(this->data.sparse_matrix_type == SparseMatrixType::Trilinos)
   {
 #ifdef DEAL_II_WITH_TRILINOS
-    if constexpr(std::is_same_v<Number, double>)
-    {
-      system_matrix_trilinos.vmult(dst, src);
-    }
-    else
-    {
-      // create temporal vectors of type double
-      dealii::LinearAlgebra::distributed::Vector<double> dst_double, src_double;
-      dst_double.reinit(dst, false);
-      src_double.reinit(src, true);
-      src_double = src;
-
-      system_matrix_trilinos.vmult(dst_double, src_double);
-
-      // convert: double -> Number
-      dst.copy_locally_owned_data_from(dst_double);
-    }
+    apply_function_in_double_precision(
+      dst,
+      src,
+      [&](dealii::LinearAlgebra::distributed::Vector<double> &       dst_double,
+          dealii::LinearAlgebra::distributed::Vector<double> const & src_double) {
+        system_matrix_trilinos.vmult(dst_double, src_double);
+      });
 #endif
   }
   else if(this->data.sparse_matrix_type == SparseMatrixType::PETSc)
