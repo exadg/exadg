@@ -22,7 +22,7 @@ if __name__ == "__main__":
     skip_stable_formulation   = False
     skip_unstable_formulation = False
 
-    sampling = 10
+    sampling = 5
 
     # Read the all the txt files and plot the stability test results
     plt.figure()
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     plt.ylabel('Relative error $\epsilon_\mathrm{rel}$')
 
     x_min = 1e-8
-    x_max = 1e1  # 1e0
+    x_max = 1e2  # 1e0
     y_min = 1e-7 # 1e-21
     y_max = 1e4  # 1e21
     plt.xlim(xmin=x_min, xmax=x_max)
