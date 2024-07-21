@@ -2,7 +2,7 @@
  *
  *  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
  *
- *  Copyright (C) 2021 by the ExaDG authors
+ *  Copyright (C) 2021 by the ExaDG authors and Marco Feder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,6 +27,9 @@
 #include <deal.II/lac/petsc_sparse_matrix.h>
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
+#include <deal.II/numerics/vector_tools_interpolate.h>
+
+#include <ml_MultiLevelPreconditioner.h>
 
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
@@ -35,6 +38,81 @@
 
 namespace ExaDG
 {
+// Rigid body motions for elasticity
+template<int dim>
+class RigidBodyMotion : public dealii::Function<dim>
+{
+public:
+  RigidBodyMotion(unsigned int const type);
+
+  virtual double
+  value(dealii::Point<dim> const & p, unsigned int const component) const override;
+
+private:
+  const unsigned int type;
+};
+
+template<int dim>
+RigidBodyMotion<dim>::RigidBodyMotion(unsigned int const type)
+  : dealii::Function<dim>(dim), type(type)
+{
+  if(dim == 1)
+  {
+    AssertThrow(type == 0, dealii::ExcMessage("Requested invalid mode type."));
+  }
+  else if(dim == 2)
+  {
+    AssertThrow(type <= 2, dealii::ExcMessage("Requested invalid mode type."));
+  }
+  else if(dim == 3)
+  {
+    AssertThrow(type <= 5, dealii::ExcMessage("Requested invalid mode type."));
+  }
+  else
+  {
+    AssertThrow(dim > 0 and dim < 4, dealii::ExcMessage("Dimension 1 <= dim <= 3 implemented."));
+  }
+}
+
+template<int dim>
+double
+RigidBodyMotion<dim>::value(const dealii::Point<dim> & p, const unsigned int component) const
+{
+  if(dim == 1)
+  {
+    return 1.0;
+  }
+  else if(dim == 2)
+  {
+    // two translations and
+    // 90 degree rotation: [x y] -> [y -x]
+    std::array<double, 3> const modes{{static_cast<double>(component == 0),
+                                       static_cast<double>(component == 1),
+                                       (component == 0) ? p[1] : -p[0]}};
+    return modes[type];
+  }
+  else
+  {
+    // three translations and three 90 degree rotations:
+    // [x, y, z] -> [ 0,  z, -y]
+    // [x, y, z] -> [-z,  0,  x]
+    // [x, y, z] -> [ y, -x,  0]
+    std::array<double, 6> const modes{{static_cast<double>(component == 0),
+                                       static_cast<double>(component == 1),
+                                       static_cast<double>(component == 2),
+                                       (component == 0) ? 0.0 :
+                                       (component == 1) ? p[2] :
+                                                          -p[1],
+                                       (component == 0) ? -p[2] :
+                                       (component == 1) ? 0.0 :
+                                                          p[0],
+                                       (component == 0) ? p[1] :
+                                       (component == 1) ? -p[0] :
+                                                          0.0}};
+    return modes[type];
+  }
+}
+
 template<int dim, int spacedim>
 std::unique_ptr<MPI_Comm, void (*)(MPI_Comm *)>
 create_subcommunicator(dealii::DoFHandler<dim, spacedim> const & dof_handler)
@@ -94,8 +172,11 @@ private:
   dealii::TrilinosWrappers::PreconditionAMG amg;
 
 public:
-  PreconditionerML(Operator const & op, bool const initialize, MLData ml_data = MLData())
-    : pde_operator(op), ml_data(ml_data)
+  PreconditionerML(Operator const & op,
+                   bool const       initialize,
+                   AMGOperatorType  operator_type,
+                   MLData           ml_data = MLData())
+    : pde_operator(op), ml_data(ml_data), operator_type(operator_type)
   {
     // initialize system matrix
     pde_operator.init_system_matrix(system_matrix,
@@ -128,17 +209,221 @@ public:
     // re-calculate matrix
     pde_operator.calculate_system_matrix(system_matrix);
 
-    // initialize Trilinos' AMG
-    amg.initialize(system_matrix, ml_data);
+    // setup constant modes
+    if(operator_type == AMGOperatorType::Ignore)
+    {
+      std::cout << "AMGOperatorType::Ignore \n";
+      // Ignore the operator type, that is, do not setup a near nullspace.
+      amg.initialize(system_matrix, ml_data);
+    }
+    else if(operator_type == AMGOperatorType::Unknown or operator_type == AMGOperatorType::Laplace)
+    {
+      std::cout << "AMGOperatorType::Unknown or AMGOperatorType::Laplace \n";
+      // Treat AMGOperatorType like Laplace to at least provide trivial nullspace.
+      std::vector<std::vector<bool>> constant_modes;
+      dealii::DoFTools::extract_constant_modes(pde_operator.get_matrix_free().get_dof_handler(pde_operator.get_dof_index()),
+                                               dealii::ComponentMask(),
+                                               constant_modes);
+      ml_data.constant_modes = constant_modes;
+
+      amg.initialize(system_matrix, ml_data);
+    }
+    else if(operator_type == AMGOperatorType::Elasticity)
+    {
+      if(pde_operator.get_matrix_free().get_dof_handler().dimension == 1)
+      {
+        // Initialize directly, as default is scalar Laplace, which is suitable in this case.
+        amg.initialize(system_matrix, ml_data);
+      }
+      else
+      {
+        std::cout << "AMGOperatorType::Elasticity in 2D or 3D \n";
+        // Translational and rotational rigid body modes need to be provided.
+        this->initialize_amg_elasticity();
+      }
+    }
 
     this->update_needed = false;
   }
 
 private:
+  void
+  initialize_amg_elasticity()
+  {
+std::cout << "##+1\n";
+    // To provide constant modes for space_dim space dimensions,
+    // we need to switch to a Teuchos::ParameterList.
+    unsigned int const dim = pde_operator.get_matrix_free().get_dof_handler().dimension;
+
+    AssertThrow(dim == pde_operator.get_matrix_free().get_dof_handler().space_dimension,
+                dealii::ExcMessage("Mixed-dimensional problems are not implemented."));
+    AssertThrow(
+      dim > 1,
+      dealii::ExcMessage(
+        "One-dimensional elasticity is identical to scalar Laplace, which is the default."));
+std::cout << "##+2\n";
+    Teuchos::ParameterList parameter_list;
+    {
+      // This block is copied from deal::PreconditionAMG::AdditionalData::set_parameters(),
+      // but does not setup the default constant_modes suitable for, e.g.,
+      // a Laplace problem with dim components. Setting up the near nullspace is the most
+      // expensive part, which is why we copy paste the code ommitting the last step, which
+      // we replace below.
+      if(ml_data.elliptic == true)
+      {
+        ML_Epetra::SetDefaults("SA", parameter_list);
+        if(ml_data.higher_order_elements)
+        {
+          parameter_list.set("aggregation: type", "Uncoupled");
+        }
+      }
+      else
+      {
+        ML_Epetra::SetDefaults("NSSA", parameter_list);
+        parameter_list.set("aggregation: type", "Uncoupled");
+        parameter_list.set("aggregation: block scaling", true);
+      }
+
+      parameter_list.set("smoother: type", ml_data.smoother_type);
+      parameter_list.set("coarse: type", ml_data.coarse_type);
+
+// Force re-initialization of the random seed to make ML deterministic
+// (only supported in trilinos >12.2):
+#  if DEAL_II_TRILINOS_VERSION_GTE(12, 4, 0)
+      parameter_list.set("initialize random seed", true);
+#  endif
+
+      parameter_list.set("smoother: sweeps", static_cast<int>(ml_data.smoother_sweeps));
+      parameter_list.set("cycle applications", static_cast<int>(ml_data.n_cycles));
+      if(ml_data.w_cycle == true)
+      {
+        parameter_list.set("prec type", "MGW");
+      }
+      else
+      {
+        parameter_list.set("prec type", "MGV");
+      }
+
+      parameter_list.set("smoother: Chebyshev alpha", 10.);
+      parameter_list.set("smoother: ifpack overlap", static_cast<int>(ml_data.smoother_overlap));
+      parameter_list.set("aggregation: threshold", ml_data.aggregation_threshold);
+      parameter_list.set("coarse: max size", 2000);
+
+      if(ml_data.output_details)
+      {
+        parameter_list.set("ML output", 10);
+      }
+      else
+      {
+        parameter_list.set("ML output", 0);
+      }
+    }
+    parameter_list.set("PDE equations", 3); // static_cast<unsigned int>(dim));
+
+std::cout << "##+3\n";
+
+    // Compute constant modes for elasticity.
+    unsigned int const      n_constant_modes = dim == 2 ? 3 : 6;
+    std::vector<VectorType> near_null_space(n_constant_modes);
+    for(unsigned int i = 0; i < n_constant_modes; ++i)
+    {
+      near_null_space[i].reinit(pde_operator.get_matrix_free().get_vector_partitioner(),
+                                system_matrix.get_mpi_communicator());
+
+      // Fill vector with rigid body modes.
+      if(dim == 2)
+      {
+        dealii::DoFHandler<2, 2> const * dof_handler_ptr =
+          dynamic_cast<dealii::DoFHandler<2, 2> const *>(
+            &pde_operator.get_matrix_free().get_dof_handler(pde_operator.get_dof_index()));
+        AssertThrow(dof_handler_ptr, dealii::ExcMessage("Cast unsuccessful."));
+
+        RigidBodyMotion<2> const rbm(i);
+        dealii::VectorTools::interpolate(*dof_handler_ptr, rbm, near_null_space[i]);
+      }
+      else if(dim == 3)
+      {
+std::cout << "##+3.1\n";
+        dealii::DoFHandler<3, 3> const * dof_handler_ptr =
+          dynamic_cast<dealii::DoFHandler<3, 3> const *>(
+            &pde_operator.get_matrix_free().get_dof_handler(pde_operator.get_dof_index()));
+        AssertThrow(dof_handler_ptr, dealii::ExcMessage("Cast unsuccessful."));
+std::cout << "##+3.2\n";
+        RigidBodyMotion<3> const rbm(i);
+std::cout << "##+3.3\n";
+        dealii::VectorTools::interpolate(*dof_handler_ptr, rbm, near_null_space[i]);
+std::cout << "##+3.4\n";
+      }
+    }
+
+std::cout << "##+4\n";
+
+    // Add constant modes to Teuchos::ParameterList.
+    std::unique_ptr<Epetra_MultiVector>
+      constant_modes; // has to stay alive until after amg.initialize();
+    this->set_elasticity_operator_nullspace(parameter_list,
+                                            constant_modes,
+                                            system_matrix.trilinos_matrix(),
+                                            near_null_space);
+std::cout << "##+5\n";
+    // Initialize with the Teuchos::ParameterList.
+    amg.initialize(system_matrix, parameter_list);
+std::cout << "##+6\n";
+  }
+
+  void
+  set_elasticity_operator_nullspace(Teuchos::ParameterList &              parameter_list,
+                                    std::unique_ptr<Epetra_MultiVector> & ptr_distributed_modes,
+                                    Epetra_RowMatrix const &              matrix,
+                                    std::vector<VectorType> const &       modes)
+  {
+std::cout << "##+4.1\n";
+    using size_type               = dealii::TrilinosWrappers::PreconditionAMG::size_type;
+    Epetra_Map const & domain_map = matrix.OperatorDomainMap();
+
+    ptr_distributed_modes.reset(new Epetra_MultiVector(domain_map, modes.size()));
+    AssertThrow(ptr_distributed_modes, dealii::ExcNotInitialized());
+    Epetra_MultiVector & distributed_modes = *ptr_distributed_modes;
+
+    const size_type global_size = dealii::TrilinosWrappers::n_global_rows(matrix);
+
+    AssertThrow(global_size == static_cast<size_type>(
+                                 dealii::TrilinosWrappers::global_length(distributed_modes)),
+                dealii::ExcDimensionMismatch(
+                  global_size, dealii::TrilinosWrappers::global_length(distributed_modes)));
+
+    size_type const my_size = domain_map.NumMyElements();
+
+std::cout << "##+4.2\n";
+
+    // Reshape null space as a contiguous vector of doubles so that
+    // Trilinos can read from it.
+    [[maybe_unused]] size_type const expected_mode_size = global_size;
+    for(size_type d = 0; d < modes.size(); ++d)
+    {
+      AssertThrow(modes[d].size() == expected_mode_size,
+                  dealii::ExcDimensionMismatch(modes[d].size(), expected_mode_size));
+      for(size_type row = 0; row < my_size; ++row)
+      {
+        dealii::TrilinosWrappers::types::int_type const mode_index =
+          dealii::TrilinosWrappers::global_index(domain_map, row);
+        distributed_modes[d][row] = static_cast<double>(modes[d][mode_index]);
+      }
+    }
+
+std::cout << "##+4.3\n";
+
+    parameter_list.set("null space: type", "pre-computed");
+    parameter_list.set("null space: dimension", distributed_modes.NumVectors());
+    parameter_list.set("null space: vectors", distributed_modes.Values());
+  }
+
   // reference to matrix-free operator
   Operator const & pde_operator;
 
   MLData ml_data;
+
+  AMGOperatorType operator_type;
 };
 #endif
 
@@ -296,9 +581,8 @@ public:
     else if(data.amg_type == AMGType::ML)
     {
 #ifdef DEAL_II_WITH_TRILINOS
-      preconditioner_amg = std::make_shared<PreconditionerML<Operator, double>>(pde_operator,
-                                                                                initialize,
-                                                                                data.ml_data);
+      preconditioner_amg = std::make_shared<PreconditionerML<Operator, double>>(
+        pde_operator, initialize, data.amg_operator_type, data.ml_data);
 #else
       AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif

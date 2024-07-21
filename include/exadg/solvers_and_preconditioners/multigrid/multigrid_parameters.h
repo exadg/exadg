@@ -78,6 +78,14 @@ enum class AMGType
   BoomerAMG
 };
 
+enum class AMGOperatorType
+{
+  Unknown,
+  Ignore,
+  Laplace,
+  Elasticity
+};
+
 enum class MultigridCoarseGridSolver
 {
   Chebyshev,
@@ -101,6 +109,7 @@ struct AMGData
     amg_type = AMGType::ML;
 
 #ifdef DEAL_II_WITH_TRILINOS
+    amg_operator_type       = AMGOperatorType::Unknown;
     ml_data.smoother_sweeps = 1;
     ml_data.n_cycles        = 1;
     ml_data.smoother_type   = "ILU";
@@ -150,6 +159,7 @@ struct AMGData
   AMGType amg_type;
 
 #ifdef DEAL_II_WITH_TRILINOS
+  AMGOperatorType                                           amg_operator_type;
   dealii::TrilinosWrappers::PreconditionAMG::AdditionalData ml_data;
 #endif
 

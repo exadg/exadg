@@ -344,6 +344,8 @@ private:
     }
     else
     {
+      this->param.multigrid_data.coarse_problem.amg_data.amg_operator_type = AMGOperatorType::Laplace;
+
       this->param.multigrid_data.coarse_problem.amg_data.ml_data.elliptic = true;
       this->param.multigrid_data.coarse_problem.amg_data.ml_data.higher_order_elements =
         higher_order_amg;

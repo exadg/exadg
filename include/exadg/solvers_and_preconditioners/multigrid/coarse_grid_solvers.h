@@ -133,10 +133,11 @@ public:
       if(additional_data.amg_data.amg_type == AMGType::ML)
       {
 #ifdef DEAL_II_WITH_TRILINOS
-        preconditioner_amg =
-          std::make_shared<PreconditionerML<Operator, NumberAMG>>(pde_operator,
-                                                                  initialize,
-                                                                  additional_data.amg_data.ml_data);
+        preconditioner_amg = std::make_shared<PreconditionerML<Operator, NumberAMG>>(
+          pde_operator,
+          initialize,
+          additional_data.amg_data.amg_operator_type,
+          additional_data.amg_data.ml_data);
 #else
         AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
@@ -481,8 +482,8 @@ public:
     else if(data.amg_type == AMGType::ML)
     {
 #ifdef DEAL_II_WITH_TRILINOS
-      amg_preconditioner =
-        std::make_shared<PreconditionerML<Operator, NumberAMG>>(op, initialize, data.ml_data);
+      amg_preconditioner = std::make_shared<PreconditionerML<Operator, NumberAMG>>(
+        op, initialize, data.amg_operator_type, data.ml_data);
 #else
       AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
