@@ -335,17 +335,18 @@ private:
       MultigridCoarseGridPreconditioner::AMG;
 
 #ifdef DEAL_II_WITH_TRILINOS
-      this->param.multigrid_data.coarse_problem.amg_data.amg_operator_type = AMGOperatorType::Laplace;
+    this->param.multigrid_data.coarse_problem.amg_data.amg_operator_type = AMGOperatorType::Ignore;
 
-      this->param.multigrid_data.coarse_problem.amg_data.ml_data.elliptic = true;
-      this->param.multigrid_data.coarse_problem.amg_data.ml_data.higher_order_elements = this->param.degree > 1;
-      this->param.multigrid_data.coarse_problem.amg_data.ml_data.n_cycles              = 2;
-      this->param.multigrid_data.coarse_problem.amg_data.ml_data.w_cycle               = false;
-      this->param.multigrid_data.coarse_problem.amg_data.ml_data.aggregation_threshold = 1e-4;
-      this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_sweeps       = 6;
-      this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_overlap      = 2;
-      this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_type         = "Chebyshev";
-      this->param.multigrid_data.coarse_problem.amg_data.ml_data.coarse_type = "Amesos-KLU";
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.elliptic = true;
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.higher_order_elements =
+      this->param.degree > 1;
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.n_cycles              = 2;
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.w_cycle               = false;
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.aggregation_threshold = 1e-4;
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_sweeps       = 6;
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_overlap      = 2;
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_type         = "Chebyshev";
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.coarse_type           = "Amesos-KLU";
 #endif
 
     this->param.update_preconditioner                         = true;

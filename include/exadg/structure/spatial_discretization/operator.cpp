@@ -469,7 +469,7 @@ Operator<dim, Number>::setup_preconditioner()
       preconditioner = std::make_shared<AMG>(elasticity_operator_nonlinear,
                                              false,
                                              param.multigrid_data.coarse_problem.amg_data,
-											 dof_handler);
+                                             dof_handler);
     }
     else
     {
@@ -477,7 +477,7 @@ Operator<dim, Number>::setup_preconditioner()
       preconditioner = std::make_shared<AMG>(elasticity_operator_linear,
                                              false,
                                              param.multigrid_data.coarse_problem.amg_data,
-											 dof_handler);
+                                             dof_handler);
     }
   }
   else

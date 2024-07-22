@@ -49,22 +49,22 @@ public:
   value(dealii::Point<dim> const & p, unsigned int const component) const override;
 
 private:
-  const unsigned int type;
+  unsigned int const type;
 };
 
 template<int dim>
 RigidBodyMotion<dim>::RigidBodyMotion(unsigned int const type)
   : dealii::Function<dim>(dim), type(type)
 {
-  if(dim == 1)
+  if constexpr(dim == 1)
   {
     AssertThrow(type == 0, dealii::ExcMessage("Requested invalid mode type."));
   }
-  else if(dim == 2)
+  else if constexpr(dim == 2)
   {
     AssertThrow(type <= 2, dealii::ExcMessage("Requested invalid mode type."));
   }
-  else if(dim == 3)
+  else if constexpr(dim == 3)
   {
     AssertThrow(type <= 5, dealii::ExcMessage("Requested invalid mode type."));
   }
@@ -76,13 +76,13 @@ RigidBodyMotion<dim>::RigidBodyMotion(unsigned int const type)
 
 template<int dim>
 double
-RigidBodyMotion<dim>::value(const dealii::Point<dim> & p, const unsigned int component) const
+RigidBodyMotion<dim>::value(dealii::Point<dim> const & p, unsigned int const component) const
 {
-  if(dim == 1)
+  if constexpr(dim == 1)
   {
     return 1.0;
   }
-  else if(dim == 2)
+  else if constexpr(dim == 2)
   {
     // two translations and
     // 90 degree rotation: [x y] -> [y -x]
@@ -172,11 +172,11 @@ private:
   dealii::TrilinosWrappers::PreconditionAMG amg;
 
 public:
-  PreconditionerML(Operator const & op,
-                   bool const       initialize,
-                   AMGOperatorType  operator_type,
-				   dealii::DoFHandler<dim> const & dof_handler,
-                   MLData           ml_data = MLData())
+  PreconditionerML(Operator const &                op,
+                   bool const                      initialize,
+                   AMGOperatorType                 operator_type,
+                   dealii::DoFHandler<dim> const & dof_handler,
+                   MLData                          ml_data = MLData())
     : pde_operator(op), ml_data(ml_data), operator_type(operator_type), dof_handler(dof_handler)
   {
     // initialize system matrix
@@ -213,17 +213,15 @@ public:
     // setup constant modes
     if(operator_type == AMGOperatorType::Ignore)
     {
-      std::cout << "AMGOperatorType::Ignore \n";
       // Ignore the operator type, that is, do not setup a near nullspace.
       amg.initialize(system_matrix, ml_data);
     }
     else if(operator_type == AMGOperatorType::Unknown or operator_type == AMGOperatorType::Laplace)
     {
-      std::cout << "AMGOperatorType::Unknown or AMGOperatorType::Laplace \n";
       // Treat AMGOperatorType like Laplace to at least provide trivial nullspace.
       std::vector<std::vector<bool>> constant_modes;
       dealii::DoFTools::extract_constant_modes(dof_handler,
-    		  	  	  	  	  	  	  	  	   dealii::ComponentMask(),
+                                               dealii::ComponentMask(),
                                                constant_modes);
       ml_data.constant_modes = constant_modes;
 
@@ -238,7 +236,6 @@ public:
       }
       else
       {
-        std::cout << "AMGOperatorType::Elasticity in 2D or 3D \n";
         // Translational and rotational rigid body modes need to be provided.
         this->initialize_amg_elasticity();
       }
@@ -315,28 +312,30 @@ private:
         parameter_list.set("ML output", 0);
       }
     }
-    parameter_list.set("PDE equations", static_cast<int>(dim));
 
     // Compute constant modes for elasticity.
     unsigned int constexpr n_constant_modes = dim == 2 ? 3 : 6;
-    std::vector<VectorType> near_null_space(n_constant_modes);
+    std::vector<VectorType> constant_modes(n_constant_modes);
+    dealii::IndexSet        locally_relevant_dofs =
+      dealii::DoFTools::extract_locally_relevant_dofs(dof_handler);
     for(unsigned int i = 0; i < n_constant_modes; ++i)
     {
-      near_null_space[i].reinit(dof_handler.locally_owned_dofs(),
-                                system_matrix.get_mpi_communicator());
+      constant_modes[i].reinit(dof_handler.locally_owned_dofs(),
+                               locally_relevant_dofs,
+                               system_matrix.get_mpi_communicator());
 
       // Fill vector with rigid body modes.
-	  RigidBodyMotion<dim> const rbm(i);
-      dealii::VectorTools::interpolate(dof_handler, rbm, near_null_space[i]);
+      RigidBodyMotion<dim> const rbm(i);
+      dealii::VectorTools::interpolate(dof_handler, rbm, constant_modes[i]);
     }
 
     // Add constant modes to Teuchos::ParameterList.
     std::unique_ptr<Epetra_MultiVector>
-      constant_modes; // has to stay alive until after amg.initialize();
+      ptr_distributed_modes; // has to stay alive until after amg.initialize();
     this->set_elasticity_operator_nullspace(parameter_list,
-                                            constant_modes,
+                                            ptr_distributed_modes,
                                             system_matrix.trilinos_matrix(),
-                                            near_null_space);
+                                            constant_modes);
 
     // Initialize with the Teuchos::ParameterList.
     amg.initialize(system_matrix, parameter_list);
@@ -346,12 +345,14 @@ private:
   set_elasticity_operator_nullspace(Teuchos::ParameterList &              parameter_list,
                                     std::unique_ptr<Epetra_MultiVector> & ptr_distributed_modes,
                                     Epetra_RowMatrix const &              matrix,
-                                    std::vector<VectorType> const &       modes)
+                                    std::vector<VectorType> const &       constant_modes)
   {
     using size_type               = dealii::TrilinosWrappers::PreconditionAMG::size_type;
     Epetra_Map const & domain_map = matrix.OperatorDomainMap();
 
-    ptr_distributed_modes.reset(new Epetra_MultiVector(domain_map, modes.size()));
+    AssertThrow(constant_modes.size() > 0,
+                dealii::ExcMessage("Provide constant modes for near null space"));
+    ptr_distributed_modes.reset(new Epetra_MultiVector(domain_map, constant_modes.size()));
     AssertThrow(ptr_distributed_modes, dealii::ExcNotInitialized());
     Epetra_MultiVector & distributed_modes = *ptr_distributed_modes;
 
@@ -364,18 +365,21 @@ private:
 
     size_type const my_size = domain_map.NumMyElements();
 
+    bool const constant_modes_are_global = constant_modes[0].size() == global_size;
+
     // Reshape null space as a contiguous vector of doubles so that
     // Trilinos can read from it.
-    [[maybe_unused]] size_type const expected_mode_size = global_size;
-    for(size_type d = 0; d < modes.size(); ++d)
+    [[maybe_unused]] size_type const expected_mode_size =
+      constant_modes_are_global ? global_size : my_size;
+    for(size_type i = 0; i < constant_modes.size(); ++i)
     {
-      AssertThrow(modes[d].size() == expected_mode_size,
-                  dealii::ExcDimensionMismatch(modes[d].size(), expected_mode_size));
+      AssertThrow(constant_modes[i].size() == expected_mode_size,
+                  dealii::ExcDimensionMismatch(constant_modes[i].size(), expected_mode_size));
       for(size_type row = 0; row < my_size; ++row)
       {
-        dealii::TrilinosWrappers::types::int_type const mode_index =
-          dealii::TrilinosWrappers::global_index(domain_map, row);
-        distributed_modes[d][row] = static_cast<double>(modes[d][mode_index]);
+        const dealii::TrilinosWrappers::types::int_type mode_index =
+          constant_modes_are_global ? dealii::TrilinosWrappers::global_index(domain_map, row) : row;
+        distributed_modes[i][row] = static_cast<double>(constant_modes[i][mode_index]);
       }
     }
 
@@ -529,8 +533,10 @@ private:
   typedef dealii::LinearAlgebra::distributed::Vector<NumberAMG> VectorTypeAMG;
 
 public:
-  PreconditionerAMG(Operator const & pde_operator, bool const initialize, AMGData const & data,
-		  dealii::DoFHandler<dim> const & dof_handler)
+  PreconditionerAMG(Operator const &                pde_operator,
+                    bool const                      initialize,
+                    AMGData const &                 data,
+                    dealii::DoFHandler<dim> const & dof_handler)
   {
     (void)pde_operator;
     (void)initialize;

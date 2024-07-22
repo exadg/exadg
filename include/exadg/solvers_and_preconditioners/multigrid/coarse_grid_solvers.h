@@ -109,11 +109,11 @@ public:
     AMGData amg_data;
   };
 
-  MGCoarseKrylov(Operator const &       pde_operator_in,
-                 bool const             initialize,
-                 AdditionalData const & additional_data,
-				 dealii::DoFHandler<dim> const & dof_handler,
-                 MPI_Comm const &       comm)
+  MGCoarseKrylov(Operator const &                pde_operator_in,
+                 bool const                      initialize,
+                 AdditionalData const &          additional_data,
+                 dealii::DoFHandler<dim> const & dof_handler,
+                 MPI_Comm const &                comm)
     : pde_operator(pde_operator_in), additional_data(additional_data), mpi_comm(comm)
   {
     if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi)
@@ -138,7 +138,7 @@ public:
           pde_operator,
           initialize,
           additional_data.amg_data.amg_operator_type,
-		  dof_handler,
+          dof_handler,
           additional_data.amg_data.ml_data);
 #else
         AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with Trilinos!"));
@@ -465,7 +465,10 @@ private:
     VectorTypeMultigrid;
 
 public:
-  MGCoarseAMG(Operator const & op, bool const initialize, dealii::DoFHandler<dim> const & dof_handler, AMGData data = AMGData())
+  MGCoarseAMG(Operator const &                op,
+              bool const                      initialize,
+              dealii::DoFHandler<dim> const & dof_handler,
+              AMGData                         data = AMGData())
   {
     (void)op;
     (void)data;
