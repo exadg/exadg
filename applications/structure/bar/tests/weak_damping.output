@@ -52,6 +52,7 @@ Spatial Discretization:
   Mapping degree:                            1
   Mapping degree coarse grids:               1
   Polynomial degree:                         1
+  Use matrix-based implementation:           false
 
 Solver:
 
