@@ -317,7 +317,7 @@ private:
     this->param.newton_solver_data  = Newton::SolverData(1e2, 1.e-9, 1.e-4);
     this->param.solver              = Solver::FGMRES;
     this->param.solver_data         = SolverData(1e3, 1.e-14, 1.e-8, 30);
-    this->param.preconditioner      = Preconditioner::Multigrid;
+    this->param.preconditioner      = Preconditioner::AMG; // Multigrid; // AMG
     this->param.multigrid_data.type = MultigridType::phMG;
 
     this->param.multigrid_data.p_sequence             = PSequenceType::DecreaseByOne; // Bisect;
@@ -335,28 +335,17 @@ private:
       MultigridCoarseGridPreconditioner::AMG;
 
 #ifdef DEAL_II_WITH_TRILINOS
-    bool const higher_order_amg =
-      this->param.preconditioner == Preconditioner::AMG and this->param.degree > 1;
-    if(higher_order_amg)
-    {
-      AssertThrow(not higher_order_amg,
-                  dealii::ExcMessage("Trilinos' ML not tuned for higher-order AMG."));
-    }
-    else
-    {
       this->param.multigrid_data.coarse_problem.amg_data.amg_operator_type = AMGOperatorType::Laplace;
 
       this->param.multigrid_data.coarse_problem.amg_data.ml_data.elliptic = true;
-      this->param.multigrid_data.coarse_problem.amg_data.ml_data.higher_order_elements =
-        higher_order_amg;
+      this->param.multigrid_data.coarse_problem.amg_data.ml_data.higher_order_elements = this->param.degree > 1;
       this->param.multigrid_data.coarse_problem.amg_data.ml_data.n_cycles              = 2;
       this->param.multigrid_data.coarse_problem.amg_data.ml_data.w_cycle               = false;
       this->param.multigrid_data.coarse_problem.amg_data.ml_data.aggregation_threshold = 1e-4;
-      this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_sweeps       = 2;
-      this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_overlap      = 0;
-      this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_type         = "ILU";
+      this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_sweeps       = 6;
+      this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_overlap      = 2;
+      this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_type         = "Chebyshev";
       this->param.multigrid_data.coarse_problem.amg_data.ml_data.coarse_type = "Amesos-KLU";
-    }
 #endif
 
     this->param.update_preconditioner                         = true;

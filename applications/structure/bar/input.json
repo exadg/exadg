@@ -5,10 +5,10 @@
         "IsTest": "false"
     },
     "SpatialResolution": {
-        "DegreeMin": "4",
-        "DegreeMax": "4",
-        "RefineSpaceMin": "1",
-        "RefineSpaceMax": "1"
+        "DegreeMin": "2",
+        "DegreeMax": "2",
+        "RefineSpaceMin": "2",
+        "RefineSpaceMax": "2"
     },
     "TemporalResolution": {
         "RefineTimeMin": "0",

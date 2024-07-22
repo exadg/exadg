@@ -65,7 +65,7 @@ enum class KrylovSolverType
   GMRES
 };
 
-template<typename Operator>
+template<int dim, typename Operator>
 class MGCoarseKrylov : public CoarseGridSolverBase<Operator>
 {
 public:
@@ -112,6 +112,7 @@ public:
   MGCoarseKrylov(Operator const &       pde_operator_in,
                  bool const             initialize,
                  AdditionalData const & additional_data,
+				 dealii::DoFHandler<dim> const & dof_handler,
                  MPI_Comm const &       comm)
     : pde_operator(pde_operator_in), additional_data(additional_data), mpi_comm(comm)
   {
@@ -133,10 +134,11 @@ public:
       if(additional_data.amg_data.amg_type == AMGType::ML)
       {
 #ifdef DEAL_II_WITH_TRILINOS
-        preconditioner_amg = std::make_shared<PreconditionerML<Operator, NumberAMG>>(
+        preconditioner_amg = std::make_shared<PreconditionerML<dim, Operator, NumberAMG>>(
           pde_operator,
           initialize,
           additional_data.amg_data.amg_operator_type,
+		  dof_handler,
           additional_data.amg_data.ml_data);
 #else
         AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with Trilinos!"));
@@ -208,8 +210,8 @@ public:
         src_tri.reinit(r, true);
         src_tri.copy_locally_owned_data_from(r);
 
-        std::shared_ptr<PreconditionerML<Operator, NumberAMG>> coarse_operator =
-          std::dynamic_pointer_cast<PreconditionerML<Operator, NumberAMG>>(preconditioner_amg);
+        std::shared_ptr<PreconditionerML<dim, Operator, NumberAMG>> coarse_operator =
+          std::dynamic_pointer_cast<PreconditionerML<dim, Operator, NumberAMG>>(preconditioner_amg);
 
         dealii::ReductionControl solver_control(additional_data.solver_data.max_iter,
                                                 additional_data.solver_data.abs_tol,
@@ -451,7 +453,7 @@ private:
   std::shared_ptr<DealiiChebyshev> chebyshev_smoother;
 };
 
-template<typename Operator>
+template<int dim, typename Operator>
 class MGCoarseAMG : public CoarseGridSolverBase<Operator>
 {
 private:
@@ -463,10 +465,11 @@ private:
     VectorTypeMultigrid;
 
 public:
-  MGCoarseAMG(Operator const & op, bool const initialize, AMGData data = AMGData())
+  MGCoarseAMG(Operator const & op, bool const initialize, dealii::DoFHandler<dim> const & dof_handler, AMGData data = AMGData())
   {
     (void)op;
     (void)data;
+    (void)dof_handler;
 
     if(data.amg_type == AMGType::BoomerAMG)
     {
@@ -482,8 +485,8 @@ public:
     else if(data.amg_type == AMGType::ML)
     {
 #ifdef DEAL_II_WITH_TRILINOS
-      amg_preconditioner = std::make_shared<PreconditionerML<Operator, NumberAMG>>(
-        op, initialize, data.amg_operator_type, data.ml_data);
+      amg_preconditioner = std::make_shared<PreconditionerML<dim, Operator, NumberAMG>>(
+        op, initialize, data.amg_operator_type, dof_handler, data.ml_data);
 #else
       AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif

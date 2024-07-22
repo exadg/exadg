@@ -323,8 +323,8 @@ Operator<dim, n_components, Number>::setup_preconditioner_and_solver()
   }
   else if(param.preconditioner == Poisson::Preconditioner::AMG)
   {
-    preconditioner = std::make_shared<PreconditionerAMG<Laplace, Number>>(
-      laplace_operator, true, param.multigrid_data.coarse_problem.amg_data);
+    preconditioner = std::make_shared<PreconditionerAMG<dim, Laplace, Number>>(
+      laplace_operator, true, param.multigrid_data.coarse_problem.amg_data, dof_handler);
   }
   else if(param.preconditioner == Poisson::Preconditioner::Multigrid)
   {
