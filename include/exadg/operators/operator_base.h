@@ -758,6 +758,8 @@ private:
   unsigned int n_mpi_processes;
 
   // sparse matrices for matrix-based vmult
+  mutable bool system_matrix_based_been_initialized;
+
 #ifdef DEAL_II_WITH_TRILINOS
   mutable dealii::TrilinosWrappers::SparseMatrix system_matrix_trilinos;
 #endif

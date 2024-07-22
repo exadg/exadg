@@ -44,7 +44,8 @@ OperatorBase<dim, Number, n_components>::OperatorBase()
     is_dg(true),
     data(OperatorBaseData()),
     level(dealii::numbers::invalid_unsigned_int),
-    n_mpi_processes(0)
+    n_mpi_processes(0),
+    system_matrix_based_been_initialized(false)
 {
 }
 
@@ -319,13 +320,47 @@ OperatorBase<dim, Number, n_components>::assemble_matrix_if_necessary() const
 {
   if(this->data.use_matrix_based_vmult)
   {
-    dealii::DoFHandler<dim> const & dof_handler =
-      this->matrix_free->get_dof_handler(this->data.dof_index);
+    // initialize matrix
+    if(not(system_matrix_based_been_initialized))
+    {
+      dealii::DoFHandler<dim> const & dof_handler =
+        this->matrix_free->get_dof_handler(this->data.dof_index);
 
+      if(this->data.sparse_matrix_type == SparseMatrixType::Trilinos)
+      {
+#ifdef DEAL_II_WITH_TRILINOS
+        init_system_matrix(system_matrix_trilinos, dof_handler.get_communicator());
+#else
+        AssertThrow(
+          false,
+          dealii::ExcMessage(
+            "Make sure that DEAL_II_WITH_TRILINOS is activated if you want to use SparseMatrixType::Trilinos."));
+#endif
+      }
+      else if(this->data.sparse_matrix_type == SparseMatrixType::PETSc)
+      {
+#ifdef DEAL_II_WITH_PETSC
+        init_system_matrix(system_matrix_petsc, dof_handler.get_communicator());
+#else
+        AssertThrow(
+          false,
+          dealii::ExcMessage(
+            "Make sure that DEAL_II_WITH_PETSC is activated if you want to use SparseMatrixType::PETSc."));
+#endif
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("not implemented."));
+      }
+
+      system_matrix_based_been_initialized = true;
+    }
+
+    // calculate matrix
     if(this->data.sparse_matrix_type == SparseMatrixType::Trilinos)
     {
 #ifdef DEAL_II_WITH_TRILINOS
-      init_system_matrix(system_matrix_trilinos, dof_handler.get_communicator());
+      system_matrix_trilinos *= 0.0;
       calculate_system_matrix(system_matrix_trilinos);
 #else
       AssertThrow(
@@ -337,7 +372,7 @@ OperatorBase<dim, Number, n_components>::assemble_matrix_if_necessary() const
     else if(this->data.sparse_matrix_type == SparseMatrixType::PETSc)
     {
 #ifdef DEAL_II_WITH_PETSC
-      init_system_matrix(system_matrix_petsc, dof_handler.get_communicator());
+      system_matrix_petsc *= 0.0;
       calculate_system_matrix(system_matrix_petsc);
 
       if(system_matrix_petsc.m() > 0)
