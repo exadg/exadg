@@ -110,7 +110,13 @@ public:
   void
   vmult(VectorType & dst, VectorType const & src) const override
   {
-    amg.vmult(dst, src);
+    apply_function_in_double_precision(
+      dst,
+      src,
+      [&](dealii::LinearAlgebra::distributed::Vector<double> &       dst_double,
+          dealii::LinearAlgebra::distributed::Vector<double> const & src_double) {
+        amg.vmult(dst_double, src_double);
+      });
   }
 
   void
@@ -259,22 +265,20 @@ template<typename Operator, typename Number>
 class PreconditionerAMG : public PreconditionerBase<Number>
 {
 private:
-  typedef double                                                NumberAMG;
-  typedef typename PreconditionerBase<Number>::VectorType       VectorType;
-  typedef dealii::LinearAlgebra::distributed::Vector<NumberAMG> VectorTypeAMG;
+  typedef typename PreconditionerBase<Number>::VectorType VectorType;
 
 public:
   PreconditionerAMG(Operator const & pde_operator, bool const initialize, AMGData const & data)
   {
     (void)pde_operator;
     (void)initialize;
-    (void)data;
+    this->data = data;
 
     if(data.amg_type == AMGType::BoomerAMG)
     {
 #ifdef DEAL_II_WITH_PETSC
       preconditioner_amg =
-        std::make_shared<PreconditionerBoomerAMG<Operator, double>>(pde_operator,
+        std::make_shared<PreconditionerBoomerAMG<Operator, Number>>(pde_operator,
                                                                     initialize,
                                                                     data.boomer_data);
 #else
@@ -284,7 +288,7 @@ public:
     else if(data.amg_type == AMGType::ML)
     {
 #ifdef DEAL_II_WITH_TRILINOS
-      preconditioner_amg = std::make_shared<PreconditionerML<Operator, double>>(pde_operator,
+      preconditioner_amg = std::make_shared<PreconditionerML<Operator, Number>>(pde_operator,
                                                                                 initialize,
                                                                                 data.ml_data);
 #else
@@ -300,16 +304,9 @@ public:
   void
   vmult(VectorType & dst, VectorType const & src) const final
   {
-    apply_function_in_double_precision(
-      dst,
-      src,
-      [&](dealii::LinearAlgebra::distributed::Vector<double> &       dst_double,
-          dealii::LinearAlgebra::distributed::Vector<double> const & src_double) {
-        preconditioner_amg->vmult(dst_double, src_double);
-      });
+    preconditioner_amg->vmult(dst, src);
   }
 
-private:
   void
   update() final
   {
@@ -318,7 +315,10 @@ private:
     this->update_needed = false;
   }
 
-  std::shared_ptr<PreconditionerBase<NumberAMG>> preconditioner_amg;
+private:
+  AMGData data;
+
+  std::shared_ptr<PreconditionerBase<Number>> preconditioner_amg;
 };
 
 } // namespace ExaDG
