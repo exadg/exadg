@@ -419,6 +419,11 @@ Enumerations</h2></td></tr>
 , <b>SineAligned</b>
  }</td></tr>
 <tr class="separator:a5451e905b8e2603a2ba6abd82eb370f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab38c15f6b794510acede19511eb6f0db" id="r_ab38c15f6b794510acede19511eb6f0db"><td class="memItemLeft" align="right" valign="top"><a id="ab38c15f6b794510acede19511eb6f0db" name="ab38c15f6b794510acede19511eb6f0db"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>SparseMatrixType</b> { <b>Undefined</b>
+, <b>Trilinos</b>
+, <b>PETSc</b>
+ }</td></tr>
+<tr class="separator:ab38c15f6b794510acede19511eb6f0db"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0220f7503db0dc1ae16412d4f21df730" id="r_a0220f7503db0dc1ae16412d4f21df730"><td class="memItemLeft" align="right" valign="top"><a id="a0220f7503db0dc1ae16412d4f21df730" name="a0220f7503db0dc1ae16412d4f21df730"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>RunType</b> { <b>RefineHAndP</b>
 , <b>FixedProblemSize</b>
 , <b>IncreasingProblemSize</b>
@@ -443,10 +448,6 @@ Enumerations</h2></td></tr>
 , <b>cellwise</b>
  }</td></tr>
 <tr class="separator:a3683d0be5f1067c7e9b43a7a9cfe0973"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4306f49edbfd80cee94a8d99f9e1d7f9" id="r_a4306f49edbfd80cee94a8d99f9e1d7f9"><td class="memItemLeft" align="right" valign="top"><a id="a4306f49edbfd80cee94a8d99f9e1d7f9" name="a4306f49edbfd80cee94a8d99f9e1d7f9"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>KrylovSolverType</b> { <b>CG</b>
-, <b>GMRES</b>
- }</td></tr>
-<tr class="separator:a4306f49edbfd80cee94a8d99f9e1d7f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab45d4fe05ebe191c856090b1192a78b8" id="r_ab45d4fe05ebe191c856090b1192a78b8"><td class="memItemLeft" align="right" valign="top"><a id="ab45d4fe05ebe191c856090b1192a78b8" name="ab45d4fe05ebe191c856090b1192a78b8"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>MultigridType</b> { <br />
 &#160;&#160;<b>Undefined</b>
 , <b>hMG</b>
@@ -773,6 +774,9 @@ template&lt;typename Operator , typename VectorType &gt; </td></tr>
 template&lt;typename Number &gt; </td></tr>
 <tr class="memitem:ad2cd538c9b0514f52730ececda4592f0"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>invert_diagonal</b> (dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; &amp;diagonal)</td></tr>
 <tr class="separator:ad2cd538c9b0514f52730ececda4592f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa998bf14de6ea2ca3e973e3185396215" id="r_aa998bf14de6ea2ca3e973e3185396215"><td class="memTemplParams" colspan="2">template&lt;typename Number &gt; </td></tr>
+<tr class="memitem:aa998bf14de6ea2ca3e973e3185396215"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#aa998bf14de6ea2ca3e973e3185396215">apply_function_in_double_precision</a> (dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; &amp;dst, dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; const &amp;src, std::function&lt; void(dealii::LinearAlgebra::distributed::Vector&lt; double &gt; &amp;, dealii::LinearAlgebra::distributed::Vector&lt; double &gt; const &amp;)&gt; operation)</td></tr>
+<tr class="separator:aa998bf14de6ea2ca3e973e3185396215"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad5d7552d4bfd125db2ddc92cd73ca2f5" id="r_ad5d7552d4bfd125db2ddc92cd73ca2f5"><td class="memTemplParams" colspan="2"><a id="ad5d7552d4bfd125db2ddc92cd73ca2f5" name="ad5d7552d4bfd125db2ddc92cd73ca2f5"></a>
 template&lt;typename Operator , typename value_type &gt; </td></tr>
 <tr class="memitem:ad5d7552d4bfd125db2ddc92cd73ca2f5"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>verify_calculation_of_diagonal</b> (Operator &amp;op, dealii::LinearAlgebra::distributed::Vector&lt; value_type &gt; &amp;diagonal, MPI_Comm const &amp;mpi_comm)</td></tr>
@@ -1019,6 +1023,35 @@ template&lt;int dim&gt; </div>
       </table>
 </div><div class="memdoc">
 <p>Loop over cells and check for refinement/coarsening flags set. </p>
+
+</div>
+</div>
+<a id="aa998bf14de6ea2ca3e973e3185396215" name="aa998bf14de6ea2ca3e973e3185396215"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa998bf14de6ea2ca3e973e3185396215">&#9670;&#160;</a></span>apply_function_in_double_precision()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Number &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void ExaDG::apply_function_in_double_precision </td>
+          <td>(</td>
+          <td class="paramtype">dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>dst</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>src</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::function&lt; void(dealii::LinearAlgebra::distributed::Vector&lt; double &gt; &amp;, dealii::LinearAlgebra::distributed::Vector&lt; double &gt; const &amp;)&gt;</td>          <td class="paramname"><span class="paramname"><em>operation</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Certain functionality of e.g. Trilinos is only available in double precision. The aim of this function is to hide this circumstance from the user code (that uses the template parameter Number) and to perform Number -&gt; double conversions and then call the double-version of a certain Trilinos functionality. </p>
 
 </div>
 </div>

@@ -94,6 +94,8 @@ $(function(){ initResizable(false); });
   <div class="headertitle"><div class="title">ExaDG::MGCoarseAMG&lt; Operator &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p><code>#include &lt;<a class="el" href="coarse__grid__solvers_8h_source.html">coarse_grid_solvers.h</a>&gt;</code></p>
 <div class="dynheader">
 Inheritance diagram for ExaDG::MGCoarseAMG&lt; Operator &gt;:</div>
 <div class="dyncontent">
@@ -112,11 +114,14 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a3c53a283f0c8dd4e73ccf8d56a05449e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5fc82565c893927dde93ba7baf8eb9f0" id="r_a5fc82565c893927dde93ba7baf8eb9f0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5fc82565c893927dde93ba7baf8eb9f0">update</a> () final</td></tr>
 <tr class="separator:a5fc82565c893927dde93ba7baf8eb9f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8b60a61659fc9094edd599aaae2c5aeb" id="r_a8b60a61659fc9094edd599aaae2c5aeb"><td class="memItemLeft" align="right" valign="top"><a id="a8b60a61659fc9094edd599aaae2c5aeb" name="a8b60a61659fc9094edd599aaae2c5aeb"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>operator()</b> (unsigned int const, VectorTypeMultigrid &amp;dst, VectorTypeMultigrid const &amp;src) const final</td></tr>
-<tr class="separator:a8b60a61659fc9094edd599aaae2c5aeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab95eed9cbbeeed93493265787b8d464b" id="r_ab95eed9cbbeeed93493265787b8d464b"><td class="memItemLeft" align="right" valign="top"><a id="ab95eed9cbbeeed93493265787b8d464b" name="ab95eed9cbbeeed93493265787b8d464b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>operator()</b> (unsigned int const, VectorType &amp;dst, VectorType const &amp;src) const final</td></tr>
+<tr class="separator:ab95eed9cbbeeed93493265787b8d464b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Member Function Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><div class="compoundTemplParams">template&lt;typename Operator&gt;<br />
+class ExaDG::MGCoarseAMG&lt; Operator &gt;</div><p>The aim if this class is to translate <a class="el" href="classExaDG_1_1PreconditionerAMG.html">PreconditionerAMG</a> to a coarse-grid solver with the function operator()(). </p>
+</div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a5fc82565c893927dde93ba7baf8eb9f0" name="a5fc82565c893927dde93ba7baf8eb9f0"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a5fc82565c893927dde93ba7baf8eb9f0">&#9670;&#160;</a></span>update()</h2>
 

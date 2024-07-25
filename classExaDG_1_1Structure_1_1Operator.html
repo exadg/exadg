@@ -134,15 +134,18 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_nonlinear_re
 <tr class="memitem:a775483dd6ae16a9ad858b0d85ce6a769" id="r_a775483dd6ae16a9ad858b0d85ce6a769"><td class="memItemLeft" align="right" valign="top"><a id="a775483dd6ae16a9ad858b0d85ce6a769" name="a775483dd6ae16a9ad858b0d85ce6a769"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_solution_linearization</b> (VectorType const &amp;vector) const</td></tr>
 <tr class="separator:a775483dd6ae16a9ad858b0d85ce6a769"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3a4e2243d0da8bfb1204c64bad0cc8d2" id="r_a3a4e2243d0da8bfb1204c64bad0cc8d2"><td class="memItemLeft" align="right" valign="top"><a id="a3a4e2243d0da8bfb1204c64bad0cc8d2" name="a3a4e2243d0da8bfb1204c64bad0cc8d2"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_linearized_operator</b> (VectorType &amp;dst, VectorType const &amp;src, double const factor, double const time) const</td></tr>
-<tr class="separator:a3a4e2243d0da8bfb1204c64bad0cc8d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adcedb2a224723ce1f08ae78dd470561f" id="r_adcedb2a224723ce1f08ae78dd470561f"><td class="memItemLeft" align="right" valign="top"><a id="adcedb2a224723ce1f08ae78dd470561f" name="adcedb2a224723ce1f08ae78dd470561f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>assemble_matrix_if_necessary_for_linear_elasticity_operator</b> () const</td></tr>
+<tr class="separator:adcedb2a224723ce1f08ae78dd470561f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:add0f241c960365f15fc02080c90ebe65" id="r_add0f241c960365f15fc02080c90ebe65"><td class="memItemLeft" align="right" valign="top"><a id="add0f241c960365f15fc02080c90ebe65" name="add0f241c960365f15fc02080c90ebe65"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_elasticity_operator</b> (VectorType &amp;dst, VectorType const &amp;src, double const factor, double const time) const</td></tr>
 <tr class="separator:add0f241c960365f15fc02080c90ebe65"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a53fca797a89b55a63e379a73a9130da0" id="r_a53fca797a89b55a63e379a73a9130da0"><td class="memItemLeft" align="right" valign="top"><a id="a53fca797a89b55a63e379a73a9130da0" name="a53fca797a89b55a63e379a73a9130da0"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_elasticity_operator</b> (VectorType &amp;dst, VectorType const &amp;src, VectorType const &amp;linearization, double const factor, double const time) const</td></tr>
-<tr class="separator:a53fca797a89b55a63e379a73a9130da0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a65a4c15782b899b03b591c16cf32557b" id="r_a65a4c15782b899b03b591c16cf32557b"><td class="memItemLeft" align="right" valign="top"><a id="a65a4c15782b899b03b591c16cf32557b" name="a65a4c15782b899b03b591c16cf32557b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>update_elasticity_operator</b> (double const factor, double const time) const</td></tr>
+<tr class="separator:a65a4c15782b899b03b591c16cf32557b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4da07037971bfc1cabfe9ab8b227ff80" id="r_a4da07037971bfc1cabfe9ab8b227ff80"><td class="memItemLeft" align="right" valign="top"><a id="a4da07037971bfc1cabfe9ab8b227ff80" name="a4da07037971bfc1cabfe9ab8b227ff80"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_elasticity_operator</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
+<tr class="separator:a4da07037971bfc1cabfe9ab8b227ff80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9e442d4a29dedb144ae30793c610df83" id="r_a9e442d4a29dedb144ae30793c610df83"><td class="memItemLeft" align="right" valign="top">std::tuple&lt; unsigned int, unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9e442d4a29dedb144ae30793c610df83">solve_nonlinear</a> (VectorType &amp;sol, VectorType const &amp;const_vector, double const scaling_factor_acceleration, double const scaling_factor_velocity, double const time, bool const update_preconditioner) const final</td></tr>
 <tr class="separator:a9e442d4a29dedb144ae30793c610df83"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac87f1075eba3d74ef7a0e5bc5bc60e62" id="r_ac87f1075eba3d74ef7a0e5bc5bc60e62"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac87f1075eba3d74ef7a0e5bc5bc60e62">rhs</a> (VectorType &amp;dst, double const time) const final</td></tr>
