@@ -151,9 +151,9 @@ apply_function_in_double_precision(
   {
     // create temporal vectors of type double
     dealii::LinearAlgebra::distributed::Vector<double> dst_double, src_double;
-    dst_double.reinit(dst, false); // zero entries
-    src_double.reinit(src, true);  // do not zero entries
-    src_double = src;
+    dst_double.reinit(dst, true); // do not zero entries
+    src_double.reinit(src, true); // do not zero entries
+    src_double.copy_locally_owned_data_from(src);
 
     operation(dst_double, src_double);
 
