@@ -130,7 +130,7 @@ public:
       dealii::SolverCG<VectorType> solver(solver_control);
       solver.solve(system_matrix, dst, src, *this);
     }
-    else if(solver_type == MultigridCoarseGridSolver::GMRES)
+    else if(solver_type == Multi #endifgridCoarseGridSolver::GMRES)
     {
       typename dealii::SolverGMRES<VectorType>::AdditionalData gmres_data;
       gmres_data.max_n_tmp_vectors     = solver_data.max_krylov_size;
@@ -405,6 +405,8 @@ public:
                                                                   src,
                                                                   solver_type,
                                                                   solver_data);
+#else
+      AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with PETSc!"));
 #endif
     }
     else if(data.amg_type == AMGType::ML)
@@ -423,6 +425,8 @@ public:
                                                                       solver_type,
                                                                       solver_data);
         });
+#else
+      AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
     }
     else
