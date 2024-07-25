@@ -30,6 +30,7 @@
 #include <exadg/operators/operator_base.h>
 #include <exadg/solvers_and_preconditioners/utilities/block_jacobi_matrices.h>
 #include <exadg/solvers_and_preconditioners/utilities/invert_diagonal.h>
+#include <exadg/solvers_and_preconditioners/utilities/linear_algebra_utilities.h>
 #include <exadg/solvers_and_preconditioners/utilities/verify_calculation_of_diagonal.h>
 
 namespace ExaDG
@@ -43,7 +44,8 @@ OperatorBase<dim, Number, n_components>::OperatorBase()
     is_dg(true),
     data(OperatorBaseData()),
     level(dealii::numbers::invalid_unsigned_int),
-    n_mpi_processes(0)
+    n_mpi_processes(0),
+    system_matrix_based_been_initialized(false)
 {
 }
 
@@ -146,14 +148,20 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::vmult(VectorType & dst, VectorType const & src) const
 {
-  this->apply(dst, src);
+  if(this->data.use_matrix_based_vmult)
+    this->apply_matrix_based(dst, src);
+  else
+    this->apply(dst, src);
 }
 
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::vmult_add(VectorType & dst, VectorType const & src) const
 {
-  this->apply_add(dst, src);
+  if(this->data.use_matrix_based_vmult)
+    this->apply_matrix_based_add(dst, src);
+  else
+    this->apply_add(dst, src);
 }
 
 template<int dim, typename Number, int n_components>
@@ -304,6 +312,157 @@ OperatorBase<dim, Number, n_components>::apply_add(VectorType & dst, VectorType 
       dst.local_element(constrained_index) += src.local_element(constrained_index);
     }
   }
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::assemble_matrix_if_necessary() const
+{
+  if(this->data.use_matrix_based_vmult)
+  {
+    // initialize matrix
+    if(not(system_matrix_based_been_initialized))
+    {
+      dealii::DoFHandler<dim> const & dof_handler =
+        this->matrix_free->get_dof_handler(this->data.dof_index);
+
+      if(this->data.sparse_matrix_type == SparseMatrixType::Trilinos)
+      {
+#ifdef DEAL_II_WITH_TRILINOS
+        init_system_matrix(system_matrix_trilinos, dof_handler.get_communicator());
+#else
+        AssertThrow(
+          false,
+          dealii::ExcMessage(
+            "Make sure that DEAL_II_WITH_TRILINOS is activated if you want to use SparseMatrixType::Trilinos."));
+#endif
+      }
+      else if(this->data.sparse_matrix_type == SparseMatrixType::PETSc)
+      {
+#ifdef DEAL_II_WITH_PETSC
+        init_system_matrix(system_matrix_petsc, dof_handler.get_communicator());
+#else
+        AssertThrow(
+          false,
+          dealii::ExcMessage(
+            "Make sure that DEAL_II_WITH_PETSC is activated if you want to use SparseMatrixType::PETSc."));
+#endif
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("not implemented."));
+      }
+
+      system_matrix_based_been_initialized = true;
+    }
+
+    // calculate matrix
+    if(this->data.sparse_matrix_type == SparseMatrixType::Trilinos)
+    {
+#ifdef DEAL_II_WITH_TRILINOS
+      system_matrix_trilinos *= 0.0;
+      calculate_system_matrix(system_matrix_trilinos);
+#else
+      AssertThrow(
+        false,
+        dealii::ExcMessage(
+          "Make sure that DEAL_II_WITH_TRILINOS is activated if you want to use SparseMatrixType::Trilinos."));
+#endif
+    }
+    else if(this->data.sparse_matrix_type == SparseMatrixType::PETSc)
+    {
+#ifdef DEAL_II_WITH_PETSC
+      system_matrix_petsc *= 0.0;
+      calculate_system_matrix(system_matrix_petsc);
+
+      if(system_matrix_petsc.m() > 0)
+      {
+        // get vector partitioner
+        dealii::LinearAlgebra::distributed::Vector<Number> vector;
+        initialize_dof_vector(vector);
+        VecCreateMPI(system_matrix_petsc.get_mpi_communicator(),
+                     vector.get_partitioner()->locally_owned_size(),
+                     PETSC_DETERMINE,
+                     &petsc_vector_dst);
+        VecCreateMPI(system_matrix_petsc.get_mpi_communicator(),
+                     vector.get_partitioner()->locally_owned_size(),
+                     PETSC_DETERMINE,
+                     &petsc_vector_src);
+      }
+#else
+      AssertThrow(
+        false,
+        dealii::ExcMessage(
+          "Make sure that DEAL_II_WITH_PETSC is activated if you want to use SparseMatrixType::PETSc."));
+#endif
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
+    }
+  }
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::apply_matrix_based(VectorType &       dst,
+                                                            VectorType const & src) const
+{
+  if(this->data.sparse_matrix_type == SparseMatrixType::Trilinos)
+  {
+#ifdef DEAL_II_WITH_TRILINOS
+    apply_function_in_double_precision(
+      dst,
+      src,
+      [&](dealii::LinearAlgebra::distributed::Vector<double> &       dst_double,
+          dealii::LinearAlgebra::distributed::Vector<double> const & src_double) {
+        system_matrix_trilinos.vmult(dst_double, src_double);
+      });
+#else
+    AssertThrow(
+      false,
+      dealii::ExcMessage(
+        "Make sure that DEAL_II_WITH_TRILINOS is activated if you want to use SparseMatrixType::Trilinos."));
+#endif
+  }
+  else if(this->data.sparse_matrix_type == SparseMatrixType::PETSc)
+  {
+#ifdef DEAL_II_WITH_PETSC
+    if(system_matrix_petsc.m() > 0)
+    {
+      apply_petsc_operation(dst,
+                            src,
+                            petsc_vector_dst,
+                            petsc_vector_src,
+                            [&](dealii::PETScWrappers::VectorBase &       petsc_dst,
+                                dealii::PETScWrappers::VectorBase const & petsc_src) {
+                              system_matrix_petsc.vmult(petsc_dst, petsc_src);
+                            });
+    }
+#else
+    AssertThrow(
+      false,
+      dealii::ExcMessage(
+        "Make sure that DEAL_II_WITH_PETSC is activated if you want to use SparseMatrixType::PETSc."));
+#endif
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("not implemented."));
+  }
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::apply_matrix_based_add(VectorType &       dst,
+                                                                VectorType const & src) const
+{
+  VectorType tmp;
+  tmp.reinit(dst, false);
+
+  apply_matrix_based(tmp, src);
+
+  dst += tmp;
 }
 
 template<int dim, typename Number, int n_components>

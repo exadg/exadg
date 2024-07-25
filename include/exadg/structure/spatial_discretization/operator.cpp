@@ -215,6 +215,9 @@ Operator<dim, Number>::setup_operators()
   operator_data.dof_index               = get_dof_index();
   operator_data.quad_index              = get_quad_index();
   operator_data.dof_index_inhomogeneous = get_dof_index_periodicity_and_hanging_node_constraints();
+  operator_data.use_matrix_based_vmult  = param.use_matrix_based_implementation;
+  operator_data.sparse_matrix_type      = param.sparse_matrix_type;
+
   if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
     AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
@@ -829,8 +832,8 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
 {
   // elasticity operator: make sure that constrained degrees of freedom have been set correctly
   // before evaluating the elasticity operator.
-  elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
-  elasticity_operator_nonlinear.set_time(time);
+  update_elasticity_operator(factor, time);
+
   elasticity_operator_nonlinear.evaluate_nonlinear(dst, src);
 
   // dynamic problems
@@ -864,14 +867,9 @@ Operator<dim, Number>::set_solution_linearization(VectorType const & vector) con
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::apply_linearized_operator(VectorType &       dst,
-                                                 VectorType const & src,
-                                                 double const       factor,
-                                                 double const       time) const
+Operator<dim, Number>::assemble_matrix_if_necessary_for_linear_elasticity_operator() const
 {
-  elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
-  elasticity_operator_nonlinear.set_time(time);
-  elasticity_operator_nonlinear.vmult(dst, src);
+  elasticity_operator_linear.assemble_matrix_if_necessary();
 }
 
 template<int dim, typename Number>
@@ -881,37 +879,44 @@ Operator<dim, Number>::evaluate_elasticity_operator(VectorType &       dst,
                                                     double const       factor,
                                                     double const       time) const
 {
+  update_elasticity_operator(factor, time);
+
   if(param.large_deformation)
   {
-    elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
-    elasticity_operator_nonlinear.set_time(time);
     elasticity_operator_nonlinear.evaluate_nonlinear(dst, src);
   }
   else
   {
-    elasticity_operator_linear.set_scaling_factor_mass_operator(factor);
-    elasticity_operator_linear.set_time(time);
     elasticity_operator_linear.evaluate(dst, src);
   }
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::apply_elasticity_operator(VectorType &       dst,
-                                                 VectorType const & src,
-                                                 VectorType const & linearization,
-                                                 double const       factor,
-                                                 double const       time) const
+Operator<dim, Number>::update_elasticity_operator(double const factor, double const time) const
 {
   if(param.large_deformation)
   {
-    set_solution_linearization(linearization);
-    apply_linearized_operator(dst, src, factor, time);
+    elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
+    elasticity_operator_nonlinear.set_time(time);
   }
   else
   {
     elasticity_operator_linear.set_scaling_factor_mass_operator(factor);
     elasticity_operator_linear.set_time(time);
+  }
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::apply_elasticity_operator(VectorType & dst, VectorType const & src) const
+{
+  if(param.large_deformation)
+  {
+    elasticity_operator_nonlinear.vmult(dst, src);
+  }
+  else
+  {
     elasticity_operator_linear.vmult(dst, src);
   }
 }
@@ -991,8 +996,9 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
   // unsteady problems
   double const scaling_factor_mass =
     compute_scaling_factor_mass(scaling_factor_acceleration, scaling_factor_velocity);
-  elasticity_operator_linear.set_scaling_factor_mass_operator(scaling_factor_mass);
-  elasticity_operator_linear.set_time(time);
+
+  update_elasticity_operator(scaling_factor_mass, time);
+  assemble_matrix_if_necessary_for_linear_elasticity_operator();
 
   linear_solver->update_preconditioner(update_preconditioner);
 

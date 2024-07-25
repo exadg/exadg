@@ -803,12 +803,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_sol
     {
       typename MGCoarseKrylov<Operator>::AdditionalData additional_data;
 
-      if(data.coarse_problem.solver == MultigridCoarseGridSolver::CG)
-        additional_data.solver_type = KrylovSolverType::CG;
-      else if(data.coarse_problem.solver == MultigridCoarseGridSolver::GMRES)
-        additional_data.solver_type = KrylovSolverType::GMRES;
-      else
-        AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      additional_data.solver_type = data.coarse_problem.solver;
 
       additional_data.solver_data          = data.coarse_problem.solver_data;
       additional_data.operator_is_singular = operator_is_singular;
