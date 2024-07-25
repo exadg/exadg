@@ -418,6 +418,11 @@ OperatorBase<dim, Number, n_components>::apply_matrix_based(VectorType &       d
           dealii::LinearAlgebra::distributed::Vector<double> const & src_double) {
         system_matrix_trilinos.vmult(dst_double, src_double);
       });
+#else
+    AssertThrow(
+      false,
+      dealii::ExcMessage(
+        "Make sure that DEAL_II_WITH_TRILINOS is activated if you want to use SparseMatrixType::Trilinos."));
 #endif
   }
   else if(this->data.sparse_matrix_type == SparseMatrixType::PETSc)
@@ -434,6 +439,11 @@ OperatorBase<dim, Number, n_components>::apply_matrix_based(VectorType &       d
                               system_matrix_petsc.vmult(petsc_dst, petsc_src);
                             });
     }
+#else
+    AssertThrow(
+      false,
+      dealii::ExcMessage(
+        "Make sure that DEAL_II_WITH_PETSC is activated if you want to use SparseMatrixType::PETSc."));
 #endif
   }
   else
