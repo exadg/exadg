@@ -130,7 +130,7 @@ public:
       dealii::SolverCG<VectorType> solver(solver_control);
       solver.solve(system_matrix, dst, src, *this);
     }
-    else if(solver_type == Multi #endifgridCoarseGridSolver::GMRES)
+    else if(solver_type == MultigridCoarseGridSolver::GMRES)
     {
       typename dealii::SolverGMRES<VectorType>::AdditionalData gmres_data;
       gmres_data.max_n_tmp_vectors     = solver_data.max_krylov_size;
