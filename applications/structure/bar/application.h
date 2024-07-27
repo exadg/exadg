@@ -317,7 +317,7 @@ private:
     this->param.newton_solver_data  = Newton::SolverData(1e2, 1.e-9, 1.e-4);
     this->param.solver              = Solver::FGMRES;
     this->param.solver_data         = SolverData(1e3, 1.e-14, 1.e-8, 30);
-    this->param.preconditioner      = Preconditioner::AMG; // Multigrid; // AMG
+    this->param.preconditioner      = Preconditioner::Multigrid; // AMG
     this->param.multigrid_data.type = MultigridType::phMG;
 
     this->param.multigrid_data.p_sequence             = PSequenceType::DecreaseByOne; // Bisect;
@@ -335,7 +335,8 @@ private:
       MultigridCoarseGridPreconditioner::AMG;
 
 #ifdef DEAL_II_WITH_TRILINOS
-    this->param.multigrid_data.coarse_problem.amg_data.amg_operator_type = AMGOperatorType::Ignore;
+    this->param.multigrid_data.coarse_problem.amg_data.amg_operator_type =
+      AMGOperatorType::Elasticity;
 
     this->param.multigrid_data.coarse_problem.amg_data.ml_data.elliptic = true;
     this->param.multigrid_data.coarse_problem.amg_data.ml_data.higher_order_elements =

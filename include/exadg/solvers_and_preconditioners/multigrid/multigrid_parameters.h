@@ -80,9 +80,8 @@ enum class AMGType
 
 enum class AMGOperatorType
 {
-  Unknown,
-  Ignore,
-  Laplace,
+  ScalarLaplace,
+  VectorLaplace,
   Elasticity
 };
 
@@ -109,7 +108,7 @@ struct AMGData
     amg_type = AMGType::ML;
 
 #ifdef DEAL_II_WITH_TRILINOS
-    amg_operator_type       = AMGOperatorType::Unknown;
+    amg_operator_type       = AMGOperatorType::ScalarLaplace;
     ml_data.smoother_sweeps = 1;
     ml_data.n_cycles        = 1;
     ml_data.smoother_type   = "ILU";

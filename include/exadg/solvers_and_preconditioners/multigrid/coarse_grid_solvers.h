@@ -113,6 +113,7 @@ public:
                  bool const                      initialize,
                  AdditionalData const &          additional_data,
                  dealii::DoFHandler<dim> const & dof_handler,
+                 dealii::Mapping<dim> const &    mapping,
                  MPI_Comm const &                comm)
     : pde_operator(pde_operator_in), additional_data(additional_data), mpi_comm(comm)
   {
@@ -139,6 +140,7 @@ public:
           initialize,
           additional_data.amg_data.amg_operator_type,
           dof_handler,
+          mapping,
           additional_data.amg_data.ml_data);
 #else
         AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with Trilinos!"));
@@ -468,11 +470,13 @@ public:
   MGCoarseAMG(Operator const &                op,
               bool const                      initialize,
               dealii::DoFHandler<dim> const & dof_handler,
+              dealii::Mapping<dim> const &    mapping,
               AMGData                         data = AMGData())
   {
     (void)op;
     (void)data;
     (void)dof_handler;
+    (void)mapping;
 
     if(data.amg_type == AMGType::BoomerAMG)
     {
@@ -489,7 +493,7 @@ public:
     {
 #ifdef DEAL_II_WITH_TRILINOS
       amg_preconditioner = std::make_shared<PreconditionerML<dim, Operator, NumberAMG>>(
-        op, initialize, data.amg_operator_type, dof_handler, data.ml_data);
+        op, initialize, data.amg_operator_type, dof_handler, mapping, data.ml_data);
 #else
       AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
