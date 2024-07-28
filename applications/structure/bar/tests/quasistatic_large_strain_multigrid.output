@@ -27,19 +27,20 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Perform cell integral in spatial configuration:false
 
 Physical quantities:
 
 Temporal discretization:
-  load_increment:                            5.0000e-01
+  load_increment:                            1.0000e-01
 
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              1
   Create coarse triangulations:              false
-  Mapping degree:                            1
-  Mapping degree coarse grids:               1
+  Mapping degree:                            4
+  Mapping degree coarse grids:               4
   Polynomial degree:                         4
   Use matrix-based implementation:           false
 
@@ -48,37 +49,37 @@ Solver:
 Newton:
   Maximum number of iterations:              100
   Absolute solver tolerance:                 1.0000e-09
-  Relative solver tolerance:                 1.0000e-09
+  Relative solver tolerance:                 1.0000e-04
 
 Linear solver:
   Solver:                                    FGMRES
   Maximum number of iterations:              1000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-08
-  Maximum size of Krylov space:              100
+  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            phMG
-  p-sequence:                                Bisect
+  p-sequence:                                DecreaseByOne
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
-  Iterations smoother:                       5
-  Smoothing range:                           2.0000e+01
+  Iterations smoother:                       12
+  Smoothing range:                           6.0000e+01
   Iterations eigenvalue estimation:          20
-  Coarse grid solver:                        CG
+  Coarse grid solver:                        GMRES
   Coarse grid preconditioner:                AMG
-  Maximum number of iterations:              10000
+  Maximum number of iterations:              1000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-03
   Maximum size of Krylov space:              30
       AMG type:                              ML
-      Smoother sweeps:                       1
-      Number of cycles:                      1
+      Smoother sweeps:                       2
+      Number of cycles:                      2
       Smoother type:                         ILU
 
 Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                1
-  Number of cells:                           32
+  Number of cells:                           8
 
 Construct elasticity operator ...
 
@@ -86,7 +87,7 @@ Continuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
   number of dofs per cell:                   375
-  number of dofs (total):                    8019
+  number of dofs (total):                    2187
 
 ... done!
 
@@ -101,12 +102,52 @@ Solving quasi-static problem ...
 
 ________________________________________________________________________________
 
- Solve non-linear problem for load factor = 5.0000e-03
+ Solve non-linear problem for load factor = 1.0000e-03
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 1.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 2.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 3.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 4.0000e-01
 ________________________________________________________________________________
 
 ________________________________________________________________________________
 
  Solve non-linear problem for load factor = 5.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 6.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 7.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 8.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 9.0000e-01
 ________________________________________________________________________________
 
 ________________________________________________________________________________

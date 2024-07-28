@@ -343,6 +343,9 @@ private:
     parameter_list.set("smoother: Chebyshev alpha", 10.);
     parameter_list.set("smoother: ifpack overlap", static_cast<int>(ml_data.smoother_overlap));
     parameter_list.set("aggregation: threshold", ml_data.aggregation_threshold);
+
+    // Minimum size of the coarse problem, i.e. no coarser problems
+    // smaller than `coarse: max size` are constructed.
     parameter_list.set("coarse: max size", 2000);
 
     // This extends the settings in deal::PreconditionAMG::AdditionalData::set_parameters().

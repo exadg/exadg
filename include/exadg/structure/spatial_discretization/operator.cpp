@@ -852,6 +852,11 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
   // before evaluating the elasticity operator.
   update_elasticity_operator(factor, time);
 
+  // update linearization vector for interpolation and update mapping
+  // if we integrate in the spatial configuration
+  bool const update_mapping = (not param.force_material_residual);
+  elasticity_operator_nonlinear.set_solution_linearization(src, update_mapping);
+
   elasticity_operator_nonlinear.evaluate_nonlinear(dst, src);
 
   // dynamic problems

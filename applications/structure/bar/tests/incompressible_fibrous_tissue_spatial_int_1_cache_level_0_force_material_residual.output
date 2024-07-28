@@ -42,7 +42,8 @@ Spatial Discretization:
   Mapping degree:                            4
   Mapping degree coarse grids:               4
   Polynomial degree:                         4
-
+  Use matrix-based implementation:           false
+  
 Solver:
 
 Newton:
@@ -157,4 +158,4 @@ ________________________________________________________________________________
 ... done!
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 6.03274e-02
+  Relative error (L2-norm): 6.03822e-02

@@ -766,7 +766,7 @@ private:
   // mesh parameters
   unsigned int const repetitions0 = 1, repetitions1 = 1, repetitions2 = 1;
 
-  MaterialType material_type = MaterialType::Undefined;
+  MaterialType material_type = MaterialType::StVenantKirchhoff;
   double const E_modul       = 200.0;
 
   double const start_time = 0.0;

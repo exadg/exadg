@@ -35,8 +35,8 @@ Spatial Discretization:
   Element type:                              Hypercube
   Number of global refinements:              1
   Create coarse triangulations:              false
-  Mapping degree:                            1
-  Mapping degree coarse grids:               1
+  Mapping degree:                            4
+  Mapping degree coarse grids:               4
   Polynomial degree:                         4
   Use matrix-based implementation:           false
 
@@ -47,30 +47,30 @@ Linear solver:
   Maximum number of iterations:              1000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-08
-  Maximum size of Krylov space:              100
+  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            phMG
-  p-sequence:                                Bisect
+  p-sequence:                                DecreaseByOne
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
-  Iterations smoother:                       5
-  Smoothing range:                           2.0000e+01
+  Iterations smoother:                       12
+  Smoothing range:                           6.0000e+01
   Iterations eigenvalue estimation:          20
-  Coarse grid solver:                        CG
+  Coarse grid solver:                        GMRES
   Coarse grid preconditioner:                AMG
-  Maximum number of iterations:              10000
+  Maximum number of iterations:              1000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-03
   Maximum size of Krylov space:              30
       AMG type:                              ML
-      Smoother sweeps:                       1
-      Number of cycles:                      1
+      Smoother sweeps:                       2
+      Number of cycles:                      2
       Smoother type:                         ILU
 
 Generating grid for 3-dimensional problem:
 
   Max. number of refinements:                1
-  Number of cells:                           32
+  Number of cells:                           8
 
 Construct elasticity operator ...
 
@@ -78,7 +78,7 @@ Continuous Galerkin finite element discretization:
 
   degree of 1D polynomials:                  4
   number of dofs per cell:                   375
-  number of dofs (total):                    8019
+  number of dofs (total):                    2187
 
 ... done!
 
