@@ -35,7 +35,7 @@ Physical quantities:
 
 Temporal discretization:
   Start time:                                0.0000e+00
-  End time:                                  1.0000e+02
+  End time:                                  1.0000e+00
   Max. number of time steps:                 4294967295
   Temporal refinements:                      0
   Time integration type:                     BossakAlpha
@@ -43,7 +43,7 @@ Temporal discretization:
   Solver information:
   Interval physical time:                    1.7977e+308
   Interval wall time:                        1.7977e+308
-  Interval time steps:                       200
+  Interval time steps:                       20
 
 Spatial Discretization:
   Triangulation type:                        Distributed
@@ -53,6 +53,7 @@ Spatial Discretization:
   Mapping degree:                            1
   Mapping degree coarse grids:               1
   Polynomial degree:                         1
+  Use matrix-based implementation:           false
 
 Solver:
 

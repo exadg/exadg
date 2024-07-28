@@ -129,6 +129,7 @@ protected:
   std::shared_ptr<SpatialOperatorBase<dim, Number>> operator_base;
 
   // convective term formulated explicitly
+  bool                    needs_vector_convective_term;
   std::vector<VectorType> vec_convective_term;
   VectorType              convective_term_np;
 

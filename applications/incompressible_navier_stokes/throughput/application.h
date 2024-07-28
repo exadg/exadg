@@ -129,17 +129,21 @@ private:
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
 
-    // viscous step
-    this->param.solver_viscous         = SolverViscous::CG;
-    this->param.preconditioner_viscous = PreconditionerViscous::None;
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      this->param.solver_momentum         = SolverMomentum::CG;
+      this->param.preconditioner_momentum = MomentumPreconditioner::None;
+    }
 
     // PRESSURE-CORRECTION SCHEME
 
     // momentum step
-
-    // linear solver
-    this->param.solver_momentum         = SolverMomentum::GMRES;
-    this->param.preconditioner_momentum = MomentumPreconditioner::None;
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      // linear solver
+      this->param.solver_momentum         = SolverMomentum::GMRES;
+      this->param.preconditioner_momentum = MomentumPreconditioner::None;
+    }
 
     // COUPLED NAVIER-STOKES SOLVER
 

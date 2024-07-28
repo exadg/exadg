@@ -106,6 +106,9 @@ private:
     // These should not be needed for the throughput applications.
     this->param.solver = Solver::FGMRES;
 
+    this->param.use_matrix_based_implementation = false;
+    this->param.sparse_matrix_type              = SparseMatrixType::Trilinos;
+
     // Output all the application parameters to screen.
     std::string problem_type_str = "Undefined";
     if(problem_type == ProblemType::Steady)

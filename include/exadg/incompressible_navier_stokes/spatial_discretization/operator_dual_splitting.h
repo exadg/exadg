@@ -116,14 +116,6 @@ public:
   void
   apply_helmholtz_operator(VectorType & dst, VectorType const & src) const;
 
-  void
-  rhs_add_viscous_term(VectorType & dst, double const time) const;
-
-  unsigned int
-  solve_viscous(VectorType &       dst,
-                VectorType const & src,
-                bool const &       update_preconditioner,
-                double const &     scaling_factor_mass);
 
   /*
    * Fill a DoF vector with velocity Dirichlet values on Dirichlet boundaries.
@@ -137,18 +129,6 @@ public:
   interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time) const;
 
 private:
-  void
-  setup_preconditioners_and_solvers() final;
-
-  /*
-   * Setup of Helmholtz solver.
-   */
-  void
-  setup_helmholtz_preconditioner();
-
-  void
-  setup_helmholtz_solver();
-
   /*
    * rhs pressure Poisson equation
    */
@@ -226,14 +206,6 @@ private:
     VectorType &                            dst,
     VectorType const &                      src,
     Range const &                           face_range) const;
-
-
-  /*
-   * Viscous step (Helmholtz-like equation).
-   */
-  std::shared_ptr<PreconditionerBase<Number>> helmholtz_preconditioner;
-
-  std::shared_ptr<Krylov::SolverBase<VectorType>> helmholtz_solver;
 };
 
 } // namespace IncNS

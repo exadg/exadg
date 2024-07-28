@@ -80,6 +80,9 @@ OperatorProjectionMethods<dim, Number>::setup_preconditioners_and_solvers()
   setup_solver_pressure_poisson();
 
   Base::setup_projection_solver();
+
+  setup_momentum_preconditioner();
+  setup_momentum_solver();
 }
 
 template<int dim, typename Number>
@@ -257,8 +260,156 @@ OperatorProjectionMethods<dim, Number>::setup_solver_pressure_poisson()
 
 template<int dim, typename Number>
 void
-OperatorProjectionMethods<dim, Number>::do_rhs_add_viscous_term(VectorType & dst,
-                                                                double const time) const
+OperatorProjectionMethods<dim, Number>::setup_momentum_preconditioner()
+{
+  if(this->param.preconditioner_momentum == MomentumPreconditioner::InverseMassMatrix)
+  {
+    InverseMassOperatorData inverse_mass_operator_data;
+    inverse_mass_operator_data.dof_index  = this->get_dof_index_velocity();
+    inverse_mass_operator_data.quad_index = this->get_quad_index_velocity_standard();
+    inverse_mass_operator_data.parameters = this->param.inverse_mass_preconditioner;
+
+    momentum_preconditioner =
+      std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(this->get_matrix_free(),
+                                                                    inverse_mass_operator_data);
+  }
+  else if(this->param.preconditioner_momentum == MomentumPreconditioner::PointJacobi)
+  {
+    momentum_preconditioner =
+      std::make_shared<JacobiPreconditioner<MomentumOperator<dim, Number>>>(this->momentum_operator,
+                                                                            false);
+  }
+  else if(this->param.preconditioner_momentum == MomentumPreconditioner::BlockJacobi)
+  {
+    momentum_preconditioner =
+      std::make_shared<BlockJacobiPreconditioner<MomentumOperator<dim, Number>>>(
+        this->momentum_operator, false);
+  }
+  else if(this->param.preconditioner_momentum == MomentumPreconditioner::Multigrid)
+  {
+    typedef MultigridPreconditioner<dim, Number> Multigrid;
+
+    momentum_preconditioner = std::make_shared<Multigrid>(this->mpi_comm);
+
+    std::shared_ptr<Multigrid> mg_preconditioner =
+      std::dynamic_pointer_cast<Multigrid>(momentum_preconditioner);
+
+    std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      dirichlet_boundary_conditions = this->momentum_operator.get_data().bc->dirichlet_bc;
+
+    // We also need to add DirichletCached boundary conditions. From the
+    // perspective of multigrid, there is no difference between standard
+    // and cached Dirichlet BCs. Since multigrid does not need information
+    // about inhomogeneous boundary data, we simply fill the map with
+    // dealii::Functions::ZeroFunction for DirichletCached BCs.
+    for(auto iter : this->momentum_operator.get_data().bc->dirichlet_cached_bc)
+    {
+      typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+        pair;
+
+      dirichlet_boundary_conditions.insert(
+        pair(iter, new dealii::Functions::ZeroFunction<dim>(dim)));
+    }
+
+    typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
+    Map_DBC_ComponentMask                                               dirichlet_bc_component_mask;
+
+    mg_preconditioner->initialize(this->param.multigrid_data_momentum,
+                                  this->grid,
+                                  this->multigrid_mappings,
+                                  this->get_dof_handler_u().get_fe(),
+                                  this->momentum_operator,
+                                  this->param.multigrid_operator_type_momentum,
+                                  this->param.ale_formulation,
+                                  dirichlet_boundary_conditions,
+                                  dirichlet_bc_component_mask);
+  }
+  else
+  {
+    AssertThrow(this->param.preconditioner_momentum == MomentumPreconditioner::None,
+                dealii::ExcNotImplemented());
+  }
+}
+
+template<int dim, typename Number>
+void
+OperatorProjectionMethods<dim, Number>::setup_momentum_solver()
+{
+  if(this->param.solver_momentum == SolverMomentum::CG)
+  {
+    // setup solver data
+    Krylov::SolverDataCG solver_data;
+    solver_data.max_iter             = this->param.solver_data_momentum.max_iter;
+    solver_data.solver_tolerance_abs = this->param.solver_data_momentum.abs_tol;
+    solver_data.solver_tolerance_rel = this->param.solver_data_momentum.rel_tol;
+    if(this->param.preconditioner_momentum != MomentumPreconditioner::None)
+      solver_data.use_preconditioner = true;
+
+    // setup solver
+    momentum_linear_solver = std::make_shared<
+      Krylov::SolverCG<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
+      this->momentum_operator, *momentum_preconditioner, solver_data);
+  }
+  else if(this->param.solver_momentum == SolverMomentum::GMRES)
+  {
+    // setup solver data
+    Krylov::SolverDataGMRES solver_data;
+    solver_data.max_iter             = this->param.solver_data_momentum.max_iter;
+    solver_data.solver_tolerance_abs = this->param.solver_data_momentum.abs_tol;
+    solver_data.solver_tolerance_rel = this->param.solver_data_momentum.rel_tol;
+    solver_data.max_n_tmp_vectors    = this->param.solver_data_momentum.max_krylov_size;
+    solver_data.compute_eigenvalues  = false;
+    if(this->param.preconditioner_momentum != MomentumPreconditioner::None)
+      solver_data.use_preconditioner = true;
+
+    // setup solver
+    momentum_linear_solver = std::make_shared<
+      Krylov::SolverGMRES<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
+      this->momentum_operator, *momentum_preconditioner, solver_data, this->mpi_comm);
+  }
+  else if(this->param.solver_momentum == SolverMomentum::FGMRES)
+  {
+    Krylov::SolverDataFGMRES solver_data;
+    solver_data.max_iter             = this->param.solver_data_momentum.max_iter;
+    solver_data.solver_tolerance_abs = this->param.solver_data_momentum.abs_tol;
+    solver_data.solver_tolerance_rel = this->param.solver_data_momentum.rel_tol;
+    solver_data.max_n_tmp_vectors    = this->param.solver_data_momentum.max_krylov_size;
+    if(this->param.preconditioner_momentum != MomentumPreconditioner::None)
+      solver_data.use_preconditioner = true;
+
+    momentum_linear_solver = std::make_shared<
+      Krylov::SolverFGMRES<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
+      this->momentum_operator, *momentum_preconditioner, solver_data);
+  }
+  else
+  {
+    AssertThrow(false,
+                dealii::ExcMessage("Specified solver for momentum equation is not implemented."));
+  }
+
+
+  // Navier-Stokes equations with an implicit treatment of the convective term
+  if(this->param.nonlinear_problem_has_to_be_solved())
+  {
+    // nonlinear_operator
+    nonlinear_operator.initialize(*this);
+
+    // setup Newton solver
+    momentum_newton_solver = std::make_shared<Newton::Solver<VectorType,
+                                                             NonlinearMomentumOperator<dim, Number>,
+                                                             MomentumOperator<dim, Number>,
+                                                             Krylov::SolverBase<VectorType>>>(
+      this->param.newton_solver_data_momentum,
+      nonlinear_operator,
+      this->momentum_operator,
+      *momentum_linear_solver);
+  }
+}
+
+template<int dim, typename Number>
+void
+OperatorProjectionMethods<dim, Number>::rhs_add_viscous_term(VectorType & dst,
+                                                             double const time) const
 {
   this->viscous_operator.set_time(time);
   this->viscous_operator.rhs_add(dst);
@@ -309,6 +460,87 @@ OperatorProjectionMethods<dim, Number>::apply_laplace_operator(VectorType &     
                                                                VectorType const & src) const
 {
   this->laplace_operator.vmult(dst, src);
+}
+
+template<int dim, typename Number>
+unsigned int
+OperatorProjectionMethods<dim, Number>::solve_linear_momentum_equation(
+  VectorType &       solution,
+  VectorType const & rhs,
+  bool const &       update_preconditioner,
+  double const &     scaling_factor_mass)
+{
+  // We do not need to set the time here, because time affects the operator only in the form of
+  // boundary conditions. The result of such boundary condition evaluations is handed over to this
+  // function via the vector rhs.
+  this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
+
+  // Note that there is no need to set the evaluation time for the momentum_operator
+  // because this function is only called if the convective term is not considered
+  // in the momentum_operator (Stokes eq. or explicit treatment of convective term).
+
+  this->momentum_linear_solver->update_preconditioner(update_preconditioner);
+
+  auto linear_iterations = this->momentum_linear_solver->solve(solution, rhs);
+
+  return linear_iterations;
+}
+
+template<int dim, typename Number>
+std::tuple<unsigned int, unsigned int>
+OperatorProjectionMethods<dim, Number>::solve_nonlinear_momentum_equation(
+  VectorType &       dst,
+  VectorType const & rhs_vector,
+  double const &     time,
+  bool const &       update_preconditioner,
+  double const &     scaling_factor_mass)
+{
+  // update nonlinear operator
+  this->nonlinear_operator.update(rhs_vector, time, scaling_factor_mass);
+
+  // Set time and scaling_factor_mass for linear operator
+  this->momentum_operator.set_time(time);
+  this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
+
+  // Solve nonlinear problem
+  Newton::UpdateData update;
+  update.do_update                = update_preconditioner;
+  update.update_every_newton_iter = this->param.update_preconditioner_momentum_every_newton_iter;
+
+  std::tuple<unsigned int, unsigned int> iter = this->momentum_newton_solver->solve(dst, update);
+
+  return iter;
+}
+
+template<int dim, typename Number>
+void
+OperatorProjectionMethods<dim, Number>::evaluate_nonlinear_residual(
+  VectorType &       dst,
+  VectorType const & src,
+  VectorType const * rhs_vector,
+  double const &     time,
+  double const &     scaling_factor_mass) const
+{
+  // update implicitly coupled viscosity
+  if(this->param.nonlinear_viscous_problem())
+  {
+    this->update_viscosity(src);
+  }
+
+  this->mass_operator.apply_scale(dst, scaling_factor_mass, src);
+
+  // implicitly treated convective term
+  if(this->param.implicit_convective_problem())
+  {
+    this->convective_operator.evaluate_nonlinear_operator_add(dst, src, time);
+  }
+
+  // viscous term
+  this->viscous_operator.set_time(time);
+  this->viscous_operator.evaluate_add(dst, src);
+
+  // rhs vector
+  dst.add(-1.0, *rhs_vector);
 }
 
 template<int dim, typename Number>

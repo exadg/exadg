@@ -156,7 +156,7 @@ public:
   get_dof_index_pressure() const;
 
   unsigned int
-  get_quad_index_velocity_linear() const;
+  get_quad_index_velocity_standard() const;
 
   unsigned int
   get_quad_index_pressure() const;
@@ -166,7 +166,7 @@ protected:
   get_dof_index_velocity_scalar() const;
 
   unsigned int
-  get_quad_index_velocity_nonlinear() const;
+  get_quad_index_velocity_overintegration() const;
 
   unsigned int
   get_quad_index_velocity_gauss_lobatto() const;
@@ -237,6 +237,14 @@ public:
   prescribe_initial_conditions(VectorType & velocity,
                                VectorType & pressure,
                                double const time) const;
+
+  /*
+   * Interpolate analytical solution functions.
+   */
+  void
+  interpolate_analytical_solution(VectorType & velocity,
+                                  VectorType & pressure,
+                                  double const time) const;
 
   // FSI: coupling fluid -> structure
   // fills a DoF-vector (velocity) with values of traction on fluid-structure interface
@@ -503,11 +511,11 @@ private:
   std::string const dof_index_p        = "pressure";
   std::string const dof_index_u_scalar = "velocity_scalar";
 
-  std::string const quad_index_u               = "velocity";
-  std::string const quad_index_p               = "pressure";
-  std::string const quad_index_u_nonlinear     = "velocity_nonlinear";
-  std::string const quad_index_u_gauss_lobatto = "velocity_gauss_lobatto";
-  std::string const quad_index_p_gauss_lobatto = "pressure_gauss_lobatto";
+  std::string const quad_index_u                 = "velocity";
+  std::string const quad_index_p                 = "pressure";
+  std::string const quad_index_u_overintegration = "velocity_overintegration";
+  std::string const quad_index_u_gauss_lobatto   = "velocity_gauss_lobatto";
+  std::string const quad_index_p_gauss_lobatto   = "pressure_gauss_lobatto";
 
   std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data;
   std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free;

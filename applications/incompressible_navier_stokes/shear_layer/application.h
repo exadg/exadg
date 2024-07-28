@@ -154,10 +154,9 @@ private:
     this->param.order_extrapolation_pressure_nbc =
       this->param.order_time_integrator <= 2 ? this->param.order_time_integrator : 2;
 
-    // viscous step
-    this->param.solver_viscous         = SolverViscous::CG;
-    this->param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-6);
-    this->param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
+    this->param.solver_momentum         = SolverMomentum::CG;
+    this->param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-6);
+    this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
   }
 
   void

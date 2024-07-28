@@ -222,6 +222,11 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
   {
     pde_operator->initialize_dof_vector(linearization);
     linearization = 1.0;
+    pde_operator->set_solution_linearization(linearization);
+  }
+  else
+  {
+    pde_operator->assemble_matrix_if_necessary_for_linear_elasticity_operator();
   }
 
   double wall_time = std::numeric_limits<double>::max();
@@ -258,14 +263,9 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
           {
             if(i == 0 and application->get_parameters().large_deformation)
             {
-              // This also calls set_solution_linearization(), which updates
-              // the storage of the material models in the nonlinear case.
-              pde_operator->apply_elasticity_operator(dst, src, linearization, 1.0, 0.0);
+              pde_operator->set_solution_linearization(linearization);
             }
-            else
-            {
-              pde_operator->apply_linearized_operator(dst, src, 1.0, 0.0);
-            }
+            pde_operator->apply_elasticity_operator(dst, src);
           }
         }
 
@@ -294,10 +294,10 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
   if(not(is_test))
   {
     // clang-format off
-    pcout << std::endl
-          << std::scientific << std::setprecision(4)
-          << "DoFs/sec:        " << throughput << std::endl
-          << "DoFs/(sec*core): " << throughput/(double)N_mpi_processes << std::endl;
+	    pcout << std::endl
+	          << std::scientific << std::setprecision(4)
+	          << "DoFs/sec:        " << throughput << std::endl
+	          << "DoFs/(sec*core): " << throughput/(double)N_mpi_processes << std::endl;
     // clang-format on
   }
 

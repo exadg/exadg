@@ -104,11 +104,13 @@ MultigridPreconditioner<dim, Number>::update()
       vector_multigrid_type_ptr  = &vector_multigrid_type_copy;
     }
 
-    // copy velocity to finest level
+    // Copy displacement vector to finest level
+    // Note: This function also re-assembles the sparse matrix in case a matrix-based implementation
+    // is used
     this->get_operator_nonlinear(this->get_number_of_levels() - 1)
       ->set_solution_linearization(*vector_multigrid_type_ptr, true);
 
-    // interpolate velocity from fine to coarse level
+    // interpolate displacement vector from fine to coarse level
     this->transfer_from_fine_to_coarse_levels(
       [&](unsigned int const fine_level, unsigned int const coarse_level) {
         auto const & vector_fine_level =
@@ -116,18 +118,21 @@ MultigridPreconditioner<dim, Number>::update()
         auto vector_coarse_level =
           this->get_operator_nonlinear(coarse_level)->get_solution_linearization();
         this->transfers->interpolate(fine_level, vector_coarse_level, vector_fine_level);
+        // Note: This function also re-assembles the sparse matrix in case a matrix-based
+        // implementation is used
         this->get_operator_nonlinear(coarse_level)
           ->set_solution_linearization(vector_coarse_level, false);
       });
   }
-
-  // In case that the operators have been updated, we also need to update the smoothers and the
-  // coarse grid solver. This is generic functionality implemented in the base class.
-  if(nonlinear or data.unsteady)
+  else // linear problems
   {
-    this->update_smoothers();
-    this->update_coarse_solver();
+    pde_operator->assemble_matrix_if_necessary();
   }
+
+  // Update the smoothers and the coarse grid solver. This is generic functionality implemented in
+  // the base class.
+  this->update_smoothers();
+  this->update_coarse_solver();
 
   this->update_needed = false;
 }

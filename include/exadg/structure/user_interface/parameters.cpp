@@ -71,6 +71,8 @@ Parameters::Parameters()
     mapping_degree(1),
     mapping_degree_coarse_grids(1),
     degree(1),
+    use_matrix_based_implementation(false),
+    sparse_matrix_type(SparseMatrixType::Undefined),
 
     // SOLVER
     newton_solver_data(Newton::SolverData(1e4, 1.e-12, 1.e-6)),
@@ -128,6 +130,12 @@ Parameters::check() const
   grid.check();
 
   AssertThrow(degree > 0, dealii::ExcMessage("Polynomial degree must be larger than zero."));
+
+  if(use_matrix_based_implementation)
+  {
+    AssertThrow(sparse_matrix_type != SparseMatrixType::Undefined,
+                dealii::ExcMessage("Parameter must be defined."));
+  }
 
   // SOLVER
   AssertThrow(solver != Solver::Undefined, dealii::ExcMessage("Parameter must be defined."));
@@ -235,6 +243,13 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
     print_parameter(pcout, "Mapping degree coarse grids", mapping_degree_coarse_grids);
 
   print_parameter(pcout, "Polynomial degree", degree);
+
+  print_parameter(pcout, "Use matrix-based implementation", use_matrix_based_implementation);
+
+  if(use_matrix_based_implementation)
+  {
+    print_parameter(pcout, "Sparse matrix type", sparse_matrix_type);
+  }
 }
 
 void

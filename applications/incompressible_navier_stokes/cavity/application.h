@@ -130,33 +130,37 @@ private:
     this->param.order_extrapolation_pressure_nbc =
       this->param.order_time_integrator <= 2 ? this->param.order_time_integrator : 2;
 
-    // viscous step
-    this->param.solver_viscous         = SolverViscous::CG;
-    this->param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-8);
-    this->param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; // Multigrid;
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      this->param.solver_momentum         = SolverMomentum::CG;
+      this->param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-8);
+      this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
+    }
 
 
     // PRESSURE-CORRECTION SCHEME
 
     // momentum step
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      // Newton solver
+      this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-20, 1.e-6);
 
-    // Newton solver
-    this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-20, 1.e-6);
-
-    // linear solver
-    this->param.solver_momentum = SolverMomentum::GMRES; // FGMRES;
-    if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-      this->param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-2, 100);
-    else
-      this->param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-6, 100);
-    this->param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
-    this->param.update_preconditioner_momentum = true;
-    this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
-    this->param.multigrid_data_momentum.smoother_data.preconditioner =
-      PreconditionerSmoother::BlockJacobi;
-    this->param.multigrid_data_momentum.smoother_data.iterations        = 5;
-    this->param.multigrid_data_momentum.smoother_data.relaxation_factor = 0.7;
-    this->param.multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
+      // linear solver
+      this->param.solver_momentum = SolverMomentum::GMRES; // FGMRES;
+      if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+        this->param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-2, 100);
+      else
+        this->param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-6, 100);
+      this->param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
+      this->param.update_preconditioner_momentum = true;
+      this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
+      this->param.multigrid_data_momentum.smoother_data.preconditioner =
+        PreconditionerSmoother::BlockJacobi;
+      this->param.multigrid_data_momentum.smoother_data.iterations        = 5;
+      this->param.multigrid_data_momentum.smoother_data.relaxation_factor = 0.7;
+      this->param.multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
+    }
 
     // formulation
     this->param.order_pressure_extrapolation = 1;

@@ -144,6 +144,8 @@ NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & ve
         this->mapping_undeformed, displacement_lin, this->matrix_free->get_dof_handler());
       this->matrix_free_spatial.update_mapping(*mapping_spatial->get_mapping());
     }
+
+    this->assemble_matrix_if_necessary();
   }
 }
 

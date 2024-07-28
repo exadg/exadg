@@ -20,6 +20,8 @@
         "Width": "10.0",
         "ProblemType": "QuasiStatic",
         "MaterialType": "IncompressibleFibrousTissue",
+        "LargeDeformation": "true",
+        "Preconditioner": "Multigrid",
         "WeakDamping": "0.0",
         "LoadIncrement": "0.1",
         "UseVolumeForce": "false",

@@ -262,6 +262,8 @@ public:
       prm.add_parameter("WeakDamping",           weak_damping_coefficient, "Weak damping coefficient for unsteady problems.");
       prm.add_parameter("Displacement",          displacement,             "Displacement of right boundary in case of Dirichlet BC.");
       prm.add_parameter("Traction",              area_force,               "Traction acting on right boundary in case of Neumann BC.");
+      prm.add_parameter("LargeDeformation",      large_deformation,        "Consider finite strains or linear elasticity.");
+      prm.add_parameter("Preconditioner",        preconditioner,           "None, PointJacobi, AMG, AdditiveSchwarz or Multigrid");
     }
     prm.leave_subsection();
     // clang-format on
@@ -273,7 +275,7 @@ private:
   {
     this->param.problem_type            = problem_type;
     this->param.body_force              = use_volume_force;
-    this->param.large_deformation       = true;
+    this->param.large_deformation       = large_deformation;
     this->param.pull_back_body_force    = false;
     this->param.pull_back_traction      = false;
     this->param.spatial_integration     = spatial_integration;
@@ -291,11 +293,11 @@ private:
 
     this->param.start_time      = start_time;
     this->param.end_time        = end_time;
-    this->param.time_step_size  = end_time / 200.;
+    this->param.time_step_size  = end_time / 2.;
     this->param.gen_alpha_type  = GenAlphaType::BossakAlpha;
     this->param.spectral_radius = 0.8;
     this->param.solver_info_data.interval_time_steps =
-      problem_type == ProblemType::Unsteady ? 200 : 2;
+      problem_type == ProblemType::Unsteady ? 20 : 2;
 
     this->param.mapping_degree              = this->param.degree;
     this->param.mapping_degree_coarse_grids = this->param.degree;
@@ -317,7 +319,7 @@ private:
     this->param.newton_solver_data  = Newton::SolverData(1e2, 1.e-9, 1.e-4);
     this->param.solver              = Solver::FGMRES;
     this->param.solver_data         = SolverData(1e3, 1.e-14, 1.e-8, 30);
-    this->param.preconditioner      = Preconditioner::Multigrid; // AMG
+    this->param.preconditioner      = preconditioner;
     this->param.multigrid_data.type = MultigridType::phMG;
 
     this->param.multigrid_data.p_sequence             = PSequenceType::DecreaseByOne; // Bisect;
@@ -331,6 +333,7 @@ private:
 
     this->param.multigrid_data.coarse_problem.solver      = MultigridCoarseGridSolver::GMRES;
     this->param.multigrid_data.coarse_problem.solver_data = SolverData(1e3, 1.e-12, 1.e-3, 30);
+
     this->param.multigrid_data.coarse_problem.preconditioner =
       MultigridCoarseGridPreconditioner::AMG;
 
@@ -344,9 +347,9 @@ private:
     this->param.multigrid_data.coarse_problem.amg_data.ml_data.n_cycles              = 2;
     this->param.multigrid_data.coarse_problem.amg_data.ml_data.w_cycle               = false;
     this->param.multigrid_data.coarse_problem.amg_data.ml_data.aggregation_threshold = 1e-4;
-    this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_sweeps       = 6;
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_sweeps       = 2;
     this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_overlap      = 2;
-    this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_type         = "Chebyshev";
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_type         = "ILU";
     this->param.multigrid_data.coarse_problem.amg_data.ml_data.coarse_type           = "Amesos-KLU";
 #endif
 
@@ -354,6 +357,9 @@ private:
     this->param.update_preconditioner_every_time_steps        = 1;
     this->param.update_preconditioner_every_newton_iterations = 5;
     this->param.update_preconditioner_once_newton_converged   = true;
+
+    this->param.use_matrix_based_implementation = false;
+    this->param.sparse_matrix_type              = SparseMatrixType::Trilinos;
   }
 
   void
@@ -520,9 +526,13 @@ private:
 
       bool const unsteady = (this->param.problem_type == ProblemType::Unsteady);
       this->boundary_descriptor->dirichlet_bc.insert(
-        pair(2, new DisplacementDBC<dim>(displacement, quasistatic_solver, unsteady, end_time)));
+        pair(2,
+             new DisplacementDBC<dim>(
+               displacement, quasistatic_solver, unsteady, 200.0 /* end_time */)));
       this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
-        pair(2, new AccelerationDBC<dim>(displacement, quasistatic_solver, unsteady, end_time)));
+        pair(2,
+             new AccelerationDBC<dim>(
+               displacement, quasistatic_solver, unsteady, 200.0 /* end_time */)));
 
       this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(2, mask_right));
     }
@@ -721,7 +731,9 @@ private:
 
   double length = 1.0, height = 1.0, width = 1.0;
 
-  bool use_volume_force        = true;
+  bool use_volume_force  = true;
+  bool large_deformation = true;
+
   bool spatial_integration     = false;
   bool force_material_residual = false;
   bool stable_formulation      = true;
@@ -744,6 +756,8 @@ private:
 
   double weak_damping_coefficient = 0.0;
 
+  Preconditioner preconditioner = Preconditioner::Multigrid;
+
   double displacement = 1.0; // "Dirichlet"
   double area_force   = 1.0; // "Neumann"
 
@@ -756,7 +770,7 @@ private:
   double const E_modul       = 200.0;
 
   double const start_time = 0.0;
-  double const end_time   = 100.0;
+  double const end_time   = 1.0;
 
   double const density = 0.001;
 
