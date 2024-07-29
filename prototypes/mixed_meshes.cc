@@ -298,7 +298,7 @@ do_test(const unsigned int fe_degree)
   op.rhs(b);
   op.initialize_dof_vector(vec2);
   op.initialize_dof_vector(x);
-  
+
   const bool solve = false;
   if(solve)
   {
