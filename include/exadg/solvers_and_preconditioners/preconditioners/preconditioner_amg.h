@@ -279,21 +279,23 @@ public:
     // re-calculate matrix
     pde_operator.calculate_system_matrix(system_matrix);
 
-    // get Teuchos::ParameterList to provide custom near null space basis
-    Teuchos::ParameterList parameter_list = get_parameter_list();
+//    // get Teuchos::ParameterList to provide custom near null space basis
+//    Teuchos::ParameterList parameter_list = get_parameter_list();
+//
+//    std::vector<VectorType> constant_modes = get_constant_modes();
+//
+//    // Add constant modes to Teuchos::ParameterList.
+//    std::unique_ptr<Epetra_MultiVector>
+//      ptr_distributed_modes; // has to stay alive until after amg.initialize();
+//    set_operator_nullspace(parameter_list,
+//                           ptr_distributed_modes,
+//                           system_matrix.trilinos_matrix(),
+//                           constant_modes);
+//
+//    // Initialize with the Teuchos::ParameterList.
+//    amg.initialize(system_matrix, parameter_list);
 
-    std::vector<VectorType> constant_modes = get_constant_modes();
-
-    // Add constant modes to Teuchos::ParameterList.
-    std::unique_ptr<Epetra_MultiVector>
-      ptr_distributed_modes; // has to stay alive until after amg.initialize();
-    set_operator_nullspace(parameter_list,
-                           ptr_distributed_modes,
-                           system_matrix.trilinos_matrix(),
-                           constant_modes);
-
-    // Initialize with the Teuchos::ParameterList.
-    amg.initialize(system_matrix, parameter_list);
+    amg.initialize(system_matrix, ml_data);
 
     this->update_needed = false;
   }
