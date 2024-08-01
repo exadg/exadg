@@ -230,7 +230,7 @@ generic_cell_integral_cpu_backend(std::vector<double> &                         
 }
 
 void
-portable_cell_integral()
+portable_cell_integral(std::vector<double> & dst, std::vector<double> const & src)
 {
   unsigned int const velocity = 0;
   unsigned int const pressure = velocity + 1;
@@ -265,8 +265,8 @@ main()
   std::vector<double> dst, src;
 
   // old
-  cell_integral_navier_stokes_cpu_backend();
+  cell_integral_navier_stokes_cpu_backend(dst, src);
 
   // new
-  portable_cell_integral();
+  portable_cell_integral(dst, src);
 }
