@@ -173,7 +173,7 @@ cell_integral_navier_stokes_cpu_backend(std::vector<double> & dst, std::vector<d
     fe_eval_pressure.reinit(cell);
 
     fe_eval_velocity.evaluate(velocity_src, true, true);
-    fe_eval_pressure.evaluate(src.block(1), false, true);
+    fe_eval_pressure.evaluate(pressure_src, false, true);
 
     unsigned int const n_q_points = 10;
     for(unsigned int q = 0; q < n_q_points; ++q)
