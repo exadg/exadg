@@ -450,6 +450,19 @@ OperatorBase<dim, Number, n_components>::apply_matrix_based(VectorType &       d
   {
     AssertThrow(false, dealii::ExcMessage("not implemented."));
   }
+
+  if(not is_dg)
+  {
+    // Constrained degree of freedom are not removed from the system of equations.
+    // Instead, we set the diagonal entries of the matrix to 1 for these constrained
+    // degrees of freedom. This means that we simply copy the constrained values to the
+    // dst vector.
+    for(unsigned int const constrained_index :
+        matrix_free->get_constrained_dofs(this->data.dof_index))
+    {
+      dst.local_element(constrained_index) = src.local_element(constrained_index);
+    }
+  }
 }
 
 template<int dim, typename Number, int n_components>
