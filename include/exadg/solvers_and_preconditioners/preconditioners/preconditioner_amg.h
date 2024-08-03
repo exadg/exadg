@@ -279,7 +279,7 @@ public:
     // re-calculate matrix
     pde_operator.calculate_system_matrix(system_matrix);
 
-    bool constexpr use_default_setup = true;
+    bool constexpr use_default_setup = false;
     if(use_default_setup)
     {
       amg.initialize(system_matrix, ml_data);
