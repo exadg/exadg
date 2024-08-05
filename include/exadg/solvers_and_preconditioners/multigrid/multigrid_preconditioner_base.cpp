@@ -326,9 +326,7 @@ template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mapping()
 {
-  unsigned int const n_h_levels = level_info.back().h_level() - level_info.front().h_level() + 1;
-
-  multigrid_mappings->initialize_coarse_mappings(*grid, n_h_levels);
+  multigrid_mappings->initialize_coarse_mappings(*grid, this->get_number_of_h_levels());
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -336,9 +334,7 @@ dealii::Mapping<dim> const &
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::get_mapping(
   unsigned int const h_level) const
 {
-  unsigned int const n_h_levels = level_info.back().h_level() - level_info.front().h_level() + 1;
-
-  return multigrid_mappings->get_mapping(h_level, n_h_levels);
+  return multigrid_mappings->get_mapping(h_level, this->get_number_of_h_levels());
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -350,6 +346,17 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::get_number_of_levels(
                 "MultigridPreconditionerBase: level_info seems to be uninitialized."));
 
   return level_info.size();
+}
+
+template<int dim, typename Number, typename MultigridNumber>
+unsigned int
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::get_number_of_h_levels() const
+{
+  AssertThrow(level_info.size() > 0,
+              dealii::ExcMessage(
+                "MultigridPreconditionerBase: level_info seems to be uninitialized."));
+
+  return (level_info.back().h_level() - level_info.front().h_level() + 1);
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -810,17 +817,12 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_sol
       additional_data.preconditioner       = data.coarse_problem.preconditioner;
       additional_data.amg_data             = data.coarse_problem.amg_data;
 
-      unsigned int const n_h_levels =
-        level_info.back().h_level() - level_info.front().h_level() + 1;
-
-      coarse_grid_solver =
-        std::make_shared<MGCoarseKrylov<dim, Operator>>(coarse_operator,
-                                                        initialize_preconditioners,
-                                                        additional_data,
-                                                        *dof_handlers[0],
-                                                        multigrid_mappings->get_mapping(0,
-                                                                                        n_h_levels),
-                                                        mpi_comm);
+      coarse_grid_solver = std::make_shared<MGCoarseKrylov<dim, Operator>>(
+        coarse_operator,
+        initialize_preconditioners,
+        additional_data,
+        multigrid_mappings->get_mapping(0, this->get_number_of_h_levels()),
+        mpi_comm);
       break;
     }
     case MultigridCoarseGridSolver::AMG:
@@ -828,16 +830,11 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_sol
       if(data.coarse_problem.amg_data.amg_type == AMGType::ML or
          data.coarse_problem.amg_data.amg_type == AMGType::BoomerAMG)
       {
-        unsigned int const n_h_levels =
-          level_info.back().h_level() - level_info.front().h_level() + 1;
-
-        coarse_grid_solver =
-          std::make_shared<MGCoarseAMG<dim, Operator>>(coarse_operator,
-                                                       initialize_preconditioners,
-                                                       *dof_handlers[0],
-                                                       multigrid_mappings->get_mapping(0,
-                                                                                       n_h_levels),
-                                                       data.coarse_problem.amg_data);
+        coarse_grid_solver = std::make_shared<MGCoarseAMG<dim, Operator>>(
+          coarse_operator,
+          initialize_preconditioners,
+          multigrid_mappings->get_mapping(0, this->get_number_of_h_levels()),
+          data.coarse_problem.amg_data);
       }
       else
       {

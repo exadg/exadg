@@ -212,17 +212,12 @@ private:
   dealii::TrilinosWrappers::PreconditionAMG amg;
 
 public:
-  PreconditionerML(Operator const &                op,
-                   bool const                      initialize,
-                   AMGOperatorType                 operator_type,
-                   dealii::DoFHandler<dim> const & dof_handler,
-                   dealii::Mapping<dim> const &    mapping,
-                   MLData                          ml_data = MLData())
-    : pde_operator(op),
-      ml_data(ml_data),
-      operator_type(operator_type),
-      dof_handler(dof_handler),
-      mapping(mapping)
+  PreconditionerML(Operator const &             op,
+                   bool const                   initialize,
+                   AMGOperatorType              operator_type,
+                   dealii::Mapping<dim> const & mapping,
+                   MLData                       ml_data = MLData())
+    : pde_operator(op), ml_data(ml_data), operator_type(operator_type), mapping(mapping)
   {
     // initialize system matrix
     pde_operator.init_system_matrix(system_matrix,
@@ -398,10 +393,9 @@ private:
 
     std::vector<VectorType> constant_modes(n_constant_modes);
 
-    unsigned int const n_global_rows_system_matrix =
-      dealii::TrilinosWrappers::n_global_rows(system_matrix.trilinos_matrix());
-    bool const operating_on_fine_else_coarsest_level =
-      n_global_rows_system_matrix == dof_handler.n_dofs();
+    // The AMG Preconditioner might be used as a coarse-level solver/preconditioner within
+    // multigrid.
+    bool const on_coarse_grid = pde_operator.get_matrix_free().get_dof_handler().has_level_dofs();
 
     for(unsigned int i = 0; i < n_constant_modes; ++i)
     {
@@ -415,9 +409,7 @@ private:
                                        mode_generator,
                                        constant_modes[i],
                                        dealii::ComponentMask(),
-                                       operating_on_fine_else_coarsest_level ?
-                                         dealii::numbers::invalid_unsigned_int :
-                                         0);
+                                       on_coarse_grid ? 0 : dealii::numbers::invalid_unsigned_int);
     }
 
     return constant_modes;
@@ -475,8 +467,6 @@ private:
   MLData ml_data;
 
   AMGOperatorType operator_type;
-
-  dealii::DoFHandler<dim> const & dof_handler;
 
   dealii::Mapping<dim> const & mapping;
 };
@@ -640,15 +630,13 @@ private:
   typedef typename PreconditionerBase<Number>::VectorType VectorType;
 
 public:
-  PreconditionerAMG(Operator const &                pde_operator,
-                    bool const                      initialize,
-                    AMGData const &                 data,
-                    dealii::DoFHandler<dim> const & dof_handler,
-                    dealii::Mapping<dim> const &    mapping)
+  PreconditionerAMG(Operator const &             pde_operator,
+                    bool const                   initialize,
+                    AMGData const &              data,
+                    dealii::Mapping<dim> const & mapping)
   {
     (void)pde_operator;
     (void)initialize;
-    (void)dof_handler;
     (void)mapping;
     this->data = data;
 
@@ -670,7 +658,7 @@ public:
     {
 #ifdef DEAL_II_WITH_TRILINOS
       preconditioner_ml = std::make_shared<PreconditionerML<dim, Operator>>(
-        pde_operator, initialize, data.amg_operator_type, dof_handler, mapping, data.ml_data);
+        pde_operator, initialize, data.amg_operator_type, mapping, data.ml_data);
 #else
       AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif

@@ -98,12 +98,11 @@ public:
     AMGData amg_data;
   };
 
-  MGCoarseKrylov(Operator const &                pde_operator_in,
-                 bool const                      initialize,
-                 AdditionalData const &          additional_data,
-                 dealii::DoFHandler<dim> const & dof_handler,
-                 dealii::Mapping<dim> const &    mapping,
-                 MPI_Comm const &                comm)
+  MGCoarseKrylov(Operator const &             pde_operator_in,
+                 bool const                   initialize,
+                 AdditionalData const &       additional_data,
+                 dealii::Mapping<dim> const & mapping,
+                 MPI_Comm const &             comm)
     : pde_operator(pde_operator_in), additional_data(additional_data), mpi_comm(comm)
   {
     if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi)
@@ -122,7 +121,7 @@ public:
     else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
     {
       preconditioner = std::make_shared<PreconditionerAMG<dim, Operator, Number>>(
-        pde_operator, initialize, additional_data.amg_data, dof_handler, mapping);
+        pde_operator, initialize, additional_data.amg_data, mapping);
     }
     else
     {
@@ -351,14 +350,13 @@ private:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  MGCoarseAMG(Operator const &                op,
-              bool const                      initialize,
-              dealii::DoFHandler<dim> const & dof_handler,
-              dealii::Mapping<dim> const &    mapping,
-              AMGData                         data = AMGData())
+  MGCoarseAMG(Operator const &             op,
+              bool const                   initialize,
+              dealii::Mapping<dim> const & mapping,
+              AMGData                      data = AMGData())
   {
-    amg_preconditioner = std::make_shared<PreconditionerAMG<dim, Operator, Number>>(
-      op, initialize, data, dof_handler, mapping);
+    amg_preconditioner =
+      std::make_shared<PreconditionerAMG<dim, Operator, Number>>(op, initialize, data, mapping);
   }
 
   void
