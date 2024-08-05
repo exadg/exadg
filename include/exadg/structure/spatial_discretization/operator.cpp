@@ -455,17 +455,21 @@ Operator<dim, Number>::setup_preconditioner()
   {
     if(param.large_deformation)
     {
-      typedef PreconditionerAMG<NonLinearOperator<dim, Number>, Number> AMG;
+      typedef PreconditionerAMG<dim, NonLinearOperator<dim, Number>, Number> AMG;
       preconditioner = std::make_shared<AMG>(elasticity_operator_nonlinear,
                                              false,
-                                             param.multigrid_data.coarse_problem.amg_data);
+                                             param.multigrid_data.coarse_problem.amg_data,
+                                             dof_handler,
+                                             *mapping);
     }
     else
     {
-      typedef PreconditionerAMG<LinearOperator<dim, Number>, Number> AMG;
+      typedef PreconditionerAMG<dim, LinearOperator<dim, Number>, Number> AMG;
       preconditioner = std::make_shared<AMG>(elasticity_operator_linear,
                                              false,
-                                             param.multigrid_data.coarse_problem.amg_data);
+                                             param.multigrid_data.coarse_problem.amg_data,
+                                             dof_handler,
+                                             *mapping);
     }
   }
   else

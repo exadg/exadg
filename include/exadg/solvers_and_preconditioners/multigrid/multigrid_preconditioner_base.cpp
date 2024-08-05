@@ -801,7 +801,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_sol
     case MultigridCoarseGridSolver::CG:
     case MultigridCoarseGridSolver::GMRES:
     {
-      typename MGCoarseKrylov<Operator>::AdditionalData additional_data;
+      typename MGCoarseKrylov<dim, Operator>::AdditionalData additional_data;
 
       additional_data.solver_type = data.coarse_problem.solver;
 
@@ -810,10 +810,17 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_sol
       additional_data.preconditioner       = data.coarse_problem.preconditioner;
       additional_data.amg_data             = data.coarse_problem.amg_data;
 
-      coarse_grid_solver = std::make_shared<MGCoarseKrylov<Operator>>(coarse_operator,
-                                                                      initialize_preconditioners,
-                                                                      additional_data,
-                                                                      mpi_comm);
+      unsigned int const n_h_levels =
+        level_info.back().h_level() - level_info.front().h_level() + 1;
+
+      coarse_grid_solver =
+        std::make_shared<MGCoarseKrylov<dim, Operator>>(coarse_operator,
+                                                        initialize_preconditioners,
+                                                        additional_data,
+                                                        *dof_handlers[0],
+                                                        multigrid_mappings->get_mapping(0,
+                                                                                        n_h_levels),
+                                                        mpi_comm);
       break;
     }
     case MultigridCoarseGridSolver::AMG:
@@ -821,9 +828,16 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_sol
       if(data.coarse_problem.amg_data.amg_type == AMGType::ML or
          data.coarse_problem.amg_data.amg_type == AMGType::BoomerAMG)
       {
-        coarse_grid_solver = std::make_shared<MGCoarseAMG<Operator>>(coarse_operator,
-                                                                     initialize_preconditioners,
-                                                                     data.coarse_problem.amg_data);
+        unsigned int const n_h_levels =
+          level_info.back().h_level() - level_info.front().h_level() + 1;
+
+        coarse_grid_solver =
+          std::make_shared<MGCoarseAMG<dim, Operator>>(coarse_operator,
+                                                       initialize_preconditioners,
+                                                       *dof_handlers[0],
+                                                       multigrid_mappings->get_mapping(0,
+                                                                                       n_h_levels),
+                                                       data.coarse_problem.amg_data);
       }
       else
       {
