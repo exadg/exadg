@@ -41,7 +41,7 @@
 namespace ExaDG
 {
 // Rigid body motions for elasticity
-template<int dim>
+template<int dim, int n_components>
 class ConstantModes : public dealii::Function<dim>
 {
 public:
@@ -55,9 +55,9 @@ private:
   unsigned int const mode_index;
 };
 
-template<int dim>
-ConstantModes<dim>::ConstantModes(AMGOperatorType amg_operator_type, unsigned int const mode_index)
-  : dealii::Function<dim>(dim), amg_operator_type(amg_operator_type), mode_index(mode_index)
+template<int dim, int n_components>
+ConstantModes<dim, n_components>::ConstantModes(AMGOperatorType amg_operator_type, unsigned int const mode_index)
+  : dealii::Function<dim>(n_components), amg_operator_type(amg_operator_type), mode_index(mode_index)
 {
   if(amg_operator_type == AMGOperatorType::ScalarLaplace)
   {
@@ -94,9 +94,9 @@ ConstantModes<dim>::ConstantModes(AMGOperatorType amg_operator_type, unsigned in
   }
 }
 
-template<int dim>
+template<int dim, int n_components>
 double
-ConstantModes<dim>::value(dealii::Point<dim> const & p, unsigned int const component) const
+ConstantModes<dim, n_components>::value(dealii::Point<dim> const & p, unsigned int const component) const
 {
   if(amg_operator_type == AMGOperatorType::ScalarLaplace)
   {
@@ -379,15 +379,33 @@ private:
                                system_matrix.get_mpi_communicator());
 
       // Fill vector with rigid body modes.
-      ConstantModes<dim> const mode_generator(operator_type, i);
-      dealii::VectorTools::interpolate(mapping,
-                                       pde_operator.get_matrix_free().get_dof_handler(),
-                                       mode_generator,
-                                       constant_modes[i],
-                                       dealii::ComponentMask(),
-                                       operating_on_fine_else_coarsest_level ?
-                                         dealii::numbers::invalid_unsigned_int :
-                                         0);
+      unsigned int const dof_index = pde_operator.get_dof_index();
+	  unsigned int const n_components = pde_operator.get_matrix_free().get_dof_handler(dof_index).get_fe().n_components();
+	  dealii::ComponentMask component_mask(n_components, true);
+	  if(n_components == 1)
+	  {
+		  ConstantModes<dim, 1> const mode_generator(operator_type, i);
+		  dealii::VectorTools::interpolate(mapping,
+										   pde_operator.get_matrix_free().get_dof_handler(dof_index),
+										   mode_generator,
+										   constant_modes[i],
+										   component_mask,
+										   operating_on_fine_else_coarsest_level ?
+											 dealii::numbers::invalid_unsigned_int :
+											 0);
+	  }
+	  else if(n_components == dim)
+	  {
+		  ConstantModes<dim, dim> const mode_generator(operator_type, i);
+		  dealii::VectorTools::interpolate(mapping,
+										   pde_operator.get_matrix_free().get_dof_handler(dof_index),
+										   mode_generator,
+										   constant_modes[i],
+										   component_mask,
+										   operating_on_fine_else_coarsest_level ?
+											 dealii::numbers::invalid_unsigned_int :
+											 0);
+	  }
     }
 
     return constant_modes;
