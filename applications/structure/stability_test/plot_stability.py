@@ -4,10 +4,10 @@
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-import glob, os   
+import glob, os
 import re
 import scipy.interpolate
-   
+
 if __name__ == "__main__":
 
     skip_jacobian = False
@@ -41,13 +41,20 @@ if __name__ == "__main__":
     #plt.loglog([0.0, 1e20], [1e+4, 1e+4], label=None, color='black', linestyle='dotted', linewidth=1.0)
 
     #os.chdir("/home/richardschussnig/dealii-candi/exadg/build/applications/structure/stability_test/")
-    os.chdir("/home/richard/dealii-candi/exadg/build/applications/structure/stability_test/")
-    for file in glob.glob("stability_forward_test_*"):
-    
+    #os.chdir("/home/richard/dealii-candi/exadg/build/applications/structure/stability_test/")
+
+    #os.chdir("/home/richard/dealii-candi/exadg/build/applications/structure/stability_test/stability_results/")
+    #os.chdir("/home/richard/dealii-candi/exadg/build/applications/structure/stability_test/stability_results_FastExp/")
+    #os.chdir("/home/richard/dealii-candi/exadg/build/applications/structure/stability_test/stability_results_FastExp_JpowNewton/")
+    os.chdir("/home/richard/dealii-candi/exadg/build/applications/structure/stability_test/stability_results_JpowNewton/")
+
+    files = sorted(glob.glob("stability_forward_test_*"))
+    for file in files:
+
         print("Parsing file:")
         print(file)
         print("")
-        
+
         # Parse each file.
         f = open(file, 'r')
 
@@ -57,14 +64,14 @@ if __name__ == "__main__":
         idx_line = 0
         n_header_lines = 4
         for line in f:
-        
+
             # Skip parsing header lines.
             idx_line = idx_line + 1
             if idx_line <= n_header_lines:
                 continue
-                
+
             # Split on any whitespace (including tab characters)
-            row = line.split()            
+            row = line.split()
             # print(row)
             for i in range(len(row)):
                 val = float(row[i])
@@ -87,23 +94,23 @@ if __name__ == "__main__":
         for match in re.finditer('_', file):
             underscore_indices[idx]= match.start()
             idx = idx + 1
-            
+
         for match in re.finditer('.', file):
             point_idx = match.start()
-            
+
         spatial_integration = file[int(underscore_indices[4]+1):int(underscore_indices[4]+2)]
         stable_formulation = file[int(underscore_indices[7]+1):int(underscore_indices[7]+2)]
-        material_model = file[int(underscore_indices[8]+1):int(point_idx-3)]     
+        material_model = file[int(underscore_indices[8]+1):int(point_idx-3)]
 
         if stable_formulation == '1':
             stable_formulation_lgd_entry = "stable"
             if skip_stable_formulation:
                 continue
         else:
-            stable_formulation_lgd_entry = "standard"        
+            stable_formulation_lgd_entry = "standard"
             if skip_unstable_formulation:
                 continue
-            
+
         if spatial_integration == '1':
             if skip_spatial_integration:
                 continue
@@ -113,7 +120,7 @@ if __name__ == "__main__":
 
         line_style_stress = 'solid'
         line_style_jacobian = 'dotted'
-        
+
         line_color = 'black'
         if spatial_integration == '1':
             Omega_0_or_t = '$\Omega_t$';
@@ -129,7 +136,7 @@ if __name__ == "__main__":
                 line_color = 'tab:red'
             else:
                 line_color = 'tab:orange'
- 
+
         line_width = 1.0
         abbreviation_material_model = ""
         if material_model == "StVenantKirchhoff":
@@ -152,17 +159,17 @@ if __name__ == "__main__":
                 continue
             #line_width = 0.5
             abbreviation_material_model = "fiber"
-            
+
         if not skip_stress:
             plt.loglog(rows[1:-1:sampling,0], rows[1:-1:sampling,1], label=abbreviation_material_model + ', ' + Omega_0_or_t + \
             ', ' + stable_formulation_lgd_entry + ', stress', color=line_color, \
             linestyle=line_style_stress, linewidth=line_width)
-        
+
         if not skip_jacobian:
             plt.loglog(rows[1:-1:sampling,0], rows[1:-1:sampling,2], label=abbreviation_material_model + ', ' + Omega_0_or_t + \
             ', ' + stable_formulation_lgd_entry + ', D/Du stress', color=line_color, \
             linestyle=line_style_jacobian, linewidth=line_width)
- 
+
     #plt.title("Relative error $\epsilon_\mathrm{rel} = \mathrm{max}_i || (.)_\mathrm{f64} - (.)_\mathrm{f32} ||_\infty / ||(.)_\mathrm{f64}||_\infty$")
     plt.legend()
 
@@ -180,4 +187,4 @@ if __name__ == "__main__":
     # plt.autoscale(enable=True, axis='y', tight=True)
 
     plt.show()
-    
+
