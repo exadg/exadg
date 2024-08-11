@@ -313,25 +313,17 @@ private:
 
     this->param.load_increment = 0.5;
 
-    this->param.newton_solver_data  = Newton::SolverData(1e2, 1.e-9, 1.e-9);
-    this->param.solver              = Solver::FGMRES;
-    this->param.solver_data         = SolverData(1e3, 1.e-12, 1.e-8, 100);
+    this->param.newton_solver_data  = Newton::SolverData(1e2, 1.e-9, 1.e-3);
+    this->param.solver              = Solver::CG;
+    this->param.solver_data         = SolverData(1e3, 1.e-12, 1.e-6, 100);
     this->param.preconditioner      = preconditioner;
     this->param.multigrid_data.type = MultigridType::phMG;
 
-    this->param.multigrid_data.coarse_problem.amg_data.amg_operator_type =
-      AMGOperatorType::Elasticity;
+    this->param.multigrid_data.coarse_problem.amg_data.ml_operator_type =
+      MLOperatorType::Elasticity;
 
 #ifdef DEAL_II_WITH_TRILINOS
-    this->param.multigrid_data.coarse_problem.amg_data.ml_data.elliptic = true;
-    bool const mg_involves_p = (this->param.multigrid_data.type == MultigridType::pMG or
-                                this->param.multigrid_data.type == MultigridType::hpMG or
-                                this->param.multigrid_data.type == MultigridType::phMG);
-    this->param.multigrid_data.coarse_problem.amg_data.ml_data.higher_order_elements =
-      (preconditioner == Preconditioner::AMG or
-       (preconditioner == Preconditioner::Multigrid and not mg_involves_p)) ?
-        this->param.degree > 1 :
-        false;
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.elliptic              = true;
     this->param.multigrid_data.coarse_problem.amg_data.ml_data.n_cycles              = 1;
     this->param.multigrid_data.coarse_problem.amg_data.ml_data.w_cycle               = false;
     this->param.multigrid_data.coarse_problem.amg_data.ml_data.aggregation_threshold = 1e-4;

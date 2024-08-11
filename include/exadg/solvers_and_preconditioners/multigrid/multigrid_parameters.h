@@ -78,11 +78,9 @@ enum class AMGType
   BoomerAMG
 };
 
-enum class AMGOperatorType
+enum class MLOperatorType
 {
   Default,
-  ScalarLaplace,
-  VectorLaplace,
   Elasticity
 };
 
@@ -106,13 +104,13 @@ struct AMGData
 {
   AMGData()
   {
-    amg_type          = AMGType::ML;
-    amg_operator_type = AMGOperatorType::Default;
+    amg_type = AMGType::ML;
 
 #ifdef DEAL_II_WITH_TRILINOS
     ml_data.smoother_sweeps = 1;
     ml_data.n_cycles        = 1;
     ml_data.smoother_type   = "ILU";
+    ml_operator_type        = MLOperatorType::Default;
 #endif
 
 #ifdef DEAL_II_WITH_PETSC
@@ -131,7 +129,6 @@ struct AMGData
   print(dealii::ConditionalOStream const & pcout) const
   {
     print_parameter(pcout, "    AMG type", amg_type);
-    print_parameter(pcout, "    AMG operator type", amg_operator_type);
 
     if(amg_type == AMGType::ML)
     {
@@ -139,6 +136,7 @@ struct AMGData
       print_parameter(pcout, "    Smoother sweeps", ml_data.smoother_sweeps);
       print_parameter(pcout, "    Number of cycles", ml_data.n_cycles);
       print_parameter(pcout, "    Smoother type", ml_data.smoother_type);
+      print_parameter(pcout, "    AMG operator type", ml_operator_type);
 #endif
     }
     else if(amg_type == AMGType::BoomerAMG)
@@ -157,11 +155,12 @@ struct AMGData
     }
   }
 
-  AMGType         amg_type;
-  AMGOperatorType amg_operator_type;
+  AMGType amg_type;
 
 #ifdef DEAL_II_WITH_TRILINOS
+  MLOperatorType                                            ml_operator_type;
   dealii::TrilinosWrappers::PreconditionAMG::AdditionalData ml_data;
+  Teuchos::ParameterList                                    parameter_list_ML;
 #endif
 
 #ifdef DEAL_II_WITH_PETSC
