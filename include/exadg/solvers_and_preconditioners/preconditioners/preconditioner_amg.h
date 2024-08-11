@@ -28,7 +28,6 @@
 #include <deal.II/lac/petsc_sparse_matrix.h>
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
-#include <deal.II/numerics/vector_tools_interpolate.h>
 
 #include <ml_MultiLevelPreconditioner.h>
 
@@ -83,10 +82,9 @@ create_subcommunicator(dealii::DoFHandler<dim, spacedim> const & dof_handler)
 }
 
 #ifdef DEAL_II_WITH_TRILINOS
-template<int dim>
-Teuchos::ParameterList
-get_ML_parameter_list(
-  dealii::TrilinosWrappers::PreconditionAMG::AdditionalData const & ml_data) // , int const dim)
+inline Teuchos::ParameterList
+get_ML_parameter_list(dealii::TrilinosWrappers::PreconditionAMG::AdditionalData const & ml_data,
+                      int const                                                         dimension)
 {
   Teuchos::ParameterList parameter_list;
 
@@ -134,7 +132,7 @@ get_ML_parameter_list(
   parameter_list.set("repartition: max min ratio", 1.3);
   parameter_list.set("repartition: min per proc", 300);
   parameter_list.set("repartition: partitioner", "Zoltan");
-  parameter_list.set("repartition: Zoltan dimensions", dim);
+  parameter_list.set("repartition: Zoltan dimensions", dimension);
 
   if(ml_data.output_details)
   {
@@ -148,7 +146,7 @@ get_ML_parameter_list(
   return parameter_list;
 }
 
-template<int dim, typename Operator>
+template<typename Operator>
 class PreconditionerML : public PreconditionerBase<double>
 {
 private:
@@ -164,12 +162,11 @@ private:
   dealii::TrilinosWrappers::PreconditionAMG amg;
 
 public:
-  PreconditionerML(Operator const &             op,
-                   bool const                   initialize,
-                   MLOperatorType               operator_type,
-                   dealii::Mapping<dim> const & mapping,
-                   MLData                       ml_data = MLData())
-    : pde_operator(op), ml_data(ml_data), operator_type(operator_type), mapping(mapping)
+  PreconditionerML(Operator const & op,
+                   bool const       initialize,
+                   MLOperatorType   operator_type,
+                   MLData           ml_data = MLData())
+    : pde_operator(op), ml_data(ml_data), operator_type(operator_type)
   {
     // initialize system matrix
     pde_operator.init_system_matrix(system_matrix,
@@ -226,19 +223,23 @@ public:
     // re-calculate matrix
     pde_operator.calculate_system_matrix(system_matrix);
 
-    if(operator_type == MLOperatorType::Default)
+    if(operator_type == MLOperatorType::Laplace)
     {
-      // Default setup.
+      // Deauflt setup; add near null space for Laplace operator.
       amg.initialize(system_matrix, ml_data);
     }
     else if(operator_type == MLOperatorType::Elasticity)
     {
       // get Teuchos::ParameterList to provide custom near null space basis
-      unsigned int const dimension = pde_operator.get_matrix_free().dimension;
-      std::cout << "dim = " << dimension << "\n";
-      Teuchos::ParameterList parameter_list = get_ML_parameter_list<dim>(ml_data); // , dimension);
+      unsigned int const     dimension      = pde_operator.get_matrix_free().dimension;
+      Teuchos::ParameterList parameter_list = get_ML_parameter_list(ml_data, dimension);
 
-      std::vector<std::vector<double>> constant_modes;
+      std::vector<std::vector<double>> elasticity_modes;
+
+      // If we use the AMG preconditioner in a multigrid setting,
+      // signaled by `dof_handler.has_level_dofs() == true`,
+      // we construct the AMG preconditioner on the coarsest level.
+      // Otherwise, we use AMG as fine-level preconditioner.
       if(pde_operator.get_matrix_free().get_dof_handler().has_level_dofs())
       {
         dealii::DoFTools::extract_level_elasticity_modes(
@@ -246,7 +247,7 @@ public:
           *pde_operator.get_matrix_free().get_mapping_info().mapping,
           pde_operator.get_matrix_free().get_dof_handler(),
           dealii::ComponentMask(dimension, true),
-          constant_modes);
+          elasticity_modes);
       }
       else
       {
@@ -254,11 +255,11 @@ public:
           *pde_operator.get_matrix_free().get_mapping_info().mapping,
           pde_operator.get_matrix_free().get_dof_handler(),
           dealii::ComponentMask(dimension, true),
-          constant_modes);
+          elasticity_modes);
       }
-      ml_data.elasticity_modes = constant_modes;
+      ml_data.elasticity_modes = elasticity_modes;
 
-      // Add constant modes to Teuchos::ParameterList.
+      // Add near null space basis vectors to Teuchos::ParameterList.
       // `ptr_distributed_modes` must stay alive for amg.initialize();
       std::unique_ptr<Epetra_MultiVector> ptr_distributed_modes;
       ml_data.set_operator_null_space(parameter_list,
@@ -283,8 +284,6 @@ private:
   MLData ml_data;
 
   MLOperatorType operator_type;
-
-  dealii::Mapping<dim> const & mapping;
 };
 #endif
 
@@ -439,21 +438,17 @@ private:
 /**
  * Implementation of AMG preconditioner unifying PreconditionerML and PreconditionerBoomerAMG.
  */
-template<int dim, typename Operator, typename Number>
+template<typename Operator, typename Number>
 class PreconditionerAMG : public PreconditionerBase<Number>
 {
 private:
   typedef typename PreconditionerBase<Number>::VectorType VectorType;
 
 public:
-  PreconditionerAMG(Operator const &             pde_operator,
-                    bool const                   initialize,
-                    AMGData const &              data,
-                    dealii::Mapping<dim> const & mapping)
+  PreconditionerAMG(Operator const & pde_operator, bool const initialize, AMGData const & data)
   {
     (void)pde_operator;
     (void)initialize;
-    (void)mapping;
     this->data = data;
 
     if(data.amg_type == AMGType::BoomerAMG)
@@ -470,8 +465,10 @@ public:
     else if(data.amg_type == AMGType::ML)
     {
 #ifdef DEAL_II_WITH_TRILINOS
-      preconditioner_ml = std::make_shared<PreconditionerML<dim, Operator>>(
-        pde_operator, initialize, data.ml_operator_type, mapping, data.ml_data);
+      preconditioner_ml = std::make_shared<PreconditionerML<Operator>>(pde_operator,
+                                                                       initialize,
+                                                                       data.ml_operator_type,
+                                                                       data.ml_data);
 #else
       AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
@@ -536,8 +533,8 @@ public:
     else if(data.amg_type == AMGType::ML)
     {
 #ifdef DEAL_II_WITH_TRILINOS
-      std::shared_ptr<PreconditionerML<dim, Operator>> preconditioner =
-        std::dynamic_pointer_cast<PreconditionerML<dim, Operator>>(preconditioner_ml);
+      std::shared_ptr<PreconditionerML<Operator>> preconditioner =
+        std::dynamic_pointer_cast<PreconditionerML<Operator>>(preconditioner_ml);
 
       apply_function_in_double_precision(
         dst,

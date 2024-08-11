@@ -211,7 +211,7 @@ protected:
   get_number_of_levels() const;
 
   /**
-   * Returns the number of h levels.
+   * Returns the number of h-levels.
    */
   unsigned int
   get_number_of_h_levels() const;

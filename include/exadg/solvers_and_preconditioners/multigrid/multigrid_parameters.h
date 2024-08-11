@@ -80,7 +80,7 @@ enum class AMGType
 
 enum class MLOperatorType
 {
-  Default,
+  Laplace,
   Elasticity
 };
 
@@ -110,7 +110,7 @@ struct AMGData
     ml_data.smoother_sweeps = 1;
     ml_data.n_cycles        = 1;
     ml_data.smoother_type   = "ILU";
-    ml_operator_type        = MLOperatorType::Default;
+    ml_operator_type        = MLOperatorType::Laplace;
 #endif
 
 #ifdef DEAL_II_WITH_PETSC
@@ -160,7 +160,6 @@ struct AMGData
 #ifdef DEAL_II_WITH_TRILINOS
   MLOperatorType                                            ml_operator_type;
   dealii::TrilinosWrappers::PreconditionAMG::AdditionalData ml_data;
-  Teuchos::ParameterList                                    parameter_list_ML;
 #endif
 
 #ifdef DEAL_II_WITH_PETSC

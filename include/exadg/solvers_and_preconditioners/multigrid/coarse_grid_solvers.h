@@ -58,7 +58,7 @@ public:
   update() = 0;
 };
 
-template<int dim, typename Operator>
+template<typename Operator>
 class MGCoarseKrylov : public CoarseGridSolverBase<Operator>
 {
 public:
@@ -98,11 +98,10 @@ public:
     AMGData amg_data;
   };
 
-  MGCoarseKrylov(Operator const &             pde_operator_in,
-                 bool const                   initialize,
-                 AdditionalData const &       additional_data,
-                 dealii::Mapping<dim> const & mapping,
-                 MPI_Comm const &             comm)
+  MGCoarseKrylov(Operator const &       pde_operator_in,
+                 bool const             initialize,
+                 AdditionalData const & additional_data,
+                 MPI_Comm const &       comm)
     : pde_operator(pde_operator_in), additional_data(additional_data), mpi_comm(comm)
   {
     if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi)
@@ -120,8 +119,10 @@ public:
     }
     else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
     {
-      preconditioner = std::make_shared<PreconditionerAMG<dim, Operator, Number>>(
-        pde_operator, initialize, additional_data.amg_data, mapping);
+      preconditioner =
+        std::make_shared<PreconditionerAMG<Operator, Number>>(pde_operator,
+                                                              initialize,
+                                                              additional_data.amg_data);
     }
     else
     {
@@ -162,15 +163,13 @@ public:
 
     if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
     {
-      std::shared_ptr<PreconditionerAMG<dim, Operator, Number>> preconditioner_amg =
-        std::dynamic_pointer_cast<PreconditionerAMG<dim, Operator, Number>>(preconditioner);
+      std::shared_ptr<PreconditionerAMG<Operator, Number>> preconditioner_amg =
+        std::dynamic_pointer_cast<PreconditionerAMG<Operator, Number>>(preconditioner);
 
       AssertThrow(preconditioner_amg != nullptr,
                   dealii::ExcMessage("Constructed preconditioner is not of type "
-                                     "PreconditionerAMG<dim, Operator, Number>."));
+                                     "PreconditionerAMG<Operator, Number>."));
 
-      // Note that `apply_krylov_solver_with_amg_preconditioner()` uses the system matrix
-      // instead of matrix-free operator evaluation.
       preconditioner_amg->apply_krylov_solver_with_amg_preconditioner(dst,
                                                                       r,
                                                                       additional_data.solver_type,
@@ -341,7 +340,7 @@ private:
  * The aim if this class is to translate PreconditionerAMG to a coarse-grid solver with the function
  * operator()().
  */
-template<int dim, typename Operator>
+template<typename Operator>
 class MGCoarseAMG : public CoarseGridSolverBase<Operator>
 {
 private:
@@ -350,13 +349,10 @@ private:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  MGCoarseAMG(Operator const &             op,
-              bool const                   initialize,
-              dealii::Mapping<dim> const & mapping,
-              AMGData                      data = AMGData())
+  MGCoarseAMG(Operator const & op, bool const initialize, AMGData data = AMGData())
   {
     amg_preconditioner =
-      std::make_shared<PreconditionerAMG<dim, Operator, Number>>(op, initialize, data, mapping);
+      std::make_shared<PreconditionerAMG<Operator, Number>>(op, initialize, data);
   }
 
   void
@@ -372,7 +368,7 @@ public:
   }
 
 private:
-  std::shared_ptr<PreconditionerAMG<dim, Operator, Number>> amg_preconditioner;
+  std::shared_ptr<PreconditionerAMG<Operator, Number>> amg_preconditioner;
 };
 
 } // namespace ExaDG
