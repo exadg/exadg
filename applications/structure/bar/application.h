@@ -322,16 +322,6 @@ private:
     this->param.multigrid_data.coarse_problem.amg_data.ml_operator_type =
       MLOperatorType::Elasticity;
 
-#ifdef DEAL_II_WITH_TRILINOS
-    this->param.multigrid_data.coarse_problem.amg_data.ml_data.elliptic              = true;
-    this->param.multigrid_data.coarse_problem.amg_data.ml_data.n_cycles              = 1;
-    this->param.multigrid_data.coarse_problem.amg_data.ml_data.w_cycle               = false;
-    this->param.multigrid_data.coarse_problem.amg_data.ml_data.aggregation_threshold = 1e-4;
-    this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_sweeps       = 6;
-    this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_overlap      = 2;
-    this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_type         = "Chebyshev";
-#endif
-
     this->param.multigrid_data.smoother_data.smoother       = MultigridSmoother::Chebyshev;
     this->param.multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
 
