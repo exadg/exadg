@@ -82,7 +82,8 @@ public:
     }
     else
     {
-      solution_transfer = std::make_shared<dealii::SolutionTransfer<dim, VectorType>>(*dof_handler);
+      solution_transfer =
+        std::make_shared<dealii::Legacy::SolutionTransfer<dim, VectorType>>(*dof_handler);
       solution_transfer->prepare_for_coarsening_and_refinement(vectors_old_grid);
     }
   }
@@ -136,7 +137,7 @@ private:
 
   std::vector<VectorType> vectors_old_grid;
 
-  std::shared_ptr<dealii::SolutionTransfer<dim, VectorType>> solution_transfer;
+  std::shared_ptr<dealii::Legacy::SolutionTransfer<dim, VectorType>> solution_transfer;
   std::shared_ptr<dealii::parallel::distributed::SolutionTransfer<dim, VectorType>>
     pd_solution_transfer;
 
