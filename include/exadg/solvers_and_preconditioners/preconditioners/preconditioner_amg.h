@@ -234,7 +234,7 @@ public:
       unsigned int const     dimension      = pde_operator.get_matrix_free().dimension;
       Teuchos::ParameterList parameter_list = get_ML_parameter_list(ml_data, dimension);
 
-      std::vector<std::vector<double>> elasticity_modes;
+      std::vector<std::vector<double>> rigid_body_modes;
 
       // If we use the AMG preconditioner in a multigrid setting,
       // signaled by `dof_handler.has_level_dofs() == true`,
@@ -242,22 +242,20 @@ public:
       // Otherwise, we use AMG as fine-level preconditioner.
       if(pde_operator.get_matrix_free().get_dof_handler().has_level_dofs())
       {
-        dealii::DoFTools::extract_level_elasticity_modes(
+        rigid_body_modes = dealii::DoFTools::extract_level_rigid_body_modes(
           0,
           *pde_operator.get_matrix_free().get_mapping_info().mapping,
           pde_operator.get_matrix_free().get_dof_handler(),
-          dealii::ComponentMask(dimension, true),
-          elasticity_modes);
+          dealii::ComponentMask(dimension, true));
       }
       else
       {
-        dealii::DoFTools::extract_elasticity_modes(
+        rigid_body_modes = dealii::DoFTools::extract_rigid_body_modes(
           *pde_operator.get_matrix_free().get_mapping_info().mapping,
           pde_operator.get_matrix_free().get_dof_handler(),
-          dealii::ComponentMask(dimension, true),
-          elasticity_modes);
+          dealii::ComponentMask(dimension, true));
       }
-      ml_data.elasticity_modes = elasticity_modes;
+      ml_data.constant_modes_values = rigid_body_modes;
 
       // Add near null space basis vectors to Teuchos::ParameterList.
       // `ptr_distributed_modes` must stay alive for amg.initialize();
