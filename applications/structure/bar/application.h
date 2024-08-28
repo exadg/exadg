@@ -319,9 +319,6 @@ private:
     this->param.preconditioner      = preconditioner;
     this->param.multigrid_data.type = MultigridType::phMG;
 
-    this->param.multigrid_data.coarse_problem.amg_data.ml_operator_type =
-      MLOperatorType::Elasticity;
-
     this->param.multigrid_data.smoother_data.smoother       = MultigridSmoother::Chebyshev;
     this->param.multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
 

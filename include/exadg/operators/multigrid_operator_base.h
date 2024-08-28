@@ -37,6 +37,8 @@ public:
   typedef Number                                             value_type;
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
+  static unsigned int const dimension = dim;
+
   MultigridOperatorBase() : dealii::Subscriptor()
   {
   }

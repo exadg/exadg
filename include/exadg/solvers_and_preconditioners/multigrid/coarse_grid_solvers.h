@@ -337,7 +337,7 @@ private:
 };
 
 /**
- * The aim if this class is to translate PreconditionerAMG to a coarse-grid solver with the function
+ * The aim of this class is to translate PreconditionerAMG to a coarse-grid solver with the function
  * operator()().
  */
 template<typename Operator>
