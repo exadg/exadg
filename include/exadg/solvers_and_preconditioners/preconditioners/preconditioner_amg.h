@@ -225,7 +225,7 @@ public:
 
     if(operator_type == MLOperatorType::Laplace)
     {
-      // Deauflt setup; add near null space for Laplace operator.
+      // Default setup; add near null space for Laplace operator.
       amg.initialize(system_matrix, ml_data);
     }
     else if(operator_type == MLOperatorType::Elasticity)
