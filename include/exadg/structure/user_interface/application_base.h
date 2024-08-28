@@ -70,12 +70,14 @@ public:
   {
     parse_parameters();
 
-    // parameters
-    set_parameters();
 #ifdef DEAL_II_WITH_TRILINOS
-    // Overwrite default MLOperatorType::Laplace to include rotational rigid body modes.
+    // Overwrite default MLOperatorType::Laplace to include rotational rigid body modes;
+    // might still be adapted by the user at will in application.
     param.multigrid_data.coarse_problem.amg_data.ml_operator_type = MLOperatorType::Elasticity;
 #endif
+
+    // parameters
+    set_parameters();
     param.check();
     param.print(pcout, "List of parameters:");
 
