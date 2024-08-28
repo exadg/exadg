@@ -59,6 +59,7 @@ Solver:
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
+      AMG operator type:                     Laplace
 
 Numerical parameters:
   Enable cell-based face loops:              false
@@ -149,6 +150,7 @@ Solver:
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
+      AMG operator type:                     Laplace
 
 Numerical parameters:
   Enable cell-based face loops:              false
@@ -239,6 +241,7 @@ Solver:
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
+      AMG operator type:                     Laplace
 
 Numerical parameters:
   Enable cell-based face loops:              false
@@ -329,6 +332,7 @@ Solver:
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
+      AMG operator type:                     Laplace
 
 Numerical parameters:
   Enable cell-based face loops:              false
@@ -419,6 +423,7 @@ Solver:
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
+      AMG operator type:                     Laplace
 
 Numerical parameters:
   Enable cell-based face loops:              false
@@ -509,6 +514,7 @@ Solver:
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
+      AMG operator type:                     Laplace
 
 Numerical parameters:
   Enable cell-based face loops:              false
@@ -599,6 +605,7 @@ Solver:
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
+      AMG operator type:                     Laplace
 
 Numerical parameters:
   Enable cell-based face loops:              false
