@@ -341,7 +341,7 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
   timer.restart();
 
   // in case we need to iteratively solve a linear or nonlinear system of equations
-  if(this->param.viscous_problem() or this->param.implicit_convective_problem())
+  if(this->param.viscous_problem() or this->param.non_explicit_convective_problem())
   {
     // Extrapolate old solutions to get a good initial estimate for the solver.
     if(this->use_extrapolation)
@@ -388,7 +388,8 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
        *  to the next, i.e., it does not depend on the current solution of the nonlinear solver)
        */
       VectorType rhs(velocity_np);
-      rhs_momentum(rhs);
+      VectorType transport_velocity_dummy;
+      rhs_momentum(rhs, transport_velocity_dummy);
 
       // solve non-linear system of equations
       auto const iter = pde_operator->solve_nonlinear_momentum_equation(
@@ -413,17 +414,27 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
     }
     else // linear problem
     {
-      AssertThrow(this->param.viscous_problem(), dealii::ExcMessage("Should not arrive here."));
+      // linearly implicit convective term: use extrapolated/stored velocity as transport velocity
+      VectorType transport_velocity;
+      if(this->param.convective_problem() and
+         this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+      {
+        transport_velocity = velocity_np;
+      }
 
       /*
        *  Calculate the right-hand side of the linear system of equations.
        */
       VectorType rhs(velocity_np);
-      rhs_momentum(rhs);
+      rhs_momentum(rhs, transport_velocity);
 
       // solve linear system of equations
       unsigned int n_iter = pde_operator->solve_linear_momentum_equation(
-        velocity_np, rhs, update_preconditioner, this->get_scaling_factor_time_derivative_term());
+        velocity_np,
+        rhs,
+        transport_velocity,
+        update_preconditioner,
+        this->get_scaling_factor_time_derivative_term());
 
       iterations_momentum.first += 1;
       std::get<1>(iterations_momentum.second) += n_iter;
@@ -438,14 +449,15 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
     if(this->store_solution)
       velocity_momentum_last_iter = velocity_np;
   }
-  else // no viscous term and no implicit convective term, i.e. we only need to invert the mass
-       // matrix
+  else // no viscous term and no (linearly) implicit convective term, i.e. we only need to invert
+       // the mass matrix
   {
     /*
      *  Calculate the right-hand side vector.
      */
     VectorType rhs(velocity_np);
-    rhs_momentum(rhs);
+    VectorType transport_velocity_dummy;
+    rhs_momentum(rhs, transport_velocity_dummy);
 
     pde_operator->apply_inverse_mass_operator(velocity_np, rhs);
     velocity_np *= this->get_time_step_size() / this->bdf.get_gamma0();
@@ -462,7 +474,8 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
 
 template<int dim, typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::rhs_momentum(VectorType & rhs)
+TimeIntBDFPressureCorrection<dim, Number>::rhs_momentum(VectorType &       rhs,
+                                                        VectorType const & transport_velocity)
 {
   rhs = 0.0;
 
@@ -496,27 +509,33 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_momentum(VectorType & rhs)
    *  Convective term formulated explicitly (additive decomposition):
    *  Evaluate convective term and add extrapolation of convective term to the rhs
    */
-  if(this->param.convective_problem() and
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  if(this->param.convective_problem())
   {
-    if(this->param.ale_formulation)
+    if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
     {
-      for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
+      if(this->param.ale_formulation)
       {
-        // in a general setting, we only know the boundary conditions at time t_{n+1}
-        pde_operator->evaluate_convective_term(this->vec_convective_term[i],
-                                               velocity[i],
-                                               this->get_next_time());
+        for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
+        {
+          // in a general setting, we only know the boundary conditions at time t_{n+1}
+          pde_operator->evaluate_convective_term(this->vec_convective_term[i],
+                                                 velocity[i],
+                                                 this->get_next_time());
+        }
       }
+
+      for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
+        rhs.add(-this->extra.get_beta(i), this->vec_convective_term[i]);
     }
 
-    for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
-      rhs.add(-this->extra.get_beta(i), this->vec_convective_term[i]);
+    if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+    {
+      pde_operator->rhs_add_convective_term(rhs, transport_velocity, this->get_next_time());
+    }
   }
 
   /*
-   *  calculate sum (alpha_i/dt * u_i): This term is relevant for both the explicit
-   *  and the implicit formulation of the convective term
+   *  calculate sum (alpha_i/dt * u_i) and apply mass operator to this vector
    */
   VectorType sum_alphai_ui(velocity[0]);
 

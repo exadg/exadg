@@ -166,16 +166,24 @@ OperatorCoupled<dim, Number>::set_scaling_factor_continuity(double const scaling
 
 template<int dim, typename Number>
 unsigned int
-OperatorCoupled<dim, Number>::solve_linear_stokes_problem(BlockVectorType &       dst,
-                                                          BlockVectorType const & src,
-                                                          bool const &   update_preconditioner,
-                                                          double const & scaling_factor_mass)
+OperatorCoupled<dim, Number>::solve_linear_problem(BlockVectorType &       dst,
+                                                   BlockVectorType const & src,
+                                                   VectorType const &      transport_velocity,
+                                                   bool const &            update_preconditioner,
+                                                   double const &          scaling_factor_mass)
 {
   // Update momentum operator
   // We do not need to set the time here, because time affects the operator only in the form of
   // boundary conditions. The result of such boundary condition evaluations is handed over to this
   // function via the vector src.
   this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
+
+  // linearly implicit convective term
+  if(this->param.convective_problem() and
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+  {
+    this->momentum_operator.set_solution_linearization(transport_velocity);
+  }
 
   linear_solver->update_preconditioner(update_preconditioner);
 
@@ -184,14 +192,27 @@ OperatorCoupled<dim, Number>::solve_linear_stokes_problem(BlockVectorType &     
 
 template<int dim, typename Number>
 void
-OperatorCoupled<dim, Number>::rhs_stokes_problem(BlockVectorType & dst, double const & time) const
+OperatorCoupled<dim, Number>::rhs_linear_problem(BlockVectorType &  dst,
+                                                 VectorType const & transport_velocity,
+                                                 double const &     time) const
 {
   // velocity-block
   this->gradient_operator.rhs(dst.block(0), time);
   dst.block(0) *= scaling_factor_continuity;
 
-  this->viscous_operator.set_time(time);
-  this->viscous_operator.rhs_add(dst.block(0));
+  if(this->param.viscous_problem())
+  {
+    this->viscous_operator.set_time(time);
+    this->viscous_operator.rhs_add(dst.block(0));
+  }
+
+  if(this->param.convective_problem() and
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+  {
+    this->convective_operator.set_velocity_ptr(transport_velocity);
+    this->convective_operator.set_time(time);
+    this->convective_operator.rhs_add(dst.block(0));
+  }
 
   if(this->param.apply_penalty_terms_in_postprocessing_step == false)
   {
@@ -287,7 +308,7 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &     
   else
     dst.block(0) = 0.0;
 
-  if(this->param.implicit_convective_problem())
+  if(this->param.implicit_nonlinear_convective_problem())
   {
     this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0), src.block(0), time);
   }
@@ -350,7 +371,7 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVectorType
     dst.block(0) *= -1.0;
   }
 
-  if(this->param.implicit_convective_problem())
+  if(this->param.implicit_nonlinear_convective_problem())
   {
     this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0), src.block(0), time);
   }
@@ -733,7 +754,7 @@ OperatorCoupled<dim, Number>::setup_pressure_convection_diffusion_operator()
   operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
 
   operator_data.unsteady_problem   = this->unsteady_problem_has_to_be_solved();
-  operator_data.convective_problem = this->param.implicit_convective_problem();
+  operator_data.convective_problem = this->param.non_explicit_convective_problem();
   operator_data.diffusive_problem  = this->param.viscous_problem();
 
   operator_data.convective_kernel_data = convective_kernel_data;
@@ -1148,7 +1169,7 @@ OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &  
         this->momentum_operator.get_scaling_factor_mass_operator());
     }
 
-    if(this->param.implicit_convective_problem())
+    if(this->param.non_explicit_convective_problem())
     {
       pressure_conv_diff_operator->set_velocity_ptr(this->convective_kernel->get_velocity());
     }

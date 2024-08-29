@@ -136,7 +136,8 @@ enum class TreatmentOfConvectiveTerm
 {
   Undefined,
   Explicit,
-  Implicit
+  Implicit,
+  LinearlyImplicit
 };
 
 /*
