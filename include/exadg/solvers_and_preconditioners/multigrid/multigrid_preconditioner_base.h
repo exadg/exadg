@@ -211,12 +211,6 @@ protected:
   get_number_of_levels() const;
 
   /**
-   * Returns the number of h-levels.
-   */
-  unsigned int
-  get_number_of_h_levels() const;
-
-  /**
    * This is a generic function allowing to loop over all multigrid levels (including the coarsest
    * level). The operation to be performed on each level is passed as a lambda with argument level.
    */
@@ -285,6 +279,12 @@ private:
    */
   dealii::Mapping<dim> const &
   get_mapping(unsigned int const h_level) const;
+
+  /**
+   * Returns the number of h-levels.
+   */
+  unsigned int
+  get_number_of_h_levels() const;
 
   /*
    * Data structures needed for matrix-free operator evaluation.

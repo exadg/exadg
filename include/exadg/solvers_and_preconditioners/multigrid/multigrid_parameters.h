@@ -80,6 +80,7 @@ enum class AMGType
 
 enum class MLOperatorType
 {
+  Undefined,
   Laplace,
   Elasticity
 };
@@ -110,7 +111,6 @@ struct AMGData
     ml_data.smoother_sweeps = 1;
     ml_data.n_cycles        = 1;
     ml_data.smoother_type   = "ILU";
-    ml_operator_type        = MLOperatorType::Laplace;
 #endif
 
 #ifdef DEAL_II_WITH_PETSC
@@ -136,7 +136,6 @@ struct AMGData
       print_parameter(pcout, "    Smoother sweeps", ml_data.smoother_sweeps);
       print_parameter(pcout, "    Number of cycles", ml_data.n_cycles);
       print_parameter(pcout, "    Smoother type", ml_data.smoother_type);
-      print_parameter(pcout, "    AMG operator type", ml_operator_type);
 #endif
     }
     else if(amg_type == AMGType::BoomerAMG)
@@ -158,7 +157,6 @@ struct AMGData
   AMGType amg_type;
 
 #ifdef DEAL_II_WITH_TRILINOS
-  MLOperatorType                                            ml_operator_type;
   dealii::TrilinosWrappers::PreconditionAMG::AdditionalData ml_data;
 #endif
 

@@ -240,7 +240,7 @@ public:
   }
 
 private:
-  const Operator & pde_operator;
+  Operator const & pde_operator;
 
   std::shared_ptr<PreconditionerBase<Number>> preconditioner;
 

@@ -73,7 +73,6 @@ Linear solver:
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
-      AMG operator type:                     Elasticity
 
 Generating grid for 3-dimensional problem:
 
