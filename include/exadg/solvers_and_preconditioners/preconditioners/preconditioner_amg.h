@@ -36,8 +36,6 @@
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
 #include <exadg/solvers_and_preconditioners/utilities/linear_algebra_utilities.h>
 #include <exadg/utilities/print_functions.h>
-//#include <exadg/structure/spatial_discretization/operators/nonlinear_operator.h>
-//#include <exadg/structure/spatial_discretization/operators/linear_operator.h>
 
 namespace ExaDG
 {
@@ -164,25 +162,15 @@ private:
   dealii::TrilinosWrappers::PreconditionAMG amg;
 
 public:
-  PreconditionerML(Operator const & op, bool const initialize, MLData ml_data = MLData())
-    : pde_operator(op), ml_data(ml_data)
+  PreconditionerML(Operator const &     op,
+                   bool const           initialize,
+                   MLOperatorType const ml_operator_type,
+                   MLData               ml_data = MLData())
+    : pde_operator(op), ml_operator_type(ml_operator_type), ml_data(ml_data)
   {
     // initialize system matrix
     pde_operator.init_system_matrix(system_matrix,
                                     op.get_matrix_free().get_dof_handler().get_communicator());
-
-    //    // Set MLOperatorType according to type `Operator`
-    //    // DOES NOT WORK FOR MULTIGRID OPERATORS ##+
-    //    operator_type = MLOperatorType::Laplace;
-    //    if(std::is_same<Operator, ExaDG::Structure::LinearOperator<op.dimension, double>>::value
-    //    or
-    //       std::is_same<Operator, ExaDG::Structure::LinearOperator<op.dimension, float>>::value or
-    //	   std::is_same<Operator, ExaDG::Structure::NonLinearOperator<op.dimension, double>>::value
-    // or 	   std::is_same<Operator, ExaDG::Structure::NonLinearOperator<op.dimension,
-    // float>>::value)
-    //    {
-    //      operator_type = MLOperatorType::Elasticity;
-    //    }
 
     if(initialize)
     {
@@ -235,14 +223,14 @@ public:
     // re-calculate matrix
     pde_operator.calculate_system_matrix(system_matrix);
 
-    if(operator_type == MLOperatorType::Laplace)
+    if(ml_operator_type == MLOperatorType::Laplace)
     {
       std::cout << "##+ LAPLACE\n";
 
       // Default setup; add near null space for Laplace operator.
       amg.initialize(system_matrix, ml_data);
     }
-    else if(operator_type == MLOperatorType::Elasticity)
+    else if(ml_operator_type == MLOperatorType::Elasticity)
     {
       std::cout << "##+ ELASTICITY\n";
 
@@ -295,8 +283,8 @@ private:
   // reference to matrix-free operator
   Operator const & pde_operator;
 
-  MLOperatorType operator_type = MLOperatorType::Undefined;
-  MLData         ml_data;
+  MLOperatorType const ml_operator_type;
+  MLData               ml_data;
 };
 #endif
 
@@ -478,8 +466,10 @@ public:
     else if(data.amg_type == AMGType::ML)
     {
 #ifdef DEAL_II_WITH_TRILINOS
-      preconditioner_ml =
-        std::make_shared<PreconditionerML<Operator>>(pde_operator, initialize, data.ml_data);
+      preconditioner_ml = std::make_shared<PreconditionerML<Operator>>(pde_operator,
+                                                                       initialize,
+                                                                       data.ml_operator_type,
+                                                                       data.ml_data);
 #else
       AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif

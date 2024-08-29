@@ -322,6 +322,11 @@ Operator<dim, n_components, Number>::setup_preconditioner_and_solver()
   }
   else if(param.preconditioner == Poisson::Preconditioner::AMG)
   {
+    AMGData amg_data = param.multigrid_data.coarse_problem.amg_data;
+#ifdef DEAL_II_WITH_TRILINOS
+    amg_data.ml_operator_type = MLOperatorType::Laplace;
+#endif
+
     preconditioner = std::make_shared<PreconditionerAMG<Laplace, Number>>(
       laplace_operator, true, param.multigrid_data.coarse_problem.amg_data);
   }
