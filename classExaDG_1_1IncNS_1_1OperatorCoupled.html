@@ -118,9 +118,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>update_continuity_pen
 <tr class="memitem:ac596f660568af28d51479fa53003f11a" id="r_ac596f660568af28d51479fa53003f11a"><td class="memItemLeft" align="right" valign="top"><a id="ac596f660568af28d51479fa53003f11a" name="ac596f660568af28d51479fa53003f11a"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_scaling_factor_continuity</b> (double const scaling_factor)</td></tr>
 <tr class="separator:ac596f660568af28d51479fa53003f11a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8994826b2cdee0525717ac40b4e01b05" id="r_a8994826b2cdee0525717ac40b4e01b05"><td class="memItemLeft" align="right" valign="top"><a id="a8994826b2cdee0525717ac40b4e01b05" name="a8994826b2cdee0525717ac40b4e01b05"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve_linear_stokes_problem</b> (BlockVectorType &amp;dst, BlockVectorType const &amp;src, bool const &amp;update_preconditioner, double const &amp;scaling_factor_mass=1.0)</td></tr>
-<tr class="separator:a8994826b2cdee0525717ac40b4e01b05"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a38b35fcc8d900520626290208f093891" id="r_a38b35fcc8d900520626290208f093891"><td class="memItemLeft" align="right" valign="top"><a id="a38b35fcc8d900520626290208f093891" name="a38b35fcc8d900520626290208f093891"></a>
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve_linear_problem</b> (BlockVectorType &amp;dst, BlockVectorType const &amp;src, VectorType const &amp;transport_velocity, bool const &amp;update_preconditioner, double const &amp;scaling_factor_mass=1.0)</td></tr>
+<tr class="separator:a38b35fcc8d900520626290208f093891"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab7d1c956c77f509b3cbdc15a59dde373" id="r_ab7d1c956c77f509b3cbdc15a59dde373"><td class="memItemLeft" align="right" valign="top"><a id="ab7d1c956c77f509b3cbdc15a59dde373" name="ab7d1c956c77f509b3cbdc15a59dde373"></a>
 std::tuple&lt; unsigned int, unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>solve_nonlinear_problem</b> (BlockVectorType &amp;dst, VectorType const &amp;rhs_vector, bool const &amp;update_preconditioner, double const &amp;time=0.0, double const &amp;scaling_factor_mass=1.0)</td></tr>
 <tr class="separator:ab7d1c956c77f509b3cbdc15a59dde373"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -133,9 +133,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_nonlinear_re
 <tr class="memitem:acc668feeef036cb52bf8d92c5713ebcb" id="r_acc668feeef036cb52bf8d92c5713ebcb"><td class="memItemLeft" align="right" valign="top"><a id="acc668feeef036cb52bf8d92c5713ebcb" name="acc668feeef036cb52bf8d92c5713ebcb"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_linearized_problem</b> (BlockVectorType &amp;dst, BlockVectorType const &amp;src) const</td></tr>
 <tr class="separator:acc668feeef036cb52bf8d92c5713ebcb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaa97064dbc8c806e9d46f158da0e8cee" id="r_aaa97064dbc8c806e9d46f158da0e8cee"><td class="memItemLeft" align="right" valign="top"><a id="aaa97064dbc8c806e9d46f158da0e8cee" name="aaa97064dbc8c806e9d46f158da0e8cee"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>rhs_stokes_problem</b> (BlockVectorType &amp;dst, double const &amp;time=0.0) const</td></tr>
-<tr class="separator:aaa97064dbc8c806e9d46f158da0e8cee"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a89dd07e3717b3e1db06ed208b3788881" id="r_a89dd07e3717b3e1db06ed208b3788881"><td class="memItemLeft" align="right" valign="top"><a id="a89dd07e3717b3e1db06ed208b3788881" name="a89dd07e3717b3e1db06ed208b3788881"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>rhs_linear_problem</b> (BlockVectorType &amp;dst, VectorType const &amp;transport_velocity, double const &amp;time=0.0) const</td></tr>
+<tr class="separator:a89dd07e3717b3e1db06ed208b3788881"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f16c62b1eb63f6ed96d587c2d4f893c" id="r_a6f16c62b1eb63f6ed96d587c2d4f893c"><td class="memItemLeft" align="right" valign="top"><a id="a6f16c62b1eb63f6ed96d587c2d4f893c" name="a6f16c62b1eb63f6ed96d587c2d4f893c"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update_block_preconditioner</b> ()</td></tr>
 <tr class="separator:a6f16c62b1eb63f6ed96d587c2d4f893c"><td class="memSeparator" colspan="2">&#160;</td></tr>

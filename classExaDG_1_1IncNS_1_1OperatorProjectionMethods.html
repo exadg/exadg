@@ -128,12 +128,15 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_projection_oper
 <tr class="memitem:a3ba6e81c2fe3baed4c979b7af457cbbd" id="r_a3ba6e81c2fe3baed4c979b7af457cbbd"><td class="memItemLeft" align="right" valign="top"><a id="a3ba6e81c2fe3baed4c979b7af457cbbd" name="a3ba6e81c2fe3baed4c979b7af457cbbd"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_laplace_operator</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:a3ba6e81c2fe3baed4c979b7af457cbbd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a69d85c9f0eba95d2cd7446951d9545c2" id="r_a69d85c9f0eba95d2cd7446951d9545c2"><td class="memItemLeft" align="right" valign="top"><a id="a69d85c9f0eba95d2cd7446951d9545c2" name="a69d85c9f0eba95d2cd7446951d9545c2"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve_linear_momentum_equation</b> (VectorType &amp;solution, VectorType const &amp;rhs, bool const &amp;update_preconditioner, double const &amp;scaling_factor_mass)</td></tr>
-<tr class="separator:a69d85c9f0eba95d2cd7446951d9545c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8637edaef729b2846b3db6c7e70c9a2b" id="r_a8637edaef729b2846b3db6c7e70c9a2b"><td class="memItemLeft" align="right" valign="top"><a id="a8637edaef729b2846b3db6c7e70c9a2b" name="a8637edaef729b2846b3db6c7e70c9a2b"></a>
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve_linear_momentum_equation</b> (VectorType &amp;solution, VectorType const &amp;rhs, VectorType const &amp;transport_velocity, bool const &amp;update_preconditioner, double const &amp;scaling_factor_mass)</td></tr>
+<tr class="separator:a8637edaef729b2846b3db6c7e70c9a2b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af8ccb8962ea20130261027d9ab457297" id="r_af8ccb8962ea20130261027d9ab457297"><td class="memItemLeft" align="right" valign="top"><a id="af8ccb8962ea20130261027d9ab457297" name="af8ccb8962ea20130261027d9ab457297"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>rhs_add_viscous_term</b> (VectorType &amp;dst, double const time) const</td></tr>
 <tr class="separator:af8ccb8962ea20130261027d9ab457297"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf1f66b5b6e76407c2f82add84ea5402" id="r_adf1f66b5b6e76407c2f82add84ea5402"><td class="memItemLeft" align="right" valign="top"><a id="adf1f66b5b6e76407c2f82add84ea5402" name="adf1f66b5b6e76407c2f82add84ea5402"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>rhs_add_convective_term</b> (VectorType &amp;dst, VectorType const &amp;transport_velocity, double const time) const</td></tr>
+<tr class="separator:adf1f66b5b6e76407c2f82add84ea5402"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8d2dea11cda204e562aedc5279623983" id="r_a8d2dea11cda204e562aedc5279623983"><td class="memItemLeft" align="right" valign="top"><a id="a8d2dea11cda204e562aedc5279623983" name="a8d2dea11cda204e562aedc5279623983"></a>
 std::tuple&lt; unsigned int, unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>solve_nonlinear_momentum_equation</b> (VectorType &amp;dst, VectorType const &amp;rhs_vector, double const &amp;time, bool const &amp;update_preconditioner, double const &amp;scaling_factor_mass)</td></tr>
 <tr class="separator:a8d2dea11cda204e562aedc5279623983"><td class="memSeparator" colspan="2">&#160;</td></tr>
