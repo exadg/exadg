@@ -225,15 +225,11 @@ public:
 
     if(ml_operator_type == MLOperatorType::Laplace)
     {
-      std::cout << "##+ LAPLACE\n";
-
       // Default setup; add near null space for Laplace operator.
       amg.initialize(system_matrix, ml_data);
     }
     else if(ml_operator_type == MLOperatorType::Elasticity)
     {
-      std::cout << "##+ ELASTICITY\n";
-
       // get Teuchos::ParameterList to provide custom near null space basis
       unsigned int const     dimension      = pde_operator.get_matrix_free().dimension;
       Teuchos::ParameterList parameter_list = get_ML_parameter_list(ml_data, dimension);
