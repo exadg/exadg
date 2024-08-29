@@ -178,7 +178,8 @@ public:
     //    or
     //       std::is_same<Operator, ExaDG::Structure::LinearOperator<op.dimension, float>>::value or
     //	   std::is_same<Operator, ExaDG::Structure::NonLinearOperator<op.dimension, double>>::value
-    //or 	   std::is_same<Operator, ExaDG::Structure::NonLinearOperator<op.dimension, float>>::value)
+    // or 	   std::is_same<Operator, ExaDG::Structure::NonLinearOperator<op.dimension,
+    // float>>::value)
     //    {
     //      operator_type = MLOperatorType::Elasticity;
     //    }
