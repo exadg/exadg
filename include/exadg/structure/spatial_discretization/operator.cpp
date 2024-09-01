@@ -19,10 +19,8 @@
  *  ______________________________________________________________________
  */
 
-// deal.II
-#include <deal.II/numerics/vector_tools.h>
-
 // ExaDG
+#include <exadg/functions_and_boundary_conditions/interpolate.h>
 #include <exadg/grid/grid_data.h>
 #include <exadg/operators/constraints.h>
 #include <exadg/operators/finite_element.h>
@@ -675,32 +673,14 @@ void
 Operator<dim, Number>::prescribe_initial_displacement(VectorType & displacement,
                                                       double const time) const
 {
-  // This is necessary if Number == float
-  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-
-  VectorTypeDouble src_double;
-  src_double = displacement;
-
-  field_functions->initial_displacement->set_time(time);
-  dealii::VectorTools::interpolate(dof_handler, *field_functions->initial_displacement, src_double);
-
-  displacement = src_double;
+  Utilities::interpolate(dof_handler, *field_functions->initial_displacement, displacement, time);
 }
 
 template<int dim, typename Number>
 void
 Operator<dim, Number>::prescribe_initial_velocity(VectorType & velocity, double const time) const
 {
-  // This is necessary if Number == float
-  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-
-  VectorTypeDouble src_double;
-  src_double = velocity;
-
-  field_functions->initial_velocity->set_time(time);
-  dealii::VectorTools::interpolate(dof_handler, *field_functions->initial_velocity, src_double);
-
-  velocity = src_double;
+  Utilities::interpolate(dof_handler, *field_functions->initial_velocity, velocity, time);
 }
 
 template<int dim, typename Number>
@@ -711,18 +691,10 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
 {
   if(field_functions->initial_acceleration.get())
   {
-    // This is necessary if Number == float
-    typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-
-    VectorTypeDouble src_double;
-    src_double = initial_acceleration;
-
-    field_functions->initial_acceleration->set_time(time);
-    dealii::VectorTools::interpolate(dof_handler,
-                                     *field_functions->initial_acceleration,
-                                     src_double);
-
-    initial_acceleration = src_double;
+    Utilities::interpolate(dof_handler,
+                           *field_functions->initial_acceleration,
+                           initial_acceleration,
+                           time);
   }
   else
   {
