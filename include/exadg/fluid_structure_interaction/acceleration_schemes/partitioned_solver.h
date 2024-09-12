@@ -61,6 +61,10 @@ public:
   get_timings() const;
 
 private:
+  void
+  update_structure_displacement(VectorType &       displacement_structure,
+                                unsigned int const iteration) const;
+
   bool
   check_convergence(VectorType const & residual) const;
 
@@ -174,6 +178,28 @@ PartitionedSolver<dim, Number>::get_timings() const
 
 template<int dim, typename Number>
 void
+PartitionedSolver<dim, Number>::update_structure_displacement(VectorType & displacement_structure,
+                                                              unsigned int const iteration) const
+{
+  if(iteration == 0)
+  {
+    if(parameters.use_extrapolation)
+    {
+      structure->time_integrator->extrapolate_displacement_to_np(displacement_structure);
+    }
+    else
+    {
+      displacement_structure = structure->time_integrator->get_displacement_n();
+    }
+  }
+  else
+  {
+    displacement_structure = structure->time_integrator->get_displacement_np();
+  }
+}
+
+template<int dim, typename Number>
+void
 PartitionedSolver<dim, Number>::solve(
   std::function<void(VectorType &, VectorType const &, unsigned int)> const &
     apply_dirichlet_neumann_scheme)
@@ -194,10 +220,7 @@ PartitionedSolver<dim, Number>::solve(
     {
       print_solver_info_header(k);
 
-      if(k == 0)
-        structure->time_integrator->extrapolate_displacement_to_np(d);
-      else
-        d = structure->time_integrator->get_displacement_np();
+      update_structure_displacement(d, k);
 
       VectorType d_tilde(d);
       apply_dirichlet_neumann_scheme(d_tilde, d, k);
@@ -257,10 +280,7 @@ PartitionedSolver<dim, Number>::solve(
     {
       print_solver_info_header(k);
 
-      if(k == 0)
-        structure->time_integrator->extrapolate_displacement_to_np(d);
-      else
-        d = structure->time_integrator->get_displacement_np();
+      update_structure_displacement(d, k);
 
       apply_dirichlet_neumann_scheme(d_tilde, d, k);
 
@@ -385,10 +405,7 @@ PartitionedSolver<dim, Number>::solve(
     {
       print_solver_info_header(k);
 
-      if(k == 0)
-        structure->time_integrator->extrapolate_displacement_to_np(d);
-      else
-        d = structure->time_integrator->get_displacement_np();
+      update_structure_displacement(d, k);
 
       apply_dirichlet_neumann_scheme(d_tilde, d, k);
 
