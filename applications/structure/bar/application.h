@@ -308,10 +308,13 @@ private:
     else if(this->param.grid.element_type == ElementType::Hypercube)
     {
       this->param.grid.triangulation_type           = TriangulationType::Distributed;
-      this->param.grid.create_coarse_triangulations = false; // can also be set to true if desired
+      this->param.grid.create_coarse_triangulations = true; // can also be set to true if desired
     }
 
     this->param.load_increment = 0.5;
+
+    this->param.use_matrix_based_implementation = true;
+    this->param.sparse_matrix_type              = SparseMatrixType::Trilinos;
 
     this->param.newton_solver_data  = Newton::SolverData(1e2, 1.e-9, 1.e-9);
     this->param.solver              = Solver::FGMRES;
@@ -365,12 +368,14 @@ private:
 
         if(this->param.grid.element_type == ElementType::Hypercube)
         {
-          dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, p1, p2);
+          dealii::GridGenerator::subdivided_hyper_rectangle(
+            tria, repetitions, p1, p2, false /* colorize */);
         }
         else if(this->param.grid.element_type == ElementType::Simplex)
         {
           dealii::Triangulation<dim, dim> tria_hypercube;
-          dealii::GridGenerator::subdivided_hyper_rectangle(tria_hypercube, repetitions, p1, p2);
+          dealii::GridGenerator::subdivided_hyper_rectangle(
+            tria_hypercube, repetitions, p1, p2, false /* colorize */);
 
           dealii::GridGenerator::convert_hypercube_to_simplex_mesh(tria_hypercube, tria);
         }
@@ -448,6 +453,52 @@ private:
                                                  this->param.mapping_degree,
                                                  this->param.mapping_degree_coarse_grids,
                                                  this->param.involves_h_multigrid());
+
+    // Flag all cells touching one of the boundaries with a face.
+    std::vector<dealii::types::boundary_id> refine_bdry_id = {1};
+    for(auto const & cell : grid.triangulation->active_cell_iterators())
+    {
+      for(auto const face : cell->face_indices())
+      {
+        if(cell->at_boundary(face))
+        {
+          if(std::find(refine_bdry_id.begin(),
+                       refine_bdry_id.end(),
+                       cell->face(face)->boundary_id()) != refine_bdry_id.end())
+          {
+            if(not cell->refine_flag_set())
+            {
+              cell->clear_coarsen_flag();
+              cell->set_refine_flag();
+            }
+          }
+        }
+      }
+    }
+    grid.triangulation->prepare_coarsening_and_refinement();
+    grid.triangulation->execute_coarsening_and_refinement();
+
+    // Update coarse_triangulations after adaptive refinement.
+    if(this->param.involves_h_multigrid())
+    {
+      GridUtilities::create_coarse_triangulations_after_coarsening_and_refinement(
+        *grid.triangulation,
+        grid.periodic_face_pairs,
+        grid.coarse_triangulations,
+        grid.coarse_periodic_face_pairs,
+        this->param.grid,
+        false /* preserve_boundary_cells */);
+    }
+
+    // Fill coarse mappings based on fine mapping.
+    std::shared_ptr<dealii::Mapping<dim>> coarse_mapping;
+    if(this->param.involves_h_multigrid())
+    {
+      GridUtilities::create_mapping(coarse_mapping,
+                                    this->param.grid.element_type,
+                                    this->param.mapping_degree_coarse_grids);
+    }
+    multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping, coarse_mapping);
   }
 
   void
