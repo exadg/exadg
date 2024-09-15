@@ -450,19 +450,6 @@ OperatorBase<dim, Number, n_components>::apply_matrix_based(VectorType &       d
   {
     AssertThrow(false, dealii::ExcMessage("not implemented."));
   }
-
-  if(not is_dg)
-  {
-    // Constrained degree of freedom are not removed from the system of equations.
-    // Instead, we set the diagonal entries of the matrix to 1 for these constrained
-    // degrees of freedom. This means that we simply copy the constrained values to the
-    // dst vector.
-    for(unsigned int const constrained_index :
-        matrix_free->get_constrained_dofs(this->data.dof_index))
-    {
-      dst.local_element(constrained_index) = src.local_element(constrained_index);
-    }
-  }
 }
 
 template<int dim, typename Number, int n_components>
@@ -1014,6 +1001,18 @@ OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix(
 
   // communicate overlapping matrix parts
   system_matrix.compress(dealii::VectorOperation::add);
+
+  // set diagonal entries of constrained DoFs to 1.0
+  dealii::DoFHandler<dim> const & dof_handler =
+    this->matrix_free->get_dof_handler(this->data.dof_index);
+  for(auto const & line : this->constraint->get_lines())
+  {
+    if(dof_handler.locally_owned_dofs().is_element(line.index))
+    {
+      system_matrix.set(line.index, line.index, 1.0);
+    }
+  }
+  system_matrix.compress(dealii::VectorOperation::insert);
 }
 
 template<int dim, typename Number, int n_components>
