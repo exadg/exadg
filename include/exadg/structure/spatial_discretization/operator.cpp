@@ -961,6 +961,8 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
 
   //  elasticity_operator_nonlinear.set_inhomogeneous_boundary_values(sol);
 
+  affine_constraints_periodicity_and_hanging_nodes.distribute(sol); // <- these should be always enforced through matrix_free!?
+
   return iter;
 }
 
