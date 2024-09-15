@@ -156,16 +156,23 @@ inline DEAL_II_ALWAYS_INLINE //
  *  Neumann boundary:   u⁺ = u⁻
  *  symmetry boundary:  u⁺ = u⁻ -(u⁻*n)n - (u⁻*n)n = u⁻ - 2 (u⁻*n)n
  *
- *  The name "nonlinear" indicates that this function is used when
- *  evaluating the nonlinear convective operator.
+ *  The name "convective" indicates that this function is used when
+ *  evaluating the convective operator.
+ *
+ *  OperatorType:
+ *  - To evaluate the nonlinear convective term (residual evaluation), use OperatorType::full.
+ *  - To evaluate the linearization of the nonlinear convective term, use OperatorType::homogeneous.
+ *  - To evaluate the linearly implicit convective term, use OperatorType::homogeneous for the
+ * "matrix-vector" product and OperatorType::inhomogeneous for the "rhs" contribution.
  */
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
-  calculate_exterior_value_nonlinear(
+  calculate_exterior_value_convective(
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & u_m,
     unsigned int const                                              q,
     FaceIntegrator<dim, dim, Number> &                              integrator,
+    OperatorType const &                                            operator_type,
     BoundaryTypeU const &                                           boundary_type,
     TypeDirichletBCs const &                                        type_dirichlet_bc,
     dealii::types::boundary_id const                                boundary_id,
@@ -178,24 +185,27 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> g;
 
-    if(boundary_type == BoundaryTypeU::Dirichlet)
+    if(operator_type == OperatorType::full or operator_type == OperatorType::inhomogeneous)
     {
-      auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
-      auto q_points = integrator.quadrature_point(q);
+      if(boundary_type == BoundaryTypeU::Dirichlet)
+      {
+        auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
+        auto q_points = integrator.quadrature_point(q);
 
-      g = FunctionEvaluator<1, dim, Number>::value(*bc, q_points, time);
-    }
-    else if(boundary_type == BoundaryTypeU::DirichletCached)
-    {
-      auto bc = boundary_descriptor->get_dirichlet_cached_data();
-      g       = FunctionEvaluator<1, dim, Number>::value(*bc,
-                                                   integrator.get_current_cell_index(),
-                                                   q,
-                                                   integrator.get_quadrature_index());
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+        g = FunctionEvaluator<1, dim, Number>::value(*bc, q_points, time);
+      }
+      else if(boundary_type == BoundaryTypeU::DirichletCached)
+      {
+        auto bc = boundary_descriptor->get_dirichlet_cached_data();
+        g       = FunctionEvaluator<1, dim, Number>::value(*bc,
+                                                     integrator.get_current_cell_index(),
+                                                     q,
+                                                     integrator.get_quadrature_index());
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      }
     }
 
     if(type_dirichlet_bc == TypeDirichletBCs::Mirror)

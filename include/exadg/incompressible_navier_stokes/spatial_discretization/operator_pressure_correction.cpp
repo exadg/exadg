@@ -115,7 +115,7 @@ OperatorPressureCorrection<dim, Number>::evaluate_nonlinear_residual_steady(
     dst_u *= -1.0;
   }
 
-  if(this->param.implicit_convective_problem())
+  if(this->param.implicit_nonlinear_convective_problem())
   {
     this->convective_operator.evaluate_nonlinear_operator_add(dst_u, src_u, time);
   }

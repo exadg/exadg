@@ -460,11 +460,12 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   divergence_operator.initialize(*matrix_free, divergence_operator_data);
 
   // convective operator
-  convective_kernel_data.formulation       = param.formulation_convective_term;
-  convective_kernel_data.upwind_factor     = param.upwind_factor;
-  convective_kernel_data.use_outflow_bc    = param.use_outflow_bc_convective_term;
-  convective_kernel_data.type_dirichlet_bc = param.type_dirichlet_bc_convective;
-  convective_kernel_data.ale               = param.ale_formulation;
+  convective_kernel_data.formulation        = param.formulation_convective_term;
+  convective_kernel_data.temporal_treatment = param.treatment_of_convective_term;
+  convective_kernel_data.upwind_factor      = param.upwind_factor;
+  convective_kernel_data.use_outflow_bc     = param.use_outflow_bc_convective_term;
+  convective_kernel_data.type_dirichlet_bc  = param.type_dirichlet_bc_convective;
+  convective_kernel_data.ale                = param.ale_formulation;
   convective_kernel = std::make_shared<Operators::ConvectiveKernel<dim, Number>>();
   convective_kernel->reinit(*matrix_free,
                             convective_kernel_data,
@@ -534,16 +535,9 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   // Momentum operator
   MomentumOperatorData<dim> data;
 
-  data.unsteady_problem = unsteady_problem_has_to_be_solved();
-  if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    data.convective_problem = false;
-  }
-  else
-  {
-    data.convective_problem = param.implicit_convective_problem();
-  }
-  data.viscous_problem = param.viscous_problem();
+  data.unsteady_problem   = unsteady_problem_has_to_be_solved();
+  data.convective_problem = param.non_explicit_convective_problem();
+  data.viscous_problem    = param.viscous_problem();
 
   data.convective_kernel_data = convective_kernel_data;
   data.viscous_kernel_data    = viscous_kernel_data;
@@ -818,7 +812,7 @@ SpatialOperatorBase<dim, Number>::get_quad_index_velocity_linearized() const
   }
   else if(param.quad_rule_linearization == QuadratureRuleLinearization::Overintegration32k)
   {
-    if(param.implicit_convective_problem())
+    if(param.non_explicit_convective_problem())
       return get_quad_index_velocity_overintegration();
     else
       return get_quad_index_velocity_standard();

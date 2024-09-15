@@ -264,6 +264,11 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
       dealii::ExcMessage(
         "ALE formulation only implemented for equations that include the convective operator, "
         "e.g., ALE is currently not available for the Stokes equations."));
+
+    AssertThrow(
+      treatment_of_convective_term != TreatmentOfConvectiveTerm::LinearlyImplicit,
+      dealii::ExcMessage(
+        "ALE formulation is currently not implemented for a linearly implicit convective term."));
   }
 
   // PHYSICAL QUANTITIES
@@ -308,6 +313,14 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
   {
     AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::Undefined,
                 dealii::ExcMessage("parameter must be defined"));
+
+    if(treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+    {
+      AssertThrow(
+        nonlinear_viscous_problem() == false,
+        dealii::ExcMessage(
+          "The combination of a linearly implicit convective term and a nonlinear viscous term is currently not implemented. Choose e.g. an implicit formulation of the convective term."));
+    }
   }
 
   AssertThrow(calculation_of_time_step_size != TimeStepCalculation::Undefined,
@@ -577,7 +590,23 @@ Parameters::viscosity_is_variable() const
 }
 
 bool
-Parameters::implicit_convective_problem() const
+Parameters::non_explicit_convective_problem() const
+{
+  if(convective_problem())
+  {
+    if(solver_type == SolverType::Steady or
+       (solver_type == SolverType::Unsteady and
+        (treatment_of_convective_term != TreatmentOfConvectiveTerm::Explicit)))
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool
+Parameters::implicit_nonlinear_convective_problem() const
 {
   if(convective_problem())
   {
@@ -602,7 +631,7 @@ Parameters::nonlinear_viscous_problem() const
 bool
 Parameters::nonlinear_problem_has_to_be_solved() const
 {
-  return (implicit_convective_problem() or nonlinear_viscous_problem());
+  return (implicit_nonlinear_convective_problem() or nonlinear_viscous_problem());
 }
 
 bool
@@ -662,7 +691,7 @@ Parameters::involves_h_multigrid() const
     }
 
     // momentum step
-    if(viscous_problem() or implicit_convective_problem())
+    if(viscous_problem() or non_explicit_convective_problem())
     {
       if(involves_h_multigrid_momentum_step())
       {
@@ -1113,7 +1142,7 @@ Parameters::print_parameters_dual_splitting(dealii::ConditionalOStream const & p
   print_parameters_projection_step(pcout);
 
   // momentum step
-  if(viscous_problem() or implicit_convective_problem())
+  if(viscous_problem() or non_explicit_convective_problem())
   {
     print_parameters_momentum_step(pcout);
   }
