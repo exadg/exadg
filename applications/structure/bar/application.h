@@ -290,7 +290,7 @@ private:
 
     this->param.start_time      = start_time;
     this->param.end_time        = end_time;
-    this->param.time_step_size  = end_time / 100.; // ##+
+    this->param.time_step_size  = end_time / 2.;
     this->param.gen_alpha_type  = GenAlphaType::BossakAlpha;
     this->param.spectral_radius = 0.8;
     this->param.solver_info_data.interval_time_steps =
@@ -455,7 +455,7 @@ private:
                                                  this->param.involves_h_multigrid());
 
     constexpr bool adaptive_refinement = false;
-    if(adaptive_refinement)
+    if(adaptive_refinement && this->param.grid.element_type == ElementType::Hypercube)
     {
       // Flag all cells touching one of the boundaries with a face.
       std::vector<dealii::types::boundary_id> refine_bdry_id = {1, 3};
