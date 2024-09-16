@@ -290,7 +290,7 @@ private:
 
     this->param.start_time      = start_time;
     this->param.end_time        = end_time;
-    this->param.time_step_size  = end_time / 2.;
+    this->param.time_step_size  = end_time / 100.; // ##+
     this->param.gen_alpha_type  = GenAlphaType::BossakAlpha;
     this->param.spectral_radius = 0.8;
     this->param.solver_info_data.interval_time_steps =
@@ -313,7 +313,7 @@ private:
 
     this->param.load_increment = 0.5;
 
-    this->param.use_matrix_based_implementation = true;
+    this->param.use_matrix_based_implementation = false;
     this->param.sparse_matrix_type              = SparseMatrixType::Trilinos;
 
     this->param.newton_solver_data  = Newton::SolverData(1e2, 1.e-9, 1.e-9);
@@ -454,29 +454,35 @@ private:
                                                  this->param.mapping_degree_coarse_grids,
                                                  this->param.involves_h_multigrid());
 
-    // Flag all cells touching one of the boundaries with a face.
-    std::vector<dealii::types::boundary_id> refine_bdry_id = {1};
-    for(auto const & cell : grid.triangulation->active_cell_iterators())
+    constexpr bool adaptive_refinement = false;
+    if(adaptive_refinement)
     {
-      for(auto const face : cell->face_indices())
+    // Flag all cells touching one of the boundaries with a face.
+    std::vector<dealii::types::boundary_id> refine_bdry_id = {1, 3};
+    for(unsigned int i = 0; i < 4; ++i)
+    {
+      for(auto const & cell : grid.triangulation->active_cell_iterators())
       {
-        if(cell->at_boundary(face))
+        for(auto const face : cell->face_indices())
         {
-          if(std::find(refine_bdry_id.begin(),
-                       refine_bdry_id.end(),
-                       cell->face(face)->boundary_id()) != refine_bdry_id.end())
+          if(cell->at_boundary(face))
           {
-            if(not cell->refine_flag_set())
+            if(std::find(refine_bdry_id.begin(),
+                         refine_bdry_id.end(),
+                         cell->face(face)->boundary_id()) != refine_bdry_id.end())
             {
-              cell->clear_coarsen_flag();
-              cell->set_refine_flag();
+              if(not cell->refine_flag_set())
+              {
+                cell->clear_coarsen_flag();
+                cell->set_refine_flag();
+              }
             }
           }
         }
       }
+      grid.triangulation->prepare_coarsening_and_refinement();
+      grid.triangulation->execute_coarsening_and_refinement();
     }
-    grid.triangulation->prepare_coarsening_and_refinement();
-    grid.triangulation->execute_coarsening_and_refinement();
 
     // Update coarse_triangulations after adaptive refinement.
     if(this->param.involves_h_multigrid())
@@ -499,6 +505,7 @@ private:
                                     this->param.mapping_degree_coarse_grids);
     }
     multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping, coarse_mapping);
+    }
   }
 
   void
