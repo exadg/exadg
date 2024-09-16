@@ -110,7 +110,7 @@ private:
   momentum_step();
 
   void
-  rhs_momentum(VectorType & rhs);
+  rhs_momentum(VectorType & rhs, VectorType const & transport_velocity);
 
   void
   pressure_step(VectorType & pressure_increment);

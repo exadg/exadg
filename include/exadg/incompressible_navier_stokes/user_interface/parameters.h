@@ -61,7 +61,10 @@ public:
   viscosity_is_variable() const;
 
   bool
-  implicit_convective_problem() const;
+  non_explicit_convective_problem() const;
+
+  bool
+  implicit_nonlinear_convective_problem() const;
 
   bool
   nonlinear_viscous_problem() const;
@@ -449,17 +452,19 @@ public:
 
   // Quadrature rule used to integrate the linearized convective term. This parameter is
   // therefore only relevant if linear systems of equations have to be solved involving
-  // the convective term. For reasons of computational efficiency, it might be advantageous
-  // to use a standard quadrature rule for the linearized problem in order to speed up
+  // the convective term. The quadrature rule specified by this parameter is also used in
+  // case of a linearly implicit formulation of the convective term.
+  // Note that if the convective term is not involved in the momentum operator, this
+  // parameter does not have any effect and the standard quadrature rule will be used
+  // for the momentum operator.
+  // For reasons of computational efficiency, it might be advantageous to use a standard
+  // quadrature rule for the linear(ized) momentum operator in order to speed up
   // the computation. However, it was found that choosing a lower order quadrature rule
   // for the linearized problem only, increases the number of iterations significantly. It
   // was found that the quadrature rules used for the nonlinear and linear problems should
   // be the same. Hence, although this parameter speeds up the operator evaluation (i.e.
   // the wall time per iteration), it is unclear whether a lower order quadrature rule
   // really allows to achieve a more efficient method overall.
-  // Note that if the convective term is not involved in the momentum operator, this
-  // parameter does not have any effect and the standard quadrature rule will be used
-  // for the momentum operator.
   QuadratureRuleLinearization quad_rule_linearization;
 
   /**************************************************************************************/

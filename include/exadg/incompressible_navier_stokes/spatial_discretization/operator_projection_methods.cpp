@@ -417,6 +417,18 @@ OperatorProjectionMethods<dim, Number>::rhs_add_viscous_term(VectorType & dst,
 
 template<int dim, typename Number>
 void
+OperatorProjectionMethods<dim, Number>::rhs_add_convective_term(
+  VectorType &       dst,
+  VectorType const & transport_velocity,
+  double const       time) const
+{
+  this->convective_operator.set_velocity_ptr(transport_velocity);
+  this->convective_operator.set_time(time);
+  this->convective_operator.rhs_add(dst);
+}
+
+template<int dim, typename Number>
+void
 OperatorProjectionMethods<dim, Number>::do_rhs_ppe_laplace_add(VectorType &   dst,
                                                                double const & time) const
 {
@@ -467,6 +479,7 @@ unsigned int
 OperatorProjectionMethods<dim, Number>::solve_linear_momentum_equation(
   VectorType &       solution,
   VectorType const & rhs,
+  VectorType const & transport_velocity,
   bool const &       update_preconditioner,
   double const &     scaling_factor_mass)
 {
@@ -475,9 +488,12 @@ OperatorProjectionMethods<dim, Number>::solve_linear_momentum_equation(
   // function via the vector rhs.
   this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
 
-  // Note that there is no need to set the evaluation time for the momentum_operator
-  // because this function is only called if the convective term is not considered
-  // in the momentum_operator (Stokes eq. or explicit treatment of convective term).
+  // linearly implicit convective term
+  if(this->param.convective_problem() and
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+  {
+    this->momentum_operator.set_solution_linearization(transport_velocity);
+  }
 
   this->momentum_linear_solver->update_preconditioner(update_preconditioner);
 
@@ -530,7 +546,7 @@ OperatorProjectionMethods<dim, Number>::evaluate_nonlinear_residual(
   this->mass_operator.apply_scale(dst, scaling_factor_mass, src);
 
   // implicitly treated convective term
-  if(this->param.implicit_convective_problem())
+  if(this->param.implicit_nonlinear_convective_problem())
   {
     this->convective_operator.evaluate_nonlinear_operator_add(dst, src, time);
   }
