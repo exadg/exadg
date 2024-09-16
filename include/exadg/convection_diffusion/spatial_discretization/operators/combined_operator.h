@@ -71,6 +71,10 @@ private:
 public:
   CombinedOperator();
 
+  /**
+   * This function creates own kernels for the different terms of the combined PDE operator. This
+   * function is typically called when using this operator as the PDE operator in multigrid.
+   */
   void
   initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
              dealii::AffineConstraints<Number> const & affine_constraints,

@@ -57,166 +57,6 @@ OperatorDualSplitting<dim, Number>::~OperatorDualSplitting()
 
 template<int dim, typename Number>
 void
-OperatorDualSplitting<dim, Number>::setup_preconditioners_and_solvers()
-{
-  ProjectionBase::setup_preconditioners_and_solvers();
-
-  setup_helmholtz_preconditioner();
-  setup_helmholtz_solver();
-}
-
-template<int dim, typename Number>
-void
-OperatorDualSplitting<dim, Number>::setup_helmholtz_preconditioner()
-{
-  if(this->param.preconditioner_viscous == PreconditionerViscous::None)
-  {
-    // do nothing, preconditioner will not be used
-  }
-  else if(this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix)
-  {
-    InverseMassOperatorData inverse_mass_operator_data;
-    inverse_mass_operator_data.dof_index  = this->get_dof_index_velocity();
-    inverse_mass_operator_data.quad_index = this->get_quad_index_velocity_linear();
-    inverse_mass_operator_data.parameters = this->param.inverse_mass_preconditioner;
-
-    helmholtz_preconditioner =
-      std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(this->get_matrix_free(),
-                                                                    inverse_mass_operator_data);
-  }
-  else if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi)
-  {
-    helmholtz_preconditioner =
-      std::make_shared<JacobiPreconditioner<MomentumOperator<dim, Number>>>(this->momentum_operator,
-                                                                            false);
-  }
-  else if(this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi)
-  {
-    helmholtz_preconditioner =
-      std::make_shared<BlockJacobiPreconditioner<MomentumOperator<dim, Number>>>(
-        this->momentum_operator, false);
-  }
-  else if(this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
-  {
-    typedef MultigridPreconditioner<dim, Number> Multigrid;
-
-    helmholtz_preconditioner = std::make_shared<Multigrid>(this->mpi_comm);
-
-    std::shared_ptr<Multigrid> mg_preconditioner =
-      std::dynamic_pointer_cast<Multigrid>(helmholtz_preconditioner);
-
-    std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
-      dirichlet_boundary_conditions = this->momentum_operator.get_data().bc->dirichlet_bc;
-
-    // We also need to add DirichletCached boundary conditions. From the
-    // perspective of multigrid, there is no difference between standard
-    // and cached Dirichlet BCs. Since multigrid does not need information
-    // about inhomogeneous boundary data, we simply fill the map with
-    // dealii::Functions::ZeroFunction for DirichletCached BCs.
-    for(auto iter : this->momentum_operator.get_data().bc->dirichlet_cached_bc)
-    {
-      typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
-        pair;
-
-      dirichlet_boundary_conditions.insert(
-        pair(iter, new dealii::Functions::ZeroFunction<dim>(dim)));
-    }
-
-    typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
-    Map_DBC_ComponentMask                                               dirichlet_bc_component_mask;
-
-    mg_preconditioner->initialize(this->param.multigrid_data_viscous,
-                                  this->grid,
-                                  this->multigrid_mappings,
-                                  this->get_dof_handler_u().get_fe(),
-                                  this->momentum_operator,
-                                  MultigridOperatorType::ReactionDiffusion,
-                                  this->param.ale_formulation,
-                                  dirichlet_boundary_conditions,
-                                  dirichlet_bc_component_mask);
-  }
-  else
-  {
-    AssertThrow(
-      false, dealii::ExcMessage("Preconditioner specified for viscous step is not implemented."));
-  }
-}
-
-template<int dim, typename Number>
-void
-OperatorDualSplitting<dim, Number>::setup_helmholtz_solver()
-{
-  if(this->param.solver_viscous == SolverViscous::CG)
-  {
-    // setup solver data
-    Krylov::SolverDataCG solver_data;
-    solver_data.max_iter             = this->param.solver_data_viscous.max_iter;
-    solver_data.solver_tolerance_abs = this->param.solver_data_viscous.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.solver_data_viscous.rel_tol;
-
-    if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi or
-       this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi or
-       this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix or
-       this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
-    {
-      solver_data.use_preconditioner = true;
-    }
-
-    helmholtz_solver = std::make_shared<
-      Krylov::SolverCG<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
-      this->momentum_operator, *helmholtz_preconditioner, solver_data);
-  }
-  else if(this->param.solver_viscous == SolverViscous::GMRES)
-  {
-    // setup solver data
-    Krylov::SolverDataGMRES solver_data;
-    solver_data.max_iter             = this->param.solver_data_viscous.max_iter;
-    solver_data.solver_tolerance_abs = this->param.solver_data_viscous.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.solver_data_viscous.rel_tol;
-    solver_data.max_n_tmp_vectors    = this->param.solver_data_viscous.max_krylov_size;
-    // use default value of compute_eigenvalues
-
-    // default value of use_preconditioner = false
-    if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi or
-       this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi or
-       this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix or
-       this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
-    {
-      solver_data.use_preconditioner = true;
-    }
-
-    helmholtz_solver = std::make_shared<
-      Krylov::SolverGMRES<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
-      this->momentum_operator, *helmholtz_preconditioner, solver_data, this->mpi_comm);
-  }
-  else if(this->param.solver_viscous == SolverViscous::FGMRES)
-  {
-    Krylov::SolverDataFGMRES solver_data;
-    solver_data.max_iter             = this->param.solver_data_viscous.max_iter;
-    solver_data.solver_tolerance_abs = this->param.solver_data_viscous.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.solver_data_viscous.rel_tol;
-    solver_data.max_n_tmp_vectors    = this->param.solver_data_viscous.max_krylov_size;
-
-    if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi or
-       this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi or
-       this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix or
-       this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
-    {
-      solver_data.use_preconditioner = true;
-    }
-
-    helmholtz_solver = std::make_shared<
-      Krylov::SolverFGMRES<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
-      this->momentum_operator, *helmholtz_preconditioner, solver_data);
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("Specified viscous solver is not implemented."));
-  }
-}
-
-template<int dim, typename Number>
-void
 OperatorDualSplitting<dim, Number>::apply_velocity_divergence_term(VectorType &       dst,
                                                                    VectorType const & src) const
 {
@@ -330,7 +170,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
 {
   unsigned int const dof_index_velocity = this->get_dof_index_velocity();
   unsigned int const dof_index_pressure = this->get_dof_index_pressure();
-  unsigned int const quad_index         = this->get_quad_index_velocity_nonlinear();
+  unsigned int const quad_index         = this->get_quad_index_velocity_overintegration();
 
   FaceIntegratorU velocity(matrix_free, true, dof_index_velocity, quad_index);
   FaceIntegratorP pressure(matrix_free, true, dof_index_pressure, quad_index);
@@ -434,7 +274,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_numerical_time_derivative_
 {
   unsigned int dof_index_velocity  = this->get_dof_index_velocity();
   unsigned int dof_index_pressure  = this->get_dof_index_pressure();
-  unsigned int quad_index_velocity = this->get_quad_index_velocity_linear();
+  unsigned int quad_index_velocity = this->get_quad_index_velocity_standard();
 
   FaceIntegratorU integrator_velocity(data, true, dof_index_velocity, quad_index_velocity);
   FaceIntegratorP integrator_pressure(data, true, dof_index_pressure, quad_index_velocity);
@@ -571,7 +411,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_boundary_fa
 {
   unsigned int const dof_index_velocity = this->get_dof_index_velocity();
   unsigned int const dof_index_pressure = this->get_dof_index_pressure();
-  unsigned int const quad_index         = this->get_quad_index_velocity_nonlinear();
+  unsigned int const quad_index         = this->get_quad_index_velocity_overintegration();
 
   FaceIntegratorU velocity(matrix_free, true, dof_index_velocity, quad_index);
   FaceIntegratorP pressure(matrix_free, true, dof_index_pressure, quad_index);
@@ -666,7 +506,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary_face(
 {
   unsigned int const dof_index_velocity = this->get_dof_index_velocity();
   unsigned int const dof_index_pressure = this->get_quad_index_pressure();
-  unsigned int const quad_index         = this->get_quad_index_velocity_linear();
+  unsigned int const quad_index         = this->get_quad_index_velocity_standard();
 
   FaceIntegratorU omega(matrix_free, true, dof_index_velocity, quad_index);
 
@@ -727,31 +567,6 @@ OperatorDualSplitting<dim, Number>::solve_pressure(VectorType &       dst,
                                                    bool const         update_preconditioner) const
 {
   return ProjectionBase::do_solve_pressure(dst, src, update_preconditioner);
-}
-
-template<int dim, typename Number>
-void
-OperatorDualSplitting<dim, Number>::rhs_add_viscous_term(VectorType & dst,
-                                                         double const evaluation_time) const
-{
-  ProjectionBase::do_rhs_add_viscous_term(dst, evaluation_time);
-}
-
-template<int dim, typename Number>
-unsigned int
-OperatorDualSplitting<dim, Number>::solve_viscous(VectorType &       dst,
-                                                  VectorType const & src,
-                                                  bool const &       update_preconditioner,
-                                                  double const &     factor)
-{
-  // Update operator
-  this->momentum_operator.set_scaling_factor_mass_operator(factor);
-
-  helmholtz_solver->update_preconditioner(update_preconditioner);
-
-  unsigned int n_iter = helmholtz_solver->solve(dst, src);
-
-  return n_iter;
 }
 
 template<int dim, typename Number>

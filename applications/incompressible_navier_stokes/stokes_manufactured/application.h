@@ -194,23 +194,27 @@ private:
     this->param.order_extrapolation_pressure_nbc =
       this->param.order_time_integrator <= 2 ? this->param.order_time_integrator : 2;
 
-    // viscous step
-    this->param.solver_viscous         = SolverViscous::CG;
-    this->param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-8);
-    this->param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; // Multigrid;
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      this->param.solver_momentum         = SolverMomentum::CG;
+      this->param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-8);
+      this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
+    }
 
 
     // PRESSURE-CORRECTION SCHEME
 
     // momentum step
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      // Newton solver
 
-    // Newton solver
-
-    // linear solver
-    this->param.solver_momentum                = SolverMomentum::GMRES;
-    this->param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-8, 100);
-    this->param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
-    this->param.update_preconditioner_momentum = false;
+      // linear solver
+      this->param.solver_momentum                = SolverMomentum::GMRES;
+      this->param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-8, 100);
+      this->param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
+      this->param.update_preconditioner_momentum = false;
+    }
 
     // formulation
     this->param.order_pressure_extrapolation = this->param.order_time_integrator - 1;

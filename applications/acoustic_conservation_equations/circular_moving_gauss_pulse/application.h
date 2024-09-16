@@ -169,7 +169,6 @@ private:
     this->param.start_time     = start_time;
     this->param.end_time       = number_of_rotations * compute_rotation_duration();
     this->param.speed_of_sound = speed_of_sound;
-    this->param.density        = density;
 
     // TEMPORAL DISCRETIZATION
     this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
@@ -282,7 +281,6 @@ private:
   double radius              = 0.04;
   double l                   = 0.02;
   double speed_of_sound      = 1500.0;
-  double density             = 1000.0;
   double number_of_rotations = 1.0;
 
   double

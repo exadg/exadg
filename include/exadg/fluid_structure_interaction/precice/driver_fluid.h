@@ -76,7 +76,7 @@ public:
         this->precice_parameters.write_data_type,
         fluid->pde_operator->get_matrix_free(),
         fluid->pde_operator->get_dof_index_velocity(),
-        fluid->pde_operator->get_quad_index_velocity_linear());
+        fluid->pde_operator->get_quad_index_velocity_standard());
     }
 
     // structure to ALE

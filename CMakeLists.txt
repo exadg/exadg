@@ -58,7 +58,7 @@ DEAL_II_INITIALIZE_CACHED_VARIABLES()
 DEAL_II_QUERY_GIT_INFORMATION(EXADG)
 CONFIGURE_FILE(
   ${CMAKE_SOURCE_DIR}/include/exadg/utilities/exadg_revision.h.in
-  ${CMAKE_SOURCE_DIR}/include/exadg/utilities/exadg_revision.h
+  ${CMAKE_BINARY_DIR}/include/exadg/utilities/exadg_revision.h
   )
 
 
@@ -195,6 +195,8 @@ SET(TARGET_SRC
      include/exadg/acoustic_conservation_equations/postprocessor/postprocessor.cpp
      include/exadg/acoustic_conservation_equations/postprocessor/output_generator.cpp
      include/exadg/acoustic_conservation_equations/driver.cpp
+     # aero-acoustic
+     include/exadg/aero_acoustic/driver.cpp
      )
 
 SET(DEAL_II_HAVE_TESTS_DIRECTORY TRUE)
@@ -208,7 +210,7 @@ OPTION(BUILD_SHARED_LIBS "Build shared library." ON)
 ADD_LIBRARY(exadg ${TARGET_SRC})
 
 # Set the include directories
-SET(EXADG_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/bundled)
+SET(EXADG_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/bundled ${CMAKE_BINARY_DIR}/include)
 TARGET_INCLUDE_DIRECTORIES(exadg PUBLIC ${EXADG_INCLUDE_DIRS})
 
 # FFTW

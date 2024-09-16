@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_DG_CONVECTION_DIFFUSION_OPERATION_H_
-#define INCLUDE_CONVECTION_DIFFUSION_DG_CONVECTION_DIFFUSION_OPERATION_H_
+#ifndef INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATOR_H_
+#define INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATOR_H_
 
 // deal.II
 #include <deal.II/fe/fe_system.h>
@@ -159,6 +159,8 @@ public:
     this->scaling_factor_mass          = scaling_factor_mass;
     this->scaling_factor_mass_boundary = scaling_factor_mass_boundary;
     this->time                         = time;
+
+    pde_operator->update_elasticity_operator(scaling_factor_mass, scaling_factor_mass_boundary, time);
   }
 
   /*
@@ -168,8 +170,7 @@ public:
   void
   vmult(VectorType & dst, VectorType const & src) const
   {
-    pde_operator->apply_linearized_operator(
-      dst, src, scaling_factor_mass, scaling_factor_mass_boundary, time);
+    pde_operator->apply_linearized_operator(dst, src);
   }
 
 private:
@@ -278,11 +279,7 @@ public:
   set_solution_linearization(VectorType const & vector) const;
 
   void
-  apply_linearized_operator(VectorType &       dst,
-                            VectorType const & src,
-                            double const       factor,
-                            double const       factor_boundary,
-                            double const       time) const;
+  assemble_matrix_if_necessary_for_linear_elasticity_operator() const;
 
   void
   evaluate_elasticity_operator(VectorType &       dst,
@@ -292,12 +289,10 @@ public:
                                double const       time) const;
 
   void
-  apply_elasticity_operator(VectorType &       dst,
-                            VectorType const & src,
-                            VectorType const & linearization,
-                            double const       factor,
-                            double const       factor_boundary,
-                            double const       time) const;
+  update_elasticity_operator(double const factor, double const factor_boundary, double const time) const;
+
+  void
+  apply_elasticity_operator(VectorType & dst, VectorType const & src) const;
 
   /*
    * This function solves the system of equations for nonlinear problems. This function needs to
@@ -554,4 +549,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATOR_H_ */

@@ -226,10 +226,12 @@ private:
       param.order_time_integrator <= 2 ? param.order_time_integrator : 2;
     param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
 
-    // viscous step
-    param.solver_viscous         = SolverViscous::CG;
-    param.solver_data_viscous    = SolverData(1000, ABS_TOL, REL_TOL);
-    param.preconditioner_viscous = PreconditionerViscous::PointJacobi;
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      this->param.solver_momentum         = SolverMomentum::CG;
+      this->param.solver_data_momentum    = SolverData(1000, ABS_TOL, REL_TOL);
+      this->param.preconditioner_momentum = MomentumPreconditioner::PointJacobi;
+    }
 
 
     // PRESSURE-CORRECTION SCHEME
@@ -240,18 +242,20 @@ private:
     param.rotational_formulation = true;
 
     // momentum step
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      // Newton solver
+      param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
-    // Newton solver
-    param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
-
-    // linear solver
-    param.solver_momentum = SolverMomentum::FGMRES;
-    if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-      param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
-    else
-      param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, 100);
-    param.update_preconditioner_momentum = false;
-    param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
+      // linear solver
+      param.solver_momentum = SolverMomentum::FGMRES;
+      if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+        param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
+      else
+        param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+      param.update_preconditioner_momentum = false;
+      param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
+    }
 
 
     // COUPLED NAVIER-STOKES SOLVER
@@ -345,8 +349,6 @@ private:
         (void)vector_local_refinements;
 
         create_triangulation(tria);
-
-        tria.set_all_manifold_ids(0);
 
         for(auto cell : tria.cell_iterators())
         {
@@ -720,8 +722,6 @@ public:
         (void)vector_local_refinements;
 
         create_triangulation(tria);
-
-        tria.set_all_manifold_ids(0);
 
         for(auto cell : tria.cell_iterators())
         {

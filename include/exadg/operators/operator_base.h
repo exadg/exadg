@@ -49,6 +49,7 @@
 #include <exadg/utilities/lazy_ptr.h>
 
 #include <exadg/operators/elementwise_operator.h>
+#include <exadg/operators/enum_types.h>
 #include <exadg/operators/integrator_flags.h>
 #include <exadg/operators/mapping_flags.h>
 #include <exadg/operators/operator_type.h>
@@ -61,6 +62,8 @@ struct OperatorBaseData
     : dof_index(0),
       dof_index_inhomogeneous(dealii::numbers::invalid_unsigned_int),
       quad_index(0),
+      use_matrix_based_vmult(false),
+      sparse_matrix_type(SparseMatrixType::Undefined),
       operator_is_singular(false),
       use_cell_based_loops(false),
       implement_block_diagonal_preconditioner_matrix_free(false),
@@ -78,6 +81,12 @@ struct OperatorBaseData
   unsigned int dof_index_inhomogeneous;
 
   unsigned int quad_index;
+
+  // this parameter can be used to use sparse matrices for the vmult() operation. The default
+  // case is to use a matrix-free implementation, i.e. use_matrix_based_vmult = false.
+  bool use_matrix_based_vmult;
+
+  SparseMatrixType sparse_matrix_type;
 
   // Solution of linear systems of equations and preconditioning
   bool operator_is_singular;
@@ -114,6 +123,18 @@ public:
 
   virtual ~OperatorBase()
   {
+    if(data.sparse_matrix_type == SparseMatrixType::PETSc)
+    {
+#ifdef DEAL_II_WITH_PETSC
+      if(system_matrix_petsc.m() > 0)
+      {
+        PetscErrorCode ierr = VecDestroy(&petsc_vector_dst);
+        AssertThrow(ierr == 0, dealii::ExcPETScError(ierr));
+        ierr = VecDestroy(&petsc_vector_src);
+        AssertThrow(ierr == 0, dealii::ExcPETScError(ierr));
+      }
+#endif
+    }
   }
 
   /*
@@ -246,6 +267,22 @@ public:
    */
   void
   apply_add(VectorType & dst, VectorType const & src) const;
+
+  void
+  assemble_matrix_if_necessary() const;
+
+  /*
+   * Matrix-based version of the apply function. This function is used if use_matrix_based_vmult =
+   * true.
+   */
+  void
+  apply_matrix_based(VectorType & dst, VectorType const & src) const;
+
+  /*
+   * See function apply_matrix_based() for a description.
+   */
+  void
+  apply_matrix_based_add(VectorType & dst, VectorType const & src) const;
 
   /*
    * evaluate inhomogeneous parts of operator related to inhomogeneous boundary face integrals.
@@ -433,11 +470,13 @@ protected:
    */
   IntegratorFlags integrator_flags;
 
+private:
   /*
    * Is the operator used as a multigrid level operator?
    */
   bool is_mg;
 
+protected:
   /*
    * Is the discretization based on discontinuous Galerkin method?
    */
@@ -718,6 +757,21 @@ private:
   mutable VectorType weights;
 
   unsigned int n_mpi_processes;
+
+  // sparse matrices for matrix-based vmult
+  mutable bool system_matrix_based_been_initialized;
+
+#ifdef DEAL_II_WITH_TRILINOS
+  mutable dealii::TrilinosWrappers::SparseMatrix system_matrix_trilinos;
+#endif
+
+#ifdef DEAL_II_WITH_PETSC
+  mutable dealii::PETScWrappers::MPI::SparseMatrix system_matrix_petsc;
+
+  // PETSc vector objects to avoid re-allocation in every vmult() operation
+  mutable Vec petsc_vector_src;
+  mutable Vec petsc_vector_dst;
+#endif
 };
 } // namespace ExaDG
 

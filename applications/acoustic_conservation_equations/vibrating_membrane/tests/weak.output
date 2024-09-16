@@ -27,9 +27,8 @@ Mathematical model:
 
 Physical quantities:
   Start time:                                0.0000e+00
-  End time:                                  2.5254e-02
+  End time:                                  3.3672e-02
   Speed of sound:                            7.0000e+00
-  Density:                                   3.0000e+00
 
 Temporal discretization:
   Calculation of time step size:             UserSpecified
@@ -40,6 +39,7 @@ Temporal discretization:
   Restarted simulation:                      false
   Restart:
   Write restart:                             false
+  Adaptive time stepping:                    false
 
 Spatial discretization:
   Triangulation type:                        Distributed
@@ -85,7 +85,7 @@ Calculation of time step size:
 Starting time loop ...
 
 Calculate error for pressure at time t = 0.0000e+00:
-  Absolute error (L2-norm): 1.80554e-01
+  Absolute error (L2-norm): 1.09728e-01
 
 Calculate error for velocity at time t = 0.0000e+00:
   Absolute error (L2-norm): 0.00000e+00
@@ -95,11 +95,11 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 1.00000e-04
 ________________________________________________________________________________
 
-Calculate error for pressure at time t = 2.5300e-02:
-  Absolute error (L2-norm): 1.56490e-02
+Calculate error for pressure at time t = 3.3700e-02:
+  Absolute error (L2-norm): 4.68986e-02
 
-Calculate error for velocity at time t = 2.5300e-02:
-  Absolute error (L2-norm): 2.83242e-02
+Calculate error for velocity at time t = 3.3700e-02:
+  Absolute error (L2-norm): 1.38719e-02
 
 
 
@@ -129,9 +129,8 @@ Mathematical model:
 
 Physical quantities:
   Start time:                                0.0000e+00
-  End time:                                  2.5254e-02
+  End time:                                  3.3672e-02
   Speed of sound:                            7.0000e+00
-  Density:                                   3.0000e+00
 
 Temporal discretization:
   Calculation of time step size:             UserSpecified
@@ -142,6 +141,7 @@ Temporal discretization:
   Restarted simulation:                      false
   Restart:
   Write restart:                             false
+  Adaptive time stepping:                    false
 
 Spatial discretization:
   Triangulation type:                        Distributed
@@ -187,7 +187,7 @@ Calculation of time step size:
 Starting time loop ...
 
 Calculate error for pressure at time t = 0.0000e+00:
-  Absolute error (L2-norm): 1.57067e-02
+  Absolute error (L2-norm): 6.65003e-03
 
 Calculate error for velocity at time t = 0.0000e+00:
   Absolute error (L2-norm): 0.00000e+00
@@ -197,11 +197,11 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 1.00000e-04
 ________________________________________________________________________________
 
-Calculate error for pressure at time t = 2.5300e-02:
-  Absolute error (L2-norm): 8.03504e-03
+Calculate error for pressure at time t = 3.3700e-02:
+  Absolute error (L2-norm): 2.69809e-03
 
-Calculate error for velocity at time t = 2.5300e-02:
-  Absolute error (L2-norm): 1.68592e-03
+Calculate error for velocity at time t = 3.3700e-02:
+  Absolute error (L2-norm): 6.57061e-04
 
 
 
@@ -231,9 +231,8 @@ Mathematical model:
 
 Physical quantities:
   Start time:                                0.0000e+00
-  End time:                                  2.5254e-02
+  End time:                                  3.3672e-02
   Speed of sound:                            7.0000e+00
-  Density:                                   3.0000e+00
 
 Temporal discretization:
   Calculation of time step size:             UserSpecified
@@ -244,6 +243,7 @@ Temporal discretization:
   Restarted simulation:                      false
   Restart:
   Write restart:                             false
+  Adaptive time stepping:                    false
 
 Spatial discretization:
   Triangulation type:                        Distributed
@@ -289,7 +289,7 @@ Calculation of time step size:
 Starting time loop ...
 
 Calculate error for pressure at time t = 0.0000e+00:
-  Absolute error (L2-norm): 1.39272e-03
+  Absolute error (L2-norm): 4.45586e-04
 
 Calculate error for velocity at time t = 0.0000e+00:
   Absolute error (L2-norm): 0.00000e+00
@@ -299,11 +299,11 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 1.00000e-04
 ________________________________________________________________________________
 
-Calculate error for pressure at time t = 2.5300e-02:
-  Absolute error (L2-norm): 7.77314e-04
+Calculate error for pressure at time t = 3.3700e-02:
+  Absolute error (L2-norm): 2.00796e-04
 
-Calculate error for velocity at time t = 2.5300e-02:
-  Absolute error (L2-norm): 1.32258e-04
+Calculate error for velocity at time t = 3.3700e-02:
+  Absolute error (L2-norm): 5.10435e-05
 
 
 
@@ -333,9 +333,8 @@ Mathematical model:
 
 Physical quantities:
   Start time:                                0.0000e+00
-  End time:                                  2.5254e-02
+  End time:                                  3.3672e-02
   Speed of sound:                            7.0000e+00
-  Density:                                   3.0000e+00
 
 Temporal discretization:
   Calculation of time step size:             UserSpecified
@@ -346,6 +345,7 @@ Temporal discretization:
   Restarted simulation:                      false
   Restart:
   Write restart:                             false
+  Adaptive time stepping:                    false
 
 Spatial discretization:
   Triangulation type:                        Distributed
@@ -391,7 +391,7 @@ Calculation of time step size:
 Starting time loop ...
 
 Calculate error for pressure at time t = 0.0000e+00:
-  Absolute error (L2-norm): 1.05702e-04
+  Absolute error (L2-norm): 2.53327e-05
 
 Calculate error for velocity at time t = 0.0000e+00:
   Absolute error (L2-norm): 0.00000e+00
@@ -401,11 +401,11 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 1.00000e-04
 ________________________________________________________________________________
 
-Calculate error for pressure at time t = 2.5300e-02:
-  Absolute error (L2-norm): 5.18740e-05
+Calculate error for pressure at time t = 3.3700e-02:
+  Absolute error (L2-norm): 1.19597e-05
 
-Calculate error for velocity at time t = 2.5300e-02:
-  Absolute error (L2-norm): 1.09897e-05
+Calculate error for velocity at time t = 3.3700e-02:
+  Absolute error (L2-norm): 2.89105e-06
 
 
 
@@ -435,9 +435,8 @@ Mathematical model:
 
 Physical quantities:
   Start time:                                0.0000e+00
-  End time:                                  2.5254e-02
+  End time:                                  3.3672e-02
   Speed of sound:                            7.0000e+00
-  Density:                                   3.0000e+00
 
 Temporal discretization:
   Calculation of time step size:             UserSpecified
@@ -448,6 +447,7 @@ Temporal discretization:
   Restarted simulation:                      false
   Restart:
   Write restart:                             false
+  Adaptive time stepping:                    false
 
 Spatial discretization:
   Triangulation type:                        Distributed
@@ -493,7 +493,7 @@ Calculation of time step size:
 Starting time loop ...
 
 Calculate error for pressure at time t = 0.0000e+00:
-  Absolute error (L2-norm): 6.78907e-06
+  Absolute error (L2-norm): 1.21871e-06
 
 Calculate error for velocity at time t = 0.0000e+00:
   Absolute error (L2-norm): 0.00000e+00
@@ -503,11 +503,11 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 1.00000e-04
 ________________________________________________________________________________
 
-Calculate error for pressure at time t = 2.5300e-02:
-  Absolute error (L2-norm): 6.14288e-06
+Calculate error for pressure at time t = 3.3700e-02:
+  Absolute error (L2-norm): 3.23599e-06
 
-Calculate error for velocity at time t = 2.5300e-02:
-  Absolute error (L2-norm): 7.67662e-07
+Calculate error for velocity at time t = 3.3700e-02:
+  Absolute error (L2-norm): 2.88955e-07
 
 
 
@@ -537,9 +537,8 @@ Mathematical model:
 
 Physical quantities:
   Start time:                                0.0000e+00
-  End time:                                  2.5254e-02
+  End time:                                  3.3672e-02
   Speed of sound:                            7.0000e+00
-  Density:                                   3.0000e+00
 
 Temporal discretization:
   Calculation of time step size:             UserSpecified
@@ -550,6 +549,7 @@ Temporal discretization:
   Restarted simulation:                      false
   Restart:
   Write restart:                             false
+  Adaptive time stepping:                    false
 
 Spatial discretization:
   Triangulation type:                        Distributed
@@ -595,7 +595,7 @@ Calculation of time step size:
 Starting time loop ...
 
 Calculate error for pressure at time t = 0.0000e+00:
-  Absolute error (L2-norm): 3.76329e-07
+  Absolute error (L2-norm): 5.06161e-08
 
 Calculate error for velocity at time t = 0.0000e+00:
   Absolute error (L2-norm): 0.00000e+00
@@ -605,11 +605,11 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 1.00000e-04
 ________________________________________________________________________________
 
-Calculate error for pressure at time t = 2.5300e-02:
-  Absolute error (L2-norm): 5.07805e-06
+Calculate error for pressure at time t = 3.3700e-02:
+  Absolute error (L2-norm): 3.18551e-06
 
-Calculate error for velocity at time t = 2.5300e-02:
-  Absolute error (L2-norm): 4.23885e-08
+Calculate error for velocity at time t = 3.3700e-02:
+  Absolute error (L2-norm): 2.48798e-07
 
 
 
@@ -639,9 +639,8 @@ Mathematical model:
 
 Physical quantities:
   Start time:                                0.0000e+00
-  End time:                                  2.5254e-02
+  End time:                                  3.3672e-02
   Speed of sound:                            7.0000e+00
-  Density:                                   3.0000e+00
 
 Temporal discretization:
   Calculation of time step size:             UserSpecified
@@ -652,6 +651,7 @@ Temporal discretization:
   Restarted simulation:                      false
   Restart:
   Write restart:                             false
+  Adaptive time stepping:                    false
 
 Spatial discretization:
   Triangulation type:                        Distributed
@@ -697,7 +697,7 @@ Calculation of time step size:
 Starting time loop ...
 
 Calculate error for pressure at time t = 0.0000e+00:
-  Absolute error (L2-norm): 1.83214e-08
+  Absolute error (L2-norm): 1.84673e-09
 
 Calculate error for velocity at time t = 0.0000e+00:
   Absolute error (L2-norm): 0.00000e+00
@@ -707,8 +707,8 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 1.00000e-04
 ________________________________________________________________________________
 
-Calculate error for pressure at time t = 2.5300e-02:
-  Absolute error (L2-norm): 5.07362e-06
+Calculate error for pressure at time t = 3.3700e-02:
+  Absolute error (L2-norm): 3.19000e-06
 
-Calculate error for velocity at time t = 2.5300e-02:
-  Absolute error (L2-norm): 2.37661e-09
+Calculate error for velocity at time t = 3.3700e-02:
+  Absolute error (L2-norm): 2.49803e-07

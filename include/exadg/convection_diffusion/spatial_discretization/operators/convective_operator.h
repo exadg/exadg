@@ -83,7 +83,7 @@ public:
   reinit(dealii::MatrixFree<dim, Number> const & matrix_free,
          ConvectiveKernelData<dim> const &       data_in,
          unsigned int const                      quad_index,
-         bool const                              is_mg)
+         bool const                              use_own_velocity_storage)
   {
     data = data_in;
 
@@ -102,8 +102,7 @@ public:
                                                                        data.dof_index_velocity,
                                                                        quad_index);
 
-      // use own storage of velocity vector only in case of multigrid
-      if(is_mg)
+      if(use_own_velocity_storage)
       {
         velocity.reset();
         matrix_free.initialize_dof_vector(velocity.own(), data.dof_index_velocity);

@@ -251,13 +251,13 @@ public:
   void
   evaluate(BlockVectorType & dst, BlockVectorType const & src, double const time) const
   {
-    do_evaluate(dst, src, true, time);
+    do_evaluate(dst, src, time, true);
   }
 
   void
   evaluate_add(BlockVectorType & dst, BlockVectorType const & src, double const time) const
   {
-    do_evaluate(dst, src, false, time);
+    do_evaluate(dst, src, time, true);
   }
 
 private:
@@ -474,7 +474,10 @@ private:
     BoundaryFaceIntegratorP<dim, Number> pressure_p(pressure_m, *data.bc);
 
     FaceIntegratorU velocity_m(matrix_free_in, true, data.dof_index_velocity, data.quad_index);
-    BoundaryFaceIntegratorU<dim, Number> velocity_p(velocity_m, *data.bc);
+    BoundaryFaceIntegratorU<dim, Number> velocity_p(velocity_m,
+                                                    pressure_m,
+                                                    data.speed_of_sound,
+                                                    *data.bc);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
@@ -515,4 +518,4 @@ private:
 } // namespace ExaDG
 
 
-#endif /*EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_OPERATORS_OPERATOR_H_*/
+#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_OPERATORS_OPERATOR_H_ */

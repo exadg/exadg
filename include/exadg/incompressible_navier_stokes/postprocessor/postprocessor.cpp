@@ -80,7 +80,7 @@ PostProcessor<dim, Number>::setup(Operator const & pde_operator)
                                  pde_operator.get_matrix_free(),
                                  pde_operator.get_dof_index_velocity(),
                                  pde_operator.get_dof_index_pressure(),
-                                 pde_operator.get_quad_index_velocity_linear(),
+                                 pde_operator.get_quad_index_velocity_standard(),
                                  pp_data.lift_and_drag_data);
 
   pressure_difference_calculator.setup(pde_operator.get_dof_handler_p(),
@@ -89,13 +89,13 @@ PostProcessor<dim, Number>::setup(Operator const & pde_operator)
 
   div_and_mass_error_calculator.setup(pde_operator.get_matrix_free(),
                                       pde_operator.get_dof_index_velocity(),
-                                      pde_operator.get_quad_index_velocity_linear(),
+                                      pde_operator.get_quad_index_velocity_standard(),
                                       pp_data.mass_data);
 
   kinetic_energy_calculator.setup(pde_operator,
                                   pde_operator.get_matrix_free(),
                                   pde_operator.get_dof_index_velocity(),
-                                  pde_operator.get_quad_index_velocity_linear(),
+                                  pde_operator.get_quad_index_velocity_standard(),
                                   pp_data.kinetic_energy_data);
 
   kinetic_energy_spectrum_calculator.setup(pde_operator.get_matrix_free(),

@@ -37,6 +37,7 @@
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
 #include <exadg/operators/rhs_operator.h>
+#include <exadg/utilities/lazy_ptr.h>
 
 namespace ExaDG
 {
@@ -55,6 +56,7 @@ template<int dim, typename Number>
 class SpatialOperator : public Interface::SpatialOperator<Number>
 {
   using BlockVectorType = typename Interface::SpatialOperator<Number>::BlockVectorType;
+  using VectorType      = dealii::LinearAlgebra::distributed::Vector<Number>;
 
 public:
   static unsigned int const block_index_pressure = 0;
@@ -147,11 +149,20 @@ public:
   void
   initialize_dof_vector(BlockVectorType & dst) const final;
 
+  void
+  initialize_dof_vector_pressure(VectorType & dst) const;
+
   /*
    * Prescribe initial conditions using a specified analytical/initial solution function.
    */
   void
   prescribe_initial_conditions(BlockVectorType & dst, double const time) const final;
+
+  /*
+   * Set aero-acoustic source term.
+   */
+  void
+  set_aero_acoustic_source_term(VectorType const & aero_acoustic_source_term_in);
 
   /*
    *  This function is used in case of explicit time integration:
@@ -261,6 +272,9 @@ private:
    * RHS operator that acts on the pressure DoFs
    */
   RHSOperator<dim, Number, 1> rhs_operator;
+
+  // The aero-acoustic source term has been computed externally.
+  VectorType const * aero_acoustic_source_term;
 
   MPI_Comm const mpi_comm;
 

@@ -357,7 +357,8 @@ SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
   matrix_free_data.insert_quadrature(*quadrature_p, field + quad_index_p);
   std::shared_ptr<dealii::Quadrature<dim>> quadrature_u_overintegration =
     create_quadrature<dim>(param.grid.element_type, param.degree_u + (param.degree_u + 2) / 2);
-  matrix_free_data.insert_quadrature(*quadrature_u_overintegration, field + quad_index_u_nonlinear);
+  matrix_free_data.insert_quadrature(*quadrature_u_overintegration,
+                                     field + quad_index_u_overintegration);
 
   // TODO create these quadrature rules only when needed
   matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree_u + 1),
@@ -375,8 +376,8 @@ SpatialOperatorBase<dim, Number>::initialize_dirichlet_cached_bc()
   if(not(boundary_descriptor->velocity->dirichlet_cached_bc.empty()))
   {
     std::vector<unsigned int> quad_indices;
-    quad_indices.emplace_back(get_quad_index_velocity_linear());
-    quad_indices.emplace_back(get_quad_index_velocity_nonlinear());
+    quad_indices.emplace_back(get_quad_index_velocity_standard());
+    quad_indices.emplace_back(get_quad_index_velocity_overintegration());
     quad_indices.emplace_back(get_quad_index_velocity_gauss_lobatto());
 
     interface_data_dirichlet_cached = std::make_shared<ContainerInterfaceData<1, dim, double>>();
@@ -396,12 +397,12 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   // mass operator
   MassOperatorData<dim> mass_operator_data;
   mass_operator_data.dof_index  = get_dof_index_velocity();
-  mass_operator_data.quad_index = get_quad_index_velocity_linear();
+  mass_operator_data.quad_index = get_quad_index_velocity_standard();
   mass_operator.initialize(*matrix_free, constraint_u, mass_operator_data);
 
   InverseMassOperatorDataHdiv inverse_mass_data_hdiv;
   inverse_mass_data_hdiv.dof_index  = get_dof_index_velocity();
-  inverse_mass_data_hdiv.quad_index = get_quad_index_velocity_linear();
+  inverse_mass_data_hdiv.quad_index = get_quad_index_velocity_standard();
   inverse_mass_data_hdiv.parameters = this->param.inverse_mass_operator_hdiv;
 
   inverse_mass_hdiv.initialize(*matrix_free, constraint_u, inverse_mass_data_hdiv);
@@ -411,14 +412,14 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   {
     InverseMassOperatorData inverse_mass_operator_data_velocity;
     inverse_mass_operator_data_velocity.dof_index  = get_dof_index_velocity();
-    inverse_mass_operator_data_velocity.quad_index = get_quad_index_velocity_linear();
+    inverse_mass_operator_data_velocity.quad_index = get_quad_index_velocity_standard();
     inverse_mass_operator_data_velocity.parameters = param.inverse_mass_operator;
     inverse_mass_velocity.initialize(*matrix_free, inverse_mass_operator_data_velocity);
   }
   // inverse mass operator velocity scalar
   InverseMassOperatorData inverse_mass_operator_data_velocity_scalar;
   inverse_mass_operator_data_velocity_scalar.dof_index  = get_dof_index_velocity_scalar();
-  inverse_mass_operator_data_velocity_scalar.quad_index = get_quad_index_velocity_linear();
+  inverse_mass_operator_data_velocity_scalar.quad_index = get_quad_index_velocity_standard();
   inverse_mass_operator_data_velocity_scalar.parameters = param.inverse_mass_operator;
   inverse_mass_velocity_scalar.initialize(*matrix_free, inverse_mass_operator_data_velocity_scalar);
 
@@ -427,7 +428,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   rhs_data.dof_index = get_dof_index_velocity();
   if(param.boussinesq_term)
     rhs_data.dof_index_scalar = matrix_free_data->get_dof_index(dof_index_temperature);
-  rhs_data.quad_index                                = get_quad_index_velocity_linear();
+  rhs_data.quad_index                                = get_quad_index_velocity_standard();
   rhs_data.kernel_data.f                             = field_functions->right_hand_side;
   rhs_data.kernel_data.boussinesq_term               = param.boussinesq_term;
   rhs_data.kernel_data.boussinesq_dynamic_part_only  = param.boussinesq_dynamic_part_only;
@@ -441,7 +442,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   GradientOperatorData<dim> gradient_operator_data;
   gradient_operator_data.dof_index_velocity   = get_dof_index_velocity();
   gradient_operator_data.dof_index_pressure   = get_dof_index_pressure();
-  gradient_operator_data.quad_index           = get_quad_index_velocity_linear();
+  gradient_operator_data.quad_index           = get_quad_index_velocity_standard();
   gradient_operator_data.integration_by_parts = param.gradp_integrated_by_parts;
   gradient_operator_data.formulation          = param.gradp_formulation;
   gradient_operator_data.use_boundary_data    = param.gradp_use_boundary_data;
@@ -452,7 +453,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   DivergenceOperatorData<dim> divergence_operator_data;
   divergence_operator_data.dof_index_velocity   = get_dof_index_velocity();
   divergence_operator_data.dof_index_pressure   = get_dof_index_pressure();
-  divergence_operator_data.quad_index           = get_quad_index_velocity_linear();
+  divergence_operator_data.quad_index           = get_quad_index_velocity_standard();
   divergence_operator_data.integration_by_parts = param.divu_integrated_by_parts;
   divergence_operator_data.formulation          = param.divu_formulation;
   divergence_operator_data.use_boundary_data    = param.divu_use_boundary_data;
@@ -460,11 +461,12 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   divergence_operator.initialize(*matrix_free, divergence_operator_data);
 
   // convective operator
-  convective_kernel_data.formulation       = param.formulation_convective_term;
-  convective_kernel_data.upwind_factor     = param.upwind_factor;
-  convective_kernel_data.use_outflow_bc    = param.use_outflow_bc_convective_term;
-  convective_kernel_data.type_dirichlet_bc = param.type_dirichlet_bc_convective;
-  convective_kernel_data.ale               = param.ale_formulation;
+  convective_kernel_data.formulation        = param.formulation_convective_term;
+  convective_kernel_data.temporal_treatment = param.treatment_of_convective_term;
+  convective_kernel_data.upwind_factor      = param.upwind_factor;
+  convective_kernel_data.use_outflow_bc     = param.use_outflow_bc_convective_term;
+  convective_kernel_data.type_dirichlet_bc  = param.type_dirichlet_bc_convective;
+  convective_kernel_data.ale                = param.ale_formulation;
   convective_kernel = std::make_shared<Operators::ConvectiveKernel<dim, Number>>();
   convective_kernel->reinit(*matrix_free,
                             convective_kernel_data,
@@ -480,7 +482,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   convective_operator_data.dof_index            = get_dof_index_velocity();
   convective_operator_data.quad_index           = this->get_quad_index_velocity_linearized();
   convective_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
-  convective_operator_data.quad_index_nonlinear = get_quad_index_velocity_nonlinear();
+  convective_operator_data.quad_index_nonlinear = get_quad_index_velocity_overintegration();
   convective_operator_data.bc                   = boundary_descriptor->velocity;
   convective_operator.initialize(*matrix_free,
                                  constraint_dummy,
@@ -499,7 +501,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   viscous_kernel->reinit(*matrix_free,
                          viscous_kernel_data,
                          get_dof_index_velocity(),
-                         get_quad_index_velocity_linear());
+                         get_quad_index_velocity_standard());
 
   // initialize and check turbulence model data
   if(param.turbulence_model_data.is_active)
@@ -524,7 +526,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   viscous_operator_data.kernel_data          = viscous_kernel_data;
   viscous_operator_data.bc                   = boundary_descriptor->velocity;
   viscous_operator_data.dof_index            = get_dof_index_velocity();
-  viscous_operator_data.quad_index           = get_quad_index_velocity_linear();
+  viscous_operator_data.quad_index           = get_quad_index_velocity_standard();
   viscous_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   viscous_operator.initialize(*matrix_free,
                               constraint_dummy,
@@ -534,16 +536,9 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   // Momentum operator
   MomentumOperatorData<dim> data;
 
-  data.unsteady_problem = unsteady_problem_has_to_be_solved();
-  if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    data.convective_problem = false;
-  }
-  else
-  {
-    data.convective_problem = param.implicit_convective_problem();
-  }
-  data.viscous_problem = param.viscous_problem();
+  data.unsteady_problem   = unsteady_problem_has_to_be_solved();
+  data.convective_problem = param.non_explicit_convective_problem();
+  data.viscous_problem    = param.viscous_problem();
 
   data.convective_kernel_data = convective_kernel_data;
   data.viscous_kernel_data    = viscous_kernel_data;
@@ -578,13 +573,13 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
     div_penalty_kernel = std::make_shared<Operators::DivergencePenaltyKernel<dim, Number>>();
     div_penalty_kernel->reinit(*matrix_free,
                                get_dof_index_velocity(),
-                               get_quad_index_velocity_linear(),
+                               get_quad_index_velocity_standard(),
                                div_penalty_data);
 
     // Operator
     DivergencePenaltyData operator_data;
     operator_data.dof_index  = get_dof_index_velocity();
-    operator_data.quad_index = get_quad_index_velocity_linear();
+    operator_data.quad_index = get_quad_index_velocity_standard();
 
     div_penalty_operator.initialize(*matrix_free, operator_data, div_penalty_kernel);
   }
@@ -603,13 +598,13 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
     conti_penalty_kernel = std::make_shared<Operators::ContinuityPenaltyKernel<dim, Number>>();
     conti_penalty_kernel->reinit(*matrix_free,
                                  get_dof_index_velocity(),
-                                 get_quad_index_velocity_linear(),
+                                 get_quad_index_velocity_standard(),
                                  kernel_data);
 
     // Operator
     ContinuityPenaltyData<dim> operator_data;
     operator_data.dof_index         = get_dof_index_velocity();
-    operator_data.quad_index        = get_quad_index_velocity_linear();
+    operator_data.quad_index        = get_quad_index_velocity_standard();
     operator_data.use_boundary_data = param.continuity_penalty_use_boundary_data;
     operator_data.bc                = this->boundary_descriptor->velocity;
 
@@ -630,7 +625,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
       data.use_boundary_data      = param.continuity_penalty_use_boundary_data;
       data.bc                     = this->boundary_descriptor->velocity;
       data.dof_index              = get_dof_index_velocity();
-      data.quad_index             = get_quad_index_velocity_linear();
+      data.quad_index             = get_quad_index_velocity_standard();
       data.use_cell_based_loops   = param.use_cell_based_face_loops;
       data.implement_block_diagonal_preconditioner_matrix_free =
         param.implement_block_diagonal_preconditioner_matrix_free;
@@ -652,23 +647,23 @@ SpatialOperatorBase<dim, Number>::initialize_calculators_for_derived_quantities(
 {
   vorticity_calculator.initialize(*matrix_free,
                                   get_dof_index_velocity(),
-                                  get_quad_index_velocity_linear());
+                                  get_quad_index_velocity_standard());
   divergence_calculator.initialize(*matrix_free,
                                    get_dof_index_velocity(),
                                    get_dof_index_velocity_scalar(),
-                                   get_quad_index_velocity_linear());
+                                   get_quad_index_velocity_standard());
   shear_rate_calculator.initialize(*matrix_free,
                                    get_dof_index_velocity(),
                                    get_dof_index_velocity_scalar(),
-                                   get_quad_index_velocity_linear());
+                                   get_quad_index_velocity_standard());
   magnitude_calculator.initialize(*matrix_free,
                                   get_dof_index_velocity(),
                                   get_dof_index_velocity_scalar(),
-                                  get_quad_index_velocity_linear());
+                                  get_quad_index_velocity_standard());
   q_criterion_calculator.initialize(*matrix_free,
                                     get_dof_index_velocity(),
                                     get_dof_index_velocity_scalar(),
-                                    get_quad_index_velocity_linear(),
+                                    get_quad_index_velocity_standard(),
                                     false /*compressible_flow*/);
 }
 
@@ -775,7 +770,7 @@ SpatialOperatorBase<dim, Number>::get_dof_index_velocity_scalar() const
 
 template<int dim, typename Number>
 unsigned int
-SpatialOperatorBase<dim, Number>::get_quad_index_velocity_linear() const
+SpatialOperatorBase<dim, Number>::get_quad_index_velocity_standard() const
 {
   return matrix_free_data->get_quad_index(field + quad_index_u);
 }
@@ -789,9 +784,9 @@ SpatialOperatorBase<dim, Number>::get_quad_index_pressure() const
 
 template<int dim, typename Number>
 unsigned int
-SpatialOperatorBase<dim, Number>::get_quad_index_velocity_nonlinear() const
+SpatialOperatorBase<dim, Number>::get_quad_index_velocity_overintegration() const
 {
-  return matrix_free_data->get_quad_index(field + quad_index_u_nonlinear);
+  return matrix_free_data->get_quad_index(field + quad_index_u_overintegration);
 }
 
 template<int dim, typename Number>
@@ -814,19 +809,19 @@ SpatialOperatorBase<dim, Number>::get_quad_index_velocity_linearized() const
 {
   if(param.quad_rule_linearization == QuadratureRuleLinearization::Standard)
   {
-    return get_quad_index_velocity_linear();
+    return get_quad_index_velocity_standard();
   }
   else if(param.quad_rule_linearization == QuadratureRuleLinearization::Overintegration32k)
   {
-    if(param.nonlinear_problem_has_to_be_solved())
-      return get_quad_index_velocity_nonlinear();
+    if(param.non_explicit_convective_problem())
+      return get_quad_index_velocity_overintegration();
     else
-      return get_quad_index_velocity_linear();
+      return get_quad_index_velocity_standard();
   }
   else
   {
     AssertThrow(false, dealii::ExcMessage("Not implemented"));
-    return get_quad_index_velocity_nonlinear();
+    return get_quad_index_velocity_overintegration();
   }
 }
 
@@ -983,6 +978,42 @@ SpatialOperatorBase<dim, Number>::prescribe_initial_conditions(VectorType & velo
 
 template<int dim, typename Number>
 void
+SpatialOperatorBase<dim, Number>::interpolate_analytical_solution(VectorType & velocity,
+                                                                  VectorType & pressure,
+                                                                  double const time) const
+{
+  AssertThrow(field_functions->analytical_solution_velocity,
+              dealii::ExcMessage("FieldFunctions::analytical_solution_velocity not set"));
+  AssertThrow(field_functions->analytical_solution_pressure,
+              dealii::ExcMessage("FieldFunctions::analytical_solution_pressure not set"));
+
+  field_functions->analytical_solution_velocity->set_time(time);
+  field_functions->analytical_solution_pressure->set_time(time);
+
+  // This is necessary if Number == float
+  using VectorTypeDouble = dealii::LinearAlgebra::distributed::Vector<double>;
+
+  VectorTypeDouble velocity_double;
+  VectorTypeDouble pressure_double;
+  velocity_double = velocity;
+  pressure_double = pressure;
+
+  dealii::VectorTools::interpolate(*get_mapping(),
+                                   get_dof_handler_u(),
+                                   *(field_functions->analytical_solution_velocity),
+                                   velocity_double);
+
+  dealii::VectorTools::interpolate(*get_mapping(),
+                                   get_dof_handler_p(),
+                                   *(field_functions->analytical_solution_pressure),
+                                   pressure_double);
+
+  velocity = velocity_double;
+  pressure = pressure_double;
+}
+
+template<int dim, typename Number>
+void
 SpatialOperatorBase<dim, Number>::interpolate_stress_bc(VectorType &       stress,
                                                         VectorType const & velocity,
                                                         VectorType const & pressure) const
@@ -1041,7 +1072,7 @@ SpatialOperatorBase<dim, Number>::calculate_time_step_cfl_global() const
   return calculate_time_step_cfl_local<dim, Number>(
     *matrix_free,
     get_dof_index_velocity(),
-    get_quad_index_velocity_linear(),
+    get_quad_index_velocity_standard(),
     velocity_field,
     param.start_time /* will not be used (ConstantFunction) */,
     param.degree_u,
@@ -1060,7 +1091,7 @@ SpatialOperatorBase<dim, Number>::calculate_time_step_cfl(VectorType const & vel
 
   return calculate_time_step_cfl_local<dim, Number>(*matrix_free,
                                                     get_dof_index_velocity(),
-                                                    get_quad_index_velocity_linear(),
+                                                    get_quad_index_velocity_standard(),
                                                     velocity,
                                                     param.degree_u,
                                                     param.cfl_exponent_fe_degree_velocity,
@@ -1078,7 +1109,7 @@ SpatialOperatorBase<dim, Number>::calculate_cfl_from_time_step(VectorType &     
                              *grid->triangulation,
                              *matrix_free,
                              get_dof_index_velocity(),
-                             get_quad_index_velocity_linear(),
+                             get_quad_index_velocity_standard(),
                              velocity,
                              time_step_size,
                              param.degree_u,
@@ -1265,7 +1296,7 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   rhs_operator.initialize(*matrix_free,
                           get_dof_index_velocity(),
                           get_dof_index_velocity_scalar(),
-                          get_quad_index_velocity_linear());
+                          get_quad_index_velocity_standard());
   VectorType rhs;
   initialize_vector_velocity_scalar(rhs);
   rhs_operator.apply(rhs, src);
@@ -1273,7 +1304,7 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   // setup Laplace operator for scalar velocity vector
   Poisson::LaplaceOperatorData<0, dim> laplace_operator_data;
   laplace_operator_data.dof_index  = get_dof_index_velocity_scalar();
-  laplace_operator_data.quad_index = get_quad_index_velocity_linear();
+  laplace_operator_data.quad_index = get_quad_index_velocity_standard();
 
   std::shared_ptr<Poisson::BoundaryDescriptor<0, dim>> boundary_descriptor_streamfunction;
   boundary_descriptor_streamfunction = std::make_shared<Poisson::BoundaryDescriptor<0, dim>>();
@@ -1618,7 +1649,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
     {
       InverseMassOperatorData inverse_mass_operator_data;
       inverse_mass_operator_data.dof_index  = get_dof_index_velocity();
-      inverse_mass_operator_data.quad_index = get_quad_index_velocity_linear();
+      inverse_mass_operator_data.quad_index = get_quad_index_velocity_standard();
       inverse_mass_operator_data.parameters = param.inverse_mass_preconditioner;
 
       preconditioner_projection =
