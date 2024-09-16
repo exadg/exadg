@@ -502,13 +502,9 @@ private:
 
       bool const unsteady = (this->param.problem_type == ProblemType::Unsteady);
       this->boundary_descriptor->dirichlet_bc.insert(
-        pair(2,
-             new DisplacementDBC<dim>(
-               displacement, quasistatic_solver, unsteady, end_time)));
+        pair(2, new DisplacementDBC<dim>(displacement, quasistatic_solver, unsteady, end_time)));
       this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
-        pair(2,
-             new AccelerationDBC<dim>(
-               displacement, quasistatic_solver, unsteady, end_time)));
+        pair(2, new AccelerationDBC<dim>(displacement, quasistatic_solver, unsteady, end_time)));
 
       this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(2, mask_right));
     }

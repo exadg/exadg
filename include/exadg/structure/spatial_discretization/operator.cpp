@@ -986,7 +986,9 @@ Operator<dim, Number>::evaluate_elasticity_operator(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::update_elasticity_operator(double const factor, double const factor_boundary, double const time) const
+Operator<dim, Number>::update_elasticity_operator(double const factor,
+                                                  double const factor_boundary,
+                                                  double const time) const
 {
   if(param.large_deformation)
   {

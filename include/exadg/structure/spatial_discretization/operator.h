@@ -160,7 +160,9 @@ public:
     this->scaling_factor_mass_boundary = scaling_factor_mass_boundary;
     this->time                         = time;
 
-    pde_operator->update_elasticity_operator(scaling_factor_mass, scaling_factor_mass_boundary, time);
+    pde_operator->update_elasticity_operator(scaling_factor_mass,
+                                             scaling_factor_mass_boundary,
+                                             time);
   }
 
   /*
@@ -289,7 +291,9 @@ public:
                                double const       time) const;
 
   void
-  update_elasticity_operator(double const factor, double const factor_boundary, double const time) const;
+  update_elasticity_operator(double const factor,
+                             double const factor_boundary,
+                             double const time) const;
 
   void
   apply_elasticity_operator(VectorType & dst, VectorType const & src) const;
