@@ -307,8 +307,9 @@ private:
     }
     else if(this->param.grid.element_type == ElementType::Hypercube)
     {
-      this->param.grid.triangulation_type           = TriangulationType::Distributed;
-      this->param.grid.create_coarse_triangulations = true; // can also be set to true if desired
+      this->param.grid.triangulation_type = TriangulationType::Distributed;
+      this->param.grid.create_coarse_triangulations =
+        adaptive_refinement ? true : false; // required for adaptive refinement
     }
 
     this->param.load_increment = 0.5;
@@ -454,7 +455,6 @@ private:
                                                  this->param.mapping_degree_coarse_grids,
                                                  this->param.involves_h_multigrid());
 
-    constexpr bool adaptive_refinement = false;
     if(adaptive_refinement && this->param.grid.element_type == ElementType::Hypercube)
     {
       // Flag all cells touching one of the boundaries with a face.
@@ -711,6 +711,7 @@ private:
   double area_force   = 1.0; // "Neumann"
 
   // mesh parameters
+  bool const         adaptive_refinement = false;
   unsigned int const repetitions0 = 4, repetitions1 = 1, repetitions2 = 1;
 
   double const E_modul = 200.0;
