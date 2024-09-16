@@ -457,54 +457,55 @@ private:
     constexpr bool adaptive_refinement = false;
     if(adaptive_refinement)
     {
-    // Flag all cells touching one of the boundaries with a face.
-    std::vector<dealii::types::boundary_id> refine_bdry_id = {1, 3};
-    for(unsigned int i = 0; i < 4; ++i)
-    {
-      for(auto const & cell : grid.triangulation->active_cell_iterators())
+      // Flag all cells touching one of the boundaries with a face.
+      std::vector<dealii::types::boundary_id> refine_bdry_id = {1, 3};
+      for(unsigned int i = 0; i < 4; ++i)
       {
-        for(auto const face : cell->face_indices())
+        for(auto const & cell : grid.triangulation->active_cell_iterators())
         {
-          if(cell->at_boundary(face))
+          for(auto const face : cell->face_indices())
           {
-            if(std::find(refine_bdry_id.begin(),
-                         refine_bdry_id.end(),
-                         cell->face(face)->boundary_id()) != refine_bdry_id.end())
+            if(cell->at_boundary(face))
             {
-              if(not cell->refine_flag_set())
+              if(std::find(refine_bdry_id.begin(),
+                           refine_bdry_id.end(),
+                           cell->face(face)->boundary_id()) != refine_bdry_id.end())
               {
-                cell->clear_coarsen_flag();
-                cell->set_refine_flag();
+                if(not cell->refine_flag_set())
+                {
+                  cell->clear_coarsen_flag();
+                  cell->set_refine_flag();
+                }
               }
             }
           }
         }
+        grid.triangulation->prepare_coarsening_and_refinement();
+        grid.triangulation->execute_coarsening_and_refinement();
       }
-      grid.triangulation->prepare_coarsening_and_refinement();
-      grid.triangulation->execute_coarsening_and_refinement();
-    }
 
-    // Update coarse_triangulations after adaptive refinement.
-    if(this->param.involves_h_multigrid())
-    {
-      GridUtilities::create_coarse_triangulations_after_coarsening_and_refinement(
-        *grid.triangulation,
-        grid.periodic_face_pairs,
-        grid.coarse_triangulations,
-        grid.coarse_periodic_face_pairs,
-        this->param.grid,
-        false /* preserve_boundary_cells */);
-    }
+      // Update coarse_triangulations after adaptive refinement.
+      if(this->param.involves_h_multigrid())
+      {
+        GridUtilities::create_coarse_triangulations_after_coarsening_and_refinement(
+          *grid.triangulation,
+          grid.periodic_face_pairs,
+          grid.coarse_triangulations,
+          grid.coarse_periodic_face_pairs,
+          this->param.grid,
+          false /* preserve_boundary_cells */);
+      }
 
-    // Fill coarse mappings based on fine mapping.
-    std::shared_ptr<dealii::Mapping<dim>> coarse_mapping;
-    if(this->param.involves_h_multigrid())
-    {
-      GridUtilities::create_mapping(coarse_mapping,
-                                    this->param.grid.element_type,
-                                    this->param.mapping_degree_coarse_grids);
-    }
-    multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping, coarse_mapping);
+      // Fill coarse mappings based on fine mapping.
+      std::shared_ptr<dealii::Mapping<dim>> coarse_mapping;
+      if(this->param.involves_h_multigrid())
+      {
+        GridUtilities::create_mapping(coarse_mapping,
+                                      this->param.grid.element_type,
+                                      this->param.mapping_degree_coarse_grids);
+      }
+      multigrid_mappings =
+        std::make_shared<MultigridMappings<dim, Number>>(mapping, coarse_mapping);
     }
   }
 
