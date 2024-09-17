@@ -1208,24 +1208,30 @@ OperatorCoupled<dim, Number>::apply_inverse_negative_laplace_operator(VectorType
   {
     // solve a linear system of equations for negative Laplace operator to given (relative)
     // tolerance using the PCG method
-    VectorType const * pointer_to_src = &src;
+    dst = 0.0;
     if(this->is_pressure_level_undefined())
     {
-      VectorType vector_zero_mean;
-      vector_zero_mean = src;
-
+      VectorType vector_zero_mean = src;
       if(laplace_operator->operator_is_singular())
       {
         dealii::VectorTools::subtract_mean_value(vector_zero_mean);
       }
-
-      pointer_to_src = &vector_zero_mean;
+      else
+      {
+        AssertThrow(false,
+                    dealii::ExcMessage(
+                      "Undefined pressure level always leads to singular Laplace operator."));
+      }
+      // Note that the preconditioner is not updated here since it has
+      // already been updated in the function update_block_preconditioner().
+      solver_pressure_block->solve(dst, vector_zero_mean);
     }
-
-    dst = 0.0;
-    // Note that the preconditioner is not updated here since it has
-    // already been updated in the function update_block_preconditioner().
-    solver_pressure_block->solve(dst, *pointer_to_src);
+    else
+    {
+      // Note that the preconditioner is not updated here since it has
+      // already been updated in the function update_block_preconditioner().
+      solver_pressure_block->solve(dst, src);
+    }
   }
 }
 
