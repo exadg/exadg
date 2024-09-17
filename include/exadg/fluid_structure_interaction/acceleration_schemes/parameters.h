@@ -34,13 +34,34 @@ enum class AccelerationMethod
   IQN_IMVLS
 };
 
+enum class UpdateMethod
+{
+  Undefined,
+  Implicit,
+  GeometricExplicit,
+  ImplicitPressureStructure,
+  ImplicitVelocityStructure
+};
+
+enum class CouplingMethod
+{
+  Undefined,
+  DirichletNeumann,
+  DirichletRobinFixedParameter,
+  DirichletRobinAdaptiveParameter
+};
+
 struct Parameters
 {
   Parameters()
     : acceleration_method(AccelerationMethod::Undefined),
+      update_method(UpdateMethod::Implicit),
+      coupling_method(CouplingMethod::DirichletNeumann),
+      robin_parameter_scale(0.0),
       abs_tol(1.e-12),
       rel_tol(1.e-3),
       omega_init(0.1),
+      use_extrapolation(true),
       reused_time_steps(0),
       partitioned_iter_max(100),
       geometric_tolerance(1.e-10)
@@ -58,6 +79,18 @@ struct Parameters
                         Patterns::Enum<AccelerationMethod>(),
                         true);
       prm.add_parameter(
+        "UpdateMethod", update_method, "Update method.", Patterns::Enum<UpdateMethod>(), false);
+      prm.add_parameter("CouplingMethod",
+                        coupling_method,
+                        "Coupling method.",
+                        Patterns::Enum<CouplingMethod>(),
+                        false);
+      prm.add_parameter("RobinParameterScale",
+                        robin_parameter_scale,
+                        "Parameter scale for Robin coupling.",
+                        dealii::Patterns::Double(),
+                        false);
+      prm.add_parameter(
         "AbsTol", abs_tol, "Absolute solver tolerance.", dealii::Patterns::Double(0.0, 1.0), true);
       prm.add_parameter(
         "RelTol", rel_tol, "Relative solver tolerance.", dealii::Patterns::Double(0.0, 1.0), true);
@@ -66,6 +99,11 @@ struct Parameters
                         "Initial relaxation parameter.",
                         dealii::Patterns::Double(0.0, 1.0),
                         true);
+      prm.add_parameter("UseExtrapolation",
+                        use_extrapolation,
+                        "Extrapolate for initial guess in coupling scheme.",
+                        dealii::Patterns::Bool(),
+                        false);
       prm.add_parameter("ReusedTimeSteps",
                         reused_time_steps,
                         "Number of time steps reused for acceleration.",
@@ -86,9 +124,13 @@ struct Parameters
   }
 
   AccelerationMethod acceleration_method;
+  UpdateMethod       update_method;
+  CouplingMethod     coupling_method;
+  double             robin_parameter_scale;
   double             abs_tol;
   double             rel_tol;
   double             omega_init;
+  bool               use_extrapolation;
   unsigned int       reused_time_steps;
   unsigned int       partitioned_iter_max;
 

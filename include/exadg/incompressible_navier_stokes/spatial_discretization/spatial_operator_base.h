@@ -253,6 +253,9 @@ public:
                         VectorType const & velocity,
                         VectorType const & pressure) const;
 
+  void
+  set_robin_parameter_traction_output(double const robin_parameter_in) const;
+
   /*
    * Time step calculation.
    */
@@ -531,6 +534,7 @@ private:
    * Interface coupling
    */
   std::shared_ptr<ContainerInterfaceData<1, dim, double>> interface_data_dirichlet_cached;
+  mutable double                                          robin_parameter_traction_output;
 
 protected:
   /*

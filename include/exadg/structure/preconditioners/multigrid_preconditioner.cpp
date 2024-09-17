@@ -74,12 +74,16 @@ MultigridPreconditioner<dim, Number>::update()
         this->get_operator_nonlinear(level)->set_time(pde_operator->get_time());
         this->get_operator_nonlinear(level)->set_scaling_factor_mass_operator(
           pde_operator->get_scaling_factor_mass_operator());
+        this->get_operator_nonlinear(level)->set_scaling_factor_mass_boundary_operator(
+          pde_operator->get_scaling_factor_mass_boundary_operator());
       }
       else
       {
         this->get_operator_linear(level)->set_time(pde_operator->get_time());
         this->get_operator_linear(level)->set_scaling_factor_mass_operator(
           pde_operator->get_scaling_factor_mass_operator());
+        this->get_operator_linear(level)->set_scaling_factor_mass_boundary_operator(
+          pde_operator->get_scaling_factor_mass_boundary_operator());
       }
     });
   }
@@ -244,6 +248,8 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
       pde_operator_level->set_time(pde_operator->get_time());
       pde_operator_level->set_scaling_factor_mass_operator(
         pde_operator->get_scaling_factor_mass_operator());
+      pde_operator_level->set_scaling_factor_mass_boundary_operator(
+        pde_operator->get_scaling_factor_mass_boundary_operator());
     }
 
     pde_operator_level->initialize(*this->matrix_free_objects[level],
@@ -267,6 +273,8 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
       pde_operator_level->set_time(pde_operator->get_time());
       pde_operator_level->set_scaling_factor_mass_operator(
         pde_operator->get_scaling_factor_mass_operator());
+      pde_operator_level->set_scaling_factor_mass_boundary_operator(
+        pde_operator->get_scaling_factor_mass_boundary_operator());
     }
 
     pde_operator_level->initialize(*this->matrix_free_objects[level],

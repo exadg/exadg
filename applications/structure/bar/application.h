@@ -264,6 +264,9 @@ public:
       prm.add_parameter("Traction",              area_force,               "Traction acting on right boundary in case of Neumann BC.");
       prm.add_parameter("LargeDeformation",      large_deformation,        "Consider finite strains or linear elasticity.");
       prm.add_parameter("Preconditioner",        preconditioner,           "None, PointJacobi, AMG, AdditiveSchwarz or Multigrid");
+      prm.add_parameter("SpringCoefficient",     spring_coefficient,       "Exterior spring stiffness.");
+      prm.add_parameter("DashpotCoefficient",    dashpot_coefficient,      "Exterior daspot coefficient.");
+      prm.add_parameter("ExteriorPressure",      exterior_pressure,        "Exterior pressure.");
     }
     prm.leave_subsection();
     // clang-format on
@@ -293,11 +296,11 @@ private:
 
     this->param.start_time      = start_time;
     this->param.end_time        = end_time;
-    this->param.time_step_size  = end_time / 2.;
+    this->param.time_step_size  = end_time / 200.;
     this->param.gen_alpha_type  = GenAlphaType::BossakAlpha;
     this->param.spectral_radius = 0.8;
     this->param.solver_info_data.interval_time_steps =
-      problem_type == ProblemType::Unsteady ? 20 : 2;
+      problem_type == ProblemType::Unsteady ? 200 : 2;
 
     this->param.mapping_degree              = this->param.degree;
     this->param.mapping_degree_coarse_grids = this->param.degree;
@@ -492,8 +495,15 @@ private:
                                                                                   pair;
     typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
 
-    this->boundary_descriptor->neumann_bc.insert(
-      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
+    // exterior support
+    bool const spring_active_in_normal_direction_only  = true;
+    bool const dashpot_active_in_normal_direction_only = true;
+    this->boundary_descriptor->robin_k_c_p_param.insert(std::make_pair(
+      0,
+      std::make_pair(std::array<bool, 2>{{spring_active_in_normal_direction_only,
+                                          dashpot_active_in_normal_direction_only}},
+                     std::array<double, 3>{
+                       {spring_coefficient, dashpot_coefficient, exterior_pressure}})));
 
     // left face
     std::vector<bool> mask_left = {true, clamp_at_left_boundary};
@@ -526,13 +536,9 @@ private:
 
       bool const unsteady = (this->param.problem_type == ProblemType::Unsteady);
       this->boundary_descriptor->dirichlet_bc.insert(
-        pair(2,
-             new DisplacementDBC<dim>(
-               displacement, quasistatic_solver, unsteady, 200.0 /* end_time */)));
+        pair(2, new DisplacementDBC<dim>(displacement, quasistatic_solver, unsteady, end_time)));
       this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
-        pair(2,
-             new AccelerationDBC<dim>(
-               displacement, quasistatic_solver, unsteady, 200.0 /* end_time */)));
+        pair(2, new AccelerationDBC<dim>(displacement, quasistatic_solver, unsteady, end_time)));
 
       this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(2, mask_right));
     }
@@ -702,12 +708,11 @@ private:
     pp_data.output_data.write_higher_order = true;
     pp_data.output_data.degree             = this->param.degree;
 
+    pp_data.error_data.time_control_data.is_active        = true;
     pp_data.error_data.time_control_data.start_time       = start_time;
-    pp_data.error_data.time_control_data.trigger_interval = (end_time - start_time);
-
-    pp_data.error_data.time_control_data.is_active = true;
-    pp_data.error_data.calculate_relative_errors   = true;
-    double const vol_force                         = use_volume_force ? this->volume_force : 0.0;
+    pp_data.error_data.time_control_data.trigger_interval = (end_time - start_time) * 0.25;
+    pp_data.error_data.calculate_relative_errors          = true;
+    double const vol_force = use_volume_force ? this->volume_force : 0.0;
     if(boundary_type == BoundaryType::Dirichlet)
     {
       pp_data.error_data.analytical_solution.reset(
@@ -763,6 +768,10 @@ private:
 
   double load_increment = 0.1;
 
+  double spring_coefficient  = 0.0;
+  double dashpot_coefficient = 0.0;
+  double exterior_pressure   = 0.0;
+
   // mesh parameters
   unsigned int const repetitions0 = 1, repetitions1 = 1, repetitions2 = 1;
 
@@ -770,7 +779,7 @@ private:
   double const E_modul       = 200.0;
 
   double const start_time = 0.0;
-  double const end_time   = 1.0;
+  double const end_time   = 100.0;
 
   double const density = 0.001;
 

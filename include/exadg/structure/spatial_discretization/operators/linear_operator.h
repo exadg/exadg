@@ -38,12 +38,13 @@ private:
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
 
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
   typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
 
   /*
    * Calculates the integral
    *
-   *  (v_h, factor * d_h)_Omega + (grad(v_h), sigma_h)_Omega
+   *  (v_h, factor * density * d_h)_Omega + (grad(v_h), sigma_h)_Omega
    *
    * with
    *
@@ -57,12 +58,17 @@ private:
   do_cell_integral(IntegratorCell & integrator) const override;
 
   /*
-   * Computes Neumann BC integral
+   * Computes boundary integrals
    *
-   *  - (v_h, t)_{Gamma_N}
+   * inhomogeneous operator:
+   *  - (v_h, t)_{Gamma_N} - (v_h, - p * N)_{Gamma_R}
+   *
+   * homogeneous operator:
+   *  + (v_h, k * d_h + c * factor_velocity * d_h)_{Gamma_R}
    */
   void
   do_boundary_integral_continuous(IntegratorFace &                   integrator_m,
+                                  OperatorType const &               operator_type,
                                   dealii::types::boundary_id const & boundary_id) const override;
 };
 

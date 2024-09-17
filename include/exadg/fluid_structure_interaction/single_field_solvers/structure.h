@@ -40,7 +40,12 @@ public:
   void
   setup(std::shared_ptr<StructureFSI::ApplicationBase<dim, Number>> application,
         MPI_Comm const                                              mpi_comm,
-        bool const                                                  is_test);
+        bool const                                                  is_test,
+        double const &                                              robin_parameter_in);
+
+  void
+  set_robin_parameters(std::set<dealii::types::boundary_id> const & boundary_IDs,
+                       double const &                               robin_parameter) const;
 
   // grid and mapping
   std::shared_ptr<Grid<dim>>            grid;
@@ -67,7 +72,8 @@ void
 SolverStructure<dim, Number>::setup(
   std::shared_ptr<StructureFSI::ApplicationBase<dim, Number>> application,
   MPI_Comm const                                              mpi_comm,
-  bool const                                                  is_test)
+  bool const                                                  is_test,
+  double const &                                              robin_parameter_in)
 {
   // setup application
   application->setup(grid, mapping, multigrid_mappings);
@@ -106,6 +112,20 @@ SolverStructure<dim, Number>::setup(
     pde_operator, postprocessor, application->get_parameters(), mpi_comm, is_test);
 
   time_integrator->setup(application->get_parameters().restarted_simulation);
+
+  // Robin parameters need to be set *before* solver setup
+  // ##+ MAYBE REMOVE THIS ENTIRE THING SINCE SOLVER SETUP IS DONE AT SOLVER CALL.
+  set_robin_parameters(application->get_boundary_descriptor()->neumann_cached_bc,
+                       robin_parameter_in);
+}
+
+template<int dim, typename Number>
+void
+SolverStructure<dim, Number>::set_robin_parameters(
+  std::set<dealii::types::boundary_id> const & boundary_IDs,
+  double const &                               robin_parameter) const
+{
+  pde_operator->set_robin_parameters(boundary_IDs, robin_parameter);
 }
 
 } // namespace FSI

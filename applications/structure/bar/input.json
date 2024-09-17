@@ -33,8 +33,11 @@
         "CheckType": "0",
         "MappingStrength": "0.20",
         "BoundaryType": "Dirichlet",
-        "Displacement": "20",
-        "Traction":	"0.0"
+        "Displacement": "20.0",
+        "Traction": "0.0",
+        "SpringCoefficient": "1e5",
+        "DashpotCoefficient": "1e3",
+        "ExteriorPressure": "0"
     },
     "Output": {
         "OutputDirectory": "output/bar/",

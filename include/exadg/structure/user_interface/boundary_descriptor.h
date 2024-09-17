@@ -40,7 +40,8 @@ enum class BoundaryType
   Dirichlet,
   DirichletCached,
   Neumann,
-  NeumannCached
+  NeumannCached,
+  RobinSpringDashpotPressure
 };
 
 template<int dim>
@@ -70,6 +71,17 @@ struct BoundaryDescriptor
   // Neumann
   std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> neumann_bc;
 
+  // Robin boundary condition of the form
+  // + ( v_h, k * d_h + c * d/dt(d_h) +  p * N )
+  // or
+  // + ( v_h, k * N * (d_h . N) + c * N . (d/dt(d_h) . N) + p * N )
+  // using normal projections of displacement/velocity terms controlled via the
+  // std::array<bool, 2> for the displacement (index 0) and velocity terms (index 1)
+  // The std::array<double, 3> contains the parameters k (index 0), c (index 1) and p (index 2).
+  mutable std::map<dealii::types::boundary_id,
+                   std::pair<std::array<bool, 2>, std::array<double, 3>>>
+    robin_k_c_p_param;
+
   // another type of Neumann boundary condition where the traction force comes
   // from the solution on another domain that is in contact with the actual domain
   // of interest at the given boundary (this type of Neumann boundary condition
@@ -88,6 +100,14 @@ struct BoundaryDescriptor
       return BoundaryType::Neumann;
     else if(this->neumann_cached_bc.find(boundary_id) != this->neumann_cached_bc.end())
       return BoundaryType::NeumannCached;
+    else if(this->robin_k_c_p_param.find(boundary_id) != this->robin_k_c_p_param.end() and
+            this->neumann_cached_bc.find(boundary_id) == this->neumann_cached_bc.end())
+    {
+      // In FSI, the  interface is a BoundaryType::NeumannCached, where we also evaluate a Robin
+      // term, but BoundaryType::RobinSpringDashpotPressure refers to spring/dashpot support, which
+      // does not include the interface traction term in the FSI case.
+      return BoundaryType::RobinSpringDashpotPressure;
+    }
 
     AssertThrow(false,
                 dealii::ExcMessage(
@@ -130,6 +150,9 @@ struct BoundaryDescriptor
     if(neumann_bc.find(boundary_id) != neumann_bc.end())
       counter++;
 
+    if(robin_k_c_p_param.find(boundary_id) != robin_k_c_p_param.end())
+      counter++;
+
     if(neumann_cached_bc.find(boundary_id) != neumann_cached_bc.end())
       counter++;
 
@@ -170,6 +193,20 @@ struct BoundaryDescriptor
                 dealii::ExcMessage("Pointer to ContainerInterfaceData has not been initialized."));
 
     return neumann_cached_data;
+  }
+
+  std::map<dealii::types::boundary_id, std::pair<std::array<bool, 2>, std::array<double, 3>>>
+  get_robin_k_c_p_param() const
+  {
+    return robin_k_c_p_param;
+  }
+
+  void
+  set_robin_k_c_p_param(
+    std::map<dealii::types::boundary_id, std::pair<std::array<bool, 2>, std::array<double, 3>>>
+      robin_k_c_p_param_in) const
+  {
+    this->robin_k_c_p_param = robin_k_c_p_param_in;
   }
 
 private:

@@ -81,7 +81,7 @@ public:
     output_parameters.add_parameters(prm, "Output");
   }
 
-  void
+  virtual void
   parse_parameters()
   {
     dealii::ParameterHandler prm;
@@ -94,7 +94,7 @@ public:
         std::shared_ptr<dealii::Mapping<dim>> &           mapping,
         std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings)
   {
-    parse_parameters();
+    this->parse_parameters();
 
     set_resolution_parameters();
 
@@ -220,7 +220,7 @@ public:
     output_parameters.add_parameters(prm, "Output");
   }
 
-  void
+  virtual void
   parse_parameters()
   {
     dealii::ParameterHandler prm;
@@ -233,7 +233,7 @@ public:
         std::shared_ptr<dealii::Mapping<dim>> &           mapping,
         std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings)
   {
-    parse_parameters();
+    this->parse_parameters();
 
     set_resolution_parameters();
 

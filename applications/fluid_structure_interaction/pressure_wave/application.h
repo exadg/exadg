@@ -99,6 +99,20 @@ public:
   {
   }
 
+  void
+  add_parameters(dealii::ParameterHandler & prm) final
+  {
+    // clang format off
+    prm.enter_subsection("Fluid");
+    prm.add_parameter("TemporalDiscretization",
+                      temporal_discretization,
+                      "Temporal discretization of Navier-Stokes euqaitons.",
+                      Patterns::Enum<IncNS::TemporalDiscretization>(),
+                      false);
+    prm.leave_subsection();
+    // clang format on
+  }
+
 private:
   void
   set_parameters() final
@@ -128,7 +142,7 @@ private:
 
     // TEMPORAL DISCRETIZATION
     param.solver_type                     = SolverType::Unsteady;
-    param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
+    param.temporal_discretization         = temporal_discretization;
     param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     param.order_time_integrator           = 2;
     param.start_with_low_order            = true;
@@ -621,6 +635,9 @@ private:
     field_functions->initial_displacement.reset(new dealii::Functions::ZeroFunction<dim>(dim));
     field_functions->initial_velocity.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
+
+  IncNS::TemporalDiscretization temporal_discretization =
+    IncNS::TemporalDiscretization::BDFDualSplittingScheme;
 };
 } // namespace FluidFSI
 
@@ -633,6 +650,24 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : StructureFSI::ApplicationBase<dim, Number>(input_file, comm)
   {
+  }
+
+  void
+  add_parameters(dealii::ParameterHandler & prm) final
+  {
+    // clang format off
+    prm.enter_subsection("Structure");
+    prm.add_parameter("WeakDamping",
+                      weak_damping_coefficient,
+                      "Weak damping coefficient for unsteady problems.");
+    prm.add_parameter("UseExteriorSupport",
+                      use_exterior_support,
+                      "Use exterior support or zero Neumann condition.");
+    prm.add_parameter("SpringCoefficient", spring_coefficient, "Exterior spring stiffness.");
+    prm.add_parameter("DashpotCoefficient", dashpot_coefficient, "Exterior daspot coefficient.");
+    prm.add_parameter("ExteriorPressure", exterior_pressure, "Exterior pressure.");
+    prm.leave_subsection();
+    // clang format on
   }
 
 private:
@@ -650,6 +685,9 @@ private:
     param.pull_back_traction   = true;
 
     param.density = DENSITY_STRUCTURE;
+
+    param.weak_damping_coefficient = weak_damping_coefficient;
+    param.weak_damping_active      = weak_damping_coefficient > 0.0;
 
     param.start_time                           = 0.0;
     param.end_time                             = END_TIME;
@@ -800,9 +838,21 @@ private:
     boundary_descriptor->dirichlet_bc_component_mask.insert(
       pair_mask(BOUNDARY_ID_OUTFLOW, dealii::ComponentMask()));
 
-    // zero traction at wall boundaries
-    boundary_descriptor->neumann_bc.insert(
-      pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
+    // zero traction at wall boundaries or exterior support
+    if(use_exterior_support)
+    {
+      boundary_descriptor->robin_k_c_p_param.insert(std::make_pair(
+        BOUNDARY_ID_WALLS,
+        std::make_pair(std::array<bool, 2>{{true /* normal_projection_displacement */,
+                                            true /* normal_projection_velocity */}},
+                       std::array<double, 3>{
+                         {spring_coefficient, dashpot_coefficient, exterior_pressure}})));
+    }
+    else
+    {
+      boundary_descriptor->neumann_bc.insert(
+        pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
+    }
 
     // fluid-structure interface
     boundary_descriptor->neumann_cached_bc.insert(BOUNDARY_ID_FSI);
@@ -854,6 +904,12 @@ private:
 
     return post;
   }
+
+  double weak_damping_coefficient = 0.0;
+  double spring_coefficient       = 0.0;
+  double dashpot_coefficient      = 0.0;
+  double exterior_pressure        = 0.0;
+  bool   use_exterior_support     = false;
 };
 
 } // namespace StructureFSI

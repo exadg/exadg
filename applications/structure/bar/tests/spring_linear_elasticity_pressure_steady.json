@@ -5,10 +5,10 @@
         "IsTest": "true"
     },
     "SpatialResolution": {
-        "DegreeMin": "1",
-        "DegreeMax": "1",
-        "RefineSpaceMin": "0",
-        "RefineSpaceMax": "0"
+        "DegreeMin": "2",
+        "DegreeMax": "2",
+        "RefineSpaceMin": "1",
+        "RefineSpaceMax": "1"
     },
     "TemporalResolution": {
         "RefineTimeMin": "0",
@@ -18,20 +18,17 @@
         "Length": "100.0",
         "Height": "10.0",
         "Width": "10.0",
-        "ProblemType": "Unsteady",
-        "MaterialType": "StVenantKirchhoff",
-        "LargeDeformation": "true",
-        "Preconditioner": "Multigrid",
-        "WeakDamping": "10000.0",
+        "ProblemType": "Steady",
+        "WeakDamping": "0.0",
         "UseVolumeForce": "false",
         "VolumeForce": "1.0",
         "LargeDeformation": "true",
-        "BoundaryType": "Neumann",
+        "BoundaryType": "Dirichlet",
         "Displacement": "20.0",
-        "Traction":	"10.0",
-        "SpringCoefficient": "0.0",
-        "DashpotCoefficient": "0.0",
-        "ExteriorPressure": "0.0"
+        "Traction":	"0.0",
+        "SpringCoefficient": "1e5",
+        "DashpotCoefficient": "0",
+        "ExteriorPressure": "-10.0"
     },
     "Output": {
         "OutputDirectory": "output/bar/",

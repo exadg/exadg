@@ -257,7 +257,7 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
             {
               pde_operator->set_solution_linearization(linearization);
             }
-            pde_operator->evaluate_elasticity_operator(dst, src, 1.0, 0.0);
+            pde_operator->evaluate_elasticity_operator(dst, src, 1.0, 1.0, 0.0);
           }
           else if(operator_type == OperatorType::Apply)
           {
