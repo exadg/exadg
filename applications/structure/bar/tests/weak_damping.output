@@ -121,13 +121,13 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for all fields at time t = 2.5000e+01:
-  Relative error (L2-norm): 9.11314e-01
+  Relative error (L2-norm): 9.00768e-01
 
 Calculate error for all fields at time t = 5.0000e+01:
-  Relative error (L2-norm): 8.03837e-01
+  Relative error (L2-norm): 7.75860e-01
 
 Calculate error for all fields at time t = 7.5000e+01:
-  Relative error (L2-norm): 7.10108e-01
+  Relative error (L2-norm): 6.68909e-01
 
 ________________________________________________________________________________
 
@@ -135,4 +135,4 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for all fields at time t = 1.0000e+02:
-  Relative error (L2-norm): 6.27902e-01
+  Relative error (L2-norm): 5.77571e-01
