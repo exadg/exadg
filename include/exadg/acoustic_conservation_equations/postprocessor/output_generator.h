@@ -22,6 +22,8 @@
 #ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_OUTPUT_GENERATOR_H_
 #define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_OUTPUT_GENERATOR_H_
 
+#include <deal.II/base/smartpointer.h>
+
 #include <exadg/postprocessor/output_data_base.h>
 #include <exadg/postprocessor/solution_field.h>
 #include <exadg/postprocessor/time_control.h>

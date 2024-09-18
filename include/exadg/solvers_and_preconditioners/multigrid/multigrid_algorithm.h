@@ -24,6 +24,7 @@
 
 // deal.II
 #include <deal.II/base/function_lib.h>
+#include <deal.II/base/smartpointer.h>
 #include <deal.II/base/timer.h>
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/multigrid/mg_matrix.h>

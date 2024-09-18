@@ -22,6 +22,7 @@
 #ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_OPERATORS_OPERATOR_H_
 #define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_OPERATORS_OPERATOR_H_
 
+#include <deal.II/base/smartpointer.h>
 #include <deal.II/lac/la_parallel_block_vector.h>
 
 #include <exadg/acoustic_conservation_equations/spatial_discretization/operators/weak_boundary_conditions.h>

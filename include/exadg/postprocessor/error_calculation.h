@@ -24,6 +24,7 @@
 
 // deal.II
 #include <deal.II/base/function.h>
+#include <deal.II/base/smartpointer.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/lac/la_parallel_vector.h>

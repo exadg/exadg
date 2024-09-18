@@ -23,6 +23,7 @@
 #define INCLUDE_EXADG_STRUCTURE_POSTPROCESSOR_OUTPUT_GENERATOR_H_
 
 // deal.II
+#include <deal.II/base/smartpointer.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG

@@ -25,6 +25,9 @@
 // C/C++
 #include <fstream>
 
+// deal.II
+#include <deal.II/base/smartpointer.h>
+
 // ExaDG
 #include <exadg/postprocessor/output_data_base.h>
 #include <exadg/postprocessor/solution_field.h>

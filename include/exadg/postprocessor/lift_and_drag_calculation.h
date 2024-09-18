@@ -24,6 +24,7 @@
 
 // deal.ii
 #include <deal.II/base/conditional_ostream.h>
+#include <deal.II/base/smartpointer.h>
 #include <deal.II/matrix_free/matrix_free.h>
 
 // ExaDG

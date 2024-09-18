@@ -23,6 +23,7 @@
 #define INCLUDE_EXADG_OPERATORS_SOLUTION_TRANSFER_H
 
 // deal.II
+#include <deal.II/base/smartpointer.h>
 #include <deal.II/distributed/solution_transfer.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/tria.h>

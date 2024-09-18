@@ -23,6 +23,7 @@
 #define INCLUDE_EXADG_POSTPROCESSOR_KINETIC_ENERGY_SPECTRUM_H_
 
 // deal.II
+#include <deal.II/base/smartpointer.h>
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/matrix_free.h>

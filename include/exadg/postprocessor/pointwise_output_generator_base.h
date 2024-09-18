@@ -27,6 +27,7 @@
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/mpi_remote_point_evaluation.h>
 #include <deal.II/base/point.h>
+#include <deal.II/base/smartpointer.h>
 
 #ifdef DEAL_II_WITH_HDF5
 #  include <deal.II/base/hdf5.h>
