@@ -473,9 +473,23 @@ NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
 {
   BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 
+#ifdef DEBUG
+  if(this->operator_data.spatial_integration)
+  {
+    AssertThrow(boundary_type == BoundaryType::RobinSpringDashpotPressure,
+                dealii::ExcMessage(
+                  "Linearization of Robin terms incomplete for spatial integration."));
+  }
+#endif
+
+  bool const spatial_residual_evaluation =
+    this->operator_data.spatial_integration and not this->operator_data.force_material_residual;
+
+  vector traction;
+
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
-    vector traction;
+    traction = 0.0;
 
     // integrate standard (stored) traction or exterior pressure on Robin boundaries
     if(boundary_type == BoundaryType::Neumann or boundary_type == BoundaryType::NeumannCached or
@@ -486,15 +500,27 @@ NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
         traction -= calculate_neumann_value<dim, Number>(
           q, integrator, boundary_type, boundary_id, this->operator_data.bc, this->time);
 
-        if(this->operator_data.pull_back_traction)
+        if(this->operator_data.pull_back_traction or this->operator_data.spatial_integration)
         {
           tensor F = compute_F(integrator.get_gradient(q));
           vector N = integrator.get_normal_vector(q);
           // da/dA * n = det F F^{-T} * N := n_star
           // -> da/dA = n_star.norm()
           vector n_star = determinant(F) * transpose(invert(F)) * N;
-          // t_0 = da/dA * t
-          traction *= n_star.norm();
+          if(this->operator_data.pull_back_traction)
+          {
+            // t_0 = da/dA * t
+            traction *= n_star.norm();
+            AssertThrow(not spatial_residual_evaluation,
+                        dealii::ExcMessage("Invalid combination."));
+          }
+          else if(spatial_residual_evaluation)
+          {
+            // t = dA/da * t_0
+            traction /= n_star.norm();
+            AssertThrow(not this->operator_data.pull_back_traction,
+                        dealii::ExcMessage("Invalid combination."));
+          }
         }
       }
     }

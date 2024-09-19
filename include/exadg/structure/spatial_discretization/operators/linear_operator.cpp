@@ -62,9 +62,11 @@ LinearOperator<dim, Number>::do_boundary_integral_continuous(
 {
   BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 
+  vector traction;
+
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
-    vector traction;
+    traction = 0.0;
 
     // integrate standard (stored) traction or exterior pressure on Robin boundaries
     if(boundary_type == BoundaryType::Neumann or boundary_type == BoundaryType::NeumannCached or
