@@ -1053,7 +1053,7 @@ inline DEAL_II_ALWAYS_INLINE //
 // check_type 0   : Do not modify.
 // check_type 1   : Global quasi-Newton, update linearization vector only if the complete field is
 //                  valid everywhere (see nonlinear_operator: set_solution_linearization).
-// check_type 2   : Local quasi-Newtzon, update use old F and J if the current one is invalid.
+// check_type 2   : Local quasi-Newton, update use old F and J if the current one is invalid.
 // check_type >2  : In-place modification, see `compute_modified_F_Jm1()` below.
 template<int dim, typename Number, unsigned int check_type, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
