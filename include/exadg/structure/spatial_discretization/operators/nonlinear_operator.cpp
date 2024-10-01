@@ -441,12 +441,13 @@ NonLinearOperator<dim, Number>::boundary_face_loop_nonlinear(
     // to obtain the surface area ratio da/dA. We write the integrator flags explicitly in this case
     // since they depend on the parameter pull_back_traction. On Robin boundaries, we need the
     // solution values.
-    bool const is_on_robin_boundary =
-      this->operator_data.bc->get_boundary_type(matrix_free.get_boundary_id(face)) ==
-        BoundaryType::RobinSpringDashpotPressure or
-      this->operator_data.bc->get_boundary_type(matrix_free.get_boundary_id(face)) ==
-        BoundaryType::NeumannCached;
-    if(this->operator_data.pull_back_traction or is_on_robin_boundary)
+    BoundaryType const boundary_type =
+      this->operator_data.bc->get_boundary_type(matrix_free.get_boundary_id(face));
+    bool const values_or_gradients_required =
+      boundary_type == BoundaryType::Neumann or boundary_type == BoundaryType::NeumannCached or
+      boundary_type == BoundaryType::RobinSpringDashpotPressure or
+      this->operator_data.pull_back_traction;
+    if(values_or_gradients_required)
     {
       integrator_m_inhom.gather_evaluate(src,
                                          dealii::EvaluationFlags::gradients |
