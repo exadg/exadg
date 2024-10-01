@@ -613,22 +613,13 @@ private:
    * Calculate diagonal.
    */
   void
-  cell_loop_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
-                     VectorType &                            dst,
-                     VectorType const &                      src,
-                     Range const &                           range) const;
+  cell_compute_diagonal_matrix(IntegratorCell & integrator) const;
 
   void
-  face_loop_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
-                     VectorType &                            dst,
-                     VectorType const &                      src,
-                     Range const &                           range) const;
+  face_compute_diagonal_matrix(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
 
   void
-  boundary_face_loop_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
-                              VectorType &                            dst,
-                              VectorType const &                      src,
-                              Range const &                           range) const;
+  boundary_face_compute_diagonal_matrix(IntegratorFace & integrator_m) const;
 
   void
   cell_based_loop_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
@@ -689,30 +680,6 @@ private:
   template<typename SparseMatrix>
   void
   internal_calculate_system_matrix(SparseMatrix & system_matrix) const;
-
-  /*
-   * Calculate sparse matrix.
-   */
-  template<typename SparseMatrix>
-  void
-  cell_loop_calculate_system_matrix(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                    SparseMatrix &                          dst,
-                                    SparseMatrix const &                    src,
-                                    Range const &                           range) const;
-
-  template<typename SparseMatrix>
-  void
-  face_loop_calculate_system_matrix(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                    SparseMatrix &                          dst,
-                                    SparseMatrix const &                    src,
-                                    Range const &                           range) const;
-
-  template<typename SparseMatrix>
-  void
-  boundary_face_loop_calculate_system_matrix(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                             SparseMatrix &                          dst,
-                                             SparseMatrix const &                    src,
-                                             Range const &                           range) const;
 
   /*
    * This function sets entries of the DoF-vector corresponding to constraint DoFs to one.
