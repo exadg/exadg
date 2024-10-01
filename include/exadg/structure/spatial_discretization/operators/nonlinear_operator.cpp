@@ -476,9 +476,19 @@ NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
 #ifdef DEBUG
   if(this->operator_data.spatial_integration)
   {
-    AssertThrow(boundary_type == BoundaryType::RobinSpringDashpotPressure,
-                dealii::ExcMessage(
-                  "Linearization of Robin terms incomplete for spatial integration."));
+    auto const it = this->operator_data.bc->robin_k_c_p_param.find(boundary_id);
+    if(it != this->operator_data.bc->robin_k_c_p_param.end())
+    {
+      double const coefficient_displacement = it->second.second[0];
+      double const coefficient_velocity     = it->second.second[1];
+
+      if(std::abs(coefficient_displacement) > 1e-20 or std::abs(coefficient_velocity) > 1e-20)
+      {
+        AssertThrow(boundary_type == BoundaryType::RobinSpringDashpotPressure,
+                    dealii::ExcMessage(
+                      "Linearization of Robin terms incomplete for spatial integration."));
+      }
+    }
   }
 #endif
 
