@@ -453,19 +453,20 @@ Operator<dim, Number>::setup_preconditioner()
   }
   else if(param.preconditioner == Preconditioner::AMG)
   {
+    AMGData amg_data = param.multigrid_data.coarse_problem.amg_data;
+#ifdef DEAL_II_WITH_TRILINOS
+    amg_data.ml_operator_type = MLOperatorType::Elasticity;
+#endif
+
     if(param.large_deformation)
     {
       typedef PreconditionerAMG<NonLinearOperator<dim, Number>, Number> AMG;
-      preconditioner = std::make_shared<AMG>(elasticity_operator_nonlinear,
-                                             false,
-                                             param.multigrid_data.coarse_problem.amg_data);
+      preconditioner = std::make_shared<AMG>(elasticity_operator_nonlinear, false, amg_data);
     }
     else
     {
       typedef PreconditionerAMG<LinearOperator<dim, Number>, Number> AMG;
-      preconditioner = std::make_shared<AMG>(elasticity_operator_linear,
-                                             false,
-                                             param.multigrid_data.coarse_problem.amg_data);
+      preconditioner = std::make_shared<AMG>(elasticity_operator_linear, false, amg_data);
     }
   }
   else

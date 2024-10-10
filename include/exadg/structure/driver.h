@@ -97,9 +97,6 @@ private:
 
   std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
 
-  // user parameters
-  Parameters param;
-
   // operator
   std::shared_ptr<Operator<dim, Number>> pde_operator;
 

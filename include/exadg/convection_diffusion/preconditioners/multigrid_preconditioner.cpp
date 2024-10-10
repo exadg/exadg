@@ -46,7 +46,7 @@ MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & m
 template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize(
-  MultigridData const &                                 mg_data,
+  MultigridData const &                                 mg_data_in,
   std::shared_ptr<Grid<dim> const>                      grid,
   std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
   dealii::FiniteElement<dim> const &                    fe,
@@ -94,6 +94,11 @@ MultigridPreconditioner<dim, Number>::initialize(
   {
     AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
+
+  MultigridData mg_data = mg_data_in;
+#ifdef DEAL_II_WITH_TRILINOS
+  mg_data.coarse_problem.amg_data.ml_operator_type = MLOperatorType::Laplace;
+#endif
 
   Base::initialize(mg_data,
                    grid,
