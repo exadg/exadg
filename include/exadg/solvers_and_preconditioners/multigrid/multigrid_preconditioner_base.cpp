@@ -471,8 +471,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
       dealii::Functions::ZeroFunction<dim, MultigridNumber> zero_function(
         dof_handler->get_fe().n_components());
 
-      auto const & mapping_dummy =
-        dof_handler->get_fe().reference_cell().template get_default_linear_mapping<dim>();
+      auto const & mapping_dummy = dealii::get_default_linear_mapping<dim>(*grid->triangulation);
 
       for(auto & it : dirichlet_bc)
       {
