@@ -705,141 +705,174 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span><span class="comment">   * Calculate diagonal.</span></div>
 <div class="line"><a id="l00614" name="l00614"></a><span class="lineno">  614</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00615" name="l00615"></a><span class="lineno">  615</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span>  cell_compute_diagonal_matrix(IntegratorCell &amp; integrator) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span> </div>
-<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>  face_compute_diagonal_matrix(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span>  cell_loop_diagonal(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
+<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span>                     VectorType &amp;                            dst,</div>
+<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>                     VectorType <span class="keyword">const</span> &amp;                      src,</div>
+<div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>                     Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span> </div>
 <div class="line"><a id="l00621" name="l00621"></a><span class="lineno">  621</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00622" name="l00622"></a><span class="lineno">  622</span>  boundary_face_compute_diagonal_matrix(IntegratorFace &amp; integrator_m) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span> </div>
-<div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>  cell_based_loop_diagonal(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
-<div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span>                           VectorType &amp;                            dst,</div>
-<div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>                           VectorType <span class="keyword">const</span> &amp;                      src,</div>
-<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>                           Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span> </div>
-<div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span><span class="comment">   * Calculate (assemble) block diagonal.</span></div>
-<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00622" name="l00622"></a><span class="lineno">  622</span>  face_loop_diagonal(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
+<div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span>                     VectorType &amp;                            dst,</div>
+<div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>                     VectorType <span class="keyword">const</span> &amp;                      src,</div>
+<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>                     Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span> </div>
+<div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>  boundary_face_loop_diagonal(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
+<div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>                              VectorType &amp;                            dst,</div>
+<div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>                              VectorType <span class="keyword">const</span> &amp;                      src,</div>
+<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>                              Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span> </div>
 <div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>  cell_loop_block_diagonal(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
-<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>                           std::vector&lt;LAPACKMatrix&gt; &amp;             matrices,</div>
-<div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>                           std::vector&lt;LAPACKMatrix&gt; <span class="keyword">const</span> &amp;       src,</div>
+<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>  cell_based_loop_diagonal(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
+<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>                           VectorType &amp;                            dst,</div>
+<div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>                           VectorType <span class="keyword">const</span> &amp;                      src,</div>
 <div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span>                           Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span> </div>
-<div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span>  face_loop_block_diagonal(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
-<div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span>                           std::vector&lt;LAPACKMatrix&gt; &amp;             matrices,</div>
-<div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>                           std::vector&lt;LAPACKMatrix&gt; <span class="keyword">const</span> &amp;       src,</div>
-<div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span>                           Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span> </div>
-<div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span>  boundary_face_loop_block_diagonal(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
-<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>                                    std::vector&lt;LAPACKMatrix&gt; &amp;             matrices,</div>
-<div class="line"><a id="l00648" name="l00648"></a><span class="lineno">  648</span>                                    std::vector&lt;LAPACKMatrix&gt; <span class="keyword">const</span> &amp;       src,</div>
-<div class="line"><a id="l00649" name="l00649"></a><span class="lineno">  649</span>                                    Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span> </div>
-<div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span>  <span class="comment">// cell-based variant for computation of both cell and face integrals</span></div>
-<div class="line"><a id="l00652" name="l00652"></a><span class="lineno">  652</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>  cell_based_loop_block_diagonal(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
-<div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>                                 std::vector&lt;LAPACKMatrix&gt; &amp;             matrices,</div>
-<div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span>                                 std::vector&lt;LAPACKMatrix&gt; <span class="keyword">const</span> &amp;       src,</div>
-<div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span>                                 Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00657" name="l00657"></a><span class="lineno">  657</span> </div>
-<div class="line"><a id="l00658" name="l00658"></a><span class="lineno">  658</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span><span class="comment">   * Apply inverse block diagonal:</span></div>
-<div class="line"><a id="l00660" name="l00660"></a><span class="lineno">  660</span><span class="comment">   *</span></div>
-<div class="line"><a id="l00661" name="l00661"></a><span class="lineno">  661</span><span class="comment">   *  we compute dst = B^{-1} * src</span></div>
-<div class="line"><a id="l00662" name="l00662"></a><span class="lineno">  662</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00663" name="l00663"></a><span class="lineno">  663</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span>  cell_loop_apply_inverse_block_diagonal_matrix_based(</div>
-<div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span>    dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
-<div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span>    VectorType &amp;                            dst,</div>
-<div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>    VectorType <span class="keyword">const</span> &amp;                      src,</div>
-<div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span>    Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span> </div>
-<div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00671" name="l00671"></a><span class="lineno">  671</span><span class="comment">   * Set up sparse matrix internally for templated matrix type (Trilinos or</span></div>
-<div class="line"><a id="l00672" name="l00672"></a><span class="lineno">  672</span><span class="comment">   * PETSc matrices)</span></div>
-<div class="line"><a id="l00673" name="l00673"></a><span class="lineno">  673</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00674" name="l00674"></a><span class="lineno">  674</span>  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> SparseMatrix&gt;</div>
-<div class="line"><a id="l00675" name="l00675"></a><span class="lineno">  675</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00676" name="l00676"></a><span class="lineno">  676</span>  internal_init_system_matrix(SparseMatrix &amp;                   system_matrix,</div>
-<div class="line"><a id="l00677" name="l00677"></a><span class="lineno">  677</span>                              dealii::DynamicSparsityPattern &amp; dsp,</div>
-<div class="line"><a id="l00678" name="l00678"></a><span class="lineno">  678</span>                              MPI_Comm <span class="keyword">const</span> &amp;                 mpi_comm) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00679" name="l00679"></a><span class="lineno">  679</span> </div>
-<div class="line"><a id="l00680" name="l00680"></a><span class="lineno">  680</span>  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> SparseMatrix&gt;</div>
-<div class="line"><a id="l00681" name="l00681"></a><span class="lineno">  681</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00682" name="l00682"></a><span class="lineno">  682</span>  internal_calculate_system_matrix(SparseMatrix &amp; system_matrix) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00683" name="l00683"></a><span class="lineno">  683</span> </div>
-<div class="line"><a id="l00684" name="l00684"></a><span class="lineno">  684</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00685" name="l00685"></a><span class="lineno">  685</span><span class="comment">   * This function sets entries of the DoF-vector corresponding to constraint DoFs to one.</span></div>
-<div class="line"><a id="l00686" name="l00686"></a><span class="lineno">  686</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00687" name="l00687"></a><span class="lineno">  687</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00688" name="l00688"></a><span class="lineno">  688</span>  set_constrained_dofs_to_one(VectorType &amp; vector) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00689" name="l00689"></a><span class="lineno">  689</span> </div>
-<div class="line"><a id="l00690" name="l00690"></a><span class="lineno">  690</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00691" name="l00691"></a><span class="lineno">  691</span><span class="comment">   * Do we have to evaluate (boundary) face integrals for this operator? For example, operators</span></div>
-<div class="line"><a id="l00692" name="l00692"></a><span class="lineno">  692</span><span class="comment">   * such as the mass operator only involve cell integrals.</span></div>
-<div class="line"><a id="l00693" name="l00693"></a><span class="lineno">  693</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00694" name="l00694"></a><span class="lineno">  694</span>  <span class="keywordtype">bool</span></div>
-<div class="line"><a id="l00695" name="l00695"></a><span class="lineno">  695</span>  evaluate_face_integrals() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00696" name="l00696"></a><span class="lineno">  696</span> </div>
-<div class="line"><a id="l00697" name="l00697"></a><span class="lineno">  697</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00698" name="l00698"></a><span class="lineno">  698</span><span class="comment">   * Compute factorized additive Schwarz matrices.</span></div>
-<div class="line"><a id="l00699" name="l00699"></a><span class="lineno">  699</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00700" name="l00700"></a><span class="lineno">  700</span>  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> SparseMatrix&gt;</div>
-<div class="line"><a id="l00701" name="l00701"></a><span class="lineno">  701</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00702" name="l00702"></a><span class="lineno">  702</span>  internal_compute_factorized_additive_schwarz_matrices() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00703" name="l00703"></a><span class="lineno">  703</span> </div>
-<div class="line"><a id="l00704" name="l00704"></a><span class="lineno">  704</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00705" name="l00705"></a><span class="lineno">  705</span><span class="comment">   * Data structure containing all operator-specific data.</span></div>
-<div class="line"><a id="l00706" name="l00706"></a><span class="lineno">  706</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00707" name="l00707"></a><span class="lineno">  707</span>  <a class="code hl_struct" href="structExaDG_1_1OperatorBaseData.html">OperatorBaseData</a> data;</div>
-<div class="line"><a id="l00708" name="l00708"></a><span class="lineno">  708</span> </div>
-<div class="line"><a id="l00709" name="l00709"></a><span class="lineno">  709</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00710" name="l00710"></a><span class="lineno">  710</span><span class="comment">   * Multigrid level: 0 &lt;= level &lt;= max_level. If the operator is not used as a multigrid</span></div>
-<div class="line"><a id="l00711" name="l00711"></a><span class="lineno">  711</span><span class="comment">   * level operator, this variable takes a value of dealii::numbers::invalid_unsigned_int.</span></div>
-<div class="line"><a id="l00712" name="l00712"></a><span class="lineno">  712</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00713" name="l00713"></a><span class="lineno">  713</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> level;</div>
-<div class="line"><a id="l00714" name="l00714"></a><span class="lineno">  714</span> </div>
-<div class="line"><a id="l00715" name="l00715"></a><span class="lineno">  715</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00716" name="l00716"></a><span class="lineno">  716</span><span class="comment">   * Vector of matrices for block-diagonal preconditioners.</span></div>
-<div class="line"><a id="l00717" name="l00717"></a><span class="lineno">  717</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00718" name="l00718"></a><span class="lineno">  718</span>  <span class="keyword">mutable</span> std::vector&lt;LAPACKMatrix&gt; matrices;</div>
-<div class="line"><a id="l00719" name="l00719"></a><span class="lineno">  719</span> </div>
-<div class="line"><a id="l00720" name="l00720"></a><span class="lineno">  720</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00721" name="l00721"></a><span class="lineno">  721</span><span class="comment">   * Vector with weights for additive Schwarz preconditioner.</span></div>
-<div class="line"><a id="l00722" name="l00722"></a><span class="lineno">  722</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00723" name="l00723"></a><span class="lineno">  723</span>  <span class="keyword">mutable</span> VectorType weights;</div>
-<div class="line"><a id="l00724" name="l00724"></a><span class="lineno">  724</span> </div>
-<div class="line"><a id="l00725" name="l00725"></a><span class="lineno">  725</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n_mpi_processes;</div>
-<div class="line"><a id="l00726" name="l00726"></a><span class="lineno">  726</span> </div>
-<div class="line"><a id="l00727" name="l00727"></a><span class="lineno">  727</span>  <span class="comment">// sparse matrices for matrix-based vmult</span></div>
-<div class="line"><a id="l00728" name="l00728"></a><span class="lineno">  728</span>  <span class="keyword">mutable</span> <span class="keywordtype">bool</span> system_matrix_based_been_initialized;</div>
+<div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span><span class="comment">   * Calculate (assemble) block diagonal.</span></div>
+<div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span>  cell_loop_block_diagonal(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
+<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span>                           std::vector&lt;LAPACKMatrix&gt; &amp;             matrices,</div>
+<div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span>                           std::vector&lt;LAPACKMatrix&gt; <span class="keyword">const</span> &amp;       src,</div>
+<div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span>                           Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span> </div>
+<div class="line"><a id="l00648" name="l00648"></a><span class="lineno">  648</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00649" name="l00649"></a><span class="lineno">  649</span>  face_loop_block_diagonal(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
+<div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span>                           std::vector&lt;LAPACKMatrix&gt; &amp;             matrices,</div>
+<div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span>                           std::vector&lt;LAPACKMatrix&gt; <span class="keyword">const</span> &amp;       src,</div>
+<div class="line"><a id="l00652" name="l00652"></a><span class="lineno">  652</span>                           Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span> </div>
+<div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span>  boundary_face_loop_block_diagonal(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
+<div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span>                                    std::vector&lt;LAPACKMatrix&gt; &amp;             matrices,</div>
+<div class="line"><a id="l00657" name="l00657"></a><span class="lineno">  657</span>                                    std::vector&lt;LAPACKMatrix&gt; <span class="keyword">const</span> &amp;       src,</div>
+<div class="line"><a id="l00658" name="l00658"></a><span class="lineno">  658</span>                                    Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span> </div>
+<div class="line"><a id="l00660" name="l00660"></a><span class="lineno">  660</span>  <span class="comment">// cell-based variant for computation of both cell and face integrals</span></div>
+<div class="line"><a id="l00661" name="l00661"></a><span class="lineno">  661</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00662" name="l00662"></a><span class="lineno">  662</span>  cell_based_loop_block_diagonal(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
+<div class="line"><a id="l00663" name="l00663"></a><span class="lineno">  663</span>                                 std::vector&lt;LAPACKMatrix&gt; &amp;             matrices,</div>
+<div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span>                                 std::vector&lt;LAPACKMatrix&gt; <span class="keyword">const</span> &amp;       src,</div>
+<div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span>                                 Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span> </div>
+<div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span><span class="comment">   * Apply inverse block diagonal:</span></div>
+<div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span><span class="comment">   *</span></div>
+<div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span><span class="comment">   *  we compute dst = B^{-1} * src</span></div>
+<div class="line"><a id="l00671" name="l00671"></a><span class="lineno">  671</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00672" name="l00672"></a><span class="lineno">  672</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00673" name="l00673"></a><span class="lineno">  673</span>  cell_loop_apply_inverse_block_diagonal_matrix_based(</div>
+<div class="line"><a id="l00674" name="l00674"></a><span class="lineno">  674</span>    dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
+<div class="line"><a id="l00675" name="l00675"></a><span class="lineno">  675</span>    VectorType &amp;                            dst,</div>
+<div class="line"><a id="l00676" name="l00676"></a><span class="lineno">  676</span>    VectorType <span class="keyword">const</span> &amp;                      src,</div>
+<div class="line"><a id="l00677" name="l00677"></a><span class="lineno">  677</span>    Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00678" name="l00678"></a><span class="lineno">  678</span> </div>
+<div class="line"><a id="l00679" name="l00679"></a><span class="lineno">  679</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00680" name="l00680"></a><span class="lineno">  680</span><span class="comment">   * Set up sparse matrix internally for templated matrix type (Trilinos or</span></div>
+<div class="line"><a id="l00681" name="l00681"></a><span class="lineno">  681</span><span class="comment">   * PETSc matrices)</span></div>
+<div class="line"><a id="l00682" name="l00682"></a><span class="lineno">  682</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00683" name="l00683"></a><span class="lineno">  683</span>  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> SparseMatrix&gt;</div>
+<div class="line"><a id="l00684" name="l00684"></a><span class="lineno">  684</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00685" name="l00685"></a><span class="lineno">  685</span>  internal_init_system_matrix(SparseMatrix &amp;                   system_matrix,</div>
+<div class="line"><a id="l00686" name="l00686"></a><span class="lineno">  686</span>                              dealii::DynamicSparsityPattern &amp; dsp,</div>
+<div class="line"><a id="l00687" name="l00687"></a><span class="lineno">  687</span>                              MPI_Comm <span class="keyword">const</span> &amp;                 mpi_comm) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00688" name="l00688"></a><span class="lineno">  688</span> </div>
+<div class="line"><a id="l00689" name="l00689"></a><span class="lineno">  689</span>  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> SparseMatrix&gt;</div>
+<div class="line"><a id="l00690" name="l00690"></a><span class="lineno">  690</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00691" name="l00691"></a><span class="lineno">  691</span>  internal_calculate_system_matrix(SparseMatrix &amp; system_matrix) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00692" name="l00692"></a><span class="lineno">  692</span> </div>
+<div class="line"><a id="l00693" name="l00693"></a><span class="lineno">  693</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00694" name="l00694"></a><span class="lineno">  694</span><span class="comment">   * Calculate sparse matrix.</span></div>
+<div class="line"><a id="l00695" name="l00695"></a><span class="lineno">  695</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00696" name="l00696"></a><span class="lineno">  696</span>  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> SparseMatrix&gt;</div>
+<div class="line"><a id="l00697" name="l00697"></a><span class="lineno">  697</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00698" name="l00698"></a><span class="lineno">  698</span>  cell_loop_calculate_system_matrix(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
+<div class="line"><a id="l00699" name="l00699"></a><span class="lineno">  699</span>                                    SparseMatrix &amp;                          dst,</div>
+<div class="line"><a id="l00700" name="l00700"></a><span class="lineno">  700</span>                                    SparseMatrix <span class="keyword">const</span> &amp;                    src,</div>
+<div class="line"><a id="l00701" name="l00701"></a><span class="lineno">  701</span>                                    Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00702" name="l00702"></a><span class="lineno">  702</span> </div>
+<div class="line"><a id="l00703" name="l00703"></a><span class="lineno">  703</span>  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> SparseMatrix&gt;</div>
+<div class="line"><a id="l00704" name="l00704"></a><span class="lineno">  704</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00705" name="l00705"></a><span class="lineno">  705</span>  face_loop_calculate_system_matrix(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
+<div class="line"><a id="l00706" name="l00706"></a><span class="lineno">  706</span>                                    SparseMatrix &amp;                          dst,</div>
+<div class="line"><a id="l00707" name="l00707"></a><span class="lineno">  707</span>                                    SparseMatrix <span class="keyword">const</span> &amp;                    src,</div>
+<div class="line"><a id="l00708" name="l00708"></a><span class="lineno">  708</span>                                    Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00709" name="l00709"></a><span class="lineno">  709</span> </div>
+<div class="line"><a id="l00710" name="l00710"></a><span class="lineno">  710</span>  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> SparseMatrix&gt;</div>
+<div class="line"><a id="l00711" name="l00711"></a><span class="lineno">  711</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00712" name="l00712"></a><span class="lineno">  712</span>  boundary_face_loop_calculate_system_matrix(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
+<div class="line"><a id="l00713" name="l00713"></a><span class="lineno">  713</span>                                             SparseMatrix &amp;                          dst,</div>
+<div class="line"><a id="l00714" name="l00714"></a><span class="lineno">  714</span>                                             SparseMatrix <span class="keyword">const</span> &amp;                    src,</div>
+<div class="line"><a id="l00715" name="l00715"></a><span class="lineno">  715</span>                                             Range <span class="keyword">const</span> &amp;                           range) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00716" name="l00716"></a><span class="lineno">  716</span> </div>
+<div class="line"><a id="l00717" name="l00717"></a><span class="lineno">  717</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00718" name="l00718"></a><span class="lineno">  718</span><span class="comment">   * This function sets entries of the DoF-vector corresponding to constraint DoFs to one.</span></div>
+<div class="line"><a id="l00719" name="l00719"></a><span class="lineno">  719</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00720" name="l00720"></a><span class="lineno">  720</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00721" name="l00721"></a><span class="lineno">  721</span>  set_constrained_dofs_to_one(VectorType &amp; vector) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00722" name="l00722"></a><span class="lineno">  722</span> </div>
+<div class="line"><a id="l00723" name="l00723"></a><span class="lineno">  723</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00724" name="l00724"></a><span class="lineno">  724</span><span class="comment">   * Do we have to evaluate (boundary) face integrals for this operator? For example, operators</span></div>
+<div class="line"><a id="l00725" name="l00725"></a><span class="lineno">  725</span><span class="comment">   * such as the mass operator only involve cell integrals.</span></div>
+<div class="line"><a id="l00726" name="l00726"></a><span class="lineno">  726</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00727" name="l00727"></a><span class="lineno">  727</span>  <span class="keywordtype">bool</span></div>
+<div class="line"><a id="l00728" name="l00728"></a><span class="lineno">  728</span>  evaluate_face_integrals() <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00729" name="l00729"></a><span class="lineno">  729</span> </div>
-<div class="line"><a id="l00730" name="l00730"></a><span class="lineno">  730</span><span class="preprocessor">#ifdef DEAL_II_WITH_TRILINOS</span></div>
-<div class="line"><a id="l00731" name="l00731"></a><span class="lineno">  731</span>  <span class="keyword">mutable</span> dealii::TrilinosWrappers::SparseMatrix system_matrix_trilinos;</div>
-<div class="line"><a id="l00732" name="l00732"></a><span class="lineno">  732</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00733" name="l00733"></a><span class="lineno">  733</span> </div>
-<div class="line"><a id="l00734" name="l00734"></a><span class="lineno">  734</span><span class="preprocessor">#ifdef DEAL_II_WITH_PETSC</span></div>
-<div class="line"><a id="l00735" name="l00735"></a><span class="lineno">  735</span>  <span class="keyword">mutable</span> dealii::PETScWrappers::MPI::SparseMatrix system_matrix_petsc;</div>
+<div class="line"><a id="l00730" name="l00730"></a><span class="lineno">  730</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00731" name="l00731"></a><span class="lineno">  731</span><span class="comment">   * Compute factorized additive Schwarz matrices.</span></div>
+<div class="line"><a id="l00732" name="l00732"></a><span class="lineno">  732</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00733" name="l00733"></a><span class="lineno">  733</span>  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> SparseMatrix&gt;</div>
+<div class="line"><a id="l00734" name="l00734"></a><span class="lineno">  734</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00735" name="l00735"></a><span class="lineno">  735</span>  internal_compute_factorized_additive_schwarz_matrices() <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00736" name="l00736"></a><span class="lineno">  736</span> </div>
-<div class="line"><a id="l00737" name="l00737"></a><span class="lineno">  737</span>  <span class="comment">// PETSc vector objects to avoid re-allocation in every vmult() operation</span></div>
-<div class="line"><a id="l00738" name="l00738"></a><span class="lineno">  738</span>  <span class="keyword">mutable</span> Vec petsc_vector_src;</div>
-<div class="line"><a id="l00739" name="l00739"></a><span class="lineno">  739</span>  <span class="keyword">mutable</span> Vec petsc_vector_dst;</div>
-<div class="line"><a id="l00740" name="l00740"></a><span class="lineno">  740</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00741" name="l00741"></a><span class="lineno">  741</span>};</div>
+<div class="line"><a id="l00737" name="l00737"></a><span class="lineno">  737</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00738" name="l00738"></a><span class="lineno">  738</span><span class="comment">   * Data structure containing all operator-specific data.</span></div>
+<div class="line"><a id="l00739" name="l00739"></a><span class="lineno">  739</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00740" name="l00740"></a><span class="lineno">  740</span>  <a class="code hl_struct" href="structExaDG_1_1OperatorBaseData.html">OperatorBaseData</a> data;</div>
+<div class="line"><a id="l00741" name="l00741"></a><span class="lineno">  741</span> </div>
+<div class="line"><a id="l00742" name="l00742"></a><span class="lineno">  742</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00743" name="l00743"></a><span class="lineno">  743</span><span class="comment">   * Multigrid level: 0 &lt;= level &lt;= max_level. If the operator is not used as a multigrid</span></div>
+<div class="line"><a id="l00744" name="l00744"></a><span class="lineno">  744</span><span class="comment">   * level operator, this variable takes a value of dealii::numbers::invalid_unsigned_int.</span></div>
+<div class="line"><a id="l00745" name="l00745"></a><span class="lineno">  745</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00746" name="l00746"></a><span class="lineno">  746</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> level;</div>
+<div class="line"><a id="l00747" name="l00747"></a><span class="lineno">  747</span> </div>
+<div class="line"><a id="l00748" name="l00748"></a><span class="lineno">  748</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00749" name="l00749"></a><span class="lineno">  749</span><span class="comment">   * Vector of matrices for block-diagonal preconditioners.</span></div>
+<div class="line"><a id="l00750" name="l00750"></a><span class="lineno">  750</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00751" name="l00751"></a><span class="lineno">  751</span>  <span class="keyword">mutable</span> std::vector&lt;LAPACKMatrix&gt; matrices;</div>
+<div class="line"><a id="l00752" name="l00752"></a><span class="lineno">  752</span> </div>
+<div class="line"><a id="l00753" name="l00753"></a><span class="lineno">  753</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00754" name="l00754"></a><span class="lineno">  754</span><span class="comment">   * Vector with weights for additive Schwarz preconditioner.</span></div>
+<div class="line"><a id="l00755" name="l00755"></a><span class="lineno">  755</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00756" name="l00756"></a><span class="lineno">  756</span>  <span class="keyword">mutable</span> VectorType weights;</div>
+<div class="line"><a id="l00757" name="l00757"></a><span class="lineno">  757</span> </div>
+<div class="line"><a id="l00758" name="l00758"></a><span class="lineno">  758</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n_mpi_processes;</div>
+<div class="line"><a id="l00759" name="l00759"></a><span class="lineno">  759</span> </div>
+<div class="line"><a id="l00760" name="l00760"></a><span class="lineno">  760</span>  <span class="comment">// sparse matrices for matrix-based vmult</span></div>
+<div class="line"><a id="l00761" name="l00761"></a><span class="lineno">  761</span>  <span class="keyword">mutable</span> <span class="keywordtype">bool</span> system_matrix_based_been_initialized;</div>
+<div class="line"><a id="l00762" name="l00762"></a><span class="lineno">  762</span> </div>
+<div class="line"><a id="l00763" name="l00763"></a><span class="lineno">  763</span><span class="preprocessor">#ifdef DEAL_II_WITH_TRILINOS</span></div>
+<div class="line"><a id="l00764" name="l00764"></a><span class="lineno">  764</span>  <span class="keyword">mutable</span> dealii::TrilinosWrappers::SparseMatrix system_matrix_trilinos;</div>
+<div class="line"><a id="l00765" name="l00765"></a><span class="lineno">  765</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00766" name="l00766"></a><span class="lineno">  766</span> </div>
+<div class="line"><a id="l00767" name="l00767"></a><span class="lineno">  767</span><span class="preprocessor">#ifdef DEAL_II_WITH_PETSC</span></div>
+<div class="line"><a id="l00768" name="l00768"></a><span class="lineno">  768</span>  <span class="keyword">mutable</span> dealii::PETScWrappers::MPI::SparseMatrix system_matrix_petsc;</div>
+<div class="line"><a id="l00769" name="l00769"></a><span class="lineno">  769</span> </div>
+<div class="line"><a id="l00770" name="l00770"></a><span class="lineno">  770</span>  <span class="comment">// PETSc vector objects to avoid re-allocation in every vmult() operation</span></div>
+<div class="line"><a id="l00771" name="l00771"></a><span class="lineno">  771</span>  <span class="keyword">mutable</span> Vec petsc_vector_src;</div>
+<div class="line"><a id="l00772" name="l00772"></a><span class="lineno">  772</span>  <span class="keyword">mutable</span> Vec petsc_vector_dst;</div>
+<div class="line"><a id="l00773" name="l00773"></a><span class="lineno">  773</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00774" name="l00774"></a><span class="lineno">  774</span>};</div>
 </div>
-<div class="line"><a id="l00742" name="l00742"></a><span class="lineno">  742</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00743" name="l00743"></a><span class="lineno">  743</span> </div>
-<div class="line"><a id="l00744" name="l00744"></a><span class="lineno">  744</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00775" name="l00775"></a><span class="lineno">  775</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00776" name="l00776"></a><span class="lineno">  776</span> </div>
+<div class="line"><a id="l00777" name="l00777"></a><span class="lineno">  777</span><span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclassExaDG_1_1Elementwise_1_1IterativeSolver_html"><div class="ttname"><a href="classExaDG_1_1Elementwise_1_1IterativeSolver.html">ExaDG::Elementwise::IterativeSolver</a></div><div class="ttdef"><b>Definition</b> wrapper_elementwise_solvers.h:61</div></div>
 <div class="ttc" id="aclassExaDG_1_1Elementwise_1_1OperatorBase_html"><div class="ttname"><a href="classExaDG_1_1Elementwise_1_1OperatorBase.html">ExaDG::Elementwise::OperatorBase</a></div><div class="ttdef"><b>Definition</b> elementwise_operator.h:33</div></div>
 <div class="ttc" id="aclassExaDG_1_1Elementwise_1_1PreconditionerBase_html"><div class="ttname"><a href="classExaDG_1_1Elementwise_1_1PreconditionerBase.html">ExaDG::Elementwise::PreconditionerBase</a></div><div class="ttdef"><b>Definition</b> elementwise_preconditioners.h:41</div></div>
 <div class="ttc" id="aclassExaDG_1_1OperatorBase_html"><div class="ttname"><a href="classExaDG_1_1OperatorBase.html">ExaDG::OperatorBase</a></div><div class="ttdef"><b>Definition</b> operator_base.h:107</div></div>
-<div class="ttc" id="aclassExaDG_1_1OperatorBase_html_a0d06a2e9ec836a9b7fa412c079c62dfa"><div class="ttname"><a href="classExaDG_1_1OperatorBase.html#a0d06a2e9ec836a9b7fa412c079c62dfa">ExaDG::OperatorBase::apply_inverse_block_diagonal</a></div><div class="ttdeci">void apply_inverse_block_diagonal(VectorType &amp;dst, VectorType const &amp;src) const</div><div class="ttdef"><b>Definition</b> operator_base.cpp:650</div></div>
+<div class="ttc" id="aclassExaDG_1_1OperatorBase_html_a0d06a2e9ec836a9b7fa412c079c62dfa"><div class="ttname"><a href="classExaDG_1_1OperatorBase.html#a0d06a2e9ec836a9b7fa412c079c62dfa">ExaDG::OperatorBase::apply_inverse_block_diagonal</a></div><div class="ttdeci">void apply_inverse_block_diagonal(VectorType &amp;dst, VectorType const &amp;src) const</div><div class="ttdef"><b>Definition</b> operator_base.cpp:659</div></div>
 <div class="ttc" id="aclassExaDG_1_1lazy__ptr_html"><div class="ttname"><a href="classExaDG_1_1lazy__ptr.html">ExaDG::lazy_ptr</a></div><div class="ttdef"><b>Definition</b> lazy_ptr.h:29</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 <div class="ttc" id="astructExaDG_1_1IntegratorFlags_html"><div class="ttname"><a href="structExaDG_1_1IntegratorFlags.html">ExaDG::IntegratorFlags</a></div><div class="ttdef"><b>Definition</b> integrator_flags.h:30</div></div>
