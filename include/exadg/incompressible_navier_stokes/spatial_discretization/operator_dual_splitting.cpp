@@ -595,7 +595,7 @@ OperatorDualSplitting<dim, Number>::local_interpolate_velocity_dirichlet_bc_boun
   VectorType const &,
   Range const & face_range) const
 {
-  unsigned int const dof_index = this->get_dof_index_velocity();
+  unsigned int const dof_index  = this->get_dof_index_velocity();
   unsigned int const quad_index = this->get_quad_index_velocity_nodal_points();
 
   FaceIntegratorU integrator(matrix_free, true, dof_index, quad_index);
