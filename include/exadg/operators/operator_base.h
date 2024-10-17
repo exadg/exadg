@@ -113,6 +113,7 @@ public:
   typedef CellIntegrator<dim, n_components, Number>          IntegratorCell;
   typedef FaceIntegrator<dim, n_components, Number>          IntegratorFace;
 
+  static unsigned int const dimension            = dim;
   static unsigned int const vectorization_length = dealii::VectorizedArray<Number>::size();
 
   typedef dealii::LAPACKFullMatrix<Number> LAPACKMatrix;
