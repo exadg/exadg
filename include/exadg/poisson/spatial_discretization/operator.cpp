@@ -237,10 +237,14 @@ Operator<dim, n_components, Number>::setup_operators()
 
     laplace_operator_data.quad_index_gauss_lobatto = get_quad_index_gauss_lobatto();
   }
-  laplace_operator_data.bc                    = boundary_descriptor;
-  laplace_operator_data.use_cell_based_loops  = param.enable_cell_based_face_loops;
-  laplace_operator_data.kernel_data.IP_factor = param.IP_factor;
+  laplace_operator_data.bc                     = boundary_descriptor;
+  laplace_operator_data.use_cell_based_loops   = param.enable_cell_based_face_loops;
+  laplace_operator_data.kernel_data.IP_factor  = param.IP_factor;
+  laplace_operator_data.use_matrix_based_vmult = param.use_matrix_based_implementation;
+  laplace_operator_data.sparse_matrix_type     = param.sparse_matrix_type;
   laplace_operator.initialize(*matrix_free, affine_constraints, laplace_operator_data);
+
+  laplace_operator.assemble_matrix_if_necessary();
 
   // rhs operator
   if(param.right_hand_side)
