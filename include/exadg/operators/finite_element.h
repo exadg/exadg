@@ -89,27 +89,81 @@ create_finite_element(ElementType const & element_type,
 }
 
 inline unsigned int
+get_inner_dofs_per_element_simplex_scalar(unsigned int const n_points_1d, unsigned int const dim)
+{
+  if(n_points_1d == 0)
+    return 0;
+  else if(n_points_1d == 1)
+    return 1;
+  else
+  {
+    unsigned int scalar_inner_dofs = 1;
+    for(unsigned int d = 0; d < dim; ++d)
+      scalar_inner_dofs = (scalar_inner_dofs * (n_points_1d + d)) / (d + 1);
+
+    return scalar_inner_dofs;
+  }
+}
+
+inline double
 get_dofs_per_element(ExaDG::ElementType const element_type,
                      bool const               is_dg,
                      unsigned int const       n_components,
                      unsigned int const       degree,
                      unsigned int const       dim)
 {
-  unsigned int scalar_dofs_per_element = 1;
-
-  unsigned int n_points_1d = degree;
-
-  if(is_dg)
-    n_points_1d += 1;
+  double scalar_dofs_per_element = 0.;
 
   if(element_type == ElementType::Hypercube)
   {
+    unsigned int n_points_1d = degree;
+    if(is_dg)
+      n_points_1d += 1;
+
     scalar_dofs_per_element = dealii::Utilities::pow(n_points_1d, dim);
   }
   else if(element_type == ElementType::Simplex)
   {
-    for(unsigned int d = 0; d < dim; ++d)
-      scalar_dofs_per_element = (scalar_dofs_per_element * (n_points_1d + d)) / (d + 1);
+    unsigned int n_points_1d = degree + 1;
+
+    if(is_dg)
+    {
+      scalar_dofs_per_element = get_inner_dofs_per_element_simplex_scalar(n_points_1d, dim);
+    }
+    else // continuous Galerkin
+    {
+      if(dim == 2)
+      {
+        // consider a quadrilateral element that is subdivided into 2 triangular elements; each
+        // face/edge is shared by 2 triangular elements
+
+        scalar_dofs_per_element = 1. / 2.;                      // corners
+        scalar_dofs_per_element += 3. * (n_points_1d - 2) / 2.; // faces/edges
+        if(n_points_1d >= 3)
+          scalar_dofs_per_element +=
+            get_inner_dofs_per_element_simplex_scalar(n_points_1d - 3, dim); // inner
+      }
+      else if(dim == 3)
+      {
+        // consider a hexahedral element that is subdivided into 5 tetrahedral elements; assume that
+        // each of the 6 unique edges of the "hexahedral element" is shared by 5 tetrahedra; and
+        // each of the 4 unique face per tetrahedral element is shared by 2 tetrahedra
+
+        scalar_dofs_per_element = 1. / 5.;                      // corners
+        scalar_dofs_per_element += 6. * (n_points_1d - 2) / 5.; // edges
+        if(n_points_1d >= 3)
+        {
+          scalar_dofs_per_element +=
+            4. * get_inner_dofs_per_element_simplex_scalar(n_points_1d - 3, dim - 1) / 2.; // faces
+          scalar_dofs_per_element +=
+            get_inner_dofs_per_element_simplex_scalar(n_points_1d - 3, dim); // inner
+        }
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      }
+    }
   }
   else
   {
