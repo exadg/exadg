@@ -146,8 +146,9 @@ get_dofs_per_element(ExaDG::ElementType const element_type,
       else if(dim == 3)
       {
         // consider a hexahedral element that is subdivided into 5 tetrahedral elements; assume that
-        // each of the 6 unique edges of the "hexahedral element" is shared by 5 tetrahedra; and
-        // each of the 4 unique face per tetrahedral element is shared by 2 tetrahedra
+        // each of the 6 unique edges of the "hexahedral element" (with 5 tets inside) is shared by
+        // 5 tetrahedra; and each of the 4 unique faces per tetrahedral element is shared by
+        // 2 tetrahedra
 
         scalar_dofs_per_element = 1. / 5.;                      // corners
         scalar_dofs_per_element += 6. * (n_points_1d - 2) / 5.; // edges
