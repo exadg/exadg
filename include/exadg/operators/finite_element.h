@@ -89,7 +89,7 @@ create_finite_element(ElementType const & element_type,
 }
 
 inline unsigned int
-get_inner_dofs_per_element_simplex_scalar(unsigned int const n_points_1d, unsigned int const dim)
+get_dofs_per_element_simplex_scalar(unsigned int const n_points_1d, unsigned int const dim)
 {
   if(n_points_1d == 0)
     return 0;
@@ -128,7 +128,7 @@ get_dofs_per_element(ExaDG::ElementType const element_type,
 
     if(is_dg)
     {
-      scalar_dofs_per_element = get_inner_dofs_per_element_simplex_scalar(n_points_1d, dim);
+      scalar_dofs_per_element = get_dofs_per_element_simplex_scalar(n_points_1d, dim);
     }
     else // continuous Galerkin
     {
@@ -141,7 +141,7 @@ get_dofs_per_element(ExaDG::ElementType const element_type,
         scalar_dofs_per_element += 3. * (n_points_1d - 2) / 2.; // faces/edges
         if(n_points_1d >= 3)
           scalar_dofs_per_element +=
-            get_inner_dofs_per_element_simplex_scalar(n_points_1d - 3, dim); // inner
+            get_dofs_per_element_simplex_scalar(n_points_1d - 3, dim); // inner
       }
       else if(dim == 3)
       {
@@ -154,9 +154,9 @@ get_dofs_per_element(ExaDG::ElementType const element_type,
         if(n_points_1d >= 3)
         {
           scalar_dofs_per_element +=
-            4. * get_inner_dofs_per_element_simplex_scalar(n_points_1d - 3, dim - 1) / 2.; // faces
+            4. * get_dofs_per_element_simplex_scalar(n_points_1d - 3, dim - 1) / 2.; // faces
           scalar_dofs_per_element +=
-            get_inner_dofs_per_element_simplex_scalar(n_points_1d - 3, dim); // inner
+            get_dofs_per_element_simplex_scalar(n_points_1d - 3, dim); // inner
         }
       }
       else
