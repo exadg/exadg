@@ -134,8 +134,10 @@ get_dofs_per_element(ExaDG::ElementType const element_type,
     {
       if(dim == 2)
       {
-        // consider a quadrilateral element that is subdivided into 2 triangular elements; each
-        // face/edge is shared by 2 triangular elements
+        // consider a quadrilateral element that is subdivided into 2 triangular elements; the
+        // quadrilateral element has one unique corner shared by 2 triangular elements; each
+        // face/edge is shared by 2 triangular elements; inner dofs are unique per triangular
+        // element
 
         scalar_dofs_per_element = 1. / 2.;                      // corners
         scalar_dofs_per_element += 3. * (n_points_1d - 2) / 2.; // faces/edges
@@ -147,10 +149,11 @@ get_dofs_per_element(ExaDG::ElementType const element_type,
       }
       else if(dim == 3)
       {
-        // consider a hexahedral element that is subdivided into 5 tetrahedral elements; assume that
+        // consider a hexahedral element that is subdivided into 5 tetrahedral elements; the
+        // "hexahedral element" has one unique corner shared by 5 tetrahedral elements; assume that
         // each of the 6 unique edges of the "hexahedral element" (with 5 tets inside) is shared by
         // 5 tetrahedra; and each of the 4 unique faces per tetrahedral element is shared by
-        // 2 tetrahedra
+        // 2 tetrahedra; inner dofs are unique per tetrahedral element
 
         scalar_dofs_per_element = 1. / 5.;                      // corners
         scalar_dofs_per_element += 6. * (n_points_1d - 2) / 5.; // edges
