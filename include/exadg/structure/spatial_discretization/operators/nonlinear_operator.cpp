@@ -29,13 +29,8 @@ namespace Structure
 {
 template<int dim, typename Number>
 void
-NonLinearOperator<dim, Number>::initialize(
-  dealii::MatrixFree<dim, Number> const &   matrix_free,
-  dealii::AffineConstraints<Number> const & affine_constraints,
-  OperatorData<dim> const &                 data)
+NonLinearOperator<dim, Number>::initialize_derived()
 {
-  Base::initialize(matrix_free, affine_constraints, data);
-
   integrator_lin = std::make_shared<IntegratorCell>(*this->matrix_free,
                                                     this->operator_data.dof_index_inhomogeneous,
                                                     this->operator_data.quad_index);

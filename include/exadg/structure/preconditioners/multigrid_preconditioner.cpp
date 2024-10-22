@@ -222,7 +222,8 @@ MultigridPreconditioner<dim, Number>::get_operator_linear(unsigned int level)
 template<int dim, typename Number>
 std::shared_ptr<
   MultigridOperatorBase<dim, typename MultigridPreconditionerBase<dim, Number>::MultigridNumber>>
-MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const level)
+MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const level,
+                                                          bool const         assemble_matrix)
 {
   std::shared_ptr<MGOperatorBase> mg_operator_level;
 
@@ -247,7 +248,8 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
 
     pde_operator_level->initialize(*this->matrix_free_objects[level],
                                    *this->constraints[level],
-                                   data);
+                                   data,
+                                   assemble_matrix);
 
     mg_operator_level = std::make_shared<MGOperatorNonlinear>(pde_operator_level);
   }
@@ -264,7 +266,8 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
 
     pde_operator_level->initialize(*this->matrix_free_objects[level],
                                    *this->constraints[level],
-                                   data);
+                                   data,
+                                   assemble_matrix);
 
     mg_operator_level = std::make_shared<MGOperatorLinear>(pde_operator_level);
   }

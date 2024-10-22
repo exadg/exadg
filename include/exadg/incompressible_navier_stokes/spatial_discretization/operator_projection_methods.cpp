@@ -143,7 +143,8 @@ OperatorProjectionMethods<dim, Number>::initialize_laplace_operator()
 
   laplace_operator.initialize(this->get_matrix_free(),
                               this->get_constraint_p(),
-                              laplace_operator_data);
+                              laplace_operator_data,
+                              true);
 }
 
 template<int dim, typename Number>

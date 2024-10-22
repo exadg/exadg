@@ -78,7 +78,7 @@ private:
                         unsigned int const                     dealii_triangulation_level) final;
 
   std::shared_ptr<MGOperatorBase>
-  initialize_operator(unsigned int const level) final;
+  initialize_operator(unsigned int const level, bool const assemble_matrix) final;
 
   std::shared_ptr<Laplace>
   get_operator(unsigned int level);
