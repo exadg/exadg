@@ -78,13 +78,6 @@ enum class AMGType
   BoomerAMG
 };
 
-enum class MLOperatorType
-{
-  Undefined,
-  Laplace,
-  Elasticity
-};
-
 enum class MultigridCoarseGridSolver
 {
   Chebyshev,
@@ -157,7 +150,6 @@ struct AMGData
   AMGType amg_type;
 
 #ifdef DEAL_II_WITH_TRILINOS
-  MLOperatorType ml_operator_type = MLOperatorType::Undefined;
   dealii::TrilinosWrappers::PreconditionAMG::AdditionalData ml_data;
 #endif
 

@@ -38,7 +38,7 @@ MultigridPreconditionerProjection<dim, Number>::MultigridPreconditionerProjectio
 template<int dim, typename Number>
 void
 MultigridPreconditionerProjection<dim, Number>::initialize(
-  MultigridData const &                                 mg_data_in,
+  MultigridData const &                                 mg_data,
   std::shared_ptr<Grid<dim> const>                      grid,
   std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
   dealii::FiniteElement<dim> const &                    fe,
@@ -52,11 +52,6 @@ MultigridPreconditionerProjection<dim, Number>::initialize(
   data = this->pde_operator->get_data();
 
   this->mesh_is_moving = mesh_is_moving;
-
-  MultigridData mg_data = mg_data_in;
-#ifdef DEAL_II_WITH_TRILINOS
-  mg_data.coarse_problem.amg_data.ml_operator_type = MLOperatorType::Laplace;
-#endif
 
   Base::initialize(mg_data,
                    grid,

@@ -115,6 +115,10 @@ public:
   virtual void
   calculate_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const = 0;
 #endif
+
+  virtual void
+  get_constant_modes(std::vector<std::vector<bool>> &   constant_modes,
+                     std::vector<std::vector<double>> & constant_modes_values) const = 0;
 };
 
 } // namespace ExaDG

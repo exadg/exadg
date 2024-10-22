@@ -162,11 +162,8 @@ private:
   dealii::TrilinosWrappers::PreconditionAMG amg;
 
 public:
-  PreconditionerML(Operator const &     op,
-                   bool const           initialize,
-                   MLOperatorType const ml_operator_type,
-                   MLData               ml_data = MLData())
-    : pde_operator(op), ml_operator_type(ml_operator_type), ml_data(ml_data)
+  PreconditionerML(Operator const & op, bool const initialize, MLData ml_data = MLData())
+    : pde_operator(op), ml_data(ml_data)
   {
     // initialize system matrix
     pde_operator.init_system_matrix(system_matrix,
@@ -217,60 +214,45 @@ public:
   void
   update() override
   {
-    // clear content of matrix since calculate_system_matrix() adds the result
+    // Clear content of matrix since calculate_system_matrix() adds the result.
     system_matrix *= 0.0;
 
-    // re-calculate matrix
+    // Re-calculate the system matrix.
     pde_operator.calculate_system_matrix(system_matrix);
 
-    if(ml_operator_type == MLOperatorType::Laplace)
+    // Construct AMG preconditioner based on `Teuchos::ParameterList`.
+    unsigned int const     dimension      = pde_operator.get_matrix_free().dimension;
+    Teuchos::ParameterList parameter_list = get_ML_parameter_list(ml_data, dimension);
+
+    // Add near null space basis vectors to `Teuchos::ParameterList`.
+    // If the `std::vector<std::vector<double>> constant_modes_values`
+    // were filled, use these, otherwise use `std::vector<std::vector<bool>> constant_modes`.
+    // This mirrors the behavior within deal.II.
+    std::vector<std::vector<bool>>   constant_modes;
+    std::vector<std::vector<double>> constant_modes_values;
+    pde_operator.get_constant_modes(constant_modes, constant_modes_values);
+    if(constant_modes.empty())
     {
-      // Default setup; add near null space for Laplace operator.
-      amg.initialize(system_matrix, ml_data);
-    }
-    else if(ml_operator_type == MLOperatorType::Elasticity)
-    {
-      // get Teuchos::ParameterList to provide custom near null space basis
-      unsigned int const     dimension      = pde_operator.get_matrix_free().dimension;
-      Teuchos::ParameterList parameter_list = get_ML_parameter_list(ml_data, dimension);
-
-      std::vector<std::vector<double>> rigid_body_modes;
-
-      // If we use the AMG preconditioner in a multigrid setting,
-      // signaled by `dof_handler.has_level_dofs() == true`,
-      // we construct the AMG preconditioner on the coarsest level.
-      // Otherwise, we use AMG as fine-level preconditioner.
-      if(pde_operator.get_matrix_free().get_dof_handler().has_level_dofs())
-      {
-        rigid_body_modes = dealii::DoFTools::extract_level_rigid_body_modes(
-          0,
-          *pde_operator.get_matrix_free().get_mapping_info().mapping,
-          pde_operator.get_matrix_free().get_dof_handler(),
-          dealii::ComponentMask(dimension, true));
-      }
-      else
-      {
-        rigid_body_modes = dealii::DoFTools::extract_rigid_body_modes(
-          *pde_operator.get_matrix_free().get_mapping_info().mapping,
-          pde_operator.get_matrix_free().get_dof_handler(),
-          dealii::ComponentMask(dimension, true));
-      }
-      ml_data.constant_modes_values = rigid_body_modes;
-
-      // Add near null space basis vectors to Teuchos::ParameterList.
-      // `ptr_distributed_modes` must stay alive for amg.initialize();
-      std::unique_ptr<Epetra_MultiVector> ptr_distributed_modes;
-      ml_data.set_operator_null_space(parameter_list,
-                                      ptr_distributed_modes,
-                                      system_matrix.trilinos_matrix());
-
-      // Initialize with the Teuchos::ParameterList.
-      amg.initialize(system_matrix, parameter_list);
+      AssertThrow(constant_modes_values.size() > 0,
+                  dealii::ExcMessage(
+                    "Neither `constant_modes` nor `constant_modes_values` were provided. "
+                    "AMG setup requires near null sapce basis vectors."));
+      ml_data.constant_modes_values = constant_modes_values;
     }
     else
     {
-      AssertThrow(false, dealii::ExcMessage("MLOperatorType not defined."));
+      ml_data.constant_modes = constant_modes;
     }
+
+    // Add near null space basis vectors to Teuchos::ParameterList.
+    // `ptr_distributed_modes` must stay alive for amg.initialize()
+    std::unique_ptr<Epetra_MultiVector> ptr_operator_modes;
+    ml_data.set_operator_null_space(parameter_list,
+                                    ptr_operator_modes,
+                                    system_matrix.trilinos_matrix());
+
+    // Initialize with the `Teuchos::ParameterList`.
+    amg.initialize(system_matrix, parameter_list);
 
     this->update_needed = false;
   }
@@ -279,8 +261,7 @@ private:
   // reference to matrix-free operator
   Operator const & pde_operator;
 
-  MLOperatorType const ml_operator_type;
-  MLData               ml_data;
+  MLData ml_data;
 };
 #endif
 
@@ -462,10 +443,8 @@ public:
     else if(data.amg_type == AMGType::ML)
     {
 #ifdef DEAL_II_WITH_TRILINOS
-      preconditioner_ml = std::make_shared<PreconditionerML<Operator>>(pde_operator,
-                                                                       initialize,
-                                                                       data.ml_operator_type,
-                                                                       data.ml_data);
+      preconditioner_ml =
+        std::make_shared<PreconditionerML<Operator>>(pde_operator, initialize, data.ml_data);
 #else
       AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif

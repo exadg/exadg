@@ -37,7 +37,7 @@ MultigridPreconditioner<dim, Number, n_components>::MultigridPreconditioner(
 template<int dim, typename Number, int n_components>
 void
 MultigridPreconditioner<dim, Number, n_components>::initialize(
-  MultigridData const &                                 mg_data_in,
+  MultigridData const &                                 mg_data,
   std::shared_ptr<Grid<dim> const>                      grid,
   std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
   dealii::FiniteElement<dim> const &                    fe,
@@ -51,11 +51,6 @@ MultigridPreconditioner<dim, Number, n_components>::initialize(
   is_dg = (fe.dofs_per_vertex == 0);
 
   this->mesh_is_moving = mesh_is_moving;
-
-  MultigridData mg_data = mg_data_in;
-#ifdef DEAL_II_WITH_TRILINOS
-  mg_data.coarse_problem.amg_data.ml_operator_type = MLOperatorType::Laplace;
-#endif
 
   Base::initialize(mg_data,
                    grid,
