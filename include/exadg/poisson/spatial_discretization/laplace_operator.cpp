@@ -44,6 +44,8 @@ LaplaceOperator<dim, Number, n_components>::initialize(
   kernel.reinit(matrix_free, data.kernel_data, data.dof_index);
 
   this->integrator_flags = kernel.get_integrator_flags(this->is_dg);
+
+  this->assemble_matrix_if_necessary();
 }
 
 template<int dim, typename Number, int n_components>

@@ -244,8 +244,6 @@ Operator<dim, n_components, Number>::setup_operators()
   laplace_operator_data.sparse_matrix_type     = param.sparse_matrix_type;
   laplace_operator.initialize(*matrix_free, affine_constraints, laplace_operator_data);
 
-  laplace_operator.assemble_matrix_if_necessary();
-
   // rhs operator
   if(param.right_hand_side)
   {
