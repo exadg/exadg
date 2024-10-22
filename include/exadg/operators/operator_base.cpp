@@ -1001,6 +1001,18 @@ OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix(
 
   // communicate overlapping matrix parts
   system_matrix.compress(dealii::VectorOperation::add);
+
+  // set diagonal entries of constrained DoFs to 1.0
+  dealii::DoFHandler<dim> const & dof_handler =
+    this->matrix_free->get_dof_handler(this->data.dof_index);
+  for(auto const & line : this->constraint->get_lines())
+  {
+    if(dof_handler.locally_owned_dofs().is_element(line.index))
+    {
+      system_matrix.set(line.index, line.index, 1.0);
+    }
+  }
+  system_matrix.compress(dealii::VectorOperation::insert);
 }
 
 template<int dim, typename Number, int n_components>
