@@ -123,7 +123,8 @@ MultigridPreconditioner<dim, Number, n_components>::fill_matrix_free_data(
 template<int dim, typename Number, int n_components>
 std::shared_ptr<
   MultigridOperatorBase<dim, typename MultigridPreconditionerBase<dim, Number>::MultigridNumber>>
-MultigridPreconditioner<dim, Number, n_components>::initialize_operator(unsigned int const level)
+MultigridPreconditioner<dim, Number, n_components>::initialize_operator(unsigned int const level,
+                                                                        bool const assemble_matrix)
 {
   // initialize pde_operator in a first step
   std::shared_ptr<Laplace> pde_operator(new Laplace());
@@ -131,7 +132,10 @@ MultigridPreconditioner<dim, Number, n_components>::initialize_operator(unsigned
   data.dof_index  = this->matrix_free_data_objects[level]->get_dof_index("laplace_dof_handler");
   data.quad_index = this->matrix_free_data_objects[level]->get_quad_index("laplace_quadrature");
 
-  pde_operator->initialize(*this->matrix_free_objects[level], *this->constraints[level], data);
+  pde_operator->initialize(*this->matrix_free_objects[level],
+                           *this->constraints[level],
+                           data,
+                           assemble_matrix);
 
   // initialize MGOperator which is a wrapper around the PDEOperator
   std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator));

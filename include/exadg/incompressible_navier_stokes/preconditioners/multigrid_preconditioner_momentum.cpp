@@ -200,8 +200,11 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
 template<int dim, typename Number>
 std::shared_ptr<
   MultigridOperatorBase<dim, typename MultigridPreconditionerBase<dim, Number>::MultigridNumber>>
-MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const level)
+MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const level,
+                                                          bool const         assemble_matrix)
 {
+  (void)assemble_matrix;
+
   // initialize pde_operator in a first step
   std::shared_ptr<PDEOperatorMG> pde_operator_level(new PDEOperatorMG());
 

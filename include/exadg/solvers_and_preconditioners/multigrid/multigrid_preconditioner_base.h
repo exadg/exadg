@@ -292,14 +292,14 @@ private:
    * Initializes the multigrid operators for all multigrid levels.
    */
   void
-  initialize_operators();
+  initialize_operators(bool const assemble_matrix);
 
   /*
    * This function initializes an operator for a specified level. It needs to be implemented by
    * derived classes.
    */
   virtual std::shared_ptr<Operator>
-  initialize_operator(unsigned int const level);
+  initialize_operator(unsigned int const level, bool const assemble_matrix);
 
   /*
    * Smoother.

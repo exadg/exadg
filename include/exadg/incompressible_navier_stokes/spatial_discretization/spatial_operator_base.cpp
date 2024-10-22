@@ -1329,7 +1329,7 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   typedef Poisson::LaplaceOperator<dim, Number, 1> Laplace;
   Laplace                                          laplace_operator;
   dealii::AffineConstraints<Number>                constraint_dummy;
-  laplace_operator.initialize(*matrix_free, constraint_dummy, laplace_operator_data);
+  laplace_operator.initialize(*matrix_free, constraint_dummy, laplace_operator_data, true);
 
   // setup preconditioner
   std::shared_ptr<PreconditionerBase<Number>> preconditioner;

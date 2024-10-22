@@ -35,7 +35,8 @@ void
 LaplaceOperator<dim, Number, n_components>::initialize(
   dealii::MatrixFree<dim, Number> const &   matrix_free,
   dealii::AffineConstraints<Number> const & affine_constraints,
-  LaplaceOperatorData<rank, dim> const &    data)
+  LaplaceOperatorData<rank, dim> const &    data,
+  bool const                                assemble_matrix)
 {
   operator_data = data;
 
@@ -45,7 +46,8 @@ LaplaceOperator<dim, Number, n_components>::initialize(
 
   this->integrator_flags = kernel.get_integrator_flags(this->is_dg);
 
-  this->assemble_matrix_if_necessary();
+  if(assemble_matrix)
+    this->assemble_matrix_if_necessary();
 }
 
 template<int dim, typename Number, int n_components>
