@@ -113,6 +113,7 @@ public:
   typedef CellIntegrator<dim, n_components, Number>          IntegratorCell;
   typedef FaceIntegrator<dim, n_components, Number>          IntegratorFace;
 
+  static unsigned int const dimension            = dim;
   static unsigned int const vectorization_length = dealii::VectorizedArray<Number>::size();
 
   typedef dealii::LAPACKFullMatrix<Number> LAPACKMatrix;
@@ -252,6 +253,35 @@ public:
   void
   calculate_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const;
 #endif
+
+  /*
+   * Provide near null space basis vectors used e.g. in AMG setup. deal.II allows providing constant
+   * modes as `std::vector<std::vector<double>> constant_modes_values` or
+   * `std::vector<std::vector<bool>>   constant_modes`,
+   * where `constant_modes_values` is currently checked first (within deal.II), and if not provided,
+   * `constant_modes` is used. ExaDG assumes a scalar Laplace operator as default, filling
+   * `constant_modes`, which can be overwritten in derived classes if necessary.
+   */
+  virtual void
+  get_constant_modes(std::vector<std::vector<bool>> &   constant_modes,
+                     std::vector<std::vector<double>> & constant_modes_values) const
+  {
+    (void)constant_modes_values;
+
+    dealii::DoFHandler<dim> const & dof_handler =
+      this->matrix_free->get_dof_handler(this->data.dof_index);
+
+    if(dof_handler.has_level_dofs())
+    {
+      constant_modes = dealii::DoFTools::extract_level_constant_modes(
+        0, dof_handler, dealii::ComponentMask(1 /* single component */, true));
+    }
+    else
+    {
+      constant_modes = dealii::DoFTools::extract_constant_modes(
+        dof_handler, dealii::ComponentMask(1 /* single component */, true));
+    }
+  }
 
   /*
    * Evaluate the homogeneous part of an operator. The homogeneous operator is the operator that is
