@@ -461,7 +461,7 @@ inline DEAL_II_ALWAYS_INLINE //
   return out;
 }
 
-// Compute f(x) = (1 + x)^e
+// Compute f(x) = e^(1 + x)
 template<typename Number, bool stable_formulation>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::VectorizedArray<Number>

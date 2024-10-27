@@ -569,11 +569,14 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       // not pay off enough for cache_level > 1 since we are storing
       // related variables anyways.
 
-      scalar const J_sqrd_over_three = (Jm1 * Jm1 + 2.0 * Jm1 + 1.0) * ONE_THIRD;
+      scalar const J_sqrd_over_three = ((Jm1 + 2.0) * Jm1 + 1.0) * ONE_THIRD;
 
-      // The first iteration simplifies due to the initial guess x_0 = 1.0.
-      scalar J_pow = dealii::make_vectorized_array(static_cast<Number>(FOUR_THIRDS));
-      J_pow -= J_sqrd_over_three;
+      // The first iteration simplifies due to the initial guess x_0 = 1.0,
+      // but a one-term Taylor series expansion is more accurate in tests.
+      // scalar J_pow = dealii::make_vectorized_array(static_cast<Number>(FOUR_THIRDS));
+      // J_pow -= J_sqrd_over_three;
+      scalar Jpow = dealii::make_vectorized_array(static_cast<Number>(1.0));
+      J_pow -= TWO_THIRDS * Jm1;
 
       // The remaining Newton iterations are identical.
       scalar J_pow_to_the_fourth = J_pow * J_pow;
