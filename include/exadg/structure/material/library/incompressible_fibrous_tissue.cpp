@@ -575,7 +575,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       // but a one-term Taylor series expansion is more accurate in tests.
       // scalar J_pow = dealii::make_vectorized_array(static_cast<Number>(FOUR_THIRDS));
       // J_pow -= J_sqrd_over_three;
-      scalar Jpow = dealii::make_vectorized_array(static_cast<Number>(1.0));
+      scalar J_pow = dealii::make_vectorized_array(static_cast<Number>(1.0));
       J_pow -= TWO_THIRDS * Jm1;
 
       // The remaining Newton iterations are identical.

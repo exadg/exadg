@@ -127,6 +127,21 @@ MultigridPreconditioner<dim, Number>::update()
         this->get_operator_nonlinear(coarse_level)
           ->set_solution_linearization(vector_coarse_level, false);
       });
+
+    // Update the coarse h level mappings in the spatial integration approach.
+    bool constexpr update_coarse_mappings = false;
+    if constexpr(update_coarse_mappings)
+    {
+      OperatorData<dim> const & operator_data =
+        this->get_operator_nonlinear(this->get_number_of_levels() - 1)->get_data();
+      if(operator_data.spatial_integration)
+      {
+        // This is expensive and hence disabled since `mapping_degree_coarse_grids`
+        // and `level_info[level].degree` are rarely the same.
+        this->multigrid_mappings->initialize_coarse_mappings(
+          *this->grid, this->grid->coarse_triangulations.size() + 1);
+      }
+    }
   }
   else // linear problems
   {
