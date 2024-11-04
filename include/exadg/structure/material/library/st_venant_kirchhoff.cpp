@@ -196,6 +196,19 @@ StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(tensor const & gra
 
 template<int dim, typename Number>
 dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
+StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress_eval(
+  tensor const &     gradient_displacement,
+  unsigned int const cell,
+  unsigned int const q) const
+{
+  // Since we do not precompute and store data, the
+  // `second_piola_kirchhoff_stress_eval` and
+  // `second_piola_kirchhoff_stress` functions are identical.
+  return second_piola_kirchhoff_stress(gradient_displacement, cell, q);
+}
+
+template<int dim, typename Number>
+dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
 StVenantKirchhoff<dim, Number>::second_piola_kirchhoff_stress(unsigned int const cell,
                                                               unsigned int const q) const
 {

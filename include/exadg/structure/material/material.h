@@ -61,7 +61,26 @@ public:
     (void)cell;
     (void)q;
     AssertThrow(false,
-                dealii::ExcMessage("For a total Lagrangian formulation,"
+                dealii::ExcMessage("For a total Lagrangian formulation, "
+                                   "overwrite this method in derived class."));
+
+    symmetric_tensor dummy;
+    return dummy;
+  }
+
+  /*
+   * Variant of the above function to force evaluation (not loading) a stress tensor.
+   */
+  virtual symmetric_tensor
+  second_piola_kirchhoff_stress_eval(tensor const &     gradient_displacement,
+                                     unsigned int const cell,
+                                     unsigned int const q) const
+  {
+    (void)gradient_displacement;
+    (void)cell;
+    (void)q;
+    AssertThrow(false,
+                dealii::ExcMessage("For a total Lagrangian formulation, "
                                    "overwrite this method in derived class."));
 
     symmetric_tensor dummy;
@@ -119,6 +138,25 @@ public:
   kirchhoff_stress(tensor const &     gradient_displacement,
                    unsigned int const cell,
                    unsigned int const q) const
+  {
+    (void)gradient_displacement;
+    (void)cell;
+    (void)q;
+    AssertThrow(false,
+                dealii::ExcMessage("For a Lagrangian formulation in spatial domain, "
+                                   "overwrite this method in derived class."));
+
+    symmetric_tensor dummy;
+    return dummy;
+  }
+
+  /*
+   * Variant of the above function to force evaluation (not loading) a stress tensor.
+   */
+  virtual symmetric_tensor
+  kirchhoff_stress_eval(tensor const &     gradient_displacement,
+                        unsigned int const cell,
+                        unsigned int const q) const
   {
     (void)gradient_displacement;
     (void)cell;

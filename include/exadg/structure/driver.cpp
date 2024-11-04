@@ -252,12 +252,9 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
         {
           if(operator_type == OperatorType::Evaluate)
           {
-            // No linearization data update in evaluate_elasticity_operator().
-            if(application->get_parameters().large_deformation)
-            {
-              pde_operator->set_solution_linearization(linearization);
-            }
-            pde_operator->evaluate_elasticity_operator(dst, src, 1.0, 1.0, 0.0);
+            // Contains update of mapping for `large_deformation == true`, but
+            // does neither update underlying matrices of operators nor cell data.
+            pde_operator->evaluate_elasticity_operator(dst, src, 1.0, 0.0, 0.0);
           }
           else if(operator_type == OperatorType::Apply)
           {

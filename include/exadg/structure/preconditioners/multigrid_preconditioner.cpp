@@ -112,7 +112,10 @@ MultigridPreconditioner<dim, Number>::update()
     // Note: This function also re-assembles the sparse matrix in case a matrix-based implementation
     // is used
     this->get_operator_nonlinear(this->get_number_of_levels() - 1)
-      ->set_solution_linearization(*vector_multigrid_type_ptr, true);
+      ->set_solution_linearization(*vector_multigrid_type_ptr,
+                                   true /* update_cell_data */,
+                                   true /* update_mapping */,
+                                   true /* update_matrix_if_necessary */);
 
     // interpolate displacement vector from fine to coarse level
     this->transfer_from_fine_to_coarse_levels(
@@ -125,7 +128,10 @@ MultigridPreconditioner<dim, Number>::update()
         // Note: This function also re-assembles the sparse matrix in case a matrix-based
         // implementation is used
         this->get_operator_nonlinear(coarse_level)
-          ->set_solution_linearization(vector_coarse_level, false);
+          ->set_solution_linearization(vector_coarse_level,
+                                       true /* update_cell_data */,
+                                       false /* update_mapping */,
+                                       true /* update_matrix_if_necessary */);
       });
 
     // Update the coarse h level mappings in the spatial integration approach.

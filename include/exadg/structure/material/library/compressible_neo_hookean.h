@@ -115,6 +115,11 @@ public:
                                 unsigned int const q) const final;
 
   symmetric_tensor
+  second_piola_kirchhoff_stress_eval(tensor const &     gradient_displacement,
+                                     unsigned int const cell,
+                                     unsigned int const q) const final;
+
+  symmetric_tensor
   second_piola_kirchhoff_stress(unsigned int const cell, unsigned int const q) const final;
 
   symmetric_tensor
@@ -127,6 +132,11 @@ public:
   kirchhoff_stress(tensor const &     gradient_displacement,
                    unsigned int const cell,
                    unsigned int const q) const final;
+
+  symmetric_tensor
+  kirchhoff_stress_eval(tensor const &     gradient_displacement,
+                        unsigned int const cell,
+                        unsigned int const q) const final;
 
   symmetric_tensor
   kirchhoff_stress(unsigned int const cell, unsigned int const q) const final;

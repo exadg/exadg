@@ -85,7 +85,10 @@ public:
    * Linearized operator: Sets the linearization vector.
    */
   void
-  set_solution_linearization(VectorType const & vector, bool const update_mapping) const;
+  set_solution_linearization(VectorType const & vector,
+                             bool const         update_cell_data,
+                             bool const         update_mapping,
+                             bool const         update_matrix_if_necessary) const;
 
   /**
    * Set the mapping pointer for the undeformed mapping.

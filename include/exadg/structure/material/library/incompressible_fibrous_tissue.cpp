@@ -631,6 +631,27 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   return result;
 }
 
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
+inline dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
+  get_structure_tensor(vector const & M_1, unsigned int i, unsigned int cell, unsigned int q) const
+{
+  if constexpr(cache_level < 2)
+  {
+    vector const M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+    return compute_structure_tensor(M_1, M_2);
+  }
+  else
+  {
+    (void)M_1;
+    return fiber_structure_tensor[i].get_coefficient_cell(cell, q);
+  }
+}
+
 // Function to evaluate the fiber_switch, not using/loading any data.
 template<int dim,
          typename Number,
@@ -938,110 +959,60 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
                                 unsigned int const cell,
                                 unsigned int const q) const
 {
-  if constexpr(cache_level < 2)
+  if constexpr(cache_level == 0)
+  {
+    return second_piola_kirchhoff_stress_eval(gradient_displacement, cell, q);
+  }
+  else if constexpr(cache_level == 1)
   {
     if(shear_modulus_is_variable)
     {
       shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
     }
 
-    if constexpr(cache_level == 0)
+    tensor const F =
+      compute_modified_F<dim, Number, check_type, stable_formulation>(gradient_displacement);
+    tensor const           F_inv = invert(F);
+    scalar const           Jm1   = Jm1_coefficients.get_coefficient_cell(cell, q);
+    symmetric_tensor const C_inv = compute_C_inv(F_inv);
+    scalar const           J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
+
+    if constexpr(stable_formulation)
     {
-      auto const [F, Jm1] =
-        compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(gradient_displacement);
-      tensor const           F_inv = invert(F);
-      symmetric_tensor const C_inv = compute_C_inv(F_inv);
-      scalar const           J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
-      symmetric_tensor const E =
-        compute_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement, 1.0);
+      symmetric_tensor S = compute_S_ground_matrix_stable(
+        gradient_displacement, C_inv, J_pow, Jm1, shear_modulus_stored);
 
-      if constexpr(stable_formulation)
+      for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
       {
-        symmetric_tensor S = compute_S_ground_matrix_stable(
-          gradient_displacement, C_inv, J_pow, Jm1, shear_modulus_stored);
+        vector const           M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+        vector const           M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+        symmetric_tensor const H_i = compute_structure_tensor(M_1, M_2);
+        scalar const           E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
+        scalar const           c3  = c3_coefficients[i].get_coefficient_cell(cell, q);
 
-        for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
-        {
-          vector const           M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
-          vector const           M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
-          symmetric_tensor const H_i = compute_structure_tensor(M_1, M_2);
-          scalar const           E_i = get_E_i<false /* force_evaluation */>(H_i, E, i, cell, q);
-          scalar const           c3 = get_c3<false /* force_evaluation */>(M_1, E, E_i, i, cell, q);
-
-          S += compute_S_fiber_i(c3, E_i, H_i);
-        }
-
-        return S;
+        S += compute_S_fiber_i(c3, E_i, H_i);
       }
-      else
-      {
-        scalar const c1 =
-          get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
 
-        symmetric_tensor S =
-          compute_S_ground_matrix_unstable(C_inv, J_pow, c1, shear_modulus_stored);
-
-        for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
-        {
-          vector const           M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
-          vector const           M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
-          symmetric_tensor const H_i = compute_structure_tensor(M_1, M_2);
-          scalar const           E_i = get_E_i<false /* force_evaluation */>(H_i, E, i, cell, q);
-          scalar const           c3 = get_c3<false /* force_evaluation */>(M_1, E, E_i, i, cell, q);
-
-          S += compute_S_fiber_i(c3, E_i, H_i);
-        }
-
-        return S;
-      }
+      return S;
     }
     else
     {
-      tensor const F =
-        compute_modified_F<dim, Number, check_type, stable_formulation>(gradient_displacement);
-      tensor const           F_inv = invert(F);
-      scalar const           Jm1   = Jm1_coefficients.get_coefficient_cell(cell, q);
-      symmetric_tensor const C_inv = compute_C_inv(F_inv);
-      scalar const           J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
+      scalar const c1 = c1_coefficients.get_coefficient_cell(cell, q);
 
-      if constexpr(stable_formulation)
+      symmetric_tensor S = compute_S_ground_matrix_unstable(C_inv, J_pow, c1, shear_modulus_stored);
+
+      for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
       {
-        symmetric_tensor S = compute_S_ground_matrix_stable(
-          gradient_displacement, C_inv, J_pow, Jm1, shear_modulus_stored);
+        vector const           M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+        vector const           M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+        symmetric_tensor const H_i = compute_structure_tensor(M_1, M_2);
+        scalar const           E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
+        scalar const           c3  = c3_coefficients[i].get_coefficient_cell(cell, q);
 
-        for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
-        {
-          vector const           M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
-          vector const           M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
-          symmetric_tensor const H_i = compute_structure_tensor(M_1, M_2);
-          scalar const           E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
-          scalar const           c3  = c3_coefficients[i].get_coefficient_cell(cell, q);
-
-          S += compute_S_fiber_i(c3, E_i, H_i);
-        }
-
-        return S;
+        S += compute_S_fiber_i(c3, E_i, H_i);
       }
-      else
-      {
-        scalar const c1 = c1_coefficients.get_coefficient_cell(cell, q);
 
-        symmetric_tensor S =
-          compute_S_ground_matrix_unstable(C_inv, J_pow, c1, shear_modulus_stored);
-
-        for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
-        {
-          vector const           M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
-          vector const           M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
-          symmetric_tensor const H_i = compute_structure_tensor(M_1, M_2);
-          scalar const           E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
-          scalar const           c3  = c3_coefficients[i].get_coefficient_cell(cell, q);
-
-          S += compute_S_fiber_i(c3, E_i, H_i);
-        }
-
-        return S;
-      }
+      return S;
     }
   }
   else
@@ -1051,6 +1022,68 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
                                    "use the dedicated function."));
 
     return second_piola_kirchhoff_stress_coefficients.get_coefficient_cell(cell, q);
+  }
+}
+
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
+dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
+  second_piola_kirchhoff_stress_eval(tensor const &     gradient_displacement,
+                                     unsigned int const cell,
+                                     unsigned int const q) const
+{
+  if(shear_modulus_is_variable)
+  {
+    shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+  }
+
+  auto const [F, Jm1] =
+    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(gradient_displacement);
+  tensor const           F_inv = invert(F);
+  symmetric_tensor const C_inv = compute_C_inv(F_inv);
+  scalar const           J_pow = get_J_pow<true /* force_evaluation */>(Jm1, cell, q);
+  symmetric_tensor const E =
+    compute_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement, 1.0);
+
+  if constexpr(stable_formulation)
+  {
+    symmetric_tensor S = compute_S_ground_matrix_stable(
+      gradient_displacement, C_inv, J_pow, Jm1, shear_modulus_stored);
+
+    for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
+    {
+      vector const           M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+      symmetric_tensor const H_i = get_structure_tensor(M_1, i, cell, q);
+      scalar const           E_i = get_E_i<true /* force_evaluation */>(H_i, E, i, cell, q);
+      scalar const           c3  = get_c3<true /* force_evaluation */>(M_1, E, E_i, i, cell, q);
+
+      S += compute_S_fiber_i(c3, E_i, H_i);
+    }
+
+    return S;
+  }
+  else
+  {
+    scalar const c1 =
+      get_c1<true /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
+
+    symmetric_tensor S = compute_S_ground_matrix_unstable(C_inv, J_pow, c1, shear_modulus_stored);
+
+    for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
+    {
+      vector const           M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+      symmetric_tensor const H_i = get_structure_tensor(M_1, i, cell, q);
+      scalar const           E_i = get_E_i<true /* force_evaluation */>(H_i, E, i, cell, q);
+      scalar const           c3  = get_c3<true /* force_evaluation */>(M_1, E, E_i, i, cell, q);
+
+      S += compute_S_fiber_i(c3, E_i, H_i);
+    }
+
+    return S;
   }
 }
 
@@ -1270,86 +1303,51 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
                    unsigned int const cell,
                    unsigned int const q) const
 {
-  if constexpr(cache_level < 2)
+  if constexpr(cache_level == 0)
+  {
+    return kirchhoff_stress_eval(gradient_displacement, cell, q);
+  }
+  else if constexpr(cache_level == 1)
   {
     if(shear_modulus_is_variable)
     {
       shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
     }
 
-    if constexpr(cache_level == 0)
+    symmetric_tensor tau;
+    for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
     {
-      symmetric_tensor const E =
-        compute_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement, 1.0);
+      vector const           M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+      vector const           M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
+      symmetric_tensor const H_i = compute_structure_tensor(M_1, M_2);
+      scalar const           E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
+      scalar const           c3  = c3_coefficients[i].get_coefficient_cell(cell, q);
 
-      symmetric_tensor tau;
-      for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
-      {
-        vector const           M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
-        vector const           M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
-        symmetric_tensor const H_i = compute_structure_tensor(M_1, M_2);
-        scalar const           E_i = get_E_i<false /* force_evaluation */>(H_i, E, i, cell, q);
-        scalar const           c3  = get_c3<false /* force_evaluation */>(M_1, E, E_i, i, cell, q);
+      tau += compute_S_fiber_i(c3, E_i, H_i);
+    }
 
-        tau += compute_S_fiber_i(c3, E_i, H_i);
-      }
+    if constexpr(stable_formulation)
+    {
+      tensor const F =
+        compute_modified_F<dim, Number, check_type, stable_formulation>(gradient_displacement);
+      scalar const           Jm1   = Jm1_coefficients.get_coefficient_cell(cell, q);
+      scalar const           J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
+      symmetric_tensor const e =
+        compute_e_scaled<dim, Number, Number, stable_formulation>(gradient_displacement, 1.0);
 
-      auto const [F, Jm1] =
-        compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(gradient_displacement);
-
-      scalar const J_pow = get_J_pow<false /* force_evaluation */>(Jm1, cell, q);
-      if constexpr(stable_formulation)
-      {
-        symmetric_tensor const e =
-          compute_e_scaled<dim, Number, Number, stable_formulation>(gradient_displacement, 1.0);
-        tau = compute_tau_stable(tau, F, e, Jm1, J_pow, shear_modulus_stored);
-      }
-      else
-      {
-        scalar const c1 =
-          get_c1<false /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
-        tau = compute_tau_unstable(tau, F, J_pow, c1, shear_modulus_stored);
-      }
-
-      return tau;
+      tau = compute_tau_stable(tau, F, e, Jm1, J_pow, shear_modulus_stored);
     }
     else
     {
-      symmetric_tensor tau;
-      for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
-      {
-        vector const           M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
-        vector const           M_2 = fiber_direction_M_2[i].get_coefficient_cell(cell, q);
-        symmetric_tensor const H_i = compute_structure_tensor(M_1, M_2);
-        scalar const           E_i = E_i_coefficients[i].get_coefficient_cell(cell, q);
-        scalar const           c3  = c3_coefficients[i].get_coefficient_cell(cell, q);
+      tensor const F =
+        compute_modified_F<dim, Number, check_type, stable_formulation>(gradient_displacement);
+      scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
+      scalar const c1    = c1_coefficients.get_coefficient_cell(cell, q);
 
-        tau += compute_S_fiber_i(c3, E_i, H_i);
-      }
-
-      if constexpr(stable_formulation)
-      {
-        tensor const F =
-          compute_modified_F<dim, Number, check_type, stable_formulation>(gradient_displacement);
-        scalar const           Jm1   = Jm1_coefficients.get_coefficient_cell(cell, q);
-        scalar const           J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
-        symmetric_tensor const e =
-          compute_e_scaled<dim, Number, Number, stable_formulation>(gradient_displacement, 1.0);
-
-        tau = compute_tau_stable(tau, F, e, Jm1, J_pow, shear_modulus_stored);
-      }
-      else
-      {
-        tensor const F =
-          compute_modified_F<dim, Number, check_type, stable_formulation>(gradient_displacement);
-        scalar const J_pow = J_pow_coefficients.get_coefficient_cell(cell, q);
-        scalar const c1    = c1_coefficients.get_coefficient_cell(cell, q);
-
-        tau = compute_tau_unstable(tau, F, J_pow, c1, shear_modulus_stored);
-      }
-
-      return tau;
+      tau = compute_tau_unstable(tau, F, J_pow, c1, shear_modulus_stored);
     }
+
+    return tau;
   }
   else
   {
@@ -1359,6 +1357,56 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 
     return kirchhoff_stress_coefficients.get_coefficient_cell(cell, q);
   }
+}
+
+template<int dim,
+         typename Number,
+         unsigned int check_type,
+         bool         stable_formulation,
+         unsigned int cache_level>
+dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
+IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
+  kirchhoff_stress_eval(tensor const &     gradient_displacement,
+                        unsigned int const cell,
+                        unsigned int const q) const
+{
+  if(shear_modulus_is_variable)
+  {
+    shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+  }
+
+  symmetric_tensor const E =
+    compute_E_scaled<dim, Number, Number, stable_formulation>(gradient_displacement, 1.0);
+
+  symmetric_tensor tau;
+  for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
+  {
+    vector const           M_1 = fiber_direction_M_1[i].get_coefficient_cell(cell, q);
+    symmetric_tensor const H_i = get_structure_tensor(M_1, i, cell, q);
+    scalar const           E_i = get_E_i<true /* force_evaluation */>(H_i, E, i, cell, q);
+    scalar const           c3  = get_c3<true /* force_evaluation */>(M_1, E, E_i, i, cell, q);
+
+    tau += compute_S_fiber_i(c3, E_i, H_i);
+  }
+
+  auto const [F, Jm1] =
+    compute_modified_F_Jm1<dim, Number, check_type, stable_formulation>(gradient_displacement);
+
+  scalar const J_pow = get_J_pow<true /* force_evaluation */>(Jm1, cell, q);
+  if constexpr(stable_formulation)
+  {
+    symmetric_tensor const e =
+      compute_e_scaled<dim, Number, Number, stable_formulation>(gradient_displacement, 1.0);
+    tau = compute_tau_stable(tau, F, e, Jm1, J_pow, shear_modulus_stored);
+  }
+  else
+  {
+    scalar const c1 =
+      get_c1<true /* force_evaluation */>(Jm1, J_pow, E, shear_modulus_stored, cell, q);
+    tau = compute_tau_unstable(tau, F, J_pow, c1, shear_modulus_stored);
+  }
+
+  return tau;
 }
 
 template<int dim,

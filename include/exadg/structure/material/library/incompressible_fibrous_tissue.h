@@ -188,6 +188,11 @@ public:
                                 unsigned int const q) const final;
 
   symmetric_tensor
+  second_piola_kirchhoff_stress_eval(tensor const &     gradient_displacement,
+                                     unsigned int const cell,
+                                     unsigned int const q) const final;
+
+  symmetric_tensor
   second_piola_kirchhoff_stress(unsigned int const cell, unsigned int const q) const final;
 
   symmetric_tensor
@@ -200,6 +205,11 @@ public:
   kirchhoff_stress(tensor const &     gradient_displacement,
                    unsigned int const cell,
                    unsigned int const q) const final;
+
+  symmetric_tensor
+  kirchhoff_stress_eval(tensor const &     gradient_displacement,
+                        unsigned int const cell,
+                        unsigned int const q) const final;
 
   symmetric_tensor
   kirchhoff_stress(unsigned int const cell, unsigned int const q) const final;
@@ -275,6 +285,12 @@ private:
 
   DEAL_II_ALWAYS_INLINE symmetric_tensor
   compute_structure_tensor(vector const & M_1, vector const & M_2) const;
+
+  DEAL_II_ALWAYS_INLINE symmetric_tensor
+  get_structure_tensor(vector const &     M_1,
+                       unsigned int const i,
+                       unsigned int const cell,
+                       unsigned int const q) const;
 
   DEAL_II_ALWAYS_INLINE scalar
   compute_fiber_switch(vector const & M_1, symmetric_tensor const & E) const;
