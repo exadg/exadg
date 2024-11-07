@@ -104,9 +104,27 @@ MultigridPreconditioner<dim, Number>::update()
     }
     else
     {
-      vector_multigrid_type_copy = vector_linearization;
-      vector_multigrid_type_ptr  = &vector_multigrid_type_copy;
+      if(this->dof_renumbering.empty())
+      {
+        vector_multigrid_type_copy = vector_linearization;
+      }
+      else
+      {
+        this->get_operator_nonlinear(this->get_number_of_levels() - 1)
+          ->get_matrix_free()
+          .initialize_dof_vector(vector_multigrid_type_copy);
+        for(unsigned int i = 0; i < vector_linearization.locally_owned_size(); ++i)
+        {
+          vector_multigrid_type_copy.local_element(i) =
+            vector_linearization.local_element(this->dof_renumbering[i]);
+        }
+      }
+      vector_multigrid_type_ptr = &vector_multigrid_type_copy;
     }
+
+    // TODO the mappings of the coarser grids levels are not updated
+    // for renumbered DoFs on the MG levels.
+    bool const update_mapping = this->dof_renumbering.empty();
 
     // Copy displacement vector to finest level
     // Note: This function also re-assembles the sparse matrix in case a matrix-based implementation
@@ -114,7 +132,7 @@ MultigridPreconditioner<dim, Number>::update()
     this->get_operator_nonlinear(this->get_number_of_levels() - 1)
       ->set_solution_linearization(*vector_multigrid_type_ptr,
                                    true /* update_cell_data */,
-                                   true /* update_mapping */,
+                                   update_mapping,
                                    true /* update_matrix_if_necessary */);
 
     // interpolate displacement vector from fine to coarse level
@@ -180,14 +198,13 @@ MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
   // additional DoFHandler objects.
   if(nonlinear)
   {
-    Map_DBC               dirichlet_bc_empty;
-    Map_DBC_ComponentMask dirichlet_bc_empty_component_mask;
-    this->do_initialize_dof_handler_and_constraints(false,
-                                                    n_components,
-                                                    dirichlet_bc_empty,
-                                                    dirichlet_bc_empty_component_mask,
-                                                    dof_handlers_inhomogeneous,
-                                                    constraints_inhomogeneous);
+    constraints_inhomogeneous.resize(this->constraints.min_level(), this->constraints.max_level());
+    for(unsigned int level = this->constraints.min_level(); level <= this->constraints.max_level();
+        ++level)
+    {
+      constraints_inhomogeneous[level] =
+        std::make_shared<dealii::AffineConstraints<MultigridNumber>>();
+    }
   }
 }
 
@@ -211,7 +228,7 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
   // additional constraints without Dirichlet degrees of freedom
   if(nonlinear)
   {
-    matrix_free_data.insert_dof_handler(&(*dof_handlers_inhomogeneous[level]),
+    matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]),
                                         "elasticity_dof_index_inhomogeneous");
     matrix_free_data.insert_constraint(&(*constraints_inhomogeneous[level]),
                                        "elasticity_dof_index_inhomogeneous");

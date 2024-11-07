@@ -172,6 +172,12 @@ public:
   vmult(VectorType & dst, VectorType const & src) const;
 
   void
+  vmult(VectorType &                                                        dst,
+        VectorType const &                                                  src,
+        std::function<void(const unsigned int, const unsigned int)> const & before,
+        std::function<void(const unsigned int, const unsigned int)> const & after) const;
+
+  void
   vmult_add(VectorType & dst, VectorType const & src) const;
 
   void
@@ -261,6 +267,13 @@ public:
    */
   virtual void
   apply(VectorType & dst, VectorType const & src) const;
+
+  virtual void
+  apply_before_after(
+    VectorType &                                                        dst,
+    VectorType const &                                                  src,
+    std::function<void(const unsigned int, const unsigned int)> const & before,
+    std::function<void(const unsigned int, const unsigned int)> const & after) const;
 
   /*
    * See function apply() for a description.

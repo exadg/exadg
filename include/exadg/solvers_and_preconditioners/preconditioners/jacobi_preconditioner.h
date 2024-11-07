@@ -75,6 +75,12 @@ public:
     this->update_needed = false;
   }
 
+  VectorType
+  get_inverse_diagonal() const
+  {
+    return inverse_diagonal;
+  }
+
 private:
   Operator const & underlying_operator;
 

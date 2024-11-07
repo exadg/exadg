@@ -86,7 +86,9 @@ public:
 
   template<class OtherVectorType>
   void
-  vmult(OtherVectorType & dst, OtherVectorType const & src) const
+  vmult(const std::vector<unsigned int> & dof_renumbering,
+        OtherVectorType &                 dst,
+        OtherVectorType const &           src) const
   {
 #if ENABLE_TIMING
     dealii::Timer timer;
@@ -96,11 +98,31 @@ public:
     {
       defect[i] = 0.0;
     }
-    defect[maxlevel].copy_locally_owned_data_from(src);
+    if(dof_renumbering.empty())
+    {
+      defect[maxlevel].copy_locally_owned_data_from(src);
+    }
+    else
+    {
+      for(unsigned int i = 0; i < src.locally_owned_size(); ++i)
+      {
+        defect[maxlevel].local_element(i) = src.local_element(dof_renumbering[i]);
+      }
+    }
 
     v_cycle(maxlevel, false);
 
-    dst.copy_locally_owned_data_from(solution[maxlevel]);
+    if(dof_renumbering.empty())
+    {
+      dst.copy_locally_owned_data_from(solution[maxlevel]);
+    }
+    else
+    {
+      for(unsigned int i = 0; i < src.locally_owned_size(); ++i)
+      {
+        dst.local_element(dof_renumbering[i]) = solution[maxlevel].local_element(i);
+      }
+    }
 
 #if ENABLE_TIMING
     timer_tree->insert({"Multigrid"}, timer.wall_time());

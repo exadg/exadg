@@ -70,6 +70,12 @@ public:
   vmult(VectorType & dst, VectorType const & src) const = 0;
 
   virtual void
+  vmult(VectorType &       dst,
+        VectorType const & src,
+        std::function<void(const unsigned int, const unsigned int)> const &,
+        std::function<void(const unsigned int, const unsigned int)> const &) const = 0;
+
+  virtual void
   vmult_add(VectorType & dst, VectorType const & src) const = 0;
 
   virtual void

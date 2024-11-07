@@ -99,6 +99,15 @@ public:
   }
 
   void
+  vmult(VectorType &                                                        dst,
+        VectorType const &                                                  src,
+        std::function<void(const unsigned int, const unsigned int)> const & before,
+        std::function<void(const unsigned int, const unsigned int)> const & after) const final
+  {
+    pde_operator->vmult(dst, src, before, after);
+  }
+
+  void
   vmult_add(VectorType & dst, VectorType const & src) const final
   {
     pde_operator->vmult_add(dst, src);

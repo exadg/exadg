@@ -110,7 +110,6 @@ private:
   ElasticityOperatorBase<dim, Number> const * pde_operator;
 
   // additional constraints without Dirichlet degrees of freedom
-  dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> dof_handlers_inhomogeneous;
   dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>>
     constraints_inhomogeneous;
 

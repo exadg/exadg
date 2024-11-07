@@ -20,6 +20,7 @@
  */
 
 // deal.II
+#include <deal.II/dofs/dof_renumbering.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_simplex_p.h>
@@ -453,10 +454,9 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
         }
         else
         {
-          AssertThrow(
-            grid->coarse_periodic_face_pairs.size() == grid->coarse_triangulations.size(),
-            dealii::ExcMessage(
-              "The size of coarse_periodic_face_pairs differs from the size of coarse_triangulations."));
+          AssertThrow(grid->coarse_periodic_face_pairs.size() == grid->coarse_triangulations.size(),
+                      dealii::ExcMessage("The size of coarse_periodic_face_pairs differs from the "
+                                         "size of coarse_triangulations."));
 
           AssertThrow(level.h_level() < grid->coarse_periodic_face_pairs.size(),
                       dealii::ExcMessage(
@@ -562,6 +562,85 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
       dof_handlers[level]     = map_dofhandlers[p_level];
       constrained_dofs[level] = map_constrained_dofs[p_level];
     });
+
+    // enable reordering of MG levels to optimize for data locality.
+    bool constexpr reorder_data_locality = false; // ##+
+    if(reorder_data_locality)
+    {
+      for_all_levels([&](unsigned int const level) {
+        dealii::AffineConstraints<MultigridNumber> affine_constraints_own;
+
+        ConstraintUtil::add_constraints<dim>(level_info[level].is_dg(),
+                                             is_singular,
+                                             *dof_handlers[level],
+                                             affine_constraints_own,
+                                             *constrained_dofs[level],
+                                             grid->periodic_face_pairs,
+                                             level_info[level].h_level());
+
+        typename dealii::MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
+        additional_data.tasks_parallel_scheme =
+          dealii::MatrixFree<dim, MultigridNumber>::AdditionalData::none;
+        additional_data.mg_level = level_info[level].dealii_tria_level();
+        dealii::DoFRenumbering::matrix_free_data_locality(const_cast<dealii::DoFHandler<dim> &>(
+                                                            *dof_handlers[level]),
+                                                          affine_constraints_own,
+                                                          additional_data);
+      });
+
+      for(auto level : p_levels)
+      {
+        if(not(level.is_dg))
+        {
+          map_constrained_dofs[level]->clear();
+          map_constrained_dofs[level]->initialize(*map_dofhandlers[level]);
+          for(auto it : dirichlet_bc)
+          {
+            std::set<dealii::types::boundary_id> dirichlet_boundary;
+            dirichlet_boundary.insert(it.first);
+
+            dealii::ComponentMask mask    = dealii::ComponentMask();
+            auto                  it_mask = dirichlet_bc_component_mask.find(it.first);
+            if(it_mask != dirichlet_bc_component_mask.end())
+            {
+              mask = it_mask->second;
+            }
+
+            map_constrained_dofs[level]->make_zero_boundary_constraints(*map_dofhandlers[level],
+                                                                        dirichlet_boundary,
+                                                                        mask);
+          }
+        }
+      }
+
+      const dealii::DoFHandler<dim> & dof_handler = *dof_handlers.back();
+      dof_renumbering.clear();
+      dof_renumbering.resize(dof_handler.locally_owned_dofs().n_elements(),
+                             dealii::numbers::invalid_unsigned_int);
+      std::vector<dealii::types::global_dof_index> dof_indices(dof_handler.get_fe().dofs_per_cell);
+      std::vector<dealii::types::global_dof_index> mg_dof_indices(
+        dof_handler.get_fe().dofs_per_cell);
+      const dealii::IndexSet & active = dof_handler.locally_owned_dofs();
+      const dealii::IndexSet & level =
+        dof_handler.locally_owned_mg_dofs(level_info.back().h_level());
+      for(const auto & cell : dof_handler.active_cell_iterators())
+      {
+        if(cell->is_locally_owned())
+        {
+          cell->get_dof_indices(dof_indices);
+          cell->get_mg_dof_indices(mg_dof_indices);
+          for(unsigned int i = 0; i < dof_indices.size(); ++i)
+          {
+            if(active.is_element(dof_indices[i]))
+            {
+              Assert(level.is_element(mg_dof_indices[i]), dealii::ExcInternalError());
+              dof_renumbering[level.index_within_set(mg_dof_indices[i])] =
+                active.index_within_set(dof_indices[i]);
+            }
+          }
+        }
+      }
+    }
 
     for_all_levels([&](unsigned int const level) {
       auto affine_constraints_own = new dealii::AffineConstraints<MultigridNumber>;
@@ -674,7 +753,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::vmult(VectorType &   
               dealii::ExcMessage(
                 "Multigrid preconditioner can not be applied because it needs to be updated."));
 
-  multigrid_algorithm->vmult(dst, src);
+  multigrid_algorithm->vmult(dof_renumbering, dst, src);
 }
 
 template<int dim, typename Number, typename MultigridNumber>

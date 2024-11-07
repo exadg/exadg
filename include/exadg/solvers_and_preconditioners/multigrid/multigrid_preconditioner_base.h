@@ -276,6 +276,8 @@ protected:
 
   std::vector<MGLevelInfo> level_info;
 
+  std::vector<unsigned int> dof_renumbering;
+
 private:
   /**
    * Initializes multigrid levels according to coarsening strategy (h-/p-/hp-/ph-MG).

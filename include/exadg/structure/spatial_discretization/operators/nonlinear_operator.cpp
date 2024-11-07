@@ -196,6 +196,39 @@ NonLinearOperator<dim, Number>::apply(VectorType & dst, VectorType const & src) 
 
 template<int dim, typename Number>
 void
+NonLinearOperator<dim, Number>::apply_before_after(
+  VectorType &                                                        dst,
+  VectorType const &                                                  src,
+  std::function<void(const unsigned int, const unsigned int)> const & before,
+  std::function<void(const unsigned int, const unsigned int)> const & after) const
+{
+  AssertThrow(not this->is_dg, dealii::ExcMessage("NonLinearOperator::apply supports CG only"));
+
+  if(this->operator_data.spatial_integration)
+  {
+    // Compute matrix-vector product. Constrained degrees of freedom in the src-vector will not be
+    // used. The function read_dof_values() (or gather_evaluate()) uses the homogeneous boundary
+    // data passed to MatrixFree via AffineConstraints with the standard "dof_index".
+    this->matrix_free_spatial.cell_loop(&This::cell_loop, this, dst, src, before, after);
+
+    // Constrained degree of freedom are not removed from the system of equations.
+    // Instead, we set the diagonal entries of the matrix to 1 for these constrained
+    // degrees of freedom. This means that we simply copy the constrained values to the
+    // dst vector.
+    for(unsigned int const constrained_index :
+        this->matrix_free_spatial.get_constrained_dofs(this->operator_data.dof_index))
+    {
+      dst.local_element(constrained_index) = src.local_element(constrained_index);
+    }
+  }
+  else
+  {
+    OperatorBase<dim, Number, dim /* n_components */>::apply_before_after(dst, src, before, after);
+  }
+}
+
+template<int dim, typename Number>
+void
 NonLinearOperator<dim, Number>::apply_add(VectorType & dst, VectorType const & src) const
 {
   (void)dst;
@@ -480,11 +513,12 @@ NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
   OperatorType const &               operator_type,
   dealii::types::boundary_id const & boundary_id) const
 {
-  BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
+  BoundaryType const boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 
 #ifdef DEBUG
   if(this->operator_data.spatial_integration)
   {
+    // Assert nonzero Robin boundary terms for spatial integration.
     auto const it = this->operator_data.bc->robin_k_c_p_param.find(boundary_id);
     if(it != this->operator_data.bc->robin_k_c_p_param.end())
     {
@@ -493,7 +527,7 @@ NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
 
       if(std::abs(coefficient_displacement) > 1e-20 or std::abs(coefficient_velocity) > 1e-20)
       {
-        AssertThrow(boundary_type == BoundaryType::RobinSpringDashpotPressure,
+        AssertThrow(boundary_type != BoundaryType::RobinSpringDashpotPressure,
                     dealii::ExcMessage(
                       "Linearization of Robin terms incomplete for spatial integration."));
       }
