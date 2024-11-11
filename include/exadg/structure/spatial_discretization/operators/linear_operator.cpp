@@ -60,6 +60,9 @@ LinearOperator<dim, Number>::do_boundary_integral_continuous(
   OperatorType const &               operator_type,
   dealii::types::boundary_id const & boundary_id) const
 {
+  // Note that for the spatial integration approach, this is a quasi-Newton method
+  // as the finite deformation of the body is ignored in the directional derivative.
+
   BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 
   vector traction;

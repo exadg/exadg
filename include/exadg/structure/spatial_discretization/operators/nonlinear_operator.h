@@ -172,11 +172,20 @@ private:
                       VectorType const &                      src,
                       Range const &                           range) const;
 
+  /*
+   * Redefined member functions of OperatorBase for MatrixFree interface.
+   */
   void
-  face_loop_nonlinear(dealii::MatrixFree<dim, Number> const & matrix_free,
-                      VectorType &                            dst,
-                      VectorType const &                      src,
-                      Range const &                           range) const;
+  face_loop_empty(dealii::MatrixFree<dim, Number> const & matrix_free,
+                  VectorType &                            dst,
+                  VectorType const &                      src,
+                  Range const &                           range) const;
+
+  void
+  boundary_face_loop_hom_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                  VectorType &                            dst,
+                                  VectorType const &                      src,
+                                  Range const &                           range) const;
 
   void
   boundary_face_loop_nonlinear(dealii::MatrixFree<dim, Number> const & matrix_free,

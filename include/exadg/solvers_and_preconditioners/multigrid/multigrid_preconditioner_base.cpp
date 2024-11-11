@@ -564,7 +564,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
     });
 
     // enable reordering of MG levels to optimize for data locality.
-    bool constexpr reorder_data_locality = false; // ##+
+    bool constexpr reorder_data_locality = false;
     if(reorder_data_locality)
     {
       for_all_levels([&](unsigned int const level) {

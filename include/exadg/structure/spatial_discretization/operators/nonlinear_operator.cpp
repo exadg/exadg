@@ -68,7 +68,7 @@ NonLinearOperator<dim, Number>::evaluate_nonlinear(VectorType & dst, VectorType 
   if(this->operator_data.spatial_integration and (not this->operator_data.force_material_residual))
   {
     this->matrix_free_spatial.loop(&This::cell_loop_nonlinear,
-                                   &This::face_loop_nonlinear,
+                                   &This::face_loop_empty,
                                    &This::boundary_face_loop_nonlinear,
                                    this,
                                    dst,
@@ -78,7 +78,7 @@ NonLinearOperator<dim, Number>::evaluate_nonlinear(VectorType & dst, VectorType 
   else
   {
     this->matrix_free->loop(&This::cell_loop_nonlinear,
-                            &This::face_loop_nonlinear,
+                            &This::face_loop_empty,
                             &This::boundary_face_loop_nonlinear,
                             this,
                             dst,
@@ -176,7 +176,20 @@ NonLinearOperator<dim, Number>::apply(VectorType & dst, VectorType const & src) 
     // Compute matrix-vector product. Constrained degrees of freedom in the src-vector will not be
     // used. The function read_dof_values() (or gather_evaluate()) uses the homogeneous boundary
     // data passed to MatrixFree via AffineConstraints with the standard "dof_index".
-    this->matrix_free_spatial.cell_loop(&This::cell_loop, this, dst, src, true);
+    if(this->evaluate_face_integrals())
+    {
+      matrix_free_spatial.loop(&This::cell_loop,
+                               &This::face_loop_empty,
+                               &This::boundary_face_loop_hom_operator,
+                               this,
+                               dst,
+                               src,
+                               true);
+    }
+    else
+    {
+      matrix_free_spatial.cell_loop(&This::cell_loop, this, dst, src, true);
+    }
 
     // Constrained degree of freedom are not removed from the system of equations.
     // Instead, we set the diagonal entries of the matrix to 1 for these constrained
@@ -209,7 +222,21 @@ NonLinearOperator<dim, Number>::apply_before_after(
     // Compute matrix-vector product. Constrained degrees of freedom in the src-vector will not be
     // used. The function read_dof_values() (or gather_evaluate()) uses the homogeneous boundary
     // data passed to MatrixFree via AffineConstraints with the standard "dof_index".
-    this->matrix_free_spatial.cell_loop(&This::cell_loop, this, dst, src, before, after);
+    if(this->evaluate_face_integrals())
+    {
+      matrix_free_spatial.loop(&This::cell_loop,
+                               &This::face_loop_empty,
+                               &This::boundary_face_loop_hom_operator,
+                               this,
+                               dst,
+                               src,
+                               before,
+                               after);
+    }
+    else
+    {
+      matrix_free_spatial.cell_loop(&This::cell_loop, this, dst, src, before, after);
+    }
 
     // Constrained degree of freedom are not removed from the system of equations.
     // Instead, we set the diagonal entries of the matrix to 1 for these constrained
@@ -442,16 +469,32 @@ NonLinearOperator<dim, Number>::cell_loop_valid_deformation(
 
 template<int dim, typename Number>
 void
-NonLinearOperator<dim, Number>::face_loop_nonlinear(
-  dealii::MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                            dst,
-  VectorType const &                      src,
-  Range const &                           range) const
+NonLinearOperator<dim, Number>::face_loop_empty(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                                VectorType &                            dst,
+                                                VectorType const &                      src,
+                                                Range const &                           range) const
 {
   (void)matrix_free;
   (void)dst;
   (void)src;
   (void)range;
+
+  // OperatorBase<dim, Number, dim /* n_components */>::face_loop_empty(
+  //   matrix_free, dst, src, range);
+}
+
+template<int dim, typename Number>
+void
+NonLinearOperator<dim, Number>::boundary_face_loop_hom_operator(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
+{
+  OperatorBase<dim, Number, dim /* n_components */>::boundary_face_loop_hom_operator(matrix_free,
+                                                                                     dst,
+                                                                                     src,
+                                                                                     range);
 }
 
 template<int dim, typename Number>
@@ -529,7 +572,7 @@ NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
       {
         AssertThrow(boundary_type != BoundaryType::RobinSpringDashpotPressure,
                     dealii::ExcMessage(
-                      "Linearization of Robin terms incomplete for spatial integration."));
+                      "Residual of Robin terms incomplete for spatial integration."));
       }
     }
   }
@@ -544,35 +587,58 @@ NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
   {
     traction = 0.0;
 
-    // integrate standard (stored) traction or exterior pressure on Robin boundaries
+    // Integrate standard (stored) traction or exterior pressure on Robin boundaries.
     if(boundary_type == BoundaryType::Neumann or boundary_type == BoundaryType::NeumannCached or
        boundary_type == BoundaryType::RobinSpringDashpotPressure)
     {
       if(operator_type == OperatorType::inhomogeneous or operator_type == OperatorType::full)
       {
+        // This returns cached value or evaluation in respective configuration.
         traction -= calculate_neumann_value<dim, Number>(
           q, integrator, boundary_type, boundary_id, this->operator_data.bc, this->time);
 
-        if(this->operator_data.pull_back_traction or this->operator_data.spatial_integration)
+        if(spatial_residual_evaluation)
         {
-          tensor F = compute_F(integrator.get_gradient(q));
-          vector N = integrator.get_normal_vector(q);
-          // da/dA * n = det F F^{-T} * N := n_star
-          // -> da/dA = n_star.norm()
-          vector n_star = determinant(F) * transpose(invert(F)) * N;
           if(this->operator_data.pull_back_traction)
           {
+            // Integrate in spatial domain, traction is given in spatial domain.
+            // No additional scaling required.
+          }
+          else
+          {
+            // Integrate in spatial domain, traction is given in material domain.
+#ifdef DEBUG
+            Number norm = 0.0;
+            for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
+            {
+              for(unsigned int j = 0; j < dim; ++j)
+              {
+                norm += std::max(norm, std::abs(traction[j][i]));
+              }
+            }
+            AssertThrow(norm < 1e-20,
+                        dealii::ExcMessage(
+                          "Nonzero traction not supported for spatial configuration."));
+#endif
+          }
+        }
+        else
+        {
+          if(this->operator_data.pull_back_traction)
+          {
+            // Integrate in material domain, traction is given in spatial domain.
+            tensor F = compute_F(integrator.get_gradient(q));
+            vector N = integrator.get_normal_vector(q);
+            // da/dA * n = det F F^{-T} * N := n_star
+            // -> da/dA = n_star.norm()
+            vector n_star = determinant(F) * transpose(invert(F)) * N;
             // t_0 = da/dA * t
             traction *= n_star.norm();
-            AssertThrow(not spatial_residual_evaluation,
-                        dealii::ExcMessage("Invalid combination."));
           }
-          else if(spatial_residual_evaluation)
+          else
           {
-            // t = dA/da * t_0
-            traction /= n_star.norm();
-            AssertThrow(not this->operator_data.pull_back_traction,
-                        dealii::ExcMessage("Invalid combination."));
+            // Integrate in material domain, traction is given in material domain.
+            // No additional scaling required.
           }
         }
       }

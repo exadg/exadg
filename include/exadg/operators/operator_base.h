@@ -602,6 +602,7 @@ private:
    * homogeneous, inhomogeneous, and full.
    */
 
+protected:
   // homogeneous operator
   void
   boundary_face_loop_hom_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
@@ -609,6 +610,7 @@ private:
                                   VectorType const &                      src,
                                   Range const &                           range) const;
 
+private:
   // inhomogeneous operator
   void
   boundary_face_loop_inhom_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
@@ -740,6 +742,7 @@ private:
   void
   set_constrained_dofs_to_one(VectorType & vector) const;
 
+protected:
   /*
    * Do we have to evaluate (boundary) face integrals for this operator? For example, operators
    * such as the mass operator only involve cell integrals.
@@ -747,6 +750,7 @@ private:
   bool
   evaluate_face_integrals() const;
 
+private:
   /*
    * Compute factorized additive Schwarz matrices.
    */
