@@ -276,6 +276,8 @@ struct MultigridData
       print_parameter(pcout, "p-sequence", p_sequence);
     }
 
+    print_parameter(pcout, "Min degree matrix-free", min_degree_matrix_free);
+
     smoother_data.print(pcout);
 
     coarse_problem.print(pcout);
