@@ -45,6 +45,7 @@ Solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -136,6 +137,7 @@ Solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -227,6 +229,7 @@ Solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -318,6 +321,7 @@ Solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -409,6 +413,7 @@ Solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -500,6 +505,7 @@ Solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -591,6 +597,7 @@ Solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -682,6 +689,7 @@ Solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -773,6 +781,7 @@ Solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -864,6 +873,7 @@ Solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -955,6 +965,7 @@ Solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -1046,6 +1057,7 @@ Solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -1089,7 +1101,7 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 4.58597e-11
+  Relative error (L2-norm): 4.58640e-11
 
 
 
@@ -1137,6 +1149,7 @@ Solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -1180,7 +1193,7 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 4.25103e-11
+  Relative error (L2-norm): 4.25200e-11
 
 
 
@@ -1228,6 +1241,7 @@ Solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -1271,7 +1285,7 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 2.51762e-12
+  Relative error (L2-norm): 2.43668e-12
 
 
 
@@ -1319,6 +1333,7 @@ Solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -1362,4 +1377,4 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 1.90388e-12
+  Relative error (L2-norm): 1.54770e-12

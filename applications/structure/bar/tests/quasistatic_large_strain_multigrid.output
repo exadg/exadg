@@ -59,6 +59,7 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            phMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
