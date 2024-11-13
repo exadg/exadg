@@ -296,10 +296,17 @@ private:
 
   /*
    * This function initializes an operator for a specified level. It needs to be implemented by
-   * derived classes.
+   * derived classes. The parameter use_matrix_based_implementation describes whether a matrix-based
+   * implementation is used on a given level. The parameter assemble_matrix describes whether the
+   * matrix should be assembled during initialize_operator(). This parameter only has an effect if
+   * use_matrix_based_implementation = true. Note that you have to make sure that the parameter
+   * use_matrix_based_implementation is passed correctly to the underlying PDE operator when
+   * implementing the function initialize_operator() in derived classes.
    */
   virtual std::shared_ptr<Operator>
-  initialize_operator(unsigned int const level, bool const assemble_matrix);
+  initialize_operator(unsigned int const level,
+                      bool const         use_matrix_based_implementation,
+                      bool const         assemble_matrix);
 
   /*
    * Smoother.

@@ -608,7 +608,10 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_operators(
   this->operators.resize(0, this->get_number_of_levels() - 1);
 
   for_all_levels([&](unsigned int const level) {
-    operators[level] = this->initialize_operator(level, assemble_matrix);
+    bool const use_matrix_based_implementation =
+      level_info[level].degree() < this->data.min_degree_matrix_free;
+    operators[level] =
+      this->initialize_operator(level, use_matrix_based_implementation, assemble_matrix);
   });
 }
 
@@ -618,9 +621,11 @@ std::shared_ptr<MultigridOperatorBase<
   typename MultigridPreconditionerBase<dim, Number, MultigridNumber>::MultigridNumber>>
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_operator(
   unsigned int const level,
+  bool const         use_matrix_based_implementation,
   bool const         assemble_matrix)
 {
   (void)level;
+  (void)use_matrix_based_implementation;
   (void)assemble_matrix;
 
   AssertThrow(false,
