@@ -227,7 +227,6 @@ public:
     // Add near null space basis vectors to `Teuchos::ParameterList`.
     // If the `std::vector<std::vector<double>> constant_modes_values`
     // were filled, use these, otherwise use `std::vector<std::vector<bool>> constant_modes`.
-    // This mirrors the behavior within deal.II.
     std::vector<std::vector<bool>>   constant_modes;
     std::vector<std::vector<double>> constant_modes_values;
     pde_operator.get_constant_modes(constant_modes, constant_modes_values);

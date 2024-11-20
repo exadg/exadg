@@ -255,12 +255,9 @@ public:
 #endif
 
   /*
-   * Provide near null space basis vectors used e.g. in AMG setup. deal.II allows providing constant
-   * modes as `std::vector<std::vector<double>> constant_modes_values` or
-   * `std::vector<std::vector<bool>>   constant_modes`,
-   * where `constant_modes_values` is currently checked first (within deal.II), and if not provided,
-   * `constant_modes` is used. ExaDG assumes a scalar Laplace operator as default, filling
-   * `constant_modes`, which can be overwritten in derived classes if necessary.
+   * Provide near null space basis vectors used e.g. in AMG setup. ExaDG assumes a scalar Laplace
+   * operator as default, filling `constant_modes`, which can be overwritten in derived classes if
+   * necessary. 'constant_modes_values' may alternatively be used to provide non-trivial modes.
    */
   virtual void
   get_constant_modes(std::vector<std::vector<bool>> &   constant_modes,

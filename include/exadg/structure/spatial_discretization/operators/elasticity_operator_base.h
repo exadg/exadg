@@ -100,11 +100,7 @@ public:
   get_data() const;
 
   /*
-   * Provide near null space basis vectors used e.g. in AMG setup. deal.II allows providing constant
-   * modes as `std::vector<std::vector<double>> constant_modes_values` or
-   * `std::vector<std::vector<bool>>   constant_modes`,
-   * where `constant_modes_values` is currently checked first (within deal.II), and if not provided,
-   * `constant_modes` is used. Provide rigid body modes, override implementation in `OperatorBase`.
+   * Provide near null space basis vectors, that is, the rigid body modes, used e.g. in AMG setup.
    */
   void
   get_constant_modes(std::vector<std::vector<bool>> &   constant_modes,
