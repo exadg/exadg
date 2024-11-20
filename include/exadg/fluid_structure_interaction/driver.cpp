@@ -221,22 +221,7 @@ Driver<dim, Number>::coupling_structure_to_fluid(unsigned int iteration) const
 
   VectorType velocity_structure;
   structure->pde_operator->initialize_dof_vector(velocity_structure);
-  if(iteration == 0)
-  {
-    if(parameters.use_extrapolation)
-    {
-      structure->time_integrator->extrapolate_velocity_to_np(velocity_structure);
-    }
-    else
-    {
-      velocity_structure = structure->time_integrator->get_velocity_n();
-    }
-  }
-  else
-  {
-    velocity_structure = structure->time_integrator->get_velocity_np();
-  }
-
+  partitioned_solver->get_structure_velocity(velocity_structure, iteration);
   structure_to_fluid->update_data(velocity_structure);
 
   timer_tree.insert({"FSI", "Coupling structure -> fluid"}, sub_timer.wall_time());
