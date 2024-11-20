@@ -26,7 +26,7 @@
         "VolumeForce": "1.0",
         "BoundaryType": "Dirichlet",
         "Displacement": "20.0",
-        "Traction":	"0.0" 
+        "Traction":	"0.0"
     },
     "Output": {
         "OutputDirectory": "output/bar/",

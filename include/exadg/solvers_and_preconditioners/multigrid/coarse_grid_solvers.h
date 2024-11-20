@@ -166,6 +166,10 @@ public:
       std::shared_ptr<PreconditionerAMG<Operator, Number>> preconditioner_amg =
         std::dynamic_pointer_cast<PreconditionerAMG<Operator, Number>>(preconditioner);
 
+      AssertThrow(preconditioner_amg != nullptr,
+                  dealii::ExcMessage("Constructed preconditioner is not of type "
+                                     "PreconditionerAMG<Operator, Number>."));
+
       preconditioner_amg->apply_krylov_solver_with_amg_preconditioner(dst,
                                                                       r,
                                                                       additional_data.solver_type,
@@ -236,7 +240,7 @@ public:
   }
 
 private:
-  const Operator & pde_operator;
+  Operator const & pde_operator;
 
   std::shared_ptr<PreconditionerBase<Number>> preconditioner;
 
@@ -333,7 +337,7 @@ private:
 };
 
 /**
- * The aim if this class is to translate PreconditionerAMG to a coarse-grid solver with the function
+ * The aim of this class is to translate PreconditionerAMG to a coarse-grid solver with the function
  * operator()().
  */
 template<typename Operator>

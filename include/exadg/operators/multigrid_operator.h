@@ -182,6 +182,13 @@ public:
   }
 #endif
 
+  void
+  get_constant_modes(std::vector<std::vector<bool>> &   constant_modes,
+                     std::vector<std::vector<double>> & constant_modes_values) const final
+  {
+    pde_operator->get_constant_modes(constant_modes, constant_modes_values);
+  }
+
 private:
   std::shared_ptr<Operator> pde_operator;
 };

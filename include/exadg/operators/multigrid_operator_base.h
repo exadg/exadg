@@ -37,6 +37,8 @@ public:
   typedef Number                                             value_type;
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
+  static unsigned int const dimension = dim;
+
   MultigridOperatorBase() : dealii::Subscriptor()
   {
   }
@@ -113,6 +115,10 @@ public:
   virtual void
   calculate_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const = 0;
 #endif
+
+  virtual void
+  get_constant_modes(std::vector<std::vector<bool>> &   constant_modes,
+                     std::vector<std::vector<double>> & constant_modes_values) const = 0;
 };
 
 } // namespace ExaDG

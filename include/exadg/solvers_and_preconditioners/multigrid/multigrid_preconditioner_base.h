@@ -280,6 +280,12 @@ private:
   dealii::Mapping<dim> const &
   get_mapping(unsigned int const h_level) const;
 
+  /**
+   * Returns the number of h-levels.
+   */
+  unsigned int
+  get_number_of_h_levels() const;
+
   /*
    * Data structures needed for matrix-free operator evaluation.
    */
