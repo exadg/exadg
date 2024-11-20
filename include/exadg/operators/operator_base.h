@@ -257,7 +257,7 @@ public:
   /*
    * Provide near null space basis vectors used e.g. in AMG setup. ExaDG assumes a scalar Laplace
    * operator as default, filling `constant_modes`, which can be overwritten in derived classes if
-   * necessary. 'constant_modes_values' may alternatively be used to provide non-trivial modes.
+   * necessary. `constant_modes_values` may alternatively be used to provide non-trivial modes.
    */
   virtual void
   get_constant_modes(std::vector<std::vector<bool>> &   constant_modes,
