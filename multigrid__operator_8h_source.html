@@ -276,14 +276,21 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>  }</div>
 <div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span> </div>
-<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>  std::shared_ptr&lt;Operator&gt; pde_operator;</div>
-<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>};</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>  get_constant_modes(std::vector&lt;std::vector&lt;bool&gt;&gt; &amp;   constant_modes,</div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>                     std::vector&lt;std::vector&lt;double&gt;&gt; &amp; constant_modes_values) <span class="keyword">const</span> <span class="keyword">final</span></div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>  {</div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>    pde_operator-&gt;get_constant_modes(constant_modes, constant_modes_values);</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  }</div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span> </div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>  std::shared_ptr&lt;Operator&gt; pde_operator;</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>};</div>
 </div>
-<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span> </div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span> </div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_OPERATORS_MULTIGRID_OPERATOR_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span> </div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span> </div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_OPERATORS_MULTIGRID_OPERATOR_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1MultigridOperatorBase_html"><div class="ttname"><a href="classExaDG_1_1MultigridOperatorBase.html">ExaDG::MultigridOperatorBase</a></div><div class="ttdef"><b>Definition</b> multigrid_operator_base.h:35</div></div>
 <div class="ttc" id="aclassExaDG_1_1MultigridOperator_html"><div class="ttname"><a href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a></div><div class="ttdef"><b>Definition</b> multigrid_operator.h:31</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>

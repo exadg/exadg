@@ -149,6 +149,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:af4e00472e0cc046ea81d6afe18d6abaf" id="r_af4e00472e0cc046ea81d6afe18d6abaf"><td class="memItemLeft" align="right" valign="top"><a id="af4e00472e0cc046ea81d6afe18d6abaf" name="af4e00472e0cc046ea81d6afe18d6abaf"></a>
 <a class="el" href="structExaDG_1_1Structure_1_1OperatorData.html">OperatorData</a>&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_data</b> () const</td></tr>
 <tr class="separator:af4e00472e0cc046ea81d6afe18d6abaf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae85e04e00e415b7debe7e2216c071b9e" id="r_ae85e04e00e415b7debe7e2216c071b9e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae85e04e00e415b7debe7e2216c071b9e">get_constant_modes</a> (std::vector&lt; std::vector&lt; bool &gt; &gt; &amp;constant_modes, std::vector&lt; std::vector&lt; double &gt; &gt; &amp;constant_modes_values) const override</td></tr>
+<tr class="separator:ae85e04e00e415b7debe7e2216c071b9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af5223aa37cdb2e1ec34f98162c2e13ba" id="r_af5223aa37cdb2e1ec34f98162c2e13ba"><td class="memItemLeft" align="right" valign="top"><a id="af5223aa37cdb2e1ec34f98162c2e13ba" name="af5223aa37cdb2e1ec34f98162c2e13ba"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_scaling_factor_mass_operator</b> (double const scaling_factor) const</td></tr>
 <tr class="separator:af5223aa37cdb2e1ec34f98162c2e13ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -405,11 +407,47 @@ std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Elementwise_1_1IterativeSo
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pub_static_attribs_classExaDG_1_1OperatorBase"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_static_attribs_classExaDG_1_1OperatorBase')"><img src="closed.png" alt="-"/>&#160;Static Public Attributes inherited from <a class="el" href="classExaDG_1_1OperatorBase.html">ExaDG::OperatorBase&lt; dim, Number, dim &gt;</a></td></tr>
+<tr class="memitem:a62c3a76f7d196c7f28ee009a7c390280 inherit pub_static_attribs_classExaDG_1_1OperatorBase" id="r_a62c3a76f7d196c7f28ee009a7c390280"><td class="memItemLeft" align="right" valign="top">
+static unsigned int const&#160;</td><td class="memItemRight" valign="bottom"><b>dimension</b></td></tr>
+<tr class="separator:a62c3a76f7d196c7f28ee009a7c390280 inherit pub_static_attribs_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1b664752da1840caf220ee294211b9e6 inherit pub_static_attribs_classExaDG_1_1OperatorBase" id="r_a1b664752da1840caf220ee294211b9e6"><td class="memItemLeft" align="right" valign="top">
 static unsigned int const&#160;</td><td class="memItemRight" valign="bottom"><b>vectorization_length</b></td></tr>
 <tr class="separator:a1b664752da1840caf220ee294211b9e6 inherit pub_static_attribs_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="ae85e04e00e415b7debe7e2216c071b9e" name="ae85e04e00e415b7debe7e2216c071b9e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae85e04e00e415b7debe7e2216c071b9e">&#9670;&#160;</a></span>get_constant_modes()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1Structure_1_1ElasticityOperatorBase.html">ExaDG::Structure::ElasticityOperatorBase</a>&lt; dim, Number &gt;::get_constant_modes </td>
+          <td>(</td>
+          <td class="paramtype">std::vector&lt; std::vector&lt; bool &gt; &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>constant_modes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; std::vector&lt; double &gt; &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>constant_modes_values</em></span>&#160;) const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reimplemented from <a class="el" href="classExaDG_1_1OperatorBase.html">ExaDG::OperatorBase&lt; dim, Number, dim &gt;</a>.</p>
+
+</div>
+</div>
 <a id="ab966291ebe80530a34d222d7da877ea8" name="ab966291ebe80530a34d222d7da877ea8"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab966291ebe80530a34d222d7da877ea8">&#9670;&#160;</a></span>initialize()</h2>
 

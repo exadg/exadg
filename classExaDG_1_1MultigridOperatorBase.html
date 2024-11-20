@@ -91,6 +91,7 @@ $(function(){ initResizable(false); });
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="classExaDG_1_1MultigridOperatorBase-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">ExaDG::MultigridOperatorBase&lt; dim, Number &gt; Class Template Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div></div>
 </div><!--header-->
@@ -167,6 +168,15 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_inverse
 <tr class="memitem:ab0d1f304f62c569ab28e86c1b2697a00" id="r_ab0d1f304f62c569ab28e86c1b2697a00"><td class="memItemLeft" align="right" valign="top"><a id="ab0d1f304f62c569ab28e86c1b2697a00" name="ab0d1f304f62c569ab28e86c1b2697a00"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>compute_factorized_additive_schwarz_matrices</b> () const =0</td></tr>
 <tr class="separator:ab0d1f304f62c569ab28e86c1b2697a00"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a55630de64e8e15fb95e2339f7306f4a9" id="r_a55630de64e8e15fb95e2339f7306f4a9"><td class="memItemLeft" align="right" valign="top"><a id="a55630de64e8e15fb95e2339f7306f4a9" name="a55630de64e8e15fb95e2339f7306f4a9"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>get_constant_modes</b> (std::vector&lt; std::vector&lt; bool &gt; &gt; &amp;constant_modes, std::vector&lt; std::vector&lt; double &gt; &gt; &amp;constant_modes_values) const =0</td></tr>
+<tr class="separator:a55630de64e8e15fb95e2339f7306f4a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:aef3581c3b68dd4486d0a0833c6d847f0" id="r_aef3581c3b68dd4486d0a0833c6d847f0"><td class="memItemLeft" align="right" valign="top"><a id="aef3581c3b68dd4486d0a0833c6d847f0" name="aef3581c3b68dd4486d0a0833c6d847f0"></a>
+static unsigned int const&#160;</td><td class="memItemRight" valign="bottom"><b>dimension</b> = dim</td></tr>
+<tr class="separator:aef3581c3b68dd4486d0a0833c6d847f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/operators/<a class="el" href="multigrid__operator__base_8h_source.html">multigrid_operator_base.h</a></li>
