@@ -312,9 +312,6 @@ template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::do_timestep_solve()
 {
-  // pre-computations
-  pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
-
   // perform the sub-steps of the dual-splitting method
   if(this->update_velocity)
   {
@@ -323,6 +320,8 @@ TimeIntBDFDualSplitting<dim, Number>::do_timestep_solve()
 
   if(this->update_pressure)
   {
+    // The vector `velocity_dbc_np` is only required in `rhs_pressure`.
+    pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
     pressure_step();
   }
 
@@ -935,8 +934,11 @@ TimeIntBDFDualSplitting<dim, Number>::prepare_vectors_for_next_timestep()
 
   // We also have to care about the history of velocity Dirichlet boundary conditions.
   // Note that velocity_dbc_np has already been updated.
-  push_back(velocity_dbc);
-  velocity_dbc[0].swap(velocity_dbc_np);
+  if(this->update_pressure)
+  {
+    push_back(velocity_dbc);
+    velocity_dbc[0].swap(velocity_dbc_np);
+  }
 }
 
 template<int dim, typename Number>
