@@ -218,7 +218,6 @@ create_grid_and_set_boundary_ids_nozzle(
    *  MANIFOLDS
    */
   dealii::Triangulation<dim> * current_tria = &triangulation;
-  current_tria->set_all_manifold_ids(0);
 
   // first fill vectors of manifold_ids and face_ids
   std::vector<unsigned int> manifold_ids;
@@ -465,8 +464,6 @@ create_grid_and_set_boundary_ids_precursor(
   /*
    *  MANIFOLDS
    */
-  tria.set_all_manifold_ids(0);
-
   // first fill vectors of manifold_ids and face_ids
   std::vector<unsigned int> manifold_ids;
   std::vector<unsigned int> face_ids;

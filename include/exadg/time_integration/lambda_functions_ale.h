@@ -24,6 +24,8 @@
 
 // deal.II
 #include <deal.II/base/exceptions.h>
+#include <deal.II/dofs/dof_handler.h>
+#include <deal.II/lac/la_parallel_vector.h>
 
 namespace ExaDG
 {
@@ -33,7 +35,7 @@ namespace ExaDG
  * utility functions as lambda functions so that the time integrator classes do not depend on data
  * structures owned by other classes.
  */
-template<typename Number>
+template<int dim, typename Number>
 class HelpersALE
 {
 public:
@@ -63,6 +65,26 @@ public:
       dealii::ExcMessage(
         "The function update_pde_operator_after_grid_motion() has not been implemented."));
   };
+
+  /**
+   * This function fills a DoF-vector describing the grid coordinates given an underlying
+   * dof-handler.
+   *
+   * The default implementation causes the program to terminate, in order to avoid uninitialized /
+   * undefined functions leading to erroneous results.
+   */
+  std::function<void(dealii::LinearAlgebra::distributed::Vector<Number> & grid_coordinates,
+                     dealii::DoFHandler<dim> const &                      dof_handler)>
+    fill_grid_coordinates_vector =
+      [](dealii::LinearAlgebra::distributed::Vector<Number> & grid_coordinates,
+         dealii::DoFHandler<dim> const &                      dof_handler) {
+        (void)grid_coordinates;
+        (void)dof_handler;
+
+        AssertThrow(false,
+                    dealii::ExcMessage(
+                      "The function fill_grid_coordinates_vector() has not been implemented."));
+      };
 };
 } // namespace ExaDG
 

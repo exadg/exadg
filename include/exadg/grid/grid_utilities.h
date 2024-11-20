@@ -68,6 +68,33 @@ create_mapping(std::shared_ptr<dealii::Mapping<dim>> & mapping,
 }
 
 /**
+ * This function creates mapping and multigrid_mappings (while the mapping for coarse multigrid
+ * h-levels is created only if involves_h_multigrid is true and if mapping_degree_fine is
+ * unequal mapping_degree_coarse). Internally, the above function is called, creating a
+ * dealii::Mapping depending on the element type and the mapping_degree.
+ */
+template<int dim, typename Number>
+void
+create_mapping_with_multigrid(std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+                              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings,
+                              ElementType const &                               element_type,
+                              unsigned int const &                              mapping_degree_fine,
+                              unsigned int const & mapping_degree_coarse,
+                              bool const           involves_h_multigrid)
+{
+  // create fine mapping
+  create_mapping(mapping, element_type, mapping_degree_fine);
+
+  // create coarse mappings if needed
+  std::shared_ptr<dealii::Mapping<dim>> coarse_mapping;
+  if(involves_h_multigrid and (mapping_degree_coarse != mapping_degree_fine))
+  {
+    create_mapping(coarse_mapping, element_type, mapping_degree_coarse);
+  }
+  multigrid_mappings = std::make_shared<MultigridMappings<dim, Number>>(mapping, coarse_mapping);
+}
+
+/**
  * This function can be seen as some form of "copy constructor" for periodic face pairs,
  * transforming the template argument of dealii::GridTools::PeriodicFacePair from
  * Triangulation::cell_iterator to DoFHandler::cell_iterator.
@@ -243,7 +270,164 @@ create_triangulation(
  *
  * The vector coarse_triangulations only includes the levels coarser than the fine triangulation,
  * where the first entry of the vector corresponds to the coarsest level.
+ *
+ * We have to distinguish between traingulation types, since for the case of a fully distributed
+ * triangulation, one cannot coarse triangulations automatically. Instead, the lambda function
+ * `lambda_create_coarse_triangulation()` is used together with the `vector_local_refinemetns`.
  */
+template<int dim>
+inline void
+create_coarse_triangulations_automatically_from_fine_triangulation(
+  dealii::Triangulation<dim> const &                               fine_triangulation,
+  PeriodicFacePairs<dim> const &                                   fine_periodic_face_pairs,
+  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> & coarse_triangulations_const,
+  std::vector<PeriodicFacePairs<dim>> &                            coarse_periodic_face_pairs,
+  GridData const &                                                 data)
+{
+  // In case of a serial or distributed triangulation, deal.II can automatically generate the
+  // coarse triangulations.
+  AssertThrow(data.triangulation_type == TriangulationType::Serial or
+                data.triangulation_type == TriangulationType::Distributed,
+              dealii::ExcMessage("Invalid parameter triangulation_type."));
+
+  if(data.triangulation_type == TriangulationType::Serial)
+  {
+    AssertThrow(
+      fine_triangulation.all_reference_cells_are_hyper_cube(),
+      dealii::ExcMessage(
+        "The create_geometric_coarsening_sequence function of dealii does currently not support "
+        "simplicial elements."));
+
+    coarse_triangulations_const =
+      dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
+        fine_triangulation);
+  }
+  else if(data.triangulation_type == TriangulationType::Distributed)
+  {
+    AssertThrow(
+      fine_triangulation.all_reference_cells_are_hyper_cube(),
+      dealii::ExcMessage(
+        "dealii::parallel::distributed::Triangulation does not support simplicial elements."));
+
+    coarse_triangulations_const =
+      dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
+        fine_triangulation,
+        BalancedGranularityPartitionPolicy<dim>(
+          dealii::Utilities::MPI::n_mpi_processes(fine_triangulation.get_communicator())));
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("Invalid parameter triangulation_type."));
+  }
+
+  // deal.II adds the fine triangulation as the last entry of the vector. According to our
+  // convention in ExaDG, we only include the triangulations coarser than the fine level. Hence,
+  // we remove the last entry of the vector.
+  coarse_triangulations_const.pop_back();
+
+  coarse_periodic_face_pairs.resize(coarse_triangulations_const.size());
+  for(unsigned int level = 0; level < coarse_periodic_face_pairs.size(); ++level)
+  {
+    coarse_periodic_face_pairs[level] = fine_periodic_face_pairs;
+  }
+}
+
+template<int dim>
+inline void
+create_coarse_triangulations_for_fully_distributed_triangulation(
+  dealii::Triangulation<dim> const &                               fine_triangulation,
+  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> & coarse_triangulations_const,
+  std::vector<PeriodicFacePairs<dim>> &                            coarse_periodic_face_pairs,
+  GridData const &                                                 data,
+  std::function<void(dealii::Triangulation<dim> &,
+                     PeriodicFacePairs<dim> &,
+                     unsigned int const,
+                     std::vector<unsigned int> const &)> const &   lambda_create_triangulation,
+  std::vector<unsigned int> const                                  vector_local_refinements)
+{
+  // In case of a fully distributed triangulation, deal.II cannot automatically generate the
+  // coarse triangulations. Create the coarse traingulations using the lambda function and
+  // the vector of local refinements.
+  AssertThrow(data.triangulation_type == TriangulationType::FullyDistributed,
+              dealii::ExcMessage("Invalid parameter triangulation_type."));
+
+  if(fine_triangulation.n_global_levels() >= 2)
+  {
+    // Resize the empty coarse_triangulations and coarse_periodic_face_pairs vectors.
+    std::vector<std::shared_ptr<dealii::Triangulation<dim>>> coarse_triangulations =
+      std::vector<std::shared_ptr<dealii::Triangulation<dim>>>(
+        fine_triangulation.n_global_levels() - 1);
+
+    coarse_periodic_face_pairs = std::vector<PeriodicFacePairs<dim>>(coarse_triangulations.size());
+
+    // Start one level below the fine triangulation.
+    unsigned int              level        = fine_triangulation.n_global_levels() - 2;
+    std::vector<unsigned int> refine_local = vector_local_refinements;
+
+    // Undo global refinements.
+    if(data.n_refine_global >= 1)
+    {
+      unsigned int const n_refine_global_start = (unsigned int)(data.n_refine_global - 1);
+      for(int refine_global = n_refine_global_start; refine_global >= 0; --refine_global)
+      {
+        GridUtilities::create_triangulation<dim>(coarse_triangulations[level],
+                                                 coarse_periodic_face_pairs[level],
+                                                 fine_triangulation.get_communicator(),
+                                                 data,
+                                                 false /*construct_multigrid_hierarchy */,
+                                                 lambda_create_triangulation,
+                                                 refine_global,
+                                                 refine_local);
+
+        if(level > 0)
+        {
+          level--;
+        }
+      }
+    }
+
+    // Undo local refinements.
+    if(refine_local.size() > 0)
+    {
+      while(*std::max_element(refine_local.begin(), refine_local.end()) != 0)
+      {
+        for(size_t material_id = 0; material_id < refine_local.size(); material_id++)
+        {
+          if(refine_local[material_id] > 0)
+          {
+            refine_local[material_id]--;
+          }
+        }
+
+        GridUtilities::create_triangulation<dim>(coarse_triangulations[level],
+                                                 coarse_periodic_face_pairs[level],
+                                                 fine_triangulation.get_communicator(),
+                                                 data,
+                                                 false /*construct_multigrid_hierarchy */,
+                                                 lambda_create_triangulation,
+                                                 0 /*refine_global*/,
+                                                 refine_local);
+
+        if(level > 0)
+        {
+          level--;
+        }
+      }
+    }
+
+    AssertThrow(
+      level == 0,
+      dealii::ExcMessage(
+        "There occurred a logical error when creating the geometric coarsening sequence."));
+
+    // Make all entries in the vector of shared pointers const.
+    for(auto const & it : coarse_triangulations)
+    {
+      coarse_triangulations_const.push_back(it);
+    }
+  }
+}
+
 template<int dim>
 inline void
 create_coarse_triangulations(
@@ -258,122 +442,26 @@ create_coarse_triangulations(
                      std::vector<unsigned int> const &)> const &   lambda_create_triangulation,
   std::vector<unsigned int> const                                  vector_local_refinements)
 {
-  // in case of a serial or distributed triangulation, deal.II can automatically generate the
-  // coarse triangulations
+  // In case of a serial or distributed triangulation, deal.II can automatically generate the
+  // coarse triangulations, otherwise, the coarse triangulations have to be explicitily created
+  // using the provided lambda function and the vector of local refinements.
   if(data.triangulation_type == TriangulationType::Serial or
      data.triangulation_type == TriangulationType::Distributed)
   {
-    if(data.triangulation_type == TriangulationType::Serial)
-    {
-      AssertThrow(
-        fine_triangulation.all_reference_cells_are_hyper_cube(),
-        dealii::ExcMessage(
-          "The create_geometric_coarsening_sequence function of dealii does currently not support "
-          "simplicial elements."));
-
-      coarse_triangulations_const =
-        dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
-          fine_triangulation);
-    }
-    else if(data.triangulation_type == TriangulationType::Distributed)
-    {
-      AssertThrow(
-        fine_triangulation.all_reference_cells_are_hyper_cube(),
-        dealii::ExcMessage(
-          "dealii::parallel::distributed::Triangulation does not support simplicial elements."));
-
-      coarse_triangulations_const =
-        dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
-          fine_triangulation,
-          BalancedGranularityPartitionPolicy<dim>(
-            dealii::Utilities::MPI::n_mpi_processes(fine_triangulation.get_communicator())));
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Invalid parameter triangulation_type."));
-    }
-
-    // deal.II adds the fine triangulation as the last entry of the vector. According to our
-    // convention in ExaDG, we only include the triangulations coarser than the fine level. Hence,
-    // we remove the last entry of the vector.
-    coarse_triangulations_const.pop_back();
-
-    coarse_periodic_face_pairs.resize(coarse_triangulations_const.size());
-    for(unsigned int level = 0; level < coarse_periodic_face_pairs.size(); ++level)
-      coarse_periodic_face_pairs[level] = fine_periodic_face_pairs;
+    create_coarse_triangulations_automatically_from_fine_triangulation(fine_triangulation,
+                                                                       fine_periodic_face_pairs,
+                                                                       coarse_triangulations_const,
+                                                                       coarse_periodic_face_pairs,
+                                                                       data);
   }
   else if(data.triangulation_type == TriangulationType::FullyDistributed)
   {
-    if(fine_triangulation.n_global_levels() >= 2)
-    {
-      // resize the empty coarse_triangulations and coarse_periodic_face_pairs vectors
-      std::vector<std::shared_ptr<dealii::Triangulation<dim>>> coarse_triangulations =
-        std::vector<std::shared_ptr<dealii::Triangulation<dim>>>(
-          fine_triangulation.n_global_levels() - 1);
-
-      coarse_periodic_face_pairs =
-        std::vector<PeriodicFacePairs<dim>>(coarse_triangulations.size());
-
-      // we start with one level below the fine triangulation
-      unsigned int              level        = fine_triangulation.n_global_levels() - 2;
-      std::vector<unsigned int> refine_local = vector_local_refinements;
-
-      // undo global refinements
-      if(data.n_refine_global >= 1)
-      {
-        unsigned int const n_refine_global_start = (unsigned int)(data.n_refine_global - 1);
-        for(int refine_global = n_refine_global_start; refine_global >= 0; --refine_global)
-        {
-          GridUtilities::create_triangulation<dim>(coarse_triangulations[level],
-                                                   coarse_periodic_face_pairs[level],
-                                                   fine_triangulation.get_communicator(),
-                                                   data,
-                                                   false /*construct_multigrid_hierarchy */,
-                                                   lambda_create_triangulation,
-                                                   refine_global,
-                                                   refine_local);
-
-          if(level > 0)
-            level--;
-        }
-      }
-
-      // undo local refinements
-      if(refine_local.size() > 0)
-      {
-        while(*std::max_element(refine_local.begin(), refine_local.end()) != 0)
-        {
-          for(size_t material_id = 0; material_id < refine_local.size(); material_id++)
-          {
-            if(refine_local[material_id] > 0)
-            {
-              refine_local[material_id]--;
-            }
-          }
-
-          GridUtilities::create_triangulation<dim>(coarse_triangulations[level],
-                                                   coarse_periodic_face_pairs[level],
-                                                   fine_triangulation.get_communicator(),
-                                                   data,
-                                                   false /*construct_multigrid_hierarchy */,
-                                                   lambda_create_triangulation,
-                                                   0 /*refine_global*/,
-                                                   refine_local);
-
-          if(level > 0)
-            level--;
-        }
-      }
-
-      AssertThrow(
-        level == 0,
-        dealii::ExcMessage(
-          "There occurred a logical error when creating the geometric coarsening sequence."));
-
-      // make all vector entries shared_ptr's to const
-      for(auto const & it : coarse_triangulations)
-        coarse_triangulations_const.push_back(it);
-    }
+    create_coarse_triangulations_for_fully_distributed_triangulation(fine_triangulation,
+                                                                     coarse_triangulations_const,
+                                                                     coarse_periodic_face_pairs,
+                                                                     data,
+                                                                     lambda_create_triangulation,
+                                                                     vector_local_refinements);
   }
   else
   {
@@ -429,6 +517,7 @@ create_triangulation_with_multigrid(
 {
   if(involves_h_multigrid)
   {
+    // Make sure that we create coarse triangulations in case of simplex meshes.
     if(data.element_type == ElementType::Simplex)
     {
       AssertThrow(data.create_coarse_triangulations == true,
@@ -437,6 +526,7 @@ create_triangulation_with_multigrid(
                     "in order to use h-multigrid for simplex meshes."));
     }
 
+    // create fine triangulation
     GridUtilities::create_triangulation(grid.triangulation,
                                         grid.periodic_face_pairs,
                                         mpi_comm,
@@ -446,8 +536,16 @@ create_triangulation_with_multigrid(
                                         data.n_refine_global,
                                         vector_local_refinements);
 
-    // Depending on the type of multigrid implementation, the coarse triangulations need to be
-    // created explicitly.
+    // Make sure that we create coarse triangulations in case of meshes with hanging nodes.
+    if(grid.triangulation->has_hanging_nodes())
+    {
+      AssertThrow(data.create_coarse_triangulations == true,
+                  dealii::ExcMessage(
+                    "You need to set GridData::create_coarse_triangulations = true "
+                    "in order to use h-multigrid for meshes with hanging nodes."));
+    }
+
+    // create coarse triangulations
     if(data.create_coarse_triangulations)
     {
       GridUtilities::create_coarse_triangulations(*grid.triangulation,
@@ -461,9 +559,54 @@ create_triangulation_with_multigrid(
   }
   else
   {
-    // If no h-multigrid is involved, simply re-direct to the other function above.
+    // If no h-multigrid is involved, simply re-direct to the other function that creates the fine
+    // triangulation only.
     GridUtilities::create_triangulation<dim>(
       grid, mpi_comm, data, lambda_create_triangulation, vector_local_refinements);
+  }
+}
+
+/**
+ * Function to create the coarse_triangulations and coarse_periodic_face_pairs given the
+ * fine_triangulation and fine_periodic_face_pairs.
+ */
+template<int dim>
+inline void
+create_coarse_triangulations_after_coarsening_and_refinement(
+  dealii::Triangulation<dim> const &                               fine_triangulation,
+  PeriodicFacePairs<dim> const &                                   fine_periodic_face_pairs,
+  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> & coarse_triangulations_const,
+  std::vector<PeriodicFacePairs<dim>> &                            coarse_periodic_face_pairs,
+  GridData const &                                                 data,
+  bool const                                                       amr_preserves_boundary_cells)
+{
+  if(data.triangulation_type == TriangulationType::Serial or
+     data.triangulation_type == TriangulationType::Distributed)
+  {
+    // Update periodic face pairs if existent.
+    if(fine_periodic_face_pairs.size() > 0)
+    {
+      AssertThrow(amr_preserves_boundary_cells,
+                  dealii::ExcMessage(
+                    "Combination of adaptive mesh refinement and periodic face pairs"
+                    " requires boundary cells to be preserved."));
+    }
+
+    create_coarse_triangulations_automatically_from_fine_triangulation(fine_triangulation,
+                                                                       fine_periodic_face_pairs,
+                                                                       coarse_triangulations_const,
+                                                                       coarse_periodic_face_pairs,
+                                                                       data);
+  }
+  else if(data.triangulation_type == TriangulationType::FullyDistributed)
+  {
+    AssertThrow(false,
+                dealii::ExcMessage("Combination of adaptive mesh refinement and "
+                                   "TriangulationType::FullyDistributed not implemented."));
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("Invalid parameter triangulation_type."));
   }
 }
 

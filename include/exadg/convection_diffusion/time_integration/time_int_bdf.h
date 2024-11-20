@@ -27,7 +27,7 @@
 
 // ExaDG
 #include <exadg/time_integration/lambda_functions_ale.h>
-#include <exadg/time_integration/time_int_multistep_base.h>
+#include <exadg/time_integration/time_int_bdf_base.h>
 
 namespace ExaDG
 {
@@ -52,7 +52,7 @@ public:
   using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
 
   TimeIntBDF(std::shared_ptr<Operator<dim, Number>>          operator_in,
-             std::shared_ptr<HelpersALE<Number> const>       helpers_ale_in,
+             std::shared_ptr<HelpersALE<dim, Number> const>  helpers_ale_in,
              std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
              Parameters const &                              param_in,
              MPI_Comm const &                                mpi_comm_in,
@@ -65,21 +65,33 @@ public:
   void
   extrapolate_solution(VectorType & vector);
 
+  VectorType const &
+  get_solution_np() const;
+
   void
   ale_update();
 
   void
   print_iterations() const;
 
+  void
+  prepare_coarsening_and_refinement() final;
+
+  void
+  interpolate_after_coarsening_and_refinement() final;
+
 private:
   void
   allocate_vectors() final;
+
+  std::shared_ptr<std::vector<VectorType *>>
+  get_vectors();
 
   void
   initialize_current_solution() final;
 
   void
-  initialize_former_solutions() final;
+  initialize_former_multistep_dof_vectors() final;
 
   void
   initialize_vec_convective_term();
@@ -138,7 +150,7 @@ private:
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor;
 
   // This object allows to access utility functions needed for ALE
-  std::shared_ptr<HelpersALE<Number> const> helpers_ale;
+  std::shared_ptr<HelpersALE<dim, Number> const> helpers_ale;
 
   // ALE
   VectorType              grid_velocity;

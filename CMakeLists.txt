@@ -58,7 +58,7 @@ DEAL_II_INITIALIZE_CACHED_VARIABLES()
 DEAL_II_QUERY_GIT_INFORMATION(EXADG)
 CONFIGURE_FILE(
   ${CMAKE_SOURCE_DIR}/include/exadg/utilities/exadg_revision.h.in
-  ${CMAKE_SOURCE_DIR}/include/exadg/utilities/exadg_revision.h
+  ${CMAKE_BINARY_DIR}/include/exadg/utilities/exadg_revision.h
   )
 
 
@@ -72,6 +72,7 @@ SET(TARGET_SRC
      include/exadg/time_integration/extrapolation_constants.cpp
      include/exadg/time_integration/time_int_base.cpp
      include/exadg/time_integration/time_int_multistep_base.cpp
+     include/exadg/time_integration/time_int_bdf_base.cpp
      include/exadg/time_integration/time_int_explicit_runge_kutta_base.cpp
      include/exadg/time_integration/time_int_gen_alpha_base.cpp
      include/exadg/functions_and_boundary_conditions/container_interface_data.cpp
@@ -145,6 +146,7 @@ SET(TARGET_SRC
      include/exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.cpp
      include/exadg/incompressible_navier_stokes/time_integration/driver_steady_problems.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/output_generator.cpp
+     include/exadg/incompressible_navier_stokes/postprocessor/pointwise_output_generator.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/divergence_and_mass_error.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/inflow_data_calculator.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/kinetic_energy_dissipation_detailed.cpp
@@ -185,6 +187,15 @@ SET(TARGET_SRC
      include/exadg/structure/driver.cpp
      # fluid-structure-interaction
      include/exadg/fluid_structure_interaction/driver.cpp
+     # acoustic conservation equations
+     include/exadg/acoustic_conservation_equations/user_interface/parameters.cpp
+     include/exadg/acoustic_conservation_equations/spatial_discretization/spatial_operator.cpp
+     include/exadg/acoustic_conservation_equations/postprocessor/pointwise_output_generator.cpp
+     include/exadg/acoustic_conservation_equations/postprocessor/postprocessor.cpp
+     include/exadg/acoustic_conservation_equations/postprocessor/output_generator.cpp
+     include/exadg/acoustic_conservation_equations/driver.cpp
+     # aero-acoustic
+     include/exadg/aero_acoustic/driver.cpp
      )
 
 SET(DEAL_II_HAVE_TESTS_DIRECTORY TRUE)
@@ -198,7 +209,7 @@ OPTION(BUILD_SHARED_LIBS "Build shared library." ON)
 ADD_LIBRARY(exadg ${TARGET_SRC})
 
 # Set the include directories
-SET(EXADG_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/bundled)
+SET(EXADG_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/bundled ${CMAKE_BINARY_DIR}/include)
 TARGET_INCLUDE_DIRECTORIES(exadg PUBLIC ${EXADG_INCLUDE_DIRS})
 
 # FFTW

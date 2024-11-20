@@ -29,6 +29,7 @@
 #include <exadg/grid/grid_data.h>
 #include <exadg/incompressible_navier_stokes/user_interface/enum_types.h>
 #include <exadg/incompressible_navier_stokes/user_interface/viscosity_model_data.h>
+#include <exadg/operators/inverse_mass_parameters.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver_data.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/enum_types.h>
@@ -60,7 +61,10 @@ public:
   viscosity_is_variable() const;
 
   bool
-  implicit_convective_problem() const;
+  non_explicit_convective_problem() const;
+
+  bool
+  implicit_nonlinear_convective_problem() const;
 
   bool
   nonlinear_viscous_problem() const;
@@ -100,6 +104,9 @@ private:
   print_parameters_projection_step(dealii::ConditionalOStream const & pcout) const;
 
   void
+  print_parameters_momentum_step(dealii::ConditionalOStream const & pcout) const;
+
+  void
   print_parameters_dual_splitting(dealii::ConditionalOStream const & pcout) const;
 
   void
@@ -123,9 +130,6 @@ private:
   // projection methods
   bool
   involves_h_multigrid_pressure_step() const;
-
-  bool
-  involves_h_multigrid_viscous_step() const;
 
   bool
   involves_h_multigrid_momentum_step() const;
@@ -311,6 +315,9 @@ public:
   // Mapping
   unsigned int mapping_degree;
 
+  // mapping degree for coarser grids in h-multigrid
+  unsigned int mapping_degree_coarse_grids;
+
   // type of spatial discretization approach
   SpatialDiscretization spatial_discretization;
 
@@ -445,8 +452,13 @@ public:
 
   // Quadrature rule used to integrate the linearized convective term. This parameter is
   // therefore only relevant if linear systems of equations have to be solved involving
-  // the convective term. For reasons of computational efficiency, it might be advantageous
-  // to use a standard quadrature rule for the linearized problem in order to speed up
+  // the convective term. The quadrature rule specified by this parameter is also used in
+  // case of a linearly implicit formulation of the convective term.
+  // Note that if the convective term is not involved in the momentum operator, this
+  // parameter does not have any effect and the standard quadrature rule will be used
+  // for the momentum operator.
+  // For reasons of computational efficiency, it might be advantageous to use a standard
+  // quadrature rule for the linear(ized) momentum operator in order to speed up
   // the computation. However, it was found that choosing a lower order quadrature rule
   // for the linearized problem only, increases the number of iterations significantly. It
   // was found that the quadrature rules used for the nonlinear and linear problems should
@@ -454,6 +466,39 @@ public:
   // the wall time per iteration), it is unclear whether a lower order quadrature rule
   // really allows to achieve a more efficient method overall.
   QuadratureRuleLinearization quad_rule_linearization;
+
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                 Solver parameters for mass matrix problem                          */
+  /*                                                                                    */
+  /**************************************************************************************/
+  // These parameters are relevant if the inverse mass can not be realized as a
+  // matrix-free operator evaluation. The typical use case is a DG formulation with non
+  // hypercube elements (e.g. simplex).
+
+  InverseMassParameters inverse_mass_operator;
+
+  // This parameter is only relevant if an H(div)-conforming formulation is chosen.
+  InverseMassParametersHdiv inverse_mass_operator_hdiv;
+
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                            InverseMassPreconditioner                               */
+  /*                                                                                    */
+  /**************************************************************************************/
+
+  // This parameter is used for all inverse mass preconditioners used for incompressible
+  // Navier-Stokes solvers. Note that there is a separate parameter above for the inverse
+  // mass operator (which needs to be inverted "exactly" for reasons of accuracy).
+  // This parameter is only relevant if the mass operator is block diagonal and if the
+  // inverse mass operator can not be realized as a matrix-free operator evaluation. The
+  // typical use case is a DG formulation with non hypercube elements (e.g. simplex). In
+  // these cases, however, you should think about replacing the inverse mass preconditioner
+  // by a simple point Jacobi preconditioner as an efficient alternative to the (exact)
+  // inverse mass preconditioner. This type of preconditioner is not available for an
+  // H(div)-conforming formulation.
+
+  InverseMassParameters inverse_mass_preconditioner;
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -518,57 +563,7 @@ public:
   // iterative solution procedure is used for block diagonal preconditioner)
   SolverData solver_data_block_diagonal_projection;
 
-  /**************************************************************************************/
-  /*                                                                                    */
-  /*                        HIGH-ORDER DUAL SPLITTING SCHEME                            */
-  /*                                                                                    */
-  /**************************************************************************************/
-
-  // FORMULATIONS
-
-  // order of extrapolation of viscous term and convective term in pressure Neumann BC
-  unsigned int order_extrapolation_pressure_nbc;
-
-  // description: see enum declaration
-  // The formulation of the convective term in the boundary conditions for the dual
-  // splitting scheme (there are two occurrences, the g_u_hat term
-  // arising from the divergence term on the right-hand side of the pressure Poisson
-  // equation as well as the pressure NBC for the dual splitting scheme)can be chosen
-  // independently from the type of formulation used for the discretization of the
-  // convective term in the Navier-Stokes equations.
-  // As a default parameter, FormulationConvectiveTerm::ConvectiveFormulation is
-  // used (exploiting that div(u)=0 holds in the continuous case).
-  FormulationConvectiveTerm formulation_convective_term_bc;
-
-  // CONVECTIVE STEP
-
-  // VISCOUS STEP
-
-  // description: see enum declaration
-  SolverViscous solver_viscous;
-
-  // solver data for viscous step
-  SolverData solver_data_viscous;
-
-  // description: see enum declaration
-  PreconditionerViscous preconditioner_viscous;
-
-  // update preconditioner before solving the viscous step
-  bool update_preconditioner_viscous;
-
-  // Update preconditioner every ... time steps.
-  // This variable is only used if update_preconditioner_viscous is true.
-  unsigned int update_preconditioner_viscous_every_time_steps;
-
-  // description: see declaration of MultigridData
-  MultigridData multigrid_data_viscous;
-
-
-  /**************************************************************************************/
-  /*                                                                                    */
-  /*                            PRESSURE-CORRECTION SCHEME                              */
-  /*                                                                                    */
-  /**************************************************************************************/
+  // MOMENTUM STEP
 
   // Newton solver data
   Newton::SolverData newton_solver_data_momentum;
@@ -600,6 +595,34 @@ public:
 
   // description: see enum declaration
   MultigridOperatorType multigrid_operator_type_momentum;
+
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                        HIGH-ORDER DUAL SPLITTING SCHEME                            */
+  /*                                                                                    */
+  /**************************************************************************************/
+
+  // FORMULATIONS
+
+  // order of extrapolation of viscous term and convective term in pressure Neumann BC
+  unsigned int order_extrapolation_pressure_nbc;
+
+  // description: see enum declaration
+  // The formulation of the convective term in the boundary conditions for the dual
+  // splitting scheme (there are two occurrences, the g_u_hat term
+  // arising from the divergence term on the right-hand side of the pressure Poisson
+  // equation as well as the pressure NBC for the dual splitting scheme)can be chosen
+  // independently from the type of formulation used for the discretization of the
+  // convective term in the Navier-Stokes equations.
+  // As a default parameter, FormulationConvectiveTerm::ConvectiveFormulation is
+  // used (exploiting that div(u)=0 holds in the continuous case).
+  FormulationConvectiveTerm formulation_convective_term_bc;
+
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                            PRESSURE-CORRECTION SCHEME                              */
+  /*                                                                                    */
+  /**************************************************************************************/
 
   // order of pressure extrapolation in case of incremental formulation
   // a value of 0 corresponds to non-incremental formulation
@@ -677,27 +700,6 @@ public:
   // solver data for Schur complement
   // (only relevant if exact_inversion_of_laplace_operator == true)
   SolverData solver_data_pressure_block;
-
-
-
-  /**************************************************************************************/
-  /*                                                                                    */
-  /*                            SOLVE MASS SYSTEM (projection)                          */
-  /*                                                                                    */
-  /**************************************************************************************/
-  // Used when matrix-free inverse mass operator is not avaliable, e.g in the case of HDIV.
-
-  // solver data for solving mass system
-  SolverData solver_data_mass;
-
-  // description: see enum declaration
-  PreconditionerMass preconditioner_mass;
-
-  // Used when matrix-free inverse mass operator is not available and when the spatial
-  // discretization is DG, e.g. simplex.
-  bool solve_elementwise_mass_system_matrix_free;
-
-  SolverData solver_data_elementwise_inverse_mass;
 };
 
 } // namespace IncNS

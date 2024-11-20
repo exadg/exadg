@@ -285,9 +285,10 @@ private:
 
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.mapping_degree          = this->param.degree_u;
-    this->param.degree_p                = DegreePressure::MixedOrder;
+    this->param.grid.triangulation_type     = TriangulationType::Distributed;
+    this->param.mapping_degree              = this->param.degree_u;
+    this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
+    this->param.degree_p                    = DegreePressure::MixedOrder;
 
     // convective term
     this->param.upwind_factor = 1.0;
@@ -347,13 +348,26 @@ private:
       this->param.order_time_integrator <= 2 ? this->param.order_time_integrator : 2;
     this->param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
 
-    // viscous step
-    this->param.solver_viscous         = SolverViscous::CG;
-    this->param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-6);
-    this->param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; // Multigrid;
-    this->param.multigrid_data_viscous.type                   = MultigridType::hMG;
-    this->param.multigrid_data_viscous.smoother_data.smoother = MultigridSmoother::Chebyshev;
-    this->param.update_preconditioner_viscous                 = false;
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+      {
+        this->param.solver_momentum      = SolverMomentum::CG;
+        this->param.solver_data_momentum = SolverData(1000, 1.e-12, 1.e-6);
+      }
+      else
+      {
+        // Newton solver
+        this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-10, 1.e-6);
+        this->param.solver_momentum             = SolverMomentum::GMRES;
+        this->param.solver_data_momentum        = SolverData(1000, 1.e-12, 1.e-6);
+      }
+
+      this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
+      this->param.multigrid_data_momentum.type                   = MultigridType::hMG;
+      this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Chebyshev;
+      this->param.update_preconditioner_momentum                 = false;
+    }
 
 
     // PRESSURE-CORRECTION SCHEME
@@ -364,29 +378,31 @@ private:
     this->param.rotational_formulation = true;
 
     // momentum step
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      // Newton solver
+      this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-6);
 
-    // Newton solver
-    this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-6); // TODO
+      // linear solver
+      this->param.solver_momentum                = SolverMomentum::FGMRES;
+      this->param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-6, 100);
+      this->param.update_preconditioner_momentum = false;
+      this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
+      this->param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
 
-    // linear solver
-    this->param.solver_momentum                = SolverMomentum::FGMRES;
-    this->param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-6, 100);
-    this->param.update_preconditioner_momentum = false;
-    this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
-    this->param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
+      // Jacobi smoother data
+      //  this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
+      //  this->param.multigrid_data_momentum.smoother_data.preconditioner =
+      //  PreconditionerSmoother::BlockJacobi;
+      //  this->param.multigrid_data_momentum.smoother_data.iterations = 5;
+      //  this->param.multigrid_data_momentum.coarse_problem.solver =
+      //  MultigridCoarseGridSolver::GMRES;
 
-    // Jacobi smoother data
-    //  this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
-    //  this->param.multigrid_data_momentum.smoother_data.preconditioner =
-    //  PreconditionerSmoother::BlockJacobi;
-    //  this->param.multigrid_data_momentum.smoother_data.iterations = 5;
-    //  this->param.multigrid_data_momentum.coarse_problem.solver =
-    //  MultigridCoarseGridSolver::GMRES;
-
-    // Chebyshev smoother data
-    this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Chebyshev;
-    this->param.multigrid_data_momentum.coarse_problem.solver =
-      MultigridCoarseGridSolver::Chebyshev;
+      // Chebyshev smoother data
+      this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Chebyshev;
+      this->param.multigrid_data_momentum.coarse_problem.solver =
+        MultigridCoarseGridSolver::Chebyshev;
+    }
 
 
     // COUPLED NAVIER-STOKES SOLVER
@@ -423,62 +439,79 @@ private:
   }
 
   void
-  create_grid() final
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
-    auto const lambda_create_triangulation =
-      [&](dealii::Triangulation<dim, dim> &                        tria,
-          std::vector<dealii::GridTools::PeriodicFacePair<
-            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
-          unsigned int const                                       global_refinements,
-          std::vector<unsigned int> const &                        vector_local_refinements) {
-        (void)periodic_face_pairs;
-        (void)vector_local_refinements;
+    auto const lambda_create_triangulation = [&](dealii::Triangulation<dim, dim> & tria,
+                                                 std::vector<dealii::GridTools::PeriodicFacePair<
+                                                   typename dealii::Triangulation<
+                                                     dim>::cell_iterator>> & periodic_face_pairs,
+                                                 unsigned int const          global_refinements,
+                                                 std::vector<unsigned int> const &
+                                                   vector_local_refinements) {
+      (void)periodic_face_pairs;
+      (void)vector_local_refinements;
 
-        if(ALE)
+      if(ALE)
+      {
+        AssertThrow(mesh_type == MeshType::Cartesian,
+                    dealii::ExcMessage(
+                      "Taylor vortex problem: Parameter mesh_type is invalid for ALE."));
+      }
+
+      dealii::GridGenerator::subdivided_hyper_cube(tria, 2, left, right);
+
+      if(mesh_type == MeshType::Curvilinear)
+      {
+        AssertThrow(
+          this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+          dealii::ExcMessage(
+            "Manifolds might not be applied correctly for TriangulationType::FullyDistributed. "
+            "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
+
+        double const       deformation = 0.1;
+        unsigned int const frequency   = 2;
+
+        apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
+      }
+
+      // boundary IDs
+      for(auto cell : tria.cell_iterators())
+      {
+        for(auto const & f : cell->face_indices())
         {
-          AssertThrow(mesh_type == MeshType::Cartesian,
-                      dealii::ExcMessage(
-                        "Taylor vortex problem: Parameter mesh_type is invalid for ALE."));
-        }
-
-        dealii::GridGenerator::subdivided_hyper_cube(tria, 2, left, right);
-
-        if(mesh_type == MeshType::Curvilinear)
-        {
-          double const       deformation = 0.1;
-          unsigned int const frequency   = 2;
-
-          apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
-        }
-
-        // boundary IDs
-        for(auto cell : tria.cell_iterators())
-        {
-          for(auto const & f : cell->face_indices())
+          if(((std::fabs(cell->face(f)->center()(0) - right) < 1e-12) and
+              (cell->face(f)->center()(1) < 0)) or
+             ((std::fabs(cell->face(f)->center()(0) - left) < 1e-12) and
+              (cell->face(f)->center()(1) > 0)) or
+             ((std::fabs(cell->face(f)->center()(1) - left) < 1e-12) and
+              (cell->face(f)->center()(0) < 0)) or
+             ((std::fabs(cell->face(f)->center()(1) - right) < 1e-12) and
+              (cell->face(f)->center()(0) > 0)))
           {
-            if(((std::fabs(cell->face(f)->center()(0) - right) < 1e-12) and
-                (cell->face(f)->center()(1) < 0)) or
-               ((std::fabs(cell->face(f)->center()(0) - left) < 1e-12) and
-                (cell->face(f)->center()(1) > 0)) or
-               ((std::fabs(cell->face(f)->center()(1) - left) < 1e-12) and
-                (cell->face(f)->center()(0) < 0)) or
-               ((std::fabs(cell->face(f)->center()(1) - right) < 1e-12) and
-                (cell->face(f)->center()(0) > 0)))
-            {
-              cell->face(f)->set_boundary_id(1);
-            }
+            cell->face(f)->set_boundary_id(1);
           }
         }
+      }
 
-        tria.refine_global(global_refinements);
-      };
+      tria.refine_global(global_refinements);
+    };
 
-    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+    GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
                                                             this->param.grid,
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
+
+    // mappings
+    GridUtilities::create_mapping_with_multigrid(mapping,
+                                                 multigrid_mappings,
+                                                 this->param.grid.element_type,
+                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree_coarse_grids,
+                                                 this->param.involves_h_multigrid());
   }
 
   void

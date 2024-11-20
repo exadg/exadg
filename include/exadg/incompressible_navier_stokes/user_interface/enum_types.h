@@ -125,7 +125,8 @@ enum class TemporalDiscretization
   Undefined,
   BDFDualSplittingScheme,
   BDFPressureCorrection,
-  BDFCoupledSolution
+  BDFCoupledSolution,
+  InterpolateAnalyticalSolution
 };
 
 /*
@@ -135,7 +136,8 @@ enum class TreatmentOfConvectiveTerm
 {
   Undefined,
   Explicit,
-  Implicit
+  Implicit,
+  LinearlyImplicit
 };
 
 /*
@@ -370,6 +372,7 @@ enum class PreconditionerPressurePoisson
 {
   None,
   PointJacobi,
+  BlockJacobi,
   Multigrid
 };
 
@@ -391,37 +394,6 @@ enum class SolverProjection
  *  preconditioners if the number of iterations is significantly larger than 10.
  */
 enum class PreconditionerProjection
-{
-  None,
-  InverseMassMatrix,
-  PointJacobi,
-  BlockJacobi,
-  Multigrid
-};
-
-/*
- *  Solver type for solution of viscous step:
- *
- *  use CG (conjugate gradient) method as default and GMRES if the problem
- *  is non-symmetric (Divergence formulation of viscous term, but note that often
- *  CG also works in this case).
- *  FGMRES might be necessary if a Krylov method is used inside the preconditioner
- *  (e.g., as multigrid smoother or as multigrid coarse grid solver).
- */
-enum class SolverViscous
-{
-  CG,
-  GMRES,
-  FGMRES
-};
-
-/*
- *  Preconditioner type for solution of viscous step:
- *
- *  Use InverseMassMatrix as default. As a rule of thumb, only try other
- *  preconditioners if the number of iterations is significantly larger than 10.
- */
-enum class PreconditionerViscous
 {
   None,
   InverseMassMatrix,
@@ -532,24 +504,6 @@ enum class SchurComplementPreconditioner
   LaplaceOperator,
   CahouetChabard,
   PressureConvectionDiffusion
-};
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                            SOLVE MASS SYSTEM (projection)                          */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- *  Preconditioner type for solution of mass system, only used for HDIV case as Matrix-free inverse
- * mass operator is not avaliable.
- *
- *  InverseMassMatrix and BlockJacobi are not availiable.
- */
-enum class PreconditionerMass
-{
-  None,
-  PointJacobi
 };
 
 } // namespace IncNS

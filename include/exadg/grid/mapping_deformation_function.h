@@ -89,30 +89,32 @@ private:
     dealii::FE_Nothing<dim> dummy_fe;
     dealii::FEValues<dim>   fe_values(*this->mapping_undeformed,
                                     dummy_fe,
-                                    dealii::QGaussLobatto<dim>(this->get_degree() + 1),
+                                    dealii::QGaussLobatto<dim>(this->mapping_q_cache->get_degree() +
+                                                               1),
                                     dealii::update_quadrature_points);
 
-    this->initialize(triangulation,
-                     [&](typename dealii::Triangulation<dim>::cell_iterator const & cell)
-                       -> std::vector<dealii::Point<dim>> {
-                       fe_values.reinit(cell);
+    this->mapping_q_cache->initialize(
+      triangulation,
+      [&](typename dealii::Triangulation<dim>::cell_iterator const & cell)
+        -> std::vector<dealii::Point<dim>> {
+        fe_values.reinit(cell);
 
-                       // compute displacement and add to original position
-                       std::vector<dealii::Point<dim>> points_moved(fe_values.n_quadrature_points);
-                       for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
-                       {
-                         // need to adjust for hierarchic numbering of dealii::MappingQCache
-                         dealii::Point<dim> const point = fe_values.quadrature_point(
-                           this->hierarchic_to_lexicographic_numbering[i]);
-                         dealii::Point<dim> displacement;
-                         for(unsigned int d = 0; d < dim; ++d)
-                           displacement[d] = displacement_function->value(point, d);
+        // compute displacement and add to original position
+        std::vector<dealii::Point<dim>> points_moved(fe_values.n_quadrature_points);
+        for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
+        {
+          // need to adjust for hierarchic numbering of dealii::MappingQCache
+          dealii::Point<dim> const point =
+            fe_values.quadrature_point(this->hierarchic_to_lexicographic_numbering[i]);
+          dealii::Point<dim> displacement;
+          for(unsigned int d = 0; d < dim; ++d)
+            displacement[d] = displacement_function->value(point, d);
 
-                         points_moved[i] = point + displacement;
-                       }
+          points_moved[i] = point + displacement;
+        }
 
-                       return points_moved;
-                     });
+        return points_moved;
+      });
   }
 
   std::shared_ptr<dealii::Function<dim>> mesh_deformation_function;

@@ -61,7 +61,7 @@ public:
 
     energy_calculator.setup(pde_operator.get_matrix_free(),
                             pde_operator.get_dof_index_velocity(),
-                            pde_operator.get_quad_index_velocity_linear(),
+                            pde_operator.get_quad_index_velocity_standard(),
                             energy_data);
   }
 

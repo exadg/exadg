@@ -145,6 +145,18 @@ TimeIntBase::reset_time(double const & current_time)
                 dealii::ExcMessage("The variable time may not be overwritten via public access."));
 }
 
+void
+TimeIntBase::prepare_coarsening_and_refinement()
+{
+  AssertThrow(false, dealii::ExcMessage("Overwrite in derived class to enable adaptivity."));
+}
+
+void
+TimeIntBase::interpolate_after_coarsening_and_refinement()
+{
+  AssertThrow(false, dealii::ExcMessage("Overwrite in derived class to enable adaptivity."));
+}
+
 double
 TimeIntBase::get_time() const
 {

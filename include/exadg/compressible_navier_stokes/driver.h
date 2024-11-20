@@ -91,6 +91,11 @@ private:
 
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
+  // Grid and mapping
+  std::shared_ptr<Grid<dim>> grid;
+
+  std::shared_ptr<dealii::Mapping<dim>> mapping;
+
   std::shared_ptr<Operator<dim, Number>> pde_operator;
 
   std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;

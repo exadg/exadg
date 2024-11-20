@@ -24,6 +24,7 @@
 
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/smoother_base.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/additive_schwarz_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
 
@@ -71,7 +72,9 @@ public:
   };
 
   void
-  initialize(Operator const & operator_in, AdditionalData const & additional_data_in)
+  setup(Operator const &       operator_in,
+        bool const             initialize_preconditioner,
+        AdditionalData const & additional_data_in)
   {
     underlying_operator = &operator_in;
 
@@ -79,11 +82,18 @@ public:
 
     if(data.preconditioner == PreconditionerSmoother::PointJacobi)
     {
-      preconditioner = new JacobiPreconditioner<Operator>(*underlying_operator);
+      preconditioner =
+        new JacobiPreconditioner<Operator>(*underlying_operator, initialize_preconditioner);
     }
     else if(data.preconditioner == PreconditionerSmoother::BlockJacobi)
     {
-      preconditioner = new BlockJacobiPreconditioner<Operator>(*underlying_operator);
+      preconditioner =
+        new BlockJacobiPreconditioner<Operator>(*underlying_operator, initialize_preconditioner);
+    }
+    else if(data.preconditioner == PreconditionerSmoother::AdditiveSchwarz)
+    {
+      preconditioner = new AdditiveSchwarzPreconditioner<Operator>(*underlying_operator,
+                                                                   initialize_preconditioner);
     }
     else
     {

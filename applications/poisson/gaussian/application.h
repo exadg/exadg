@@ -203,10 +203,12 @@ private:
     this->param.right_hand_side = true;
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.mapping_degree          = this->param.degree;
-    this->param.spatial_discretization  = SpatialDiscretization::DG;
-    this->param.IP_factor               = 1.0e0;
+    this->param.grid.triangulation_type     = TriangulationType::Distributed;
+    this->param.mapping_degree              = this->param.degree;
+    this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
+
+    this->param.spatial_discretization = SpatialDiscretization::DG;
+    this->param.IP_factor              = 1.0e0;
 
     // SOLVER
     this->param.solver                      = LinearSolver::CG;
@@ -228,48 +230,65 @@ private:
   }
 
   void
-  create_grid() final
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
-    auto const lambda_create_triangulation =
-      [&](dealii::Triangulation<dim, dim> &                        tria,
-          std::vector<dealii::GridTools::PeriodicFacePair<
-            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
-          unsigned int const                                       global_refinements,
-          std::vector<unsigned int> const &                        vector_local_refinements) {
-        (void)periodic_face_pairs;
-        (void)vector_local_refinements;
+    auto const lambda_create_triangulation = [&](dealii::Triangulation<dim, dim> & tria,
+                                                 std::vector<dealii::GridTools::PeriodicFacePair<
+                                                   typename dealii::Triangulation<
+                                                     dim>::cell_iterator>> & periodic_face_pairs,
+                                                 unsigned int const          global_refinements,
+                                                 std::vector<unsigned int> const &
+                                                   vector_local_refinements) {
+      (void)periodic_face_pairs;
+      (void)vector_local_refinements;
 
-        double const length = 1.0;
-        double const left = -length, right = length;
-        dealii::GridGenerator::subdivided_hyper_cube(tria,
-                                                     this->n_subdivisions_1d_hypercube,
-                                                     left,
-                                                     right);
+      double const length = 1.0;
+      double const left = -length, right = length;
+      dealii::GridGenerator::subdivided_hyper_cube(tria,
+                                                   this->n_subdivisions_1d_hypercube,
+                                                   left,
+                                                   right);
 
-        if(mesh_type == MeshType::Cartesian)
-        {
-          // do nothing
-        }
-        else if(mesh_type == MeshType::Curvilinear)
-        {
-          double const       deformation = 0.1;
-          unsigned int const frequency   = 2;
-          apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
-        }
-        else
-        {
-          AssertThrow(false, dealii::ExcMessage("not implemented."));
-        }
+      if(mesh_type == MeshType::Cartesian)
+      {
+        // do nothing
+      }
+      else if(mesh_type == MeshType::Curvilinear)
+      {
+        AssertThrow(
+          this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+          dealii::ExcMessage(
+            "Manifolds might not be applied correctly for TriangulationType::FullyDistributed. "
+            "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
 
-        tria.refine_global(global_refinements);
-      };
+        double const       deformation = 0.1;
+        unsigned int const frequency   = 2;
+        apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("not implemented."));
+      }
 
-    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+      tria.refine_global(global_refinements);
+    };
+
+    GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
                                                             this->param.grid,
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
+
+    // mappings
+    GridUtilities::create_mapping_with_multigrid(mapping,
+                                                 multigrid_mappings,
+                                                 this->param.grid.element_type,
+                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree_coarse_grids,
+                                                 this->param.involves_h_multigrid());
   }
 
   void

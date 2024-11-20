@@ -28,7 +28,9 @@
 // ExaDG
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/smoother_base.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/additive_schwarz_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
 
 namespace ExaDG
 {
@@ -36,10 +38,13 @@ template<typename Operator, typename VectorType>
 class ChebyshevSmoother : public SmootherBase<VectorType>
 {
 public:
-  typedef dealii::PreconditionChebyshev<Operator, VectorType, dealii::DiagonalMatrix<VectorType>>
+  typedef dealii::PreconditionChebyshev<Operator, VectorType, JacobiPreconditioner<Operator>>
     ChebyshevPointJacobi;
   typedef dealii::PreconditionChebyshev<Operator, VectorType, BlockJacobiPreconditioner<Operator>>
     ChebyshevBlockJacobi;
+  typedef dealii::
+    PreconditionChebyshev<Operator, VectorType, AdditiveSchwarzPreconditioner<Operator>>
+      ChebyshevAdditiveSchwarz;
 
   ChebyshevSmoother() : underlying_operator(nullptr)
   {
@@ -76,11 +81,15 @@ public:
   {
     if(data.preconditioner == PreconditionerSmoother::PointJacobi)
     {
-      smoother_point_jacobi->vmult(dst, src);
+      chebyshev_point_jacobi->vmult(dst, src);
     }
     else if(data.preconditioner == PreconditionerSmoother::BlockJacobi)
     {
-      smoother_block_jacobi->vmult(dst, src);
+      chebyshev_block_jacobi->vmult(dst, src);
+    }
+    else if(data.preconditioner == PreconditionerSmoother::AdditiveSchwarz)
+    {
+      chebyshev_additive_schwarz->vmult(dst, src);
     }
     else
     {
@@ -93,11 +102,15 @@ public:
   {
     if(data.preconditioner == PreconditionerSmoother::PointJacobi)
     {
-      smoother_point_jacobi->step(dst, src);
+      chebyshev_point_jacobi->step(dst, src);
     }
     else if(data.preconditioner == PreconditionerSmoother::BlockJacobi)
     {
-      smoother_block_jacobi->step(dst, src);
+      chebyshev_block_jacobi->step(dst, src);
+    }
+    else if(data.preconditioner == PreconditionerSmoother::AdditiveSchwarz)
+    {
+      chebyshev_additive_schwarz->step(dst, src);
     }
     else
     {
@@ -111,46 +124,84 @@ public:
     AssertThrow(underlying_operator != nullptr,
                 dealii::ExcMessage("Pointer underlying_operator is uninitialized."));
 
-    initialize(*underlying_operator, data);
+    if(data.preconditioner == PreconditionerSmoother::PointJacobi)
+    {
+      preconditioner_point_jacobi->update();
+      chebyshev_point_jacobi->initialize(*underlying_operator, additional_data_point);
+    }
+    else if(data.preconditioner == PreconditionerSmoother::BlockJacobi)
+    {
+      preconditioner_block_jacobi->update();
+      chebyshev_block_jacobi->initialize(*underlying_operator, additional_data_block);
+    }
+    else if(data.preconditioner == PreconditionerSmoother::AdditiveSchwarz)
+    {
+      preconditioner_additive_schwarz->update();
+      chebyshev_additive_schwarz->initialize(*underlying_operator,
+                                             additional_data_additive_schwarz);
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcNotImplemented());
+    }
   }
 
   void
-  initialize(Operator const & operator_in, AdditionalData const & additional_data)
+  setup(Operator const &       operator_in,
+        bool const             initialize_preconditioner,
+        AdditionalData const & additional_data)
   {
     underlying_operator = &operator_in;
     data                = additional_data;
 
     if(data.preconditioner == PreconditionerSmoother::PointJacobi)
     {
-      typename ChebyshevPointJacobi::AdditionalData additional_data_dealii;
+      preconditioner_point_jacobi =
+        std::make_shared<JacobiPreconditioner<Operator>>(*underlying_operator,
+                                                         initialize_preconditioner);
 
-      std::shared_ptr<dealii::DiagonalMatrix<VectorType>> jacobi_preconditioner =
-        std::make_shared<dealii::DiagonalMatrix<VectorType>>();
-      VectorType & diagonal_vector = jacobi_preconditioner->get_vector();
+      additional_data_point.preconditioner      = preconditioner_point_jacobi;
+      additional_data_point.smoothing_range     = data.smoothing_range;
+      additional_data_point.degree              = data.degree;
+      additional_data_point.eig_cg_n_iterations = data.iterations_eigenvalue_estimation;
 
-      underlying_operator->initialize_dof_vector(diagonal_vector);
-      underlying_operator->calculate_inverse_diagonal(diagonal_vector);
+      chebyshev_point_jacobi = std::make_shared<ChebyshevPointJacobi>();
 
-      additional_data_dealii.preconditioner      = jacobi_preconditioner;
-      additional_data_dealii.smoothing_range     = data.smoothing_range;
-      additional_data_dealii.degree              = data.degree;
-      additional_data_dealii.eig_cg_n_iterations = data.iterations_eigenvalue_estimation;
-
-      smoother_point_jacobi = std::make_shared<ChebyshevPointJacobi>();
-      smoother_point_jacobi->initialize(*underlying_operator, additional_data_dealii);
+      if(initialize_preconditioner)
+        chebyshev_point_jacobi->initialize(*underlying_operator, additional_data_point);
     }
     else if(data.preconditioner == PreconditionerSmoother::BlockJacobi)
     {
-      typename ChebyshevBlockJacobi::AdditionalData additional_data_dealii;
+      preconditioner_block_jacobi =
+        std::make_shared<BlockJacobiPreconditioner<Operator>>(*underlying_operator,
+                                                              initialize_preconditioner);
 
-      additional_data_dealii.preconditioner =
-        std::make_shared<BlockJacobiPreconditioner<Operator>>(*underlying_operator);
-      additional_data_dealii.smoothing_range     = data.smoothing_range;
-      additional_data_dealii.degree              = data.degree;
-      additional_data_dealii.eig_cg_n_iterations = data.iterations_eigenvalue_estimation;
+      additional_data_block.preconditioner      = preconditioner_block_jacobi;
+      additional_data_block.smoothing_range     = data.smoothing_range;
+      additional_data_block.degree              = data.degree;
+      additional_data_block.eig_cg_n_iterations = data.iterations_eigenvalue_estimation;
 
-      smoother_block_jacobi = std::make_shared<ChebyshevBlockJacobi>();
-      smoother_block_jacobi->initialize(*underlying_operator, additional_data_dealii);
+      chebyshev_block_jacobi = std::make_shared<ChebyshevBlockJacobi>();
+
+      if(initialize_preconditioner)
+        chebyshev_block_jacobi->initialize(*underlying_operator, additional_data_block);
+    }
+    else if(data.preconditioner == PreconditionerSmoother::AdditiveSchwarz)
+    {
+      preconditioner_additive_schwarz =
+        std::make_shared<AdditiveSchwarzPreconditioner<Operator>>(*underlying_operator,
+                                                                  initialize_preconditioner);
+
+      additional_data_additive_schwarz.preconditioner      = preconditioner_additive_schwarz;
+      additional_data_additive_schwarz.smoothing_range     = data.smoothing_range;
+      additional_data_additive_schwarz.degree              = data.degree;
+      additional_data_additive_schwarz.eig_cg_n_iterations = data.iterations_eigenvalue_estimation;
+
+      chebyshev_additive_schwarz = std::make_shared<ChebyshevAdditiveSchwarz>();
+
+      if(initialize_preconditioner)
+        chebyshev_additive_schwarz->initialize(*underlying_operator,
+                                               additional_data_additive_schwarz);
     }
     else
     {
@@ -162,8 +213,17 @@ private:
   Operator const * underlying_operator;
   AdditionalData   data;
 
-  std::shared_ptr<ChebyshevPointJacobi> smoother_point_jacobi;
-  std::shared_ptr<ChebyshevBlockJacobi> smoother_block_jacobi;
+  std::shared_ptr<ChebyshevPointJacobi>     chebyshev_point_jacobi;
+  std::shared_ptr<ChebyshevBlockJacobi>     chebyshev_block_jacobi;
+  std::shared_ptr<ChebyshevAdditiveSchwarz> chebyshev_additive_schwarz;
+
+  std::shared_ptr<JacobiPreconditioner<Operator>>          preconditioner_point_jacobi;
+  std::shared_ptr<BlockJacobiPreconditioner<Operator>>     preconditioner_block_jacobi;
+  std::shared_ptr<AdditiveSchwarzPreconditioner<Operator>> preconditioner_additive_schwarz;
+
+  typename ChebyshevPointJacobi::AdditionalData     additional_data_point;
+  typename ChebyshevBlockJacobi::AdditionalData     additional_data_block;
+  typename ChebyshevAdditiveSchwarz::AdditionalData additional_data_additive_schwarz;
 };
 
 } // namespace ExaDG

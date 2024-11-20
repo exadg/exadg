@@ -89,6 +89,8 @@ NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & ve
   {
     displacement_lin = vector;
     displacement_lin.update_ghost_values();
+
+    this->assemble_matrix_if_necessary();
   }
 }
 

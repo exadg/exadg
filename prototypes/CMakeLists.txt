@@ -36,6 +36,7 @@ SET( SOURCE_FILES
      moving_mesh.cpp
      particles.cpp
      global_coarsening.cpp
+     matrix_free_integrals_and_kernels.cpp
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )

@@ -132,6 +132,27 @@ print_throughput_unsteady(dealii::ConditionalOStream const &    pcout,
   // clang-format on
 }
 
+inline void
+print_throughput_unsteady(dealii::ConditionalOStream const & pcout,
+                          double const                       avg_n_dofs,
+                          double const                       overall_time_avg,
+                          unsigned int const                 N_time_steps,
+                          unsigned int const                 N_mpi_processes)
+{
+  double const time_per_timestep = overall_time_avg / (double)N_time_steps;
+
+  // clang-format off
+  pcout << std::endl
+        << "Throughput per time step:" << std::endl
+        << "  Number of MPI processes    = " << N_mpi_processes << std::endl
+        << "  Average Degrees of freedom = " << std::scientific << std::setprecision(2)<< avg_n_dofs << std::endl
+        << "  Wall time                  = " << std::scientific << std::setprecision(2) << overall_time_avg << " s" << std::endl
+        << "  Time steps                 = " << std::left << N_time_steps << std::endl
+        << "  Wall time per time step    = " << std::scientific << std::setprecision(2) << time_per_timestep << " s" << std::endl
+        << "  Throughput                 = " << std::scientific << std::setprecision(2) << avg_n_dofs / (time_per_timestep * N_mpi_processes) << " DoFs/s/core" << std::endl
+        << std::flush;
+  // clang-format on
+}
 
 inline void
 print_costs(dealii::ConditionalOStream const & pcout,

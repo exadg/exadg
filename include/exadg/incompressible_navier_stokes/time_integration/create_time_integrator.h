@@ -26,6 +26,7 @@
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
+#include <exadg/incompressible_navier_stokes/time_integration/time_int_interpolate_analytical_solution.h>
 
 namespace ExaDG
 {
@@ -37,7 +38,7 @@ namespace IncNS
 template<int dim, typename Number>
 std::shared_ptr<TimeIntBDF<dim, Number>>
 create_time_integrator(std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_operator,
-                       std::shared_ptr<HelpersALE<Number> const>         helpers_ale,
+                       std::shared_ptr<HelpersALE<dim, Number> const>    helpers_ale,
                        std::shared_ptr<PostProcessorInterface<Number>>   postprocessor,
                        Parameters const &                                parameters,
                        MPI_Comm const &                                  mpi_comm,
@@ -68,6 +69,12 @@ create_time_integrator(std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_ope
 
     time_integrator = std::make_shared<IncNS::TimeIntBDFPressureCorrection<dim, Number>>(
       operator_pressure_correction, helpers_ale, postprocessor, parameters, mpi_comm, is_test);
+  }
+  else if(parameters.temporal_discretization ==
+          TemporalDiscretization::InterpolateAnalyticalSolution)
+  {
+    time_integrator = std::make_shared<IncNS::TimeIntInterpolateAnalyticalSolution<dim, Number>>(
+      pde_operator, helpers_ale, postprocessor, parameters, mpi_comm, is_test);
   }
   else
   {

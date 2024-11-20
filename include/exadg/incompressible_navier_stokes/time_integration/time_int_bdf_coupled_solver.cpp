@@ -33,7 +33,7 @@ namespace IncNS
 template<int dim, typename Number>
 TimeIntBDFCoupled<dim, Number>::TimeIntBDFCoupled(
   std::shared_ptr<Operator>                       operator_in,
-  std::shared_ptr<HelpersALE<Number> const>       helpers_ale_in,
+  std::shared_ptr<HelpersALE<dim, Number> const>  helpers_ale_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
   Parameters const &                              param_in,
   MPI_Comm const &                                mpi_comm_in,
@@ -74,7 +74,7 @@ TimeIntBDFCoupled<dim, Number>::initialize_current_solution()
 
 template<int dim, typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::initialize_former_solutions()
+TimeIntBDFCoupled<dim, Number>::initialize_former_multistep_dof_vectors()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < solution.size(); ++i)
@@ -177,7 +177,7 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
   }
 
   // explicit viscosity update
-  if(this->param.viscosity_is_variable() and
+  if(this->param.viscous_problem() and this->param.viscosity_is_variable() and
      this->param.treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit)
   {
     dealii::Timer timer_viscosity_update;
@@ -259,11 +259,11 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
       pde_operator->evaluate_add_body_force_term(rhs, this->get_next_time());
 
     // Add the convective term to the right-hand side of the equations
-    // if the convective term is treated explicitly (additive decomposition):
-    // add extrapolation of convective term to the rhs (-> minus sign!)
+    // if the convective term is treated explicitly
     if(this->param.convective_problem() and
        this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
     {
+      // add extrapolation of convective term to the rhs (-> minus sign!)
       for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
         rhs.add(-this->extra.get_beta(i), this->vec_convective_term[i]);
     }
@@ -292,19 +292,27 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
   }
   else // linear problem
   {
+    // linearly implicit convective term: use extrapolated/stored velocity as transport velocity
+    VectorType transport_velocity;
+    if(this->param.convective_problem() and
+       this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+    {
+      transport_velocity = solution_np.block(0);
+    }
+
     BlockVectorType rhs_vector;
     pde_operator->initialize_block_vector_velocity_pressure(rhs_vector);
 
-    // calculate rhs vector for the Stokes problem, i.e., the convective term is neglected in this
-    // step
-    pde_operator->rhs_stokes_problem(rhs_vector, this->get_next_time());
+    // calculate rhs vector for the linear problem, with contributions from the convective term for
+    // a linearly implicit formulation
+    pde_operator->rhs_linear_problem(rhs_vector, transport_velocity, this->get_next_time());
 
     // Add the convective term to the right-hand side of the equations
-    // if the convective term is treated explicitly (additive decomposition):
-    // add extrapolation of convective term to the rhs (-> minus sign!)
+    // if the convective term is treated explicitly
     if(this->param.convective_problem() and
        this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
     {
+      // add extrapolation of convective term to the rhs (-> minus sign!)
       for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
         rhs_vector.block(0).add(-this->extra.get_beta(i), this->vec_convective_term[i]);
     }
@@ -313,11 +321,11 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
     pde_operator->apply_mass_operator_add(rhs_vector.block(0), sum_alphai_ui);
 
     unsigned int const n_iter =
-      pde_operator->solve_linear_stokes_problem(solution_np,
-                                                rhs_vector,
-                                                update_preconditioner,
-                                                this->get_next_time(),
-                                                this->get_scaling_factor_time_derivative_term());
+      pde_operator->solve_linear_problem(solution_np,
+                                         rhs_vector,
+                                         transport_velocity,
+                                         update_preconditioner,
+                                         this->get_scaling_factor_time_derivative_term());
 
     iterations.first += 1;
     std::get<1>(iterations.second) += n_iter;

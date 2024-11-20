@@ -22,6 +22,7 @@
 #ifndef APPLICATIONS_POISSON_TEST_CASES_SINE_H_
 #define APPLICATIONS_POISSON_TEST_CASES_SINE_H_
 
+#include <exadg/grid/boundary_layer_manifold.h>
 #include <exadg/grid/deformed_cube_manifold.h>
 
 namespace ExaDG
@@ -101,7 +102,8 @@ public:
 enum class MeshType
 {
   Cartesian,
-  Curvilinear
+  Curvilinear,
+  BoundaryLayer
 };
 
 template<int dim, int n_components, typename Number>
@@ -136,14 +138,18 @@ private:
     this->param.grid.element_type = ElementType::Hypercube; // Simplex;
     if(this->param.grid.element_type == ElementType::Simplex)
     {
-      this->param.grid.triangulation_type           = TriangulationType::FullyDistributed;
-      this->param.mapping_degree                    = 2;
+      this->param.grid.triangulation_type     = TriangulationType::FullyDistributed;
+      this->param.mapping_degree              = 2;
+      this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
+
       this->param.grid.create_coarse_triangulations = true;
     }
     else if(this->param.grid.element_type == ElementType::Hypercube)
     {
-      this->param.grid.triangulation_type           = TriangulationType::Distributed;
-      this->param.mapping_degree                    = 3;
+      this->param.grid.triangulation_type     = TriangulationType::Distributed;
+      this->param.mapping_degree              = 3;
+      this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
+
       this->param.grid.create_coarse_triangulations = false; // can also be set to true if desired
     }
     this->param.grid.file_name = this->grid_parameters.file_name;
@@ -172,113 +178,155 @@ private:
   }
 
   void
-  create_grid() final
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
-    auto const lambda_create_triangulation =
-      [&](dealii::Triangulation<dim, dim> &                        tria,
-          std::vector<dealii::GridTools::PeriodicFacePair<
-            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
-          unsigned int const                                       global_refinements,
-          std::vector<unsigned int> const &                        vector_local_refinements) {
-        double const length = 1.0;
-        double const left = -length, right = length;
-        // choose a coarse grid with at least 2^dim elements to obtain a non-trivial coarse grid
-        // problem
-        unsigned int const n_cells_1d =
-          std::max((unsigned int)2, this->n_subdivisions_1d_hypercube);
+    auto const lambda_create_triangulation = [&](dealii::Triangulation<dim, dim> & tria,
+                                                 std::vector<dealii::GridTools::PeriodicFacePair<
+                                                   typename dealii::Triangulation<
+                                                     dim>::cell_iterator>> & periodic_face_pairs,
+                                                 unsigned int const          global_refinements,
+                                                 std::vector<unsigned int> const &
+                                                   vector_local_refinements) {
+      double const length = 1.0;
+      double const left = -length, right = length;
+      // choose a coarse grid with at least 2^dim elements to obtain a non-trivial coarse grid
+      // problem
+      unsigned int const n_cells_1d = std::max((unsigned int)2, this->n_subdivisions_1d_hypercube);
 
-        if(read_external_grid)
+      if(read_external_grid)
+      {
+        GridUtilities::read_external_triangulation<dim>(tria, this->param.grid);
+      }
+      else
+      {
+        if(this->param.grid.element_type == ElementType::Hypercube)
         {
-          GridUtilities::read_external_triangulation<dim>(tria, this->param.grid);
+          dealii::GridGenerator::subdivided_hyper_cube(tria, n_cells_1d, left, right);
+        }
+        else if(this->param.grid.element_type == ElementType::Simplex)
+        {
+          dealii::GridGenerator::subdivided_hyper_cube_with_simplices(tria,
+                                                                      n_cells_1d,
+                                                                      left,
+                                                                      right);
         }
         else
         {
-          if(this->param.grid.element_type == ElementType::Hypercube)
+          AssertThrow(false, ExcNotImplemented());
+        }
+      }
+
+      if(USE_NEUMANN_BOUNDARY)
+      {
+        for(auto cell : tria)
+        {
+          for(auto const & f : cell.face_indices())
           {
-            dealii::GridGenerator::subdivided_hyper_cube(tria, n_cells_1d, left, right);
-          }
-          else if(this->param.grid.element_type == ElementType::Simplex)
-          {
-            dealii::GridGenerator::subdivided_hyper_cube_with_simplices(tria,
-                                                                        n_cells_1d,
-                                                                        left,
-                                                                        right);
-          }
-          else
-          {
-            AssertThrow(false, ExcNotImplemented());
+            if(std::fabs(cell.face(f)->center()(0) - right) < 1e-12)
+            {
+              cell.face(f)->set_boundary_id(1);
+            }
           }
         }
+      }
 
-        if(USE_NEUMANN_BOUNDARY)
+      if(USE_PERIODIC_BOUNDARY)
+      {
+        AssertThrow(USE_NEUMANN_BOUNDARY == false,
+                    dealii::ExcMessage("Neumann and periodic boundaries may not be combined."));
+
+        AssertThrow(
+          this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+          dealii::ExcMessage(
+            "Periodic faces might not be applied correctly for TriangulationType::FullyDistributed. "
+            "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
+
+        for(auto cell : tria)
         {
-          for(auto cell : tria)
+          for(auto const & f : cell.face_indices())
           {
-            for(auto const & f : cell.face_indices())
+            if(std::fabs(cell.face(f)->center()(0) - left) < 1e-12)
             {
-              if(std::fabs(cell.face(f)->center()(0) - right) < 1e-12)
-              {
-                cell.face(f)->set_boundary_id(1);
-              }
+              cell.face(f)->set_boundary_id(1);
+            }
+
+            if(std::fabs(cell.face(f)->center()(0) - right) < 1e-12)
+            {
+              cell.face(f)->set_boundary_id(2);
             }
           }
         }
 
-        if(USE_PERIODIC_BOUNDARY)
+        dealii::GridTools::collect_periodic_faces(
+          tria, 1, 2, 0 /*x-direction*/, periodic_face_pairs);
+
+        tria.add_periodicity(periodic_face_pairs);
+      }
+
+      if(mesh_type == MeshType::Cartesian)
+      {
+        // do nothing
+      }
+      else if(mesh_type == MeshType::Curvilinear)
+      {
+        AssertThrow(
+          this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+          dealii::ExcMessage(
+            "Manifolds might not be applied correctly for TriangulationType::FullyDistributed. "
+            "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
+
+        double const       deformation = 0.15;
+        unsigned int const frequency   = 2;
+        apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
+      }
+      else if(mesh_type == MeshType::BoundaryLayer)
+      {
+        AssertThrow(
+          this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+          dealii::ExcMessage(
+            "Manifolds might not be applied correctly for TriangulationType::FullyDistributed. "
+            "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
+
+        dealii::Tensor<1, dim> dimensions;
+        for(unsigned int d = 0; d < dim; ++d)
         {
-          AssertThrow(USE_NEUMANN_BOUNDARY == false,
-                      dealii::ExcMessage("Neumann and periodic boundaries may not be combined."));
-
-          for(auto cell : tria)
-          {
-            for(auto const & f : cell.face_indices())
-            {
-              if(std::fabs(cell.face(f)->center()(0) - left) < 1e-12)
-              {
-                cell.face(f)->set_boundary_id(1);
-              }
-
-              if(std::fabs(cell.face(f)->center()(0) - right) < 1e-12)
-              {
-                cell.face(f)->set_boundary_id(2);
-              }
-            }
-          }
-
-          dealii::GridTools::collect_periodic_faces(
-            tria, 1, 2, 0 /*x-direction*/, periodic_face_pairs);
-
-          tria.add_periodicity(periodic_face_pairs);
+          dimensions[d] = right - left;
         }
 
-        if(vector_local_refinements.size() > 0)
-          refine_local(tria, vector_local_refinements);
+        double const grid_stretch_factor = 2.8;
 
-        if(global_refinements > 0)
-          tria.refine_global(global_refinements);
+        BoundaryLayerManifold<dim> manifold(dimensions, grid_stretch_factor);
+        tria.set_all_manifold_ids(1);
+        tria.set_manifold(1, manifold);
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("not implemented."));
+      }
 
-        if(mesh_type == MeshType::Cartesian)
-        {
-          // do nothing
-        }
-        else if(mesh_type == MeshType::Curvilinear)
-        {
-          double const       deformation = 0.15;
-          unsigned int const frequency   = 2;
-          apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
-        }
-        else
-        {
-          AssertThrow(false, dealii::ExcMessage("not implemented."));
-        }
-      };
+      if(vector_local_refinements.size() > 0)
+        refine_local(tria, vector_local_refinements);
 
-    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+      if(global_refinements > 0)
+        tria.refine_global(global_refinements);
+    };
+
+    GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
                                                             this->param.grid,
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
+
+    // mappings
+    GridUtilities::create_mapping_with_multigrid(mapping,
+                                                 multigrid_mappings,
+                                                 this->param.grid.element_type,
+                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree_coarse_grids,
+                                                 this->param.involves_h_multigrid());
   }
 
   void
@@ -328,6 +376,9 @@ private:
 
     return pp;
   }
+
+  double const length = 1.0;
+  double const left = -length, right = length;
 
   bool const read_external_grid = false;
 

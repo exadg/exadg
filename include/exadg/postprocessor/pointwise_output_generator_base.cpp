@@ -58,60 +58,63 @@ PointwiseOutputDataBase<dim>::print(dealii::ConditionalOStream & pcout) const
 template struct PointwiseOutputDataBase<2>;
 template struct PointwiseOutputDataBase<3>;
 
-template<int dim, typename VectorType>
+template<int dim, typename Number>
 void
-PointwiseOutputGeneratorBase<dim, VectorType>::evaluate(VectorType const & solution,
-                                                        double const       time,
-                                                        bool const         unsteady)
+PointwiseOutputGeneratorBase<dim, Number>::do_evaluate(std::function<void()> const & write_solution,
+                                                       double const                  time,
+                                                       bool const                    unsteady)
 {
   AssertThrow(unsteady, dealii::ExcMessage("Only implemented for the unsteady case."));
 
-  if(first_evaluation)
+  if(pointwise_output_data.evaluation_points.size() > 0)
   {
-    first_evaluation = false;
-    AssertThrow(time_control.get_counter() == 0,
-                dealii::ExcMessage(
-                  "Only implemented in the case that the simulation is not restarted"));
+    if(first_evaluation)
+    {
+      first_evaluation = false;
+      AssertThrow(time_control.get_counter() == 0,
+                  dealii::ExcMessage(
+                    "Only implemented in the case that the simulation is not restarted"));
+    }
+
+    if(pointwise_output_data.update_points_before_evaluation)
+      reinit_remote_evaluator();
+
+    write_time(time);
+
+    write_solution();
   }
-
-  if(pointwise_output_data.update_points_before_evaluation)
-    reinit_remote_evaluator();
-
-  write_time(time);
-  do_evaluate(solution);
 }
 
-template<int dim, typename VectorType>
-PointwiseOutputGeneratorBase<dim, VectorType>::PointwiseOutputGeneratorBase(MPI_Comm const & comm)
-  : mpi_comm(comm), first_evaluation(true)
+template<int dim, typename Number>
+PointwiseOutputGeneratorBase<dim, Number>::PointwiseOutputGeneratorBase(MPI_Comm const & comm)
+  : mpi_comm(comm), n_out_samples(dealii::numbers::invalid_unsigned_int), first_evaluation(true)
 {
 }
 
-template<int dim, typename VectorType>
+template<int dim, typename Number>
 void
-PointwiseOutputGeneratorBase<dim, VectorType>::setup_base(
+PointwiseOutputGeneratorBase<dim, Number>::setup_base(
   dealii::Triangulation<dim> const &   triangulation_in,
   dealii::Mapping<dim> const &         mapping_in,
   PointwiseOutputDataBase<dim> const & pointwise_output_data_in)
 {
-#ifdef DEAL_II_WITH_HDF5
-  triangulation         = &triangulation_in;
-  pointwise_output_data = pointwise_output_data_in;
-
-
-  AssertThrow(
-    (get_unsteady_evaluation_type(pointwise_output_data_in.time_control_data) ==
-     TimeControlData::UnsteadyEvalType::Interval) or
-      (get_unsteady_evaluation_type(pointwise_output_data_in.time_control_data) ==
-       TimeControlData::UnsteadyEvalType::None),
-    dealii::ExcMessage(
-      "This module can currently only be used with time TimeControlData::UnsteadyEvalType::Interval"));
-
-  time_control.setup(pointwise_output_data_in.time_control_data);
-
-  if(pointwise_output_data.time_control_data.is_active and
-     pointwise_output_data.evaluation_points.size() > 0)
+  if(pointwise_output_data_in.time_control_data.is_active and
+     pointwise_output_data_in.evaluation_points.size() > 0)
   {
+#ifdef DEAL_II_WITH_HDF5
+    triangulation         = &triangulation_in;
+    pointwise_output_data = pointwise_output_data_in;
+
+    AssertThrow(
+      (get_unsteady_evaluation_type(pointwise_output_data.time_control_data) ==
+       TimeControlData::UnsteadyEvalType::Interval) or
+        (get_unsteady_evaluation_type(pointwise_output_data.time_control_data) ==
+         TimeControlData::UnsteadyEvalType::None),
+      dealii::ExcMessage(
+        "This module can currently only be used with time TimeControlData::UnsteadyEvalType::Interval"));
+
+    time_control.setup(pointwise_output_data.time_control_data);
+
     mapping = &mapping_in;
 
     // allocate memory for hyperslab
@@ -137,19 +140,19 @@ PointwiseOutputGeneratorBase<dim, VectorType>::setup_base(
       auto group = hdf5_file->create_group("PhysicalInformation");
       add_time_dataset(group, "Time");
     }
-  }
+
 #else
-  (void)triangulation_in;
-  (void)mapping_in;
-  (void)pointwise_output_data_in;
-  AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with HDF5!"));
+    (void)triangulation_in;
+    (void)mapping_in;
+    AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with HDF5!"));
 #endif
+  }
 }
 
-template<int dim, typename VectorType>
+template<int dim, typename Number>
 void
-PointwiseOutputGeneratorBase<dim, VectorType>::add_quantity(std::string const & name,
-                                                            unsigned int const  n_components)
+PointwiseOutputGeneratorBase<dim, Number>::add_quantity(std::string const & name,
+                                                        unsigned int const  n_components)
 {
   AssertThrow(n_components > 0, dealii::ExcMessage("n_components has to be > 0."));
 
@@ -169,27 +172,27 @@ PointwiseOutputGeneratorBase<dim, VectorType>::add_quantity(std::string const & 
 #endif
 }
 
-template<int dim, typename VectorType>
+template<int dim, typename Number>
 void
-PointwiseOutputGeneratorBase<dim, VectorType>::setup_remote_evaluator()
+PointwiseOutputGeneratorBase<dim, Number>::setup_remote_evaluator()
 {
   remote_evaluator =
     std::make_shared<dealii::Utilities::MPI::RemotePointEvaluation<dim>>(1e-6, false, 0);
   reinit_remote_evaluator();
 }
 
-template<int dim, typename VectorType>
+template<int dim, typename Number>
 void
-PointwiseOutputGeneratorBase<dim, VectorType>::reinit_remote_evaluator()
+PointwiseOutputGeneratorBase<dim, Number>::reinit_remote_evaluator()
 {
   remote_evaluator->reinit(pointwise_output_data.evaluation_points, *triangulation, *mapping);
   AssertThrow(remote_evaluator->all_points_found(),
               dealii::ExcMessage("Not all remote points found."));
 }
 
-template<int dim, typename VectorType>
+template<int dim, typename Number>
 void
-PointwiseOutputGeneratorBase<dim, VectorType>::create_hdf5_file()
+PointwiseOutputGeneratorBase<dim, Number>::create_hdf5_file()
 {
 #ifdef DEAL_II_WITH_HDF5
   ExaDG::create_directories(pointwise_output_data.directory, mpi_comm);
@@ -202,9 +205,9 @@ PointwiseOutputGeneratorBase<dim, VectorType>::create_hdf5_file()
 #endif
 }
 
-template<int dim, typename VectorType>
+template<int dim, typename Number>
 void
-PointwiseOutputGeneratorBase<dim, VectorType>::write_evaluation_points(std::string const & name)
+PointwiseOutputGeneratorBase<dim, Number>::write_evaluation_points(std::string const & name)
 {
 #ifdef DEAL_II_WITH_HDF5
   auto dataset = hdf5_file->open_dataset(name);
@@ -231,9 +234,9 @@ PointwiseOutputGeneratorBase<dim, VectorType>::write_evaluation_points(std::stri
 }
 
 #ifdef DEAL_II_WITH_HDF5
-template<int dim, typename VectorType>
+template<int dim, typename Number>
 void
-PointwiseOutputGeneratorBase<dim, VectorType>::add_evaluation_points_dataset(
+PointwiseOutputGeneratorBase<dim, Number>::add_evaluation_points_dataset(
   dealii::HDF5::Group & group,
   std::string const &   name)
 {
@@ -242,18 +245,18 @@ PointwiseOutputGeneratorBase<dim, VectorType>::add_evaluation_points_dataset(
   group.template create_dataset<point_value_type>(name, hdf5_point_dims);
 }
 
-template<int dim, typename VectorType>
+template<int dim, typename Number>
 void
-PointwiseOutputGeneratorBase<dim, VectorType>::add_time_dataset(dealii::HDF5::Group & group,
-                                                                std::string const &   name)
+PointwiseOutputGeneratorBase<dim, Number>::add_time_dataset(dealii::HDF5::Group & group,
+                                                            std::string const &   name)
 {
   group.template create_dataset<Number>(name, std::vector<hsize_t>{1, 1 * n_out_samples});
 }
 #endif
 
-template<int dim, typename VectorType>
+template<int dim, typename Number>
 void
-PointwiseOutputGeneratorBase<dim, VectorType>::write_time(double time)
+PointwiseOutputGeneratorBase<dim, Number>::write_time(double time)
 {
 #ifdef DEAL_II_WITH_HDF5
   auto dataset = hdf5_file->open_dataset("PhysicalInformation/Time");
@@ -277,24 +280,10 @@ PointwiseOutputGeneratorBase<dim, VectorType>::write_time(double time)
 }
 
 // Vector Instantiations
-template<typename Number>
-using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
+template class PointwiseOutputGeneratorBase<2, float>;
+template class PointwiseOutputGeneratorBase<2, double>;
 
-template class PointwiseOutputGeneratorBase<2, VectorType<float>>;
-template class PointwiseOutputGeneratorBase<2, VectorType<double>>;
-
-template class PointwiseOutputGeneratorBase<3, VectorType<float>>;
-template class PointwiseOutputGeneratorBase<3, VectorType<double>>;
-
-// BlockVector Instantiations
-template<typename Number>
-using BlockVectorType = dealii::LinearAlgebra::distributed::BlockVector<Number>;
-
-template class PointwiseOutputGeneratorBase<2, BlockVectorType<float>>;
-template class PointwiseOutputGeneratorBase<2, BlockVectorType<double>>;
-
-template class PointwiseOutputGeneratorBase<3, BlockVectorType<float>>;
-template class PointwiseOutputGeneratorBase<3, BlockVectorType<double>>;
-
+template class PointwiseOutputGeneratorBase<3, float>;
+template class PointwiseOutputGeneratorBase<3, double>;
 
 } // namespace ExaDG

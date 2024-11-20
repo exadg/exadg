@@ -49,10 +49,12 @@ public:
     p.right_hand_side = true;
 
     // SPATIAL DISCRETIZATION
-    p.grid.triangulation_type = TriangulationType::Distributed;
-    p.mapping_degree          = 3;
-    p.spatial_discretization  = SpatialDiscretization::DG;
-    p.IP_factor               = 1.0e0;
+    p.grid.triangulation_type     = TriangulationType::Distributed;
+    p.mapping_degree              = 3;
+    p.mapping_degree_coarse_grids = p.mapping_degree;
+
+    p.spatial_discretization = SpatialDiscretization::DG;
+    p.IP_factor              = 1.0e0;
 
     // SOLVER
     p.solver                      = LinearSolver::CG;
@@ -74,7 +76,9 @@ public:
   }
 
   void
-  create_grid() final
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
     auto const lambda_create_triangulation =
       [&](dealii::Triangulation<dim, dim> &                        tria,
@@ -97,12 +101,20 @@ public:
         tria.refine_global(global_refinements);
       };
 
-    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+    GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
                                                             this->param.grid,
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
+
+    // mappings
+    GridUtilities::create_mapping_with_multigrid(mapping,
+                                                 multigrid_mappings,
+                                                 this->param.grid.element_type,
+                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree_coarse_grids,
+                                                 this->param.involves_h_multigrid());
   }
 
   void
@@ -129,7 +141,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, n_components, Number>>
-  create_postprocessor() final
+  create_postprocessor() const final
   {
     PostProcessorData<dim> pp_data;
     pp_data.output_data.time_control_data.is_active = this->output_parameters.write;
@@ -169,10 +181,12 @@ private:
     p.right_hand_side = true;
 
     // SPATIAL DISCRETIZATION
-    p.grid.triangulation_type = TriangulationType::Distributed;
-    p.mapping_degree          = 3;
-    p.spatial_discretization  = SpatialDiscretization::DG;
-    p.IP_factor               = 1.0e0;
+    p.grid.triangulation_type     = TriangulationType::Distributed;
+    p.mapping_degree              = 3;
+    p.mapping_degree_coarse_grids = p.mapping_degree;
+
+    p.spatial_discretization = SpatialDiscretization::DG;
+    p.IP_factor              = 1.0e0;
 
     // SOLVER
     p.solver                      = LinearSolver::CG;
@@ -194,7 +208,9 @@ private:
   }
 
   void
-  create_grid() final
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
     auto const lambda_create_triangulation =
       [&](dealii::Triangulation<dim, dim> &                        tria,
@@ -216,12 +232,20 @@ private:
         tria.refine_global(global_refinements);
       };
 
-    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+    GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
                                                             this->param.grid,
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
+
+    // mappings
+    GridUtilities::create_mapping_with_multigrid(mapping,
+                                                 multigrid_mappings,
+                                                 this->param.grid.element_type,
+                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree_coarse_grids,
+                                                 this->param.involves_h_multigrid());
   }
 
   void
@@ -247,7 +271,7 @@ private:
   }
 
   std::shared_ptr<PostProcessorBase<dim, n_components, Number>>
-  create_postprocessor() final
+  create_postprocessor() const final
   {
     PostProcessorData<dim> pp_data;
     pp_data.output_data.time_control_data.is_active = this->output_parameters.write;

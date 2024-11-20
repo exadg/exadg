@@ -36,8 +36,18 @@ class PreconditionerBase
 public:
   typedef dealii::LinearAlgebra::distributed::Vector<value_type> VectorType;
 
+  PreconditionerBase() : update_needed(true)
+  {
+  }
+
   virtual ~PreconditionerBase()
   {
+  }
+
+  bool
+  needs_update() const
+  {
+    return update_needed;
   }
 
   virtual void
@@ -51,6 +61,9 @@ public:
   {
     return std::make_shared<TimerTree>();
   }
+
+protected:
+  bool update_needed;
 };
 
 } // namespace ExaDG

@@ -65,20 +65,18 @@ struct PointwiseOutputDataBase
   print(dealii::ConditionalOStream & pcout) const;
 };
 
-template<int dim, typename VectorType>
+template<int dim, typename Number>
 class PointwiseOutputGeneratorBase
 {
 public:
-  using Number = typename VectorType::value_type;
-
   using point_value_type = typename PointwiseOutputDataBase<dim>::point_value_type;
-
-  void
-  evaluate(VectorType const & solution, double const time, bool const unsteady);
 
   TimeControl time_control;
 
 protected:
+  void
+  do_evaluate(std::function<void()> const & write_solution, double const time, bool const unsteady);
+
   PointwiseOutputGeneratorBase(MPI_Comm const & comm);
 
   virtual ~PointwiseOutputGeneratorBase() = default;
@@ -123,9 +121,6 @@ protected:
   }
 
 private:
-  virtual void
-  do_evaluate(VectorType const & solution) = 0;
-
   void
   setup_remote_evaluator();
 

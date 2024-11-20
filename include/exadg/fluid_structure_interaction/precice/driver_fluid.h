@@ -47,17 +47,6 @@ public:
     fluid = std::make_shared<SolverFluid<dim, Number>>();
   }
 
-  void
-  setup_application()
-  {
-    dealii::Timer timer_local;
-    timer_local.restart();
-
-    this->application->fluid->setup();
-
-    this->timer_tree.insert({"FSI", "Setup", "Application"}, timer_local.wall_time());
-  }
-
 
   void
   setup_fluid_and_ale()
@@ -87,7 +76,7 @@ public:
         this->precice_parameters.write_data_type,
         fluid->pde_operator->get_matrix_free(),
         fluid->pde_operator->get_dof_index_velocity(),
-        fluid->pde_operator->get_quad_index_velocity_linear());
+        fluid->pde_operator->get_quad_index_velocity_standard());
     }
 
     // structure to ALE
@@ -147,8 +136,6 @@ public:
     timer.restart();
 
     this->pcout << std::endl << "Setting up fluid-structure interaction solver:" << std::endl;
-
-    setup_application();
 
     setup_fluid_and_ale();
 

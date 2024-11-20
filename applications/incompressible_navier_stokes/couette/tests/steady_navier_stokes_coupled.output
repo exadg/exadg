@@ -42,6 +42,7 @@ Spatial discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            2
+  Mapping degree coarse grids:               2
   FE space:                                  L2
   Polynomial degree velocity:                2
   Polynomial degree pressure:                MixedOrder
@@ -151,10 +152,6 @@ Setup incompressible Navier-Stokes operator ...
 
 ... done!
 
-Setup incompressible Navier-Stokes solver ...
-
-... done!
-
 Calculate error for velocity for initial data:
   Absolute error (L2-norm): 1.15470e+00
 
@@ -164,10 +161,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 7.79651e-13
+  Absolute error (L2-norm): 7.80921e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 2.10835e-11
+  Absolute error (L2-norm): 2.10768e-11
 
 
 
@@ -212,6 +209,7 @@ Spatial discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            3
+  Mapping degree coarse grids:               3
   FE space:                                  L2
   Polynomial degree velocity:                3
   Polynomial degree pressure:                MixedOrder
@@ -321,10 +319,6 @@ Setup incompressible Navier-Stokes operator ...
 
 ... done!
 
-Setup incompressible Navier-Stokes solver ...
-
-... done!
-
 Calculate error for velocity for initial data:
   Absolute error (L2-norm): 1.15470e+00
 
@@ -334,10 +328,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 7.37921e-13
+  Absolute error (L2-norm): 4.17721e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 1.41420e-11
+  Absolute error (L2-norm): 6.95824e-12
 
 
 
@@ -382,6 +376,7 @@ Spatial discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            4
+  Mapping degree coarse grids:               4
   FE space:                                  L2
   Polynomial degree velocity:                4
   Polynomial degree pressure:                MixedOrder
@@ -491,10 +486,6 @@ Setup incompressible Navier-Stokes operator ...
 
 ... done!
 
-Setup incompressible Navier-Stokes solver ...
-
-... done!
-
 Calculate error for velocity for initial data:
   Absolute error (L2-norm): 1.15470e+00
 
@@ -504,10 +495,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 3.04448e-14
+  Absolute error (L2-norm): 2.96422e-14
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 8.26406e-13
+  Absolute error (L2-norm): 8.08894e-13
 
 
 
@@ -552,6 +543,7 @@ Spatial discretization:
   Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            5
+  Mapping degree coarse grids:               5
   FE space:                                  L2
   Polynomial degree velocity:                5
   Polynomial degree pressure:                MixedOrder
@@ -661,10 +653,6 @@ Setup incompressible Navier-Stokes operator ...
 
 ... done!
 
-Setup incompressible Navier-Stokes solver ...
-
-... done!
-
 Calculate error for velocity for initial data:
   Absolute error (L2-norm): 1.15470e+00
 
@@ -674,7 +662,7 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 8.94271e-12
+  Absolute error (L2-norm): 9.09819e-12
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 2.25122e-10
+  Absolute error (L2-norm): 2.27289e-10

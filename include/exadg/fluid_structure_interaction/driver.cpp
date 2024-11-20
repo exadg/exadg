@@ -59,15 +59,6 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up fluid-structure interaction solver:" << std::endl;
 
-  // setup application
-  {
-    dealii::Timer timer_local;
-
-    application->setup();
-
-    timer_tree.insert({"FSI", "Setup", "Application"}, timer_local.wall_time());
-  }
-
   // setup structure
   {
     dealii::Timer timer_local;
@@ -117,7 +108,7 @@ Driver<dim, Number>::setup_interface_coupling()
       structure_to_ale->setup(
         poisson_grid_motion->get_pde_operator()->get_container_interface_data(),
         structure->pde_operator->get_dof_handler(),
-        *application->structure->get_mapping(),
+        *structure->mapping,
         marked_vertices_structure,
         parameters.geometric_tolerance);
     }
@@ -131,7 +122,7 @@ Driver<dim, Number>::setup_interface_coupling()
       structure_to_ale->setup(
         elasticity_grid_motion->get_pde_operator()->get_container_interface_data_dirichlet(),
         structure->pde_operator->get_dof_handler(),
-        *application->structure->get_mapping(),
+        *structure->mapping,
         marked_vertices_structure,
         parameters.geometric_tolerance);
     }
@@ -159,7 +150,7 @@ Driver<dim, Number>::setup_interface_coupling()
     structure_to_fluid = std::make_shared<InterfaceCoupling<1, dim, Number>>();
     structure_to_fluid->setup(fluid->pde_operator->get_container_interface_data(),
                               structure->pde_operator->get_dof_handler(),
-                              *application->structure->get_mapping(),
+                              *structure->mapping,
                               marked_vertices_structure,
                               parameters.geometric_tolerance);
 
@@ -183,7 +174,7 @@ Driver<dim, Number>::setup_interface_coupling()
     fluid_to_structure = std::make_shared<InterfaceCoupling<1, dim, Number>>();
     fluid_to_structure->setup(structure->pde_operator->get_container_interface_data_neumann(),
                               fluid->pde_operator->get_dof_handler_u(),
-                              *application->fluid->get_mapping(),
+                              *fluid->mapping,
                               marked_vertices_fluid,
                               parameters.geometric_tolerance);
 

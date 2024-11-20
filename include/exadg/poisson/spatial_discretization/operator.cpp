@@ -31,13 +31,13 @@
 #include <exadg/operators/quadrature.h>
 #include <exadg/poisson/preconditioners/multigrid_preconditioner.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/additive_schwarz_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_amg.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
 #include <exadg/solvers_and_preconditioners/utilities/check_multigrid.h>
-#include <exadg/solvers_and_preconditioners/utilities/petsc_operation.h>
 #include <exadg/utilities/exceptions.h>
 
 namespace ExaDG
@@ -46,16 +46,18 @@ namespace Poisson
 {
 template<int dim, int n_components, typename Number>
 Operator<dim, n_components, Number>::Operator(
-  std::shared_ptr<Grid<dim> const>                     grid_in,
-  std::shared_ptr<dealii::Mapping<dim> const>          mapping_in,
-  std::shared_ptr<BoundaryDescriptor<rank, dim> const> boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim> const>           field_functions_in,
-  Parameters const &                                   param_in,
-  std::string const &                                  field_in,
-  MPI_Comm const &                                     mpi_comm_in)
+  std::shared_ptr<Grid<dim> const>                      grid_in,
+  std::shared_ptr<dealii::Mapping<dim> const>           mapping_in,
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings_in,
+  std::shared_ptr<BoundaryDescriptor<rank, dim> const>  boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim> const>            field_functions_in,
+  Parameters const &                                    param_in,
+  std::string const &                                   field_in,
+  MPI_Comm const &                                      mpi_comm_in)
   : dealii::Subscriptor(),
     grid(grid_in),
     mapping(mapping_in),
+    multigrid_mappings(multigrid_mappings_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(param_in),
@@ -235,10 +237,14 @@ Operator<dim, n_components, Number>::setup_operators()
 
     laplace_operator_data.quad_index_gauss_lobatto = get_quad_index_gauss_lobatto();
   }
-  laplace_operator_data.bc                    = boundary_descriptor;
-  laplace_operator_data.use_cell_based_loops  = param.enable_cell_based_face_loops;
-  laplace_operator_data.kernel_data.IP_factor = param.IP_factor;
+  laplace_operator_data.bc                     = boundary_descriptor;
+  laplace_operator_data.use_cell_based_loops   = param.enable_cell_based_face_loops;
+  laplace_operator_data.kernel_data.IP_factor  = param.IP_factor;
+  laplace_operator_data.use_matrix_based_vmult = param.use_matrix_based_implementation;
+  laplace_operator_data.sparse_matrix_type     = param.sparse_matrix_type;
   laplace_operator.initialize(*matrix_free, affine_constraints, laplace_operator_data);
+
+  laplace_operator.assemble_matrix_if_necessary();
 
   // rhs operator
   if(param.right_hand_side)
@@ -291,15 +297,15 @@ Operator<dim, n_components, Number>::setup(
 
   setup_operators();
 
+  setup_preconditioner_and_solver();
+
   pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, int n_components, typename Number>
 void
-Operator<dim, n_components, Number>::setup_solver()
+Operator<dim, n_components, Number>::setup_preconditioner_and_solver()
 {
-  pcout << std::endl << "Setup Poisson solver ..." << std::endl;
-
   // initialize preconditioner
   if(param.preconditioner == Poisson::Preconditioner::None)
   {
@@ -307,16 +313,21 @@ Operator<dim, n_components, Number>::setup_solver()
   }
   else if(param.preconditioner == Poisson::Preconditioner::PointJacobi)
   {
-    preconditioner = std::make_shared<JacobiPreconditioner<Laplace>>(laplace_operator);
+    preconditioner = std::make_shared<JacobiPreconditioner<Laplace>>(laplace_operator, true);
   }
   else if(param.preconditioner == Poisson::Preconditioner::BlockJacobi)
   {
-    preconditioner = std::make_shared<BlockJacobiPreconditioner<Laplace>>(laplace_operator);
+    preconditioner = std::make_shared<BlockJacobiPreconditioner<Laplace>>(laplace_operator, true);
+  }
+  else if(param.preconditioner == Poisson::Preconditioner::AdditiveSchwarz)
+  {
+    preconditioner =
+      std::make_shared<AdditiveSchwarzPreconditioner<Laplace>>(laplace_operator, true);
   }
   else if(param.preconditioner == Poisson::Preconditioner::AMG)
   {
     preconditioner = std::make_shared<PreconditionerAMG<Laplace, Number>>(
-      laplace_operator, param.multigrid_data.coarse_problem.amg_data);
+      laplace_operator, true, param.multigrid_data.coarse_problem.amg_data);
   }
   else if(param.preconditioner == Poisson::Preconditioner::Multigrid)
   {
@@ -358,7 +369,7 @@ Operator<dim, n_components, Number>::setup_solver()
 
     mg_preconditioner->initialize(mg_data,
                                   grid,
-                                  mapping,
+                                  multigrid_mappings,
                                   dof_handler.get_fe(),
                                   laplace_operator.get_data(),
                                   false /* moving_mesh */,
@@ -409,8 +420,6 @@ Operator<dim, n_components, Number>::setup_solver()
   {
     AssertThrow(false, dealii::ExcMessage("Specified solver is not implemented!"));
   }
-
-  pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, int n_components, typename Number>

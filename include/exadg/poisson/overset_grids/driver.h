@@ -39,11 +39,16 @@ class Solver
 {
 public:
   void
-  setup(std::shared_ptr<Domain<dim, n_components, Number>> domain, MPI_Comm const mpi_comm)
+  setup(std::shared_ptr<Domain<dim, n_components, Number> const> const & domain,
+        std::shared_ptr<Grid<dim> const> const &                         grid,
+        std::shared_ptr<dealii::Mapping<dim> const> const &              mapping,
+        std::shared_ptr<MultigridMappings<dim, Number>> const            multigrid_mappings,
+        MPI_Comm const                                                   mpi_comm)
   {
     pde_operator =
-      std::make_shared<Operator<dim, n_components, Number>>(domain->get_grid(),
-                                                            domain->get_mapping(),
+      std::make_shared<Operator<dim, n_components, Number>>(grid,
+                                                            mapping,
+                                                            multigrid_mappings,
                                                             domain->get_boundary_descriptor(),
                                                             domain->get_field_functions(),
                                                             domain->get_parameters(),
@@ -51,8 +56,6 @@ public:
                                                             mpi_comm);
 
     pde_operator->setup();
-
-    pde_operator->setup_solver();
 
     postprocessor = domain->create_postprocessor();
     postprocessor->setup(*pde_operator);
@@ -86,6 +89,12 @@ private:
   dealii::ConditionalOStream pcout;
 
   std::shared_ptr<ApplicationBase<dim, n_components, Number>> application;
+
+  std::shared_ptr<Grid<dim>> grid1, grid2;
+
+  std::shared_ptr<dealii::Mapping<dim>> mapping1, mapping2;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings1, multigrid_mappings2;
 
   // Poisson solvers
   std::shared_ptr<Solver<dim, n_components, Number>> poisson1, poisson2;

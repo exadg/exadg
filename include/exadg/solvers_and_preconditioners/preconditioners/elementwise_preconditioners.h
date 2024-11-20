@@ -40,7 +40,7 @@ template<typename Number>
 class PreconditionerBase
 {
 public:
-  PreconditionerBase()
+  PreconditionerBase() : update_needed(true)
   {
   }
 
@@ -52,17 +52,31 @@ public:
   setup(unsigned int const cell) = 0;
 
   virtual void
+  update() = 0;
+
+  bool
+  needs_update()
+  {
+    return update_needed;
+  }
+
+  virtual void
   vmult(Number * dst, Number const * src) const = 0;
 
-private:
+protected:
+  bool update_needed;
 };
 
+/**
+ * This class implements an identity preconditioner for iterative solvers for elementwise problems.
+ */
 template<typename Number>
 class PreconditionerIdentity : public PreconditionerBase<Number>
 {
 public:
   PreconditionerIdentity(unsigned int const size) : M(size)
   {
+    this->update_needed = false;
   }
 
   virtual ~PreconditionerIdentity()
@@ -71,6 +85,12 @@ public:
 
   void
   setup(unsigned int const /* cell */) final
+  {
+    // nothing to do
+  }
+
+  void
+  update() final
   {
     // nothing to do
   }
@@ -87,6 +107,9 @@ private:
   unsigned int const M;
 };
 
+/**
+ * This class implements a Jacobi preconditioner for iterative solvers for elementwise problems.
+ */
 template<int dim, int n_components, typename Number, typename Operator>
 class JacobiPreconditioner : public Elementwise::PreconditionerBase<dealii::VectorizedArray<Number>>
 {
@@ -96,14 +119,18 @@ public:
   JacobiPreconditioner(dealii::MatrixFree<dim, Number> const & matrix_free,
                        unsigned int const                      dof_index,
                        unsigned int const                      quad_index,
-                       Operator const &                        underlying_operator_in)
+                       Operator const &                        underlying_operator_in,
+                       bool const                              initialize)
     : underlying_operator(underlying_operator_in)
   {
     integrator = std::make_shared<Integrator>(matrix_free, dof_index, quad_index);
 
     underlying_operator.initialize_dof_vector(global_inverse_diagonal);
 
-    underlying_operator.calculate_inverse_diagonal(global_inverse_diagonal);
+    if(initialize)
+    {
+      this->update();
+    }
   }
 
   void
@@ -113,6 +140,17 @@ public:
     integrator->read_dof_values(global_inverse_diagonal, 0);
   }
 
+  void
+  update() final
+  {
+    underlying_operator.calculate_inverse_diagonal(global_inverse_diagonal);
+
+    this->update_needed = false;
+  }
+
+  /**
+   * The pointers dst, src may point to the same data.
+   */
   void
   vmult(dealii::VectorizedArray<Number> *       dst,
         dealii::VectorizedArray<Number> const * src) const final
@@ -131,6 +169,11 @@ private:
   dealii::LinearAlgebra::distributed::Vector<Number> global_inverse_diagonal;
 };
 
+/**
+ * This class implements an elementwise inverse mass preconditioner. Currently, this class can only
+ * be used if the inverse mass can be realized as a matrix-free operator evaluation available via
+ * utility functions in deal.II.
+ */
 template<int dim, int n_components, typename Number>
 class InverseMassPreconditioner
   : public Elementwise::PreconditionerBase<dealii::VectorizedArray<Number>>
@@ -148,6 +191,30 @@ public:
   {
     integrator = std::make_shared<Integrator>(matrix_free, dof_index, quad_index);
     inverse    = std::make_shared<CellwiseInverseMass>(*integrator);
+
+    dealii::FiniteElement<dim> const & fe = matrix_free.get_dof_handler(dof_index).get_fe();
+
+    // The inverse mass preconditioner is only available for discontinuous Galerkin discretizations.
+    AssertThrow(
+      fe.conforms(dealii::FiniteElementData<dim>::L2),
+      dealii::ExcMessage(
+        "The elementwise inverse mass preconditioner is only implemented for DG (L2-conforming) elements."));
+
+    // Currently, the inverse mass realized as matrix-free operator evaluation is only available
+    // in deal.II for tensor-product elements.
+    AssertThrow(
+      fe.base_element(0).dofs_per_cell == dealii::Utilities::pow(fe.degree + 1, dim),
+      dealii::ExcMessage(
+        "The elementwise inverse mass preconditioner is only implemented for tensor-product DG elements."));
+
+    // Currently, the inverse mass realized as matrix-free operator evaluation is only available
+    // in deal.II if n_q_points_1d = n_nodes_1d.
+    AssertThrow(
+      matrix_free.get_shape_info(0, quad_index).data[0].n_q_points_1d == fe.degree + 1,
+      dealii::ExcMessage(
+        "The elementwise inverse mass preconditioner is only available if n_q_points_1d = n_nodes_1d."));
+
+    this->update_needed = false;
   }
 
   void
@@ -156,6 +223,16 @@ public:
     integrator->reinit(cell);
   }
 
+  void
+  update() final
+  {
+    // no updates needed as long as the MatrixFree/Integrator object is up-to-date (which is not the
+    // responsibility of the present class).
+  }
+
+  /**
+   * The pointers dst, src may point to the same data.
+   */
   void
   vmult(dealii::VectorizedArray<Number> *       dst,
         dealii::VectorizedArray<Number> const * src) const final

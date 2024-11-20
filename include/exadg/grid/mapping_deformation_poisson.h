@@ -48,24 +48,31 @@ public:
   /**
    * Constructor.
    */
-  DeformedMapping(std::shared_ptr<Grid<dim> const>                           grid,
-                  std::shared_ptr<dealii::Mapping<dim> const>                mapping_undeformed,
-                  std::shared_ptr<Poisson::BoundaryDescriptor<1, dim> const> boundary_descriptor,
-                  std::shared_ptr<Poisson::FieldFunctions<dim> const>        field_functions,
-                  Poisson::Parameters const &                                param,
-                  std::string const &                                        field,
-                  MPI_Comm const &                                           mpi_comm)
+  DeformedMapping(
+    std::shared_ptr<Grid<dim> const>                           grid,
+    std::shared_ptr<dealii::Mapping<dim> const>                mapping_undeformed,
+    std::shared_ptr<MultigridMappings<dim, Number>> const      multigrid_mappings_undeformed,
+    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim> const> boundary_descriptor,
+    std::shared_ptr<Poisson::FieldFunctions<dim> const>        field_functions,
+    Poisson::Parameters const &                                param,
+    std::string const &                                        field,
+    MPI_Comm const &                                           mpi_comm)
     : DeformedMappingBase<dim, Number>(mapping_undeformed, param.degree, *grid->triangulation),
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       iterations({0, 0})
   {
-    // initialize PDE operator
-    pde_operator = std::make_shared<Poisson::Operator<dim, dim, Number>>(
-      grid, mapping_undeformed, boundary_descriptor, field_functions, param, field, mpi_comm);
+    // create and setup PDE operator
+    pde_operator =
+      std::make_shared<Poisson::Operator<dim, dim, Number>>(grid,
+                                                            mapping_undeformed,
+                                                            multigrid_mappings_undeformed,
+                                                            boundary_descriptor,
+                                                            field_functions,
+                                                            param,
+                                                            field,
+                                                            mpi_comm);
 
-    // setup PDE operator and solver
     pde_operator->setup();
-    pde_operator->setup_solver();
 
     // finally, initialize dof vector
     pde_operator->initialize_dof_vector(displacement);
@@ -113,9 +120,9 @@ public:
       print_solver_info_linear(pcout, n_iter, timer.wall_time());
     }
 
-    this->initialize_mapping_q_cache(this->mapping_undeformed,
-                                     displacement,
-                                     pde_operator->get_dof_handler());
+    this->initialize_mapping_from_dof_vector(this->mapping_undeformed,
+                                             displacement,
+                                             pde_operator->get_dof_handler());
   }
 
   /**
