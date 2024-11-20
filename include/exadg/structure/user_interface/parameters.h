@@ -24,6 +24,7 @@
 
 // ExaDG
 #include <exadg/grid/grid_data.h>
+#include <exadg/operators/enum_types.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver_data.h>
 #include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
@@ -178,8 +179,17 @@ public:
   // Mapping
   unsigned int mapping_degree;
 
+  // mapping degree for coarser grids in h-multigrid
+  unsigned int mapping_degree_coarse_grids;
+
   // polynomial degree of shape functions
   unsigned int degree;
+
+  // use a matrix-based implementation of linear(ized) operators
+  bool use_matrix_based_implementation;
+
+  // this parameter is only relevant if use_matrix_based_implementation == true
+  SparseMatrixType sparse_matrix_type;
 
   /**************************************************************************************/
   /*                                                                                    */

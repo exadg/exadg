@@ -171,9 +171,10 @@ private:
 
 
     // SPATIAL DISCRETIZATION
-    param.grid.triangulation_type = TriangulationType::Distributed;
-    param.mapping_degree          = param.degree_u;
-    param.degree_p                = DegreePressure::MixedOrder;
+    param.grid.triangulation_type     = TriangulationType::Distributed;
+    param.mapping_degree              = param.degree_u;
+    param.mapping_degree_coarse_grids = param.mapping_degree;
+    param.degree_p                    = DegreePressure::MixedOrder;
 
     // convective term
     param.upwind_factor = 0.5;
@@ -225,10 +226,12 @@ private:
       param.order_time_integrator <= 2 ? param.order_time_integrator : 2;
     param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
 
-    // viscous step
-    param.solver_viscous         = SolverViscous::CG;
-    param.solver_data_viscous    = SolverData(1000, ABS_TOL, REL_TOL);
-    param.preconditioner_viscous = PreconditionerViscous::PointJacobi;
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      this->param.solver_momentum         = SolverMomentum::CG;
+      this->param.solver_data_momentum    = SolverData(1000, ABS_TOL, REL_TOL);
+      this->param.preconditioner_momentum = MomentumPreconditioner::PointJacobi;
+    }
 
 
     // PRESSURE-CORRECTION SCHEME
@@ -239,18 +242,20 @@ private:
     param.rotational_formulation = true;
 
     // momentum step
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      // Newton solver
+      param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
-    // Newton solver
-    param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
-
-    // linear solver
-    param.solver_momentum = SolverMomentum::FGMRES;
-    if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-      param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
-    else
-      param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, 100);
-    param.update_preconditioner_momentum = false;
-    param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
+      // linear solver
+      param.solver_momentum = SolverMomentum::FGMRES;
+      if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+        param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
+      else
+        param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+      param.update_preconditioner_momentum = false;
+      param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
+    }
 
 
     // COUPLED NAVIER-STOKES SOLVER
@@ -330,7 +335,9 @@ private:
   }
 
   void
-  create_grid() final
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
     auto const lambda_create_triangulation =
       [&](dealii::Triangulation<dim, dim> &                        tria,
@@ -342,8 +349,6 @@ private:
         (void)vector_local_refinements;
 
         create_triangulation(tria);
-
-        tria.set_all_manifold_ids(0);
 
         for(auto cell : tria.cell_iterators())
         {
@@ -382,12 +387,20 @@ private:
         tria.refine_global(global_refinements);
       };
 
-    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+    GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
                                                             this->param.grid,
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
+
+    // mappings
+    GridUtilities::create_mapping_with_multigrid(mapping,
+                                                 multigrid_mappings,
+                                                 this->param.grid.element_type,
+                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree_coarse_grids,
+                                                 this->param.involves_h_multigrid());
   }
 
   void
@@ -649,8 +662,9 @@ public:
     param.spectral_radius                      = 0.9;
     param.solver_info_data.interval_time_steps = OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS;
 
-    param.grid.triangulation_type = TriangulationType::Distributed;
-    param.mapping_degree          = param.degree;
+    param.grid.triangulation_type     = TriangulationType::Distributed;
+    param.mapping_degree              = param.degree;
+    param.mapping_degree_coarse_grids = param.mapping_degree;
 
     param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
     param.solver             = Structure::Solver::FGMRES;
@@ -694,7 +708,9 @@ public:
   }
 
   void
-  create_grid() final
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
     auto const lambda_create_triangulation =
       [&](dealii::Triangulation<dim, dim> &                        tria,
@@ -706,8 +722,6 @@ public:
         (void)vector_local_refinements;
 
         create_triangulation(tria);
-
-        tria.set_all_manifold_ids(0);
 
         for(auto cell : tria.cell_iterators())
         {
@@ -737,12 +751,20 @@ public:
         tria.refine_global(global_refinements);
       };
 
-    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+    GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
                                                             this->param.grid,
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
+
+    // mappings
+    GridUtilities::create_mapping_with_multigrid(mapping,
+                                                 multigrid_mappings,
+                                                 this->param.grid.element_type,
+                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree_coarse_grids,
+                                                 this->param.involves_h_multigrid());
   }
 
   void

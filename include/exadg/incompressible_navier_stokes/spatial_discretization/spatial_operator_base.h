@@ -87,13 +87,14 @@ public:
   /*
    * Constructor.
    */
-  SpatialOperatorBase(std::shared_ptr<Grid<dim> const>               grid,
-                      std::shared_ptr<dealii::Mapping<dim> const>    mapping,
-                      std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
-                      std::shared_ptr<FieldFunctions<dim> const>     field_functions,
-                      Parameters const &                             parameters,
-                      std::string const &                            field,
-                      MPI_Comm const &                               mpi_comm);
+  SpatialOperatorBase(std::shared_ptr<Grid<dim> const>                      grid,
+                      std::shared_ptr<dealii::Mapping<dim> const>           mapping,
+                      std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+                      std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor,
+                      std::shared_ptr<FieldFunctions<dim> const>            field_functions,
+                      Parameters const &                                    parameters,
+                      std::string const &                                   field,
+                      MPI_Comm const &                                      mpi_comm);
 
   /*
    * Destructor.
@@ -120,6 +121,17 @@ public:
         std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
         std::string const &                                    dof_index_temperature = "");
 
+protected:
+  /*
+   * This function initializes operators, preconditioners, and solvers related to the solution of
+   * (non-)linear systems of equation required for implicit formulations. It has to be extended
+   * by derived classes if necessary.
+   */
+  virtual void
+  setup_preconditioners_and_solvers()
+  {
+  }
+
 private:
   /**
    * Additional setup to be done by derived classes.
@@ -128,14 +140,6 @@ private:
   setup_derived() = 0;
 
 public:
-  /*
-   * This function initializes operators, preconditioners, and solvers related to the solution of
-   * (non-)linear systems of equation required for implicit formulations. It has to be extended
-   * by derived classes if necessary.
-   */
-  virtual void
-  setup_solvers(double const & scaling_factor_mass, VectorType const & velocity);
-
   /*
    * Getters and setters.
    */
@@ -152,7 +156,7 @@ public:
   get_dof_index_pressure() const;
 
   unsigned int
-  get_quad_index_velocity_linear() const;
+  get_quad_index_velocity_standard() const;
 
   unsigned int
   get_quad_index_pressure() const;
@@ -162,13 +166,13 @@ protected:
   get_dof_index_velocity_scalar() const;
 
   unsigned int
-  get_quad_index_velocity_nonlinear() const;
+  get_quad_index_velocity_overintegration() const;
 
   unsigned int
-  get_quad_index_velocity_gauss_lobatto() const;
+  get_quad_index_velocity_nodal_points() const;
 
   unsigned int
-  get_quad_index_pressure_gauss_lobatto() const;
+  get_quad_index_pressure_nodal_points() const;
 
   unsigned int
   get_quad_index_velocity_linearized() const;
@@ -233,6 +237,14 @@ public:
   prescribe_initial_conditions(VectorType & velocity,
                                VectorType & pressure,
                                double const time) const;
+
+  /*
+   * Interpolate analytical solution functions.
+   */
+  void
+  interpolate_analytical_solution(VectorType & velocity,
+                                  VectorType & pressure,
+                                  double const time) const;
 
   // FSI: coupling fluid -> structure
   // fills a DoF-vector (velocity) with values of traction on fluid-structure interface
@@ -403,12 +415,6 @@ public:
   update_after_grid_motion(bool const update_matrix_free);
 
   /*
-   * Fills a dof-vector with grid coordinates for ALE-type problems.
-   */
-  void
-  fill_grid_coordinates_vector(VectorType & vector) const;
-
-  /*
    * Sets the grid velocity.
    */
   void
@@ -440,6 +446,8 @@ protected:
    * deformed configuration.)
    */
   std::shared_ptr<dealii::Mapping<dim> const> mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings;
 
   /*
    * User interface: Boundary conditions and field functions.
@@ -503,11 +511,11 @@ private:
   std::string const dof_index_p        = "pressure";
   std::string const dof_index_u_scalar = "velocity_scalar";
 
-  std::string const quad_index_u               = "velocity";
-  std::string const quad_index_p               = "pressure";
-  std::string const quad_index_u_nonlinear     = "velocity_nonlinear";
-  std::string const quad_index_u_gauss_lobatto = "velocity_gauss_lobatto";
-  std::string const quad_index_p_gauss_lobatto = "pressure_gauss_lobatto";
+  std::string const quad_index_u                 = "velocity";
+  std::string const quad_index_p                 = "pressure";
+  std::string const quad_index_u_overintegration = "velocity_overintegration";
+  std::string const quad_index_u_nodal_points    = "velocity_nodal_points";
+  std::string const quad_index_p_nodal_points    = "pressure_nodal_points";
 
   std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data;
   std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free;
@@ -562,11 +570,9 @@ protected:
   InverseMassOperator<dim, 1, Number>   inverse_mass_velocity_scalar;
 
   /*
-   * solver for mass system (projection). Used when matrix-free inverse mass operator is not
-   * avaliable.
+   * Inverse mass operator used in case of H(div)-conforming space
    */
-  std::shared_ptr<PreconditionerBase<Number>>     mass_preconditioner;
-  std::shared_ptr<Krylov::SolverBase<VectorType>> mass_solver;
+  InverseMassOperatorHdiv<dim, dim, Number> inverse_mass_hdiv;
 
   /*
    * Projection operator.
@@ -578,7 +584,8 @@ protected:
    * Projection solver.
    */
 
-  // elementwise solver/preconditioner
+  // Elementwise solver/preconditioner used in case that only the divergence penalty term is used
+  // and the system of equations is block-diagonal.
   typedef Elementwise::OperatorBase<dim, Number, ProjOperator> ELEMENTWISE_PROJ_OPERATOR;
   std::shared_ptr<ELEMENTWISE_PROJ_OPERATOR>                   elementwise_projection_operator;
 
@@ -586,7 +593,7 @@ protected:
                                               ELEMENTWISE_PRECONDITIONER;
   std::shared_ptr<ELEMENTWISE_PRECONDITIONER> elementwise_preconditioner_projection;
 
-  // projection solver
+  // global solver/preconditioner to be used if the continuity penalty term is applied.
   std::shared_ptr<Krylov::SolverBase<VectorType>> projection_solver;
   std::shared_ptr<PreconditionerBase<Number>>     preconditioner_projection;
 

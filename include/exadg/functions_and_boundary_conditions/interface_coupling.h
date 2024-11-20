@@ -73,7 +73,8 @@ private:
   /*
    *  Evaluates solution on src-side in those points specified by dst-side
    */
-  std::map<quad_index, dealii::Utilities::MPI::RemotePointEvaluation<dim>> map_evaluator;
+  std::map<quad_index, std::unique_ptr<dealii::Utilities::MPI::RemotePointEvaluation<dim>>>
+    map_evaluator;
 
   /*
    * src-side

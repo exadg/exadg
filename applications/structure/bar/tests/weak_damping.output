@@ -34,7 +34,7 @@ Physical quantities:
 
 Temporal discretization:
   Start time:                                0.0000e+00
-  End time:                                  1.0000e+02
+  End time:                                  1.0000e+00
   Max. number of time steps:                 4294967295
   Temporal refinements:                      0
   Time integration type:                     BossakAlpha
@@ -42,7 +42,7 @@ Temporal discretization:
   Solver information:
   Interval physical time:                    1.7977e+308
   Interval wall time:                        1.7977e+308
-  Interval time steps:                       200
+  Interval time steps:                       20
 
 Spatial Discretization:
   Triangulation type:                        Distributed
@@ -50,7 +50,9 @@ Spatial Discretization:
   Number of global refinements:              0
   Create coarse triangulations:              false
   Mapping degree:                            1
+  Mapping degree coarse grids:               1
   Polynomial degree:                         1
+  Use matrix-based implementation:           false
 
 Solver:
 
@@ -107,10 +109,6 @@ Setup elasticity time integrator ...
 
 ... done!
 
-Setup elasticity solver ...
-
-... done!
-
 Starting time loop ...
 
 Calculate error for all fields at time t = 0.0000e+00:
@@ -121,10 +119,5 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 5.00000e-01
 ________________________________________________________________________________
 
-________________________________________________________________________________
-
- Time step number = 200     t = 9.95000e+01 -> t + dt = 1.00000e+02
-________________________________________________________________________________
-
-Calculate error for all fields at time t = 1.0000e+02:
-  Relative error (L2-norm): 6.27902e-01
+Calculate error for all fields at time t = 1.0000e+00:
+  Relative error (L2-norm): 1.02068e+00

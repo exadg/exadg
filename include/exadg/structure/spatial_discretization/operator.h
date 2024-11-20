@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_DG_CONVECTION_DIFFUSION_OPERATION_H_
-#define INCLUDE_CONVECTION_DIFFUSION_DG_CONVECTION_DIFFUSION_OPERATION_H_
+#ifndef INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATOR_H_
+#define INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATOR_H_
 
 // deal.II
 #include <deal.II/fe/fe_system.h>
@@ -141,6 +141,8 @@ public:
   {
     this->scaling_factor_mass = scaling_factor_mass;
     this->time                = time;
+
+    pde_operator->update_elasticity_operator(scaling_factor_mass, time);
   }
 
   /*
@@ -150,7 +152,7 @@ public:
   void
   vmult(VectorType & dst, VectorType const & src) const
   {
-    pde_operator->apply_linearized_operator(dst, src, scaling_factor_mass, time);
+    pde_operator->apply_linearized_operator(dst, src);
   }
 
 private:
@@ -172,14 +174,15 @@ public:
   /*
    * Constructor.
    */
-  Operator(std::shared_ptr<Grid<dim> const>               grid,
-           std::shared_ptr<dealii::Mapping<dim> const>    mapping,
-           std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
-           std::shared_ptr<FieldFunctions<dim> const>     field_functions,
-           std::shared_ptr<MaterialDescriptor const>      material_descriptor,
-           Parameters const &                             param,
-           std::string const &                            field,
-           MPI_Comm const &                               mpi_comm);
+  Operator(std::shared_ptr<Grid<dim> const>                      grid,
+           std::shared_ptr<dealii::Mapping<dim> const>           mapping,
+           std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+           std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor,
+           std::shared_ptr<FieldFunctions<dim> const>            field_functions,
+           std::shared_ptr<MaterialDescriptor const>             material_descriptor,
+           Parameters const &                                    param,
+           std::string const &                                   field,
+           MPI_Comm const &                                      mpi_comm);
 
   void
   fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
@@ -198,13 +201,6 @@ public:
   void
   setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
         std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data);
-
-  /*
-   * This function initializes operators, preconditioners, and solvers related to the solution of
-   * (non-)linear systems of equations.
-   */
-  void
-  setup_solver(double const & scaling_factor_acceleration, double const & scaling_factor_velocity);
 
   /*
    * Initialization of dof-vector.
@@ -253,10 +249,7 @@ public:
   set_solution_linearization(VectorType const & vector) const;
 
   void
-  apply_linearized_operator(VectorType &       dst,
-                            VectorType const & src,
-                            double const       factor,
-                            double const       time) const;
+  assemble_matrix_if_necessary_for_linear_elasticity_operator() const;
 
   void
   evaluate_elasticity_operator(VectorType &       dst,
@@ -265,11 +258,10 @@ public:
                                double const       time) const;
 
   void
-  apply_elasticity_operator(VectorType &       dst,
-                            VectorType const & src,
-                            VectorType const & linearization,
-                            double const       factor,
-                            double const       time) const;
+  update_elasticity_operator(double const factor, double const time) const;
+
+  void
+  apply_elasticity_operator(VectorType & dst, VectorType const & src) const;
 
   /*
    * This function solves the system of equations for nonlinear problems. This function needs to
@@ -382,13 +374,13 @@ private:
    * Initializes preconditioner.
    */
   void
-  initialize_preconditioner();
+  setup_preconditioner();
 
   /**
    * Initializes solver.
    */
   void
-  initialize_solver();
+  setup_solver();
 
   /*
    * Grid
@@ -399,6 +391,8 @@ private:
    * Mapping
    */
   std::shared_ptr<dealii::Mapping<dim> const> mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings;
 
   /*
    * User interface.
@@ -518,4 +512,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATOR_H_ */

@@ -22,6 +22,9 @@
 #ifndef APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_ROTATING_HILL_H_
 #define APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_ROTATING_HILL_H_
 
+// ExaDG
+#include <exadg/grid/deformed_cube_manifold.h>
+
 namespace ExaDG
 {
 namespace ConvDiff
@@ -82,6 +85,21 @@ public:
   {
   }
 
+  void
+  add_parameters(dealii::ParameterHandler & prm) final
+  {
+    ApplicationBase<dim, Number>::add_parameters(prm);
+
+    prm.enter_subsection("Application");
+    {
+      prm.add_parameter("EnableAdaptivity",
+                        enable_adaptivity,
+                        "Enable adaptive mesh refinement.",
+                        dealii::Patterns::Bool());
+    }
+    prm.leave_subsection();
+  }
+
 private:
   void
   set_parameters() final
@@ -119,8 +137,20 @@ private:
 
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.mapping_degree          = 1;
+    this->param.grid.triangulation_type     = TriangulationType::Distributed;
+    this->param.mapping_degree              = this->param.degree;
+    this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
+
+    this->param.enable_adaptivity = enable_adaptivity;
+
+    this->param.grid.create_coarse_triangulations = enable_adaptivity;
+
+    this->param.amr_data.trigger_every_n_time_steps        = 30;
+    this->param.amr_data.maximum_refinement_level          = 4;
+    this->param.amr_data.minimum_refinement_level          = 0;
+    this->param.amr_data.preserve_boundary_cells           = false;
+    this->param.amr_data.fraction_of_cells_to_be_refined   = 0.025;
+    this->param.amr_data.fraction_of_cells_to_be_coarsened = 0.4;
 
     // convective term
     this->param.numerical_flux_convective_operator =
@@ -133,8 +163,8 @@ private:
     this->param.solver      = Solver::GMRES;
     this->param.solver_data = SolverData(1e3, 1.e-20, 1.e-8, 100);
     this->param.preconditioner =
-      Preconditioner::Multigrid; // None; //InverseMassMatrix; //PointJacobi;
-                                 // //BlockJacobi; //Multigrid;
+      Preconditioner::Multigrid; // None; //InverseMassMatrix; //PointJacobi; // BlockJacobi;
+                                 // //Multigrid;
     this->param.update_preconditioner = true;
 
     // BlockJacobi (these parameters are also relevant if used as a smoother in multigrid)
@@ -149,7 +179,7 @@ private:
 
     // MG smoother
     this->param.multigrid_data.smoother_data.smoother       = MultigridSmoother::Jacobi;
-    this->param.multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+    this->param.multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
     this->param.multigrid_data.smoother_data.iterations     = 5;
     this->param.multigrid_data.smoother_data.relaxation_factor = 0.8;
 
@@ -160,13 +190,18 @@ private:
     this->param.solver_info_data.interval_time = (end_time - start_time) / 20;
 
     // NUMERICAL PARAMETERS
-    this->param.use_cell_based_face_loops               = true;
+    this->param.use_cell_based_face_loops               = false;
     this->param.store_analytical_velocity_in_dof_vector = false;
   }
 
   void
-  create_grid() final
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
+    (void)mapping;
+    (void)multigrid_mappings;
+
     auto const lambda_create_triangulation =
       [&](dealii::Triangulation<dim, dim> &                        tria,
           std::vector<dealii::GridTools::PeriodicFacePair<
@@ -178,17 +213,33 @@ private:
 
         // hypercube volume is [left,right]^dim
         dealii::GridGenerator::hyper_cube(tria, left, right);
+
+        // For AMR, we want to consider a mapping as well.
+        if(this->param.enable_adaptivity)
+        {
+          unsigned int const frequency   = 1;
+          double const       deformation = (right - left) * 0.1;
+          apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
+        }
+
         tria.refine_global(global_refinements);
       };
 
-    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+    GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
                                                             this->param.grid,
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
-  }
 
+    // mappings
+    GridUtilities::create_mapping_with_multigrid(mapping,
+                                                 multigrid_mappings,
+                                                 this->param.grid.element_type,
+                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree_coarse_grids,
+                                                 this->param.involves_h_multigrid());
+  }
 
   void
   set_boundary_descriptor() final
@@ -236,6 +287,8 @@ private:
 
   double const left  = -1.0;
   double const right = +1.0;
+
+  bool enable_adaptivity = false;
 };
 
 } // namespace ConvDiff

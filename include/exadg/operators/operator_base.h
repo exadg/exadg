@@ -49,6 +49,7 @@
 #include <exadg/utilities/lazy_ptr.h>
 
 #include <exadg/operators/elementwise_operator.h>
+#include <exadg/operators/enum_types.h>
 #include <exadg/operators/integrator_flags.h>
 #include <exadg/operators/mapping_flags.h>
 #include <exadg/operators/operator_type.h>
@@ -61,6 +62,8 @@ struct OperatorBaseData
     : dof_index(0),
       dof_index_inhomogeneous(dealii::numbers::invalid_unsigned_int),
       quad_index(0),
+      use_matrix_based_vmult(false),
+      sparse_matrix_type(SparseMatrixType::Undefined),
       operator_is_singular(false),
       use_cell_based_loops(false),
       implement_block_diagonal_preconditioner_matrix_free(false),
@@ -78,6 +81,12 @@ struct OperatorBaseData
   unsigned int dof_index_inhomogeneous;
 
   unsigned int quad_index;
+
+  // this parameter can be used to use sparse matrices for the vmult() operation. The default
+  // case is to use a matrix-free implementation, i.e. use_matrix_based_vmult = false.
+  bool use_matrix_based_vmult;
+
+  SparseMatrixType sparse_matrix_type;
 
   // Solution of linear systems of equations and preconditioning
   bool operator_is_singular;
@@ -106,7 +115,7 @@ public:
 
   static unsigned int const vectorization_length = dealii::VectorizedArray<Number>::size();
 
-  typedef std::vector<dealii::LAPACKFullMatrix<Number>> BlockMatrix;
+  typedef dealii::LAPACKFullMatrix<Number> LAPACKMatrix;
 
   typedef dealii::FullMatrix<dealii::TrilinosScalar> FullMatrix_;
 
@@ -114,6 +123,18 @@ public:
 
   virtual ~OperatorBase()
   {
+    if(data.sparse_matrix_type == SparseMatrixType::PETSc)
+    {
+#ifdef DEAL_II_WITH_PETSC
+      if(system_matrix_petsc.m() > 0)
+      {
+        PetscErrorCode ierr = VecDestroy(&petsc_vector_dst);
+        AssertThrow(ierr == 0, dealii::ExcPETScError(ierr));
+        ierr = VecDestroy(&petsc_vector_src);
+        AssertThrow(ierr == 0, dealii::ExcPETScError(ierr));
+      }
+#endif
+    }
   }
 
   /*
@@ -188,13 +209,23 @@ public:
   calculate_inverse_diagonal(VectorType & diagonal) const;
 
   /*
-   * Update block diagonal preconditioner: initialize everything related to block diagonal
-   * preconditioner when this function is called the first time. Recompute block matrices in case of
-   * matrix-based implementation.
+   * Initialize block diagonal preconditioner: initialize everything related to block diagonal
+   * preconditioner.
+   */
+  void
+  initialize_block_diagonal_preconditioner(bool const initialize) const;
+
+  /*
+   * Update block diagonal preconditioner: Recompute block matrices in case of matrix-based
+   * implementation.
    */
   void
   update_block_diagonal_preconditioner() const;
 
+  /**
+   * This function applies the inverse block diagonal to a src vector and stores the result in the
+   * dst vector. This function may be called with identical dst, src vectors.
+   */
   void
   apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const;
 
@@ -236,6 +267,22 @@ public:
    */
   void
   apply_add(VectorType & dst, VectorType const & src) const;
+
+  void
+  assemble_matrix_if_necessary() const;
+
+  /*
+   * Matrix-based version of the apply function. This function is used if use_matrix_based_vmult =
+   * true.
+   */
+  void
+  apply_matrix_based(VectorType & dst, VectorType const & src) const;
+
+  /*
+   * See function apply_matrix_based() for a description.
+   */
+  void
+  apply_matrix_based_add(VectorType & dst, VectorType const & src) const;
 
   /*
    * evaluate inhomogeneous parts of operator related to inhomogeneous boundary face integrals.
@@ -294,16 +341,8 @@ public:
   /*
    * block Jacobi preconditioner (block-diagonal)
    */
-
-  // matrix-based implementation
   void
-  calculate_block_diagonal_matrices() const;
-
-  void
-  add_block_diagonal_matrices(BlockMatrix & matrices) const;
-
-  void
-  apply_block_diagonal_matrix_based(VectorType & dst, VectorType const & src) const;
+  add_block_diagonal_matrices(std::vector<LAPACKMatrix> & matrices) const;
 
   void
   apply_inverse_block_diagonal_matrix_based(VectorType & dst, VectorType const & src) const;
@@ -314,13 +353,35 @@ public:
   // using the matrix-free variant with elementwise iterative solvers and matrix-free operator
   // evaluation.
   void
-  initialize_block_diagonal_preconditioner_matrix_free() const;
+  initialize_block_diagonal_preconditioner_matrix_free(bool const initialize) const;
+
+  // updates block diagonal preconditioner when using the matrix-free variant with elementwise
+  // iterative solvers and matrix-free operator evaluation.
+  void
+  update_block_diagonal_preconditioner_matrix_free() const;
+
+  // initializes block diagonal preconditioner for matrix-based variant
+  void
+  initialize_block_diagonal_preconditioner_matrix_based(bool const initialize) const;
+
+  // updates block diagonal preconditioner for matrix-based variant
+  void
+  update_block_diagonal_preconditioner_matrix_based() const;
 
   void
   apply_add_block_diagonal_elementwise(unsigned int const                            cell,
                                        dealii::VectorizedArray<Number> * const       dst,
                                        dealii::VectorizedArray<Number> const * const src,
                                        unsigned int const problem_size) const;
+
+  /*
+   * additive Schwarz preconditioner (cellwise block-diagonal)
+   */
+  virtual void
+  compute_factorized_additive_schwarz_matrices() const;
+
+  void
+  apply_inverse_additive_schwarz_matrices(VectorType & dst, VectorType const & src) const;
 
 protected:
   void
@@ -408,11 +469,13 @@ protected:
    */
   IntegratorFlags integrator_flags;
 
+private:
   /*
    * Is the operator used as a multigrid level operator?
    */
   bool is_mg;
 
+protected:
   /*
    * Is the discretization based on discontinuous Galerkin method?
    */
@@ -578,43 +641,33 @@ private:
    */
   void
   cell_loop_block_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
-                           BlockMatrix &                           matrices,
-                           BlockMatrix const &                     src,
+                           std::vector<LAPACKMatrix> &             matrices,
+                           std::vector<LAPACKMatrix> const &       src,
                            Range const &                           range) const;
 
   void
   face_loop_block_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
-                           BlockMatrix &                           matrices,
-                           BlockMatrix const &                     src,
+                           std::vector<LAPACKMatrix> &             matrices,
+                           std::vector<LAPACKMatrix> const &       src,
                            Range const &                           range) const;
 
   void
   boundary_face_loop_block_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                    BlockMatrix &                           matrices,
-                                    BlockMatrix const &                     src,
+                                    std::vector<LAPACKMatrix> &             matrices,
+                                    std::vector<LAPACKMatrix> const &       src,
                                     Range const &                           range) const;
 
   // cell-based variant for computation of both cell and face integrals
   void
   cell_based_loop_block_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                 BlockMatrix &                           matrices,
-                                 BlockMatrix const &                     src,
+                                 std::vector<LAPACKMatrix> &             matrices,
+                                 std::vector<LAPACKMatrix> const &       src,
                                  Range const &                           range) const;
-
-  /*
-   * Apply block diagonal.
-   */
-  void
-  cell_loop_apply_block_diagonal_matrix_based(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                              VectorType &                            dst,
-                                              VectorType const &                      src,
-                                              Range const &                           range) const;
 
   /*
    * Apply inverse block diagonal:
    *
-   * instead of applying the block matrix B we compute dst = B^{-1} * src (LU factorization
-   * should have already been performed with the method update_inverse_block_diagonal())
+   *  we compute dst = B^{-1} * src
    */
   void
   cell_loop_apply_inverse_block_diagonal_matrix_based(
@@ -629,7 +682,9 @@ private:
    */
   template<typename SparseMatrix>
   void
-  internal_init_system_matrix(SparseMatrix & system_matrix, MPI_Comm const & mpi_comm) const;
+  internal_init_system_matrix(SparseMatrix &                   system_matrix,
+                              dealii::DynamicSparsityPattern & dsp,
+                              MPI_Comm const &                 mpi_comm) const;
 
   template<typename SparseMatrix>
   void
@@ -673,6 +728,13 @@ private:
   evaluate_face_integrals() const;
 
   /*
+   * Compute factorized additive Schwarz matrices.
+   */
+  template<typename SparseMatrix>
+  void
+  internal_compute_factorized_additive_schwarz_matrices() const;
+
+  /*
    * Data structure containing all operator-specific data.
    */
   OperatorBaseData data;
@@ -686,16 +748,29 @@ private:
   /*
    * Vector of matrices for block-diagonal preconditioners.
    */
-  mutable std::vector<dealii::LAPACKFullMatrix<Number>> matrices;
+  mutable std::vector<LAPACKMatrix> matrices;
 
   /*
-   * We want to initialize the block diagonal preconditioner (block diagonal matrices or elementwise
-   * iterative solvers in case of matrix-free implementation) only once, so we store the status of
-   * initialization in a variable.
+   * Vector with weights for additive Schwarz preconditioner.
    */
-  mutable bool block_diagonal_preconditioner_is_initialized;
+  mutable VectorType weights;
 
   unsigned int n_mpi_processes;
+
+  // sparse matrices for matrix-based vmult
+  mutable bool system_matrix_based_been_initialized;
+
+#ifdef DEAL_II_WITH_TRILINOS
+  mutable dealii::TrilinosWrappers::SparseMatrix system_matrix_trilinos;
+#endif
+
+#ifdef DEAL_II_WITH_PETSC
+  mutable dealii::PETScWrappers::MPI::SparseMatrix system_matrix_petsc;
+
+  // PETSc vector objects to avoid re-allocation in every vmult() operation
+  mutable Vec petsc_vector_src;
+  mutable Vec petsc_vector_dst;
+#endif
 };
 } // namespace ExaDG
 

@@ -24,6 +24,7 @@
 
 // C/C++
 #include <iomanip>
+#include <iostream>
 
 // deal.II
 #include <deal.II/base/conditional_ostream.h>

@@ -48,14 +48,16 @@ public:
   /**
    * Constructor.
    */
-  DeformedMapping(std::shared_ptr<Grid<dim> const>               grid,
-                  std::shared_ptr<dealii::Mapping<dim> const>    mapping_undeformed,
-                  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
-                  std::shared_ptr<FieldFunctions<dim> const>     field_functions,
-                  std::shared_ptr<MaterialDescriptor const>      material_descriptor,
-                  Parameters const &                             param,
-                  std::string const &                            field,
-                  MPI_Comm const &                               mpi_comm)
+  DeformedMapping(
+    std::shared_ptr<Grid<dim> const>                      grid,
+    std::shared_ptr<dealii::Mapping<dim> const>           mapping_undeformed,
+    std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings_undeformed,
+    std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor,
+    std::shared_ptr<FieldFunctions<dim> const>            field_functions,
+    std::shared_ptr<MaterialDescriptor const>             material_descriptor,
+    Parameters const &                                    param,
+    std::string const &                                   field,
+    MPI_Comm const &                                      mpi_comm)
     : DeformedMappingBase<dim, Number>(mapping_undeformed, param.degree, *grid->triangulation),
       param(param),
       pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
@@ -64,6 +66,7 @@ public:
     // initialize PDE operator
     pde_operator = std::make_shared<Operator<dim, Number>>(grid,
                                                            mapping_undeformed,
+                                                           multigrid_mappings_undeformed,
                                                            boundary_descriptor,
                                                            field_functions,
                                                            material_descriptor,
@@ -73,7 +76,6 @@ public:
 
     // setup PDE operator and solver
     pde_operator->setup();
-    pde_operator->setup_solver(0.0 /* no acceleration term */, 0.0 /* no damping term */);
 
     // finally, initialize dof vector
     pde_operator->initialize_dof_vector(displacement);
@@ -151,9 +153,9 @@ public:
       }
     }
 
-    this->initialize_mapping_q_cache(this->mapping_undeformed,
-                                     displacement,
-                                     pde_operator->get_dof_handler());
+    this->initialize_mapping_from_dof_vector(this->mapping_undeformed,
+                                             displacement,
+                                             pde_operator->get_dof_handler());
   }
 
   /**

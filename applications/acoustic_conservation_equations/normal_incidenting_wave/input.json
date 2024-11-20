@@ -1,0 +1,29 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "2",
+        "DegreeMax": "2",
+        "RefineSpaceMin": "2",
+        "RefineSpaceMax": "2"
+    },
+    "TemporalResolution": {
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+        "SpeedOfSound": "340.0",
+        "Admittance": "1.0",
+        "EndTime": "0.01",
+        "Radius": "1.0",
+        "AnalyticalSolutionAvailable": "false"
+    },
+    "Output": {
+        "OutputDirectory": "output/normal_incidenting_wave/",
+        "OutputName": "normal_incidenting_wave",
+        "WriteOutput": "false"
+    }
+}

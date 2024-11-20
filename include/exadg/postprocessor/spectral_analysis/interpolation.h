@@ -49,7 +49,7 @@ namespace dealspectrum
 class Interpolator
 {
 public:
-  MPI_Comm const & comm;
+  MPI_Comm const comm;
   // reference to DEAL.SPECTRUM setup
   Setup & s;
   // is initialized?

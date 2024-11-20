@@ -1,0 +1,692 @@
+// ------------------------------------------------------------------------
+//
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2020 - 2024 by the deal.II authors
+//
+// This file is part of the deal.II library.
+//
+// Part of the source code is dual licensed under Apache-2.0 WITH
+// LLVM-exception OR LGPL-2.1-or-later. Detailed license information
+// governing the source code and code contributions can be found in
+// LICENSE.md and CONTRIBUTING.md at the top level directory of deal.II.
+//
+// ------------------------------------------------------------------------
+
+// taken from dealii/tests/simplex/simplex_grids.h
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_tools.h>
+
+namespace dealii
+{
+namespace GridGenerator
+{
+template<int dim, int spacedim>
+void
+subdivided_hyper_rectangle_with_wedges(Triangulation<dim, spacedim> &    tria,
+                                       const std::vector<unsigned int> & repetitions,
+                                       const Point<dim> &                p1,
+                                       const Point<dim> &                p2,
+                                       const bool                        colorize = false)
+{
+  AssertDimension(dim, spacedim);
+
+  AssertThrow(colorize == false, ExcNotImplemented());
+
+  std::vector<Point<spacedim>> vertices;
+  std::vector<CellData<dim>>   cells;
+
+  if(dim == 3)
+  {
+    // determine cell sizes
+    const Point<dim> dx((p2[0] - p1[0]) / repetitions[0],
+                        (p2[1] - p1[1]) / repetitions[1],
+                        (p2[2] - p1[2]) / repetitions[2]);
+
+    // create vertices
+    for(unsigned int k = 0; k <= repetitions[2]; ++k)
+      for(unsigned int j = 0; j <= repetitions[1]; ++j)
+        for(unsigned int i = 0; i <= repetitions[0]; ++i)
+          vertices.push_back(
+            Point<spacedim>(p1[0] + dx[0] * i, p1[1] + dx[1] * j, p1[2] + dx[2] * k));
+
+    // create cells
+    for(unsigned int k = 0; k < repetitions[2]; ++k)
+      for(unsigned int j = 0; j < repetitions[1]; ++j)
+        for(unsigned int i = 0; i < repetitions[0]; ++i)
+        {
+          // create reference HEX cell
+          std::array<unsigned int, 8> quad{{(k + 0) * (repetitions[0] + 1) * (repetitions[1] + 1) +
+                                              (j + 0) * (repetitions[0] + 1) + i + 0,
+                                            (k + 0) * (repetitions[0] + 1) * (repetitions[1] + 1) +
+                                              (j + 0) * (repetitions[0] + 1) + i + 1,
+                                            (k + 0) * (repetitions[0] + 1) * (repetitions[1] + 1) +
+                                              (j + 1) * (repetitions[0] + 1) + i + 0,
+                                            (k + 0) * (repetitions[0] + 1) * (repetitions[1] + 1) +
+                                              (j + 1) * (repetitions[0] + 1) + i + 1,
+                                            (k + 1) * (repetitions[0] + 1) * (repetitions[1] + 1) +
+                                              (j + 0) * (repetitions[0] + 1) + i + 0,
+                                            (k + 1) * (repetitions[0] + 1) * (repetitions[1] + 1) +
+                                              (j + 0) * (repetitions[0] + 1) + i + 1,
+                                            (k + 1) * (repetitions[0] + 1) * (repetitions[1] + 1) +
+                                              (j + 1) * (repetitions[0] + 1) + i + 0,
+                                            (k + 1) * (repetitions[0] + 1) * (repetitions[1] + 1) +
+                                              (j + 1) * (repetitions[0] + 1) + i + 1}};
+
+
+          // TRI cell 0
+          {
+            CellData<dim> tri;
+            tri.vertices = {quad[0], quad[1], quad[2], quad[4], quad[5], quad[6]};
+            cells.push_back(tri);
+          }
+
+          // TRI cell 1
+          {
+            CellData<dim> tri;
+            tri.vertices = {quad[3], quad[2], quad[1], quad[7], quad[6], quad[5]};
+            cells.push_back(tri);
+          }
+        }
+  }
+  else
+  {
+    AssertThrow(colorize == false, ExcNotImplemented());
+  }
+
+  // actually create triangulation
+  tria.create_triangulation(vertices, cells, SubCellData());
+}
+
+
+
+template<int dim, int spacedim>
+void
+subdivided_hyper_cube_with_wedges(Triangulation<dim, spacedim> & tria,
+                                  const unsigned int             repetitions,
+                                  const double                   p1       = 0.0,
+                                  const double                   p2       = 1.0,
+                                  const bool                     colorize = false)
+{
+  if(dim == 3)
+  {
+    subdivided_hyper_rectangle_with_wedges(
+      tria, {{repetitions, repetitions, repetitions}}, {p1, p1, p1}, {p2, p2, p2}, colorize);
+  }
+  else
+  {
+    AssertThrow(false, ExcNotImplemented());
+  }
+}
+
+
+
+template<int dim, int spacedim>
+void
+subdivided_hyper_rectangle_with_pyramids(Triangulation<dim, spacedim> &    tria,
+                                         const std::vector<unsigned int> & repetitions,
+                                         const Point<dim> &                p1,
+                                         const Point<dim> &                p2,
+                                         const bool                        colorize = false)
+{
+  AssertDimension(dim, spacedim);
+
+  AssertThrow(colorize == false, ExcNotImplemented());
+
+  std::vector<Point<spacedim>> vertices;
+  std::vector<CellData<dim>>   cells;
+
+  if(dim == 3)
+  {
+    // determine cell sizes
+    const Point<dim> dx((p2[0] - p1[0]) / repetitions[0],
+                        (p2[1] - p1[1]) / repetitions[1],
+                        (p2[2] - p1[2]) / repetitions[2]);
+
+    // create vertices
+    for(unsigned int k = 0; k <= repetitions[2]; ++k)
+      for(unsigned int j = 0; j <= repetitions[1]; ++j)
+        for(unsigned int i = 0; i <= repetitions[0]; ++i)
+          vertices.push_back(
+            Point<spacedim>(p1[0] + dx[0] * i, p1[1] + dx[1] * j, p1[2] + dx[2] * k));
+    for(unsigned int k = 0; k < repetitions[2]; ++k)
+      for(unsigned int j = 0; j < repetitions[1]; ++j)
+        for(unsigned int i = 0; i < repetitions[0]; ++i)
+          vertices.push_back(Point<spacedim>(p1[0] + dx[0] * (i + 0.5),
+                                             p1[1] + dx[1] * (j + 0.5),
+                                             p1[2] + dx[2] * (k + 0.5)));
+
+    // create cells
+    for(unsigned int k = 0; k < repetitions[2]; ++k)
+      for(unsigned int j = 0; j < repetitions[1]; ++j)
+        for(unsigned int i = 0; i < repetitions[0]; ++i)
+        {
+          // create reference HEX cell
+          std::array<unsigned int, 9> quad{
+            {(k + 0) * (repetitions[0] + 1) * (repetitions[1] + 1) +
+               (j + 0) * (repetitions[0] + 1) + i + 0,
+             (k + 0) * (repetitions[0] + 1) * (repetitions[1] + 1) +
+               (j + 0) * (repetitions[0] + 1) + i + 1,
+             (k + 0) * (repetitions[0] + 1) * (repetitions[1] + 1) +
+               (j + 1) * (repetitions[0] + 1) + i + 0,
+             (k + 0) * (repetitions[0] + 1) * (repetitions[1] + 1) +
+               (j + 1) * (repetitions[0] + 1) + i + 1,
+             (k + 1) * (repetitions[0] + 1) * (repetitions[1] + 1) +
+               (j + 0) * (repetitions[0] + 1) + i + 0,
+             (k + 1) * (repetitions[0] + 1) * (repetitions[1] + 1) +
+               (j + 0) * (repetitions[0] + 1) + i + 1,
+             (k + 1) * (repetitions[0] + 1) * (repetitions[1] + 1) +
+               (j + 1) * (repetitions[0] + 1) + i + 0,
+             (k + 1) * (repetitions[0] + 1) * (repetitions[1] + 1) +
+               (j + 1) * (repetitions[0] + 1) + i + 1,
+             (repetitions[2] + 1) * (repetitions[1] + 1) * (repetitions[0] + 1) +
+               (repetitions[1] * repetitions[0] * k + repetitions[0] * j + i)}};
+
+
+          // TRI cell 0
+          {
+            CellData<dim> tri;
+            tri.vertices = {quad[0], quad[2], quad[4], quad[6], quad[8]};
+            cells.push_back(tri);
+          }
+          // TRI cell 1
+          {
+            CellData<dim> tri;
+            tri.vertices = {quad[2], quad[3], quad[6], quad[7], quad[8]};
+            cells.push_back(tri);
+          }
+          // TRI cell 2
+          {
+            CellData<dim> tri;
+            tri.vertices = {quad[6], quad[7], quad[4], quad[5], quad[8]};
+            cells.push_back(tri);
+          }
+          // TRI cell 3
+          {
+            CellData<dim> tri;
+            tri.vertices = {quad[1], quad[5], quad[3], quad[7], quad[8]};
+            cells.push_back(tri);
+          }
+          // TRI cell 4
+          {
+            CellData<dim> tri;
+            tri.vertices = {quad[0], quad[1], quad[2], quad[3], quad[8]};
+            cells.push_back(tri);
+          }
+          // TRI cell 5
+          {
+            CellData<dim> tri;
+            tri.vertices = {quad[0], quad[4], quad[1], quad[5], quad[8]};
+            cells.push_back(tri);
+          }
+        }
+  }
+  else
+  {
+    AssertThrow(colorize == false, ExcNotImplemented());
+  }
+
+  // actually create triangulation
+  tria.create_triangulation(vertices, cells, SubCellData());
+}
+
+
+
+template<int dim, int spacedim>
+void
+subdivided_hyper_cube_with_pyramids(Triangulation<dim, spacedim> & tria,
+                                    const unsigned int             repetitions,
+                                    const double                   p1       = 0.0,
+                                    const double                   p2       = 1.0,
+                                    const bool                     colorize = false)
+{
+  if(dim == 3)
+  {
+    subdivided_hyper_rectangle_with_pyramids(
+      tria, {{repetitions, repetitions, repetitions}}, {p1, p1, p1}, {p2, p2, p2}, colorize);
+  }
+  else
+  {
+    AssertThrow(false, ExcNotImplemented());
+  }
+}
+
+
+
+template<int dim, int spacedim>
+void
+subdivided_hyper_rectangle_with_simplices_mix(Triangulation<dim, spacedim> &    tria,
+                                              const std::vector<unsigned int> & repetitions,
+                                              const Point<dim> &                p1,
+                                              const Point<dim> &                p2,
+                                              const bool                        colorize = false)
+{
+  AssertDimension(dim, spacedim);
+
+  AssertThrow(colorize == false, ExcNotImplemented());
+
+  std::vector<Point<spacedim>> vertices;
+  std::vector<CellData<dim>>   cells;
+
+  if(dim == 2)
+  {
+    // determine cell sizes
+    const Point<dim> dx((p2[0] - p1[0]) / repetitions[0], (p2[1] - p1[1]) / repetitions[1]);
+
+    // create vertices
+    for(unsigned int j = 0; j <= repetitions[1]; ++j)
+      for(unsigned int i = 0; i <= repetitions[0]; ++i)
+        vertices.push_back(Point<spacedim>(p1[0] + dx[0] * i, p1[1] + dx[1] * j));
+
+    // create cells
+    for(unsigned int j = 0; j < repetitions[1]; ++j)
+      for(unsigned int i = 0; i < repetitions[0]; ++i)
+      {
+        // create reference QUAD cell
+        std::array<unsigned int, 4> quad{{
+          (j + 0) * (repetitions[0] + 1) + i + 0, //
+          (j + 0) * (repetitions[0] + 1) + i + 1, //
+          (j + 1) * (repetitions[0] + 1) + i + 0, //
+          (j + 1) * (repetitions[0] + 1) + i + 1  //
+        }};                                       //
+
+        if(j < repetitions[1] / 2 && i < repetitions[0] / 2)
+        {
+          CellData<dim> quad_;
+          quad_.vertices = {quad[0], quad[1], quad[2], quad[3]};
+          cells.push_back(quad_);
+
+          continue;
+        }
+
+        // TRI cell 0
+        {
+          CellData<dim> tri;
+          tri.vertices = {quad[0], quad[1], quad[2]};
+          cells.push_back(tri);
+        }
+
+        // TRI cell 1
+        {
+          CellData<dim> tri;
+          tri.vertices = {quad[3], quad[2], quad[1]};
+          cells.push_back(tri);
+        }
+      }
+  }
+  else
+  {
+    AssertThrow(colorize == false, ExcNotImplemented());
+  }
+
+  // actually create triangulation
+  tria.create_triangulation(vertices, cells, SubCellData());
+}
+
+
+template<int dim, int spacedim>
+void
+subdivided_hyper_cube_with_simplices_mix(Triangulation<dim, spacedim> & tria,
+                                         const unsigned int             repetitions,
+                                         const double                   p1       = 0.0,
+                                         const double                   p2       = 1.0,
+                                         const bool                     colorize = false)
+{
+  if(dim == 2)
+  {
+    subdivided_hyper_rectangle_with_simplices_mix(
+      tria, {{repetitions, repetitions}}, {p1, p1}, {p2, p2}, colorize);
+  }
+  else if(dim == 3)
+  {
+    subdivided_hyper_rectangle_with_simplices_mix(
+      tria, {{repetitions, repetitions, repetitions}}, {p1, p1, p1}, {p2, p2, p2}, colorize);
+  }
+  else
+  {
+    AssertThrow(false, ExcNotImplemented());
+  }
+}
+
+
+
+/**
+ * Adds a simplex cell to face @p face_no of a hyper_cube cell.
+ */
+template<int dim, int spacedim>
+void
+cube_and_pyramid(Triangulation<dim, spacedim> & tria, const unsigned int face_no = 1)
+{
+  Assert(face_no % 2 == 1,
+         ExcMessage("Only works for odd face numbers. "
+                    "GridReordering::reorder_cells() is not prepared for "
+                    "simplices yet (uses GeometryInfo)."));
+
+  // create cube
+  Triangulation<dim, spacedim> tria_cube;
+  GridGenerator::hyper_cube(tria_cube);
+  const auto cube = tria_cube.begin_active();
+  AssertIndexRange(face_no, cube->n_faces());
+
+  // extract vertices from specified face, store their midpoint
+  std::vector<Point<spacedim>> vertices;
+  Point<spacedim>              midpoint;
+  const auto                   shared_face = cube->face(face_no);
+  for(unsigned int v = 0; v < shared_face->n_vertices(); ++v)
+  {
+    const auto & vertex = shared_face->vertex(v);
+    vertices.push_back(vertex);
+    midpoint += vertex;
+  }
+  midpoint /= vertices.size();
+
+  // add simplex cell in coordinate direction
+  const unsigned int coordinate = face_no / 2;
+#ifdef DEBUG
+  // all vertices should be in a plane
+  for(const auto & vertex : vertices)
+    Assert(midpoint[coordinate] == vertex[coordinate], ExcInternalError());
+#endif
+
+  // add another vertex as tip of triangle/pyramid
+  Point<spacedim> tip = midpoint;
+  tip[coordinate] += (face_no % 2 == 1) ? 1. : -1.;
+  vertices.push_back(tip);
+
+  CellData<dim> simplex(vertices.size());
+  std::iota(simplex.vertices.begin(), simplex.vertices.end(), 0);
+
+  Triangulation<dim, spacedim> tria_simplex;
+  tria_simplex.create_triangulation(vertices, {simplex}, SubCellData());
+
+  GridGenerator::merge_triangulations(tria_cube, tria_simplex, tria);
+}
+
+/**
+ * Adds a simplex cell to face @p face_no of a hyper_cube cell.
+ */
+template<int dim, int spacedim>
+void
+cube_and_pyramid_and_tet(Triangulation<dim, spacedim> & tria)
+{
+  const unsigned int face_no = 1;
+  // create cube
+  Triangulation<dim, spacedim> tria_cube;
+  GridGenerator::hyper_cube(tria_cube);
+  const auto cube = tria_cube.begin_active();
+  AssertIndexRange(face_no, cube->n_faces());
+
+  // extract vertices from specified face, store their midpoint
+  std::vector<CellData<dim>>   cells;
+  std::vector<Point<spacedim>> vertices;
+  Point<spacedim>              midpoint;
+  const auto                   shared_face = cube->face(face_no);
+  for(unsigned int v = 0; v < shared_face->n_vertices(); ++v)
+  {
+    const auto & vertex = shared_face->vertex(v);
+    vertices.push_back(vertex);
+    midpoint += vertex;
+  }
+  midpoint /= vertices.size();
+
+  // add simplex cell in coordinate direction
+  const unsigned int coordinate = face_no / 2;
+
+  // add another vertex as tip of triangle/pyramid
+  Point<spacedim> tip = midpoint;
+  tip[coordinate] += (face_no % 2 == 1) ? 1. : -1.;
+  vertices.push_back(tip);
+  midpoint[0] += 0.5;
+  midpoint[2] += 0.5;
+  vertices.push_back(midpoint);
+  {
+    CellData<dim> simplex;
+    simplex.vertices = {0, 1, 2, 3, 4};
+    cells.push_back(simplex);
+  }
+  {
+    CellData<dim> simplex;
+    simplex.vertices = {2, 3, 4, 5};
+    cells.push_back(simplex);
+  }
+  Triangulation<dim, spacedim> tria_simplex;
+  tria_simplex.create_triangulation(vertices, cells, SubCellData());
+
+  GridGenerator::merge_triangulations(tria_cube, tria_simplex, tria);
+}
+
+/**
+ * Adds a simplex cell to face @p face_no of a hyper_cube cell.
+ */
+template<int dim, int spacedim>
+void
+hypercube_to_simplex_w_pyramid(Triangulation<dim, spacedim> & tria)
+{
+  const unsigned int face_no = 1;
+  // create cube
+  Triangulation<dim, spacedim> tria_cube;
+  GridGenerator::hyper_cube(tria_cube);
+  const auto cube = tria_cube.begin_active();
+  AssertIndexRange(face_no, cube->n_faces());
+
+  // extract vertices from specified face, store their midpoint
+  std::vector<CellData<dim>>   cells_pyramid;
+  std::vector<CellData<dim>>   cells_tet;
+  std::vector<Point<spacedim>> vertices;
+  Point<spacedim>              midpoint;
+  const auto                   shared_face = cube->face(face_no);
+  for(unsigned int v = 0; v < shared_face->n_vertices(); ++v)
+  {
+    const auto & vertex = shared_face->vertex(v);
+    vertices.push_back(vertex);
+    midpoint += vertex;
+  }
+  midpoint /= vertices.size();
+
+  // add simplex cell in coordinate direction
+  const unsigned int coordinate = face_no / 2;
+
+  // add another vertex as tip of triangle/pyramid
+  Point<spacedim> tip = midpoint;
+  tip[coordinate] += (face_no % 2 == 1) ? 1. : -1.;
+  vertices.push_back(tip); // 4
+
+  for(unsigned int v = 0; v < shared_face->n_vertices(); ++v) // 5...8
+  {
+    auto vertex        = shared_face->vertex(v);
+    vertex[coordinate] = tip[coordinate];
+    vertices.push_back(vertex);
+  }
+  midpoint[0] += 0.5;
+  midpoint[2] += 0.5;
+  vertices.push_back(midpoint); // 9 top
+
+  midpoint[2] -= 1.0;
+  vertices.push_back(midpoint); // 10 bottom
+
+  midpoint[2] += 0.5;
+  midpoint[1] += 0.5;
+  vertices.push_back(midpoint); // 11 behind
+
+  midpoint[1] -= 1.0;
+  vertices.push_back(midpoint); // 12 front
+
+  // Pyramid
+  {
+    CellData<dim> pyramid;
+    pyramid.vertices = {0, 1, 2, 3, 4};
+    cells_pyramid.push_back(pyramid);
+  }
+  Triangulation<dim, spacedim> tria_pyramid;
+  tria_pyramid.create_triangulation(vertices, cells_pyramid, SubCellData());
+
+  // Tet 1
+  {
+    CellData<dim> simplex;
+    simplex.vertices = {2, 3, 4, 9};
+    cells_tet.push_back(simplex);
+  }
+  // Tet 2
+  {
+    CellData<dim> simplex;
+    simplex.vertices = {2, 4, 9, 7};
+    cells_tet.push_back(simplex);
+  }
+
+  // Tet 3
+  {
+    CellData<dim> simplex;
+    simplex.vertices = {3, 4, 9, 8};
+    cells_tet.push_back(simplex);
+  }
+
+  // Tet 4
+  {
+    CellData<dim> simplex;
+    simplex.vertices = {4, 9, 7, 8};
+    cells_tet.push_back(simplex);
+  }
+  // Tet 5
+  {
+    CellData<dim> simplex;
+    simplex.vertices = {0, 1, 4, 10};
+    cells_tet.push_back(simplex);
+  }
+  // Tet 6
+  {
+    CellData<dim> simplex;
+    simplex.vertices = {0, 4, 10, 5};
+    cells_tet.push_back(simplex);
+  }
+
+  // Tet 7
+  {
+    CellData<dim> simplex;
+    simplex.vertices = {1, 4, 10, 6};
+    cells_tet.push_back(simplex);
+  }
+
+  // Tet 8
+  {
+    CellData<dim> simplex;
+    simplex.vertices = {4, 10, 5, 6};
+    cells_tet.push_back(simplex);
+  }
+  // Tet 9
+  {
+    CellData<dim> simplex;
+    simplex.vertices = {1, 3, 4, 11};
+    cells_tet.push_back(simplex);
+  }
+  // Tet 10
+  {
+    CellData<dim> simplex;
+    simplex.vertices = {1, 11, 4, 6};
+    cells_tet.push_back(simplex);
+  }
+
+  // Tet 11
+  {
+    CellData<dim> simplex;
+    simplex.vertices = {3, 11, 4, 8};
+    cells_tet.push_back(simplex);
+  }
+
+  // Tet 12
+  {
+    CellData<dim> simplex;
+    simplex.vertices = {4, 11, 6, 8};
+    cells_tet.push_back(simplex);
+  }
+  // Tet 13
+  {
+    CellData<dim> simplex;
+    simplex.vertices = {0, 2, 4, 12};
+    cells_tet.push_back(simplex);
+  }
+  // Tet 14
+  {
+    CellData<dim> simplex;
+    simplex.vertices = {0, 12, 4, 5};
+    cells_tet.push_back(simplex);
+  }
+
+  // Tet 15
+  {
+    CellData<dim> simplex;
+    simplex.vertices = {2, 12, 4, 7};
+    cells_tet.push_back(simplex);
+  }
+
+  // Tet 16
+  {
+    CellData<dim> simplex;
+    simplex.vertices = {4, 12, 5, 7};
+    cells_tet.push_back(simplex);
+  }
+
+  Triangulation<dim, spacedim> tria_simplex;
+  tria_simplex.create_triangulation(vertices, cells_tet, SubCellData());
+
+  Triangulation<dim, spacedim> tria_temp;
+  GridGenerator::merge_triangulations(tria_cube, tria_pyramid, tria_temp);
+  GridGenerator::merge_triangulations(tria_temp, tria_simplex, tria);
+}
+
+
+/**
+ * Adds a simplex cell to face @p face_no of a hyper_cube cell.
+ */
+template<int dim, int spacedim>
+void
+mixed_3d_mesh(Triangulation<dim, spacedim> & tria,
+              const unsigned int             n_repetitions = 3,
+              const bool                     include_wedge = false)
+{
+  // connection simplex hypercube with pyramids
+  Triangulation<dim, spacedim> tria_h_2_s;
+  hypercube_to_simplex_w_pyramid(tria_h_2_s);
+
+  // hypercube part
+  unsigned int                 n_extensions = (unsigned int)std::pow(2.0, n_repetitions);
+  Triangulation<dim, spacedim> tria_cube, tria_cube_repeated;
+  GridGenerator::hyper_cube(tria_cube_repeated);
+  Point<dim> vec(-1.0 * n_extensions, 0, 0);
+  GridTools::shift(vec, tria_cube_repeated);
+  GridGenerator::replicate_triangulation(tria_cube_repeated, {{n_extensions, 1, 1}}, tria_cube);
+
+  // Simplex part
+  Triangulation<dim, spacedim> tria_simplex, tria_temp, tria_temp_repeated;
+  GridGenerator::hyper_cube(tria_temp);
+  GridGenerator::replicate_triangulation(tria_temp, {{n_extensions, 1, 1}}, tria_temp_repeated);
+  GridGenerator::convert_hypercube_to_simplex_mesh(tria_temp_repeated, tria_simplex);
+  Point<dim> vec_2(2.0, 0, 0);
+  GridTools::shift(vec_2, tria_simplex);
+
+  // Wedge
+  Triangulation<dim, spacedim> tria_wedge;
+  if(include_wedge)
+  {
+    subdivided_hyper_cube_with_wedges(tria_wedge, 1);
+    Point<dim> vec_3(-1.0 * (n_extensions + 1), 0, 0);
+    GridTools::shift(vec_3, tria_wedge);
+  }
+
+  // Combine
+  if(include_wedge)
+  {
+    Triangulation<dim, spacedim> tria_temp_2, tria_temp_3, tria_temp_4;
+    GridGenerator::merge_triangulations(tria_cube, tria_h_2_s, tria_temp_2);
+    GridGenerator::merge_triangulations(tria_temp_2, tria_simplex, tria_temp_3);
+    GridGenerator::merge_triangulations(tria_temp_3, tria_wedge, tria_temp_4);
+    GridGenerator::replicate_triangulation(tria_temp_4, {{1, n_extensions, n_extensions}}, tria);
+  }
+  else
+  {
+    Triangulation<dim, spacedim> tria_temp_2, tria_temp_3;
+    GridGenerator::merge_triangulations(tria_cube, tria_h_2_s, tria_temp_2);
+    GridGenerator::merge_triangulations(tria_temp_2, tria_simplex, tria_temp_3);
+    GridGenerator::replicate_triangulation(tria_temp_3, {{1, n_extensions, n_extensions}}, tria);
+  }
+}
+} // namespace GridGenerator
+} // namespace dealii

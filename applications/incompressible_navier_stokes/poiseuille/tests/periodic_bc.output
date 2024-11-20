@@ -40,7 +40,6 @@ Physical quantities:
 
 Temporal discretization:
   Temporal discretization method:            BDFDualSplittingScheme
-  Treatment of convective term:              Explicit
   Calculation of time step size:             CFL
   Adaptive time stepping:                    true
   Adaptive time stepping limiting factor:    1.2000e+00
@@ -50,6 +49,7 @@ Temporal discretization:
   Temporal refinements:                      0
   Order of time integration scheme:          2
   Start with low order method:               true
+  Treatment of convective term:              Explicit
   Solver information:
   Interval physical time:                    1.0000e+01
   Interval wall time:                        1.7977e+308
@@ -64,6 +64,7 @@ Spatial discretization:
   Number of global refinements:              0
   Create coarse triangulations:              false
   Mapping degree:                            2
+  Mapping degree coarse grids:               2
   FE space:                                  L2
   Polynomial degree velocity:                2
   Polynomial degree pressure:                MixedOrder
@@ -133,14 +134,15 @@ High-order dual splitting scheme:
   Preconditioner projection step:            InverseMassMatrix
   Update preconditioner projection step:     false
 
-  Viscous step:
-  Solver viscous step:                       CG
+  Momentum step:
+  Linear solver:
+  Solver:                                    CG
   Maximum number of iterations:              1000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              30
-  Preconditioner viscous step:               InverseMassMatrix
-  Update preconditioner viscous:             false
+  Preconditioner:                            InverseMassMatrix
+  Update of preconditioner:                  false
 
 Generating grid for 2-dimensional problem:
 
@@ -166,17 +168,13 @@ Setup incompressible Navier-Stokes operator ...
 
 ... done!
 
-Setup BDF time integrator ...
+Setup Multistep time integrator ...
 
 Calculation of time step size according to CFL condition:
 
   CFL:                                       2.0000e-01
   Time step size (global):                   1.4142e-01
   Time step size (adaptive):                 1.4142e-01
-
-... done!
-
-Setup incompressible Navier-Stokes solver ...
 
 ... done!
 
@@ -197,7 +195,7 @@ Calculate error for velocity at time t = 1.0059e+01:
   Absolute error (L2-norm): 1.68241e-01
 
 Calculate error for pressure at time t = 1.0059e+01:
-  Absolute error (L2-norm): 3.97849e-10
+  Absolute error (L2-norm): 3.70189e-10
 
 ________________________________________________________________________________
 
@@ -208,7 +206,7 @@ Calculate error for velocity at time t = 2.0123e+01:
   Absolute error (L2-norm): 1.36953e-02
 
 Calculate error for pressure at time t = 2.0123e+01:
-  Absolute error (L2-norm): 2.49567e-11
+  Absolute error (L2-norm): 2.15218e-11
 
 ________________________________________________________________________________
 
@@ -219,7 +217,7 @@ Calculate error for velocity at time t = 3.0047e+01:
   Absolute error (L2-norm): 1.15467e-03
 
 Calculate error for pressure at time t = 3.0047e+01:
-  Absolute error (L2-norm): 3.49131e-12
+  Absolute error (L2-norm): 1.40866e-12
 
 ________________________________________________________________________________
 
@@ -230,7 +228,7 @@ Calculate error for velocity at time t = 4.0089e+01:
   Absolute error (L2-norm): 9.45165e-05
 
 Calculate error for pressure at time t = 4.0089e+01:
-  Absolute error (L2-norm): 4.23032e-13
+  Absolute error (L2-norm): 1.06242e-13
 
 ________________________________________________________________________________
 
@@ -241,7 +239,7 @@ Calculate error for velocity at time t = 5.0130e+01:
   Absolute error (L2-norm): 7.73955e-06
 
 Calculate error for pressure at time t = 5.0130e+01:
-  Absolute error (L2-norm): 1.45998e-14
+  Absolute error (L2-norm): 1.01057e-14
 
 ________________________________________________________________________________
 
@@ -252,7 +250,7 @@ Calculate error for velocity at time t = 6.0029e+01:
   Absolute error (L2-norm): 6.56494e-07
 
 Calculate error for pressure at time t = 6.0029e+01:
-  Absolute error (L2-norm): 4.04763e-15
+  Absolute error (L2-norm): 1.29427e-15
 
 ________________________________________________________________________________
 
@@ -263,7 +261,7 @@ Calculate error for velocity at time t = 7.0070e+01:
   Absolute error (L2-norm): 5.37574e-08
 
 Calculate error for pressure at time t = 7.0070e+01:
-  Absolute error (L2-norm): 6.85418e-16
+  Absolute error (L2-norm): 2.36443e-15
 
 ________________________________________________________________________________
 
@@ -274,7 +272,7 @@ Calculate error for velocity at time t = 8.0111e+01:
   Absolute error (L2-norm): 4.40196e-09
 
 Calculate error for pressure at time t = 8.0111e+01:
-  Absolute error (L2-norm): 8.60933e-16
+  Absolute error (L2-norm): 1.91306e-15
 
 ________________________________________________________________________________
 
@@ -282,10 +280,10 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for velocity at time t = 9.0010e+01:
-  Absolute error (L2-norm): 3.73379e-10
+  Absolute error (L2-norm): 3.73380e-10
 
 Calculate error for pressure at time t = 9.0010e+01:
-  Absolute error (L2-norm): 1.54894e-15
+  Absolute error (L2-norm): 1.55055e-15
 
 ________________________________________________________________________________
 
@@ -293,7 +291,7 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for velocity at time t = 1.0005e+02:
-  Absolute error (L2-norm): 3.05662e-11
+  Absolute error (L2-norm): 3.05689e-11
 
 Calculate error for pressure at time t = 1.0005e+02:
-  Absolute error (L2-norm): 8.73198e-16
+  Absolute error (L2-norm): 3.47967e-15

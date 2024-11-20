@@ -162,7 +162,8 @@ enum class PreconditionerSmoother
 {
   None,
   PointJacobi,
-  BlockJacobi
+  BlockJacobi,
+  AdditiveSchwarz
 };
 
 struct SmootherData

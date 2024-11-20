@@ -51,6 +51,14 @@ PostProcessor<dim, Number>::setup(Operator<dim, Number> const & pde_operator)
 
 template<int dim, typename Number>
 void
+PostProcessor<dim, Number>::setup_after_coarsening_and_refinement()
+{
+  // The `error_calculator` and `output_generator` do not require any additional setup after
+  // coarsening and refinement.
+}
+
+template<int dim, typename Number>
+void
 PostProcessor<dim, Number>::do_postprocessing(VectorType const &     solution,
                                               double const           time,
                                               types::time_step const time_step_number)

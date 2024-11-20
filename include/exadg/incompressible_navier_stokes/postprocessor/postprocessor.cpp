@@ -31,6 +31,7 @@ PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & postpro
   : mpi_comm(comm),
     pp_data(postprocessor_data),
     output_generator(comm),
+    pointwise_output_generator(comm),
     error_calculator_u(comm),
     error_calculator_p(comm),
     lift_and_drag_calculator(comm),
@@ -62,6 +63,11 @@ PostProcessor<dim, Number>::setup(Operator const & pde_operator)
                          *pde_operator.get_mapping(),
                          pp_data.output_data);
 
+  pointwise_output_generator.setup(pde_operator.get_dof_handler_u(),
+                                   pde_operator.get_dof_handler_p(),
+                                   *pde_operator.get_mapping(),
+                                   pp_data.pointwise_output_data);
+
   error_calculator_u.setup(pde_operator.get_dof_handler_u(),
                            *pde_operator.get_mapping(),
                            pp_data.error_data_u);
@@ -74,7 +80,7 @@ PostProcessor<dim, Number>::setup(Operator const & pde_operator)
                                  pde_operator.get_matrix_free(),
                                  pde_operator.get_dof_index_velocity(),
                                  pde_operator.get_dof_index_pressure(),
-                                 pde_operator.get_quad_index_velocity_linear(),
+                                 pde_operator.get_quad_index_velocity_standard(),
                                  pp_data.lift_and_drag_data);
 
   pressure_difference_calculator.setup(pde_operator.get_dof_handler_p(),
@@ -83,13 +89,13 @@ PostProcessor<dim, Number>::setup(Operator const & pde_operator)
 
   div_and_mass_error_calculator.setup(pde_operator.get_matrix_free(),
                                       pde_operator.get_dof_index_velocity(),
-                                      pde_operator.get_quad_index_velocity_linear(),
+                                      pde_operator.get_quad_index_velocity_standard(),
                                       pp_data.mass_data);
 
   kinetic_energy_calculator.setup(pde_operator,
                                   pde_operator.get_matrix_free(),
                                   pde_operator.get_dof_index_velocity(),
-                                  pde_operator.get_quad_index_velocity_linear(),
+                                  pde_operator.get_quad_index_velocity_standard(),
                                   pp_data.kinetic_energy_data);
 
   kinetic_energy_spectrum_calculator.setup(pde_operator.get_matrix_free(),
@@ -180,6 +186,17 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
                               additional_fields_vtu,
                               time,
                               Utilities::is_unsteady_timestep(time_step_number));
+  }
+
+  /*
+   *  write pointwise output
+   */
+  if(pointwise_output_generator.time_control.needs_evaluation(time, time_step_number))
+  {
+    pointwise_output_generator.evaluate(velocity,
+                                        pressure,
+                                        time,
+                                        Utilities::is_unsteady_timestep(time_step_number));
   }
 
   /*

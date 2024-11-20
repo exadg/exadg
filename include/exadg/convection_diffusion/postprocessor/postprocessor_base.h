@@ -68,6 +68,12 @@ public:
 
   virtual void
   setup(Operator<dim, Number> const & pde_operator) = 0;
+
+  /*
+   * In the derived classes, one might need to take some actions after coarsening and refinement.
+   */
+  virtual void
+  setup_after_coarsening_and_refinement() = 0;
 };
 
 } // namespace ConvDiff

@@ -108,9 +108,10 @@ private:
     this->param.solver_info_data.interval_time = this->param.end_time - this->param.start_time;
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.triangulation_type = TriangulationType::Distributed;
-    this->param.mapping_degree          = this->param.degree_u;
-    this->param.degree_p                = DegreePressure::MixedOrder;
+    this->param.grid.triangulation_type     = TriangulationType::Distributed;
+    this->param.mapping_degree              = this->param.degree_u;
+    this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
+    this->param.degree_p                    = DegreePressure::MixedOrder;
 
     // convective term
     this->param.upwind_factor = 1.0;
@@ -173,13 +174,18 @@ private:
       this->param.order_time_integrator <= 2 ? this->param.order_time_integrator : 2;
     this->param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
 
-    // viscous step
-    this->param.solver_viscous                                = SolverViscous::CG;
-    this->param.solver_data_viscous                           = SolverData(1000, 1.e-14, 1.e-14);
-    this->param.preconditioner_viscous                        = PreconditionerViscous::Multigrid;
-    this->param.multigrid_data_viscous.type                   = MultigridType::hMG;
-    this->param.multigrid_data_viscous.smoother_data.smoother = MultigridSmoother::Chebyshev;
-    this->param.update_preconditioner_viscous                 = false;
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      this->param.solver_momentum                  = SolverMomentum::CG;
+      this->param.solver_data_momentum             = SolverData(1000, 1.e-14, 1.e-14);
+      this->param.preconditioner_momentum          = MomentumPreconditioner::Multigrid;
+      this->param.multigrid_data_momentum.type     = MultigridType::hMG;
+      this->param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
+      this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Chebyshev;
+      this->param.multigrid_data_momentum.coarse_problem.solver =
+        MultigridCoarseGridSolver::Chebyshev;
+      this->param.update_preconditioner_momentum = false;
+    }
 
 
     // PRESSURE-CORRECTION SCHEME
@@ -190,19 +196,22 @@ private:
     this->param.rotational_formulation = true;
 
     // momentum step
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      // Newton solver
+      this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-12);
 
-    // Newton solver
-    this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-12);
-
-    // linear solver
-    this->param.solver_momentum                  = SolverMomentum::FGMRES;
-    this->param.solver_data_momentum             = SolverData(1e4, 1.e-14, 1.e-14, 100);
-    this->param.update_preconditioner_momentum   = false;
-    this->param.preconditioner_momentum          = MomentumPreconditioner::Multigrid;
-    this->param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
-    this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Chebyshev;
-    this->param.multigrid_data_momentum.coarse_problem.solver =
-      MultigridCoarseGridSolver::Chebyshev;
+      // linear solver
+      this->param.solver_momentum                  = SolverMomentum::FGMRES;
+      this->param.solver_data_momentum             = SolverData(1e4, 1.e-14, 1.e-14, 100);
+      this->param.update_preconditioner_momentum   = false;
+      this->param.preconditioner_momentum          = MomentumPreconditioner::Multigrid;
+      this->param.multigrid_data_momentum.type     = MultigridType::hMG;
+      this->param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
+      this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Chebyshev;
+      this->param.multigrid_data_momentum.coarse_problem.solver =
+        MultigridCoarseGridSolver::Chebyshev;
+    }
 
     // COUPLED NAVIER-STOKES SOLVER
     this->param.use_scaling_continuity = false;
@@ -238,7 +247,9 @@ private:
   }
 
   void
-  create_grid() final
+  create_grid(Grid<dim> &                                       grid,
+              std::shared_ptr<dealii::Mapping<dim>> &           mapping,
+              std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
     auto const lambda_create_triangulation =
       [&](dealii::Triangulation<dim, dim> &                        tria,
@@ -253,12 +264,20 @@ private:
         tria.refine_global(global_refinements);
       };
 
-    GridUtilities::create_triangulation_with_multigrid<dim>(*this->grid,
+    GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
                                                             this->param.grid,
                                                             this->param.involves_h_multigrid(),
                                                             lambda_create_triangulation,
                                                             {} /* no local refinements */);
+
+    // mappings
+    GridUtilities::create_mapping_with_multigrid(mapping,
+                                                 multigrid_mappings,
+                                                 this->param.grid.element_type,
+                                                 this->param.mapping_degree,
+                                                 this->param.mapping_degree_coarse_grids,
+                                                 this->param.involves_h_multigrid());
   }
 
   std::shared_ptr<dealii::Function<dim>>

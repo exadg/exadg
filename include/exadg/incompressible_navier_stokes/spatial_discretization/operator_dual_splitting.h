@@ -53,21 +53,19 @@ public:
   /*
    * Constructor.
    */
-  OperatorDualSplitting(std::shared_ptr<Grid<dim> const>               grid,
-                        std::shared_ptr<dealii::Mapping<dim> const>    mapping,
-                        std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
-                        std::shared_ptr<FieldFunctions<dim> const>     field_functions,
-                        Parameters const &                             parameters,
-                        std::string const &                            field,
-                        MPI_Comm const &                               mpi_comm);
+  OperatorDualSplitting(std::shared_ptr<Grid<dim> const>                      grid,
+                        std::shared_ptr<dealii::Mapping<dim> const>           mapping,
+                        std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+                        std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor,
+                        std::shared_ptr<FieldFunctions<dim> const>            field_functions,
+                        Parameters const &                                    parameters,
+                        std::string const &                                   field,
+                        MPI_Comm const &                                      mpi_comm);
 
   /*
    * Destructor.
    */
   virtual ~OperatorDualSplitting();
-
-  void
-  setup_solvers(double const & scaling_factor_mass, VectorType const & velocity) final;
 
   /*
    * Pressure Poisson equation.
@@ -118,14 +116,6 @@ public:
   void
   apply_helmholtz_operator(VectorType & dst, VectorType const & src) const;
 
-  void
-  rhs_add_viscous_term(VectorType & dst, double const time) const;
-
-  unsigned int
-  solve_viscous(VectorType &       dst,
-                VectorType const & src,
-                bool const &       update_preconditioner,
-                double const &     scaling_factor_mass);
 
   /*
    * Fill a DoF vector with velocity Dirichlet values on Dirichlet boundaries.
@@ -139,18 +129,6 @@ public:
   interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time) const;
 
 private:
-  /*
-   * Setup of Helmholtz solver (operator, preconditioner, solver).
-   */
-  void
-  setup_helmholtz_solver();
-
-  void
-  initialize_helmholtz_preconditioner();
-
-  void
-  initialize_helmholtz_solver();
-
   /*
    * rhs pressure Poisson equation
    */
@@ -228,14 +206,6 @@ private:
     VectorType &                            dst,
     VectorType const &                      src,
     Range const &                           face_range) const;
-
-
-  /*
-   * Viscous step (Helmholtz-like equation).
-   */
-  std::shared_ptr<PreconditionerBase<Number>> helmholtz_preconditioner;
-
-  std::shared_ptr<Krylov::SolverBase<VectorType>> helmholtz_solver;
 };
 
 } // namespace IncNS

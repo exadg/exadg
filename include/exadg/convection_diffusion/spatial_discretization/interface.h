@@ -102,10 +102,6 @@ public:
   // needed for time step calculation
   virtual double
   calculate_time_step_diffusion() const = 0;
-
-  // needed for ALE-type problems
-  virtual void
-  fill_grid_coordinates_vector(VectorType & vector) const = 0;
 };
 } // namespace Interface
 

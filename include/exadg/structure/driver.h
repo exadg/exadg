@@ -91,6 +91,12 @@ private:
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
+  std::shared_ptr<Grid<dim>> grid;
+
+  std::shared_ptr<dealii::Mapping<dim>> mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
+
   // user parameters
   Parameters param;
 
