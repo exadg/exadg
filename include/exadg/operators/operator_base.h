@@ -270,13 +270,16 @@ public:
 
     if(dof_handler.has_level_dofs())
     {
-      constant_modes = dealii::DoFTools::extract_level_constant_modes(
-        0, dof_handler, dealii::ComponentMask(n_components, true));
+      constant_modes =
+        dealii::DoFTools::extract_level_constant_modes(0,
+                                                       dof_handler,
+                                                       dealii::ComponentMask(n_components, true));
     }
     else
     {
-      constant_modes = dealii::DoFTools::extract_constant_modes(
-        dof_handler, dealii::ComponentMask(n_components, true));
+      constant_modes =
+        dealii::DoFTools::extract_constant_modes(dof_handler,
+                                                 dealii::ComponentMask(n_components, true));
     }
   }
 
