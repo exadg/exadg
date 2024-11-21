@@ -60,10 +60,13 @@ public:
   std::shared_ptr<TimerTree>
   get_timings() const;
 
+  void
+  get_structure_velocity(VectorType & velocity_structure, unsigned int const iteration) const;
+
 private:
   void
-  update_structure_displacement(VectorType &       displacement_structure,
-                                unsigned int const iteration) const;
+  get_structure_displacement(VectorType &       displacement_structure,
+                             unsigned int const iteration) const;
 
   bool
   check_convergence(VectorType const & residual) const;
@@ -178,18 +181,56 @@ PartitionedSolver<dim, Number>::get_timings() const
 
 template<int dim, typename Number>
 void
-PartitionedSolver<dim, Number>::update_structure_displacement(VectorType & displacement_structure,
-                                                              unsigned int const iteration) const
+PartitionedSolver<dim, Number>::get_structure_velocity(VectorType & velocity_structure,
+                                                       unsigned int iteration) const
 {
   if(iteration == 0)
   {
-    if(parameters.use_extrapolation)
+    if(parameters.initial_guess_coupling_scheme ==
+       InitialGuessCouplingScheme::SolutionExtrapolatedToEndOfTimeStep)
     {
-      structure->time_integrator->extrapolate_displacement_to_np(displacement_structure);
+      structure->time_integrator->extrapolate_velocity_to_np(velocity_structure);
+    }
+    else if(parameters.initial_guess_coupling_scheme ==
+            InitialGuessCouplingScheme::ConvergedSolutionOfPreviousTimeStep)
+    {
+      velocity_structure = structure->time_integrator->get_velocity_n();
     }
     else
     {
+      AssertThrow(false,
+                  dealii::ExcMessage(
+                    "Behavior for this `InitialGuessCouplingScheme` is not defined."));
+    }
+  }
+  else
+  {
+    velocity_structure = structure->time_integrator->get_velocity_np();
+  }
+}
+
+template<int dim, typename Number>
+void
+PartitionedSolver<dim, Number>::get_structure_displacement(VectorType & displacement_structure,
+                                                           unsigned int const iteration) const
+{
+  if(iteration == 0)
+  {
+    if(this->parameters.initial_guess_coupling_scheme ==
+       InitialGuessCouplingScheme::SolutionExtrapolatedToEndOfTimeStep)
+    {
+      structure->time_integrator->extrapolate_displacement_to_np(displacement_structure);
+    }
+    else if(this->parameters.initial_guess_coupling_scheme ==
+            InitialGuessCouplingScheme::ConvergedSolutionOfPreviousTimeStep)
+    {
       displacement_structure = structure->time_integrator->get_displacement_n();
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage(
+                    "Behavior for this `InitialGuessCouplingScheme` is not defined."));
     }
   }
   else
@@ -220,7 +261,7 @@ PartitionedSolver<dim, Number>::solve(
     {
       print_solver_info_header(k);
 
-      update_structure_displacement(d, k);
+      get_structure_displacement(d, k);
 
       VectorType d_tilde(d);
       apply_dirichlet_neumann_scheme(d_tilde, d, k);
@@ -280,7 +321,7 @@ PartitionedSolver<dim, Number>::solve(
     {
       print_solver_info_header(k);
 
-      update_structure_displacement(d, k);
+      get_structure_displacement(d, k);
 
       apply_dirichlet_neumann_scheme(d_tilde, d, k);
 
@@ -405,7 +446,7 @@ PartitionedSolver<dim, Number>::solve(
     {
       print_solver_info_header(k);
 
-      update_structure_displacement(d, k);
+      get_structure_displacement(d, k);
 
       apply_dirichlet_neumann_scheme(d_tilde, d, k);
 
