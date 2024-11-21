@@ -34,6 +34,15 @@ enum class AccelerationMethod
   IQN_IMVLS
 };
 
+// The initial guess used in the FSI coupling loop is computed using an extrapolation of suitable
+// order (defined within the single-field time integrators) or the last iterate from the previous
+// time step.
+enum class InitialGuessCouplingScheme
+{
+  SolutionExtrapolatedToEndOfTimeStep,
+  ConvergedSolutionOfPreviousTimeStep
+};
+
 struct Parameters
 {
   Parameters()
@@ -41,6 +50,8 @@ struct Parameters
       abs_tol(1.e-12),
       rel_tol(1.e-3),
       omega_init(0.1),
+      initial_guess_coupling_scheme(
+        InitialGuessCouplingScheme::SolutionExtrapolatedToEndOfTimeStep),
       reused_time_steps(0),
       partitioned_iter_max(100),
       geometric_tolerance(1.e-10)
@@ -66,6 +77,11 @@ struct Parameters
                         "Initial relaxation parameter.",
                         dealii::Patterns::Double(0.0, 1.0),
                         true);
+      prm.add_parameter("InitialGuessCouplingScheme",
+                        initial_guess_coupling_scheme,
+                        "Scheme for initial guess for the FSI coupling loop at every time step.",
+                        Patterns::Enum<InitialGuessCouplingScheme>(),
+                        false);
       prm.add_parameter("ReusedTimeSteps",
                         reused_time_steps,
                         "Number of time steps reused for acceleration.",
@@ -85,12 +101,13 @@ struct Parameters
     prm.leave_subsection();
   }
 
-  AccelerationMethod acceleration_method;
-  double             abs_tol;
-  double             rel_tol;
-  double             omega_init;
-  unsigned int       reused_time_steps;
-  unsigned int       partitioned_iter_max;
+  AccelerationMethod         acceleration_method;
+  double                     abs_tol;
+  double                     rel_tol;
+  double                     omega_init;
+  InitialGuessCouplingScheme initial_guess_coupling_scheme;
+  unsigned int               reused_time_steps;
+  unsigned int               partitioned_iter_max;
 
   // tolerance used to locate points at the fluid-structure interface
   double geometric_tolerance;

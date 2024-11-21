@@ -74,7 +74,7 @@ private:
   coupling_structure_to_ale(VectorType const & displacement_structure) const;
 
   void
-  coupling_structure_to_fluid(bool const extrapolate) const;
+  coupling_structure_to_fluid(unsigned int const iteration) const;
 
   void
   coupling_fluid_to_structure(bool const end_of_time_step) const;

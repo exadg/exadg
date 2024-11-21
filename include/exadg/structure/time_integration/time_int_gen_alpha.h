@@ -79,6 +79,9 @@ public:
   VectorType const &
   get_displacement_np();
 
+  VectorType const &
+  get_displacement_n();
+
   void
   extrapolate_velocity_to_np(VectorType & velocity);
 
