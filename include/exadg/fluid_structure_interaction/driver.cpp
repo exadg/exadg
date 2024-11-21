@@ -258,9 +258,9 @@ Driver<dim, Number>::coupling_fluid_to_structure(bool const end_of_time_step) co
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::solve_subproblem_mesh(VectorType const & displacement_structure) const
+Driver<dim, Number>::solve_subproblem_ale(VectorType const & displacement_structure) const
 {
-  // update displacement condition at interface
+  // update displacement boundary data at interface
   coupling_structure_to_ale(displacement_structure);
 
   // move the fluid mesh and update dependent data structures
@@ -295,13 +295,13 @@ Driver<dim, Number>::solve_subproblem_structure(unsigned int const iteration) co
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType &       displacement_structure_tilde,
+Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType &       displacement_structure_updated,
                                                     VectorType const & displacement_structure,
                                                     unsigned int       iteration) const
 {
   if(parameters.update_method == UpdateMethod::Implicit)
   {
-    solve_subproblem_mesh(displacement_structure);
+    solve_subproblem_ale(displacement_structure);
     solve_subproblem_fluid(iteration, true /* update_velocity */, true /* update_pressure */);
     solve_subproblem_structure(iteration);
   }
@@ -309,7 +309,7 @@ Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType &       displacem
   {
     if(iteration == 0)
     {
-      solve_subproblem_mesh(displacement_structure);
+      solve_subproblem_ale(displacement_structure);
     }
     solve_subproblem_fluid(iteration, true /* update_velocity */, true /* update_pressure */);
     solve_subproblem_structure(iteration);
@@ -319,9 +319,8 @@ Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType &       displacem
   {
     if(iteration == 0)
     {
-      solve_subproblem_mesh(displacement_structure);
+      solve_subproblem_ale(displacement_structure);
     }
-
     bool const update_velocity =
       iteration == 0 or parameters.update_method == UpdateMethod::ImplicitVelocityStructure;
     bool const update_pressure =
@@ -331,10 +330,10 @@ Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType &       displacem
   }
   else
   {
-    AssertThrow(false, dealii::ExcMessage("UpdateMethod not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Behavior for this `UpdateMethod` is not defined.."));
   }
 
-  displacement_structure_tilde = structure->time_integrator->get_displacement_np();
+  displacement_structure_updated = structure->time_integrator->get_displacement_np();
 }
 
 template<int dim, typename Number>

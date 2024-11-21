@@ -106,7 +106,7 @@ public:
     prm.enter_subsection("Fluid");
     prm.add_parameter("TemporalDiscretization",
                       temporal_discretization,
-                      "Temporal discretization of Navier-Stokes euqaitons.",
+                      "Temporal discretization of Navier-Stokes equations.",
                       Patterns::Enum<IncNS::TemporalDiscretization>(),
                       false);
     prm.leave_subsection();

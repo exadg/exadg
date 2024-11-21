@@ -179,22 +179,22 @@ TimeIntBDF<dim, Number>::advance_one_timestep_partitioned_solve(bool const use_e
 {
   this->use_extrapolation = use_extrapolation;
   this->store_solution    = true;
+  this->update_velocity   = update_velocity;
+  this->update_pressure   = update_pressure;
 
-  // Toggle velocity update for semi-implicit FSI
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
     AssertThrow(this->update_velocity and this->update_pressure,
                 dealii::ExcMessage(
-                  "BDFCoupled solver cannot recover velocity and pressure independently."));
+                  "TemporalDiscretization::BDFCoupledSolution cannot "
+                  "recover velocity and pressure independently."));
   }
 
-  this->update_velocity = update_velocity;
-  this->update_pressure = update_pressure;
+  AssertThrow(this->update_velocity or this->update_pressure,
+              dealii::ExcMessage(
+                "No update from fluid time stepper requested."));
 
-  if(update_velocity or update_pressure)
-  {
-    Base::advance_one_timestep_solve();
-  }
+  Base::advance_one_timestep_solve();
 }
 
 template<int dim, typename Number>

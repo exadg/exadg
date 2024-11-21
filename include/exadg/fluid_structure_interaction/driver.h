@@ -80,7 +80,7 @@ private:
   coupling_fluid_to_structure(bool const end_of_time_step) const;
 
   void
-  solve_subproblem_mesh(VectorType const & displacement_structure) const;
+  solve_subproblem_ale(VectorType const & displacement_structure) const;
 
   void
   solve_subproblem_fluid(unsigned int const iteration,
@@ -91,7 +91,7 @@ private:
   solve_subproblem_structure(unsigned int const iteration) const;
 
   void
-  apply_dirichlet_neumann_scheme(VectorType &       displacement_structure_tilde,
+  apply_dirichlet_neumann_scheme(VectorType &       displacement_structure_updated,
                                  VectorType const & displacement_structure,
                                  unsigned int       iteration) const;
 

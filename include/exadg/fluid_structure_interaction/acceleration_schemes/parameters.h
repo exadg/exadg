@@ -41,7 +41,7 @@ enum class UpdateMethod
   GeometricExplicit,
   ImplicitPressureStructure,
   ImplicitVelocityStructure
-}
+};
 
 // The initial guess used in the FSI coupling loop is computed using an extrapolation of suitable
 // order (defined within the single-field time integrators) or the last iterate from the previous
@@ -114,6 +114,7 @@ struct Parameters
   }
 
   AccelerationMethod         acceleration_method;
+  UpdateMethod               update_method;
   double                     abs_tol;
   double                     rel_tol;
   double                     omega_init;
