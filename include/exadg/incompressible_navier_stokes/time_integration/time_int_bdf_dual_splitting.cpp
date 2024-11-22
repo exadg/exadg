@@ -935,11 +935,8 @@ TimeIntBDFDualSplitting<dim, Number>::prepare_vectors_for_next_timestep()
 
   // We also have to care about the history of velocity Dirichlet boundary conditions.
   // Note that velocity_dbc_np has already been updated.
-  if(this->update_pressure)
-  {
-    push_back(velocity_dbc);
-    velocity_dbc[0].swap(velocity_dbc_np);
-  }
+  push_back(velocity_dbc);
+  velocity_dbc[0].swap(velocity_dbc_np);
 }
 
 template<int dim, typename Number>
