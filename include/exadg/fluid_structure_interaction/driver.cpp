@@ -295,7 +295,7 @@ Driver<dim, Number>::solve_subproblem_structure(unsigned int const iteration) co
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType &       displacement_structure_updated,
+Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType & displacement_structure_updated,
                                                     VectorType const & displacement_structure,
                                                     unsigned int       iteration) const
 {

@@ -185,14 +185,12 @@ TimeIntBDF<dim, Number>::advance_one_timestep_partitioned_solve(bool const use_e
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
     AssertThrow(this->update_velocity and this->update_pressure,
-                dealii::ExcMessage(
-                  "TemporalDiscretization::BDFCoupledSolution cannot "
-                  "recover velocity and pressure independently."));
+                dealii::ExcMessage("TemporalDiscretization::BDFCoupledSolution cannot "
+                                   "recover velocity and pressure independently."));
   }
 
   AssertThrow(this->update_velocity or this->update_pressure,
-              dealii::ExcMessage(
-                "No update from fluid time stepper requested."));
+              dealii::ExcMessage("No update from fluid time stepper requested."));
 
   Base::advance_one_timestep_solve();
 }
