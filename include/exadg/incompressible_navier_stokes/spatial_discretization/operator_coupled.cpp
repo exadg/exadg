@@ -677,7 +677,8 @@ OperatorCoupled<dim, Number>::setup_iterative_solver_schur_complement()
   laplace_operator = std::make_shared<Poisson::LaplaceOperator<dim, Number, 1>>();
   laplace_operator->initialize(this->get_matrix_free(),
                                this->get_constraint_p(),
-                               laplace_operator_data);
+                               laplace_operator_data,
+                               true);
 
   solver_pressure_block =
     std::make_shared<Krylov::SolverCG<Poisson::LaplaceOperator<dim, Number, 1>,

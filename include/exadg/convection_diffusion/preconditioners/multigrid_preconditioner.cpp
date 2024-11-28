@@ -227,8 +227,14 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
 template<int dim, typename Number>
 std::shared_ptr<
   MultigridOperatorBase<dim, typename MultigridPreconditionerBase<dim, Number>::MultigridNumber>>
-MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const level)
+MultigridPreconditioner<dim, Number>::initialize_operator(
+  unsigned int const level,
+  bool const         use_matrix_based_implementation,
+  bool const         assemble_matrix)
 {
+  // currently, no matrix-based implementation supported/implemented
+  (void)assemble_matrix;
+
   // initialize pde_operator in a first step
   std::shared_ptr<PDEOperatorMG> pde_operator_level(new PDEOperatorMG());
 
@@ -241,6 +247,9 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
       this->matrix_free_data_objects[level]->get_dof_index("velocity_dof_handler");
   }
   data.quad_index = this->matrix_free_data_objects[level]->get_quad_index("std_quadrature");
+
+  // the choice matrix-free vs. matrix-based might be different from what we do on the fine level
+  data.use_matrix_based_vmult = use_matrix_based_implementation;
 
   pde_operator_level->initialize(*this->matrix_free_objects[level],
                                  *this->constraints[level],

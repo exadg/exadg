@@ -222,7 +222,10 @@ MultigridPreconditioner<dim, Number>::get_operator_linear(unsigned int level)
 template<int dim, typename Number>
 std::shared_ptr<
   MultigridOperatorBase<dim, typename MultigridPreconditionerBase<dim, Number>::MultigridNumber>>
-MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const level)
+MultigridPreconditioner<dim, Number>::initialize_operator(
+  unsigned int const level,
+  bool const         use_matrix_based_implementation,
+  bool const         assemble_matrix)
 {
   std::shared_ptr<MGOperatorBase> mg_operator_level;
 
@@ -233,6 +236,9 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
       this->matrix_free_data_objects[level]->get_dof_index("elasticity_dof_index_inhomogeneous");
   }
   data.quad_index = this->matrix_free_data_objects[level]->get_quad_index("elasticity_quadrature");
+
+  // the choice matrix-free vs. matrix-based might be different from what we do on the fine level
+  data.use_matrix_based_vmult = use_matrix_based_implementation;
 
   if(nonlinear)
   {
@@ -247,7 +253,8 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
 
     pde_operator_level->initialize(*this->matrix_free_objects[level],
                                    *this->constraints[level],
-                                   data);
+                                   data,
+                                   assemble_matrix);
 
     mg_operator_level = std::make_shared<MGOperatorNonlinear>(pde_operator_level);
   }
@@ -264,7 +271,8 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
 
     pde_operator_level->initialize(*this->matrix_free_objects[level],
                                    *this->constraints[level],
-                                   data);
+                                   data,
+                                   assemble_matrix);
 
     mg_operator_level = std::make_shared<MGOperatorLinear>(pde_operator_level);
   }

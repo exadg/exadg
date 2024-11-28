@@ -80,7 +80,9 @@ private:
                         unsigned int const                     dealii_tria_level) final;
 
   std::shared_ptr<MGOperatorBase>
-  initialize_operator(unsigned int const level) final;
+  initialize_operator(unsigned int const level,
+                      bool const         use_matrix_based_implementation,
+                      bool const         assemble_matrix) final;
 
   std::shared_ptr<PDEOperatorMG>
   get_operator(unsigned int level);

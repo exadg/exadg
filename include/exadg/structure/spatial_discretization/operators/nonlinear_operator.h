@@ -46,15 +46,14 @@ private:
   typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
   typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
 
-public:
+private:
   /**
    * Initialize function.
    */
   void
-  initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
-             dealii::AffineConstraints<Number> const & affine_constraints,
-             OperatorData<dim> const &                 data) override;
+  initialize_derived() override;
 
+public:
   /**
    * Evaluates the non-linear operator.
    *

@@ -157,15 +157,21 @@ private:
     this->param.spatial_discretization = SpatialDiscretization::DG;
     this->param.IP_factor              = 1.0e0;
 
+    // use matrix-based implementation on the fine level, i.e. for the operator evaluation
+    // ("matrix-vector" product) in the Krylov solver
+    this->param.use_matrix_based_implementation = false;
+    this->param.sparse_matrix_type              = SparseMatrixType::Trilinos;
+
     // SOLVER
-    this->param.solver                      = LinearSolver::CG;
-    this->param.solver_data.abs_tol         = 1.e-20;
-    this->param.solver_data.rel_tol         = 1.e-10;
-    this->param.solver_data.max_iter        = 1e4;
-    this->param.compute_performance_metrics = true;
-    this->param.preconditioner              = Preconditioner::Multigrid;
-    this->param.multigrid_data.type         = MultigridType::cphMG;
-    this->param.multigrid_data.p_sequence   = PSequenceType::Bisect;
+    this->param.solver                                = LinearSolver::CG;
+    this->param.solver_data.abs_tol                   = 1.e-20;
+    this->param.solver_data.rel_tol                   = 1.e-10;
+    this->param.solver_data.max_iter                  = 1e4;
+    this->param.compute_performance_metrics           = true;
+    this->param.preconditioner                        = Preconditioner::Multigrid;
+    this->param.multigrid_data.type                   = MultigridType::cphMG;
+    this->param.multigrid_data.p_sequence             = PSequenceType::Bisect;
+    this->param.multigrid_data.min_degree_matrix_free = 1;
     // MG smoother
     this->param.multigrid_data.smoother_data.smoother        = MultigridSmoother::Chebyshev;
     this->param.multigrid_data.smoother_data.iterations      = 5;

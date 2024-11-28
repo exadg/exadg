@@ -242,9 +242,7 @@ Operator<dim, n_components, Number>::setup_operators()
   laplace_operator_data.kernel_data.IP_factor  = param.IP_factor;
   laplace_operator_data.use_matrix_based_vmult = param.use_matrix_based_implementation;
   laplace_operator_data.sparse_matrix_type     = param.sparse_matrix_type;
-  laplace_operator.initialize(*matrix_free, affine_constraints, laplace_operator_data);
-
-  laplace_operator.assemble_matrix_if_necessary();
+  laplace_operator.initialize(*matrix_free, affine_constraints, laplace_operator_data, true);
 
   // rhs operator
   if(param.right_hand_side)
