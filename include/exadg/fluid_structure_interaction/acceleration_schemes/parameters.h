@@ -34,15 +34,6 @@ enum class AccelerationMethod
   IQN_IMVLS
 };
 
-enum class UpdateMethod
-{
-  Undefined,
-  Implicit,
-  GeometricExplicit,
-  ImplicitPressureStructure,
-  ImplicitVelocityStructure
-};
-
 // The initial guess used in the FSI coupling loop is computed using an extrapolation of suitable
 // order (defined within the single-field time integrators) or the last iterate from the previous
 // time step.
@@ -56,7 +47,6 @@ struct Parameters
 {
   Parameters()
     : acceleration_method(AccelerationMethod::Undefined),
-      update_method(UpdateMethod::Implicit),
       abs_tol(1.e-12),
       rel_tol(1.e-3),
       omega_init(0.1),
@@ -64,7 +54,10 @@ struct Parameters
         InitialGuessCouplingScheme::SolutionExtrapolatedToEndOfTimeStep),
       reused_time_steps(0),
       partitioned_iter_max(100),
-      geometric_tolerance(1.e-10)
+      geometric_tolerance(1.e-10),
+      update_ale(true),
+      update_fluid_velocity(true),
+      update_fluid_pressure(true)
   {
   }
 
@@ -78,8 +71,6 @@ struct Parameters
                         "Acceleration method.",
                         Patterns::Enum<AccelerationMethod>(),
                         true);
-      prm.add_parameter(
-        "UpdateMethod", update_method, "Update method.", Patterns::Enum<UpdateMethod>(), false);
       prm.add_parameter(
         "AbsTol", abs_tol, "Absolute solver tolerance.", dealii::Patterns::Double(0.0, 1.0), true);
       prm.add_parameter(
@@ -109,12 +100,26 @@ struct Parameters
                         "Tolerance used to locate points at FSI interface.",
                         dealii::Patterns::Double(0.0, 1.0),
                         false);
+      prm.add_parameter("UpdateALE",
+                        update_ale,
+                        "Include ALE update in the strong coupling.",
+                        dealii::Patterns::Bool(),
+                        false);
+      prm.add_parameter("UpdateFluidVelocity",
+                        update_fluid_velocity,
+                        "Include fluid velocity subproblem in the strong coupling.",
+                        dealii::Patterns::Bool(),
+                        false);
+      prm.add_parameter("UpdateFluidPressure",
+                        update_fluid_pressure,
+                        "Include fluid pressure subproblem in the strong coupling.",
+                        dealii::Patterns::Bool(),
+                        false);
     }
     prm.leave_subsection();
   }
 
   AccelerationMethod         acceleration_method;
-  UpdateMethod               update_method;
   double                     abs_tol;
   double                     rel_tol;
   double                     omega_init;
@@ -124,6 +129,14 @@ struct Parameters
 
   // tolerance used to locate points at the fluid-structure interface
   double geometric_tolerance;
+
+  // Semi-implicit coupling variants iteratively update only a subset of all
+  // fields after the first coupling step. Stability properties are altered,
+  // but temporal order of accuracy is preserved starting from suitable
+  // extrapolations in time controlled via `InitialGuessCouplingScheme`.
+  bool update_ale;
+  bool update_fluid_velocity;
+  bool update_fluid_pressure;
 };
 } // namespace FSI
 } // namespace ExaDG

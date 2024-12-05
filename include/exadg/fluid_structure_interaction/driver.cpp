@@ -299,39 +299,16 @@ Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType & displacement_st
                                                     VectorType const & displacement_structure,
                                                     unsigned int       iteration) const
 {
-  if(parameters.update_method == UpdateMethod::Implicit)
+  if(iteration == 0 or parameters.update_ale)
   {
     solve_subproblem_ale(displacement_structure);
-    solve_subproblem_fluid(iteration, true /* update_velocity */, true /* update_pressure */);
-    solve_subproblem_structure(iteration);
   }
-  else if(parameters.update_method == UpdateMethod::GeometricExplicit)
-  {
-    if(iteration == 0)
-    {
-      solve_subproblem_ale(displacement_structure);
-    }
-    solve_subproblem_fluid(iteration, true /* update_velocity */, true /* update_pressure */);
-    solve_subproblem_structure(iteration);
-  }
-  else if(parameters.update_method == UpdateMethod::ImplicitPressureStructure or
-          parameters.update_method == UpdateMethod::ImplicitVelocityStructure)
-  {
-    if(iteration == 0)
-    {
-      solve_subproblem_ale(displacement_structure);
-    }
-    bool const update_velocity =
-      iteration == 0 or parameters.update_method == UpdateMethod::ImplicitVelocityStructure;
-    bool const update_pressure =
-      iteration == 0 or parameters.update_method == UpdateMethod::ImplicitPressureStructure;
-    solve_subproblem_fluid(iteration, update_velocity, update_pressure);
-    solve_subproblem_structure(iteration);
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("Behavior for this `UpdateMethod` is not defined.."));
-  }
+
+  solve_subproblem_fluid(iteration,
+                         iteration == 0 or parameters.update_fluid_velocity,
+                         iteration == 0 or parameters.update_fluid_pressure);
+
+  solve_subproblem_structure(iteration);
 
   displacement_structure_updated = structure->time_integrator->get_displacement_np();
 }
