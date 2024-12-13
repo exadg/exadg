@@ -37,6 +37,8 @@ FFTW=$WORKING_DIRECTORY/fftw/install
 LIKWID=$WORKING_DIRECTORY/likwid/install
 
 cmake \
+    -D CMAKE_BUILD_TYPE="DebugRelease" \
+    -D CMAKE_C_FLAGS="-march=native -Wno-array-bounds" \
     -D DEAL_II_DIR="$DEAL" \
     -D EXADG_WITH_FFTW=ON \
     -D FFTW_LIB="$FFTW/lib" \
