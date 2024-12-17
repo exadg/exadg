@@ -579,11 +579,16 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
     conti_penalty_data.viscosity              = param.viscosity;
     conti_penalty_data.degree                 = param.degree_u;
     conti_penalty_data.penalty_factor         = param.continuity_penalty_factor;
+    Operators::DivergencePenaltyKernelData div_penalty_data;
+    div_penalty_data.type_penalty_parameter = param.type_penalty_parameter;
+    div_penalty_data.viscosity              = param.viscosity;
+    div_penalty_data.degree                 = param.degree_u;
+    div_penalty_data.penalty_factor         = param.divergence_penalty_factor;
 
     projection_kernel = std::make_shared<Operators::ProjectionKernel<dim, Number>>();
     projection_kernel->reinit(*matrix_free,
                               get_dof_index_velocity(),
-                              get_quad_index_velocity_linear(),
+                              get_quad_index_velocity_linearized(),
                               div_penalty_data,
                               conti_penalty_data);
 
@@ -594,7 +599,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
     data.use_boundary_data      = param.continuity_penalty_use_boundary_data;
     data.bc                     = this->boundary_descriptor->velocity;
     data.dof_index              = get_dof_index_velocity();
-    data.quad_index             = get_quad_index_velocity_linear();
+    data.quad_index             = get_quad_index_velocity_linearized();
     data.use_cell_based_loops   = param.use_cell_based_face_loops;
     data.apply_penalty_terms_in_postprocessing_step =
       param.apply_penalty_terms_in_postprocessing_step;

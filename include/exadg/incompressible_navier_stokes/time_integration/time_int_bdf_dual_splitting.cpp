@@ -922,11 +922,6 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
       }
     }
 
-    VectorType rhs;
-    rhs.reinit(velocity_np, true);
-    // compute right-hand-side vector
-    rhs_viscous(rhs);
-
     // Extrapolate old solution to get a good initial estimate for the solver.
     if(this->use_extrapolation)
     {
@@ -970,9 +965,10 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
        *  (where constant means that the vector does not change from one Newton iteration
        *  to the next, i.e., it does not depend on the current solution of the nonlinear solver)
        */
-      VectorType rhs(velocity_rhs);
+      VectorType rhs;
+      rhs.reinit(velocity_np, true);
       VectorType transport_velocity_dummy;
-      rhs_viscous(rhs, velocity_rhs, transport_velocity_dummy);
+      rhs_viscous(rhs, transport_velocity_dummy, transport_velocity_dummy);
 
       // solve non-linear system of equations
       auto const iter = pde_operator->solve_nonlinear_momentum_equation(
@@ -1008,8 +1004,9 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
       /*
        *  Calculate the right-hand side of the linear system of equations.
        */
-      VectorType rhs(velocity_rhs);
-      rhs_viscous(rhs, velocity_rhs, transport_velocity);
+      VectorType rhs;
+      rhs.reinit(velocity_np, true);
+      rhs_viscous(rhs, transport_velocity, transport_velocity);
 
       // solve linear system of equations
       unsigned int const n_iter = pde_operator->solve_linear_momentum_equation(
@@ -1026,7 +1023,6 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
         this->pcout << std::endl << "Solve viscous step:";
         print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
       }
-    }
 
     if(this->store_solution)
       velocity_viscous_last_iter = velocity_np;
@@ -1063,6 +1059,7 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
     {
       this->pcout << std::endl << "Solve viscous step:";
       print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
+    }
     }
   }
   else // no viscous term and no (linearly) implicit convective term, i.e. there is nothing to do in
