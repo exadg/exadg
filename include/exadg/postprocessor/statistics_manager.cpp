@@ -25,6 +25,9 @@
 // deal.II
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/distributed/tria_base.h>
+#include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/fe_system.h>
+#include <deal.II/matrix_free/fe_evaluation.h>
 #include <deal.II/matrix_free/fe_point_evaluation.h>
 
 // ExaDG
@@ -179,9 +182,10 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
         points[i][1] = (double)i / (n_points_y_per_cell - 1);
       }
 
-      dealii::FEPointEvaluation<dim, dim, dim, Number> evaluator(mapping,
-                                                                 dof_handler.get_fe(),
-                                                                 dealii::update_quadrature_points);
+      dealii::FE_DGQ<dim>                            fe_dummy(0);
+      dealii::FEPointEvaluation<1, dim, dim, Number> evaluator(mapping,
+                                                               fe_dummy,
+                                                               dealii::update_quadrature_points);
 
       // loop over all cells
       for(auto const & cell : dof_handler.active_cell_iterators())
@@ -371,23 +375,39 @@ StatisticsManager<dim, Number>::do_evaluate(const std::vector<VectorType const *
     }
   }
 
-  dealii::Vector<Number> dof_values(dof_handler.get_fe().dofs_per_cell);
-  AssertThrow(dof_handler.get_fe().element_multiplicity(0) >= dim, dealii::ExcNotImplemented());
+  dealii::FEEvaluation<dim, -1, 0, dim, Number, dealii::VectorizedArray<Number, 1>>
+    evaluator_tensor_product(mapping,
+                             dof_handler.get_fe(),
+                             dealii::QGaussLobatto<1>(fe_degree + 1),
+                             dealii::update_values);
 
+  dealii::FESystem<dim>                            fe_dg(dealii::FE_DGQ<dim>(fe_degree), dim);
+  std::vector<Number>                              local_velocity_values(fe_dg.dofs_per_cell);
   dealii::FEPointEvaluation<dim, dim, dim, Number> evaluator(mapping,
-                                                             dof_handler.get_fe(),
+                                                             fe_dg,
                                                              dealii::update_values |
                                                                dealii::update_jacobians |
                                                                dealii::update_quadrature_points);
+
+  velocity[0]->update_ghost_values();
 
   // loop over all cells and perform averaging/integration for all locally owned cells
   for(auto const & cell : dof_handler.active_cell_iterators())
   {
     if(cell->is_locally_owned())
     {
-      cell->get_interpolated_dof_values(*velocity[0], dof_values);
+      evaluator_tensor_product.reinit(cell);
+      evaluator_tensor_product.read_dof_values(*velocity[0]);
+      evaluator_tensor_product.evaluate(dealii::EvaluationFlags::values);
+      for(unsigned int q : evaluator_tensor_product.quadrature_point_indices())
+      {
+        auto const vel = evaluator_tensor_product.get_value(q);
+        for(unsigned int d = 0; d < dim; ++d)
+          local_velocity_values[q + d * fe_dg.dofs_per_cell / dim] = vel[d][0];
+      }
+
       evaluator.reinit(cell, points);
-      evaluator.evaluate(dof_values, dealii::EvaluationFlags::values);
+      evaluator.evaluate(local_velocity_values, dealii::EvaluationFlags::values);
 
       // loop over all x-z-planes of current cell
       for(unsigned int i = 0, count = 0; i < n_points_y_per_cell; ++i)
@@ -460,6 +480,8 @@ StatisticsManager<dim, Number>::do_evaluate(const std::vector<VectorType const *
       }
     }
   }
+
+  velocity[0]->zero_out_ghost_values();
 
   // accumulate data over all processors overwriting
   // the processor-local data in xxx_loc since we want
