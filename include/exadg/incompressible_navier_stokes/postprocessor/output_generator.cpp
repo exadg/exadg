@@ -116,7 +116,10 @@ write_output(
 
   data_out.build_patches(mapping, output_data.degree, dealii::DataOut<dim>::curved_inner_cells);
 
-  data_out.write_vtu_with_pvtu_record(folder, file, output_counter, mpi_comm, 4);
+  // data_out.write_vtu_with_pvtu_record(folder, file, output_counter, mpi_comm, 4);
+  data_out.write_vtu_in_parallel(folder + file + "_" +
+                                   dealii::Utilities::to_string(output_counter, 4) + ".vtu",
+                                 mpi_comm);
 }
 
 template<int dim, typename Number>
