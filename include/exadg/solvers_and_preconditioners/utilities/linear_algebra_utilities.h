@@ -141,7 +141,8 @@ apply_function_in_double_precision(
   dealii::LinearAlgebra::distributed::Vector<Number> &                            dst,
   dealii::LinearAlgebra::distributed::Vector<Number> const &                      src,
   std::function<void(dealii::LinearAlgebra::distributed::Vector<double> &,
-                     dealii::LinearAlgebra::distributed::Vector<double> const &)> operation)
+                     dealii::LinearAlgebra::distributed::Vector<double> const &)> operation,
+  bool const copy_dst_entries = true)
 {
   if constexpr(std::is_same_v<Number, double>)
   {
@@ -153,7 +154,10 @@ apply_function_in_double_precision(
     dealii::LinearAlgebra::distributed::Vector<double> dst_double, src_double;
     dst_double.reinit(dst, true); // do not zero entries
     src_double.reinit(src, true); // do not zero entries
-    dst_double.copy_locally_owned_data_from(dst);
+    if(copy_dst_entries)
+    {
+      dst_double.copy_locally_owned_data_from(dst);
+    }
     src_double.copy_locally_owned_data_from(src);
 
     operation(dst_double, src_double);
