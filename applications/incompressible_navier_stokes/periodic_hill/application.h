@@ -180,7 +180,7 @@ private:
     this->param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     this->param.adaptive_time_stepping          = true;
     this->param.max_velocity                    = bulk_velocity;
-    this->param.cfl                             = 0.5; // 0.375;
+    this->param.cfl                             = 0.32; // 0.375;
     this->param.cfl_exponent_fe_degree_velocity = 1.5;
     this->param.time_step_size                  = 1.0e-1;
     this->param.order_time_integrator           = 2;
@@ -190,6 +190,7 @@ private:
     this->param.solver_info_data.interval_time = flow_through_time / 10.0;
 
     // SPATIAL DISCRETIZATION
+    this->param.spatial_discretization      = SpatialDiscretization::HDIV;
     this->param.grid.triangulation_type     = TriangulationType::Distributed;
     this->param.mapping_degree              = this->param.degree_u;
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
@@ -201,6 +202,19 @@ private:
 
     // viscous term
     this->param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
+
+    // velocity pressure coupling terms
+    this->param.gradp_formulation = FormulationPressureGradientTerm::Weak;
+    this->param.divu_formulation  = FormulationVelocityDivergenceTerm::Strong;
+
+    // div-div and continuity penalty
+    this->param.use_divergence_penalty                     = false;
+    this->param.divergence_penalty_factor                  = 1.0e1;
+    this->param.use_continuity_penalty                     = false;
+    this->param.continuity_penalty_factor                  = this->param.divergence_penalty_factor;
+    this->param.continuity_penalty_components              = ContinuityPenaltyComponents::Normal;
+    this->param.apply_penalty_terms_in_postprocessing_step = true;
+    this->param.continuity_penalty_use_boundary_data       = true;
 
     // TURBULENCE
     this->param.turbulence_model_data.is_active        = false;
@@ -238,7 +252,10 @@ private:
 
     this->param.solver_momentum         = SolverMomentum::CG;
     this->param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-3);
-    this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
+    this->param.preconditioner_momentum = MomentumPreconditioner::PointJacobi;
+
+    this->param.inverse_mass_operator_hdiv.preconditioner = PreconditionerMass::PointJacobi;
+    this->param.inverse_mass_operator_hdiv.solver_data = SolverData(1000, 1e-12, 1e-4);
   }
 
   void
@@ -412,12 +429,13 @@ private:
     // write output for visualization of results
     pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
     pp_data.output_data.time_control_data.start_time       = start_time;
-    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
+    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 50.0;
     pp_data.output_data.directory                 = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename                  = this->output_parameters.filename;
-    pp_data.output_data.write_velocity_magnitude  = true;
+    pp_data.output_data.write_velocity_magnitude  = false;
+    pp_data.output_data.write_divergence          = true;
     pp_data.output_data.write_vorticity           = true;
-    pp_data.output_data.write_vorticity_magnitude = true;
+    pp_data.output_data.write_vorticity_magnitude = false;
     pp_data.output_data.write_q_criterion         = true;
     pp_data.output_data.degree                    = this->param.degree_u;
     pp_data.output_data.write_higher_order        = true;
