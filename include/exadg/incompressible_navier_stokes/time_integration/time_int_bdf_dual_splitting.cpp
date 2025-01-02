@@ -170,19 +170,22 @@ TimeIntBDFDualSplitting<dim, Number>::initialize_velocity_dbc()
     this->helpers_ale->move_grid(this->get_time());
     this->helpers_ale->update_pde_operator_after_grid_motion();
   }
-  pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[0], this->get_time());
-  // ... and previous times if start_with_low_order == false
-  if(this->start_with_low_order == false)
+  if(this->param.spatial_discretization == SpatialDiscretization::L2)
   {
-    for(unsigned int i = 1; i < velocity_dbc.size(); ++i)
+    pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[0], this->get_time());
+    // ... and previous times if start_with_low_order == false
+    if(this->start_with_low_order == false)
     {
-      double const time = this->get_time() - double(i) * this->get_time_step_size();
-      if(this->param.ale_formulation)
+      for(unsigned int i = 1; i < velocity_dbc.size(); ++i)
       {
-        this->helpers_ale->move_grid(time);
-        this->helpers_ale->update_pde_operator_after_grid_motion();
+        double const time = this->get_time() - double(i) * this->get_time_step_size();
+        if(this->param.ale_formulation)
+        {
+          this->helpers_ale->move_grid(time);
+          this->helpers_ale->update_pde_operator_after_grid_motion();
+        }
+        pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[i], time);
       }
-      pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[i], time);
     }
   }
 }
@@ -313,14 +316,17 @@ void
 TimeIntBDFDualSplitting<dim, Number>::do_timestep_solve()
 {
   // pre-computations
-  pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
+  if(this->param.spatial_discretization == SpatialDiscretization::L2)
+    pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
 
   // perform the sub-steps of the dual-splitting method
   convective_step();
 
   pressure_step();
 
-  projection_step();
+  if(this->param.apply_penalty_terms_in_postprocessing_step == false and
+     (this->param.use_divergence_penalty == true or this->param.use_continuity_penalty == true))
+    projection_step();
 
   viscous_step();
 
@@ -597,14 +603,14 @@ compute_least_squares_fit(OperatorType const &            op,
       sum -= small_vector[j] * matrix(j, s);
     small_vector[s] = sum / matrix(s, s);
   }
-  if(dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-  {
-    std::cout << "e ";
-    for(const double a : small_vector)
-      std::cout << a << " ";
-    if (i > 0)
-      std::cout << "i=" << i << " " << matrix(i - 1, i - 1) / matrix(0, 0) << "   ";
-  }
+  // if(dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  //{
+  //  std::cout << "e ";
+  //  for(const double a : small_vector)
+  //    std::cout << a << " ";
+  //  if (i > 0)
+  //    std::cout << "i=" << i << " " << matrix(i - 1, i - 1) / matrix(0, 0) << "   ";
+  //}
   extrapolate_vectors(small_vector, vectors, result);
 }
 
@@ -638,24 +644,26 @@ TimeIntBDFDualSplitting<dim, Number>::pressure_step()
        this->param.update_preconditioner_pressure_poisson_every_time_steps ==
      0);
 
-  const double rhs_norm = rhs.l2_norm();
-  VectorType tmp, tmp2;
-  tmp.reinit(pressure_np, true);
-  tmp2.reinit(pressure_np, true);
-  pde_operator->laplace_operator.vmult(tmp, pressure_np);
-  const double res_norm = std::sqrt(tmp.add_and_dot(-1.0, rhs, tmp));
-  if (pressure.size() > 0)
-   pde_operator->laplace_operator.vmult(tmp, pressure[0]);
-  const double res2_norm = std::sqrt(tmp.add_and_dot(-1.0, rhs, tmp));
+  // const double rhs_norm = rhs.l2_norm();
+  // VectorType tmp, tmp2;
+  // tmp.reinit(pressure_np, true);
+  // tmp2.reinit(pressure_np, true);
+  // pde_operator->apply_laplace_operator(tmp, pressure_np);
+  // const double res_norm = std::sqrt(tmp.add_and_dot(-1.0, rhs, tmp));
+  // if (pressure.size() > 0)
+  // pde_operator->apply_laplace_operator(tmp, pressure[0]);
+  // const double res2_norm = std::sqrt(tmp.add_and_dot(-1.0, rhs, tmp));
+
 
   unsigned int const n_iter = pde_operator->solve_pressure(pressure_np, rhs, update_preconditioner);
   iterations_pressure.first += 1;
   iterations_pressure.second += n_iter;
 
-  pde_operator->laplace_operator.vmult(tmp, pressure_np);
-  const double res_norm4 = std::sqrt(tmp.add_and_dot(-1.0, rhs, tmp));
-  this->pcout << "Residual norms pressure:   " << rhs_norm << " " << res_norm << " " << res2_norm
-              << " " << res_norm4 << " (" << n_iter << ")" << std::endl;
+  // pde_operator->apply_laplace_operator(tmp, pressure_np);
+  // const double res_norm4 = std::sqrt(tmp.add_and_dot(-1.0, rhs, tmp));
+  // this->pcout << "Residual norms pressure:   " << std::setprecision(6) << rhs_norm << " " <<
+  // res_norm << " " << res2_norm
+  //            << " " << res_norm4 << " (" << n_iter << ")" << std::endl;
 
   // special case: pressure level is undefined
   // Adjust the pressure level in order to allow a calculation of the pressure error.
@@ -746,17 +754,15 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
   {
     if(this->param.order_extrapolation_pressure_nbc > 0)
     {
-      VectorType velocity_extra(velocity[0]);
-      velocity_extra = 0.0;
-      for(unsigned int i = 0; i < extra_pressure_nbc.get_order(); ++i)
+      VectorType velocity_extra;
+      velocity_extra.reinit(velocity[0], true);
+      velocity_extra.equ(this->extra_pressure_nbc.get_beta(0), velocity[0]);
+      for(unsigned int i = 1; i < extra_pressure_nbc.get_order(); ++i)
       {
         velocity_extra.add(this->extra_pressure_nbc.get_beta(i), velocity[i]);
       }
 
-      VectorType vorticity(velocity_extra);
-      pde_operator->compute_vorticity(vorticity, velocity_extra);
-
-      pde_operator->rhs_ppe_nbc_viscous_add(rhs, vorticity);
+      pde_operator->rhs_ppe_nbc_viscous_add(rhs, velocity_extra);
     }
   }
 
@@ -867,7 +873,7 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
     }
   }
 
-  this->timer_tree->insert({"Timeloop", "Pojection step"}, timer.wall_time());
+  this->timer_tree->insert({"Timeloop", "Projection step"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -897,30 +903,8 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
   // in case we need to iteratively solve a linear or nonlinear system of equations
   if(this->param.viscous_problem() or this->param.non_explicit_convective_problem())
   {
-    // if a variable viscosity is used: update
-    // viscosity model before calculating rhs_viscous
-    if(this->param.viscosity_is_variable())
-    {
-      dealii::Timer timer_viscosity_update;
-      timer_viscosity_update.restart();
-
-      // extrapolate velocity to time t_n+1 and use this velocity field to
-      // update the viscosity model (to recalculate the variable viscosity)
-      VectorType velocity_extrapolated;
-      velocity_extrapolated.reinit(velocity_np, true);
-      std::vector<Number> beta(velocity.size());
-      for(unsigned int i = 0; i < velocity.size(); ++i)
-        beta[i] = this->extra.get_beta(i);
-      extrapolate_vectors(beta, velocity, velocity_extrapolated);
-
-      pde_operator->update_viscosity(velocity_extrapolated);
-
-      if(this->print_solver_info() and not(this->is_test))
-      {
-        this->pcout << std::endl << "Update of variable viscosity:";
-        print_wall_time(this->pcout, timer_viscosity_update.wall_time());
-      }
-    }
+    // store the velocity vector that is needed to compute the rhs vector
+    VectorType velocity_rhs = velocity_np;
 
     // Extrapolate old solution to get a good initial estimate for the solver.
     if(this->use_extrapolation)
@@ -958,6 +942,10 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
       ((this->time_step_number - 1) % this->param.update_preconditioner_momentum_every_time_steps ==
        0);
 
+    VectorType rhs;
+    rhs.reinit(velocity_np, true);
+    VectorType transport_velocity;
+
     if(this->param.nonlinear_problem_has_to_be_solved())
     {
       /*
@@ -965,10 +953,7 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
        *  (where constant means that the vector does not change from one Newton iteration
        *  to the next, i.e., it does not depend on the current solution of the nonlinear solver)
        */
-      VectorType rhs;
-      rhs.reinit(velocity_np, true);
-      VectorType transport_velocity_dummy;
-      rhs_viscous(rhs, transport_velocity_dummy, transport_velocity_dummy);
+      rhs_viscous(rhs, velocity_rhs, transport_velocity);
 
       // solve non-linear system of equations
       auto const iter = pde_operator->solve_nonlinear_momentum_equation(
@@ -1004,9 +989,25 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
       /*
        *  Calculate the right-hand side of the linear system of equations.
        */
-      VectorType rhs;
-      rhs.reinit(velocity_np, true);
-      rhs_viscous(rhs, transport_velocity, transport_velocity);
+      rhs_viscous(rhs, velocity_rhs, transport_velocity);
+
+      //   const double rhs_norm = rhs.l2_norm();
+      // VectorType tmp, tmp2;
+      // tmp.reinit(velocity_np, true);
+      // tmp2.reinit(velocity_np, true);
+      // pde_operator->momentum_operator.vmult(tmp, velocity_np);
+      // const double res_norm = std::sqrt(tmp.add_and_dot(-1.0, rhs, tmp));
+      // if (velocity.size() > 0)
+      //  pde_operator->momentum_operator.vmult(tmp, velocity[0]);
+      // const double res2_norm = std::sqrt(tmp.add_and_dot(-1.0, rhs, tmp));
+      // compute_least_squares_fit(pde_operator->momentum_operator, velocity, rhs, tmp2);
+      // pde_operator->momentum_operator.vmult(tmp, tmp2);
+      // const double res_norm3 = std::sqrt(tmp.add_and_dot(-1.0, rhs, tmp));
+      // if (velocity_viscous_last_iter.size() > 0)
+      //  pde_operator->momentum_operator.vmult(tmp, velocity_viscous_last_iter);
+      // const double res_norm5 = std::sqrt(tmp.add_and_dot(-1.0, rhs, tmp));
+      // this->pcout << std::setprecision(6) << "Residual norms momentum:   " << rhs_norm << " " <<
+      // res_norm << " " << res2_norm << " " << res_norm3 << " " << res_norm5;
 
       // solve linear system of equations
       unsigned int const n_iter = pde_operator->solve_linear_momentum_equation(
@@ -1018,49 +1019,19 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
       iterations_viscous.first += 1;
       std::get<1>(iterations_viscous.second) += n_iter;
 
+      // pde_operator->apply_momentum_operator(tmp, velocity_np);
+      // const double res_norm4 = std::sqrt(tmp.add_and_dot(-1.0, rhs, tmp));
+      // this->pcout << " " << res_norm4 << " (" << n_iter << ")" << std::endl;
+
       if(this->print_solver_info() and not(this->is_test))
       {
         this->pcout << std::endl << "Solve viscous step:";
         print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
       }
+    }
 
     if(this->store_solution)
       velocity_viscous_last_iter = velocity_np;
-    // const double rhs_norm = rhs.l2_norm();
-    // VectorType tmp, tmp2;
-    // tmp.reinit(velocity_np, true);
-    // tmp2.reinit(velocity_np, true);
-    // pde_operator->momentum_operator.vmult(tmp, velocity_np);
-    // const double res_norm = std::sqrt(tmp.add_and_dot(-1.0, rhs, tmp));
-    // if (velocity.size() > 0)
-    //  pde_operator->momentum_operator.vmult(tmp, velocity[0]);
-    // const double res2_norm = std::sqrt(tmp.add_and_dot(-1.0, rhs, tmp));
-    // compute_least_squares_fit(pde_operator->momentum_operator, velocity, rhs, tmp2);
-    // pde_operator->momentum_operator.vmult(tmp, tmp2);
-    // const double res_norm3 = std::sqrt(tmp.add_and_dot(-1.0, rhs, tmp));
-    // if (velocity_viscous_last_iter.size() > 0)
-    //  pde_operator->momentum_operator.vmult(tmp, velocity_viscous_last_iter);
-    // const double res_norm5 = std::sqrt(tmp.add_and_dot(-1.0, rhs, tmp));
-    // this->pcout << std::setprecision(6) << "Residual norms momentum:   " << rhs_norm << " " <<
-    // res_norm << " " << res2_norm << " " << res_norm3 << " " << res_norm5;
-
-    //unsigned int const n_iter = pde_operator->solve_viscous(
-    //  velocity_np, rhs, update_preconditioner, this->get_scaling_factor_time_derivative_term());
-    // pde_operator->momentum_operator.vmult(tmp, velocity_np);
-    // const double res_norm4 = std::sqrt(tmp.add_and_dot(-1.0, rhs, tmp));
-    // this->pcout << " " << res_norm4 << " (" << n_iter << ")" << std::endl;
-    //iterations_viscous.first += 1;
-    //iterations_viscous.second += n_iter;
-
-    //velocity_viscous_last_iter = velocity_np;
-
-    // write output
-    if(this->print_solver_info() and not(this->is_test))
-    {
-      this->pcout << std::endl << "Solve viscous step:";
-      print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
-    }
-    }
   }
   else // no viscous term and no (linearly) implicit convective term, i.e. there is nothing to do in
        // this step of the dual splitting scheme
@@ -1077,7 +1048,7 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
 template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::rhs_viscous(VectorType &       rhs,
-                                                  VectorType const & velocity_mass_operator,
+                                                  VectorType const & velocity,
                                                   VectorType const & transport_velocity) const
 {
   /*
@@ -1085,7 +1056,15 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_viscous(VectorType &       rhs,
    */
   pde_operator->apply_scaled_mass_operator(rhs,
                                            this->bdf.get_gamma0() / this->get_time_step_size(),
-                                           velocity_np);
+                                           velocity);
+  if(this->param.apply_penalty_terms_in_postprocessing_step == true or
+     (this->param.use_divergence_penalty == false and this->param.use_continuity_penalty == false))
+  {
+    VectorType tmp;
+    tmp.reinit(rhs);
+    pde_operator->evaluate_pressure_gradient_term(tmp, pressure_np, this->get_next_time());
+    rhs -= tmp;
+  }
 
   // compensate for explicit convective term taken into account in the first sub-step of the
   // dual-splitting scheme

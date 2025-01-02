@@ -321,32 +321,31 @@ public:
     mass_operator_data.quad_index = inverse_mass_operator_data.quad_index;
     mass_operator.initialize(matrix_free, constraints, mass_operator_data);
 
-    Krylov::SolverDataCG solver_data;
-    solver_data.max_iter             = inverse_mass_operator_data.parameters.solver_data.max_iter;
-    solver_data.solver_tolerance_abs = inverse_mass_operator_data.parameters.solver_data.abs_tol;
-    solver_data.solver_tolerance_rel = inverse_mass_operator_data.parameters.solver_data.rel_tol;
+    solver_control =
+      dealii::ReductionControl(inverse_mass_operator_data.parameters.solver_data.max_iter,
+                               inverse_mass_operator_data.parameters.solver_data.abs_tol,
+                               inverse_mass_operator_data.parameters.solver_data.rel_tol);
+    preconditioner_type = inverse_mass_operator_data.parameters.preconditioner;
 
-    if(inverse_mass_operator_data.parameters.preconditioner == PreconditionerMass::None)
-    {
-      solver_data.use_preconditioner = false;
-    }
-    else if(inverse_mass_operator_data.parameters.preconditioner == PreconditionerMass::PointJacobi)
+    if(preconditioner_type == PreconditionerMass::PointJacobi)
     {
       preconditioner =
         std::make_shared<JacobiPreconditioner<MassOperator<dim, n_components, Number>>>(
           mass_operator, true /* initialize_preconditioner */);
-
-      solver_data.use_preconditioner = true;
     }
-    else
+    else if(preconditioner_type == PreconditionerMass::LumpedDiagonal)
     {
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      VectorType tmp;
+      mass_operator.initialize_dof_vector(tmp);
+      mass_operator.initialize_dof_vector(lumped_diagonal.get_vector());
+      tmp = 1.;
+      mass_operator.vmult(lumped_diagonal.get_vector(), tmp);
+      for(Number & entry : lumped_diagonal.get_vector())
+        if(entry > 1e-30)
+          entry = 1.0 / entry;
+        else
+          entry = 1.;
     }
-
-    solver =
-      std::make_shared<Krylov::SolverCG<MassOperator<dim, n_components, Number>,
-                                        PreconditionerBase<Number>,
-                                        VectorType>>(mass_operator, *preconditioner, solver_data);
   }
 
   /**
@@ -356,34 +355,56 @@ public:
   unsigned int
   apply(VectorType & dst, VectorType const & src) const
   {
-    Assert(solver.get() != 0, dealii::ExcMessage("Mass solver has not been initialized."));
-
     VectorType temp;
 
     // Note that the inverse mass operator might be called like inverse_mass.apply(dst, dst),
     // i.e. with identical destination and source vectors. In this case, we need to make sure
     // that the result is still correct.
+    const VectorType * src_ptr;
     if(&dst == &src)
     {
-      temp = src;
-      return solver->solve(dst, temp);
+      temp    = src;
+      src_ptr = &temp;
     }
     else
     {
-      return solver->solve(dst, src);
+      src_ptr = &src;
     }
+
+    dealii::SolverCG<VectorType> solver(solver_control);
+    if(preconditioner_type == PreconditionerMass::None)
+    {
+      solver.solve(mass_operator, dst, *src_ptr, dealii::PreconditionIdentity());
+    }
+    else if(preconditioner_type == PreconditionerMass::PointJacobi)
+    {
+      AssertThrow(preconditioner.get() != nullptr,
+                  dealii::ExcMessage("Preconditioner not initialized!"));
+      solver.solve(mass_operator, dst, *src_ptr, *preconditioner);
+    }
+    else if(preconditioner_type == PreconditionerMass::LumpedDiagonal)
+    {
+      solver.solve(mass_operator, dst, *src_ptr, lumped_diagonal);
+    }
+    else
+      AssertThrow(false,
+                  dealii::ExcMessage(
+                    "Preconditioner type for Hdiv inverse mass matrix not recognized"));
+
+    return solver_control.last_step();
   }
 
 private:
   // Solver/preconditioner for mass system solving a global linear system of equations for all
   // degrees of freedom.
-  std::shared_ptr<PreconditionerBase<Number>>     preconditioner;
-  std::shared_ptr<Krylov::SolverBase<VectorType>> solver;
+  std::shared_ptr<PreconditionerBase<Number>> preconditioner;
+  dealii::DiagonalMatrix<VectorType>          lumped_diagonal;
+  dealii::ReductionControl mutable solver_control;
 
   // We need a MassOperator as underlying operator.
   MassOperator<dim, n_components, Number> mass_operator;
 
-  InverseMassParametersHdiv data;
+  PreconditionerMass preconditioner_type;
 };
 
 } // namespace ExaDG

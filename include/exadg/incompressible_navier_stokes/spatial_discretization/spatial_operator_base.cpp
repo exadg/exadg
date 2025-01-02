@@ -150,15 +150,9 @@ SpatialOperatorBase<dim, Number>::initialize_dof_handler_and_constraints()
     // Dirichlet boundaries
     if(not(boundary_descriptor->velocity->dirichlet_bc.empty()))
     {
-      AssertThrow(
-        false,
-        dealii::ExcMessage(
-          "Dirichlet BCs are not properly implemented for HDIV. The normal component of the velocity field needs to be strongly applied."));
-      // We would like to do something similar to above. Probably would work with the same function
-      // i.e dealii::VectorTools::project_boundary_values_div_conforming(). Otherwise one might want
-      // to look into: dealii::VectorTools::interpolate_boundary_values
-      // dealii::VectorTools::project_boundary_values
-      // dealii::DoFTools::make_zero_boundary_constraints
+      for(auto bc : boundary_descriptor->velocity->dirichlet_bc)
+        dealii::VectorTools::project_boundary_values_div_conforming(
+          dof_handler_u, 0, *(bc.second), bc.first, constraint_u, *get_mapping());
     }
   }
 
@@ -185,8 +179,8 @@ SpatialOperatorBase<dim, Number>::initialize_dof_handler_and_constraints()
   print_parameter(pcout, "number of dofs (total)", dof_handler_u.n_dofs());
   if(param.spatial_discretization == SpatialDiscretization::HDIV)
   {
-    pcout << "NOTE. Continuity constraints in case of periodic boundary conditions"
-          << "are not taken into account regarding the number of total DoFs." << std::endl;
+    pcout << "NOTE. Continuity constraints in case of periodic boundary conditions " << std::endl
+          << "      are not taken into account regarding the number of total DoFs." << std::endl;
   }
 
   pcout << "Pressure:" << std::endl;
@@ -933,8 +927,8 @@ SpatialOperatorBase<dim, Number>::prescribe_initial_conditions(VectorType & velo
 
   VectorTypeDouble velocity_double;
   VectorTypeDouble pressure_double;
-  velocity_double = velocity;
-  pressure_double = pressure;
+  velocity_double.reinit(velocity.get_partitioner());
+  pressure_double.reinit(pressure.get_partitioner());
 
   dealii::VectorTools::interpolate(*get_mapping(),
                                    dof_handler_u,
@@ -946,8 +940,10 @@ SpatialOperatorBase<dim, Number>::prescribe_initial_conditions(VectorType & velo
                                    *(field_functions->initial_solution_pressure),
                                    pressure_double);
 
-  velocity = velocity_double;
-  pressure = pressure_double;
+  velocity.copy_locally_owned_data_from(velocity_double);
+  velocity.zero_out_ghost_values();
+  pressure.copy_locally_owned_data_from(pressure_double);
+  pressure.zero_out_ghost_values();
 }
 
 template<int dim, typename Number>
@@ -1360,7 +1356,7 @@ SpatialOperatorBase<dim, Number>::apply_inverse_mass_operator(VectorType &      
   }
   else if(param.spatial_discretization == SpatialDiscretization::HDIV)
   {
-    inverse_mass_hdiv.apply(dst, src);
+    return inverse_mass_hdiv.apply(dst, src);
   }
   else
   {

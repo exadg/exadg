@@ -196,8 +196,7 @@ ProjectionOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) c
 {
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
-    if(operator_data.apply_penalty_terms_in_postprocessing_step)
-      integrator.submit_value(integrator.get_value(q), q);
+    integrator.submit_value(integrator.get_value(q), q);
 
     if(operator_data.use_divergence_penalty)
       integrator.submit_divergence(time_step_size * kernel->get_volume_flux(integrator, q), q);

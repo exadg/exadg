@@ -284,16 +284,16 @@ OperatorBase<dim, Number, n_components>::apply(VectorType & dst, VectorType cons
     // used. The function read_dof_values() (or gather_evaluate()) uses the homogeneous boundary
     // data passed to MatrixFree via AffineConstraints with the standard "dof_index".
     matrix_free->cell_loop(&This::cell_loop, this, dst, src, true);
+  }
 
-    // Constrained degree of freedom are not removed from the system of equations.
-    // Instead, we set the diagonal entries of the matrix to 1 for these constrained
-    // degrees of freedom. This means that we simply copy the constrained values to the
-    // dst vector.
-    for(unsigned int const constrained_index :
-        matrix_free->get_constrained_dofs(this->data.dof_index))
-    {
-      dst.local_element(constrained_index) = src.local_element(constrained_index);
-    }
+  // Constrained degree of freedom are not removed from the system of equations.
+  // Instead, we set the diagonal entries of the matrix to 1 for these constrained
+  // degrees of freedom. This means that we simply copy the constrained values to the
+  // dst vector.
+  for(unsigned int const constrained_index :
+      matrix_free->get_constrained_dofs(this->data.dof_index))
+  {
+    dst.local_element(constrained_index) = src.local_element(constrained_index);
   }
 }
 
@@ -318,12 +318,12 @@ OperatorBase<dim, Number, n_components>::apply_add(VectorType & dst, VectorType 
     // See function apply() for additional comments.
     // Note that MatrixFree will not touch constrained degrees of freedom in the dst-vector.
     matrix_free->cell_loop(&This::cell_loop, this, dst, src);
+  }
 
-    for(unsigned int const constrained_index :
-        matrix_free->get_constrained_dofs(this->data.dof_index))
-    {
-      dst.local_element(constrained_index) += src.local_element(constrained_index);
-    }
+  for(unsigned int const constrained_index :
+      matrix_free->get_constrained_dofs(this->data.dof_index))
+  {
+    dst.local_element(constrained_index) += src.local_element(constrained_index);
   }
 }
 
@@ -596,9 +596,10 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
   // compute diagonal
   if(is_dg and evaluate_face_integrals())
   {
+    unsigned int dummy = 0;
     if(data.use_cell_based_loops)
     {
-      matrix_free->cell_loop(&This::cell_based_loop_diagonal, this, diagonal, diagonal);
+      matrix_free->cell_loop(&This::cell_based_loop_diagonal, this, diagonal, dummy);
     }
     else
     {
@@ -607,7 +608,13 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
                         &This::boundary_face_loop_diagonal,
                         this,
                         diagonal,
-                        diagonal);
+                        dummy);
+    }
+
+    for(unsigned int const constrained_index :
+        matrix_free->get_constrained_dofs(this->data.dof_index))
+    {
+      diagonal.local_element(constrained_index) += 1.0;
     }
   }
   else
@@ -1477,11 +1484,9 @@ void
 OperatorBase<dim, Number, n_components>::cell_loop_diagonal(
   dealii::MatrixFree<dim, Number> const & matrix_free,
   VectorType &                            dst,
-  VectorType const &                      src,
-  Range const &                           range) const
+  unsigned int const &,
+  Range const & range) const
 {
-  (void)src;
-
   IntegratorCell integrator =
     IntegratorCell(matrix_free, this->data.dof_index, this->data.quad_index);
 
@@ -1521,11 +1526,9 @@ void
 OperatorBase<dim, Number, n_components>::face_loop_diagonal(
   dealii::MatrixFree<dim, Number> const & matrix_free,
   VectorType &                            dst,
-  VectorType const &                      src,
-  Range const &                           range) const
+  unsigned int const &,
+  Range const & range) const
 {
-  (void)src;
-
   IntegratorFace integrator_m =
     IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
   IntegratorFace integrator_p =
@@ -1584,11 +1587,9 @@ void
 OperatorBase<dim, Number, n_components>::boundary_face_loop_diagonal(
   dealii::MatrixFree<dim, Number> const & matrix_free,
   VectorType &                            dst,
-  VectorType const &                      src,
-  Range const &                           range) const
+  unsigned int const &,
+  Range const & range) const
 {
-  (void)src;
-
   IntegratorFace integrator_m =
     IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
 
@@ -1628,11 +1629,9 @@ void
 OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
   dealii::MatrixFree<dim, Number> const & matrix_free,
   VectorType &                            dst,
-  VectorType const &                      src,
-  Range const &                           range) const
+  unsigned int const &,
+  Range const & range) const
 {
-  (void)src;
-
   IntegratorCell integrator =
     IntegratorCell(matrix_free, this->data.dof_index, this->data.quad_index);
   IntegratorFace integrator_m =

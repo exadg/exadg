@@ -651,26 +651,26 @@ private:
   void
   cell_loop_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
                      VectorType &                            dst,
-                     VectorType const &                      src,
-                     Range const &                           range) const;
+                     unsigned int const &,
+                     Range const & range) const;
 
   void
   face_loop_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
                      VectorType &                            dst,
-                     VectorType const &                      src,
-                     Range const &                           range) const;
+                     unsigned int const &,
+                     Range const & range) const;
 
   void
   boundary_face_loop_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
                               VectorType &                            dst,
-                              VectorType const &                      src,
-                              Range const &                           range) const;
+                              unsigned int const &,
+                              Range const & range) const;
 
   void
   cell_based_loop_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
                            VectorType &                            dst,
-                           VectorType const &                      src,
-                           Range const &                           range) const;
+                           unsigned int const &,
+                           Range const & range) const;
 
   /*
    * Calculate (assemble) block diagonal.

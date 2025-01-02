@@ -38,7 +38,8 @@ enum class InverseMassType
 enum class PreconditionerMass
 {
   None,
-  PointJacobi
+  PointJacobi,
+  LumpedDiagonal
 };
 
 /**
