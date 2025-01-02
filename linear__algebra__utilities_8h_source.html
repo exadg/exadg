@@ -241,19 +241,20 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>    dealii::LinearAlgebra::distributed::Vector&lt;double&gt; dst_double, src_double;</div>
 <div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>    dst_double.reinit(dst, <span class="keyword">true</span>); <span class="comment">// do not zero entries</span></div>
 <div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>    src_double.reinit(src, <span class="keyword">true</span>); <span class="comment">// do not zero entries</span></div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>    src_double.copy_locally_owned_data_from(src);</div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span> </div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>    operation(dst_double, src_double);</div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span> </div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>    <span class="comment">// convert: double -&gt; Number</span></div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>    dst.copy_locally_owned_data_from(dst_double);</div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>  }</div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>}</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>    dst_double.copy_locally_owned_data_from(dst);</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>    src_double.copy_locally_owned_data_from(src);</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span> </div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>    operation(dst_double, src_double);</div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span> </div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>    <span class="comment">// convert: double -&gt; Number</span></div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>    dst.copy_locally_owned_data_from(dst_double);</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>  }</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>}</div>
 </div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span> </div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span> </div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_SOLVERS_AND_PRECONDITIONERS_LINEAR_ALGEBRA_UTILITIES_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span> </div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span> </div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_SOLVERS_AND_PRECONDITIONERS_LINEAR_ALGEBRA_UTILITIES_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 <div class="ttc" id="anamespaceExaDG_html_aa998bf14de6ea2ca3e973e3185396215"><div class="ttname"><a href="namespaceExaDG.html#aa998bf14de6ea2ca3e973e3185396215">ExaDG::apply_function_in_double_precision</a></div><div class="ttdeci">void apply_function_in_double_precision(dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; &amp;dst, dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; const &amp;src, std::function&lt; void(dealii::LinearAlgebra::distributed::Vector&lt; double &gt; &amp;, dealii::LinearAlgebra::distributed::Vector&lt; double &gt; const &amp;)&gt; operation)</div><div class="ttdef"><b>Definition</b> linear_algebra_utilities.h:140</div></div>
 </div><!-- fragment --></div><!-- contents -->
