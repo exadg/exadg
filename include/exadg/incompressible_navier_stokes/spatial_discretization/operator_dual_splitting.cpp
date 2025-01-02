@@ -506,50 +506,65 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary_face(
   Range const &                           face_range) const
 {
   unsigned int const dof_index_velocity = this->get_dof_index_velocity();
-  unsigned int const dof_index_pressure = this->get_quad_index_pressure();
+  unsigned int const dof_index_pressure = this->get_dof_index_pressure();
   unsigned int const quad_index         = this->get_quad_index_velocity_standard();
 
-  FaceIntegratorU omega(matrix_free, true, dof_index_velocity, quad_index);
+  CellIntegrator<dim, dim, Number> velocity(matrix_free,
+                                            dof_index_velocity,
+                                            this->get_quad_index_velocity_nodal_points());
+
+  FaceIntegratorU omega(matrix_free, true, this->get_dof_index_velocity_scalar(), quad_index);
 
   FaceIntegratorP pressure(matrix_free, true, dof_index_pressure, quad_index);
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    pressure.reinit(face);
-
-    omega.reinit(face);
-    omega.gather_evaluate(src, dealii::EvaluationFlags::gradients);
-
     BoundaryTypeP boundary_type =
       this->boundary_descriptor->pressure->get_boundary_type(matrix_free.get_boundary_id(face));
 
-    for(unsigned int q = 0; q < pressure.n_q_points; ++q)
+    if(boundary_type == BoundaryTypeP::Neumann)
     {
-      scalar viscosity = this->get_viscosity_boundary_face(face, q);
+      pressure.reinit(face);
+      omega.reinit(face);
 
-      if(boundary_type == BoundaryTypeP::Neumann)
+      std::array<unsigned int, FaceIntegratorP::value_type::size()> cell_indices;
+      for(unsigned int i = 0; i < cell_indices.size(); ++i)
+        cell_indices[i] = matrix_free.get_face_info(face).cells_interior[i];
+      velocity.reinit(cell_indices);
+      velocity.gather_evaluate(src, dealii::EvaluationFlags::gradients);
+
+      for(unsigned int q = 0; q < velocity.n_q_points; ++q)
       {
-        scalar h = dealii::make_vectorized_array<Number>(0.0);
+        vector curl_u = CurlCompute<dim, CellIntegrator<dim, dim, Number>>::compute(velocity, q);
+        for(unsigned int d = 0; d < dim; ++d)
+          omega.begin_dof_values()[q + d * velocity.n_q_points] = curl_u[d];
+      }
 
-        vector normal = pressure.get_normal_vector(q);
+      omega.evaluate(dealii::EvaluationFlags::gradients);
 
-        vector curl_omega = CurlCompute<dim, FaceIntegratorU>::compute(omega, q);
+      for(unsigned int q = 0; q < pressure.n_q_points; ++q)
+      {
+        scalar const viscosity = this->get_viscosity_boundary_face(face, q);
 
-        h = -normal * (viscosity * curl_omega);
+        vector const normal = pressure.get_normal_vector(q);
+
+        vector const curl_omega = CurlCompute<dim, FaceIntegratorU>::compute(omega, q);
+
+        scalar const h = -normal * (viscosity * curl_omega);
 
         pressure.submit_value(h, q);
       }
-      else if(boundary_type == BoundaryTypeP::Dirichlet)
-      {
-        pressure.submit_value(dealii::make_vectorized_array<Number>(0.0), q);
-      }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
+      pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
-    pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
+    else if(boundary_type == BoundaryTypeP::Dirichlet)
+    {
+      // do nothing
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
   }
 }
 
