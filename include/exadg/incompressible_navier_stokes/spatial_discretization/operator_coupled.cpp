@@ -1206,23 +1206,21 @@ OperatorCoupled<dim, Number>::apply_inverse_negative_laplace_operator(VectorType
   }
   else // exact_inversion_of_laplace_operator == true
   {
-    // solve a linear system of equations for negative Laplace operator to given (relative)
-    // tolerance using the PCG method
+    // solve a linear system of equations related to the negative Laplace operator to given
+    // (relative) tolerance using an iterative method
     VectorType const * pointer_to_src = &src;
-    if(this->is_pressure_level_undefined())
+
+    // manipulate src-vector if operator is singular
+    VectorType vector_zero_mean;
+    if(laplace_operator->operator_is_singular())
     {
-      VectorType vector_zero_mean;
       vector_zero_mean = src;
-
-      if(laplace_operator->operator_is_singular())
-      {
-        dealii::VectorTools::subtract_mean_value(vector_zero_mean);
-      }
-
+      dealii::VectorTools::subtract_mean_value(vector_zero_mean);
       pointer_to_src = &vector_zero_mean;
     }
 
     dst = 0.0;
+
     // Note that the preconditioner is not updated here since it has
     // already been updated in the function update_block_preconditioner().
     solver_pressure_block->solve(dst, *pointer_to_src);

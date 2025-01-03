@@ -34,6 +34,7 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         1
   IP factor:                                 1.0000e+00
+  Use matrix-based implementation:           false
 
 Solver:
   Solver:                                    CG
@@ -124,6 +125,7 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         2
   IP factor:                                 1.0000e+00
+  Use matrix-based implementation:           false
 
 Solver:
   Solver:                                    CG
@@ -214,6 +216,7 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         3
   IP factor:                                 1.0000e+00
+  Use matrix-based implementation:           false
 
 Solver:
   Solver:                                    CG
@@ -304,6 +307,7 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         4
   IP factor:                                 1.0000e+00
+  Use matrix-based implementation:           false
 
 Solver:
   Solver:                                    CG
@@ -394,6 +398,7 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         5
   IP factor:                                 1.0000e+00
+  Use matrix-based implementation:           false
 
 Solver:
   Solver:                                    CG
@@ -484,6 +489,7 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         6
   IP factor:                                 1.0000e+00
+  Use matrix-based implementation:           false
 
 Solver:
   Solver:                                    CG
@@ -574,6 +580,7 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         7
   IP factor:                                 1.0000e+00
+  Use matrix-based implementation:           false
 
 Solver:
   Solver:                                    CG

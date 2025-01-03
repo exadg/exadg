@@ -24,7 +24,7 @@
 
 // deal.II
 #include <deal.II/base/mpi.h>
-#include <deal.II/base/mpi_compute_index_owner_internal.h>
+#include <deal.II/base/mpi_consensus_algorithms.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/dofs/dof_handler.h>
@@ -425,29 +425,14 @@ apply_taylor_green_symmetry(dealii::DoFHandler<dim> const & dof_handler_symm,
 
   // determine who has and who wants data
   std::map<unsigned int, std::vector<unsigned int>> recv_map_proc_to_lex_offset;
-  std::map<unsigned int, dealii::IndexSet>          send_map_proc_to_lex;
+  const auto [owning_ranks_of_ghosts, send_map_proc_to_lex] =
+    dealii::Utilities::MPI::compute_index_owner_and_requesters(range_has_lex, range_want_lex, comm);
 
-  {
-    std::vector<unsigned int> owning_ranks_of_ghosts(range_want_lex.n_elements());
+  for(auto const & owner : owning_ranks_of_ghosts)
+    recv_map_proc_to_lex_offset[owner] = std::vector<unsigned int>();
 
-    // set up dictionary
-    dealii::Utilities::MPI::internal::ComputeIndexOwner::ConsensusAlgorithmsPayload process(
-      range_has_lex, range_want_lex, comm, owning_ranks_of_ghosts, true);
-
-    dealii::Utilities::MPI::ConsensusAlgorithms::Selector<
-      std::vector<std::pair<dealii::types::global_dof_index, dealii::types::global_dof_index>>,
-      std::vector<unsigned int>>
-      consensus_algorithm;
-    consensus_algorithm.run(process, comm);
-
-    for(auto const & owner : owning_ranks_of_ghosts)
-      recv_map_proc_to_lex_offset[owner] = std::vector<unsigned int>();
-
-    for(unsigned int i = 0; i < owning_ranks_of_ghosts.size(); i++)
-      recv_map_proc_to_lex_offset[owning_ranks_of_ghosts[i]].push_back(i);
-
-    send_map_proc_to_lex = process.get_requesters();
-  }
+  for(unsigned int i = 0; i < owning_ranks_of_ghosts.size(); i++)
+    recv_map_proc_to_lex_offset[owning_ranks_of_ghosts[i]].push_back(i);
 
   // perform data exchange and fill this buffer
   std::vector<double> data_buffer(range_want_lex.n_elements() * fe.n_dofs_per_cell());

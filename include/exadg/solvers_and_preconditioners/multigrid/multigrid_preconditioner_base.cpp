@@ -326,9 +326,7 @@ template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mapping()
 {
-  unsigned int const n_h_levels = level_info.back().h_level() - level_info.front().h_level() + 1;
-
-  multigrid_mappings->initialize_coarse_mappings(*grid, n_h_levels);
+  multigrid_mappings->initialize_coarse_mappings(*grid, this->get_number_of_h_levels());
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -336,9 +334,7 @@ dealii::Mapping<dim> const &
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::get_mapping(
   unsigned int const h_level) const
 {
-  unsigned int const n_h_levels = level_info.back().h_level() - level_info.front().h_level() + 1;
-
-  return multigrid_mappings->get_mapping(h_level, n_h_levels);
+  return multigrid_mappings->get_mapping(h_level, this->get_number_of_h_levels());
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -350,6 +346,17 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::get_number_of_levels(
                 "MultigridPreconditionerBase: level_info seems to be uninitialized."));
 
   return level_info.size();
+}
+
+template<int dim, typename Number, typename MultigridNumber>
+unsigned int
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::get_number_of_h_levels() const
+{
+  AssertThrow(level_info.size() > 0,
+              dealii::ExcMessage(
+                "MultigridPreconditionerBase: level_info seems to be uninitialized."));
+
+  return (level_info.back().h_level() - level_info.front().h_level() + 1);
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -471,8 +478,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
       dealii::Functions::ZeroFunction<dim, MultigridNumber> zero_function(
         dof_handler->get_fe().n_components());
 
-      auto const & mapping_dummy =
-        dof_handler->get_fe().reference_cell().template get_default_linear_mapping<dim>();
+      auto const & mapping_dummy = dealii::get_default_linear_mapping<dim>(*grid->triangulation);
 
       for(auto & it : dirichlet_bc)
       {

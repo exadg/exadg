@@ -82,6 +82,9 @@ private:
     this->param.spatial_discretization = SpatialDiscretization::DG;
     this->param.IP_factor              = 1.0e0;
 
+    this->param.use_matrix_based_implementation = false;
+    this->param.sparse_matrix_type              = SparseMatrixType::Trilinos;
+
     // SOLVER
     this->param.solver         = LinearSolver::CG;
     this->param.preconditioner = Preconditioner::None;
