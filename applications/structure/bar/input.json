@@ -5,8 +5,8 @@
         "IsTest": "false"
     },
     "SpatialResolution": {
-        "DegreeMin": "4",
-        "DegreeMax": "4",
+        "DegreeMin": "2",
+        "DegreeMax": "2",
         "RefineSpaceMin": "1",
         "RefineSpaceMax": "1"
     },
@@ -26,11 +26,12 @@
         "VolumeForce": "1.0",
         "BoundaryType": "Dirichlet",
         "Displacement": "20.0",
-        "Traction":	"0.0"
+        "Traction":	"0.0",
+        "AdaptiveRefinement": "true"
     },
     "Output": {
         "OutputDirectory": "output/bar/",
         "OutputName": "test",
-        "WriteOutput": "false"
+        "WriteOutput": "true"
     }
 }
