@@ -399,7 +399,7 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
 
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::set_inhomogeneous_boundary_values(
+LaplaceOperator<dim, Number, n_components>::set_inhomogeneous_constrained_values(
   VectorType & dst) const
 {
   // standard Dirichlet boundary conditions
@@ -485,6 +485,12 @@ LaplaceOperator<dim, Number, n_components>::set_inhomogeneous_boundary_values(
       }
     }
   }
+
+  // periodicity and hanging node constraints
+  unsigned int const dof_index_inhomogeneous = this->get_dof_index_inhomogeneous();
+  dealii::AffineConstraints<Number> const & constraints =
+    this->matrix_free->get_affine_constraints(dof_index_inhomogeneous);
+  constraints.distribute(dst);
 }
 
 template class LaplaceOperator<2, float, 1>;

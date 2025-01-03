@@ -110,7 +110,7 @@ ElasticityOperatorBase<dim, Number>::get_scaling_factor_mass_operator() const
 
 template<int dim, typename Number>
 void
-ElasticityOperatorBase<dim, Number>::set_inhomogeneous_boundary_values(VectorType & dst) const
+ElasticityOperatorBase<dim, Number>::set_inhomogeneous_constrained_values(VectorType & dst) const
 {
   // standard Dirichlet boundary conditions
   std::map<dealii::types::global_dof_index, double> boundary_values;
@@ -193,6 +193,12 @@ ElasticityOperatorBase<dim, Number>::set_inhomogeneous_boundary_values(VectorTyp
       }
     }
   }
+
+  // periodicity and hanging node constraints
+  unsigned int const dof_index_inhomogeneous = this->get_dof_index_inhomogeneous();
+  dealii::AffineConstraints<Number> const & constraints =
+    this->matrix_free->get_affine_constraints(dof_index_inhomogeneous);
+  constraints.distribute(dst);
 }
 
 template<int dim, typename Number>

@@ -132,6 +132,15 @@ OperatorBase<dim, Number, n_components>::get_dof_index() const
 
 template<int dim, typename Number, int n_components>
 unsigned int
+OperatorBase<dim, Number, n_components>::get_dof_index_inhomogeneous() const
+{
+  AssertThrow(data.dof_index_inhomogeneous != dealii::numbers::invalid_unsigned_int,
+              dealii::ExcMessage("dof_index_inhomogeneous is uninitialized."));
+  return this->data.dof_index_inhomogeneous;
+}
+
+template<int dim, typename Number, int n_components>
+unsigned int
 OperatorBase<dim, Number, n_components>::get_quad_index() const
 {
   return this->data.quad_index;
@@ -502,9 +511,9 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
     src_tmp.reinit(rhs, false);
     dst_tmp.reinit(rhs, false);
 
-    // Set constrained degrees of freedom according to inhomogeneous Dirichlet boundary conditions.
-    //  The rest of the vector remains unchanged.
-    set_inhomogeneous_boundary_values(src_tmp);
+    // Set constrained degrees of freedom according to inhomogeneous Dirichlet boundary conditions,
+    // hanging node and periodicity constraints. The rest of the vector remains unchanged.
+    set_inhomogeneous_constrained_values(src_tmp);
 
     // Since src_tmp = 0 apart from inhomogeneous boundary data, the function evaluate_add() only
     // computes the inhomogeneous part of the operator.
@@ -1132,7 +1141,7 @@ OperatorBase<dim, Number, n_components>::do_boundary_integral_continuous(
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::set_inhomogeneous_boundary_values(
+OperatorBase<dim, Number, n_components>::set_inhomogeneous_constrained_values(
   VectorType & solution) const
 {
   (void)solution;
@@ -1140,7 +1149,7 @@ OperatorBase<dim, Number, n_components>::set_inhomogeneous_boundary_values(
   AssertThrow(
     false,
     dealii::ExcMessage(
-      "OperatorBase::set_inhomogeneous_boundary_values() has to be overridden by derived class!"));
+      "OperatorBase::set_inhomogeneous_constrained_values() has to be overridden by derived class!"));
 }
 
 template<int dim, typename Number, int n_components>
