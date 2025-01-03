@@ -502,6 +502,8 @@ Operator<dim, n_components, Number>::solve(VectorType &       sol,
   {
     laplace_operator.set_time(time);
     laplace_operator.set_inhomogeneous_boundary_values(sol);
+
+    affine_constraints_periodicity_and_hanging_nodes.distribute(sol);
   }
 
   return n_iterations;
