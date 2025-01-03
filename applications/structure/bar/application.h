@@ -267,8 +267,9 @@ public:
       prm.add_parameter("Traction",
                         area_force,
                         "Traction acting on right boundary in case of Neumann BC.");
-      prm.add_parameter("AdaptiveRefinement", adaptive_refinement, 
-                        "Adaptive refinement of the mesh.");
+      prm.add_parameter("AdaptiveRefinement",
+                        adaptive_refinement,
+                        "Static adaptive refinement of the mesh.");
     }
     prm.leave_subsection();
   }
@@ -461,7 +462,7 @@ private:
     {
       // Flag all cells touching one of the boundaries with a face.
       std::vector<dealii::types::boundary_id> refine_bdry_id = {1, 3};
-      bool constexpr n_adaptive_refinements = 2;
+      bool constexpr n_adaptive_refinements                  = 2;
       for(unsigned int i = 0; i < n_adaptive_refinements; ++i)
       {
         for(auto const & cell : grid.triangulation->active_cell_iterators())
