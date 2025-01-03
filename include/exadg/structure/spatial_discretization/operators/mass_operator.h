@@ -82,11 +82,11 @@ public:
 
     dst.update_ghost_values();
 
-//    // periodicity and hanging node constraints
-//    unsigned int const dof_index_inhomogeneous = this->get_dof_index_inhomogeneous();
-//    dealii::AffineConstraints<Number> const & constraints =
-//      this->matrix_free->get_affine_constraints(dof_index_inhomogeneous);
-//    constraints.distribute(dst);
+    // periodicity and hanging node constraints
+    unsigned int const dof_index_inhomogeneous = this->get_dof_index_inhomogeneous();
+    dealii::AffineConstraints<Number> const & constraints =
+      this->matrix_free->get_affine_constraints(dof_index_inhomogeneous);
+    constraints.distribute(dst);
   }
 
 private:

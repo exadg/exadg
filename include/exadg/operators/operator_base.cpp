@@ -1018,6 +1018,9 @@ OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix(
   {
     if(dof_handler.locally_owned_dofs().is_element(line.index))
     {
+      std::cout << "system_matrix.el(i,i) = " 
+                << system_matrix.el(line.index, line.index)
+                << std::endl;
       system_matrix.set(line.index, line.index, 1.0);
     }
   }
