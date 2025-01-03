@@ -5,8 +5,8 @@
         "IsTest": "false"
     },
     "SpatialResolution": {
-        "DegreeMin": "2",
-        "DegreeMax": "2",
+        "DegreeMin": "4",
+        "DegreeMax": "4",
         "RefineSpaceMin": "1",
         "RefineSpaceMax": "1"
     },
@@ -18,7 +18,7 @@
         "Length": "100.0",
         "Height": "10.0",
         "Width": "10.0",
-        "ProblemType": "QuasiStatic",
+        "ProblemType": "Unsteady",
         "LargeDeformation": "true",
         "Preconditioner": "Multigrid",
         "WeakDamping": "0.0",

@@ -194,11 +194,12 @@ ElasticityOperatorBase<dim, Number>::set_inhomogeneous_constrained_values(Vector
     }
   }
 
-  // periodicity and hanging node constraints
-  unsigned int const dof_index_inhomogeneous = this->get_dof_index_inhomogeneous();
-  dealii::AffineConstraints<Number> const & constraints =
-    this->matrix_free->get_affine_constraints(dof_index_inhomogeneous);
-  constraints.distribute(dst);
+  // // periodicity and hanging node constraints
+  // unsigned int const dof_index_inhomogeneous = this->get_dof_index_inhomogeneous();
+  // std::cout << "dof_index_inhomogeneous: " << dof_index_inhomogeneous << std::endl;
+  // dealii::AffineConstraints<Number> const & constraints =
+  //   this->matrix_free->get_affine_constraints(dof_index_inhomogeneous);
+  // constraints.distribute(dst);
 }
 
 template<int dim, typename Number>

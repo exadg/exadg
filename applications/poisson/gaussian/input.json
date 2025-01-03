@@ -5,19 +5,19 @@
         "IsTest": "false"
     },
     "SpatialResolution": {
-        "DegreeMin": "3",
-        "DegreeMax": "3",
+        "DegreeMin": "1",
+        "DegreeMax": "15",
         "RefineSpaceMin": "3",
         "RefineSpaceMax": "3"
     },
     "Application": {
         "MeshType": "Cartesian",
         "GlobalCoarsening": "false",
-        "AdaptiveRefinement": "true"
+        "AdaptiveRefinement": "false"
     },
     "Output": {
         "OutputDirectory": "output/poisson/gaussian/",
         "OutputName": "gaussian",
-        "WriteOutput": "true"
+        "WriteOutput": "false"
     }
 }
