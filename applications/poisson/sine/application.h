@@ -385,7 +385,7 @@ private:
 
   bool const read_external_grid = false;
 
-  MeshType mesh_type = MeshType::Cartesian;
+  MeshType       mesh_type      = MeshType::Cartesian;
   Preconditioner preconditioner = Preconditioner::Multigrid;
 };
 
