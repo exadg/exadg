@@ -1,0 +1,219 @@
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up Poisson solver:
+
+List of parameters:
+
+Mathematical model:
+  Right-hand side:                           true
+
+Spatial Discretization:
+  Triangulation type:                        Distributed
+  Element type:                              Hypercube
+  Number of global refinements:              2
+  Create coarse triangulations:              false
+  Mapping degree:                            3
+  FE space:                                  DG
+  Polynomial degree:                         1
+  IP factor:                                 1.0000e+00
+  Use matrix-based implementation:           false
+
+Solver:
+  Solver:                                    CG
+  Maximum number of iterations:              10000
+  Absolute solver tolerance:                 1.0000e-20
+  Relative solver tolerance:                 1.0000e-10
+  Maximum size of Krylov space:              30
+  Preconditioner:                            AMG
+
+Numerical parameters:
+  Enable cell-based face loops:              false
+
+Generating grid for 3-dimensional problem:
+
+  Max. number of refinements:                2
+  Number of cells:                           512
+
+Construct Poisson operator ...
+
+
+Discontinuous Galerkin finite element discretization:
+
+  degree of 1D polynomials:                  1
+  number of dofs per cell:                   8
+  number of dofs (total):                    4096
+
+... done!
+
+Setup Poisson operator ...
+
+... done!
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 1.00000e+00
+
+Calculate error for all fields for solution data:
+  Relative error (L2-norm): 6.97749e-01
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up Poisson solver:
+
+List of parameters:
+
+Mathematical model:
+  Right-hand side:                           true
+
+Spatial Discretization:
+  Triangulation type:                        Distributed
+  Element type:                              Hypercube
+  Number of global refinements:              2
+  Create coarse triangulations:              false
+  Mapping degree:                            3
+  FE space:                                  DG
+  Polynomial degree:                         2
+  IP factor:                                 1.0000e+00
+  Use matrix-based implementation:           false
+
+Solver:
+  Solver:                                    CG
+  Maximum number of iterations:              10000
+  Absolute solver tolerance:                 1.0000e-20
+  Relative solver tolerance:                 1.0000e-10
+  Maximum size of Krylov space:              30
+  Preconditioner:                            AMG
+
+Numerical parameters:
+  Enable cell-based face loops:              false
+
+Generating grid for 3-dimensional problem:
+
+  Max. number of refinements:                2
+  Number of cells:                           512
+
+Construct Poisson operator ...
+
+
+Discontinuous Galerkin finite element discretization:
+
+  degree of 1D polynomials:                  2
+  number of dofs per cell:                   27
+  number of dofs (total):                    13824
+
+... done!
+
+Setup Poisson operator ...
+
+... done!
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 1.00000e+00
+
+Calculate error for all fields for solution data:
+  Relative error (L2-norm): 1.44021e-01
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up Poisson solver:
+
+List of parameters:
+
+Mathematical model:
+  Right-hand side:                           true
+
+Spatial Discretization:
+  Triangulation type:                        Distributed
+  Element type:                              Hypercube
+  Number of global refinements:              2
+  Create coarse triangulations:              false
+  Mapping degree:                            3
+  FE space:                                  DG
+  Polynomial degree:                         3
+  IP factor:                                 1.0000e+00
+  Use matrix-based implementation:           false
+
+Solver:
+  Solver:                                    CG
+  Maximum number of iterations:              10000
+  Absolute solver tolerance:                 1.0000e-20
+  Relative solver tolerance:                 1.0000e-10
+  Maximum size of Krylov space:              30
+  Preconditioner:                            AMG
+
+Numerical parameters:
+  Enable cell-based face loops:              false
+
+Generating grid for 3-dimensional problem:
+
+  Max. number of refinements:                2
+  Number of cells:                           512
+
+Construct Poisson operator ...
+
+
+Discontinuous Galerkin finite element discretization:
+
+  degree of 1D polynomials:                  3
+  number of dofs per cell:                   64
+  number of dofs (total):                    32768
+
+... done!
+
+Setup Poisson operator ...
+
+... done!
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 1.00000e+00
+
+Calculate error for all fields for solution data:
+  Relative error (L2-norm): 4.69051e-02

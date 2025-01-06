@@ -257,7 +257,7 @@ public:
                         "Consider finite strains or linear elasticity.");
       prm.add_parameter("Preconditioner",
                         preconditioner,
-                        "None, PointJacobi, AMG, AdditiveSchwarz or Multigrid");
+                        "Preconditioner employed for implicit solution procedure.");
       prm.add_parameter("WeakDamping",
                         weak_damping_coefficient,
                         "Weak damping coefficient for unsteady problems.");

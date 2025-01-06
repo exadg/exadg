@@ -6,13 +6,13 @@
     },
     "SpatialResolution": {
         "DegreeMin": "1",
-        "DegreeMax": "7",
+        "DegreeMax": "3",
         "RefineSpaceMin": "2",
         "RefineSpaceMax": "2"
     },
     "Application": {
         "MeshType": "Curvilinear",
-        "Preconditioner": "Multigrid"
+        "Preconditioner": "AMG"
     },
     "Output": {
         "OutputDirectory": "output/poisson/sine/",

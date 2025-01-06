@@ -29,7 +29,9 @@
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
 
-#include <ml_MultiLevelPreconditioner.h>
+#ifdef DEAL_II_WITH_TRILINOS
+#  include <ml_MultiLevelPreconditioner.h>
+#endif
 
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
