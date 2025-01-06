@@ -296,8 +296,6 @@ private:
 
     if(adaptive_refinement && this->param.grid.element_type == ElementType::Hypercube)
     {
-      std::cout << "DOING SOME ADAPTIVE REFINEMENT\n";
-
       // Flag all cells touching one of the boundaries with a face.
       std::vector<dealii::types::boundary_id> refine_bdry_id = {0};
       bool constexpr n_adaptive_refinements                  = 2;
@@ -317,8 +315,6 @@ private:
                 {
                   cell->clear_coarsen_flag();
                   cell->set_refine_flag();
-                  std::cout << "Refining cell " << cell->id() << " at boundary "
-                            << cell->face(face)->boundary_id() << std::endl;
                 }
               }
             }

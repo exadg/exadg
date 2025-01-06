@@ -28,6 +28,7 @@
 #include <deal.II/lac/petsc_sparse_matrix.h>
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
+#include <deal.II/dofs/dof_handler.h>
 
 #include <ml_MultiLevelPreconditioner.h>
 
@@ -230,6 +231,10 @@ public:
     std::vector<std::vector<bool>>   constant_modes;
     std::vector<std::vector<double>> constant_modes_values;
     pde_operator.get_constant_modes(constant_modes, constant_modes_values);
+
+    std::cout << "constant_modes.size(): " << constant_modes.size() << std::endl;
+    std::cout << "constant_modes_values.size(): " << constant_modes_values.size() << std::endl;
+
     if(constant_modes.empty())
     {
       AssertThrow(constant_modes_values.size() > 0,
