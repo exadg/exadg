@@ -100,6 +100,7 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid operator type:                   ReactionDiffusion
   Multigrid type:                            hMG
+  Min degree matrix-free:                    1
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
   Iterations smoother:                       5
@@ -115,6 +116,7 @@ Linear solver:
   Pressure/Schur-complement block:
   Preconditioner:                            PressureConvectionDiffusion
   Multigrid type:                            hMG
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -161,10 +163,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 7.80921e-13
+  Absolute error (L2-norm): 7.10250e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 2.10768e-11
+  Absolute error (L2-norm): 1.93302e-11
 
 
 
@@ -267,6 +269,7 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid operator type:                   ReactionDiffusion
   Multigrid type:                            hMG
+  Min degree matrix-free:                    1
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
   Iterations smoother:                       5
@@ -282,6 +285,7 @@ Linear solver:
   Pressure/Schur-complement block:
   Preconditioner:                            PressureConvectionDiffusion
   Multigrid type:                            hMG
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -328,10 +332,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 4.17721e-13
+  Absolute error (L2-norm): 1.33547e-12
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 6.95824e-12
+  Absolute error (L2-norm): 3.75586e-11
 
 
 
@@ -434,6 +438,7 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid operator type:                   ReactionDiffusion
   Multigrid type:                            hMG
+  Min degree matrix-free:                    1
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
   Iterations smoother:                       5
@@ -449,6 +454,7 @@ Linear solver:
   Pressure/Schur-complement block:
   Preconditioner:                            PressureConvectionDiffusion
   Multigrid type:                            hMG
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -495,10 +501,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 2.96422e-14
+  Absolute error (L2-norm): 3.86312e-14
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 8.08894e-13
+  Absolute error (L2-norm): 1.07113e-12
 
 
 
@@ -601,6 +607,7 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid operator type:                   ReactionDiffusion
   Multigrid type:                            hMG
+  Min degree matrix-free:                    1
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
   Iterations smoother:                       5
@@ -616,6 +623,7 @@ Linear solver:
   Pressure/Schur-complement block:
   Preconditioner:                            PressureConvectionDiffusion
   Multigrid type:                            hMG
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -662,7 +670,7 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 9.09819e-12
+  Absolute error (L2-norm): 1.13400e-11
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 2.27289e-10
+  Absolute error (L2-norm): 2.90980e-10

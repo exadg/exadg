@@ -249,7 +249,8 @@ public:
   void
   initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
              dealii::AffineConstraints<Number> const & affine_constraints,
-             LaplaceOperatorData<rank, dim> const &    data);
+             LaplaceOperatorData<rank, dim> const &    data,
+             bool const                                assemble_matrix);
 
   LaplaceOperatorData<rank, dim> const &
   get_data() const

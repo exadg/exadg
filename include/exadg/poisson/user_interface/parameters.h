@@ -97,6 +97,9 @@ public:
   double IP_factor;
 
   // use a matrix-based implementation of linear(ized) operators
+  // Note that this parameter only decides about the implementation of the operator in the Krylov
+  // solver. The decision about matrix-based vs. matrix-free implementations within multigrid needs
+  // to be made separately.
   bool use_matrix_based_implementation;
 
   // this parameter is only relevant if use_matrix_based_implementation == true
