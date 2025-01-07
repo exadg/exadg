@@ -123,9 +123,7 @@ public:
     prm.enter_subsection("Application");
     {
       prm.add_parameter("MeshType", mesh_type, "Type of mesh (Cartesian versus curvilinear).");
-      prm.add_parameter("Preconditioner",
-                        preconditioner,
-                        "Preconditioner employed for implicit solution procedure.");
+      prm.add_parameter("Preconditioner", preconditioner, "Preconditioner for the linear system.");
     }
     prm.leave_subsection();
   }
