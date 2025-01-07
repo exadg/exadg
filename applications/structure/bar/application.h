@@ -257,7 +257,7 @@ public:
                         "Consider finite strains or linear elasticity.");
       prm.add_parameter("Preconditioner",
                         preconditioner,
-                        "Preconditioner employed for implicit solution procedure.");
+                        "Preconditioner for the linear system.");
       prm.add_parameter("WeakDamping",
                         weak_damping_coefficient,
                         "Weak damping coefficient for unsteady problems.");
