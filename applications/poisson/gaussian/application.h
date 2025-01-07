@@ -194,6 +194,9 @@ public:
       prm.add_parameter("AdaptiveRefinement",
                         adaptive_refinement,
                         "Static adaptive refinement of the mesh.");
+      prm.add_parameter("Preconditioner",
+                        preconditioner,
+                        "None, PointJacobi, AMG, AdditiveSchwarz or Multigrid");
     }
     prm.leave_subsection();
   }
@@ -222,7 +225,7 @@ private:
     this->param.solver_data.rel_tol         = 1.e-10;
     this->param.solver_data.max_iter        = 1e4;
     this->param.compute_performance_metrics = true;
-    this->param.preconditioner              = Preconditioner::Multigrid;
+    this->param.preconditioner              = preconditioner;
     this->param.multigrid_data.type         = MultigridType::cphMG;
     this->param.multigrid_data.p_sequence   = PSequenceType::Bisect;
     // MG smoother
@@ -389,8 +392,9 @@ private:
 
   MeshType mesh_type = MeshType::Cartesian;
 
-  bool global_coarsening   = false;
-  bool adaptive_refinement = false;
+  bool           global_coarsening   = false;
+  bool           adaptive_refinement = false;
+  Preconditioner preconditioner      = Preconditioner::Multigrid;
 };
 
 } // namespace Poisson

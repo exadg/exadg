@@ -266,34 +266,7 @@ public:
    */
   virtual void
   get_constant_modes(std::vector<std::vector<bool>> &   constant_modes,
-                     std::vector<std::vector<double>> & constant_modes_values) const
-  {
-    (void)constant_modes_values;
-std::cout << "OperatorBase::get_constant_modes ##+" << std::endl;
-    dealii::DoFHandler<dim> const & dof_handler =
-      this->matrix_free->get_dof_handler(this->data.dof_index);
-
-##+ here we need to take something like matrix_free->mg_level_index() == invalid_unsigned_int
-
-    if(dof_handler.has_level_dofs())
-    {
-      // Extract coarse level rigid body modes.
-      std::cout << "has level DoFs. ##+\n"; 
-      std::cout << "n_components: " << n_components << std::endl;
-      constant_modes =
-        dealii::DoFTools::extract_level_constant_modes(0,
-                                                       dof_handler,
-                                                       dealii::ComponentMask(n_components, true));
-    }
-    else
-    {
-        std::cout << "has NO level DoFs. ##+\n";
-      // Extract finest level rigid body modes. 
-      constant_modes =
-        dealii::DoFTools::extract_constant_modes(dof_handler,
-                                                 dealii::ComponentMask(n_components, true));
-    }
-  }
+                     std::vector<std::vector<double>> & constant_modes_values) const;
 
   /*
    * Evaluate the homogeneous part of an operator. The homogeneous operator is the operator that is

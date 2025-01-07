@@ -28,7 +28,6 @@
 #include <deal.II/lac/petsc_sparse_matrix.h>
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
-#include <deal.II/dofs/dof_handler.h>
 
 #include <ml_MultiLevelPreconditioner.h>
 
@@ -221,7 +220,7 @@ public:
     // Re-calculate the system matrix.
     pde_operator.calculate_system_matrix(system_matrix);
 
-    // Construct AMG preconditioner based on `Teuchos::ParameterList`.
+    // Construct `Teuchos::ParameterList` for AMG preconditioner.
     unsigned int const     dimension      = pde_operator.get_matrix_free().dimension;
     Teuchos::ParameterList parameter_list = get_ML_parameter_list(ml_data, dimension);
 
@@ -235,9 +234,16 @@ public:
     std::cout << "constant_modes.size(): " << constant_modes.size() << std::endl;
     std::cout << "constant_modes_values.size(): " << constant_modes_values.size() << std::endl;
 
-    if(constant_modes.empty())
+    const unsigned int n_constant_modes =
+      dealii::Utilities::MPI::sum(constant_modes.size(), system_matrix.get_mpi_communicator());
+    std::cout << "n_constant_modes = " << n_constant_modes << std::endl;
+
+    if(n_constant_modes == 0)
     {
-      AssertThrow(constant_modes_values.size() > 0,
+      const unsigned int n_constant_modes_values =
+        dealii::Utilities::MPI::sum(constant_modes_values.size(),
+                                    system_matrix.get_mpi_communicator());
+      AssertThrow(n_constant_modes_values > 0,
                   dealii::ExcMessage(
                     "Neither `constant_modes` nor `constant_modes_values` were provided. "
                     "AMG setup requires near null space basis vectors."));
@@ -248,15 +254,19 @@ public:
       ml_data.constant_modes = constant_modes;
     }
 
-    // Add near null space basis vectors to Teuchos::ParameterList.
+    // Add near null space basis vectors to `Teuchos::ParameterList`.
     // `ptr_distributed_modes` must stay alive for amg.initialize()
     std::unique_ptr<Epetra_MultiVector> ptr_operator_modes;
     ml_data.set_operator_null_space(parameter_list,
                                     ptr_operator_modes,
                                     system_matrix.trilinos_matrix());
 
+    std::cout << "starting the initialization. \n";
+
     // Initialize with the `Teuchos::ParameterList`.
     amg.initialize(system_matrix, parameter_list);
+
+    std::cout << "done with the initialization. \n";
 
     this->update_needed = false;
   }

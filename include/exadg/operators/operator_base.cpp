@@ -1029,6 +1029,40 @@ OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix(
 
 template<int dim, typename Number, int n_components>
 void
+OperatorBase<dim, Number, n_components>::get_constant_modes(
+  std::vector<std::vector<bool>> &   constant_modes,
+  std::vector<std::vector<double>> & constant_modes_values) const
+{
+  (void)constant_modes_values;
+  std::cout << "OperatorBase::get_constant_modes ##+" << std::endl;
+  dealii::DoFHandler<dim> const & dof_handler =
+    this->matrix_free->get_dof_handler(this->data.dof_index);
+
+  std::cout << "this->level = " << this->level << std::endl;
+  std::cout << "this->matrix_free->get_mg_level() = " << this->matrix_free->get_mg_level()
+            << std::endl;
+  if(this->matrix_free->get_mg_level() != dealii::numbers::invalid_unsigned_int)
+  {
+    // Extract coarse level rigid body modes.
+    std::cout << "has level DoFs. ##+\n";
+    std::cout << "n_components: " << n_components << std::endl;
+    constant_modes =
+      dealii::DoFTools::extract_level_constant_modes(this->matrix_free->get_mg_level(),
+                                                     dof_handler,
+                                                     dealii::ComponentMask(n_components, true));
+  }
+  else
+  {
+    std::cout << "has NO level DoFs. ##+\n";
+    // Extract finest level rigid body modes.
+    constant_modes =
+      dealii::DoFTools::extract_constant_modes(dof_handler,
+                                               dealii::ComponentMask(n_components, true));
+  }
+}
+
+template<int dim, typename Number, int n_components>
+void
 OperatorBase<dim, Number, n_components>::reinit_cell(IntegratorCell &   integrator,
                                                      unsigned int const cell) const
 {
