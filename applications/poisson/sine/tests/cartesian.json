@@ -12,7 +12,7 @@
     },
     "Application": {
         "MeshType": "Cartesian",
-        "Preconditioner": "Multigrid"
+        "MultigridCoarseGridPreconditioner": "PointJacobi"
     },
     "Output": {
         "OutputDirectory": "output/poisson/sine/",

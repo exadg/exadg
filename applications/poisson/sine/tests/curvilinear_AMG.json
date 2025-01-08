@@ -12,7 +12,7 @@
     },
     "Application": {
         "MeshType": "Curvilinear",
-        "Preconditioner": "AMG"
+        "MultigridCoarseGridPreconditioner": "AMG"
     },
     "Output": {
         "OutputDirectory": "output/poisson/sine/",

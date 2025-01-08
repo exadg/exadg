@@ -30,6 +30,7 @@ Spatial Discretization:
   Number of global refinements:              2
   Create coarse triangulations:              false
   Mapping degree:                            3
+  Mapping degree coarse grids:               3
   FE space:                                  DG
   Polynomial degree:                         1
   IP factor:                                 1.0000e+00
@@ -41,7 +42,20 @@ Solver:
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
   Maximum size of Krylov space:              30
-  Preconditioner:                            AMG
+  Preconditioner:                            Multigrid
+  Multigrid type:                            cphMG
+  p-sequence:                                Bisect
+  Smoother:                                  Chebyshev
+  Preconditioner smoother:                   PointJacobi
+  Iterations smoother:                       5
+  Smoothing range:                           2.0000e+01
+  Iterations eigenvalue estimation:          20
+  Coarse grid solver:                        CG
+  Coarse grid preconditioner:                PointJacobi
+  Maximum number of iterations:              10000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-03
+  Maximum size of Krylov space:              30
 
 Numerical parameters:
   Enable cell-based face loops:              false
@@ -103,6 +117,7 @@ Spatial Discretization:
   Number of global refinements:              2
   Create coarse triangulations:              false
   Mapping degree:                            3
+  Mapping degree coarse grids:               3
   FE space:                                  DG
   Polynomial degree:                         2
   IP factor:                                 1.0000e+00
@@ -114,7 +129,20 @@ Solver:
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
   Maximum size of Krylov space:              30
-  Preconditioner:                            AMG
+  Preconditioner:                            Multigrid
+  Multigrid type:                            cphMG
+  p-sequence:                                Bisect
+  Smoother:                                  Chebyshev
+  Preconditioner smoother:                   PointJacobi
+  Iterations smoother:                       5
+  Smoothing range:                           2.0000e+01
+  Iterations eigenvalue estimation:          20
+  Coarse grid solver:                        CG
+  Coarse grid preconditioner:                PointJacobi
+  Maximum number of iterations:              10000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-03
+  Maximum size of Krylov space:              30
 
 Numerical parameters:
   Enable cell-based face loops:              false
@@ -176,6 +204,7 @@ Spatial Discretization:
   Number of global refinements:              2
   Create coarse triangulations:              false
   Mapping degree:                            3
+  Mapping degree coarse grids:               3
   FE space:                                  DG
   Polynomial degree:                         3
   IP factor:                                 1.0000e+00
@@ -187,7 +216,20 @@ Solver:
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
   Maximum size of Krylov space:              30
-  Preconditioner:                            AMG
+  Preconditioner:                            Multigrid
+  Multigrid type:                            cphMG
+  p-sequence:                                Bisect
+  Smoother:                                  Chebyshev
+  Preconditioner smoother:                   PointJacobi
+  Iterations smoother:                       5
+  Smoothing range:                           2.0000e+01
+  Iterations eigenvalue estimation:          20
+  Coarse grid solver:                        CG
+  Coarse grid preconditioner:                PointJacobi
+  Maximum number of iterations:              10000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-03
+  Maximum size of Krylov space:              30
 
 Numerical parameters:
   Enable cell-based face loops:              false
