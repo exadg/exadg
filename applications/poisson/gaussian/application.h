@@ -191,9 +191,6 @@ public:
                         global_coarsening,
                         "Use Global Coarsening",
                         dealii::Patterns::Bool());
-      prm.add_parameter("MultigridCoarseGridPreconditioner",
-                        multigrid_coarse_grid_preconditioner,
-                        "Preconditioner for the linear system on the coarse grid.");
     }
     prm.leave_subsection();
   }
@@ -226,8 +223,9 @@ private:
     this->param.multigrid_data.smoother_data.smoother   = MultigridSmoother::Chebyshev;
     this->param.multigrid_data.smoother_data.iterations = 5;
     // MG coarse grid solver
-    this->param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
-    this->param.multigrid_data.coarse_problem.preconditioner = multigrid_coarse_grid_preconditioner;
+    this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+    this->param.multigrid_data.coarse_problem.preconditioner =
+      MultigridCoarseGridPreconditioner::PointJacobi;
     this->param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-6;
   }
 
@@ -333,9 +331,7 @@ private:
 
   MeshType mesh_type = MeshType::Cartesian;
 
-  bool                              global_coarsening = false;
-  MultigridCoarseGridPreconditioner multigrid_coarse_grid_preconditioner =
-    MultigridCoarseGridPreconditioner::PointJacobi;
+  bool global_coarsening = false;
 };
 
 } // namespace Poisson

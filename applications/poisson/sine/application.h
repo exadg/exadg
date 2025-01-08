@@ -123,7 +123,9 @@ public:
     prm.enter_subsection("Application");
     {
       prm.add_parameter("MeshType", mesh_type, "Type of mesh (Cartesian versus curvilinear).");
-      prm.add_parameter("Preconditioner", preconditioner, "Preconditioner for the linear system.");
+      prm.add_parameter("MultigridCoarseGridPreconditioner",
+    		  multigrid_coarse_grid_preconditioner,
+			  "Preconditioner for the linear system on the coarse grid.");
     }
     prm.leave_subsection();
   }
@@ -164,7 +166,7 @@ private:
     this->param.solver_data.rel_tol         = 1.e-10;
     this->param.solver_data.max_iter        = 1e4;
     this->param.compute_performance_metrics = true;
-    this->param.preconditioner              = preconditioner;
+    this->param.preconditioner              = Preconditioner::Multigrid;
     this->param.multigrid_data.type         = MultigridType::cphMG;
     this->param.multigrid_data.p_sequence   = PSequenceType::Bisect;
     // MG smoother
@@ -173,8 +175,7 @@ private:
     this->param.multigrid_data.smoother_data.smoothing_range = 20;
     // MG coarse grid solver
     this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
-    this->param.multigrid_data.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::PointJacobi;
+    this->param.multigrid_data.coarse_problem.preconditioner = multigrid_coarse_grid_preconditioner;
     this->param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
   }
 
@@ -384,7 +385,8 @@ private:
   bool const read_external_grid = false;
 
   MeshType       mesh_type      = MeshType::Cartesian;
-  Preconditioner preconditioner = Preconditioner::Multigrid;
+  MultigridCoarseGridPreconditioner multigrid_coarse_grid_preconditioner =
+		  MultigridCoarseGridPreconditioner::PointJacobi;
 };
 
 } // namespace Poisson
