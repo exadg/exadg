@@ -476,7 +476,8 @@ public:
         [&](dealii::LinearAlgebra::distributed::Vector<double> &       dst_double,
             dealii::LinearAlgebra::distributed::Vector<double> const & src_double) {
           preconditioner_ml->vmult(dst_double, src_double);
-        });
+        },
+        true /* copy_dst_entries */);
 #else
       AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
@@ -522,7 +523,8 @@ public:
                                                                       src_double,
                                                                       solver_type,
                                                                       solver_data);
-        });
+        },
+        true /* copy_dst_entries */);
 #else
       AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif

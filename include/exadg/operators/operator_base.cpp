@@ -417,7 +417,8 @@ OperatorBase<dim, Number, n_components>::apply_matrix_based(VectorType &       d
       [&](dealii::LinearAlgebra::distributed::Vector<double> &       dst_double,
           dealii::LinearAlgebra::distributed::Vector<double> const & src_double) {
         system_matrix_trilinos.vmult(dst_double, src_double);
-      });
+      },
+      false /* copy_dst_entries */);
 #else
     AssertThrow(
       false,
