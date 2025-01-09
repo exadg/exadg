@@ -12,8 +12,8 @@ var searchData=
   ['for_5fall_5flevels_9',['for_all_levels',['../classExaDG_1_1MultigridPreconditionerBase.html#ad07f3a7916b75b79ad456bdc50821cf5',1,'ExaDG::MultigridPreconditionerBase']]],
   ['for_5fall_5fsmoothing_5flevels_10',['for_all_smoothing_levels',['../classExaDG_1_1MultigridPreconditionerBase.html#a6cb1daa5376bfc598241addca3be360f',1,'ExaDG::MultigridPreconditionerBase']]],
   ['functionevaluator_11',['FunctionEvaluator',['../structExaDG_1_1FunctionEvaluator.html',1,'ExaDG']]],
-  ['functionevaluator_3c_200_2c_20dim_2c_20number_20_3e_12',['FunctionEvaluator&lt; 0, dim, Number &gt;',['../structExaDG_1_1FunctionEvaluator_3_010_00_01dim_00_01Number_01_4.html',1,'ExaDG']]],
-  ['functionevaluator_3c_201_2c_20dim_2c_20number_20_3e_13',['FunctionEvaluator&lt; 1, dim, Number &gt;',['../structExaDG_1_1FunctionEvaluator_3_011_00_01dim_00_01Number_01_4.html',1,'ExaDG']]],
-  ['functionevaluator_3c_202_2c_20dim_2c_20number_20_3e_14',['FunctionEvaluator&lt; 2, dim, Number &gt;',['../structExaDG_1_1FunctionEvaluator_3_012_00_01dim_00_01Number_01_4.html',1,'ExaDG']]],
+  ['functionevaluator_3c_200_2c_20dim_2c_20number_20_3e_12',['FunctionEvaluator&lt; 0, dim, Number &gt;',['../structExaDG_1_1FunctionEvaluator.html',1,'ExaDG']]],
+  ['functionevaluator_3c_201_2c_20dim_2c_20number_20_3e_13',['FunctionEvaluator&lt; 1, dim, Number &gt;',['../structExaDG_1_1FunctionEvaluator.html',1,'ExaDG']]],
+  ['functionevaluator_3c_202_2c_20dim_2c_20number_20_3e_14',['FunctionEvaluator&lt; 2, dim, Number &gt;',['../structExaDG_1_1FunctionEvaluator.html',1,'ExaDG']]],
   ['functionwithnormal_15',['FunctionWithNormal',['../classExaDG_1_1FunctionWithNormal.html',1,'ExaDG']]]
 ];

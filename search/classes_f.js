@@ -23,5 +23,6 @@ var searchData=
   ['pressuredifferencecalculator_20',['PressureDifferenceCalculator',['../classExaDG_1_1PressureDifferenceCalculator.html',1,'ExaDG']]],
   ['pressuredifferencedata_21',['PressureDifferenceData',['../structExaDG_1_1PressureDifferenceData.html',1,'ExaDG']]],
   ['projectionoperator_22',['ProjectionOperator',['../classExaDG_1_1IncNS_1_1ProjectionOperator.html',1,'ExaDG::IncNS']]],
-  ['projectionoperatordata_23',['ProjectionOperatorData',['../structExaDG_1_1IncNS_1_1ProjectionOperatorData.html',1,'ExaDG::IncNS']]]
+  ['projectionoperator_3c_20dim_2c_20multigridnumber_20_3e_23',['ProjectionOperator&lt; dim, MultigridNumber &gt;',['../classExaDG_1_1IncNS_1_1ProjectionOperator.html',1,'ExaDG::IncNS']]],
+  ['projectionoperatordata_24',['ProjectionOperatorData',['../structExaDG_1_1IncNS_1_1ProjectionOperatorData.html',1,'ExaDG::IncNS']]]
 ];

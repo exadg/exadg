@@ -31,5 +31,6 @@ var searchData=
   ['printtimings_28',['printTimings',['../classdealspectrum_1_1DealSpectrumTimer.html#a679b686b7478ac7f65c3bafe70e64a52',1,'dealspectrum::DealSpectrumTimer']]],
   ['process_5fcoupling_5fmesh_29',['process_coupling_mesh',['../classExaDG_1_1preCICE_1_1CouplingBase.html#a418651b2b8cf193b9e28a9ba839d2198',1,'ExaDG::preCICE::CouplingBase']]],
   ['projectionoperator_30',['ProjectionOperator',['../classExaDG_1_1IncNS_1_1ProjectionOperator.html',1,'ExaDG::IncNS']]],
-  ['projectionoperatordata_31',['ProjectionOperatorData',['../structExaDG_1_1IncNS_1_1ProjectionOperatorData.html',1,'ExaDG::IncNS']]]
+  ['projectionoperator_3c_20dim_2c_20multigridnumber_20_3e_31',['ProjectionOperator&lt; dim, MultigridNumber &gt;',['../classExaDG_1_1IncNS_1_1ProjectionOperator.html',1,'ExaDG::IncNS']]],
+  ['projectionoperatordata_32',['ProjectionOperatorData',['../structExaDG_1_1IncNS_1_1ProjectionOperatorData.html',1,'ExaDG::IncNS']]]
 ];

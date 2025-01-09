@@ -15,8 +15,8 @@ var searchData=
   ['interpolate_5fsimple_12',['interpolate_simple',['../classdealspectrum_1_1Interpolator.html#a94b7b341d1a9f088d256287137c77381',1,'dealspectrum::Interpolator::interpolate_simple()'],['../classdealspectrum_1_1Interpolator.html#aeed0b7a32c90e41dca49a50c826668d5',1,'dealspectrum::Interpolator::interpolate_simple(double *&amp;src)']]],
   ['interpolate_5fsolution_13',['interpolate_solution',['../classExaDG_1_1SolutionInterpolationBetweenTriangulations.html#ad9ee5dec6acfac11eba23d600acd51e2',1,'ExaDG::SolutionInterpolationBetweenTriangulations']]],
   ['interpolator_14',['Interpolator',['../classdealspectrum_1_1Interpolator.html',1,'dealspectrum::Interpolator'],['../structExaDG_1_1Interpolator.html',1,'ExaDG::Interpolator&lt; rank, dim, Number &gt;'],['../classdealspectrum_1_1Interpolator.html#a67b56e08cbd7dbfdd57fe1325cab6f3d',1,'dealspectrum::Interpolator::Interpolator()']]],
-  ['interpolator_3c_200_2c_20dim_2c_20number_20_3e_15',['Interpolator&lt; 0, dim, Number &gt;',['../structExaDG_1_1Interpolator_3_010_00_01dim_00_01Number_01_4.html',1,'ExaDG']]],
-  ['interpolator_3c_201_2c_20dim_2c_20number_20_3e_16',['Interpolator&lt; 1, dim, Number &gt;',['../structExaDG_1_1Interpolator_3_011_00_01dim_00_01Number_01_4.html',1,'ExaDG']]],
+  ['interpolator_3c_200_2c_20dim_2c_20number_20_3e_15',['Interpolator&lt; 0, dim, Number &gt;',['../structExaDG_1_1Interpolator.html',1,'ExaDG']]],
+  ['interpolator_3c_201_2c_20dim_2c_20number_20_3e_16',['Interpolator&lt; 1, dim, Number &gt;',['../structExaDG_1_1Interpolator.html',1,'ExaDG']]],
   ['invalidate_17',['invalidate',['../classExaDG_1_1SolutionField.html#ac3b6fbbb1b385fb0c26fd10326c118e4',1,'ExaDG::SolutionField']]],
   ['inversemassoperator_18',['InverseMassOperator',['../classExaDG_1_1InverseMassOperator.html',1,'ExaDG']]],
   ['inversemassoperator_3c_20dim_2c_201_2c_20number_20_3e_19',['InverseMassOperator&lt; dim, 1, Number &gt;',['../classExaDG_1_1InverseMassOperator.html',1,'ExaDG']]],
@@ -35,6 +35,7 @@ var searchData=
   ['is_5fenum_32',['is_enum',['../namespaceExaDG_1_1Utilities.html#a51f3067c518a233b7f58b2b52d7da930',1,'ExaDG::Utilities']]],
   ['is_5ftime_5fwindow_5fcomplete_33',['is_time_window_complete',['../classExaDG_1_1preCICE_1_1Adapter.html#af2409b1817f17d6c7754664d3cd073c6',1,'ExaDG::preCICE::Adapter']]],
   ['iterativesolver_34',['IterativeSolver',['../classExaDG_1_1Elementwise_1_1IterativeSolver.html',1,'ExaDG::Elementwise']]],
-  ['iterativesolverdata_35',['IterativeSolverData',['../structExaDG_1_1Elementwise_1_1IterativeSolverData.html',1,'ExaDG::Elementwise']]],
-  ['iwait_36',['iwait',['../classdealspectrum_1_1Permutator.html#a2d3b0db2ac65d628b201ea9475342685',1,'dealspectrum::Permutator']]]
+  ['iterativesolver_3c_20dim_2c_20n_5fcomponents_2c_20number_2c_20elementwise_5foperator_2c_20elementwise_5fpreconditioner_20_3e_35',['IterativeSolver&lt; dim, n_components, Number, ELEMENTWISE_OPERATOR, ELEMENTWISE_PRECONDITIONER &gt;',['../classExaDG_1_1Elementwise_1_1IterativeSolver.html',1,'ExaDG::Elementwise']]],
+  ['iterativesolverdata_36',['IterativeSolverData',['../structExaDG_1_1Elementwise_1_1IterativeSolverData.html',1,'ExaDG::Elementwise']]],
+  ['iwait_37',['iwait',['../classdealspectrum_1_1Permutator.html#a2d3b0db2ac65d628b201ea9475342685',1,'dealspectrum::Permutator']]]
 ];
