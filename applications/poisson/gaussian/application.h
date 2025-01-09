@@ -191,6 +191,12 @@ public:
                         global_coarsening,
                         "Use Global Coarsening",
                         dealii::Patterns::Bool());
+      prm.add_parameter("AdaptiveRefinement",
+                        adaptive_refinement,
+                        "Static adaptive refinement of the mesh.");
+      prm.add_parameter("Preconditioner",
+                        preconditioner,
+                        "None, PointJacobi, AMG, AdditiveSchwarz or Multigrid");
     }
     prm.leave_subsection();
   }
@@ -207,6 +213,9 @@ private:
     this->param.mapping_degree              = this->param.degree;
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
 
+    this->param.grid.create_coarse_triangulations =
+      adaptive_refinement ? true : false; // required for adaptive refinement
+
     this->param.spatial_discretization = SpatialDiscretization::DG;
     this->param.IP_factor              = 1.0e0;
 
@@ -216,7 +225,7 @@ private:
     this->param.solver_data.rel_tol         = 1.e-10;
     this->param.solver_data.max_iter        = 1e4;
     this->param.compute_performance_metrics = true;
-    this->param.preconditioner              = Preconditioner::Multigrid;
+    this->param.preconditioner              = preconditioner;
     this->param.multigrid_data.type         = MultigridType::cphMG;
     this->param.multigrid_data.p_sequence   = PSequenceType::Bisect;
     // MG smoother
@@ -246,10 +255,8 @@ private:
 
       double const length = 1.0;
       double const left = -length, right = length;
-      dealii::GridGenerator::subdivided_hyper_cube(tria,
-                                                   this->n_subdivisions_1d_hypercube,
-                                                   left,
-                                                   right);
+      dealii::GridGenerator::subdivided_hyper_cube(
+        tria, this->n_subdivisions_1d_hypercube, left, right, false /* colorize */);
 
       if(mesh_type == MeshType::Cartesian)
       {
@@ -289,6 +296,60 @@ private:
                                                  this->param.mapping_degree,
                                                  this->param.mapping_degree_coarse_grids,
                                                  this->param.involves_h_multigrid());
+
+    if(adaptive_refinement && this->param.grid.element_type == ElementType::Hypercube)
+    {
+      // Flag all cells touching one of the boundaries with a face.
+      std::vector<dealii::types::boundary_id> refine_bdry_id = {0};
+      bool constexpr n_adaptive_refinements                  = 2;
+      for(unsigned int i = 0; i < n_adaptive_refinements; ++i)
+      {
+        for(auto const & cell : grid.triangulation->active_cell_iterators())
+        {
+          for(auto const face : cell->face_indices())
+          {
+            if(cell->at_boundary(face))
+            {
+              if(std::find(refine_bdry_id.begin(),
+                           refine_bdry_id.end(),
+                           cell->face(face)->boundary_id()) != refine_bdry_id.end())
+              {
+                if(not cell->refine_flag_set())
+                {
+                  cell->clear_coarsen_flag();
+                  cell->set_refine_flag();
+                }
+              }
+            }
+          }
+        }
+        grid.triangulation->prepare_coarsening_and_refinement();
+        grid.triangulation->execute_coarsening_and_refinement();
+      }
+
+      // Update coarse_triangulations after adaptive refinement.
+      if(this->param.involves_h_multigrid())
+      {
+        GridUtilities::create_coarse_triangulations_after_coarsening_and_refinement(
+          *grid.triangulation,
+          grid.periodic_face_pairs,
+          grid.coarse_triangulations,
+          grid.coarse_periodic_face_pairs,
+          this->param.grid,
+          false /* preserve_boundary_cells */);
+      }
+
+      // Fill coarse mappings based on fine mapping.
+      std::shared_ptr<dealii::Mapping<dim>> coarse_mapping;
+      if(this->param.involves_h_multigrid())
+      {
+        GridUtilities::create_mapping(coarse_mapping,
+                                      this->param.grid.element_type,
+                                      this->param.mapping_degree_coarse_grids);
+      }
+      multigrid_mappings =
+        std::make_shared<MultigridMappings<dim, Number>>(mapping, coarse_mapping);
+    }
   }
 
   void
@@ -331,7 +392,9 @@ private:
 
   MeshType mesh_type = MeshType::Cartesian;
 
-  bool global_coarsening = false;
+  bool           global_coarsening   = false;
+  bool           adaptive_refinement = false;
+  Preconditioner preconditioner      = Preconditioner::Multigrid;
 };
 
 } // namespace Poisson
