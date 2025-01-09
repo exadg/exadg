@@ -225,7 +225,7 @@ private:
     // MG coarse grid solver
     this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
     this->param.multigrid_data.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::AMG;
+      MultigridCoarseGridPreconditioner::PointJacobi;
     this->param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-6;
   }
 

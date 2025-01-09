@@ -11,7 +11,8 @@
         "RefineSpaceMax": "2"
     },
     "Application": {
-        "MeshType": "Cartesian"
+        "MeshType": "Cartesian",
+        "MultigridCoarseGridPreconditioner": "PointJacobi"
     },
     "Output": {
         "OutputDirectory": "output/poisson/sine/",
