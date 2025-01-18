@@ -97,8 +97,7 @@ TimeIntBDFPressureCorrection<dim, Number>::setup_derived()
 
 template<int dim, typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::read_restart_vectors(
-  boost::archive::binary_iarchive & ia)
+TimeIntBDFPressureCorrection<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
 {
   Base::read_restart_vectors(ia);
 
@@ -110,8 +109,7 @@ TimeIntBDFPressureCorrection<dim, Number>::read_restart_vectors(
 
 template<int dim, typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::write_restart_vectors(
-  boost::archive::binary_oarchive & oa) const
+TimeIntBDFPressureCorrection<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) const
 {
   Base::write_restart_vectors(oa);
 

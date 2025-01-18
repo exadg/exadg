@@ -253,7 +253,7 @@ TimeIntBDF<dim, Number>::initialize_vec_convective_term()
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::read_restart_vectors(boost::archive::binary_iarchive & ia)
+TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
 {
   for(unsigned int i = 0; i < this->order; i++)
   {
@@ -290,7 +290,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(boost::archive::binary_iarchive & 
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::write_restart_vectors(boost::archive::binary_oarchive & oa) const
+TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) const
 {
   for(unsigned int i = 0; i < this->order; i++)
   {

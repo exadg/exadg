@@ -45,9 +45,11 @@ template<int dim, typename Number>
 class TimeIntBDF : public TimeIntBDFBase
 {
 public:
-  using Base            = TimeIntBDFBase;
-  using VectorType      = dealii::LinearAlgebra::distributed::Vector<Number>;
-  using BlockVectorType = dealii::LinearAlgebra::distributed::BlockVector<Number>;
+  using Base                   = TimeIntBDFBase;
+  using VectorType             = dealii::LinearAlgebra::distributed::Vector<Number>;
+  using BlockVectorType        = dealii::LinearAlgebra::distributed::BlockVector<Number>;
+  using BoostInputArchiveType  = TimeIntBase::BoostInputArchiveType;
+  using BoostOutputArchiveType = TimeIntBase::BoostOutputArchiveType;
 
   TimeIntBDF(std::shared_ptr<SpatialOperatorBase<dim, Number>> operator_in,
              std::shared_ptr<HelpersALE<dim, Number> const>    helpers_ale_in,
@@ -108,10 +110,10 @@ protected:
   setup_derived() override;
 
   void
-  read_restart_vectors(boost::archive::binary_iarchive & ia) override;
+  read_restart_vectors(BoostInputArchiveType & ia) override;
 
   void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const override;
+  write_restart_vectors(BoostOutputArchiveType & oa) const override;
 
   void
   prepare_vectors_for_next_timestep() override;

@@ -133,7 +133,7 @@ TimeIntExplRKBase<Number>::do_write_restart(std::string const & filename) const
 {
   std::ostringstream oss;
 
-  boost::archive::binary_oarchive oa(oss);
+  BoostOutputArchiveType oa(oss);
 
   unsigned int n_ranks = dealii::Utilities::MPI::n_mpi_processes(this->mpi_comm);
 
@@ -156,7 +156,7 @@ template<typename Number>
 void
 TimeIntExplRKBase<Number>::do_read_restart(std::ifstream & in)
 {
-  boost::archive::binary_iarchive ia(in);
+  BoostInputArchiveType ia(in);
 
   // Note that the operations done here must be in sync with the output.
 

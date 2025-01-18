@@ -37,7 +37,9 @@ namespace ExaDG
 template<typename Operator, typename VectorType>
 class TimeIntAdamsBashforthMoultonBase : public TimeIntMultistepBase
 {
-  using Number = typename VectorType::value_type;
+  using Number                 = typename VectorType::value_type;
+  using BoostInputArchiveType  = TimeIntBase::BoostInputArchiveType;
+  using BoostOutputArchiveType = TimeIntBase::BoostOutputArchiveType;
 
 public:
   TimeIntAdamsBashforthMoultonBase(std::shared_ptr<Operator> pde_operator_in,
@@ -218,14 +220,14 @@ private:
   }
 
   void
-  read_restart_vectors(boost::archive::binary_iarchive & ia) final
+  read_restart_vectors(BoostInputArchiveType & ia) final
   {
     ia >> solution;
     ia >> prediction;
   }
 
   void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const final
+  write_restart_vectors(BoostOutputArchiveType & oa) const final
   {
     oa << solution;
     oa << prediction;
