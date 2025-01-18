@@ -25,6 +25,7 @@
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/time_integration/push_back_vectors.h>
 #include <exadg/time_integration/time_step_calculation.h>
+#include <exadg/utilities/boost_archive.h>
 
 namespace ExaDG
 {
@@ -258,13 +259,13 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
   for(unsigned int i = 0; i < this->order; i++)
   {
     VectorType tmp = get_velocity(i);
-    ia >> tmp;
+    read_distributed_vector<Number, BoostInputArchiveType>(tmp, ia);
     set_velocity(tmp, i);
   }
   for(unsigned int i = 0; i < this->order; i++)
   {
     VectorType tmp = get_pressure(i);
-    ia >> tmp;
+    read_distributed_vector<Number, BoostInputArchiveType>(tmp, ia);
     set_pressure(tmp, i);
   }
 
@@ -274,7 +275,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
     {
       for(unsigned int i = 0; i < this->order; i++)
       {
-        ia >> vec_convective_term[i];
+        read_distributed_vector<Number, BoostInputArchiveType>(vec_convective_term[i], ia);
       }
     }
   }
@@ -283,7 +284,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
   {
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
-      ia >> vec_grid_coordinates[i];
+      read_distributed_vector<Number, BoostInputArchiveType>(vec_grid_coordinates[i], ia);
     }
   }
 }
@@ -294,11 +295,11 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
 {
   for(unsigned int i = 0; i < this->order; i++)
   {
-    oa << get_velocity(i);
+    write_distributed_vector<Number, BoostOutputArchiveType>(get_velocity(i), oa);
   }
   for(unsigned int i = 0; i < this->order; i++)
   {
-    oa << get_pressure(i);
+    write_distributed_vector<Number, BoostOutputArchiveType>(get_pressure(i), oa);
   }
 
   if(needs_vector_convective_term)
@@ -307,7 +308,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
     {
       for(unsigned int i = 0; i < this->order; i++)
       {
-        oa << vec_convective_term[i];
+        write_distributed_vector<Number, BoostOutputArchiveType>(vec_convective_term[i], oa);
       }
     }
   }
@@ -316,7 +317,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
   {
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
-      oa << vec_grid_coordinates[i];
+      write_distributed_vector<Number, BoostOutputArchiveType>(vec_grid_coordinates[i], oa);
     }
   }
 }

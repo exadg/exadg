@@ -26,6 +26,7 @@
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/time_integration/push_back_vectors.h>
 #include <exadg/time_integration/time_step_calculation.h>
+#include <exadg/utilities/boost_archive.h>
 #include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
@@ -94,7 +95,7 @@ TimeIntBDFDualSplitting<dim, Number>::read_restart_vectors(BoostInputArchiveType
 
   for(unsigned int i = 0; i < velocity_dbc.size(); i++)
   {
-    ia >> velocity_dbc[i];
+    read_distributed_vector<Number, BoostInputArchiveType>(velocity_dbc[i], ia);
   }
 }
 
@@ -106,7 +107,7 @@ TimeIntBDFDualSplitting<dim, Number>::write_restart_vectors(BoostOutputArchiveTy
 
   for(unsigned int i = 0; i < velocity_dbc.size(); i++)
   {
-    oa << velocity_dbc[i];
+    write_distributed_vector<Number, BoostOutputArchiveType>(velocity_dbc[i], oa);
   }
 }
 

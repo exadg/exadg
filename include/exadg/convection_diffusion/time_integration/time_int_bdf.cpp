@@ -25,6 +25,7 @@
 #include <exadg/convection_diffusion/user_interface/parameters.h>
 #include <exadg/time_integration/push_back_vectors.h>
 #include <exadg/time_integration/time_step_calculation.h>
+#include <exadg/utilities/boost_archive.h>
 #include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
@@ -431,7 +432,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
 {
   for(unsigned int i = 0; i < this->order; i++)
   {
-    ia >> solution[i];
+    read_distributed_vector<Number, BoostInputArchiveType>(solution[i], ia);
   }
 
   if(param.convective_problem() and
@@ -441,7 +442,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
     {
       for(unsigned int i = 0; i < this->order; i++)
       {
-        ia >> vec_convective_term[i];
+        read_distributed_vector<Number, BoostInputArchiveType>(vec_convective_term[i], ia);
       }
     }
   }
@@ -450,7 +451,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
   {
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
-      ia >> vec_grid_coordinates[i];
+      read_distributed_vector<Number, BoostInputArchiveType>(vec_grid_coordinates[i], ia);
     }
   }
 }
@@ -461,7 +462,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
 {
   for(unsigned int i = 0; i < this->order; i++)
   {
-    oa << solution[i];
+    write_distributed_vector<Number, BoostOutputArchiveType>(solution[i], oa);
   }
 
   if(param.convective_problem() and
@@ -471,7 +472,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
     {
       for(unsigned int i = 0; i < this->order; i++)
       {
-        oa << vec_convective_term[i];
+        write_distributed_vector<Number, BoostOutputArchiveType>(vec_convective_term[i], oa);
       }
     }
   }
@@ -480,7 +481,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
   {
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
-      oa << vec_grid_coordinates[i];
+      write_distributed_vector<Number, BoostOutputArchiveType>(vec_grid_coordinates[i], oa);
     }
   }
 }
