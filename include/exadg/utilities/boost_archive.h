@@ -44,9 +44,10 @@ read_distributed_vector(dealii::LinearAlgebra::distributed::Vector<Number> & vec
 
 #ifdef DEBUG
   MPI_Comm const & mpi_comm = vector.get_mpi_communicator();
+  double const     l2_norm  = vector.l2_norm();
   if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
-    std::cout << "    read vector with global l2 norm: " << vector.l2_norm() << "\n";
+    std::cout << "    read vector with global l2 norm: " << l2_norm << "\n";
   }
 #endif
 }
@@ -58,9 +59,10 @@ write_distributed_vector(dealii::LinearAlgebra::distributed::Vector<Number> cons
 {
 #ifdef DEBUG
   MPI_Comm const & mpi_comm = vector.get_mpi_communicator();
+  double const     l2_norm  = vector.l2_norm();
   if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
-    std::cout << "    writing vector with global l2 norm: " << vector.l2_norm() << "\n";
+    std::cout << "    writing vector with global l2 norm: " << l2_norm << "\n";
   }
 #endif
 

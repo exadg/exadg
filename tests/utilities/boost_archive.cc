@@ -137,13 +137,17 @@ template<int dim>
 void
 ArchiveVector<dim>::check()
 {
-  pcout << "vector_out.linfty_norm() = " << vector_out.linfty_norm() << "\n";
-  pcout << "vector_out.l2_norm()     = " << vector_out.l2_norm() << "\n\n";
+  double norm = vector_out.linfty_norm();
+  pcout << "vector_out.linfty_norm() = " << norm << "\n";
+  norm = vector_out.l2_norm();
+  pcout << "vector_out.l2_norm()     = " << norm << "\n\n";
 
   vector_in -= vector_out;
 
-  pcout << "error in linfty_norm = " << vector_in.linfty_norm() << "\n";
-  pcout << "error in l2_norm     = " << vector_in.linfty_norm() << "\n";
+  norm = vector_in.linfty_norm();
+  pcout << "error in linfty_norm = " << norm << "\n";
+  norm = vector_in.l2_norm();
+  pcout << "error in l2_norm     = " << norm << "\n";
 }
 
 template<int dim>
