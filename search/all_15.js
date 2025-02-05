@@ -7,11 +7,14 @@ var searchData=
   ['vectortype_4',['VectorType',['../classExaDG_1_1CompNS_1_1PostProcessorInterface.html',1,'ExaDG::CompNS::VectorType&lt; Number &gt;'],['../classExaDG_1_1ConvDiff_1_1PostProcessorInterface.html',1,'ExaDG::ConvDiff::VectorType&lt; Number &gt;'],['../classExaDG_1_1IncNS_1_1PostProcessorInterface.html',1,'ExaDG::IncNS::VectorType&lt; Number &gt;'],['../classExaDG_1_1Poisson_1_1PostProcessorInterface.html',1,'ExaDG::Poisson::VectorType&lt; Number &gt;'],['../classExaDG_1_1PreconditionerBase.html',1,'ExaDG::VectorType&lt; Number &gt;'],['../classExaDG_1_1PreconditionerBase.html',1,'ExaDG::VectorType&lt; value_type &gt;'],['../classExaDG_1_1Structure_1_1PostProcessorBase.html',1,'ExaDG::Structure::VectorType&lt; Number &gt;']]],
   ['velocityprojection_5',['VelocityProjection',['../classExaDG_1_1VelocityProjection.html',1,'ExaDG']]],
   ['viscositymodelbase_6',['ViscosityModelBase',['../classExaDG_1_1IncNS_1_1ViscosityModelBase.html',1,'ExaDG::IncNS']]],
-  ['viscouskernel_7',['ViscousKernel',['../classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html',1,'ExaDG::IncNS::Operators']]],
-  ['viscouskerneldata_8',['ViscousKernelData',['../structExaDG_1_1IncNS_1_1Operators_1_1ViscousKernelData.html',1,'ExaDG::IncNS::Operators']]],
-  ['viscousoperator_9',['ViscousOperator',['../classExaDG_1_1CompNS_1_1ViscousOperator.html',1,'ExaDG::CompNS::ViscousOperator&lt; dim, Number &gt;'],['../classExaDG_1_1IncNS_1_1ViscousOperator.html',1,'ExaDG::IncNS::ViscousOperator&lt; dim, Number &gt;']]],
-  ['viscousoperatordata_10',['ViscousOperatorData',['../structExaDG_1_1CompNS_1_1ViscousOperatorData.html',1,'ExaDG::CompNS::ViscousOperatorData&lt; dim &gt;'],['../structExaDG_1_1IncNS_1_1ViscousOperatorData.html',1,'ExaDG::IncNS::ViscousOperatorData&lt; dim &gt;']]],
-  ['vmult_11',['vmult',['../classExaDG_1_1Elementwise_1_1JacobiPreconditioner.html#a3388ed26e11f59571d3e8ab6e45d7bce',1,'ExaDG::Elementwise::JacobiPreconditioner::vmult()'],['../classExaDG_1_1Elementwise_1_1InverseMassPreconditioner.html#a1f480ae1482708fd0fe5d377fe24e102',1,'ExaDG::Elementwise::InverseMassPreconditioner::vmult()']]],
-  ['volumecoupling_12',['VolumeCoupling',['../classExaDG_1_1AeroAcoustic_1_1VolumeCoupling.html',1,'ExaDG::AeroAcoustic']]],
-  ['vorticitycalculator_13',['VorticityCalculator',['../classExaDG_1_1VorticityCalculator.html',1,'ExaDG']]]
+  ['viscositymodelbase_3c_20dim_2c_20double_20_3e_7',['ViscosityModelBase&lt; dim, double &gt;',['../classExaDG_1_1IncNS_1_1ViscosityModelBase.html',1,'ExaDG::IncNS']]],
+  ['viscouskernel_8',['ViscousKernel',['../classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html',1,'ExaDG::IncNS::Operators']]],
+  ['viscouskerneldata_9',['ViscousKernelData',['../structExaDG_1_1IncNS_1_1Operators_1_1ViscousKernelData.html',1,'ExaDG::IncNS::Operators']]],
+  ['viscousoperator_10',['ViscousOperator',['../classExaDG_1_1CompNS_1_1ViscousOperator.html',1,'ExaDG::CompNS::ViscousOperator&lt; dim, Number &gt;'],['../classExaDG_1_1IncNS_1_1ViscousOperator.html',1,'ExaDG::IncNS::ViscousOperator&lt; dim, Number &gt;']]],
+  ['viscousoperator_3c_20dim_2c_20double_20_3e_11',['ViscousOperator&lt; dim, double &gt;',['../classExaDG_1_1IncNS_1_1ViscousOperator.html',1,'ExaDG::IncNS']]],
+  ['viscousoperatordata_12',['ViscousOperatorData',['../structExaDG_1_1CompNS_1_1ViscousOperatorData.html',1,'ExaDG::CompNS::ViscousOperatorData&lt; dim &gt;'],['../structExaDG_1_1IncNS_1_1ViscousOperatorData.html',1,'ExaDG::IncNS::ViscousOperatorData&lt; dim &gt;']]],
+  ['vmult_13',['vmult',['../classExaDG_1_1Elementwise_1_1JacobiPreconditioner.html#a3388ed26e11f59571d3e8ab6e45d7bce',1,'ExaDG::Elementwise::JacobiPreconditioner::vmult()'],['../classExaDG_1_1Elementwise_1_1InverseMassPreconditioner.html#a1f480ae1482708fd0fe5d377fe24e102',1,'ExaDG::Elementwise::InverseMassPreconditioner::vmult()']]],
+  ['volumecoupling_14',['VolumeCoupling',['../classExaDG_1_1AeroAcoustic_1_1VolumeCoupling.html',1,'ExaDG::AeroAcoustic']]],
+  ['vorticitycalculator_15',['VorticityCalculator',['../classExaDG_1_1VorticityCalculator.html',1,'ExaDG']]],
+  ['vorticitycalculator_3c_20dim_2c_20double_20_3e_16',['VorticityCalculator&lt; dim, double &gt;',['../classExaDG_1_1VorticityCalculator.html',1,'ExaDG']]]
 ];
