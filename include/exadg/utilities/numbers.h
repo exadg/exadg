@@ -22,6 +22,8 @@
 #ifndef INCLUDE_EXADG_UTILITIES_NUMBERS_H_
 #define INCLUDE_EXADG_UTILITIES_NUMBERS_H_
 
+#include <limits>
+
 namespace ExaDG
 {
 namespace types
