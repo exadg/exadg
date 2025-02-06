@@ -27,6 +27,7 @@
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/solver_control.h>
 #include <deal.II/lac/solver_gmres.h>
+#include <deal.II/lac/trilinos_solver.h>
 #include <deal.II/multigrid/mg_base.h>
 #include <deal.II/numerics/vector_tools_mean_value.h>
 
@@ -370,6 +371,53 @@ public:
 private:
   std::shared_ptr<PreconditionerAMG<Operator, Number>> amg_preconditioner;
 };
+
+#ifdef DEAL_II_WITH_TRILINOS
+template<typename Operator>
+class MGCoarseSparseDirect : public CoarseGridSolverBase<Operator>
+{
+private:
+  typedef typename Operator::value_type Number;
+
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+
+public:
+  MGCoarseSparseDirect(Operator const &                                       op,
+                       bool const                                             initialize,
+                       SparseDirectData data = SparseDirectData())
+  : op(op)
+  {
+    solver_direct = std::make_shared<dealii::TrilinosWrappers::SolverDirect>(data.trilinos_data);
+    if(initialize)
+      update();
+  }
+
+  void
+  update() final
+  {
+    op.init_system_matrix(sparse_matrix, op.get_matrix_free().get_dof_handler().get_communicator());
+    op.calculate_system_matrix(sparse_matrix);
+    solver_direct->initialize(sparse_matrix);
+  }
+
+  void
+  operator()(unsigned int const /*level*/, VectorType & dst, VectorType const & src) const final
+  {
+    apply_function_in_double_precision(
+      dst,
+      src,
+      [&](dealii::LinearAlgebra::distributed::Vector<double> &       dst_double,
+          dealii::LinearAlgebra::distributed::Vector<double> const & src_double) {
+        solver_direct->vmult(dst_double, src_double);
+      });
+  }
+
+private:
+  std::shared_ptr<dealii::TrilinosWrappers::SolverDirect> solver_direct;
+  const Operator & op;
+  dealii::TrilinosWrappers::SparseMatrix sparse_matrix;
+};
+#endif
 
 } // namespace ExaDG
 
