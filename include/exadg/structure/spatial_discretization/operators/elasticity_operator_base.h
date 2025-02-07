@@ -111,16 +111,18 @@ public:
     dealii::DoFHandler<dim> const & dof_handler =
       this->matrix_free->get_dof_handler(this->get_dof_index());
 
-    if(dof_handler.has_level_dofs())
+    if(this->matrix_free->get_mg_level() != dealii::numbers::invalid_unsigned_int)
     {
+      std::cout << "is on coarse grid ##+ \n";
       constant_modes_values = dealii::DoFTools::extract_level_rigid_body_modes(
-        0,
+        this->matrix_free->get_mg_level(),
         *this->matrix_free->get_mapping_info().mapping,
         dof_handler,
         dealii::ComponentMask(dim, true));
     }
     else
     {
+      std::cout << "is on fine grid ##+ \n";
       constant_modes_values =
         dealii::DoFTools::extract_rigid_body_modes(*this->matrix_free->get_mapping_info().mapping,
                                                    dof_handler,
@@ -135,7 +137,9 @@ public:
   get_scaling_factor_mass_operator() const;
 
   void
-  set_inhomogeneous_boundary_values(VectorType & dst) const final;
+  set_inhomogeneous_constrained_values(
+    VectorType & dst,
+    bool const   periodicity_and_hanging_node_constraints_only) const final;
 
 protected:
   void

@@ -160,6 +160,9 @@ public:
   get_dof_index() const;
 
   unsigned int
+  get_dof_index_inhomogeneous() const;
+
+  unsigned int
   get_quad_index() const;
 
   /*
@@ -201,7 +204,9 @@ public:
    * function.
    */
   virtual void
-  set_inhomogeneous_boundary_values(VectorType & solution) const;
+  set_inhomogeneous_constrained_values(
+    VectorType & solution,
+    bool const   periodicity_and_hanging_node_constraints_only) const;
 
   void
   set_constrained_dofs_to_zero(VectorType & vector) const;
@@ -261,27 +266,7 @@ public:
    */
   virtual void
   get_constant_modes(std::vector<std::vector<bool>> &   constant_modes,
-                     std::vector<std::vector<double>> & constant_modes_values) const
-  {
-    (void)constant_modes_values;
-
-    dealii::DoFHandler<dim> const & dof_handler =
-      this->matrix_free->get_dof_handler(this->data.dof_index);
-
-    if(dof_handler.has_level_dofs())
-    {
-      constant_modes =
-        dealii::DoFTools::extract_level_constant_modes(0,
-                                                       dof_handler,
-                                                       dealii::ComponentMask(n_components, true));
-    }
-    else
-    {
-      constant_modes =
-        dealii::DoFTools::extract_constant_modes(dof_handler,
-                                                 dealii::ComponentMask(n_components, true));
-    }
-  }
+                     std::vector<std::vector<double>> & constant_modes_values) const;
 
   /*
    * Evaluate the homogeneous part of an operator. The homogeneous operator is the operator that is
@@ -323,8 +308,8 @@ public:
    * 'virtual' to provide the opportunity to override and assert these functions in derived classes.
    *
    * For continuous Galerkin discretizations, this function calls internally the member function
-   * set_inhomogeneous_boundary_values(). Hence, prior to calling this function, one needs to call
-   * set_time() for a correct evaluation in case of time-dependent problems.
+   * set_inhomogeneous_constrained_values(). Hence, prior to calling this function, one needs to
+   * call set_time() for a correct evaluation in case of time-dependent problems.
    *
    * This function sets the dst vector to zero, and afterwards calls rhs_add().
    */
@@ -346,9 +331,10 @@ public:
    * and assert these functions in derived classes.
    *
    * Unlike the function rhs(), this function does not internally call the function
-   * set_inhomogeneous_boundary_values() prior to evaluation. Hence, one needs to explicitly call
-   * the function set_inhomogeneous_boundary_values() in case of continuous Galerkin discretizations
-   * with inhomogeneous Dirichlet boundary conditions before calling the present function.
+   * set_inhomogeneous_constrained_values() prior to evaluation. Hence, one needs to explicitly call
+   * the function set_inhomogeneous_constrained_values() in case of continuous Galerkin
+   * discretizations with inhomogeneous Dirichlet boundary conditions before calling the present
+   * function.
    */
   virtual void
   evaluate(VectorType & dst, VectorType const & src) const;
