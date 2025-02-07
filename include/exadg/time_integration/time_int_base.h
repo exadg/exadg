@@ -23,6 +23,8 @@
 #define INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_BASE_H_
 
 // C/C++
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 
