@@ -24,8 +24,8 @@
 #include <exadg/convection_diffusion/time_integration/time_int_bdf.h>
 #include <exadg/convection_diffusion/user_interface/parameters.h>
 #include <exadg/time_integration/push_back_vectors.h>
+#include <exadg/time_integration/restart.h>
 #include <exadg/time_integration/time_step_calculation.h>
-#include <exadg/utilities/boost_archive.h>
 #include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
@@ -432,7 +432,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
 {
   for(unsigned int i = 0; i < this->order; i++)
   {
-    read_distributed_vector<Number, BoostInputArchiveType>(solution[i], ia);
+    read_distributed_vector(solution[i], ia);
   }
 
   if(param.convective_problem() and
@@ -442,7 +442,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
     {
       for(unsigned int i = 0; i < this->order; i++)
       {
-        read_distributed_vector<Number, BoostInputArchiveType>(vec_convective_term[i], ia);
+        read_distributed_vector(vec_convective_term[i], ia);
       }
     }
   }
@@ -451,7 +451,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
   {
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
-      read_distributed_vector<Number, BoostInputArchiveType>(vec_grid_coordinates[i], ia);
+      read_distributed_vector(vec_grid_coordinates[i], ia);
     }
   }
 }
@@ -462,7 +462,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
 {
   for(unsigned int i = 0; i < this->order; i++)
   {
-    write_distributed_vector<Number, BoostOutputArchiveType>(solution[i], oa);
+    write_distributed_vector(solution[i], oa);
   }
 
   if(param.convective_problem() and
@@ -472,7 +472,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
     {
       for(unsigned int i = 0; i < this->order; i++)
       {
-        write_distributed_vector<Number, BoostOutputArchiveType>(vec_convective_term[i], oa);
+        write_distributed_vector(vec_convective_term[i], oa);
       }
     }
   }
@@ -481,7 +481,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
   {
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
-      write_distributed_vector<Number, BoostOutputArchiveType>(vec_grid_coordinates[i], oa);
+      write_distributed_vector(vec_grid_coordinates[i], oa);
     }
   }
 }

@@ -39,7 +39,7 @@
 #include <boost/archive/text_oarchive.hpp>
 
 // ExaDG
-#include <exadg/utilities/boost_archive.h>
+#include <exadg/time_integration/restart.h>
 
 using namespace dealii;
 

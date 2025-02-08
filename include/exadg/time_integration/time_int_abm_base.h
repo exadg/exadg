@@ -26,6 +26,7 @@
 #include <exadg/time_integration/ab_constants.h>
 #include <exadg/time_integration/am_constants.h>
 #include <exadg/time_integration/push_back_vectors.h>
+#include <exadg/time_integration/restart.h>
 #include <exadg/time_integration/time_int_multistep_base.h>
 #include <exadg/utilities/print_solver_results.h>
 
@@ -222,15 +223,15 @@ private:
   void
   read_restart_vectors(BoostInputArchiveType & ia) final
   {
-    ia >> solution;
-    ia >> prediction;
+    read_distributed_vector(solution, ia);
+    read_distributed_vector(prediction, ia);
   }
 
   void
   write_restart_vectors(BoostOutputArchiveType & oa) const final
   {
-    oa << solution;
-    oa << prediction;
+    write_distributed_vector(solution, oa);
+    write_distributed_vector(prediction, oa);
   }
 
   void

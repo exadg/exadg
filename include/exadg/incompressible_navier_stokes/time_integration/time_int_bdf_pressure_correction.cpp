@@ -25,8 +25,8 @@
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/time_integration/push_back_vectors.h>
+#include <exadg/time_integration/restart.h>
 #include <exadg/time_integration/time_step_calculation.h>
-#include <exadg/utilities/boost_archive.h>
 #include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
@@ -104,7 +104,7 @@ TimeIntBDFPressureCorrection<dim, Number>::read_restart_vectors(BoostInputArchiv
 
   for(unsigned int i = 0; i < pressure_dbc.size(); i++)
   {
-    read_distributed_vector<Number, BoostInputArchiveType>(pressure_dbc[i], ia);
+    read_distributed_vector(pressure_dbc[i], ia);
   }
 }
 
@@ -116,7 +116,7 @@ TimeIntBDFPressureCorrection<dim, Number>::write_restart_vectors(BoostOutputArch
 
   for(unsigned int i = 0; i < pressure_dbc.size(); i++)
   {
-    write_distributed_vector<Number, BoostOutputArchiveType>(pressure_dbc[i], oa);
+    write_distributed_vector(pressure_dbc[i], oa);
   }
 }
 

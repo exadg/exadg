@@ -1,11 +1,11 @@
 Setting up vector.
 Filling vector with ordered global indices [0, 35937).
 Storing the vector in the archive.
-    writing vector with global l2 norm: 3.93317e+06
+    writing vector with global l2 norm: 3.9331729e+06
 Reading the vector from the archive.
-    read vector with global l2 norm: 3.93317e+06
+    read vector with global l2 norm: 3.9331729e+06
 vector_out.linfty_norm() = 35936
-vector_out.l2_norm()     = 3.93317e+06
+vector_out.l2_norm()     = 3.9331729e+06
 
 error in linfty_norm = 0
 error in l2_norm     = 0

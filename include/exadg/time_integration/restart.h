@@ -28,6 +28,8 @@
 
 // deal.II
 #include <deal.II/base/mpi.h>
+#include <deal.II/lac/la_parallel_block_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 
 namespace ExaDG
 {
@@ -64,6 +66,101 @@ write_restart_file(std::ostringstream & oss, std::string const & filename)
   std::ofstream stream(filename.c_str());
 
   stream << oss.str() << std::endl;
+}
+
+/**
+ * Utility functions to read and write the local entries of a
+ * dealii::LinearAlgebra::distributed::Vector
+ * from/to a boost archive per block and entry.
+ */
+template<typename VectorType, typename BoostInputArchiveType>
+inline void
+read_distributed_vector(VectorType & vector, BoostInputArchiveType & input_archive)
+{
+  // Depending on VectorType, we have to loop over the blocks to
+  // access the local entries via vector.local_element(i).
+  using Number = typename VectorType::value_type;
+  if(std::is_same<VectorType, dealii::LinearAlgebra::distributed::Vector<Number>>::value)
+  {
+    dealii::LinearAlgebra::distributed::Vector<Number> * tmp =
+      dynamic_cast<dealii::LinearAlgebra::distributed::Vector<Number> *>(&vector);
+    for(unsigned int i = 0; i < tmp->locally_owned_size(); ++i)
+    {
+      input_archive >> tmp->local_element(i);
+    }
+  }
+  else if(std::is_same<VectorType, dealii::LinearAlgebra::distributed::BlockVector<Number>>::value)
+  {
+    dealii::LinearAlgebra::distributed::BlockVector<Number> * tmp =
+      dynamic_cast<dealii::LinearAlgebra::distributed::BlockVector<Number> *>(&vector);
+    for(unsigned int i = 0; i < tmp->n_blocks(); ++i)
+    {
+      for(unsigned int i = 0; i < tmp->block(i).locally_owned_size(); ++i)
+      {
+        input_archive >> tmp->block(i).local_element(i);
+      }
+    }
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("Reading into this VectorType not supported."));
+  }
+
+  // Print L2 norm to screen for comparison.
+#ifdef DEBUG
+  MPI_Comm const & mpi_comm = vector.get_mpi_communicator();
+  double const     l2_norm  = vector.l2_norm();
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  {
+    std::cout << "    read vector with global l2 norm: " << std::scientific << std::setprecision(8)
+              << std::setw(20) << l2_norm << "\n";
+  }
+#endif
+}
+
+template<typename VectorType, typename BoostOutputArchiveType>
+inline void
+write_distributed_vector(VectorType const & vector, BoostOutputArchiveType & output_archive)
+{
+  // Print L2 norm to screen for comparison.
+#ifdef DEBUG
+  MPI_Comm const & mpi_comm = vector.get_mpi_communicator();
+  double const     l2_norm  = vector.l2_norm();
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  {
+    std::cout << "    writing vector with global l2 norm: " << std::scientific
+              << std::setprecision(8) << std::setw(20) << l2_norm << "\n";
+  }
+#endif
+
+  // Depending on VectorType, we have to loop over the blocks to
+  // access the local entries via vector.local_element(i).
+  using Number = typename VectorType::value_type;
+  if(std::is_same<VectorType, dealii::LinearAlgebra::distributed::Vector<Number>>::value)
+  {
+    dealii::LinearAlgebra::distributed::Vector<Number> const * tmp =
+      dynamic_cast<dealii::LinearAlgebra::distributed::Vector<Number> const *>(&vector);
+    for(unsigned int i = 0; i < tmp->locally_owned_size(); ++i)
+    {
+      output_archive << tmp->local_element(i);
+    }
+  }
+  else if(std::is_same<VectorType, dealii::LinearAlgebra::distributed::BlockVector<Number>>::value)
+  {
+    dealii::LinearAlgebra::distributed::BlockVector<Number> const * tmp =
+      dynamic_cast<dealii::LinearAlgebra::distributed::BlockVector<Number> const *>(&vector);
+    for(unsigned int i = 0; i < tmp->n_blocks(); ++i)
+    {
+      for(unsigned int i = 0; i < tmp->block(i).locally_owned_size(); ++i)
+      {
+        output_archive << tmp->block(i).local_element(i);
+      }
+    }
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("Writing into this VectorType not supported."));
+  }
 }
 
 } // namespace ExaDG
