@@ -49,7 +49,9 @@ template<int dim, typename Number>
 class TimeIntBDF : public TimeIntBDFBase
 {
 public:
-  using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
+  using VectorType             = dealii::LinearAlgebra::distributed::Vector<Number>;
+  using BoostInputArchiveType  = TimeIntBase::BoostInputArchiveType;
+  using BoostOutputArchiveType = TimeIntBase::BoostOutputArchiveType;
 
   TimeIntBDF(std::shared_ptr<Operator<dim, Number>>          operator_in,
              std::shared_ptr<HelpersALE<dim, Number> const>  helpers_ale_in,
@@ -115,10 +117,10 @@ private:
   print_solver_info() const final;
 
   void
-  read_restart_vectors(boost::archive::binary_iarchive & ia) final;
+  read_restart_vectors(BoostInputArchiveType & ia) final;
 
   void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const final;
+  write_restart_vectors(BoostOutputArchiveType & oa) const final;
 
   void
   postprocessing() const final;

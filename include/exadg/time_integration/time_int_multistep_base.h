@@ -30,6 +30,9 @@ namespace ExaDG
 class TimeIntMultistepBase : public TimeIntBase
 {
 public:
+  using BoostInputArchiveType  = TimeIntBase::BoostInputArchiveType;
+  using BoostOutputArchiveType = TimeIntBase::BoostOutputArchiveType;
+
   /*
    * Constructor.
    */
@@ -213,10 +216,10 @@ private:
   do_read_restart(std::ifstream & in) final;
 
   void
-  read_restart_preamble(boost::archive::binary_iarchive & ia);
+  read_restart_preamble(BoostInputArchiveType & ia);
 
   virtual void
-  read_restart_vectors(boost::archive::binary_iarchive & ia) = 0;
+  read_restart_vectors(BoostInputArchiveType & ia) = 0;
 
   /*
    * Write solution vectors to files so that the simulation can be restart from an intermediate
@@ -226,10 +229,10 @@ private:
   do_write_restart(std::string const & filename) const final;
 
   void
-  write_restart_preamble(boost::archive::binary_oarchive & oa) const;
+  write_restart_preamble(BoostOutputArchiveType & oa) const;
 
   virtual void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const = 0;
+  write_restart_vectors(BoostOutputArchiveType & oa) const = 0;
 
   /*
    * Recalculate the time step size after each time step in case of adaptive time stepping.
