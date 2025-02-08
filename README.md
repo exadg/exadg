@@ -44,11 +44,8 @@ There is currently no paper dedicated to the software project **ExaDG**. A detai
 
 ## Authors
 
-ExaDG's principal developers are:
+ExaDG's principal developer is [Niklas Fehn](https://scholar.google.de/citations?user=8Dm3CikAAAAJ&hl=de&oi=ao) ([@nfehn](https://github.com/nfehn)).
 
-- [Niklas Fehn](https://www.epc.ed.tum.de/lnm/staff/niklas-fehn/) ([@nfehn](https://github.com/nfehn))
-- [Martin Kronbichler](https://www.uni-augsburg.de/en/fakultaet/mntf/math/prof/hpc/team/kronbichler/) ([@kronbichler](https://github.com/kronbichler))
-- [Peter Munch](https://www.uni-augsburg.de/en/fakultaet/mntf/math/prof/hpc/team/munch/) ([@peterrum](https://github.com/peterrum))
 
 ## License
 
