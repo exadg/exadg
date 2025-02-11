@@ -47,14 +47,11 @@ namespace ExaDG
 class TimeIntBase
 {
 public:
-// Archive type used for serialization.
-#ifdef DEBUG
-  typedef boost::archive::text_iarchive BoostInputArchiveType;
-  typedef boost::archive::text_oarchive BoostOutputArchiveType;
-#else
+  // Archive type used for serialization, alternatively choose text archive type.
   typedef boost::archive::binary_iarchive BoostInputArchiveType;
   typedef boost::archive::binary_oarchive BoostOutputArchiveType;
-#endif
+  // typedef boost::archive::text_iarchive BoostInputArchiveType;
+  // typedef boost::archive::text_oarchive BoostOutputArchiveType;
 
   TimeIntBase(double const &      start_time_,
               double const &      end_time_,

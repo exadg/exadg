@@ -117,7 +117,7 @@ ArchiveVector<dim>::write_and_read()
 
     boost::archive::text_oarchive output_archive(stream);
 
-    ExaDG::write_distributed_vector(vector_out, output_archive);
+    ExaDG::read_write_distributed_vector(vector_out, output_archive);
   }
 
   vector_in.reinit(locally_owned_dofs, mpi_communicator);
@@ -129,7 +129,7 @@ ArchiveVector<dim>::write_and_read()
 
     boost::archive::text_iarchive input_archive(stream);
 
-    ExaDG::read_distributed_vector(vector_in, input_archive);
+    ExaDG::read_write_distributed_vector(vector_in, input_archive);
   }
 }
 

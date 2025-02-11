@@ -432,7 +432,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
 {
   for(unsigned int i = 0; i < this->order; i++)
   {
-    read_distributed_vector(solution[i], ia);
+    read_write_distributed_vector(solution[i], ia);
   }
 
   if(param.convective_problem() and
@@ -442,7 +442,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
     {
       for(unsigned int i = 0; i < this->order; i++)
       {
-        read_distributed_vector(vec_convective_term[i], ia);
+        read_write_distributed_vector(vec_convective_term[i], ia);
       }
     }
   }
@@ -451,7 +451,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
   {
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
-      read_distributed_vector(vec_grid_coordinates[i], ia);
+      read_write_distributed_vector(vec_grid_coordinates[i], ia);
     }
   }
 }
@@ -462,7 +462,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
 {
   for(unsigned int i = 0; i < this->order; i++)
   {
-    write_distributed_vector(solution[i], oa);
+    read_write_distributed_vector(solution[i], oa);
   }
 
   if(param.convective_problem() and
@@ -472,7 +472,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
     {
       for(unsigned int i = 0; i < this->order; i++)
       {
-        write_distributed_vector(vec_convective_term[i], oa);
+        read_write_distributed_vector(vec_convective_term[i], oa);
       }
     }
   }
@@ -481,7 +481,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
   {
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
-      write_distributed_vector(vec_grid_coordinates[i], oa);
+      read_write_distributed_vector(vec_grid_coordinates[i], oa);
     }
   }
 }

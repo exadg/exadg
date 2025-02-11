@@ -148,7 +148,7 @@ TimeIntExplRKBase<Number>::do_write_restart(std::string const & filename) const
   oa & time_step;
 
   // 4. solution vectors
-  write_distributed_vector(solution_n, oa);
+  read_write_distributed_vector(solution_n, oa);
 
   write_restart_file(oss, filename);
 }
@@ -183,7 +183,7 @@ TimeIntExplRKBase<Number>::do_read_restart(std::ifstream & in)
   ia & time_step;
 
   // 4. solution vectors
-  read_distributed_vector(solution_n, ia);
+  read_write_distributed_vector(solution_n, ia);
 }
 
 // instantiations

@@ -259,13 +259,13 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
   for(unsigned int i = 0; i < this->order; i++)
   {
     VectorType tmp = get_velocity(i);
-    read_distributed_vector(tmp, ia);
+    read_write_distributed_vector(tmp, ia);
     set_velocity(tmp, i);
   }
   for(unsigned int i = 0; i < this->order; i++)
   {
     VectorType tmp = get_pressure(i);
-    read_distributed_vector(tmp, ia);
+    read_write_distributed_vector(tmp, ia);
     set_pressure(tmp, i);
   }
 
@@ -275,7 +275,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
     {
       for(unsigned int i = 0; i < this->order; i++)
       {
-        read_distributed_vector(vec_convective_term[i], ia);
+        read_write_distributed_vector(vec_convective_term[i], ia);
       }
     }
   }
@@ -284,7 +284,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
   {
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
-      read_distributed_vector(vec_grid_coordinates[i], ia);
+      read_write_distributed_vector(vec_grid_coordinates[i], ia);
     }
   }
 }
@@ -295,11 +295,11 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
 {
   for(unsigned int i = 0; i < this->order; i++)
   {
-    write_distributed_vector(get_velocity(i), oa);
+    read_write_distributed_vector(get_velocity(i), oa);
   }
   for(unsigned int i = 0; i < this->order; i++)
   {
-    write_distributed_vector(get_pressure(i), oa);
+    read_write_distributed_vector(get_pressure(i), oa);
   }
 
   if(needs_vector_convective_term)
@@ -308,7 +308,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
     {
       for(unsigned int i = 0; i < this->order; i++)
       {
-        write_distributed_vector(vec_convective_term[i], oa);
+        read_write_distributed_vector(vec_convective_term[i], oa);
       }
     }
   }
@@ -317,7 +317,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
   {
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
-      write_distributed_vector(vec_grid_coordinates[i], oa);
+      read_write_distributed_vector(vec_grid_coordinates[i], oa);
     }
   }
 }

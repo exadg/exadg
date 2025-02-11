@@ -223,15 +223,15 @@ private:
   void
   read_restart_vectors(BoostInputArchiveType & ia) final
   {
-    read_distributed_vector(solution, ia);
-    read_distributed_vector(prediction, ia);
+    read_write_distributed_vector(solution, ia);
+    read_write_distributed_vector(prediction, ia);
   }
 
   void
   write_restart_vectors(BoostOutputArchiveType & oa) const final
   {
-    write_distributed_vector(solution, oa);
-    write_distributed_vector(prediction, oa);
+    read_write_distributed_vector(solution, oa);
+    read_write_distributed_vector(prediction, oa);
   }
 
   void
