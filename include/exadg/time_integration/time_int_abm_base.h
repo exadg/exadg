@@ -26,6 +26,7 @@
 #include <exadg/time_integration/ab_constants.h>
 #include <exadg/time_integration/am_constants.h>
 #include <exadg/time_integration/push_back_vectors.h>
+#include <exadg/time_integration/restart.h>
 #include <exadg/time_integration/time_int_multistep_base.h>
 #include <exadg/utilities/print_solver_results.h>
 
@@ -37,7 +38,9 @@ namespace ExaDG
 template<typename Operator, typename VectorType>
 class TimeIntAdamsBashforthMoultonBase : public TimeIntMultistepBase
 {
-  using Number = typename VectorType::value_type;
+  using Number                 = typename VectorType::value_type;
+  using BoostInputArchiveType  = TimeIntBase::BoostInputArchiveType;
+  using BoostOutputArchiveType = TimeIntBase::BoostOutputArchiveType;
 
 public:
   TimeIntAdamsBashforthMoultonBase(std::shared_ptr<Operator> pde_operator_in,
@@ -218,17 +221,17 @@ private:
   }
 
   void
-  read_restart_vectors(boost::archive::binary_iarchive & ia) final
+  read_restart_vectors(BoostInputArchiveType & ia) final
   {
-    ia >> solution;
-    ia >> prediction;
+    read_write_distributed_vector(solution, ia);
+    read_write_distributed_vector(prediction, ia);
   }
 
   void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const final
+  write_restart_vectors(BoostOutputArchiveType & oa) const final
   {
-    oa << solution;
-    oa << prediction;
+    read_write_distributed_vector(solution, oa);
+    read_write_distributed_vector(prediction, oa);
   }
 
   void
