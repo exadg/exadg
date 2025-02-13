@@ -106,10 +106,8 @@ read_write_distributed_vector(VectorType & vector, BoostArchiveType & archive)
   // Depending on VectorType, we have to loop over the blocks to
   // access the local entries via vector.local_element(i).
   using Number = typename VectorType::value_type;
-  if constexpr(std::is_same<VectorType,
-                            dealii::LinearAlgebra::distributed::Vector<Number>>::value or
-               std::is_same<VectorType,
-                            dealii::LinearAlgebra::distributed::Vector<Number> const>::value)
+  if constexpr(std::is_same<std::remove_cv_t<VectorType>,
+                            dealii::LinearAlgebra::distributed::Vector<Number>>::value)
   {
     for(unsigned int i = 0; i < vector.locally_owned_size(); ++i)
     {
