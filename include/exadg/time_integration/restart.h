@@ -114,11 +114,8 @@ read_write_distributed_vector(VectorType & vector, BoostArchiveType & archive)
       archive & vector.local_element(i);
     }
   }
-  else if constexpr(std::is_same<VectorType,
-                                 dealii::LinearAlgebra::distributed::BlockVector<Number>>::value or
-                    std::is_same<
-                      VectorType,
-                      dealii::LinearAlgebra::distributed::BlockVector<Number> const>::value)
+  else if constexpr(std::is_same<std::remove_cv_t<VectorType>,
+                                 dealii::LinearAlgebra::distributed::BlockVector<Number>>::value)
   {
     for(unsigned int i = 0; i < vector.n_blocks(); ++i)
     {
