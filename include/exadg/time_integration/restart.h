@@ -119,9 +119,9 @@ read_write_distributed_vector(VectorType & vector, BoostArchiveType & archive)
   {
     for(unsigned int i = 0; i < vector.n_blocks(); ++i)
     {
-      for(unsigned int i = 0; i < vector.block(i).locally_owned_size(); ++i)
+      for(unsigned int j = 0; j < vector.block(i).locally_owned_size(); ++j)
       {
-        archive & vector.block(i).local_element(i);
+        archive & vector.block(i).local_element(j);
       }
     }
   }
