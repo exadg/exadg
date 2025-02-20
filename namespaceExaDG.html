@@ -817,6 +817,13 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>rename_restart_files<
 <tr class="memitem:a595122a85a69164dc76e499319ed3ffa" id="r_a595122a85a69164dc76e499319ed3ffa"><td class="memItemLeft" align="right" valign="top"><a id="a595122a85a69164dc76e499319ed3ffa" name="a595122a85a69164dc76e499319ed3ffa"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>write_restart_file</b> (std::ostringstream &amp;oss, std::string const &amp;filename)</td></tr>
 <tr class="separator:a595122a85a69164dc76e499319ed3ffa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a952e1eb43f16ece7eb956e70712cc1bf" id="r_a952e1eb43f16ece7eb956e70712cc1bf"><td class="memTemplParams" colspan="2"><a id="a952e1eb43f16ece7eb956e70712cc1bf" name="a952e1eb43f16ece7eb956e70712cc1bf"></a>
+template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </td></tr>
+<tr class="memitem:a952e1eb43f16ece7eb956e70712cc1bf"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>print_vector_l2_norm</b> (<a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> const &amp;vector)</td></tr>
+<tr class="separator:a952e1eb43f16ece7eb956e70712cc1bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5b0e6da132568638daf46851b20078a1" id="r_a5b0e6da132568638daf46851b20078a1"><td class="memTemplParams" colspan="2">template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>, typename BoostArchiveType&gt; </td></tr>
+<tr class="memitem:a5b0e6da132568638daf46851b20078a1"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#a5b0e6da132568638daf46851b20078a1">read_write_distributed_vector</a> (<a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> &amp;vector, BoostArchiveType &amp;archive)</td></tr>
+<tr class="separator:a5b0e6da132568638daf46851b20078a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a71f5976da8ee493a4427722a6b9366f3" id="r_a71f5976da8ee493a4427722a6b9366f3"><td class="memItemLeft" align="right" valign="top"><a id="a71f5976da8ee493a4427722a6b9366f3" name="a71f5976da8ee493a4427722a6b9366f3"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>limit_time_step_change</b> (double &amp;new_time_step, double const &amp;last_time_step, double const &amp;fac)</td></tr>
 <tr class="separator:a71f5976da8ee493a4427722a6b9366f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1525,6 +1532,38 @@ template&lt;int dim&gt; </div>
       </table>
 </div><div class="memdoc">
 <p>Limit the coarsening and refinement by adapting the flags set in the triangulation. This considers the maximum and minimum refinement levels provided and might remove refinement flags set on the boundary if requested. </p>
+
+</div>
+</div>
+<a id="a5b0e6da132568638daf46851b20078a1" name="a5b0e6da132568638daf46851b20078a1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5b0e6da132568638daf46851b20078a1">&#9670;&#160;</a></span>read_write_distributed_vector()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>, typename BoostArchiveType&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ExaDG::read_write_distributed_vector </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>vector</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">BoostArchiveType &amp;</td>          <td class="paramname"><span class="paramname"><em>archive</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Utility function to read or write the local entries of a dealii::LinearAlgebra::distributed::(Block)Vector from/to a boost archive per block and entry. Using the <code>&amp;</code> operator, loading from or writing to the archive is determined from the type. </p>
 
 </div>
 </div>

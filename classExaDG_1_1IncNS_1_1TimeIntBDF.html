@@ -124,6 +124,26 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b> = dea
 <tr class="memitem:aa6924dd4cc59d5548c4983b6141e1cff" id="r_aa6924dd4cc59d5548c4983b6141e1cff"><td class="memItemLeft" align="right" valign="top"><a id="aa6924dd4cc59d5548c4983b6141e1cff" name="aa6924dd4cc59d5548c4983b6141e1cff"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>BlockVectorType</b> = dealii::LinearAlgebra::distributed::BlockVector&lt;Number&gt;</td></tr>
 <tr class="separator:aa6924dd4cc59d5548c4983b6141e1cff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1a8c574217619343bef002bc55177e0e" id="r_a1a8c574217619343bef002bc55177e0e"><td class="memItemLeft" align="right" valign="top"><a id="a1a8c574217619343bef002bc55177e0e" name="a1a8c574217619343bef002bc55177e0e"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>BoostInputArchiveType</b> = TimeIntBase::BoostInputArchiveType</td></tr>
+<tr class="separator:a1a8c574217619343bef002bc55177e0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a808208d657875341e01ed203d83341af" id="r_a808208d657875341e01ed203d83341af"><td class="memItemLeft" align="right" valign="top"><a id="a808208d657875341e01ed203d83341af" name="a808208d657875341e01ed203d83341af"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>BoostOutputArchiveType</b> = TimeIntBase::BoostOutputArchiveType</td></tr>
+<tr class="separator:a808208d657875341e01ed203d83341af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_types_classExaDG_1_1TimeIntMultistepBase"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_types_classExaDG_1_1TimeIntMultistepBase')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classExaDG_1_1TimeIntMultistepBase.html">ExaDG::TimeIntMultistepBase</a></td></tr>
+<tr class="memitem:abe1e6289ca8dd753c40468dd381fc08c inherit pub_types_classExaDG_1_1TimeIntMultistepBase" id="r_abe1e6289ca8dd753c40468dd381fc08c"><td class="memItemLeft" align="right" valign="top">
+using&#160;</td><td class="memItemRight" valign="bottom"><b>BoostInputArchiveType</b> = TimeIntBase::BoostInputArchiveType</td></tr>
+<tr class="separator:abe1e6289ca8dd753c40468dd381fc08c inherit pub_types_classExaDG_1_1TimeIntMultistepBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aef921d1033dada54f19f2a1a94032500 inherit pub_types_classExaDG_1_1TimeIntMultistepBase" id="r_aef921d1033dada54f19f2a1a94032500"><td class="memItemLeft" align="right" valign="top">
+using&#160;</td><td class="memItemRight" valign="bottom"><b>BoostOutputArchiveType</b> = TimeIntBase::BoostOutputArchiveType</td></tr>
+<tr class="separator:aef921d1033dada54f19f2a1a94032500 inherit pub_types_classExaDG_1_1TimeIntMultistepBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_types_classExaDG_1_1TimeIntBase"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_types_classExaDG_1_1TimeIntBase')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classExaDG_1_1TimeIntBase.html">ExaDG::TimeIntBase</a></td></tr>
+<tr class="memitem:a23daea8bf91d505b972c77c4fe395b25 inherit pub_types_classExaDG_1_1TimeIntBase" id="r_a23daea8bf91d505b972c77c4fe395b25"><td class="memItemLeft" align="right" valign="top">
+typedef boost::archive::binary_iarchive&#160;</td><td class="memItemRight" valign="bottom"><b>BoostInputArchiveType</b></td></tr>
+<tr class="separator:a23daea8bf91d505b972c77c4fe395b25 inherit pub_types_classExaDG_1_1TimeIntBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf8776db97758cc0a3ab8dd1d0eaf54a inherit pub_types_classExaDG_1_1TimeIntBase" id="r_adf8776db97758cc0a3ab8dd1d0eaf54a"><td class="memItemLeft" align="right" valign="top">
+typedef boost::archive::binary_oarchive&#160;</td><td class="memItemRight" valign="bottom"><b>BoostOutputArchiveType</b></td></tr>
+<tr class="separator:adf8776db97758cc0a3ab8dd1d0eaf54a inherit pub_types_classExaDG_1_1TimeIntBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -241,10 +261,10 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:a470ac057aa986e4bc9fc4384a038ddde"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abf703ee90776c2b026ced6a78ce5a099" id="r_abf703ee90776c2b026ced6a78ce5a099"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abf703ee90776c2b026ced6a78ce5a099">setup_derived</a> () override</td></tr>
 <tr class="separator:abf703ee90776c2b026ced6a78ce5a099"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad452a326d5eee0ddb911e02d5bdf6798" id="r_ad452a326d5eee0ddb911e02d5bdf6798"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad452a326d5eee0ddb911e02d5bdf6798">read_restart_vectors</a> (boost::archive::binary_iarchive &amp;ia) override</td></tr>
-<tr class="separator:ad452a326d5eee0ddb911e02d5bdf6798"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad1fa762d0e2e93af99ae4f094680ec84" id="r_ad1fa762d0e2e93af99ae4f094680ec84"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad1fa762d0e2e93af99ae4f094680ec84">write_restart_vectors</a> (boost::archive::binary_oarchive &amp;oa) const override</td></tr>
-<tr class="separator:ad1fa762d0e2e93af99ae4f094680ec84"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0768b7c14566b600b35f2ade248dc22d" id="r_a0768b7c14566b600b35f2ade248dc22d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0768b7c14566b600b35f2ade248dc22d">read_restart_vectors</a> (BoostInputArchiveType &amp;ia) override</td></tr>
+<tr class="separator:a0768b7c14566b600b35f2ade248dc22d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a64bf7ece83cced4e46a04645e473dd7d" id="r_a64bf7ece83cced4e46a04645e473dd7d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a64bf7ece83cced4e46a04645e473dd7d">write_restart_vectors</a> (BoostOutputArchiveType &amp;oa) const override</td></tr>
+<tr class="separator:a64bf7ece83cced4e46a04645e473dd7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa102fe0c6032b6673862e19099584c81" id="r_aa102fe0c6032b6673862e19099584c81"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa102fe0c6032b6673862e19099584c81">prepare_vectors_for_next_timestep</a> () override</td></tr>
 <tr class="separator:aa102fe0c6032b6673862e19099584c81"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classExaDG_1_1TimeIntBDFBase"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pro_methods_classExaDG_1_1TimeIntBDFBase')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classExaDG_1_1TimeIntBDFBase.html">ExaDG::TimeIntBDFBase</a></td></tr>
@@ -468,8 +488,8 @@ template&lt;int dim, typename Number&gt; </div>
 
 </div>
 </div>
-<a id="ad452a326d5eee0ddb911e02d5bdf6798" name="ad452a326d5eee0ddb911e02d5bdf6798"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad452a326d5eee0ddb911e02d5bdf6798">&#9670;&#160;</a></span>read_restart_vectors()</h2>
+<a id="a0768b7c14566b600b35f2ade248dc22d" name="a0768b7c14566b600b35f2ade248dc22d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0768b7c14566b600b35f2ade248dc22d">&#9670;&#160;</a></span>read_restart_vectors()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -482,7 +502,7 @@ template&lt;int dim, typename Number&gt; </div>
         <tr>
           <td class="memname">void <a class="el" href="classExaDG_1_1IncNS_1_1TimeIntBDF.html">ExaDG::IncNS::TimeIntBDF</a>&lt; dim, Number &gt;::read_restart_vectors </td>
           <td>(</td>
-          <td class="paramtype">boost::archive::binary_iarchive &amp;</td>          <td class="paramname"><span class="paramname"><em>ia</em></span></td><td>)</td>
+          <td class="paramtype">BoostInputArchiveType &amp;</td>          <td class="paramname"><span class="paramname"><em>ia</em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -526,8 +546,8 @@ template&lt;int dim, typename Number&gt; </div>
 
 </div>
 </div>
-<a id="ad1fa762d0e2e93af99ae4f094680ec84" name="ad1fa762d0e2e93af99ae4f094680ec84"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad1fa762d0e2e93af99ae4f094680ec84">&#9670;&#160;</a></span>write_restart_vectors()</h2>
+<a id="a64bf7ece83cced4e46a04645e473dd7d" name="a64bf7ece83cced4e46a04645e473dd7d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a64bf7ece83cced4e46a04645e473dd7d">&#9670;&#160;</a></span>write_restart_vectors()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -540,7 +560,7 @@ template&lt;int dim, typename Number&gt; </div>
         <tr>
           <td class="memname">void <a class="el" href="classExaDG_1_1IncNS_1_1TimeIntBDF.html">ExaDG::IncNS::TimeIntBDF</a>&lt; dim, Number &gt;::write_restart_vectors </td>
           <td>(</td>
-          <td class="paramtype">boost::archive::binary_oarchive &amp;</td>          <td class="paramname"><span class="paramname"><em>oa</em></span></td><td>)</td>
+          <td class="paramtype">BoostOutputArchiveType &amp;</td>          <td class="paramname"><span class="paramname"><em>oa</em></span></td><td>)</td>
           <td> const</td>
         </tr>
       </table>
