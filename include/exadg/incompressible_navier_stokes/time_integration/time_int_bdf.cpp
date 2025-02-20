@@ -55,6 +55,8 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
     vec_convective_term(this->order),
     use_extrapolation(true),
     store_solution(false),
+    update_velocity(true),
+    update_pressure(true),
     helpers_ale(helpers_ale_in),
     postprocessor(postprocessor_in),
     vec_grid_coordinates(param_in.order_time_integrator)
@@ -172,10 +174,24 @@ TimeIntBDF<dim, Number>::ale_update()
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::advance_one_timestep_partitioned_solve(bool const use_extrapolation)
+TimeIntBDF<dim, Number>::advance_one_timestep_partitioned_solve(bool const use_extrapolation,
+                                                                bool const update_velocity,
+                                                                bool const update_pressure)
 {
   this->use_extrapolation = use_extrapolation;
   this->store_solution    = true;
+  this->update_velocity   = update_velocity;
+  this->update_pressure   = update_pressure;
+
+  if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+  {
+    AssertThrow(this->update_velocity and this->update_pressure,
+                dealii::ExcMessage("TemporalDiscretization::BDFCoupledSolution cannot "
+                                   "recover velocity and pressure independently."));
+  }
+
+  AssertThrow(this->update_velocity or this->update_pressure,
+              dealii::ExcMessage("No update from fluid time stepper requested."));
 
   Base::advance_one_timestep_solve();
 }
