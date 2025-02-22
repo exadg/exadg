@@ -174,7 +174,7 @@ private:
 
     // TEMPORAL DISCRETIZATION
     this->param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified; // CFL;
-    this->param.time_step_size                = compute_rotation_duration() / 1000.0; 
+    this->param.time_step_size                = compute_rotation_duration() / 1000.0;
     this->param.cfl                           = 0.59;
     this->param.order_time_integrator         = 2;
     this->param.start_with_low_order          = false;
@@ -188,14 +188,14 @@ private:
     this->param.degree_p                = this->param.degree_u;
     this->param.degree_u                = this->param.degree_p;
 
-     // restart
-     this->param.restarted_simulation       = read_restart;
-     this->param.restart_data.write_restart = write_restart;
-     this->param.restart_data.interval_time = (this->param.end_time - this->param.start_time) * 0.4;
-     this->param.restart_data.interval_wall_time  = 1.e6;
-     this->param.restart_data.interval_time_steps = 1e8;
-     this->param.restart_data.filename =
-       this->output_parameters.directory + this->output_parameters.filename + "_restart";
+    // restart
+    this->param.restarted_simulation       = read_restart;
+    this->param.restart_data.write_restart = write_restart;
+    this->param.restart_data.interval_time = (this->param.end_time - this->param.start_time) * 0.4;
+    this->param.restart_data.interval_wall_time  = 1.e6;
+    this->param.restart_data.interval_time_steps = 1e8;
+    this->param.restart_data.filename =
+      this->output_parameters.directory + this->output_parameters.filename + "_restart";
   }
 
   void
@@ -301,9 +301,9 @@ private:
     return (2.0 * dealii::numbers::PI / xi);
   }
 
-  double const start_time = 0.0;
-  bool write_restart      = false;
-  bool read_restart       = false;
+  double const start_time    = 0.0;
+  bool         write_restart = false;
+  bool         read_restart  = false;
 };
 
 } // namespace Acoustics

@@ -22,6 +22,6 @@
     "Output": {
         "OutputDirectory": "output/circular_moving_gauss_pulse/",
         "OutputName": "circular_moving_gauss_pulse",
-        "WriteOutput": "true"
+        "WriteOutput": "false"
     }
 }
