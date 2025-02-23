@@ -225,6 +225,11 @@ private:
   {
     read_write_distributed_vector(solution, ia);
     read_write_distributed_vector(prediction, ia);
+
+    for(unsigned int i = 0; i < vec_evaluated_operators.size(); ++i)
+    {
+      read_write_distributed_vector(vec_evaluated_operators[i], ia);
+    }
   }
 
   void
@@ -232,6 +237,11 @@ private:
   {
     read_write_distributed_vector(solution, oa);
     read_write_distributed_vector(prediction, oa);
+
+    for(unsigned int i = 0; i < vec_evaluated_operators.size(); ++i)
+    {
+      read_write_distributed_vector(vec_evaluated_operators[i], oa);
+    }
   }
 
   void

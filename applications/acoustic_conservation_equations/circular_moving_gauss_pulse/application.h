@@ -173,7 +173,7 @@ private:
     this->param.speed_of_sound = speed_of_sound;
 
     // TEMPORAL DISCRETIZATION
-    this->param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified; // CFL;
+    this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
     this->param.time_step_size                = compute_rotation_duration() / 1000.0;
     this->param.cfl                           = 0.59;
     this->param.order_time_integrator         = 2;
