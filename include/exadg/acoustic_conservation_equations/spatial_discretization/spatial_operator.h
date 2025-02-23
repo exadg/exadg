@@ -53,10 +53,10 @@ namespace Acoustics
  * already scaled by the density rho * u.
  */
 template<int dim, typename Number>
-class SpatialOperator : public Interface::SpatialOperator<Number>
+class SpatialOperator : public Interface::SpatialOperator<dim, Number>
 {
-  using BlockVectorType = typename Interface::SpatialOperator<Number>::BlockVectorType;
-  using VectorType      = dealii::LinearAlgebra::distributed::Vector<Number>;
+  using VectorType      = typename Interface::SpatialOperator<dim, Number>::VectorType;
+  using BlockVectorType = typename Interface::SpatialOperator<dim, Number>::BlockVectorType;
 
 public:
   static unsigned int const block_index_pressure = 0;
@@ -133,6 +133,12 @@ public:
 
   dealii::DoFHandler<dim> const &
   get_dof_handler_u() const;
+
+  void
+  serialize_vectors(std::vector<BlockVectorType const *> block_vectors) const final;
+
+  void
+  deserialize_vectors(std::vector<BlockVectorType *> block_vectors) const final;
 
   dealii::AffineConstraints<Number> const &
   get_constraint_p() const;

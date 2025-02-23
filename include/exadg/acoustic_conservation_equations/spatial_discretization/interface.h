@@ -31,10 +31,11 @@ namespace Acoustics
 {
 namespace Interface
 {
-template<typename Number>
+template<int dim, typename Number>
 class SpatialOperator
 {
 public:
+  using VectorType      = dealii::LinearAlgebra::distributed::Vector<Number>;
   using BlockVectorType = dealii::LinearAlgebra::distributed::BlockVector<Number>;
 
   virtual ~SpatialOperator() = default;
@@ -51,6 +52,13 @@ public:
   // time integration: evaluate
   virtual void
   evaluate(BlockVectorType & dst, BlockVectorType const & src, double const time) const = 0;
+
+  // required for restart functionality
+  virtual void
+  serialize_vectors(std::vector<BlockVectorType const *> block_vectors) const = 0;
+
+  virtual void
+  deserialize_vectors(std::vector<BlockVectorType *> block_vectors) const = 0;
 
   virtual double
   calculate_time_step_cfl() const = 0;
