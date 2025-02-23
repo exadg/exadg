@@ -237,7 +237,7 @@ public:
       AssertThrow(constant_modes_values.size() > 0,
                   dealii::ExcMessage(
                     "Neither `constant_modes` nor `constant_modes_values` were provided. "
-                    "AMG setup requires near null sapce basis vectors."));
+                    "AMG setup requires near null space basis vectors."));
       ml_data.constant_modes_values = constant_modes_values;
     }
     else
