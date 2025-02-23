@@ -15,7 +15,9 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-        "RuntimeInNumberOfPulseRotations": "1.0"
+        "RuntimeInNumberOfPulseRotations": "1.0",
+        "ReadRestart": "false",
+        "WriteRestart": "false"
     },
     "Output": {
         "OutputDirectory": "output/circular_moving_gauss_pulse/",
