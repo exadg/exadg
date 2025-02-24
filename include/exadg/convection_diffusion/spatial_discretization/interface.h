@@ -80,6 +80,13 @@ public:
   virtual void
   project_velocity(VectorType & velocity, double const time) const = 0;
 
+  // required for restart functionality
+  virtual void
+  serialize_vectors(std::vector<VectorType const *> const & vectors) const = 0;
+
+  virtual void
+  deserialize_vectors(std::vector<VectorType *> const & vectors) = 0;
+
   // time integration: prescribe initial conditions
   virtual void
   prescribe_initial_conditions(VectorType & src, double const evaluation_time) const = 0;
@@ -152,6 +159,19 @@ public:
   initialize_dof_vector_velocity(VectorType & src) const
   {
     pde_operator->initialize_dof_vector_velocity(src);
+  }
+
+  // are these really needed? ##+
+  void
+  serialize_vectors(std::vector<VectorType const *> const & vectors) const
+  {
+    pde_operator->serialize_vectors(vectors);
+  }
+
+  void
+  deserialize_vectors(std::vector<VectorType *> const & vectors)
+  {
+    pde_operator->deserialize_vectors(vectors);
   }
 
 private:

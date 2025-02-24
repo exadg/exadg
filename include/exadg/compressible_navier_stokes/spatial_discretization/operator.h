@@ -89,6 +89,13 @@ public:
   void
   initialize_dof_vector_dim_components(VectorType & src) const;
 
+  // required for restart functionality
+  void
+  serialize_vectors(std::vector<VectorType const *> const & vectors) const final;
+
+  void
+  deserialize_vectors(std::vector<VectorType *> const & vectors) final;
+
   // set initial conditions
   void
   prescribe_initial_conditions(VectorType & src, double const time) const final;

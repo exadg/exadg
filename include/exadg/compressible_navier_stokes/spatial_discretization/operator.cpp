@@ -341,6 +341,22 @@ Operator<dim, Number>::prescribe_initial_conditions(VectorType & src, double con
 
 template<int dim, typename Number>
 void
+Operator<dim, Number>::serialize_vectors(std::vector<VectorType const *> const & vectors) const
+{
+  // ##+
+  (void)vectors;
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::deserialize_vectors(std::vector<VectorType *> const & vectors)
+{
+  // ##+
+  vectors.at(0)->add(1.2345);
+}
+
+template<int dim, typename Number>
+void
 Operator<dim, Number>::evaluate(VectorType & dst, VectorType const & src, Number const time) const
 {
   dealii::Timer timer;

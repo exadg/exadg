@@ -117,6 +117,15 @@ public:
   project_velocity(VectorType & velocity, double const time) const final;
 
   /*
+   * De-/serialize the vectors given.
+   */
+  void
+  serialize_vectors(std::vector<VectorType const *> const & vectors) const final;
+
+  void
+  deserialize_vectors(std::vector<VectorType *> const & vectors) final;
+
+  /*
    * Prescribe initial conditions using a specified analytical function.
    */
   void

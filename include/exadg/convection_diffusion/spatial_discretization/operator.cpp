@@ -585,6 +585,22 @@ Operator<dim, Number>::project_velocity(VectorType & velocity, double const time
 
 template<int dim, typename Number>
 void
+Operator<dim, Number>::serialize_vectors(std::vector<VectorType const *> const & vectors) const
+{
+  // ##+
+  (void)vectors;
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::deserialize_vectors(std::vector<VectorType *> const & vectors)
+{
+  // ##+
+  vectors.at(0)->add(1.2345);
+}
+
+template<int dim, typename Number>
+void
 Operator<dim, Number>::prescribe_initial_conditions(VectorType & src, double const time) const
 {
   field_functions->initial_solution->set_time(time);

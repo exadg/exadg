@@ -15,10 +15,12 @@
         "RefineTimeMax": "0"
     },
     "Application": {
+        "ReadRestart": "false",
+        "WriteRestart": "false"
     },
     "Output": {
         "OutputDirectory": "output/manufactured_solution/",
         "OutputName": "test",
-        "WriteOutput": "false"
+        "WriteOutput": "true"
     }
 }
