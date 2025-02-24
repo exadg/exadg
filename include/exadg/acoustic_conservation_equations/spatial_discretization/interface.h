@@ -55,10 +55,10 @@ public:
 
   // required for restart functionality
   virtual void
-  serialize_vectors(std::vector<BlockVectorType const *> block_vectors) const = 0;
+  serialize_vectors(std::vector<BlockVectorType const *> const & block_vectors) const = 0;
 
   virtual void
-  deserialize_vectors(std::vector<BlockVectorType *> block_vectors) const = 0;
+  deserialize_vectors(std::vector<BlockVectorType *> const & block_vectors) const = 0;
 
   virtual double
   calculate_time_step_cfl() const = 0;

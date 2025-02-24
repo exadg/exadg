@@ -135,10 +135,10 @@ public:
   get_dof_handler_u() const;
 
   void
-  serialize_vectors(std::vector<BlockVectorType const *> block_vectors) const final;
+  serialize_vectors(std::vector<BlockVectorType const *> const & block_vectors) const final;
 
   void
-  deserialize_vectors(std::vector<BlockVectorType *> block_vectors) const final;
+  deserialize_vectors(std::vector<BlockVectorType *> const & block_vectors) const final;
 
   dealii::AffineConstraints<Number> const &
   get_constraint_p() const;
@@ -246,6 +246,9 @@ private:
 
   dealii::DoFHandler<dim> dof_handler_p;
   dealii::DoFHandler<dim> dof_handler_u;
+
+  std::shared_ptr<dealii::FiniteElement<dim>> fe_mapping;
+  std::shared_ptr<dealii::DoFHandler<dim>>    dof_handler_mapping;
 
   dealii::AffineConstraints<Number> constraint_p, constraint_u;
 

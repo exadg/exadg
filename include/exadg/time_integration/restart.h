@@ -592,7 +592,7 @@ inline std::vector<dealii::Point<dim>>
 collect_integration_points(
   dealii::MatrixFree<dim, Number, dealii::VectorizedArray<Number>> const & matrix_free,
   unsigned int const                                                       dof_index,
-  unsigned int                                                             quad_index)
+  unsigned int const                                                       quad_index)
 {
   CellIntegrator<dim, n_components, Number> fe_eval(matrix_free, dof_index, quad_index);
 
