@@ -35,6 +35,7 @@
 #include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
+#include <exadg/time_integration/restart.h>
 
 namespace ExaDG
 {
@@ -72,6 +73,19 @@ Operator<dim, Number>::Operator(
     dof_handler_velocity = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
   }
 
+  if(param.degree)
+  {
+    fe_velocity = create_finite_element<dim>(ElementType::Hypercube, true, dim, param.degree);
+    dof_handler_velocity = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
+  }
+
+  if(needs_dof_handler_mapping())
+  {
+    fe_mapping =
+      create_finite_element<dim>(ElementType::Hypercube, true, dim, param.mapping_degree);
+    dof_handler_mapping = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
+  }
+
   initialize_dof_handler_and_constraints();
 
   pcout << std::endl
@@ -94,6 +108,11 @@ Operator<dim, Number>::initialize_dof_handler_and_constraints()
   if(needs_own_dof_handler_velocity())
   {
     dof_handler_velocity->distribute_dofs(*fe_velocity);
+  }
+
+  if(needs_dof_handler_mapping())
+  {
+    dof_handler_mapping->distribute_dofs(*fe_mapping);
   }
 
   affine_constraints.close();
@@ -587,16 +606,118 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::serialize_vectors(std::vector<VectorType const *> const & vectors) const
 {
-  // ##+
-  (void)vectors;
+  if(param.temporal_discretization == TemporalDiscretization::ExplRK)
+  {
+    std::vector<dealii::DoFHandler<dim> const *> dof_handlers{&dof_handler};
+    if(param.restart_data.consider_mapping)
+    {
+      store_vectors_in_triangulation_and_serialize(param.restart_data.filename,
+                                                   vectors,
+                                                   dof_handlers,
+                                                   *this->get_mapping(),
+                                                   &(*dof_handler_mapping),
+                                                   param.mapping_degree);
+    }
+    else
+    {
+      store_vectors_in_triangulation_and_serialize(param.restart_data.filename,
+                                                   vectors,
+                                                   dof_handlers);
+    }
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcNotImplemented());
+  }
 }
 
 template<int dim, typename Number>
 void
 Operator<dim, Number>::deserialize_vectors(std::vector<VectorType *> const & vectors)
 {
-  // ##+
-  vectors.at(0)->add(1.2345);
+  if(param.temporal_discretization == TemporalDiscretization::ExplRK)
+  {
+    // Store ghost state to recover after deserialization.
+    std::vector<bool> const has_ghost_elements = get_ghost_state(vectors);
+
+    // Load potentially unfitting checkpoint triangulation of TriangulationType.
+    std::shared_ptr<dealii::Triangulation<dim>> checkpoint_triangulation =
+      deserialize_triangulation<dim>(dof_handler.get_triangulation(),
+                                     param.restart_data.filename,
+                                     param.restart_data.triangulation_type,
+                                     mpi_comm);
+
+    // Setup DoFHandlers *as checkpointed*, sequence matches `this->serialize_vectors()`.
+    dealii::DoFHandler<dim> checkpoint_dof_handler(*checkpoint_triangulation);
+    ElementType const       checkpoint_element_type = get_element_type(*checkpoint_triangulation);
+    std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe =
+      create_finite_element<dim>(checkpoint_element_type, true, 1, param.restart_data.degree_p);
+    checkpoint_dof_handler.distribute_dofs(*checkpoint_fe);
+    std::vector<dealii::DoFHandler<dim> const *> checkpoint_dof_handlers{&checkpoint_dof_handler};
+
+    if(param.restart_data.discretization_identical)
+    {
+      // DoFHandlers need to be setup with `checkpoint_triangulation`, otherwise
+      // they are identical. We can load the contents into the vectors.
+      load_vectors(vectors, checkpoint_dof_handlers);
+    }
+    else
+    {
+      // Perform global projection in case of a non-matching discretization.
+      std::vector<dealii::DoFHandler<dim> const *> dof_handlers{&dof_handler};
+
+      // Deserialize mapping from vector or project on reference trianuglations.
+      std::shared_ptr<dealii::Mapping<dim> const> target_mapping;
+      std::shared_ptr<dealii::Mapping<dim>>       checkpoint_mapping;
+
+      std::vector<VectorType>   checkpoint_vectors(vectors.size);
+      std::vector<VectorType *> checkpoint_vectors_ptr(vectors.size);
+      for(unsigned int i = 0; i < vectors.size(); ++i)
+      {
+        checkpoint_vectors[i].reinit(checkpoint_dof_handler.locally_owned_dofs, mpi_comm);
+        checkpoint_vectors[i] = &checkpoint_vectors[i];
+      }
+
+      if(param.restart_data.consider_mapping)
+      {
+        target_mapping     = this->get_mapping();
+        checkpoint_mapping = load_vectors(checkpoint_vectors,
+                                          checkpoint_dof_handlers,
+                                          &(*dof_handler_mapping),
+                                          param.restart_data.mapping_degree);
+      }
+      else
+      {
+        load_vectors(checkpoint_vectors, checkpoint_dof_handlers);
+
+        // Create dummy linear mappings since we have no mapping serialized to restore.
+        GridUtilities::create_mapping(checkpoint_mapping,
+                                      get_element_type(*checkpoint_triangulation),
+                                      1 /* mapping_degree */);
+        std::shared_ptr<dealii::Mapping<dim>> tmp;
+        GridUtilities::create_mapping(tmp,
+                                      get_element_type(dof_handlers.at(0)->get_triangulation()),
+                                      1 /* mapping_degree */);
+        target_mapping = std::const_pointer_cast<dealii::Mapping<dim> const>(tmp);
+      }
+
+      grid_to_grid_projection(checkpoint_vectors,
+                              checkpoint_dof_handlers,
+                              checkpoint_mapping,
+                              vectors,
+                              dof_handlers,
+                              target_mapping,
+                              param.restart_data.rpe_tolerance_unit_cell,
+                              param.restart_data.rpe_enforce_unique_mapping);
+    }
+
+    // Recover ghost vector state.
+    set_ghost_state(vectors, has_ghost_elements);
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcNotImplemented());
+  }
 }
 
 template<int dim, typename Number>
@@ -1014,6 +1135,14 @@ bool
 Operator<dim, Number>::needs_own_dof_handler_velocity() const
 {
   return param.analytical_velocity_field and param.store_analytical_velocity_in_dof_vector;
+}
+
+template<int dim, typename Number>
+bool
+Operator<dim, Number>::needs_dof_handler_mapping() const
+{
+  return param.restart_data.consider_mapping and
+         (param.restart_data.write_restart or param.restarted_simulation);
 }
 
 template<int dim, typename Number>

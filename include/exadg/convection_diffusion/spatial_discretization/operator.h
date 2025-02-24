@@ -331,6 +331,9 @@ private:
   bool
   needs_own_dof_handler_velocity() const;
 
+  bool
+  needs_dof_handler_mapping() const;
+
   std::string
   get_quad_name() const;
 
@@ -396,6 +399,12 @@ private:
    */
   std::shared_ptr<dealii::FiniteElement<dim>> fe;
   dealii::DoFHandler<dim>                     dof_handler;
+
+  /*
+   * De-/serialization of the mapping requires a vector-valued `dealii::DofHandler`.
+   */
+  std::shared_ptr<dealii::FiniteElement<dim>> fe_mapping;
+  std::shared_ptr<dealii::DoFHandler<dim>>    dof_handler_mapping;
 
   /*
    * Numerical velocity field.

@@ -292,7 +292,7 @@ SpatialOperator<dim, Number>::deserialize_vectors(
   // Setup DoFHandlers *as checkpointed*, sequence matches `this->serialize_vectors()`.
   dealii::DoFHandler<dim> checkpoint_dof_handler_u(*checkpoint_triangulation);
   dealii::DoFHandler<dim> checkpoint_dof_handler_p(*checkpoint_triangulation);
-  ElementType             checkpoint_element_type = get_element_type(*checkpoint_triangulation);
+  ElementType const       checkpoint_element_type = get_element_type(*checkpoint_triangulation);
   std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_u =
     create_finite_element<dim>(checkpoint_element_type, true, dim, param.restart_data.degree_u);
   std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_p =
@@ -336,7 +336,7 @@ SpatialOperator<dim, Number>::deserialize_vectors(
     std::vector<std::vector<VectorType *>> vectors_per_dof_handler =
       get_vectors_per_block<VectorType, BlockVectorType>(block_vectors);
 
-    // Deserialize mapping from vector or project on reference trianuglations.
+    // Deserialize mapping from vector or project on reference triangulations.
     std::shared_ptr<dealii::Mapping<dim> const> target_mapping;
     std::shared_ptr<dealii::Mapping<dim>>       checkpoint_mapping;
     if(param.restart_data.consider_mapping)
