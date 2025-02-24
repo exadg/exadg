@@ -592,7 +592,7 @@ inline std::vector<dealii::Point<dim>>
 collect_integration_points(
   dealii::MatrixFree<dim, Number, dealii::VectorizedArray<Number>> const & matrix_free,
   unsigned int const                                                       dof_index,
-  unsigned int                                                             quad_index)
+  unsigned int const                                                       quad_index)
 {
   CellIntegrator<dim, n_components, Number> fe_eval(matrix_free, dof_index, quad_index);
 
@@ -756,9 +756,10 @@ project_vectors(
       target_matrix_free, fe_eval, values_source_in_q_points_target, dof_index);
 
     // CG solver for global projection.
-    unsigned int constexpr max_iter      = 10000;
-    double const                 abs_tol = 1e-16 * system_rhs.l2_norm();
-    double const                 rel_tol = 1e-12;
+    unsigned int constexpr max_iter = 10000;
+    double const abs_tol            = 1e-16 * system_rhs.l2_norm();
+    double constexpr rel_tol        = 1e-12;
+
     dealii::ReductionControl     reduction_control(max_iter, abs_tol, rel_tol);
     dealii::SolverCG<VectorType> solver_cg(reduction_control);
 
@@ -778,10 +779,11 @@ project_vectors(
 }
 
 /**
- * Utility function to perform grid-to-grid projection using `dealii::RemotePointEvaluation`.
- * We assume we only have a single `dealii::FiniteElement` per `dealii::DoFHandler`.
- * The VectorType template argument is assumed no to be of `BlockVector` type.
- * Note that this function initializes a complete `dealii::MatrixFree` object and hence
+ * Utility function to perform grid-to-grid projection using `dealii::RemotePointEvaluation`. We
+ * assume we only have a single `dealii::FiniteElement` per `dealii::DoFHandler`. The VectorType
+ * template argument is assumed not to be of `BlockVector` type. Note that this function initializes
+ * `dealii::MatrixFree` and `dealii::RemotePointEvaluation` object and hence should be used with
+ * caution.
  */
 template<int dim, typename VectorType>
 inline void
@@ -813,7 +815,7 @@ grid_to_grid_projection(
                 dealii::ExcMessage("Vectors of source and target vectors need to have same size."));
   }
 
-  // Setup `dealii::MatrixFree` object with multiple `dealii::DoFHandler`.
+  // Setup `dealii::MatrixFree` object with multiple `dealii::DoFHandler`s.
   using Number = typename VectorType::value_type;
   MatrixFreeData<dim, Number> matrix_free_data;
 
@@ -880,7 +882,7 @@ grid_to_grid_projection(
     else
     {
       AssertThrow(n_components == 1 or n_components == dim,
-                  dealii::ExcMessage("The current number of components is not"
+                  dealii::ExcMessage("The requested number of components is not"
                                      "supported in `grid_to_grid_projection()`."));
     }
   }

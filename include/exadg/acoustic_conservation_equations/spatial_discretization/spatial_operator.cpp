@@ -247,7 +247,7 @@ SpatialOperator<dim, Number>::get_dof_handler_u() const
 template<int dim, typename Number>
 void
 SpatialOperator<dim, Number>::serialize_vectors(
-  std::vector<BlockVectorType const *> block_vectors) const
+  std::vector<BlockVectorType const *> const & block_vectors) const
 {
   std::vector<dealii::DoFHandler<dim> const *> dof_handlers(2);
   dof_handlers.at(block_index_velocity) = &this->get_dof_handler_u();
@@ -277,7 +277,7 @@ SpatialOperator<dim, Number>::serialize_vectors(
 template<int dim, typename Number>
 void
 SpatialOperator<dim, Number>::deserialize_vectors(
-  std::vector<BlockVectorType *> block_vectors) const
+  std::vector<BlockVectorType *> const & block_vectors) const
 {
   // Store ghost state to recover after deserialization.
   std::vector<bool> const has_ghost_elements = get_ghost_state(block_vectors);
