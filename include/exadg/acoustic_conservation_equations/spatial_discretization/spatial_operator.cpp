@@ -308,8 +308,13 @@ SpatialOperator<dim, Number>::deserialize_vectors(
     get_block_vectors_from_dof_handlers<dim, BlockVectorType>(block_vectors.size(),
                                                               checkpoint_dof_handlers);
 
+  std::vector<BlockVectorType *> checkpoint_block_vectors_ptr;
+  for(unsigned int i = 0; i < checkpoint_block_vectors.size(); ++i)
+  {
+    checkpoint_block_vectors_ptr.push_back(&checkpoint_block_vectors[i]);
+  }
   std::vector<std::vector<VectorType *>> checkpoint_vectors =
-    get_vectors_per_block<VectorType, BlockVectorType>(checkpoint_block_vectors);
+    get_vectors_per_block<VectorType, BlockVectorType>(checkpoint_block_vectors_ptr);
 
   if(param.restart_data.discretization_identical)
   {

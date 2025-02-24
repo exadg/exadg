@@ -186,36 +186,6 @@ get_vectors_per_block(std::vector<BlockVectorType *> const & block_vectors)
   return vectors_per_block;
 }
 
-/**
- * Same as above but input argument is a vector of BlockVectors.
- * Return type is a vector of vector of pointers, i.e, unchanged.
- */
-template<typename VectorType, typename BlockVectorType>
-std::vector<std::vector<VectorType *>>
-get_vectors_per_block(std::vector<BlockVectorType> & block_vectors)
-{
-  unsigned int const n_blocks = block_vectors.at(0).n_blocks();
-  for(unsigned int i = 0; i < block_vectors.size(); ++i)
-  {
-    AssertThrow(block_vectors[i].n_blocks() == n_blocks,
-                dealii::ExcMessage("Provided number of blocks per "
-                                   "BlockVector must be equal."));
-  }
-
-  std::vector<std::vector<VectorType *>> vectors_per_block;
-  for(unsigned int i = 0; i < n_blocks; ++i)
-  {
-    std::vector<VectorType *> vectors;
-    for(unsigned int j = 0; j < block_vectors.size(); ++j)
-    {
-      vectors.push_back(&block_vectors[j].block(i));
-    }
-    vectors_per_block.push_back(vectors);
-  }
-
-  return vectors_per_block;
-}
-
 /** Utility function to setup a BlockVector given a vector
  * of DoFHandlers only containing owned DoFs. This can be used
  * in combination with `get_vectors_per_block()` to obtain vectors
