@@ -658,6 +658,9 @@ public:
   BlendInFunction(double const blend_in_start, double const blend_in_end)
     : Utilities::SpatialAwareFunction<dim>(1, 0.0), start(blend_in_start), end(blend_in_end)
   {
+    AssertThrow(start < end,
+                dealii::ExcMessage(
+                  "End of blend in has to be smaller compared to start of blend in."));
   }
 
   double
@@ -798,8 +801,9 @@ public:
   {
     this->field_functions->source_term_blend_in =
       std::make_shared<BlendInFunction<dim>>(this->acoustic->get_parameters().start_time,
-                                             0.1 * (this->acoustic->get_parameters().end_time -
-                                                    this->acoustic->get_parameters().start_time));
+                                             this->acoustic->get_parameters().start_time +
+                                               0.1 * (this->acoustic->get_parameters().end_time -
+                                                      this->acoustic->get_parameters().start_time));
 
     this->field_functions->analytical_aero_acoustic_source_term =
       std::make_shared<AnalyticalSourceTerm<dim>>(source_term_with_convection, intensity, r_0, r_c);
