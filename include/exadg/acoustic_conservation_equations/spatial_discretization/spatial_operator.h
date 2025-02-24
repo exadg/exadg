@@ -247,6 +247,9 @@ private:
   dealii::DoFHandler<dim> dof_handler_p;
   dealii::DoFHandler<dim> dof_handler_u;
 
+  std::shared_ptr<dealii::FiniteElement<dim>> fe_mapping;
+  std::shared_ptr<dealii::DoFHandler<dim>>    dof_handler_mapping;
+
   dealii::AffineConstraints<Number> constraint_p, constraint_u;
 
   std::string const dof_index_p = "pressure";
