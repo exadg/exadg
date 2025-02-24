@@ -119,7 +119,7 @@ private:
    */
 
   // unsteady solver
-  std::shared_ptr<TimeIntAdamsBashforthMoulton<Number>> time_integrator;
+  std::shared_ptr<TimeIntAdamsBashforthMoulton<dim, Number>> time_integrator;
 
   /*
    * Computation time (wall clock time).
