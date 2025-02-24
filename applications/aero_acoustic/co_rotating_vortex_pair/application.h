@@ -793,15 +793,6 @@ public:
   {
   }
 
-private:
-  void
-  set_single_field_solvers(std::string input_file, MPI_Comm const & comm) final
-  {
-    this->acoustic =
-      std::make_shared<AcousticsAeroAcoustic::Application<dim, Number>>(input_file, comm);
-    this->fluid = std::make_shared<FluidAeroAcoustic::Application<dim, Number>>(input_file, comm);
-  }
-
   void
   set_field_functions() final
   {
@@ -812,6 +803,15 @@ private:
 
     this->field_functions->analytical_aero_acoustic_source_term =
       std::make_shared<AnalyticalSourceTerm<dim>>(source_term_with_convection, intensity, r_0, r_c);
+  }
+
+private:
+  void
+  set_single_field_solvers(std::string input_file, MPI_Comm const & comm) final
+  {
+    this->acoustic =
+      std::make_shared<AcousticsAeroAcoustic::Application<dim, Number>>(input_file, comm);
+    this->fluid = std::make_shared<FluidAeroAcoustic::Application<dim, Number>>(input_file, comm);
   }
 
   void

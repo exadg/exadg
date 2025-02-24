@@ -72,6 +72,8 @@ Driver<dim, Number>::setup()
     timer_tree.insert({"AeroAcoustic", "Setup", "Fluid"}, timer_local.wall_time());
   }
 
+  application->set_field_functions();
+
   setup_volume_coupling();
 
   timer_tree.insert({"AeroAcoustic", "Setup"}, timer.wall_time());
