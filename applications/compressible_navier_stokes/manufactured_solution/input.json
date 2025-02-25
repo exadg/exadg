@@ -21,6 +21,6 @@
     "Output": {
         "OutputDirectory": "output/manufactured_solution/",
         "OutputName": "test",
-        "WriteOutput": "true"
+        "WriteOutput": "false"
     }
 }

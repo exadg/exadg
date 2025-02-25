@@ -161,19 +161,6 @@ public:
     pde_operator->initialize_dof_vector_velocity(src);
   }
 
-  // are these really needed? ##+
-  void
-  serialize_vectors(std::vector<VectorType const *> const & vectors) const
-  {
-    pde_operator->serialize_vectors(vectors);
-  }
-
-  void
-  deserialize_vectors(std::vector<VectorType *> const & vectors)
-  {
-    pde_operator->deserialize_vectors(vectors);
-  }
-
 private:
   std::shared_ptr<ConvDiff::Interface::Operator<Number>> pde_operator;
 

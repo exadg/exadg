@@ -250,6 +250,10 @@ private:
   std::string const quad_index_overintegration_conv = "overintegration_conv";
   std::string const quad_index_overintegration_vis  = "overintegration_vis";
 
+  // required for de-/serialization
+  std::shared_ptr<dealii::FiniteElement<dim>> fe_mapping;
+  std::shared_ptr<dealii::DoFHandler<dim>>    dof_handler_mapping;
+
   std::string const quad_index_l2_projections = quad_index_standard;
   // alternative: use more accurate over-integration strategy
   //  std::string const quad_index_l2_projections = quad_index_overintegration_conv;

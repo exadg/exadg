@@ -73,12 +73,6 @@ Operator<dim, Number>::Operator(
     dof_handler_velocity = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
   }
 
-  if(param.degree)
-  {
-    fe_velocity = create_finite_element<dim>(ElementType::Hypercube, true, dim, param.degree);
-    dof_handler_velocity = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
-  }
-
   if(needs_dof_handler_mapping())
   {
     fe_mapping =

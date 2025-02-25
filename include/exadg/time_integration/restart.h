@@ -386,8 +386,6 @@ store_vectors_in_triangulation_and_serialize(
 
   if(not vector_initialized)
   {
-    std::cout << "more expensive vector setup ##+\n";
-
     // More expensive setup extracting the `dealii::IndexSet`.
     dealii::IndexSet const & locally_owned_dofs = dof_handler_mapping->locally_owned_dofs();
     dealii::IndexSet const   locally_relevant_dofs =
@@ -402,11 +400,6 @@ store_vectors_in_triangulation_and_serialize(
   mapping_dof_vector.fill_grid_coordinates_vector(mapping,
                                                   vector_grid_coordinates,
                                                   *dof_handler_mapping);
-
-  std::cout << "dof_handler_mapping->n_dofs() = " << dof_handler_mapping->n_dofs() << "##+ \n";
-  std::cout << "vector_grid_coordinates.size() = " << vector_grid_coordinates.size() << "##+ \n";
-  std::cout << "vector_grid_coordinates.linfty_norm() = " << vector_grid_coordinates.linfty_norm()
-            << "##+ \n";
 
   // Attach vector holding mapping and corresponding `dof_handler_mapping`.
   std::vector<std::vector<VectorType const *>> vectors_per_dof_handler_extended =
@@ -672,11 +665,11 @@ assemble_projection_rhs(
         {
           tmp[0][i] = values;
         }
-        else if constexpr(n_components == dim)
+        else
         {
-          for(unsigned int d = 0; d < n_components; ++d)
+          for(unsigned int c = 0; c < n_components; ++c)
           {
-            tmp[d][i] = values[d];
+            tmp[c][i] = values[c];
           }
         }
       }
@@ -860,31 +853,48 @@ grid_to_grid_projection(
     unsigned int const n_components = target_dof_handlers[i]->get_fe().n_components();
     if(n_components == 1)
     {
-      project_vectors<dim, Number, 1 /* n_components */>(source_vectors_per_dof_handler.at(i),
-                                                         *source_dof_handlers.at(i),
-                                                         source_mapping,
-                                                         target_vectors_per_dof_handler.at(i),
-                                                         *target_dof_handlers.at(i),
-                                                         matrix_free,
-                                                         empty_constraints,
-                                                         i /* dof_index */,
-                                                         i /* quad_index */,
-                                                         rpe_tolerance_unit_cell,
-                                                         rpe_enforce_unique_mapping);
+      project_vectors<dim, Number, 1 /* n_components */, VectorType>(
+        source_vectors_per_dof_handler.at(i),
+        *source_dof_handlers.at(i),
+        source_mapping,
+        target_vectors_per_dof_handler.at(i),
+        *target_dof_handlers.at(i),
+        matrix_free,
+        empty_constraints,
+        i /* dof_index */,
+        i /* quad_index */,
+        rpe_tolerance_unit_cell,
+        rpe_enforce_unique_mapping);
     }
     else if(n_components == dim)
     {
-      project_vectors<dim, Number, dim /* n_components */>(source_vectors_per_dof_handler.at(i),
-                                                           *source_dof_handlers.at(i),
-                                                           source_mapping,
-                                                           target_vectors_per_dof_handler.at(i),
-                                                           *target_dof_handlers.at(i),
-                                                           matrix_free,
-                                                           empty_constraints,
-                                                           i /* dof_index */,
-                                                           i /* quad_index */,
-                                                           rpe_tolerance_unit_cell,
-                                                           rpe_enforce_unique_mapping);
+      project_vectors<dim, Number, dim /* n_components */, VectorType>(
+        source_vectors_per_dof_handler.at(i),
+        *source_dof_handlers.at(i),
+        source_mapping,
+        target_vectors_per_dof_handler.at(i),
+        *target_dof_handlers.at(i),
+        matrix_free,
+        empty_constraints,
+        i /* dof_index */,
+        i /* quad_index */,
+        rpe_tolerance_unit_cell,
+        rpe_enforce_unique_mapping);
+    }
+    else if(n_components == dim + 2)
+    {
+      project_vectors<dim, Number, dim + 2 /* n_components */, VectorType>(
+        source_vectors_per_dof_handler.at(i),
+        *source_dof_handlers.at(i),
+        source_mapping,
+        target_vectors_per_dof_handler.at(i),
+        *target_dof_handlers.at(i),
+        matrix_free,
+        empty_constraints,
+        i /* dof_index */,
+        i /* quad_index */,
+        rpe_tolerance_unit_cell,
+        rpe_enforce_unique_mapping);
     }
     else
     {
