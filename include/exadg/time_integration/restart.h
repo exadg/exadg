@@ -665,7 +665,7 @@ assemble_projection_rhs(
         {
           tmp[0][i] = values;
         }
-        else if constexpr(n_components == dim)
+        else
         {
           for(unsigned int d = 0; d < n_components; ++d)
           {
