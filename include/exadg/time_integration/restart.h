@@ -386,6 +386,8 @@ store_vectors_in_triangulation_and_serialize(
 
   if(not vector_initialized)
   {
+    std::cout << "more expensive vector setup ##+\n";
+
     // More expensive setup extracting the `dealii::IndexSet`.
     dealii::IndexSet const & locally_owned_dofs = dof_handler_mapping->locally_owned_dofs();
     dealii::IndexSet const   locally_relevant_dofs =
@@ -400,6 +402,11 @@ store_vectors_in_triangulation_and_serialize(
   mapping_dof_vector.fill_grid_coordinates_vector(mapping,
                                                   vector_grid_coordinates,
                                                   *dof_handler_mapping);
+
+  std::cout << "dof_handler_mapping->n_dofs() = " << dof_handler_mapping->n_dofs() << "##+ \n";
+  std::cout << "vector_grid_coordinates.size() = " << vector_grid_coordinates.size() << "##+ \n";
+  std::cout << "vector_grid_coordinates.linfty_norm() = " << vector_grid_coordinates.linfty_norm()
+            << "##+ \n";
 
   // Attach vector holding mapping and corresponding `dof_handler_mapping`.
   std::vector<std::vector<VectorType const *>> vectors_per_dof_handler_extended =
