@@ -27,6 +27,7 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 
@@ -35,6 +36,7 @@
 #include <deal.II/distributed/fully_distributed_tria.h>
 #include <deal.II/distributed/solution_transfer.h>
 #include <deal.II/distributed/tria.h>
+#include <deal.II/grid/manifold.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/lac/la_parallel_block_vector.h>
 #include <deal.II/lac/la_parallel_vector.h>
@@ -417,6 +419,82 @@ store_vectors_in_triangulation_and_serialize(
 }
 
 /**
+ * Utility function to copy over manifolds from one triangulation to another
+ * after deserializing. We modify `triangulation_old`, since this is the one
+ * deserialized. Currently, `manifold_id`s are preserved, while manifolds
+ * themselves are not. Match them if we can do so in an unambiguous manner.
+ */
+template<typename TriangulationTypeOld, typename TriangulationTypeNew>
+inline void
+copy_manifolds_after_serialization(TriangulationTypeOld &       triangulation_old,
+                                   TriangulationTypeNew const & triangulation_new)
+{
+  std::vector<dealii::types::manifold_id> ids_old = triangulation_old.get_manifold_ids();
+  std::vector<dealii::types::manifold_id> ids_new = triangulation_new.get_manifold_ids();
+
+  AssertThrow(ids_old.size() == ids_new.size(),
+              dealii::ExcMessage("Number of manifolds in old and new triangulations differ."));
+
+  std::sort(ids_old.begin(), ids_old.end());
+  std::sort(ids_new.begin(), ids_new.end());
+  std::vector<dealii::types::manifold_id> intersection;
+  std::set_intersection(ids_old.begin(),
+                        ids_old.end(),
+                        ids_new.begin(),
+                        ids_new.end(),
+                        std::back_inserter(intersection));
+
+  // Copy over matching manifolds.
+  for(unsigned int i = 0; i < intersection.size(); ++i)
+  {
+    triangulation_old.reset_manifold(intersection[i]);
+    triangulation_old.set_manifold(intersection[i],
+                                   triangulation_new.get_manifold(intersection[i]));
+  }
+
+  if(intersection.size() < ids_old.size() or intersection.size() < ids_new.size())
+  {
+    std::vector<dealii::types::manifold_id> ids_old_without_new;
+    std::vector<dealii::types::manifold_id> ids_new_without_old;
+    std::set_difference(ids_old.begin(),
+                        ids_old.end(),
+                        ids_new.begin(),
+                        ids_new.end(),
+                        std::inserter(ids_old_without_new, ids_old_without_new.begin()));
+    std::set_difference(ids_new.begin(),
+                        ids_new.end(),
+                        ids_old.begin(),
+                        ids_old.end(),
+                        std::inserter(ids_new_without_old, ids_new_without_old.begin()));
+
+    if(ids_old_without_new.size() == 1 and ids_new_without_old.size() == 1)
+    {
+      // We have exactly one manifold not identified, but also one manifold left to copy.
+      // Note: this should not be necessary, it might hint at an inconsistency in the setup.
+      dealii::types::manifold_id manifold_id = ids_old_without_new[0];
+
+      if(dealii::Utilities::MPI::this_mpi_process(triangulation_new.get_communicator()) == 0)
+      {
+        std::cout << "manifold_id " << ids_new_without_old[0]
+                  << " from current (new) grid not matched,\n"
+                     "but copied using manifold_id "
+                  << manifold_id << " from old grid.\n";
+      }
+
+      triangulation_old.reset_manifold(manifold_id);
+      triangulation_old.set_manifold(manifold_id,
+                                     triangulation_new.get_manifold(ids_new_without_old[0]));
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Failed to assign manifolds between triangulations "
+                                     "due to non-matching `manifold_id`s."));
+    }
+  }
+}
+
+/**
  * Utility function to deserialize the stored triangulation.
  */
 template<int dim, typename TriangulationTypeDeserialize>
@@ -434,15 +512,7 @@ deserialize_triangulation(TriangulationTypeDeserialize const & triangulation_new
     triangulation_old = std::make_shared<dealii::Triangulation<dim>>();
     triangulation_old->load(filename_base + ".triangulation");
 
-    // In case the coarse triangulation has manifolds assigned, copy them.
-    // We assume here that the `dealii::Manifold`s to be copied are exactly the same.
-    for(dealii::types::manifold_id const manifold_id : triangulation_new.get_manifold_ids())
-    {
-      if(manifold_id != dealii::numbers::flat_manifold_id)
-      {
-        triangulation_old->set_manifold(manifold_id, triangulation_new.get_manifold(manifold_id));
-      }
-    }
+    copy_manifolds_after_serialization(*triangulation_old, triangulation_new);
   }
   else if(triangulation_type == TriangulationType::Distributed)
   {
@@ -469,15 +539,8 @@ deserialize_triangulation(TriangulationTypeDeserialize const & triangulation_new
     tmp->copy_triangulation(coarse_triangulation);
     coarse_triangulation.clear();
 
-    // In case the coarse triangulation has manifolds assigned, copy them.
-    // We assume here that the `dealii::Manifold`s to be copied are exactly the same.
-    for(dealii::types::manifold_id const manifold_id : triangulation_new.get_manifold_ids())
-    {
-      if(manifold_id != dealii::numbers::flat_manifold_id)
-      {
-        tmp->set_manifold(manifold_id, triangulation_new.get_manifold(manifold_id));
-      }
-    }
+    copy_manifolds_after_serialization(*tmp, triangulation_new);
+
     tmp->load(filename_base + ".triangulation");
 
     triangulation_old = std::dynamic_pointer_cast<dealii::Triangulation<dim>>(tmp);
@@ -490,15 +553,7 @@ deserialize_triangulation(TriangulationTypeDeserialize const & triangulation_new
       std::make_shared<dealii::parallel::fullydistributed::Triangulation<dim>>(mpi_communicator);
     tmp->load(filename_base + ".triangulation");
 
-    // In case the coarse triangulation has manifolds assigned, copy them.
-    // We assume here that the `dealii::Manifold`s to be copied are exactly the same.
-    for(dealii::types::manifold_id const manifold_id : triangulation_new.get_manifold_ids())
-    {
-      if(manifold_id != dealii::numbers::flat_manifold_id)
-      {
-        tmp->set_manifold(manifold_id, triangulation_new.get_manifold(manifold_id));
-      }
-    }
+    copy_manifolds_after_serialization(*tmp, triangulation_new);
 
     triangulation_old = std::dynamic_pointer_cast<dealii::Triangulation<dim>>(tmp);
   }
