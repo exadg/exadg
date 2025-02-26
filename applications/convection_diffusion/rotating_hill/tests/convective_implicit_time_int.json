@@ -18,7 +18,7 @@
         "EnableAdaptivity": "false",
         "ReadRestart": "false",
         "WriteRestart": "false",
-        "ApplyManifold": "true"
+        "ApplyManifold": "false"
     },
     "Output": {
         "OutputDirectory": "output/rotating_hill/",

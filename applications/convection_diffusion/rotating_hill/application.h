@@ -229,7 +229,7 @@ private:
         // hypercube volume is [left,right]^dim
         dealii::GridGenerator::hyper_cube(tria, left, right);
 
-        // For AMR, we want to consider a mapping as well.
+        // Consider a mapped interior of the grid if desired.
         if(apply_manifold)
         {
           unsigned int const frequency   = 1;
