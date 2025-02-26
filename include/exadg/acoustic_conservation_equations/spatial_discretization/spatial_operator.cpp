@@ -19,11 +19,9 @@
  *  ______________________________________________________________________
  */
 
-// deal.II
-#include <deal.II/numerics/vector_tools.h>
-
 // ExaDG
 #include <exadg/acoustic_conservation_equations/spatial_discretization/spatial_operator.h>
+#include <exadg/functions_and_boundary_conditions/interpolate.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/operators/finite_element.h>
 #include <exadg/operators/grid_related_time_step_restrictions.h>
@@ -290,29 +288,16 @@ void
 SpatialOperator<dim, Number>::prescribe_initial_conditions(BlockVectorType & dst,
                                                            double const      time) const
 {
-  field_functions->initial_solution_pressure->set_time(time);
-  field_functions->initial_solution_velocity->set_time(time);
-
-  // This is necessary if Number == float
-  using VectorTypeDouble = dealii::LinearAlgebra::distributed::Vector<double>;
-
-  VectorTypeDouble pressure_double;
-  VectorTypeDouble velocity_double;
-  pressure_double = dst.block(block_index_pressure);
-  velocity_double = dst.block(block_index_velocity);
-
-  dealii::VectorTools::interpolate(*get_mapping(),
-                                   dof_handler_p,
-                                   *(field_functions->initial_solution_pressure),
-                                   pressure_double);
-
-  dealii::VectorTools::interpolate(*get_mapping(),
-                                   dof_handler_u,
-                                   *(field_functions->initial_solution_velocity),
-                                   velocity_double);
-
-  dst.block(block_index_pressure) = pressure_double;
-  dst.block(block_index_velocity) = velocity_double;
+  Utilities::interpolate(*get_mapping(),
+                         dof_handler_p,
+                         *(field_functions->initial_solution_pressure),
+                         dst.block(block_index_pressure),
+                         time);
+  Utilities::interpolate(*get_mapping(),
+                         dof_handler_u,
+                         *(field_functions->initial_solution_velocity),
+                         dst.block(block_index_velocity),
+                         time);
 }
 
 template<int dim, typename Number>
