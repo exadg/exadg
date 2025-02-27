@@ -239,6 +239,17 @@ public:
                                double const time) const;
 
   /*
+   * De-/serialization of the solution components.
+   */
+  void
+  serialize_vectors(std::vector<VectorType const *> vectors_velocity,
+                    std::vector<VectorType const *> vectors_pressure) const;
+
+  void
+  deserialize_vectors(std::vector<VectorType *> vectors_velocity,
+                      std::vector<VectorType *> vectors_pressure);
+
+  /*
    * Interpolate analytical solution functions.
    */
   void
@@ -500,10 +511,12 @@ private:
   std::shared_ptr<dealii::FiniteElement<dim>> fe_u;
   std::shared_ptr<dealii::FiniteElement<dim>> fe_p;
   std::shared_ptr<dealii::FiniteElement<dim>> fe_u_scalar;
+  std::shared_ptr<dealii::FiniteElement<dim>> fe_mapping;
 
-  dealii::DoFHandler<dim> dof_handler_u;
-  dealii::DoFHandler<dim> dof_handler_p;
-  dealii::DoFHandler<dim> dof_handler_u_scalar;
+  dealii::DoFHandler<dim>                  dof_handler_u;
+  dealii::DoFHandler<dim>                  dof_handler_p;
+  dealii::DoFHandler<dim>                  dof_handler_u_scalar;
+  std::shared_ptr<dealii::DoFHandler<dim>> dof_handler_mapping;
 
   dealii::AffineConstraints<Number> constraint_u, constraint_p, constraint_u_scalar;
 
@@ -611,6 +624,11 @@ protected:
   dealii::ConditionalOStream pcout;
 
 private:
+  std::shared_ptr<dealii::FiniteElement<dim>>
+  setup_fe_u(SpatialDiscretization const spatial_discretization,
+             ElementType const           element_type,
+             unsigned int const          degree) const;
+
   // Minimum element length h_min required for global CFL condition.
   double
   calculate_minimum_element_length() const;

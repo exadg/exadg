@@ -283,15 +283,13 @@ SpatialOperator<dim, Number>::deserialize_vectors(
 
   // Load potentially unfitting checkpoint triangulation of TriangulationType.
   std::shared_ptr<dealii::Triangulation<dim>> checkpoint_triangulation =
-    deserialize_triangulation<dim>(this->get_dof_handler_u().get_triangulation(),
-                                   param.restart_data.filename,
+    deserialize_triangulation<dim>(param.restart_data.filename,
                                    param.restart_data.triangulation_type,
                                    mpi_comm);
 
   // Setup DoFHandlers *as checkpointed*, sequence matches `this->serialize_vectors()`.
   dealii::DoFHandler<dim> checkpoint_dof_handler_u(*checkpoint_triangulation);
   dealii::DoFHandler<dim> checkpoint_dof_handler_p(*checkpoint_triangulation);
-  dealii::DoFHandler<dim> checkpoint_dof_handler_mapping(*checkpoint_triangulation);
 
   ElementType const checkpoint_element_type = get_element_type(*checkpoint_triangulation);
 
@@ -299,12 +297,9 @@ SpatialOperator<dim, Number>::deserialize_vectors(
     create_finite_element<dim>(checkpoint_element_type, true, dim, param.restart_data.degree_u);
   std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_p =
     create_finite_element<dim>(checkpoint_element_type, true, 1, param.restart_data.degree_p);
-  std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_mapping = create_finite_element<dim>(
-    checkpoint_element_type, true, dim, param.restart_data.mapping_degree);
 
   checkpoint_dof_handler_u.distribute_dofs(*checkpoint_fe_u);
   checkpoint_dof_handler_p.distribute_dofs(*checkpoint_fe_p);
-  checkpoint_dof_handler_mapping.distribute_dofs(*checkpoint_fe_mapping);
 
   std::vector<dealii::DoFHandler<dim> const *> checkpoint_dof_handlers(2);
   checkpoint_dof_handlers[block_index_velocity] = &checkpoint_dof_handler_u;
@@ -348,7 +343,15 @@ SpatialOperator<dim, Number>::deserialize_vectors(
     std::shared_ptr<dealii::Mapping<dim>>       checkpoint_mapping;
     if(param.restart_data.consider_mapping)
     {
-      target_mapping     = this->get_mapping();
+      target_mapping = this->get_mapping();
+      dealii::DoFHandler<dim> checkpoint_dof_handler_mapping(*checkpoint_triangulation);
+      std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_mapping =
+        create_finite_element<dim>(checkpoint_element_type,
+                                   true,
+                                   dim,
+                                   param.restart_data.mapping_degree);
+      checkpoint_dof_handler_mapping.distribute_dofs(*checkpoint_fe_mapping);
+
       checkpoint_mapping = load_vectors(checkpoint_vectors,
                                         checkpoint_dof_handlers,
                                         &checkpoint_dof_handler_mapping,
