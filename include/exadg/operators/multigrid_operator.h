@@ -186,6 +186,7 @@ public:
   get_constant_modes(std::vector<std::vector<bool>> &   constant_modes,
                      std::vector<std::vector<double>> & constant_modes_values) const final
   {
+    std::cout << "MultigridOperator::get_constant_modes ##+" << std::endl;
     pde_operator->get_constant_modes(constant_modes, constant_modes_values);
   }
 

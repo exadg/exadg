@@ -132,6 +132,15 @@ OperatorBase<dim, Number, n_components>::get_dof_index() const
 
 template<int dim, typename Number, int n_components>
 unsigned int
+OperatorBase<dim, Number, n_components>::get_dof_index_inhomogeneous() const
+{
+  AssertThrow(data.dof_index_inhomogeneous != dealii::numbers::invalid_unsigned_int,
+              dealii::ExcMessage("dof_index_inhomogeneous is uninitialized."));
+  return this->data.dof_index_inhomogeneous;
+}
+
+template<int dim, typename Number, int n_components>
+unsigned int
 OperatorBase<dim, Number, n_components>::get_quad_index() const
 {
   return this->data.quad_index;
@@ -502,9 +511,10 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
     src_tmp.reinit(rhs, false);
     dst_tmp.reinit(rhs, false);
 
-    // Set constrained degrees of freedom according to inhomogeneous Dirichlet boundary conditions.
-    //  The rest of the vector remains unchanged.
-    set_inhomogeneous_boundary_values(src_tmp);
+    // Set constrained degrees of freedom according to inhomogeneous Dirichlet boundary conditions,
+    // hanging node and periodicity constraints. The rest of the vector remains unchanged.
+    set_inhomogeneous_constrained_values(src_tmp,
+                                         false /* periodicity_and_hanging_node_constraints_only */);
 
     // Since src_tmp = 0 apart from inhomogeneous boundary data, the function evaluate_add() only
     // computes the inhomogeneous part of the operator.
@@ -1001,6 +1011,54 @@ OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix(
 
   // communicate overlapping matrix parts
   system_matrix.compress(dealii::VectorOperation::add);
+
+  // set diagonal entries of constrained DoFs to 1.0
+  dealii::DoFHandler<dim> const & dof_handler =
+    this->matrix_free->get_dof_handler(this->data.dof_index);
+  for(auto const & line : this->constraint->get_lines())
+  {
+    if(dof_handler.locally_owned_dofs().is_element(line.index))
+    {
+      std::cout << "system_matrix.el(i,i) = " << system_matrix.el(line.index, line.index)
+                << std::endl;
+      system_matrix.set(line.index, line.index, 1.0);
+    }
+  }
+  system_matrix.compress(dealii::VectorOperation::insert);
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::get_constant_modes(
+  std::vector<std::vector<bool>> &   constant_modes,
+  std::vector<std::vector<double>> & constant_modes_values) const
+{
+  (void)constant_modes_values;
+  std::cout << "OperatorBase::get_constant_modes ##+" << std::endl;
+  dealii::DoFHandler<dim> const & dof_handler =
+    this->matrix_free->get_dof_handler(this->data.dof_index);
+
+  std::cout << "this->level = " << this->level << std::endl;
+  std::cout << "this->matrix_free->get_mg_level() = " << this->matrix_free->get_mg_level()
+            << std::endl;
+  if(this->matrix_free->get_mg_level() != dealii::numbers::invalid_unsigned_int)
+  {
+    // Extract coarse level rigid body modes.
+    std::cout << "has level DoFs. ##+\n";
+    std::cout << "n_components: " << n_components << std::endl;
+    constant_modes =
+      dealii::DoFTools::extract_level_constant_modes(this->matrix_free->get_mg_level(),
+                                                     dof_handler,
+                                                     dealii::ComponentMask(n_components, true));
+  }
+  else
+  {
+    std::cout << "has NO level DoFs. ##+\n";
+    // Extract finest level rigid body modes.
+    constant_modes =
+      dealii::DoFTools::extract_constant_modes(dof_handler,
+                                               dealii::ComponentMask(n_components, true));
+  }
 }
 
 template<int dim, typename Number, int n_components>
@@ -1120,15 +1178,17 @@ OperatorBase<dim, Number, n_components>::do_boundary_integral_continuous(
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::set_inhomogeneous_boundary_values(
-  VectorType & solution) const
+OperatorBase<dim, Number, n_components>::set_inhomogeneous_constrained_values(
+  VectorType & solution,
+  bool const   periodicity_and_hanging_node_constraints_only) const
 {
   (void)solution;
+  (void)periodicity_and_hanging_node_constraints_only;
 
   AssertThrow(
     false,
     dealii::ExcMessage(
-      "OperatorBase::set_inhomogeneous_boundary_values() has to be overridden by derived class!"));
+      "OperatorBase::set_inhomogeneous_constrained_values() has to be overridden by derived class!"));
 }
 
 template<int dim, typename Number, int n_components>

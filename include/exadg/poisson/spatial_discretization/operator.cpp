@@ -491,7 +491,8 @@ Operator<dim, n_components, Number>::solve(VectorType &       sol,
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
     laplace_operator.set_time(time);
-    laplace_operator.set_inhomogeneous_boundary_values(sol);
+    laplace_operator.set_inhomogeneous_constrained_values(
+      sol, false /* periodicity_and_hanging_node_constraints_only */);
   }
 
   return n_iterations;
