@@ -292,19 +292,42 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
     }
   }
 
+  // Add vectors potentially defined in derived class.
+  std::vector<VectorType const *> vectors_velocity_add_ptr;
+  std::vector<VectorType const *> vectors_pressure_add_ptr;
+  this->get_vectors_serialization(vectors_velocity_add_ptr, vectors_pressure_add_ptr);
+  std::vector<VectorType> vectors_velocity_add;
+  std::vector<VectorType> vectors_pressure_add;
+  for(unsigned int i = 0; i < vectors_velocity_add_ptr.size(); ++i)
+  {
+    vectors_velocity_add.push_back(*vectors_velocity_add_ptr[i]);
+  }
+  for(unsigned int i = 0; i < vectors_pressure_add_ptr.size(); ++i)
+  {
+    vectors_pressure_add.push_back(*vectors_pressure_add_ptr[i]);
+  }
+  for(unsigned int i = 0; i < vectors_velocity_add.size(); ++i)
+  {
+    vectors_velocity_ptr.push_back(&vectors_velocity_add[i]);
+  }
+  for(unsigned int i = 0; i < vectors_pressure_add_ptr.size(); ++i)
+  {
+    vectors_pressure_ptr.push_back(&vectors_pressure_add[i]);
+  }
+
   operator_base->deserialize_vectors(vectors_velocity_ptr, vectors_pressure_ptr);
 
   // Copy contents from deserialized to used vectors.
-  unsigned int idx_velocity_vectors = 0;
   for(unsigned int i = 0; i < this->order; i++)
   {
-    set_velocity(vectors_velocity[idx_velocity_vectors], i);
-    idx_velocity_vectors += 1;
+    set_velocity(vectors_velocity[i], i);
   }
   for(unsigned int i = 0; i < this->order; i++)
   {
     set_pressure(vectors_pressure[i], i);
   }
+
+  this->set_vectors_deserialization(vectors_velocity_add, vectors_pressure_add);
 
   // Remains for comparison.
   try
@@ -399,6 +422,17 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
     }
   }
 
+  // Add vectors potentially defined in derived class.
+  std::vector<VectorType const *> vectors_velocity_add;
+  std::vector<VectorType const *> vectors_pressure_add;
+  this->get_vectors_serialization(vectors_velocity_add, vectors_pressure_add);
+  vectors_velocity.insert(vectors_velocity.end(),
+                          vectors_velocity_add.begin(),
+                          vectors_velocity_add.end());
+  vectors_pressure.insert(vectors_pressure.end(),
+                          vectors_pressure_add.begin(),
+                          vectors_pressure_add.end());
+
   operator_base->serialize_vectors(vectors_velocity, vectors_pressure);
 
   // Remains for comparison.
@@ -429,6 +463,29 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
       read_write_distributed_vector(vec_grid_coordinates[i], oa);
     }
   }
+}
+
+template<int dim, typename Number>
+void
+TimeIntBDF<dim, Number>::get_vectors_serialization(
+  std::vector<VectorType const *> & vectors_velocity,
+  std::vector<VectorType const *> & vectors_pressure) const
+{
+  // Overwrite this method in the derived class to attach additional vectors for serialization.
+  (void)vectors_velocity;
+  (void)vectors_pressure;
+}
+
+template<int dim, typename Number>
+void
+TimeIntBDF<dim, Number>::set_vectors_deserialization(
+  std::vector<VectorType> const & vectors_velocity,
+  std::vector<VectorType> const & vectors_pressure)
+{
+  // Overwrite this method in the derived class to process the attached vectors after
+  // deserialization.
+  (void)vectors_velocity;
+  (void)vectors_pressure;
 }
 
 template<int dim, typename Number>
