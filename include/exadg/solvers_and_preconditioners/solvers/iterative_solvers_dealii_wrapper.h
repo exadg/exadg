@@ -99,6 +99,16 @@ struct SolverDataCG
   {
   }
 
+  void
+  print(dealii::ConditionalOStream const & pcout) const
+  {
+    print_parameter(pcout, "Maximum number of iterations", max_iter);
+    print_parameter(pcout, "Absolut solver tolerance", solver_tolerance_abs);
+    print_parameter(pcout, "Relative solver tolerance", solver_tolerance_rel);
+    print_parameter(pcout, "Use preconditioner", use_preconditioner);
+    print_parameter(pcout, "Compute performance metrics", compute_performance_metrics);
+  }
+
   unsigned int max_iter;
   double       solver_tolerance_abs;
   double       solver_tolerance_rel;
