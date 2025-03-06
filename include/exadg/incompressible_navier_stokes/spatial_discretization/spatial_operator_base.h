@@ -239,6 +239,16 @@ public:
                                double const time) const;
 
   /*
+   * Interpolate given functions to the corresponding vectors.
+   */
+  void
+  interpolate_functions(VectorType &                                   velocity,
+                        std::shared_ptr<dealii::Function<dim>> const & f_velocity,
+                        VectorType &                                   pressure,
+                        std::shared_ptr<dealii::Function<dim>> const & f_pressure,
+                        double const                                   time) const;
+
+  /*
    * Interpolate analytical solution functions.
    */
   void

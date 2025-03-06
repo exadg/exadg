@@ -317,10 +317,9 @@ private:
     return (2.0 * dealii::numbers::PI / xi);
   }
 
-  double const start_time = 0.0;
-
-  bool read_restart  = false;
-  bool write_restart = false;
+  double const start_time    = 0.0;
+  bool         write_restart = false;
+  bool         read_restart  = false;
 };
 
 } // namespace Acoustics

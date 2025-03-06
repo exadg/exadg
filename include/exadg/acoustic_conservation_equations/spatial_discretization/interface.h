@@ -31,7 +31,7 @@ namespace Acoustics
 {
 namespace Interface
 {
-template<int dim, typename Number>
+template<typename Number>
 class SpatialOperator
 {
 public:

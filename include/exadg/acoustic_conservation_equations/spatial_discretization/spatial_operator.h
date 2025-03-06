@@ -53,10 +53,10 @@ namespace Acoustics
  * already scaled by the density rho * u.
  */
 template<int dim, typename Number>
-class SpatialOperator : public Interface::SpatialOperator<dim, Number>
+class SpatialOperator : public Interface::SpatialOperator<Number>
 {
-  using VectorType      = typename Interface::SpatialOperator<dim, Number>::VectorType;
-  using BlockVectorType = typename Interface::SpatialOperator<dim, Number>::BlockVectorType;
+  using VectorType      = typename Interface::SpatialOperator<Number>::VectorType;
+  using BlockVectorType = typename Interface::SpatialOperator<Number>::BlockVectorType;
 
 public:
   static unsigned int const block_index_pressure = 0;

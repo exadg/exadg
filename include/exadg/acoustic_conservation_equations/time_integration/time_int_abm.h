@@ -32,19 +32,18 @@ namespace ExaDG
 {
 namespace Acoustics
 {
-template<int dim, typename Number>
+template<typename Number>
 class TimeIntAdamsBashforthMoulton
-  : public TimeIntAdamsBashforthMoultonBase<Interface::SpatialOperator<dim, Number>,
+  : public TimeIntAdamsBashforthMoultonBase<Interface::SpatialOperator<Number>,
                                             dealii::LinearAlgebra::distributed::BlockVector<Number>>
 {
 public:
-  TimeIntAdamsBashforthMoulton(
-    std::shared_ptr<Interface::SpatialOperator<dim, Number>> pde_operator_in,
-    Parameters const &                                       param_in,
-    std::shared_ptr<PostProcessorInterface<Number>>          postprocessor_in,
-    MPI_Comm const &                                         mpi_comm_in,
-    bool const                                               is_test_in)
-    : TimeIntAdamsBashforthMoultonBase<Interface::SpatialOperator<dim, Number>,
+  TimeIntAdamsBashforthMoulton(std::shared_ptr<Interface::SpatialOperator<Number>> pde_operator_in,
+                               Parameters const &                                  param_in,
+                               std::shared_ptr<PostProcessorInterface<Number>>     postprocessor_in,
+                               MPI_Comm const &                                    mpi_comm_in,
+                               bool const                                          is_test_in)
+    : TimeIntAdamsBashforthMoultonBase<Interface::SpatialOperator<Number>,
                                        dealii::LinearAlgebra::distributed::BlockVector<Number>>(
         pde_operator_in,
         param_in.start_time,

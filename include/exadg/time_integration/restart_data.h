@@ -18,11 +18,13 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
+
 #ifndef INCLUDE_FUNCTIONALITIES_RESTART_DATA_H_
 #define INCLUDE_FUNCTIONALITIES_RESTART_DATA_H_
 
 // C/C++
 #include <limits>
+
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
 

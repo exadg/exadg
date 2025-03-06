@@ -19,10 +19,8 @@
  *  ______________________________________________________________________
  */
 
-// deal.II
-#include <deal.II/numerics/vector_tools.h>
-
 // ExaDG
+#include <exadg/functions_and_boundary_conditions/interpolate.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_projection.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
@@ -958,33 +956,31 @@ SpatialOperatorBase<dim, Number>::initialize_block_vector_velocity_pressure(
 
 template<int dim, typename Number>
 void
+SpatialOperatorBase<dim, Number>::interpolate_functions(
+  VectorType &                                   velocity,
+  std::shared_ptr<dealii::Function<dim>> const & f_velocity,
+  VectorType &                                   pressure,
+  std::shared_ptr<dealii::Function<dim>> const & f_pressure,
+  double const                                   time) const
+{
+  AssertThrow(f_velocity, dealii::ExcMessage("Function not set"));
+  AssertThrow(f_pressure, dealii::ExcMessage("Function not set"));
+
+  Utilities::interpolate(*get_mapping(), dof_handler_u, *f_velocity, velocity, time);
+  Utilities::interpolate(*get_mapping(), dof_handler_p, *f_pressure, pressure, time);
+}
+
+template<int dim, typename Number>
+void
 SpatialOperatorBase<dim, Number>::prescribe_initial_conditions(VectorType & velocity,
                                                                VectorType & pressure,
                                                                double const time) const
 {
-  field_functions->initial_solution_velocity->set_time(time);
-  field_functions->initial_solution_pressure->set_time(time);
-
-  // This is necessary if Number == float
-  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-
-  VectorTypeDouble velocity_double;
-  VectorTypeDouble pressure_double;
-  velocity_double = velocity;
-  pressure_double = pressure;
-
-  dealii::VectorTools::interpolate(*get_mapping(),
-                                   dof_handler_u,
-                                   *(field_functions->initial_solution_velocity),
-                                   velocity_double);
-
-  dealii::VectorTools::interpolate(*get_mapping(),
-                                   dof_handler_p,
-                                   *(field_functions->initial_solution_pressure),
-                                   pressure_double);
-
-  velocity = velocity_double;
-  pressure = pressure_double;
+  interpolate_functions(velocity,
+                        field_functions->initial_solution_velocity,
+                        pressure,
+                        field_functions->initial_solution_pressure,
+                        time);
 }
 
 template<int dim, typename Number>
@@ -993,34 +989,11 @@ SpatialOperatorBase<dim, Number>::interpolate_analytical_solution(VectorType & v
                                                                   VectorType & pressure,
                                                                   double const time) const
 {
-  AssertThrow(field_functions->analytical_solution_velocity,
-              dealii::ExcMessage("FieldFunctions::analytical_solution_velocity not set"));
-  AssertThrow(field_functions->analytical_solution_pressure,
-              dealii::ExcMessage("FieldFunctions::analytical_solution_pressure not set"));
-
-  field_functions->analytical_solution_velocity->set_time(time);
-  field_functions->analytical_solution_pressure->set_time(time);
-
-  // This is necessary if Number == float
-  using VectorTypeDouble = dealii::LinearAlgebra::distributed::Vector<double>;
-
-  VectorTypeDouble velocity_double;
-  VectorTypeDouble pressure_double;
-  velocity_double = velocity;
-  pressure_double = pressure;
-
-  dealii::VectorTools::interpolate(*get_mapping(),
-                                   get_dof_handler_u(),
-                                   *(field_functions->analytical_solution_velocity),
-                                   velocity_double);
-
-  dealii::VectorTools::interpolate(*get_mapping(),
-                                   get_dof_handler_p(),
-                                   *(field_functions->analytical_solution_pressure),
-                                   pressure_double);
-
-  velocity = velocity_double;
-  pressure = pressure_double;
+  interpolate_functions(velocity,
+                        field_functions->analytical_solution_velocity,
+                        pressure,
+                        field_functions->analytical_solution_pressure,
+                        time);
 }
 
 template<int dim, typename Number>
