@@ -1,4 +1,4 @@
-/* ______________________________________________________________________
+/*  ______________________________________________________________________
  *
  *  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
  *
@@ -121,11 +121,11 @@ struct RestartData
   // Finite element space used when the restart data was written.
   IncNS::SpatialDiscretization spatial_discretization;
 
-  // The discretization used when writing the restart data was identical to the current one
-  // (after calling `ApplicationBase::create_grid()`). Note that this includes the finite
-  // element, uniform and adaptive refinement, and the TriangulationType, *but* one might
-  // consider a different number of MPI ranks for `dealii::parallel::distributed::Triangulation``
-  // without the need for the otherwise necessary global projection.
+  // The discretization used when writing the restart data was identical to the current one.
+  // Note that this includes the finite element, uniform and adaptive refinement, and the
+  // `TriangulationType`, *but* one might consider a different number of MPI ranks for
+  // `dealii::parallel::distributed::Triangulation`` without the need for the otherwise
+  // necessary global projection.
   bool discretization_identical;
 
   // The mapping of the triangulation should be de-/serialized as well to consider for a mapped
