@@ -19,6 +19,10 @@
  *  ______________________________________________________________________
  */
 
+// C++
+#include <limits>
+
+// ExaDG
 #include <exadg/acoustic_conservation_equations/postprocessor/postprocessor.h>
 
 namespace ExaDG

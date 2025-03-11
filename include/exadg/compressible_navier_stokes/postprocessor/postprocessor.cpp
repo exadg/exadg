@@ -19,6 +19,10 @@
  *  ______________________________________________________________________
  */
 
+// C++
+#include <limits>
+
+// ExaDG
 #include <exadg/compressible_navier_stokes/postprocessor/postprocessor.h>
 #include <exadg/compressible_navier_stokes/spatial_discretization/operator.h>
 #include <exadg/utilities/numbers.h>

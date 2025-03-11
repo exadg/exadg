@@ -19,6 +19,9 @@
  *  ______________________________________________________________________
  */
 
+// C++
+#include <limits>
+
 // ExaDG
 #include <exadg/postprocessor/time_control_statistics.h>
 #include <exadg/utilities/print_functions.h>
