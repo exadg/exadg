@@ -31,6 +31,8 @@
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/manifold_lib.h>
 #include <deal.II/lac/la_parallel_vector.h>
+#include <deal.II/matrix_free/fe_point_evaluation.h>
+#include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
 #include <exadg/grid/grid_data.h>
@@ -39,6 +41,7 @@
 #include <exadg/postprocessor/error_calculation.h>
 #include <exadg/postprocessor/write_output.h>
 #include <exadg/utilities/numbers.h>
+#include <exadg/operators/solution_projection_between_triangulations.cpp> // temporary
 
 using namespace ExaDG;
 
@@ -443,7 +446,7 @@ GridToGridProjector<dim, n_components>::project()
     target_vectors_per_dof_handler.push_back(tmp);
   }
 
-  ExaDG::GridToGridProjection::GridToGridProjectionData<dim> data;
+  GridToGridProjection::GridToGridProjectionData<dim> data;
   data.solver_data.max_iter                    = 1000;
   data.solver_data.solver_tolerance_abs        = 1.0e-12;
   data.solver_data.solver_tolerance_rel        = 1.0e-8;
@@ -521,7 +524,7 @@ GridToGridProjector<dim, n_components>::check()
   std::array<double, 3> constexpr scales = {{1.0, 1.0e2, 1.0e-1}};
   for(unsigned int i = 0; i < vectors_target.size(); ++i)
   {
-    ExaDG::ErrorCalculationData<dim> error_data;
+    ErrorCalculationData<dim> error_data;
     error_data.time_control_data.is_active  = true;
     error_data.calculate_relative_errors    = true;
     error_data.additional_quadrature_points = 1;
@@ -529,7 +532,7 @@ GridToGridProjector<dim, n_components>::check()
     analytical_solution            = std::make_shared<SampleFunction<dim, n_components>>(scales[i]);
     error_data.analytical_solution = analytical_solution;
 
-    ExaDG::ErrorCalculator<dim, typename VectorType::value_type> error_calculator(mpi_comm);
+    ErrorCalculator<dim, typename VectorType::value_type> error_calculator(mpi_comm);
     error_calculator.setup(dof_handler_target, *mapping, error_data);
     error_calculator.time_control.needs_evaluation(0.0 /* time */, ExaDG::numbers::steady_timestep);
     error_calculator.evaluate(vectors_target[i], 0.0 /* time */, false /* unsteady */);
@@ -538,7 +541,7 @@ GridToGridProjector<dim, n_components>::check()
   std::array<double, 3> constexpr scales_continuous = {{1.0, 1.0e3}};
   for(unsigned int i = 0; i < vectors_target_continuous.size(); ++i)
   {
-    ExaDG::ErrorCalculationData<dim> error_data;
+    ErrorCalculationData<dim> error_data;
     error_data.time_control_data.is_active  = true;
     error_data.calculate_relative_errors    = true;
     error_data.additional_quadrature_points = 1;
@@ -546,7 +549,7 @@ GridToGridProjector<dim, n_components>::check()
     analytical_solution = std::make_shared<SampleFunction<dim, n_components>>(scales_continuous[i]);
     error_data.analytical_solution = analytical_solution;
 
-    ExaDG::ErrorCalculator<dim, typename VectorType::value_type> error_calculator(mpi_comm);
+    ErrorCalculator<dim, typename VectorType::value_type> error_calculator(mpi_comm);
     error_calculator.setup(dof_handler_target_continuous, *mapping, error_data);
     error_calculator.time_control.needs_evaluation(0.0 /* time */, ExaDG::numbers::steady_timestep);
     error_calculator.evaluate(vectors_target_continuous[i], 0.0 /* time */, false /* unsteady */);
