@@ -324,24 +324,22 @@ public:
   void
   setup()
   {
-    set_single_field_solvers(parameter_file, mpi_comm);
-
     parse_parameters();
     parameters.check();
     parameters.print(pcout, "List of parameters for aero-acoustic solver");
 
+    // field functions
     field_functions = std::make_shared<FieldFunctions<dim>>();
+    set_field_functions();
   }
-
-  // has to be called after the setup of acoustic and fluid member because we want to have
-  // access to them
-  virtual void
-  set_field_functions() = 0;
 
   virtual void
   add_parameters(dealii::ParameterHandler & prm)
   {
     parameters.add_parameters(prm, "AeroAcoustic");
+
+    acoustic->add_parameters(prm);
+    fluid->add_parameters(prm);
   }
 
   Parameters parameters;
@@ -352,6 +350,9 @@ public:
   std::shared_ptr<FieldFunctions<dim>> field_functions;
 
 private:
+  virtual void
+  set_field_functions() = 0;
+
   void
   parse_parameters()
   {
@@ -359,9 +360,6 @@ private:
     add_parameters(prm);
     prm.parse_input(parameter_file, "", true, true);
   }
-
-  virtual void
-  set_single_field_solvers(std::string input_file, MPI_Comm const & comm) = 0;
 
   std::string const          parameter_file;
   MPI_Comm const             mpi_comm;
