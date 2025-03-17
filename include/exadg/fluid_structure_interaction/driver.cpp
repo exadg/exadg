@@ -258,30 +258,59 @@ Driver<dim, Number>::coupling_fluid_to_structure(bool const end_of_time_step) co
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType &       d_tilde,
-                                                    VectorType const & d,
-                                                    unsigned int       iteration) const
+Driver<dim, Number>::solve_subproblem_ale(VectorType const & displacement_structure) const
 {
-  coupling_structure_to_ale(d);
+  // update displacement boundary data at interface
+  coupling_structure_to_ale(displacement_structure);
 
   // move the fluid mesh and update dependent data structures
   fluid->solve_ale();
+}
 
+template<int dim, typename Number>
+void
+Driver<dim, Number>::solve_subproblem_fluid(unsigned int const iteration,
+                                            bool const         update_velocity,
+                                            bool const         update_pressure) const
+{
   // update velocity boundary condition for fluid
   coupling_structure_to_fluid(iteration);
 
   // solve fluid problem
-  fluid->time_integrator->advance_one_timestep_partitioned_solve(iteration ==
-                                                                 0 /* use_extrapolation */);
+  fluid->time_integrator->advance_one_timestep_partitioned_solve(
+    iteration == 0 /* use_extrapolation */, update_velocity, update_pressure);
+}
 
+template<int dim, typename Number>
+void
+Driver<dim, Number>::solve_subproblem_structure(unsigned int const iteration) const
+{
   // update stress boundary condition for solid
   coupling_fluid_to_structure(true /* end_of_time_step */);
 
   // solve structural problem
   structure->time_integrator->advance_one_timestep_partitioned_solve(iteration ==
                                                                      0 /* use_extrapolation */);
+}
 
-  d_tilde = structure->time_integrator->get_displacement_np();
+template<int dim, typename Number>
+void
+Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType & displacement_structure_updated,
+                                                    VectorType const & displacement_structure,
+                                                    unsigned int       iteration) const
+{
+  if(iteration == 0 or parameters.update_ale)
+  {
+    solve_subproblem_ale(displacement_structure);
+  }
+
+  solve_subproblem_fluid(iteration,
+                         iteration == 0 or parameters.update_fluid_velocity,
+                         iteration == 0 or parameters.update_fluid_pressure);
+
+  solve_subproblem_structure(iteration);
+
+  displacement_structure_updated = structure->time_integrator->get_displacement_np();
 }
 
 template<int dim, typename Number>
