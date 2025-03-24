@@ -469,7 +469,7 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_velocity_block()
   {
     setup_multigrid_preconditioner_momentum();
 
-    if(this->param.exact_inversion_of_velocity_block == true)
+    if(this->param.iterative_solve_of_velocity_block == true)
     {
       setup_iterative_solver_momentum();
     }
@@ -561,7 +561,7 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
   {
     setup_multigrid_preconditioner_schur_complement();
 
-    if(this->param.exact_inversion_of_laplace_operator == true)
+    if(this->param.iterative_solve_of_pressure_block == true)
     {
       setup_iterative_solver_schur_complement();
     }
@@ -574,7 +574,7 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
 
     setup_multigrid_preconditioner_schur_complement();
 
-    if(this->param.exact_inversion_of_laplace_operator == true)
+    if(this->param.iterative_solve_of_pressure_block == true)
     {
       setup_iterative_solver_schur_complement();
     }
@@ -595,7 +595,7 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
     // I. multigrid for negative Laplace operator (classical or compatible discretization)
     setup_multigrid_preconditioner_schur_complement();
 
-    if(this->param.exact_inversion_of_laplace_operator == true)
+    if(this->param.iterative_solve_of_pressure_block == true)
     {
       setup_iterative_solver_schur_complement();
     }
@@ -889,7 +889,7 @@ OperatorCoupled<dim, Number>::update_block_preconditioner()
        type == SchurComplementPreconditioner::CahouetChabard or
        type == SchurComplementPreconditioner::PressureConvectionDiffusion)
     {
-      if(this->param.exact_inversion_of_laplace_operator == true)
+      if(this->param.iterative_solve_of_pressure_block == true)
       {
         laplace_operator->update_penalty_parameter();
       }
@@ -1068,12 +1068,12 @@ OperatorCoupled<dim, Number>::apply_preconditioner_velocity_block(VectorType &  
   }
   else if(type == MomentumPreconditioner::Multigrid)
   {
-    if(this->param.exact_inversion_of_velocity_block == false)
+    if(this->param.iterative_solve_of_velocity_block == false)
     {
       // perform one multigrid V-cylce
       preconditioner_momentum->vmult(dst, src);
     }
-    else // exact_inversion_of_velocity_block == true
+    else // iterative_solve_of_velocity_block == true
     {
       // check correctness of multigrid V-cycle
 
@@ -1198,13 +1198,13 @@ void
 OperatorCoupled<dim, Number>::apply_inverse_negative_laplace_operator(VectorType &       dst,
                                                                       VectorType const & src) const
 {
-  if(this->param.exact_inversion_of_laplace_operator == false)
+  if(this->param.iterative_solve_of_pressure_block == false)
   {
     // perform one multigrid V-cycle in order to approximately invert the negative Laplace
     // operator (classical or compatible)
     multigrid_preconditioner_schur_complement->vmult(dst, src);
   }
-  else // exact_inversion_of_laplace_operator == true
+  else // iterative_solve_of_pressure_block == true
   {
     // solve a linear system of equations related to the negative Laplace operator to given
     // (relative) tolerance using an iterative method

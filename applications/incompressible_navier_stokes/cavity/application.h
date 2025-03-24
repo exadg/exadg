@@ -197,7 +197,7 @@ private:
     this->param.multigrid_data_velocity_block.coarse_problem.solver =
       MultigridCoarseGridSolver::GMRES;
 
-    this->param.exact_inversion_of_velocity_block = false; // true;
+    this->param.iterative_solve_of_velocity_block = false; // true;
     this->param.solver_data_velocity_block        = SolverData(1e4, 1.e-12, 1.e-6, 100);
 
     // preconditioner Schur-complement block
@@ -205,8 +205,8 @@ private:
       SchurComplementPreconditioner::PressureConvectionDiffusion;
     this->param.multigrid_data_pressure_block.coarse_problem.solver =
       MultigridCoarseGridSolver::Chebyshev;
-    this->param.exact_inversion_of_laplace_operator = false;
-    this->param.solver_data_pressure_block          = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    this->param.iterative_solve_of_pressure_block = false;
+    this->param.solver_data_pressure_block        = SolverData(1e4, 1.e-12, 1.e-6, 100);
   }
 
   void
