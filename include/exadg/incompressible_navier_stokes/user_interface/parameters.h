@@ -681,7 +681,7 @@ public:
   // The momentum block is inverted "exactly" in block preconditioner
   // by solving the velocity convection-diffusion problem to a given
   // relative tolerance
-  bool exact_inversion_of_velocity_block;
+  bool iterative_solve_of_velocity_block;
 
   // solver data for velocity block (only relevant if velocity block
   // is inverted exactly)
@@ -695,10 +695,10 @@ public:
 
   // The Laplace operator is inverted "exactly" in block preconditioner
   // by solving the Laplace problem to a given relative tolerance
-  bool exact_inversion_of_laplace_operator;
+  bool iterative_solve_of_pressure_block;
 
   // solver data for Schur complement
-  // (only relevant if exact_inversion_of_laplace_operator == true)
+  // (only relevant if iterative_solve_of_pressure_block == true)
   SolverData solver_data_pressure_block;
 };
 
