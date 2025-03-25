@@ -1005,6 +1005,32 @@ OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix(
 
 template<int dim, typename Number, int n_components>
 void
+OperatorBase<dim, Number, n_components>::get_constant_modes(
+  std::vector<std::vector<bool>> &   constant_modes,
+  std::vector<std::vector<double>> & constant_modes_values) const
+{
+  (void)constant_modes_values;
+
+  dealii::DoFHandler<dim> const & dof_handler =
+    this->matrix_free->get_dof_handler(this->data.dof_index);
+
+  if(dof_handler.has_level_dofs())
+  {
+    constant_modes =
+      dealii::DoFTools::extract_level_constant_modes(0,
+                                                     dof_handler,
+                                                     dealii::ComponentMask(n_components, true));
+  }
+  else
+  {
+    constant_modes =
+      dealii::DoFTools::extract_constant_modes(dof_handler,
+                                               dealii::ComponentMask(n_components, true));
+  }
+}
+
+template<int dim, typename Number, int n_components>
+void
 OperatorBase<dim, Number, n_components>::reinit_cell(IntegratorCell &   integrator,
                                                      unsigned int const cell) const
 {
