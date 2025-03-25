@@ -775,7 +775,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00681" name="l00681"></a><span class="lineno">  681</span>  <span class="comment">// The momentum block is inverted &quot;exactly&quot; in block preconditioner</span></div>
 <div class="line"><a id="l00682" name="l00682"></a><span class="lineno">  682</span>  <span class="comment">// by solving the velocity convection-diffusion problem to a given</span></div>
 <div class="line"><a id="l00683" name="l00683"></a><span class="lineno">  683</span>  <span class="comment">// relative tolerance</span></div>
-<div class="line"><a id="l00684" name="l00684"></a><span class="lineno">  684</span>  <span class="keywordtype">bool</span> exact_inversion_of_velocity_block;</div>
+<div class="line"><a id="l00684" name="l00684"></a><span class="lineno">  684</span>  <span class="keywordtype">bool</span> iterative_solve_of_velocity_block;</div>
 <div class="line"><a id="l00685" name="l00685"></a><span class="lineno">  685</span> </div>
 <div class="line"><a id="l00686" name="l00686"></a><span class="lineno">  686</span>  <span class="comment">// solver data for velocity block (only relevant if velocity block</span></div>
 <div class="line"><a id="l00687" name="l00687"></a><span class="lineno">  687</span>  <span class="comment">// is inverted exactly)</span></div>
@@ -789,10 +789,10 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00695" name="l00695"></a><span class="lineno">  695</span> </div>
 <div class="line"><a id="l00696" name="l00696"></a><span class="lineno">  696</span>  <span class="comment">// The Laplace operator is inverted &quot;exactly&quot; in block preconditioner</span></div>
 <div class="line"><a id="l00697" name="l00697"></a><span class="lineno">  697</span>  <span class="comment">// by solving the Laplace problem to a given relative tolerance</span></div>
-<div class="line"><a id="l00698" name="l00698"></a><span class="lineno">  698</span>  <span class="keywordtype">bool</span> exact_inversion_of_laplace_operator;</div>
+<div class="line"><a id="l00698" name="l00698"></a><span class="lineno">  698</span>  <span class="keywordtype">bool</span> iterative_solve_of_pressure_block;</div>
 <div class="line"><a id="l00699" name="l00699"></a><span class="lineno">  699</span> </div>
 <div class="line"><a id="l00700" name="l00700"></a><span class="lineno">  700</span>  <span class="comment">// solver data for Schur complement</span></div>
-<div class="line"><a id="l00701" name="l00701"></a><span class="lineno">  701</span>  <span class="comment">// (only relevant if exact_inversion_of_laplace_operator == true)</span></div>
+<div class="line"><a id="l00701" name="l00701"></a><span class="lineno">  701</span>  <span class="comment">// (only relevant if iterative_solve_of_pressure_block == true)</span></div>
 <div class="line"><a id="l00702" name="l00702"></a><span class="lineno">  702</span>  <a class="code hl_struct" href="structExaDG_1_1SolverData.html">SolverData</a> solver_data_pressure_block;</div>
 <div class="line"><a id="l00703" name="l00703"></a><span class="lineno">  703</span>};</div>
 </div>
