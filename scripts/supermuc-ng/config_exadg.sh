@@ -29,7 +29,8 @@
 rm -rf CMakeFiles/ CMakeCache.txt libexadg.so libexadg.a include/exadg/configuration/config.h
 
 cmake \
-  -D DEGREE_MAX=15 \
+   -D CMAKE_BUILD_TYPE="DebugRelease" \
+   -D CMAKE_CXX_FLAGS="-std=c++17 -march=skylake-avx512 -Wno-array-bounds -Wno-literal-suffix -pthread" \
   -D DEAL_II_DIR="$WORKING_DIRECTORY/sw/dealii-build" \
   -D EXADG_WITH_FFTW=ON \
   -D FFTW_LIB="$WORKING_DIRECTORY/sw/fftw-3.3.7-install/lib/" \
