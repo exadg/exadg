@@ -33,7 +33,7 @@
 // ExaDG-Bio
 #define LINK_TO_EXADGBIO
 #ifdef LINK_TO_EXADGBIO
-#  include "../../../../../../exadg-bio/include/match_cell_data.h"
+#  include "../../../../../../../exadg-bio/include/match_cell_data.h"
 #endif
 
 namespace ExaDG
