@@ -110,6 +110,7 @@ public:
         AssertThrow(false, dealii::ExcMessage("AcousticSourceTermComputation not implemented."));
       }
 
+      source_term_acoustic = 0.0;
       non_nested_grid_transfer.restrict_and_add(source_term_acoustic, source_term_fluid);
     }
     else

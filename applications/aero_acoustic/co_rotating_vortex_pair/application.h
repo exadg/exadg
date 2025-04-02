@@ -41,6 +41,33 @@ compute_rotation_period(double const intensity, double const r_0)
 }
 } // namespace CoRotVortexPair
 
+template<int dim>
+void
+refine_triangulation_around_center(dealii::Triangulation<dim> & tria,
+                                   unsigned int const           n_ref,
+                                   double const                 radius)
+{
+  if(n_ref > 0)
+  {
+    for(unsigned int r = 0; r < n_ref; ++r)
+    {
+      for(auto const & cell : tria.active_cell_iterators())
+        if(cell->is_locally_owned())
+        {
+          for(const unsigned int i : dealii::GeometryInfo<dim>::vertex_indices())
+          {
+            if(cell->vertex(i).norm() < radius + 1.0e-6)
+            {
+              cell->set_refine_flag();
+            }
+          }
+        }
+
+      tria.execute_coarsening_and_refinement();
+    }
+  }
+}
+
 namespace AcousticsAeroAcoustic
 {
 using namespace Acoustics;
@@ -66,12 +93,17 @@ public:
         "StartTimeAcousticsInVortexRotations",
         n_rotations_before_start,
         "Number of rotations of the vortices before acoustic simulation is started.",
-        dealii::Patterns::Double(1e-12));
+        dealii::Patterns::Double(0.0));
 
       prm.add_parameter("EndTimeInVortexRotations",
                         n_rotations,
                         "Number of rotations of the vortices.",
                         dealii::Patterns::Double(1e-12));
+
+      prm.add_parameter("AdditionalAcousticRefinementsAroundSource",
+                        additional_refinements_around_source,
+                        "Number of additional refinements around source.",
+                        dealii::Patterns::Integer(0));
 
       prm.add_parameter("SpeedOfSound", this->param.speed_of_sound, "Speed of sound.");
 
@@ -131,15 +163,18 @@ private:
           std::vector<dealii::GridTools::PeriodicFacePair<
             typename dealii::Triangulation<dim>::cell_iterator>> & /*periodic_face_pairs*/,
           unsigned int const global_refinements,
-          std::vector<unsigned int> const & /* vector_local_refinements*/) {
-        dealii::GridGenerator::hyper_ball(tria, {0.0, 0.0}, domain_radius);
+          std::vector<unsigned int> const & /* vector_local_refinements*/)
+    {
+      dealii::GridGenerator::hyper_ball(tria, {0.0, 0.0}, domain_radius);
 
-        for(const auto & face : tria.active_face_iterators())
-          if(face->at_boundary())
-            face->set_boundary_id(1);
+      for(const auto & face : tria.active_face_iterators())
+        if(face->at_boundary())
+          face->set_boundary_id(1);
 
-        tria.refine_global(global_refinements);
-      };
+      tria.refine_global(global_refinements);
+
+      refine_triangulation_around_center(tria, additional_refinements_around_source, 1.5 * r_0);
+    };
 
     GridUtilities::create_triangulation<dim>(
       grid, this->mpi_comm, this->param.grid, lambda_create_triangulation, {});
@@ -184,17 +219,45 @@ private:
     pp_data.output_data.write_higher_order = true;
     pp_data.output_data.degree             = this->param.degree_u;
 
+
+    // pointwise output
+    pp_data.pointwise_output_data.time_control_data.is_active  = this->output_parameters.write;
+    pp_data.pointwise_output_data.time_control_data.start_time = this->param.end_time - 1.0e-2;
+    pp_data.pointwise_output_data.time_control_data.end_time   = this->param.end_time;
+    pp_data.pointwise_output_data.time_control_data.trigger_interval =
+      0.5 * (pp_data.pointwise_output_data.time_control_data.end_time -
+             pp_data.pointwise_output_data.time_control_data.start_time);
+    pp_data.pointwise_output_data.directory =
+      this->output_parameters.directory + "pointwise_output/";
+    pp_data.pointwise_output_data.filename       = this->output_parameters.filename;
+    pp_data.pointwise_output_data.write_pressure = true;
+    pp_data.pointwise_output_data.write_velocity = false;
+    pp_data.pointwise_output_data.update_points_before_evaluation = false;
+
+    double const       dr_x             = domain_radius / 1000.0;
+    double const       dr_y             = 0.0;
+    dealii::Point<dim> evaluation_point = {0, 0};
+    for(unsigned int i = 0; i < 1000; ++i)
+    {
+      evaluation_point[0] += dr_x;
+      evaluation_point[1] += dr_y;
+      pp_data.pointwise_output_data.evaluation_points.push_back(evaluation_point);
+    }
+
+
+
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return pp;
   }
 
-  double domain_radius            = 300.0;
-  double n_rotations_before_start = 1.0;
-  double n_rotations              = 2.0;
-  double intensity                = 7.54;
-  double r_0                      = 1.0;
+  int    additional_refinements_around_source = 0;
+  double domain_radius                        = 300.0;
+  double n_rotations_before_start             = 1.0;
+  double n_rotations                          = 2.0;
+  double intensity                            = 7.54;
+  double r_0                                  = 1.0;
 };
 
 } // namespace AcousticsAeroAcoustic
@@ -523,20 +586,21 @@ public:
           std::vector<dealii::GridTools::PeriodicFacePair<
             typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
           unsigned int const                                       global_refinements,
-          std::vector<unsigned int> const &                        vector_local_refinements) {
-        (void)periodic_face_pairs;
-        (void)vector_local_refinements;
+          std::vector<unsigned int> const &                        vector_local_refinements)
+    {
+      (void)periodic_face_pairs;
+      (void)vector_local_refinements;
 
-        dealii::GridGenerator::hyper_ball_balanced(tria, {0., 0.}, domain_radius);
+      dealii::GridGenerator::hyper_ball_balanced(tria, {0., 0.}, domain_radius);
 
-        for(const auto & face : tria.active_face_iterators())
-          if(face->at_boundary())
-            face->set_boundary_id(1);
+      for(const auto & face : tria.active_face_iterators())
+        if(face->at_boundary())
+          face->set_boundary_id(1);
 
-        tria.refine_global(global_refinements);
+      tria.refine_global(global_refinements);
 
-        refine_triangulation_around_center(tria, additional_refinements_around_source, 1.5 * r_0);
-      };
+      refine_triangulation_around_center(tria, additional_refinements_around_source, 1.5 * r_0);
+    };
 
     GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
@@ -552,32 +616,6 @@ public:
                                                  this->param.mapping_degree,
                                                  this->param.mapping_degree_coarse_grids,
                                                  this->param.involves_h_multigrid());
-  }
-
-  void
-  refine_triangulation_around_center(dealii::Triangulation<dim> & tria,
-                                     unsigned int const           n_ref,
-                                     double const                 radius)
-  {
-    if(n_ref > 0)
-    {
-      for(unsigned int r = 0; r < n_ref; ++r)
-      {
-        for(auto const & cell : tria.active_cell_iterators())
-          if(cell->is_locally_owned())
-          {
-            for(const unsigned int i : dealii::GeometryInfo<dim>::vertex_indices())
-            {
-              if(cell->vertex(i).norm() < radius + 1.0e-6)
-              {
-                cell->set_refine_flag();
-              }
-            }
-          }
-
-        tria.execute_coarsening_and_refinement();
-      }
-    }
   }
 
   void
@@ -696,7 +734,9 @@ public:
   AnalyticalSourceTerm(bool const   source_term_with_convection,
                        double const intensity,
                        double const r_0,
-                       double const r_c)
+                       double const r_c,
+                       double const rho,
+                       double const c)
     : dealii::Function<dim>(1, 0.0),
       source_term_with_convection(source_term_with_convection),
       pi(dealii::numbers::PI),
@@ -704,7 +744,9 @@ public:
       r_0(r_0),
       r_c(r_c),
       omega(2.0 * pi / CoRotVortexPair::compute_rotation_period(intensity, r_0)),
-      period(CoRotVortexPair::compute_rotation_period(intensity, r_0))
+      period(CoRotVortexPair::compute_rotation_period(intensity, r_0)),
+      rho(rho),
+      c(c)
   {
   }
 
@@ -738,7 +780,8 @@ public:
     double const ddt_2 = (dt_f2 * g - 2.0 * f2 * dt_g) / (g * g * g);
 
     if(not source_term_with_convection)
-      return intensity * omega / pi * ddt_1 + 0.5 * intensity * intensity / (pi * pi) * ddt_2;
+      return rho / (c * c) *
+             (intensity * omega / pi * ddt_1 + 0.5 * intensity * intensity / (pi * pi) * ddt_2);
 
     double const dr_f1     = -2.0 * r * r_0 * r_0 * std::cos(2.0 * theta - 2.0 * t * omega);
     double const dtheta_f1 = 2.0 * r * r * r_0 * r_0 * std::sin(2.0 * theta - 2.0 * t * omega);
@@ -772,7 +815,8 @@ public:
     double const DDt_2 = ddt_2 + (dr_f2 * g - 2.0 * f2 * dr_g) / (g * g * g) * w_r +
                          (dtheta_f2 * g - 2.0 * f2 * dtheta_g) / (r * g * g * g + 1e-16) * w_theta;
 
-    return intensity * omega / pi * DDt_1 + 0.5 * intensity * intensity / (pi * pi) * DDt_2;
+    return rho / (c * c) *
+           (intensity * omega / pi * DDt_1 + 0.5 * intensity * intensity / (pi * pi) * DDt_2);
   }
 
 private:
@@ -783,6 +827,8 @@ private:
   double const r_c;
   double const omega;
   double const period;
+  double const rho;
+  double const c;
 };
 
 template<int dim, typename Number>
@@ -804,11 +850,15 @@ private:
     this->field_functions->source_term_blend_in =
       std::make_shared<BlendInFunction<dim>>(this->acoustic->get_parameters().start_time,
                                              this->acoustic->get_parameters().start_time +
-                                               0.1 * (this->acoustic->get_parameters().end_time -
-                                                      this->acoustic->get_parameters().start_time));
+                                               0.5 * CoRotVortexPair::compute_rotation_period(intensity, r_0));
 
     this->field_functions->analytical_aero_acoustic_source_term =
-      std::make_shared<AnalyticalSourceTerm<dim>>(source_term_with_convection, intensity, r_0, r_c);
+      std::make_shared<AnalyticalSourceTerm<dim>>(source_term_with_convection,
+                                                  intensity,
+                                                  r_0,
+                                                  r_c,
+                                                  this->parameters.density,
+                                                  this->acoustic->get_parameters().speed_of_sound);
   }
 
   void

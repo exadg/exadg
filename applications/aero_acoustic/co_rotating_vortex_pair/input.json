@@ -5,30 +5,31 @@
         "IsTest": "false"
     },
     "SpatialResolutionAcoustics": {
-        "Degree": "3",
-        "RefineSpace": "3"
+        "Degree": "5",
+        "RefineSpace": "2"
     },
     "SpatialResolutionFluid": {
-        "Degree": "3",
-        "RefineSpace": "4"
+        "Degree": "6",
+        "RefineSpace": "2"
     },
     "AeroAcoustic": {
         "Density": "2.0",
-        "SourceTermWithConvection": "false",
+        "SourceTermWithConvection": "true",
         "BlendInSourceTerm": "true",
         "FluidToAcousticCouplingStrategy": "ConservativeInterpolation",
-        "AcousticSourceTermComputation": "FromAnalyticSourceTerm"
+        "AcousticSourceTermComputation": "FromFluid"
     },
     "Application": {
-        "StartTimeAcousticsInVortexRotations": "0.05",
-        "EndTimeInVortexRotations": "0.5",
-        "CFLFluid": "0.3",
+        "StartTimeAcousticsInVortexRotations": "0.0",
+        "EndTimeInVortexRotations": "4",
+        "CFLFluid": "0.5",
         "TemporalDiscretizationFluid": "InterpolateAnalyticalSolution",
         "CFLAcoustics": "0.25",
+        "AdditionalCFDRefinementsAroundSource": "4",
+        "AdditionalAcousticRefinementsAroundSource": "0",
+        "DomainRadiusFluid": "40.0",
+        "DomainRadiusAcoustics": "376.98223707078716",
         "SpeedOfSound": "12.0",
-        "AdditionalCFDRefinementsAroundSource": "0",
-        "DomainRadiusFluid": "2.0",
-        "DomainRadiusAcoustics": "20.0",
         "Intensity": "7.54",
         "VortexRadius": "1.0",
         "VortexCoreRadius": "0.1"
@@ -36,6 +37,6 @@
     "Output": {
         "OutputDirectory": "output/co_rotating_vortex_pair/",
         "OutputName": "co_rotating_vortex_pair",
-        "WriteOutput": "false"
+        "WriteOutput": "true"
     }
 }
