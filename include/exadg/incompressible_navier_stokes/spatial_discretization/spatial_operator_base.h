@@ -348,6 +348,10 @@ public:
   void
   compute_q_criterion(VectorType & dst, VectorType const & src) const;
 
+  // get the current visosity field as vector
+  void
+  get_viscosity(VectorType & dst, VectorType const & src) const;
+
   /*
    * Operators.
    */
@@ -613,6 +617,7 @@ protected:
   VorticityCalculator<dim, Number>  vorticity_calculator;
   DivergenceCalculator<dim, Number> divergence_calculator;
   ShearRateCalculator<dim, Number>  shear_rate_calculator;
+  ViscosityCalculator<dim, Number>  viscosity_calculator;
   MagnitudeCalculator<dim, Number>  magnitude_calculator;
   QCriterionCalculator<dim, Number> q_criterion_calculator;
 
