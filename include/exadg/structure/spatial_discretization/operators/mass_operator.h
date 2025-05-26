@@ -32,8 +32,8 @@ namespace ExaDG
 {
 namespace Structure
 {
-template<int dim>
-struct MassOperatorData : public ExaDG::MassOperatorData<dim>
+template<int dim, typename Number>
+struct MassOperatorData : public ExaDG::MassOperatorData<dim, Number>
 {
   std::shared_ptr<BoundaryDescriptor<dim> const> bc;
 };
@@ -49,7 +49,7 @@ public:
   void
   initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
              dealii::AffineConstraints<Number> const & affine_constraints,
-             MassOperatorData<dim> const &             data)
+             MassOperatorData<dim, Number> const &     data)
   {
     operator_data = data;
 
@@ -84,7 +84,7 @@ public:
   }
 
 private:
-  MassOperatorData<dim> operator_data;
+  MassOperatorData<dim, Number> operator_data;
 };
 
 } // namespace Structure

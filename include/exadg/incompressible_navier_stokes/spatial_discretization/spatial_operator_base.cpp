@@ -404,7 +404,7 @@ void
 SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_index_temperature)
 {
   // mass operator
-  MassOperatorData<dim> mass_operator_data;
+  MassOperatorData<dim, Number> mass_operator_data;
   mass_operator_data.dof_index  = get_dof_index_velocity();
   mass_operator_data.quad_index = get_quad_index_velocity_standard();
   mass_operator.initialize(*matrix_free, constraint_u, mass_operator_data);
