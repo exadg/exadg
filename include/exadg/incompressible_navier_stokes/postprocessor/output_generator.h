@@ -36,6 +36,7 @@ struct OutputData : public OutputDataBase
     : write_vorticity(false),
       write_divergence(false),
       write_shear_rate(false),
+      write_viscosity(false),
       write_velocity_magnitude(false),
       write_vorticity_magnitude(false),
       write_streamfunction(false),
@@ -54,6 +55,7 @@ struct OutputData : public OutputDataBase
     print_parameter(pcout, "Write vorticity", write_vorticity);
     print_parameter(pcout, "Write divergence", write_divergence);
     print_parameter(pcout, "Write shear rate", write_shear_rate);
+    print_parameter(pcout, "Write viscosity", write_viscosity);
     print_parameter(pcout, "Write velocity magnitude", write_velocity_magnitude);
     print_parameter(pcout, "Write vorticity magnitude", write_vorticity_magnitude);
     print_parameter(pcout, "Write streamfunction", write_streamfunction);
@@ -68,8 +70,11 @@ struct OutputData : public OutputDataBase
   // write divergence of velocity field
   bool write_divergence;
 
-  // write shear rate in velocity field
+  // write shear rate of velocity field
   bool write_shear_rate;
+
+  // write viscosity depending on viscosity field
+  bool write_viscosity;
 
   // write velocity magnitude
   bool write_velocity_magnitude;

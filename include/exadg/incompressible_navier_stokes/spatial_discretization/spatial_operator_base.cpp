@@ -665,6 +665,10 @@ SpatialOperatorBase<dim, Number>::initialize_calculators_for_derived_quantities(
                                    get_dof_index_velocity(),
                                    get_dof_index_velocity_scalar(),
                                    get_quad_index_velocity_standard());
+  viscosity_calculator.initialize(*matrix_free,
+                                  get_dof_index_velocity_scalar(),
+                                  get_quad_index_velocity_standard(),
+                                  *viscous_kernel);
   magnitude_calculator.initialize(*matrix_free,
                                   get_dof_index_velocity(),
                                   get_dof_index_velocity_scalar(),
@@ -1223,6 +1227,21 @@ SpatialOperatorBase<dim, Number>::compute_shear_rate(VectorType & dst, VectorTyp
   shear_rate_calculator.compute_shear_rate(dst, src);
 
   inverse_mass_velocity_scalar.apply(dst, dst);
+}
+
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::get_viscosity(VectorType & dst, VectorType const & src) const
+{
+  if(param.viscosity_is_variable())
+  {
+    viscosity_calculator.get_viscosity(dst, src);
+    inverse_mass_velocity_scalar.apply(dst, dst);
+  }
+  else
+  {
+    dst = param.viscosity;
+  }
 }
 
 template<int dim, typename Number>

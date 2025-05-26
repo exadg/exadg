@@ -209,7 +209,7 @@ struct SmootherData
   // damping/relaxation factor for Jacobi smoother
   double relaxation_factor;
 
-  // Chebyshev smmother: sets the smoothing range (range of eigenvalues to be smoothed)
+  // Chebyshev smoother: sets the smoothing range (range of eigenvalues to be smoothed)
   double smoothing_range;
 
   // Chebyshev smmother: number of CG iterations for estimation of eigenvalues

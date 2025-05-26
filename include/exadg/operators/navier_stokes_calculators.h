@@ -26,6 +26,7 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.h>
 #include <exadg/matrix_free/integrators.h>
 
 namespace ExaDG
@@ -143,6 +144,47 @@ private:
   dealii::MatrixFree<dim, Number> const * matrix_free;
   unsigned int                            dof_index;
   unsigned int                            quad_index;
+};
+
+template<int dim, typename Number>
+class ViscosityCalculator
+{
+private:
+  typedef ViscosityCalculator<dim, Number> This;
+
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef dealii::VectorizedArray<Number> scalar;
+
+  typedef std::pair<unsigned int, unsigned int> Range;
+
+  typedef CellIntegrator<dim, 1, Number> CellIntegratorScalar;
+
+public:
+  ViscosityCalculator();
+
+  void
+  initialize(dealii::MatrixFree<dim, Number> const &              matrix_free_in,
+             unsigned int const                                   dof_index_u_scalar_in,
+             unsigned int const                                   quad_index_in,
+             IncNS::Operators::ViscousKernel<dim, Number> const & viscous_kernel_in);
+
+  void
+  get_viscosity(VectorType & dst, VectorType const & src) const;
+
+private:
+  void
+  cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType &                            dst,
+            VectorType const &                      src,
+            Range const &                           cell_range) const;
+
+  dealii::MatrixFree<dim, Number> const * matrix_free;
+
+  unsigned int dof_index_u_scalar;
+  unsigned int quad_index;
+
+  IncNS::Operators::ViscousKernel<dim, Number> const * viscous_kernel;
 };
 
 template<int dim, typename Number>
