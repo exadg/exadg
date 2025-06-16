@@ -39,8 +39,9 @@ struct MassOperatorData : public OperatorBaseData
   }
 
   // variable coefficients
-  bool                                                          coefficient_is_variable;
-  VariableCoefficients<dealii::VectorizedArray<Number>> const * variable_coefficients;
+  bool coefficient_is_variable;
+  std::shared_ptr<VariableCoefficients<dealii::VectorizedArray<Number>> const>
+    variable_coefficients;
 };
 
 template<int dim, int n_components, typename Number>
@@ -79,8 +80,7 @@ private:
   mutable double scaling_factor;
 
   // Variable coefficients not managed by this class.
-  bool                                                          coefficient_is_variable;
-  VariableCoefficients<dealii::VectorizedArray<Number>> const * variable_coefficients;
+  MassOperatorData<dim, Number> operator_data;
 };
 
 } // namespace ExaDG

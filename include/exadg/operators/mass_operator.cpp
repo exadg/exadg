@@ -37,13 +37,15 @@ MassOperator<dim, n_components, Number>::initialize(
 {
   Base::reinit(matrix_free, affine_constraints, data);
 
+  operator_data = data;
+
   this->integrator_flags = kernel.get_integrator_flags();
 
-  coefficient_is_variable = data.coefficient_is_variable;
-  variable_coefficients   = data.variable_coefficients;
+  kernel.set_variable_coefficients_ptr(data.variable_coefficients);
 
   // Variable coefficients only implemented for the the matrix-free operator.
-  AssertThrow(not coefficient_is_variable or variable_coefficients != nullptr,
+  AssertThrow(not operator_data.coefficient_is_variable or
+                kernel.get_variable_coefficients_ptr() != nullptr,
               dealii::ExcMessage("Pointer to variable coefficients not set properly."));
 }
 
@@ -84,12 +86,13 @@ template<int dim, int n_components, typename Number>
 void
 MassOperator<dim, n_components, Number>::do_cell_integral(IntegratorCell & integrator) const
 {
-  if(coefficient_is_variable)
+  if(operator_data.coefficient_is_variable)
   {
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
       dealii::VectorizedArray<Number> const coefficient =
-        this->variable_coefficients->get_coefficient_cell(integrator.get_current_cell_index(), q);
+        kernel.get_variable_coefficients_ptr()->get_coefficient_cell(
+          integrator.get_current_cell_index(), q);
 
       integrator.submit_value(coefficient *
                                 kernel.get_volume_flux(scaling_factor, integrator.get_value(q)),
