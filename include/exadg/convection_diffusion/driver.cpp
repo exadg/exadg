@@ -67,7 +67,7 @@ Driver<dim, Number>::setup()
       application->create_mesh_movement_function();
     ale_mapping = std::make_shared<DeformedMappingFunction<dim, Number>>(
       mapping,
-      application->get_parameters().degree,
+      application->get_parameters().mapping_degree,
       *grid->triangulation,
       mesh_motion,
       application->get_parameters().start_time);

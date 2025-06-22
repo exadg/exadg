@@ -271,9 +271,9 @@ create_triangulation(
  * The vector coarse_triangulations only includes the levels coarser than the fine triangulation,
  * where the first entry of the vector corresponds to the coarsest level.
  *
- * We have to distinguish between traingulation types, since for the case of a fully distributed
- * triangulation, one cannot coarse triangulations automatically. Instead, the lambda function
- * `lambda_create_coarse_triangulation()` is used together with the `vector_local_refinemetns`.
+ * This function can be used for serial and distributed triangulations. For a fully-distributed
+ * triangulation, one cannot create the coarse triangulations automatically and we have to use
+ * another function in this case.
  */
 template<int dim>
 inline void
@@ -346,7 +346,7 @@ create_coarse_triangulations_for_fully_distributed_triangulation(
   std::vector<unsigned int> const                                  vector_local_refinements)
 {
   // In case of a fully distributed triangulation, deal.II cannot automatically generate the
-  // coarse triangulations. Create the coarse traingulations using the lambda function and
+  // coarse triangulations. Create the coarse triangulations using the lambda function and
   // the vector of local refinements.
   AssertThrow(data.triangulation_type == TriangulationType::FullyDistributed,
               dealii::ExcMessage("Invalid parameter triangulation_type."));
