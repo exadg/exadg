@@ -28,6 +28,7 @@
 // utilities
 #include <exadg/operators/resolution_parameters.h>
 #include <exadg/time_integration/resolution_parameters.h>
+#include <exadg/utilities/evaluate_convergence_study.h>
 #include <exadg/utilities/general_parameters.h>
 
 // application
@@ -193,6 +194,9 @@ main(int argc, char ** argv)
       }
     }
   }
+
+  // print convergence study given data in ./output/run_(...)
+  ExaDG::evaluate_convergence_study(mpi_comm, general.is_test);
 
 #ifdef USE_SUB_COMMUNICATOR
   // free communicator

@@ -112,6 +112,11 @@ private:
   void
   do_evaluate(VectorType const & solution_vector, double const time);
 
+  std::string
+  filename_from_filename_base(std::string const & directory,
+                              std::string const & filename_base,
+                              bool const          initial_call);
+
   MPI_Comm const mpi_comm;
 
   bool clear_files_L2, clear_files_H1_seminorm;
