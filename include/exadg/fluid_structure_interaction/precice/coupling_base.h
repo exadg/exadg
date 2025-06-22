@@ -33,7 +33,7 @@
 
 // preCICE
 #ifdef EXADG_WITH_PRECICE
-#  include <precice/SolverInterface.hpp>
+#  include <precice/precice.hpp>
 #endif
 
 namespace ExaDG
@@ -67,7 +67,7 @@ class CouplingBase
 public:
   CouplingBase(dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
 #ifdef EXADG_WITH_PRECICE
-               std::shared_ptr<precice::SolverInterface> precice,
+               std::shared_ptr<precice::Participant> precice,
 #endif
                std::string const                mesh_name,
                dealii::types::boundary_id const surface_id);
@@ -104,19 +104,18 @@ public:
   write_data(dealii::LinearAlgebra::distributed::Vector<double> const & data_vector,
              std::string const &                                        data_name) = 0;
 
-
   virtual void
-  read_block_data(std::string const & data_name) const;
+  read_data(std::string const & data_name, double associated_time) const;
 
   /**
-   * @brief Queries data IDs from preCICE for the given read data name
+   * @brief Registers the the given read data name (for logging only)
    * @param read_data_name
    */
   void
   add_read_data(std::string const & read_data_name);
 
   /**
-   * @brief Queries data IDs from preCICE for the given write data name
+   * @brief Registers the the given read data name (for logging only)
    * @param write_data_name
    */
   void
@@ -145,15 +144,15 @@ protected:
 
   /// public precice solverinterface
 #ifdef EXADG_WITH_PRECICE
-  std::shared_ptr<precice::SolverInterface> precice;
+  std::shared_ptr<precice::Participant> precice;
 #endif
 
   /// Configuration parameters
   std::string const mesh_name;
-  int               mesh_id;
+
   // Map between data ID (preCICE) and the data name
-  std::map<std::string, int> read_data_map;
-  std::map<std::string, int> write_data_map;
+  std::set<std::string> read_data_map;
+  std::set<std::string> write_data_map;
 
   dealii::types::boundary_id const dealii_boundary_surface_id;
 
@@ -169,7 +168,7 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 CouplingBase<dim, data_dim, VectorizedArrayType>::CouplingBase(
   dealii::MatrixFree<dim, double, VectorizedArrayType> const & matrix_free_,
 #ifdef EXADG_WITH_PRECICE
-  std::shared_ptr<precice::SolverInterface> precice,
+  std::shared_ptr<precice::Participant> precice,
 #endif
   std::string const                mesh_name,
   dealii::types::boundary_id const surface_id)
@@ -183,13 +182,10 @@ CouplingBase<dim, data_dim, VectorizedArrayType>::CouplingBase(
 {
 #ifdef EXADG_WITH_PRECICE
   Assert(precice.get() != nullptr, dealii::ExcNotInitialized());
-
-  // Ask preCICE already in the constructor for the IDs
-  mesh_id = precice->getMeshID(mesh_name);
+  AssertThrow(dim == precice->getMeshDimensions(mesh_name), dealii::ExcInternalError());
 #else
   AssertThrow(false,
               dealii::ExcMessage("EXADG_WITH_PRECICE has to be activated to use this code."));
-  mesh_id                 = 0;
 #endif
 }
 
@@ -198,13 +194,9 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 void
 CouplingBase<dim, data_dim, VectorizedArrayType>::add_read_data(std::string const & read_data_name)
 {
-  Assert(mesh_id != -1, dealii::ExcNotInitialized());
-#ifdef EXADG_WITH_PRECICE
-  int const read_data_id = precice->getDataID(read_data_name, mesh_id);
-#else
-  int const read_data_id  = 0;
-#endif
-  read_data_map.insert({read_data_name, read_data_id});
+  // Strictly speaking not necessary anymore, but we can keep it for debugging and logging reasons
+  Assert(mesh_name != "", dealii::ExcNotInitialized());
+  read_data_map.insert({read_data_name});
 }
 
 
@@ -214,13 +206,9 @@ void
 CouplingBase<dim, data_dim, VectorizedArrayType>::add_write_data(
   std::string const & write_data_name)
 {
-  Assert(mesh_id != -1, dealii::ExcNotInitialized());
-#ifdef EXADG_WITH_PRECICE
-  int const write_data_id = precice->getDataID(write_data_name, mesh_id);
-#else
-  int const write_data_id = 0;
-#endif
-  write_data_map.insert({write_data_name, write_data_id});
+  // Strictly speaking not necessary anymore, but we can keep it for debugging and logging reasons
+  Assert(mesh_name != "", dealii::ExcNotInitialized());
+  write_data_map.insert({write_data_name});
 }
 
 
@@ -245,7 +233,7 @@ CouplingBase<dim, data_dim, VectorizedArrayType>::process_coupling_mesh()
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-CouplingBase<dim, data_dim, VectorizedArrayType>::read_block_data(std::string const &) const
+CouplingBase<dim, data_dim, VectorizedArrayType>::read_data(std::string const &, double) const
 {
   AssertThrow(false, dealii::ExcNotImplemented());
 }
@@ -259,13 +247,19 @@ CouplingBase<dim, data_dim, VectorizedArrayType>::print_info(bool const         
   dealii::ConditionalOStream pcout(std::cout,
                                    dealii::Utilities::MPI::this_mpi_process(
                                      matrix_free.get_dof_handler().get_communicator()) == 0);
-  auto const                 map = (reader ? read_data_map : write_data_map);
 
-  auto        names      = map.begin();
-  std::string data_names = names->first;
-  ++names;
-  for(; names != map.end(); ++names)
-    data_names += std::string(", ") + names->first;
+  auto const & names = (reader ? read_data_map : write_data_map);
+  std::string  data_names;
+  if(!names.empty())
+  {
+    auto iter  = names.begin();
+    data_names = *iter;
+    ++iter;
+    for(; iter != names.end(); ++iter)
+    {
+      data_names += ", " + *iter;
+    }
+  }
 
   pcout << "--     Data " << (reader ? "reading" : "writing") << ":\n"
         << "--     . data name(s): " << data_names << "\n"

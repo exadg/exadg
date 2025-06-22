@@ -45,7 +45,7 @@ public:
   ExaDGCoupling(
     dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
 #ifdef EXADG_WITH_PRECICE
-    std::shared_ptr<precice::SolverInterface> precice,
+    std::shared_ptr<precice::Participant> precice,
 #endif
     std::string const                                          mesh_name,
     std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data_,
@@ -71,7 +71,7 @@ public:
              std::string const &                                        data_name) override;
 
   virtual void
-  read_block_data(std::string const & data_name) const override;
+  read_data(std::string const & data_name, double associated_time) const override;
 
 private:
   /// Accessor for ExaDG data structures
@@ -90,7 +90,7 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 ExaDGCoupling<dim, data_dim, VectorizedArrayType>::ExaDGCoupling(
   dealii::MatrixFree<dim, double, VectorizedArrayType> const & data,
 #ifdef EXADG_WITH_PRECICE
-  std::shared_ptr<precice::SolverInterface> precice,
+  std::shared_ptr<precice::Participant> precice,
 #endif
   std::string const                                          mesh_name,
   std::shared_ptr<ContainerInterfaceData<rank, dim, double>> interface_data_,
@@ -111,7 +111,7 @@ template<int dim, int data_dim, typename VectorizedArrayType>
 void
 ExaDGCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
 {
-  Assert(this->mesh_id != -1, dealii::ExcNotInitialized());
+  Assert(this->mesh_name != "", dealii::ExcNotInitialized());
   Assert(interface_data.get() != nullptr, dealii::ExcNotInitialized());
 
   // In order to avoid that we define the surface multiple times when reader
@@ -132,30 +132,27 @@ ExaDGCoupling<dim, data_dim, VectorizedArrayType>::define_coupling_mesh()
 
     // Set the vertices
 #ifdef EXADG_WITH_PRECICE
-    this->precice->setMeshVertices(this->mesh_id,
-                                   points.size(),
-                                   &points[0][0],
-                                   &coupling_nodes_ids[start_index]);
+    this->precice->setMeshVertices(this->mesh_name,
+                                   {&points[0][0], points.size() * dim},
+                                   {&coupling_nodes_ids[start_index], points.size()});
 #endif
   }
 
 #ifdef EXADG_WITH_PRECICE
   if(this->read_data_map.size() > 0)
-    this->print_info(true, this->precice->getMeshVertexSize(this->mesh_id));
+    this->print_info(true, this->precice->getMeshVertexSize(this->mesh_name));
   if(this->write_data_map.size() > 0)
-    this->print_info(false, this->precice->getMeshVertexSize(this->mesh_id));
+    this->print_info(false, this->precice->getMeshVertexSize(this->mesh_name));
 #endif
 }
 
 
 template<int dim, int data_dim, typename VectorizedArrayType>
 void
-ExaDGCoupling<dim, data_dim, VectorizedArrayType>::read_block_data(
-  std::string const & data_name) const
+ExaDGCoupling<dim, data_dim, VectorizedArrayType>::read_data(std::string const & data_name,
+                                                             double associated_time) const
 {
   Assert(interface_data.get() != nullptr, dealii::ExcNotInitialized());
-
-  int const read_data_id = this->read_data_map.at(data_name);
 
   // summarizing the IDs already read
   unsigned int start_index = 0;
@@ -169,12 +166,14 @@ ExaDGCoupling<dim, data_dim, VectorizedArrayType>::read_block_data(
 
       AssertIndexRange(start_index, coupling_nodes_ids.size());
 #ifdef EXADG_WITH_PRECICE
-      this->precice->readBlockVectorData(read_data_id,
-                                         array_size,
-                                         &coupling_nodes_ids[start_index],
-                                         &array_solution[0][0]);
+      this->precice->readData(this->mesh_name,
+                              data_name,
+                              {&coupling_nodes_ids[start_index], array_size},
+                              associated_time,
+                              {&array_solution[0][0], array_size * data_dim});
 #else
-      (void)read_data_id;
+      (void)data_name;
+      (void)associated_time;
 #endif
       start_index += array_size;
     }
