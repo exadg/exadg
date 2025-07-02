@@ -173,16 +173,16 @@ typedef dealii::FullMatrix&lt; dealii::TrilinosScalar &gt;&#160;</td><td class="
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a984e5e31330858a998b660a409478214" id="r_a984e5e31330858a998b660a409478214"><td class="memItemLeft" align="right" valign="top"><a id="a984e5e31330858a998b660a409478214" name="a984e5e31330858a998b660a409478214"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;affine_constraints, <a class="el" href="structExaDG_1_1Structure_1_1MassOperatorData.html">MassOperatorData</a>&lt; dim &gt; const &amp;data)</td></tr>
-<tr class="separator:a984e5e31330858a998b660a409478214"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab3ca43f0584717e921185cc18a8fc274" id="r_ab3ca43f0584717e921185cc18a8fc274"><td class="memItemLeft" align="right" valign="top"><a id="ab3ca43f0584717e921185cc18a8fc274" name="ab3ca43f0584717e921185cc18a8fc274"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;affine_constraints, <a class="el" href="structExaDG_1_1Structure_1_1MassOperatorData.html">MassOperatorData</a>&lt; dim, Number &gt; const &amp;data)</td></tr>
+<tr class="separator:ab3ca43f0584717e921185cc18a8fc274"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6b94254353d7c06da74aa89899c04d83" id="r_a6b94254353d7c06da74aa89899c04d83"><td class="memItemLeft" align="right" valign="top"><a id="a6b94254353d7c06da74aa89899c04d83" name="a6b94254353d7c06da74aa89899c04d83"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_inhomogeneous_boundary_values</b> (VectorType &amp;dst) const final</td></tr>
 <tr class="separator:a6b94254353d7c06da74aa89899c04d83"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1MassOperator"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_methods_classExaDG_1_1MassOperator')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1MassOperator.html">ExaDG::MassOperator&lt; dim, dim, Number &gt;</a></td></tr>
-<tr class="memitem:aa8d54e16806bb3b8994c88f518e79c78 inherit pub_methods_classExaDG_1_1MassOperator" id="r_aa8d54e16806bb3b8994c88f518e79c78"><td class="memItemLeft" align="right" valign="top">
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;affine_constraints, <a class="el" href="structExaDG_1_1MassOperatorData.html">MassOperatorData</a>&lt; dim &gt; const &amp;data)</td></tr>
-<tr class="separator:aa8d54e16806bb3b8994c88f518e79c78 inherit pub_methods_classExaDG_1_1MassOperator"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac1d05a7aac69cc46af43d793d62a3ba9 inherit pub_methods_classExaDG_1_1MassOperator" id="r_ac1d05a7aac69cc46af43d793d62a3ba9"><td class="memItemLeft" align="right" valign="top">
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;affine_constraints, <a class="el" href="structExaDG_1_1MassOperatorData.html">MassOperatorData</a>&lt; dim, Number &gt; const &amp;data)</td></tr>
+<tr class="separator:ac1d05a7aac69cc46af43d793d62a3ba9 inherit pub_methods_classExaDG_1_1MassOperator"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afab6e7736a8ff10f467d8a0261c382e4 inherit pub_methods_classExaDG_1_1MassOperator" id="r_afab6e7736a8ff10f467d8a0261c382e4"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_scaling_factor</b> (Number const &amp;number)</td></tr>
 <tr class="separator:afab6e7736a8ff10f467d8a0261c382e4 inherit pub_methods_classExaDG_1_1MassOperator"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -192,9 +192,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_scale</b> (Vect
 <tr class="memitem:adad519d4e7338d7db0ae3b103ba2de24 inherit pub_methods_classExaDG_1_1MassOperator" id="r_adad519d4e7338d7db0ae3b103ba2de24"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_scale_add</b> (VectorType &amp;dst, Number const &amp;factor, VectorType const &amp;src) const</td></tr>
 <tr class="separator:adad519d4e7338d7db0ae3b103ba2de24 inherit pub_methods_classExaDG_1_1MassOperator"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa8d54e16806bb3b8994c88f518e79c78 inherit pub_methods_classExaDG_1_1MassOperator" id="r_aa8d54e16806bb3b8994c88f518e79c78"><td class="memItemLeft" align="right" valign="top">
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;affine_constraints, <a class="el" href="structExaDG_1_1MassOperatorData.html">MassOperatorData</a>&lt; dim &gt; const &amp;data)</td></tr>
-<tr class="separator:aa8d54e16806bb3b8994c88f518e79c78 inherit pub_methods_classExaDG_1_1MassOperator"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac1d05a7aac69cc46af43d793d62a3ba9 inherit pub_methods_classExaDG_1_1MassOperator" id="r_ac1d05a7aac69cc46af43d793d62a3ba9"><td class="memItemLeft" align="right" valign="top">
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;affine_constraints, <a class="el" href="structExaDG_1_1MassOperatorData.html">MassOperatorData</a>&lt; dim, Number &gt; const &amp;data)</td></tr>
+<tr class="separator:ac1d05a7aac69cc46af43d793d62a3ba9 inherit pub_methods_classExaDG_1_1MassOperator"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afab6e7736a8ff10f467d8a0261c382e4 inherit pub_methods_classExaDG_1_1MassOperator" id="r_afab6e7736a8ff10f467d8a0261c382e4"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_scaling_factor</b> (Number const &amp;number)</td></tr>
 <tr class="separator:afab6e7736a8ff10f467d8a0261c382e4 inherit pub_methods_classExaDG_1_1MassOperator"><td class="memSeparator" colspan="2">&#160;</td></tr>

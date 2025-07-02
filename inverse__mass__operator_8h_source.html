@@ -207,7 +207,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>      constraint.clear();</div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>      constraint.close();</div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span> </div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>      <a class="code hl_struct" href="structExaDG_1_1MassOperatorData.html">MassOperatorData&lt;dim&gt;</a> mass_operator_data;</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>      <a class="code hl_struct" href="structExaDG_1_1MassOperatorData.html">MassOperatorData&lt;dim, Number&gt;</a> mass_operator_data;</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>      mass_operator_data.dof_index  = dof_index;</div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>      mass_operator_data.quad_index = quad_index;</div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>      <span class="keywordflow">if</span>(data.implementation_type == InverseMassType::ElementwiseKrylovSolver)</div>
@@ -390,7 +390,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>             <a class="code hl_struct" href="structExaDG_1_1InverseMassOperatorDataHdiv.html">InverseMassOperatorDataHdiv</a> <span class="keyword">const</span>         inverse_mass_operator_data)</div>
 <div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>  {</div>
 <div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>    <span class="comment">// mass operator</span></div>
-<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>    <a class="code hl_struct" href="structExaDG_1_1MassOperatorData.html">MassOperatorData&lt;dim&gt;</a> mass_operator_data;</div>
+<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>    <a class="code hl_struct" href="structExaDG_1_1MassOperatorData.html">MassOperatorData&lt;dim, Number&gt;</a> mass_operator_data;</div>
 <div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>    mass_operator_data.dof_index  = inverse_mass_operator_data.dof_index;</div>
 <div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>    mass_operator_data.quad_index = inverse_mass_operator_data.quad_index;</div>
 <div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>    mass_operator.initialize(matrix_free, constraints, mass_operator_data);</div>
@@ -466,7 +466,7 @@ $(function(){ initResizable(false); });
 <div class="ttc" id="aclassExaDG_1_1InverseMassOperatorHdiv_html"><div class="ttname"><a href="classExaDG_1_1InverseMassOperatorHdiv.html">ExaDG::InverseMassOperatorHdiv</a></div><div class="ttdef"><b>Definition</b> inverse_mass_operator.h:284</div></div>
 <div class="ttc" id="aclassExaDG_1_1InverseMassOperatorHdiv_html_a02ff700d6e5dfc1b99acf3708bf5d6dd"><div class="ttname"><a href="classExaDG_1_1InverseMassOperatorHdiv.html#a02ff700d6e5dfc1b99acf3708bf5d6dd">ExaDG::InverseMassOperatorHdiv::apply</a></div><div class="ttdeci">unsigned int apply(VectorType &amp;dst, VectorType const &amp;src) const</div><div class="ttdef"><b>Definition</b> inverse_mass_operator.h:333</div></div>
 <div class="ttc" id="aclassExaDG_1_1InverseMassOperator_html_aa35d967ce6cd305af7d5e22f93db2c97"><div class="ttname"><a href="classExaDG_1_1InverseMassOperator.html#aa35d967ce6cd305af7d5e22f93db2c97">ExaDG::InverseMassOperator::update</a></div><div class="ttdeci">void update()</div><div class="ttdef"><b>Definition</b> inverse_mass_operator.h:152</div></div>
-<div class="ttc" id="aclassExaDG_1_1MassOperator_html"><div class="ttname"><a href="classExaDG_1_1MassOperator.html">ExaDG::MassOperator</a></div><div class="ttdef"><b>Definition</b> mass_operator.h:41</div></div>
+<div class="ttc" id="aclassExaDG_1_1MassOperator_html"><div class="ttname"><a href="classExaDG_1_1MassOperator.html">ExaDG::MassOperator</a></div><div class="ttdef"><b>Definition</b> mass_operator.h:49</div></div>
 <div class="ttc" id="aclassExaDG_1_1PreconditionerBase_html"><div class="ttname"><a href="classExaDG_1_1PreconditionerBase.html">ExaDG::VectorType</a></div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 <div class="ttc" id="astructExaDG_1_1InverseMassOperatorDataHdiv_html"><div class="ttname"><a href="structExaDG_1_1InverseMassOperatorDataHdiv.html">ExaDG::InverseMassOperatorDataHdiv</a></div><div class="ttdef"><b>Definition</b> inverse_mass_operator.h:263</div></div>
@@ -474,7 +474,7 @@ $(function(){ initResizable(false); });
 <div class="ttc" id="astructExaDG_1_1InverseMassParametersHdiv_html"><div class="ttname"><a href="structExaDG_1_1InverseMassParametersHdiv.html">ExaDG::InverseMassParametersHdiv</a></div><div class="ttdef"><b>Definition</b> inverse_mass_parameters.h:75</div></div>
 <div class="ttc" id="astructExaDG_1_1InverseMassParameters_html"><div class="ttname"><a href="structExaDG_1_1InverseMassParameters.html">ExaDG::InverseMassParameters</a></div><div class="ttdef"><b>Definition</b> inverse_mass_parameters.h:49</div></div>
 <div class="ttc" id="astructExaDG_1_1Krylov_1_1SolverDataCG_html"><div class="ttname"><a href="structExaDG_1_1Krylov_1_1SolverDataCG.html">ExaDG::Krylov::SolverDataCG</a></div><div class="ttdef"><b>Definition</b> iterative_solvers_dealii_wrapper.h:92</div></div>
-<div class="ttc" id="astructExaDG_1_1MassOperatorData_html"><div class="ttname"><a href="structExaDG_1_1MassOperatorData.html">ExaDG::MassOperatorData</a></div><div class="ttdef"><b>Definition</b> mass_operator.h:33</div></div>
+<div class="ttc" id="astructExaDG_1_1MassOperatorData_html"><div class="ttname"><a href="structExaDG_1_1MassOperatorData.html">ExaDG::MassOperatorData</a></div><div class="ttdef"><b>Definition</b> mass_operator.h:35</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
