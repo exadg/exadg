@@ -249,7 +249,7 @@ Operator<dim, Number>::setup_operators()
   // mass operator
   if(param.problem_type == ProblemType::Unsteady)
   {
-    Structure::MassOperatorData<dim> mass_data;
+    Structure::MassOperatorData<dim, Number> mass_data;
     mass_data.dof_index               = get_dof_index();
     mass_data.dof_index_inhomogeneous = get_dof_index_periodicity_and_hanging_node_constraints();
     mass_data.quad_index              = get_quad_index();

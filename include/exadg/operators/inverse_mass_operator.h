@@ -111,7 +111,7 @@ public:
       constraint.clear();
       constraint.close();
 
-      MassOperatorData<dim> mass_operator_data;
+      MassOperatorData<dim, Number> mass_operator_data;
       mass_operator_data.dof_index  = dof_index;
       mass_operator_data.quad_index = quad_index;
       if(data.implementation_type == InverseMassType::ElementwiseKrylovSolver)
@@ -292,7 +292,7 @@ public:
              InverseMassOperatorDataHdiv const         inverse_mass_operator_data)
   {
     // mass operator
-    MassOperatorData<dim> mass_operator_data;
+    MassOperatorData<dim, Number> mass_operator_data;
     mass_operator_data.dof_index  = inverse_mass_operator_data.dof_index;
     mass_operator_data.quad_index = inverse_mass_operator_data.quad_index;
     mass_operator.initialize(matrix_free, constraints, mass_operator_data);
