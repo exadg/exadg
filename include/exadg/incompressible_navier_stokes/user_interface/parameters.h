@@ -472,14 +472,10 @@ public:
   /*                 Solver parameters for mass matrix problem                          */
   /*                                                                                    */
   /**************************************************************************************/
-  // These parameters are relevant if the inverse mass can not be realized as a
-  // matrix-free operator evaluation. The typical use case is a DG formulation with non
-  // hypercube elements (e.g. simplex).
-
+  // These parameters are relevant if the inverse mass can not be realized as a cell-wise
+  // matrix-free operator evaluation. The typical use case is a DG formulation with non hypercube
+  // elements (e.g. simplex) or a continuous finite element space.
   InverseMassParameters inverse_mass_operator;
-
-  // This parameter is only relevant if an H(div)-conforming formulation is chosen.
-  InverseMassParametersHdiv inverse_mass_operator_hdiv;
 
   /**************************************************************************************/
   /*                                                                                    */
