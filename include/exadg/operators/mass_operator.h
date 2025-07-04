@@ -34,7 +34,10 @@ template<int dim, typename Number>
 struct MassOperatorData : public OperatorBaseData
 {
   MassOperatorData()
-    : OperatorBaseData(), coefficient_is_variable(false), variable_coefficients(nullptr)
+    : OperatorBaseData(),
+      coefficient_is_variable(false),
+      variable_coefficients(nullptr),
+      consider_inverse_coefficient(false)
   {
   }
 
@@ -42,6 +45,8 @@ struct MassOperatorData : public OperatorBaseData
   bool coefficient_is_variable;
   std::shared_ptr<VariableCoefficients<dealii::VectorizedArray<Number>> const>
     variable_coefficients;
+  // use the inverse of the coefficients stored in `variable_coefficients`
+  bool consider_inverse_coefficient;
 };
 
 template<int dim, int n_components, typename Number>
