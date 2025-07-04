@@ -58,7 +58,7 @@ public:
     VectorType src;
     matrix_free.cell_loop(&VelocityProjection<dim, Number>::cell_loop, this, vector, src);
 
-    // apply M^{-1}
+    // construct and apply M^{-1}
     InverseMassOperator<dim, dim, Number> inverse_mass;
     inverse_mass.initialize(matrix_free, inverse_mass_operator_data);
     inverse_mass.apply(vector, vector);

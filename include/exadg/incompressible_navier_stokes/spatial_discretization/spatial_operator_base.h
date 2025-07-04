@@ -578,15 +578,10 @@ protected:
   mutable MomentumOperator<dim, Number> momentum_operator;
 
   /*
-   * Inverse mass operator (for L2 spaces)
+   * Inverse mass operator.
    */
   InverseMassOperator<dim, dim, Number> inverse_mass_velocity;
   InverseMassOperator<dim, 1, Number>   inverse_mass_velocity_scalar;
-
-  /*
-   * Inverse mass operator used in case of H(div)-conforming space
-   */
-  InverseMassOperatorHdiv<dim, dim, Number> inverse_mass_hdiv;
 
   /*
    * Projection operator.
