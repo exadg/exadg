@@ -105,11 +105,6 @@ public:
     // Variable coefficients only implemented for the matrix-free operator.
     AssertThrow(not coefficient_is_variable or variable_coefficients != nullptr,
                 dealii::ExcMessage("Pointer to variable coefficients not set properly."));
-    AssertThrow(
-      not coefficient_is_variable or
-        data.implementation_type == InverseMassType::MatrixfreeOperator,
-      dealii::ExcMessage(
-        "Variable coefficients only implemented for `InverseMassType::MatrixfreeOperator`."));
 
     dealii::FiniteElement<dim> const & fe = matrix_free->get_dof_handler(dof_index).get_fe();
 
@@ -138,8 +133,11 @@ public:
       // Setup MassOperator as underlying operator for cell-wise direct/iterative inverse or global
       // solve.
       MassOperatorData<dim, Number> mass_operator_data;
-      mass_operator_data.dof_index  = dof_index;
-      mass_operator_data.quad_index = quad_index;
+      mass_operator_data.dof_index                    = dof_index;
+      mass_operator_data.quad_index                   = quad_index;
+      mass_operator_data.coefficient_is_variable      = coefficient_is_variable;
+      mass_operator_data.variable_coefficients        = variable_coefficients;
+      mass_operator_data.consider_inverse_coefficient = consider_inverse_coefficient;
 
       if(data.implementation_type == InverseMassType::ElementwiseKrylovSolver)
       {

@@ -41,12 +41,10 @@ MassOperator<dim, n_components, Number>::initialize(
 
   this->integrator_flags = kernel.get_integrator_flags();
 
-  kernel.set_variable_coefficients_ptr(data.variable_coefficients);
-
-  // Variable coefficients only implemented for the the matrix-free operator.
   AssertThrow(not operator_data.coefficient_is_variable or
-                kernel.get_variable_coefficients_ptr() != nullptr,
+                operator_data.variable_coefficients != nullptr,
               dealii::ExcMessage("Pointer to variable coefficients not set properly."));
+  kernel.set_variable_coefficients_ptr(operator_data.variable_coefficients);
 }
 
 template<int dim, int n_components, typename Number>
@@ -88,15 +86,33 @@ MassOperator<dim, n_components, Number>::do_cell_integral(IntegratorCell & integ
 {
   if(operator_data.coefficient_is_variable)
   {
-    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+    if(operator_data.consider_inverse_coefficient)
     {
-      dealii::VectorizedArray<Number> const coefficient =
-        kernel.get_variable_coefficients_ptr()->get_coefficient_cell(
-          integrator.get_current_cell_index(), q);
+      // Consider a mass matrix of the form (u_h , v_h / c)_Omega
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        dealii::VectorizedArray<Number> const & coefficient =
+          kernel.get_variable_coefficients_ptr()->get_coefficient_cell(
+            integrator.get_current_cell_index(), q);
 
-      integrator.submit_value(coefficient *
-                                kernel.get_volume_flux(scaling_factor, integrator.get_value(q)),
-                              q);
+        integrator.submit_value(kernel.get_volume_flux(scaling_factor, integrator.get_value(q)) /
+                                  coefficient,
+                                q);
+      }
+    }
+    else
+    {
+      // Consider a mass matrix of the form (u_h , v_h * c)_Omega
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        dealii::VectorizedArray<Number> const & coefficient =
+          kernel.get_variable_coefficients_ptr()->get_coefficient_cell(
+            integrator.get_current_cell_index(), q);
+
+        integrator.submit_value(kernel.get_volume_flux(scaling_factor, integrator.get_value(q)) *
+                                  coefficient,
+                                q);
+      }
     }
   }
   else
