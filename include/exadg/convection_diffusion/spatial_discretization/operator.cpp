@@ -170,7 +170,7 @@ Operator<dim, Number>::setup_operators()
   mass_operator.initialize(*matrix_free, affine_constraints, mass_operator_data);
 
   // inverse mass operator
-  InverseMassOperatorData inverse_mass_operator_data;
+  InverseMassOperatorData<Number> inverse_mass_operator_data;
   inverse_mass_operator_data.dof_index  = get_dof_index();
   inverse_mass_operator_data.quad_index = get_quad_index();
   inverse_mass_operator_data.parameters = param.inverse_mass_operator;
@@ -390,7 +390,7 @@ Operator<dim, Number>::setup_preconditioner()
 {
   if(param.preconditioner == Preconditioner::InverseMassMatrix)
   {
-    InverseMassOperatorData inverse_mass_operator_data;
+    InverseMassOperatorData<Number> inverse_mass_operator_data;
     inverse_mass_operator_data.dof_index  = get_dof_index();
     inverse_mass_operator_data.quad_index = get_quad_index();
     inverse_mass_operator_data.parameters = param.inverse_mass_preconditioner;
@@ -560,7 +560,7 @@ Operator<dim, Number>::project_velocity(VectorType & velocity, double const time
 {
   VelocityProjection<dim, Number> l2_projection;
 
-  InverseMassOperatorData inverse_mass_operator_data_l2_projection;
+  InverseMassOperatorData<Number> inverse_mass_operator_data_l2_projection;
   inverse_mass_operator_data_l2_projection.dof_index  = get_dof_index_velocity();
   inverse_mass_operator_data_l2_projection.quad_index = get_quad_index();
 

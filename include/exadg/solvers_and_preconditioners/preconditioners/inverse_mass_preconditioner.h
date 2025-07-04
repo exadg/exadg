@@ -44,7 +44,7 @@ public:
   typedef typename PreconditionerBase<Number>::VectorType VectorType;
 
   InverseMassPreconditioner(dealii::MatrixFree<dim, Number> const & matrix_free,
-                            InverseMassOperatorData const           inverse_mass_operator_data)
+                            InverseMassOperatorData<Number> const   inverse_mass_operator_data)
   {
     inverse_mass_operator.initialize(matrix_free, inverse_mass_operator_data);
 

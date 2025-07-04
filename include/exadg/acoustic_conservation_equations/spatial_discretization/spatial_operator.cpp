@@ -416,7 +416,7 @@ SpatialOperator<dim, Number>::initialize_operators()
 {
   // inverse mass operator pressure
   {
-    InverseMassOperatorData data;
+    InverseMassOperatorData<Number> data;
     data.dof_index  = get_dof_index_pressure();
     data.quad_index = get_quad_index_pressure();
     inverse_mass_pressure.initialize(*matrix_free, data);
@@ -424,7 +424,7 @@ SpatialOperator<dim, Number>::initialize_operators()
 
   // inverse mass operator velocity
   {
-    InverseMassOperatorData data;
+    InverseMassOperatorData<Number> data;
     data.dof_index  = get_dof_index_velocity();
     data.quad_index = get_quad_index_velocity();
     inverse_mass_velocity.initialize(*matrix_free, data);

@@ -44,7 +44,7 @@ public:
    */
   void
   apply(dealii::MatrixFree<dim, Number> const &      matrix_free,
-        InverseMassOperatorData const                inverse_mass_operator_data,
+        InverseMassOperatorData<Number> const        inverse_mass_operator_data,
         std::shared_ptr<dealii::Function<dim>> const function,
         double const &                               time,
         VectorType &                                 vector)
