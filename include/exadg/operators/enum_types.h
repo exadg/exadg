@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_ENUM_TYPES_H_
-#define INCLUDE_EXADG_OPERATORS_ENUM_TYPES_H_
+#ifndef EXADG_OPERATORS_ENUM_TYPES_H_
+#define EXADG_OPERATORS_ENUM_TYPES_H_
 
 namespace ExaDG
 {
@@ -33,6 +33,4 @@ enum class SparseMatrixType
 
 }
 
-
-
-#endif /* INCLUDE_EXADG_OPERATORS_ENUM_TYPES_H_ */
+#endif /* EXADG_OPERATORS_ENUM_TYPES_H_ */

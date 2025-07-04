@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_MATRIX_FREE_DATA_H_
-#define INCLUDE_FUNCTIONALITIES_MATRIX_FREE_DATA_H_
+#ifndef EXADG_MATRIX_FREE_MATRIX_FREE_DATA_H_
+#define EXADG_MATRIX_FREE_MATRIX_FREE_DATA_H_
 
 // deal.II
 #include <deal.II/base/quadrature.h>
@@ -194,6 +194,7 @@ private:
   std::vector<dealii::AffineConstraints<Number> const *> constraint_vec;
   std::vector<dealii::Quadrature<dim>>                   quadrature_vec;
 };
+
 } // namespace ExaDG
 
-#endif /* INCLUDE_FUNCTIONALITIES_MATRIX_FREE_DATA_H_ */
+#endif /* EXADG_MATRIX_FREE_MATRIX_FREE_DATA_H_ */

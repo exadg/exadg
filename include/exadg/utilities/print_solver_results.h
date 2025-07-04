@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_PRINT_SOLVER_RESULTS_H_
-#define INCLUDE_EXADG_UTILITIES_PRINT_SOLVER_RESULTS_H_
+#ifndef EXADG_UTILITIES_PRINT_SOLVER_RESULTS_H_
+#define EXADG_UTILITIES_PRINT_SOLVER_RESULTS_H_
 
 // C/C++
 #include <iostream>
@@ -307,4 +307,4 @@ print_results(std::vector<SolverResult> const & results, MPI_Comm const & mpi_co
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_UTILITIES_PRINT_SOLVER_RESULTS_H_ */
+#endif /* EXADG_UTILITIES_PRINT_SOLVER_RESULTS_H_ */

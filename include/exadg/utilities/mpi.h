@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_UTILITIES_MPI_H_
-#define INCLUDE_UTILITIES_MPI_H_
+#ifndef EXADG_UTILITIES_MPI_H_
+#define EXADG_UTILITIES_MPI_H_
 
 namespace ExaDG
 {
@@ -52,4 +52,4 @@ identify_first_process_on_node(MPI_Comm const & mpi_comm)
 
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_UTILITIES_MPI_H_ */

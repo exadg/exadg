@@ -18,9 +18,11 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
-#ifndef INCLUDE_EXADG_POSTPROCESSOR_MEAN_SCALAR_CALCULATION_H
-#define INCLUDE_EXADG_POSTPROCESSOR_MEAN_SCALAR_CALCULATION_H
 
+#ifndef EXADG_POSTPROCESSOR_MEAN_SCALAR_CALCULATION_H_
+#define EXADG_POSTPROCESSOR_MEAN_SCALAR_CALCULATION_H_
+
+// ExaDG
 #include <exadg/matrix_free/integrators.h>
 
 namespace ExaDG
@@ -53,6 +55,4 @@ private:
 
 } // namespace ExaDG
 
-
-
-#endif // INCLUDE_EXADG_POSTPROCESSOR_MEAN_SCALAR_CALCULATION_H
+#endif /* EXADG_POSTPROCESSOR_MEAN_SCALAR_CALCULATION_H_ */

@@ -1,6 +1,28 @@
-#ifndef INCLUDE_EXADG_AERO_ACOUSTIC_SOURCE_TERM_CALCULATOR_H_
-#define INCLUDE_EXADG_AERO_ACOUSTIC_SOURCE_TERM_CALCULATOR_H_
+/*  ______________________________________________________________________
+ *
+ *  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
+ *
+ *  Copyright (C) 2025 by the ExaDG authors
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  ______________________________________________________________________
+ */
 
+#ifndef EXADG_AERO_ACOUSTIC_CALCULATORS_SOURCE_TERM_CALCULATOR_H_
+#define EXADG_AERO_ACOUSTIC_CALCULATORS_SOURCE_TERM_CALCULATOR_H_
+
+// ExaDG
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/utilities/lazy_ptr.h>
 
@@ -226,7 +248,8 @@ private:
 
   double time;
 };
+
 } // namespace AeroAcoustic
 } // namespace ExaDG
 
-#endif /*INCLUDE_EXADG_AERO_ACOUSTIC_SOURCE_TERM_CALCULATOR_H_*/
+#endif /*EXADG_AERO_ACOUSTIC_CALCULATORS_SOURCE_TERM_CALCULATOR_H_*/

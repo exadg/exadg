@@ -22,8 +22,8 @@
  * Author: Peter Munch, Magdalena Schreter, TUM, December 2020
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_ADAPTIVE_MESH_REFINEMENT_H_
-#define INCLUDE_EXADG_OPERATORS_ADAPTIVE_MESH_REFINEMENT_H_
+#ifndef EXADG_OPERATORS_ADAPTIVE_MESH_REFINEMENT_H_
+#define EXADG_OPERATORS_ADAPTIVE_MESH_REFINEMENT_H_
 
 // deal.II
 #include <deal.II/base/quadrature_lib.h>
@@ -36,7 +36,6 @@
 
 // ExaDG
 #include <exadg/utilities/print_functions.h>
-
 
 namespace ExaDG
 {
@@ -182,7 +181,6 @@ mark_cells_kelly_error_estimator(dealii::Triangulation<dim> &              tria,
     amr_data.fraction_of_cells_to_be_coarsened);
 }
 
-
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_OPERATORS_ADAPTIVE_MESH_REFINEMENT_H_ */
+#endif /* EXADG_OPERATORS_ADAPTIVE_MESH_REFINEMENT_H_ */

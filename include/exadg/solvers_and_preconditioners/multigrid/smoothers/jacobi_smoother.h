@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_JACOBISMOOTHER_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_JACOBISMOOTHER_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_SMOOTHERS_JACOBI_SMOOTHER_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_SMOOTHERS_JACOBI_SMOOTHER_H_
 
+// ExaDG
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/smoother_base.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/additive_schwarz_preconditioner.h>
@@ -179,7 +180,7 @@ private:
 
   PreconditionerBase<typename Operator::value_type> * preconditioner;
 };
+
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_JACOBISMOOTHER_H_ */
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_SMOOTHERS_JACOBI_SMOOTHER_H_ */

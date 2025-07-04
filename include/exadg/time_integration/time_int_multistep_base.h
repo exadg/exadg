@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_MULTISTEP_BASE_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_MULTISTEP_BASE_H_
+#ifndef EXADG_TIME_INTEGRATION_TIME_INT_MULTISTEP_BASE_H_
+#define EXADG_TIME_INTEGRATION_TIME_INT_MULTISTEP_BASE_H_
 
 // ExaDG
 #include <exadg/time_integration/time_int_base.h>
@@ -243,4 +243,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_MULTISTEP_BASE_H_ */
+#endif /* EXADG_TIME_INTEGRATION_TIME_INT_MULTISTEP_BASE_H_ */

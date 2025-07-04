@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POISSON_THROUGHPUT_H_
-#define INCLUDE_EXADG_POISSON_THROUGHPUT_H_
+#ifndef EXADG_POISSON_THROUGHPUT_H_
+#define EXADG_POISSON_THROUGHPUT_H_
 
 // likwid
 #ifdef EXADG_WITH_LIKWID
@@ -31,18 +31,14 @@
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/parameter_handler.h>
 
-// driver
-#include <exadg/poisson/driver.h>
-
-// utilities
+// ExaDG
 #include <exadg/operators/finite_element.h>
 #include <exadg/operators/hypercube_resolution_parameters.h>
 #include <exadg/operators/throughput_parameters.h>
+#include <exadg/poisson/driver.h>
+#include <exadg/poisson/user_interface/declare_get_application.h>
 #include <exadg/utilities/enum_patterns.h>
 #include <exadg/utilities/general_parameters.h>
-
-// application
-#include <exadg/poisson/user_interface/declare_get_application.h>
 
 namespace ExaDG
 {
@@ -220,5 +216,4 @@ main(int argc, char ** argv)
   return 0;
 }
 
-
-#endif /* INCLUDE_EXADG_POISSON_THROUGHPUT_H_ */
+#endif /* EXADG_POISSON_THROUGHPUT_H_ */

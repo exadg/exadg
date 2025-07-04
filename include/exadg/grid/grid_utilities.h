@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_GRID_UTILITIES_H_
-#define INCLUDE_EXADG_GRID_GRID_UTILITIES_H_
+#ifndef EXADG_GRID_GRID_UTILITIES_H_
+#define EXADG_GRID_GRID_UTILITIES_H_
 
 // deal.II
 #include <deal.II/fe/fe_simplex_p.h>
@@ -656,5 +656,4 @@ read_external_triangulation(dealii::Triangulation<dim, dim> & tria, GridData con
 } // namespace GridUtilities
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_GRID_GRID_UTILITIES_H_ */
+#endif /* EXADG_GRID_GRID_UTILITIES_H_ */

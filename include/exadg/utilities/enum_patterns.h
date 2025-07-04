@@ -19,13 +19,16 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_ENUM_PATTERNS_H_
-#define INCLUDE_EXADG_UTILITIES_ENUM_PATTERNS_H_
+#ifndef EXADG_UTILITIES_ENUM_PATTERNS_H_
+#define EXADG_UTILITIES_ENUM_PATTERNS_H_
 
+// deal.II
 #include <deal.II/base/patterns.h>
 
+// ExaDG
 #include <exadg/utilities/enum_utilities.h>
 
+// C/C++
 #include <string>
 
 namespace dealii
@@ -97,7 +100,8 @@ Enum()
 {
   return *dealii::Patterns::Tools::Convert<T>::to_pattern();
 }
+
 } // namespace Patterns
 } // namespace ExaDG
 
-#endif /*INCLUDE_EXADG_UTILITIES_ENUM_PATTERNS_H_*/
+#endif /*EXADG_UTILITIES_ENUM_PATTERNS_H_*/

@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_DATA_BASE_H_
-#define INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_DATA_BASE_H_
+#ifndef EXADG_POSTPROCESSOR_OUTPUT_DATA_BASE_H_
+#define EXADG_POSTPROCESSOR_OUTPUT_DATA_BASE_H_
 
+// ExaDG
 #include <exadg/postprocessor/time_control.h>
 #include <exadg/utilities/print_functions.h>
 
@@ -98,4 +99,4 @@ struct OutputDataBase
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_DATA_BASE_H_ */
+#endif /* EXADG_POSTPROCESSOR_OUTPUT_DATA_BASE_H_ */

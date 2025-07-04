@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_FINITE_ELEMENT_H_
-#define INCLUDE_EXADG_OPERATORS_FINITE_ELEMENT_H_
+#ifndef EXADG_OPERATORS_FINITE_ELEMENT_H_
+#define EXADG_OPERATORS_FINITE_ELEMENT_H_
 
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
@@ -184,6 +184,4 @@ get_dofs_per_element(ExaDG::ElementType const element_type,
 
 } // namespace ExaDG
 
-
-
-#endif /* INCLUDE_EXADG_OPERATORS_FINITE_ELEMENT_H_ */
+#endif /* EXADG_OPERATORS_FINITE_ELEMENT_H_ */

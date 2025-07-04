@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_MAPPING_FLAGS_H_
-#define INCLUDE_EXADG_OPERATORS_MAPPING_FLAGS_H_
+#ifndef EXADG_OPERATORS_MAPPING_FLAGS_H_
+#define EXADG_OPERATORS_MAPPING_FLAGS_H_
 
 // deal.II
 #include <deal.II/fe/fe_update_flags.h>
@@ -55,4 +55,4 @@ struct MappingFlags
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_OPERATORS_MAPPING_FLAGS_H_ */
+#endif /* EXADG_OPERATORS_MAPPING_FLAGS_H_ */

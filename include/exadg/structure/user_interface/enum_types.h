@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_ENUM_TYPES_H_
-#define INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_ENUM_TYPES_H_
+#ifndef EXADG_STRUCTURE_USER_INTERFACE_ENUM_TYPES_H_
+#define EXADG_STRUCTURE_USER_INTERFACE_ENUM_TYPES_H_
 
 // C/C++
 #include <string>
@@ -128,4 +128,4 @@ enum class Preconditioner
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_USER_INTERFACE_ENUM_TYPES_H_ */

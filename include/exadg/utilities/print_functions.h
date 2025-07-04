@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_PRINTFUNCTIONS_H_
-#define INCLUDE_FUNCTIONALITIES_PRINTFUNCTIONS_H_
+#ifndef EXADG_UTILITIES_PRINT_FUNCTIONS_H_
+#define EXADG_UTILITIES_PRINT_FUNCTIONS_H_
 
 // C/C++
 #include <iomanip>
@@ -139,4 +139,4 @@ print_write_output_time(double const       time,
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_FUNCTIONALITIES_PRINTFUNCTIONS_H_ */
+#endif /* EXADG_UTILITIES_PRINT_FUNCTIONS_H_ */

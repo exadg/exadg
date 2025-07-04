@@ -19,10 +19,11 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_FLUID_H_
-#define INCLUDE_EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_FLUID_H_
+#ifndef EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_FLUID_H_
+#define EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_FLUID_H_
 
-// IncNS
+// ExaDG
+#include <exadg/aero_acoustic/user_interface/application_base.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
@@ -32,12 +33,7 @@
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
-
-// utilities
 #include <exadg/utilities/timer_tree.h>
-
-// application
-#include <exadg/aero_acoustic/user_interface/application_base.h>
 
 namespace ExaDG
 {
@@ -169,6 +165,4 @@ private:
 } // namespace AeroAcoustic
 } // namespace ExaDG
 
-
-
-#endif /* INCLUDE_EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_FLUID_H_ */
+#endif /* EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_FLUID_H_ */

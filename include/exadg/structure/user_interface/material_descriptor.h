@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_MATERIAL_DESCRIPTOR_H_
-#define INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_MATERIAL_DESCRIPTOR_H_
+#ifndef EXADG_STRUCTURE_USER_INTERFACE_MATERIAL_DESCRIPTOR_H_
+#define EXADG_STRUCTURE_USER_INTERFACE_MATERIAL_DESCRIPTOR_H_
 
 // C/C++
 #include <map>
@@ -39,4 +39,4 @@ using MaterialDescriptor = std::map<dealii::types::material_id, std::shared_ptr<
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_USER_INTERFACE_MATERIAL_DESCRIPTOR_H_ */

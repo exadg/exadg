@@ -19,14 +19,13 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_
+#ifndef EXADG_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_
+#define EXADG_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_
 
 // ExaDG
 #include <exadg/time_integration/bdf_constants.h>
 #include <exadg/time_integration/extrapolation_constants.h>
 #include <exadg/time_integration/time_int_multistep_base.h>
-
 
 namespace ExaDG
 {
@@ -61,4 +60,4 @@ protected:
 };
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_ */
+#endif /* EXADG_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_ */

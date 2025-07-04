@@ -19,11 +19,15 @@
  *  ______________________________________________________________________
  */
 
+#ifndef EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_LINEAR_INTERPOLATION_H_
+#define EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_LINEAR_INTERPOLATION_H_
+
 // deal.II
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/point.h>
 #include <deal.II/base/tensor.h>
 
+// C/C++
 #include <vector>
 
 namespace ExaDG
@@ -61,3 +65,5 @@ linear_interpolation_2d_cylindrical(
   unsigned int const &                                component);
 
 } // namespace ExaDG
+
+#endif /* EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_LINEAR_INTERPOLATION_H_ */

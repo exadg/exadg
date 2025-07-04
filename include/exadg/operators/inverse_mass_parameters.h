@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_INVERSE_MASS_PARAMETERS_H_
-#define INCLUDE_EXADG_OPERATORS_INVERSE_MASS_PARAMETERS_H_
+#ifndef EXADG_OPERATORS_INVERSE_MASS_PARAMETERS_H_
+#define EXADG_OPERATORS_INVERSE_MASS_PARAMETERS_H_
 
 // ExaDG
 #include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
@@ -71,7 +71,7 @@ struct InverseMassParameters
   // InverseMassType::ElementwiseKrylovSolver or InverseMassType::GlobalKrylovSolver.
   SolverData solver_data;
 };
+
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_OPERATORS_INVERSE_MASS_PARAMETERS_H_ */
+#endif /* EXADG_OPERATORS_INVERSE_MASS_PARAMETERS_H_ */

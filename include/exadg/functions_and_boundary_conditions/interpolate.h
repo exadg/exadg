@@ -22,8 +22,10 @@
 #ifndef EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_INTERPOLATE_H_
 #define EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_INTERPOLATE_H_
 
+// deal.II
 #include <deal.II/numerics/vector_tools.h>
 
+// C/C++
 #include <type_traits>
 
 namespace ExaDG
@@ -102,9 +104,7 @@ interpolate(dealii::Mapping<dim, spacedim> const &       mapping,
   interpolate(mapping, dof_handler, function, vec);
 }
 
-
 } // namespace Utilities
 } // namespace ExaDG
 
-
-#endif /*EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_INTERPOLATE_H_*/
+#endif /*EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_INTERPOLATE_H_ */

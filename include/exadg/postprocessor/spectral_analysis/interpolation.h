@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef DEAL_SPECTRUM_INTERPOLATION
-#define DEAL_SPECTRUM_INTERPOLATION
+#ifndef EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_INTERPOLATION_H_
+#define EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_INTERPOLATION_H_
 
 // std
 #include <mpi.h>
@@ -37,8 +37,6 @@
 
 // ExaDG
 #include <exadg/postprocessor/spectral_analysis/setup.h>
-
-
 
 namespace dealspectrum
 {
@@ -379,4 +377,4 @@ public:
 
 } // namespace dealspectrum
 
-#endif
+#endif /* EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_INTERPOLATION_H_ */

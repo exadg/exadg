@@ -19,19 +19,15 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_DRIVER_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_DRIVER_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_DRIVER_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_DRIVER_H_
 
-// application
-#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
-
-// FSI
+// ExaDG
 #include <exadg/fluid_structure_interaction/acceleration_schemes/parameters.h>
 #include <exadg/fluid_structure_interaction/acceleration_schemes/partitioned_solver.h>
 #include <exadg/fluid_structure_interaction/single_field_solvers/fluid.h>
 #include <exadg/fluid_structure_interaction/single_field_solvers/structure.h>
-
-// utilities
+#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 #include <exadg/functions_and_boundary_conditions/interface_coupling.h>
 #include <exadg/utilities/timer_tree.h>
 
@@ -118,5 +114,4 @@ private:
 } // namespace FSI
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_DRIVER_H_ */
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_DRIVER_H_ */

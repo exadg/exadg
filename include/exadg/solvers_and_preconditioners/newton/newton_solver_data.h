@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_DATA_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_DATA_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_NEWTON_NEWTON_SOLVER_DATA_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_NEWTON_NEWTON_SOLVER_DATA_H_
 
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
@@ -66,7 +66,8 @@ struct UpdateData
   unsigned int update_every_newton_iter;
   bool         update_once_converged;
 };
+
 } // namespace Newton
 } // namespace ExaDG
 
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_DATA_H_ */
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_NEWTON_NEWTON_SOLVER_DATA_H_ */

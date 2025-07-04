@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POSTPROCESSOR_SOLUTION_FIELD_H_
-#define INCLUDE_EXADG_POSTPROCESSOR_SOLUTION_FIELD_H_
+#ifndef EXADG_POSTPROCESSOR_SOLUTION_FIELD_H_
+#define EXADG_POSTPROCESSOR_SOLUTION_FIELD_H_
 
+// deal.II
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
@@ -132,4 +133,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_POSTPROCESSOR_SOLUTION_FIELD_H_ */
+#endif /* EXADG_POSTPROCESSOR_SOLUTION_FIELD_H_ */

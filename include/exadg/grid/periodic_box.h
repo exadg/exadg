@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef APPLICATIONS_GRID_TOOLS_PERIODIC_BOX_H_
-#define APPLICATIONS_GRID_TOOLS_PERIODIC_BOX_H_
+#ifndef EXADG_GRID_PERIODIC_BOX_H_
+#define EXADG_GRID_PERIODIC_BOX_H_
 
 // deal.II
 #include <deal.II/distributed/tria.h>
@@ -88,4 +88,4 @@ create_periodic_box(dealii::Triangulation<dim> &                             tri
 
 } // namespace ExaDG
 
-#endif /* APPLICATIONS_GRID_TOOLS_PERIODIC_BOX_H_ */
+#endif /* EXADG_GRID_PERIODIC_BOX_H_ */

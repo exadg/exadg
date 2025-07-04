@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_OPERATORS_INVERSEMASSMATRIX_H_
-#define INCLUDE_OPERATORS_INVERSEMASSMATRIX_H_
+#ifndef EXADG_OPERATORS_INVERSE_MASS_OPERATOR_H_
+#define EXADG_OPERATORS_INVERSE_MASS_OPERATOR_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -430,7 +430,7 @@ private:
   // MassOperator as underlying operator for the cell-wise or global iterative solves.
   MassOperator<dim, n_components, Number> mass_operator;
 };
+
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_OPERATORS_INVERSEMASSMATRIX_H_ */
+#endif /* EXADG_OPERATORS_INVERSE_MASS_OPERATOR_H_ */

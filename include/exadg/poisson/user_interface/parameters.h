@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_LAPLACE_INPUT_PARAMETERS_H_
-#define INCLUDE_LAPLACE_INPUT_PARAMETERS_H_
+#ifndef EXADG_POISSON_USER_INTERFACE_PARAMETERS_H_
+#define EXADG_POISSON_USER_INTERFACE_PARAMETERS_H_
 
+// ExaDG
 #include <exadg/grid/grid_data.h>
 #include <exadg/operators/enum_types.h>
 #include <exadg/poisson/user_interface/enum_types.h>
@@ -140,4 +141,4 @@ public:
 } // namespace Poisson
 } // namespace ExaDG
 
-#endif /* INCLUDE_LAPLACE_INPUT_PARAMETERS_H_ */
+#endif /* EXADG_POISSON_USER_INTERFACE_PARAMETERS_H_ */

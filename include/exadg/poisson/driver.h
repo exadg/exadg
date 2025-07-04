@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POISSON_DRIVER_H_
-#define INCLUDE_EXADG_POISSON_DRIVER_H_
+#ifndef EXADG_POISSON_DRIVER_H_
+#define EXADG_POISSON_DRIVER_H_
 
 // deal.II
 #include <deal.II/base/revision.h>
@@ -106,5 +106,4 @@ private:
 } // namespace Poisson
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_POISSON_DRIVER_H_ */
+#endif /* EXADG_POISSON_DRIVER_H_ */

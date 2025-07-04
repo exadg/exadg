@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POSTPROCESSOR_WRITE_OUTPUT_H_
-#define INCLUDE_EXADG_POSTPROCESSOR_WRITE_OUTPUT_H_
+#ifndef EXADG_POSTPROCESSOR_WRITE_OUTPUT_H_
+#define EXADG_POSTPROCESSOR_WRITE_OUTPUT_H_
 
 // C/C++
 #include <fstream>
@@ -149,4 +149,4 @@ write_points_in_dummy_triangulation(std::vector<dealii::Point<dim>> const & poin
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_POSTPROCESSOR_WRITE_OUTPUT_H_ */
+#endif /* EXADG_POSTPROCESSOR_WRITE_OUTPUT_H_ */
