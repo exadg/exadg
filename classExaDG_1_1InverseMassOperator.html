@@ -97,9 +97,9 @@ $(function(){ initResizable(false); });
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a89f21495b58e7526ce1358de939a52a0" id="r_a89f21495b58e7526ce1358de939a52a0"><td class="memItemLeft" align="right" valign="top"><a id="a89f21495b58e7526ce1358de939a52a0" name="a89f21495b58e7526ce1358de939a52a0"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, <a class="el" href="structExaDG_1_1InverseMassOperatorData.html">InverseMassOperatorData</a> const inverse_mass_operator_data)</td></tr>
-<tr class="separator:a89f21495b58e7526ce1358de939a52a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac1bb9b4307ee96532bb6b2976ba442ee" id="r_ac1bb9b4307ee96532bb6b2976ba442ee"><td class="memItemLeft" align="right" valign="top"><a id="ac1bb9b4307ee96532bb6b2976ba442ee" name="ac1bb9b4307ee96532bb6b2976ba442ee"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, <a class="el" href="structExaDG_1_1InverseMassOperatorData.html">InverseMassOperatorData</a> const inverse_mass_operator_data, dealii::AffineConstraints&lt; Number &gt; const *constraints=nullptr)</td></tr>
+<tr class="separator:ac1bb9b4307ee96532bb6b2976ba442ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa35d967ce6cd305af7d5e22f93db2c97" id="r_aa35d967ce6cd305af7d5e22f93db2c97"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa35d967ce6cd305af7d5e22f93db2c97">update</a> ()</td></tr>
 <tr class="separator:aa35d967ce6cd305af7d5e22f93db2c97"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2f0e10cc5968135c4b6c87bd0cef5aad" id="r_a2f0e10cc5968135c4b6c87bd0cef5aad"><td class="memItemLeft" align="right" valign="top"><a id="a2f0e10cc5968135c4b6c87bd0cef5aad" name="a2f0e10cc5968135c4b6c87bd0cef5aad"></a>
@@ -134,7 +134,7 @@ template&lt;int dim, int n_components, typename Number&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Updates the inverse mass operator. This function recomputes the diagonal/block-diagonal in case the geometry has changed (e.g. the mesh has been deformed). </p>
+<p>Updates the inverse mass operator. This function recomputes the preconditioners in case the geometry has changed (e.g. the mesh has been deformed). </p>
 
 </div>
 </div>
