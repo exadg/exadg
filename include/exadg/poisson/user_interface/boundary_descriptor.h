@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POISSON_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_
-#define INCLUDE_EXADG_POISSON_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_
+#ifndef EXADG_POISSON_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_
+#define EXADG_POISSON_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_
 
 // deal.II
 #include <deal.II/base/function.h>
@@ -125,5 +125,4 @@ private:
 } // namespace Poisson
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_POISSON_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_ */
+#endif /* EXADG_POISSON_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_ */

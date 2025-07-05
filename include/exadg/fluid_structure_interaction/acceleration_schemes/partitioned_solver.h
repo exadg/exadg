@@ -20,16 +20,14 @@
  */
 
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_PARTITIONED_SOLVER_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_PARTITIONED_SOLVER_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_PARTITIONED_SOLVER_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_PARTITIONED_SOLVER_H_
 
-// FSI
+// ExaDG
 #include <exadg/fluid_structure_interaction/acceleration_schemes/linear_algebra.h>
 #include <exadg/fluid_structure_interaction/acceleration_schemes/parameters.h>
 #include <exadg/fluid_structure_interaction/single_field_solvers/fluid.h>
 #include <exadg/fluid_structure_interaction/single_field_solvers/structure.h>
-
-// utilities
 #include <exadg/utilities/print_solver_results.h>
 #include <exadg/utilities/timer_tree.h>
 
@@ -556,4 +554,4 @@ PartitionedSolver<dim, Number>::solve(
 } // namespace FSI
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_PARTITIONED_SOLVER_H_ */
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_PARTITIONED_SOLVER_H_ */

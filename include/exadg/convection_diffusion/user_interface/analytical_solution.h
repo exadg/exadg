@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_ANALYTICAL_SOLUTION_H_
-#define INCLUDE_CONVECTION_DIFFUSION_ANALYTICAL_SOLUTION_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_ANALYTICAL_SOLUTION_H_
+#define EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_ANALYTICAL_SOLUTION_H_
 
+// deal.II
 #include <deal.II/base/function.h>
 
 namespace ExaDG
@@ -37,4 +38,4 @@ struct AnalyticalSolution
 } // namespace ConvDiff
 } // namespace ExaDG
 
-#endif /* INCLUDE_CONVECTION_DIFFUSION_ANALYTICAL_SOLUTION_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_ANALYTICAL_SOLUTION_H_ */

@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_NAVIER_STOKES_CALCULATORS_H_
-#define INCLUDE_EXADG_OPERATORS_NAVIER_STOKES_CALCULATORS_H_
+#ifndef EXADG_OPERATORS_NAVIER_STOKES_CALCULATORS_H_
+#define EXADG_OPERATORS_NAVIER_STOKES_CALCULATORS_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -274,5 +274,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_OPERATORS_NAVIER_STOKES_CALCULATORS_H_ \
-        */
+#endif /* EXADG_OPERATORS_NAVIER_STOKES_CALCULATORS_H_ */

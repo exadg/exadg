@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_
 
+// ExaDG
 #include <exadg/incompressible_navier_stokes/postprocessor/divergence_and_mass_error.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/kinetic_energy_dissipation_detailed.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/line_plot_calculation.h>
@@ -141,9 +142,7 @@ private:
   LinePlotCalculator<dim, Number> line_plot_calculator;
 };
 
-
-
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_ */
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_ */

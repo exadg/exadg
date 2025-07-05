@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_AERO_ACOUSTIC_USER_INTERFACE_APPLICATION_BASE_H_
-#define INCLUDE_EXADG_AERO_ACOUSTIC_USER_INTERFACE_APPLICATION_BASE_H_
+#ifndef EXADG_AERO_ACOUSTIC_USER_INTERFACE_APPLICATION_BASE_H_
+#define EXADG_AERO_ACOUSTIC_USER_INTERFACE_APPLICATION_BASE_H_
 
 // deal.II
 #include <deal.II/distributed/fully_distributed_tria.h>
@@ -30,26 +30,20 @@
 #include <deal.II/grid/manifold_lib.h>
 
 // ExaDG
-#include <exadg/grid/grid.h>
-#include <exadg/grid/grid_utilities.h>
-#include <exadg/operators/resolution_parameters.h>
-#include <exadg/postprocessor/output_parameters.h>
-
-// Fluid
-#include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
-#include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
-#include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
-#include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
-
-// Acoustic
 #include <exadg/acoustic_conservation_equations/postprocessor/postprocessor.h>
 #include <exadg/acoustic_conservation_equations/user_interface/boundary_descriptor.h>
 #include <exadg/acoustic_conservation_equations/user_interface/field_functions.h>
 #include <exadg/acoustic_conservation_equations/user_interface/parameters.h>
-
-// AeroAcoustic
 #include <exadg/aero_acoustic/user_interface/field_functions.h>
 #include <exadg/aero_acoustic/user_interface/parameters.h>
+#include <exadg/grid/grid.h>
+#include <exadg/grid/grid_utilities.h>
+#include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
+#include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
+#include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
+#include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
+#include <exadg/operators/resolution_parameters.h>
+#include <exadg/postprocessor/output_parameters.h>
 
 namespace ExaDG
 {
@@ -369,4 +363,4 @@ private:
 } // namespace AeroAcoustic
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_AERO_ACOUSTIC_USER_INTERFACE_APPLICATION_BASE_H_ */
+#endif /* EXADG_AERO_ACOUSTIC_USER_INTERFACE_APPLICATION_BASE_H_ */

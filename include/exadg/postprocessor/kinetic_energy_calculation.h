@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POSTPROCESSOR_KINETIC_ENERGY_CALCULATION_H_
-#define INCLUDE_EXADG_POSTPROCESSOR_KINETIC_ENERGY_CALCULATION_H_
+#ifndef EXADG_POSTPROCESSOR_KINETIC_ENERGY_CALCULATION_H_
+#define EXADG_POSTPROCESSOR_KINETIC_ENERGY_CALCULATION_H_
 
 // deal.II
 #include <deal.II/matrix_free/matrix_free.h>
@@ -145,4 +145,4 @@ protected:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_POSTPROCESSOR_KINETIC_ENERGY_CALCULATION_H_ */
+#endif /* EXADG_POSTPROCESSOR_KINETIC_ENERGY_CALCULATION_H_ */

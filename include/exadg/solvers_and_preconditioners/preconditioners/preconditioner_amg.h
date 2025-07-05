@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef PRECONDITIONER_AMG
-#define PRECONDITIONER_AMG
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONERS_PRECONDITIONER_AMG_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONERS_PRECONDITIONER_AMG_H_
 
+// deal.II
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/lac/petsc_precondition.h>
 #include <deal.II/lac/petsc_solver.h>
@@ -29,10 +30,12 @@
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
 
+// Trilinos
 #ifdef DEAL_II_WITH_TRILINOS
 #  include <ml_MultiLevelPreconditioner.h>
 #endif
 
+// ExaDG
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
@@ -575,4 +578,4 @@ private:
 
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONERS_PRECONDITIONER_AMG_H_ */

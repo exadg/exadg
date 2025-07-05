@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_CONVECTION_DIFFUSION_TIME_INTEGRATION_CREATE_TIME_INTEGRATOR_H_
-#define INCLUDE_EXADG_CONVECTION_DIFFUSION_TIME_INTEGRATION_CREATE_TIME_INTEGRATOR_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_TIME_INTEGRATION_CREATE_TIME_INTEGRATOR_H_
+#define EXADG_CONVECTION_DIFFUSION_TIME_INTEGRATION_CREATE_TIME_INTEGRATOR_H_
 
+// ExaDG
 #include <exadg/convection_diffusion/time_integration/time_int_bdf.h>
 #include <exadg/convection_diffusion/time_integration/time_int_explicit_runge_kutta.h>
 #include <exadg/convection_diffusion/user_interface/parameters.h>
@@ -67,6 +68,4 @@ create_time_integrator(std::shared_ptr<Operator<dim, Number>>          pde_opera
 } // namespace ConvDiff
 } // namespace ExaDG
 
-
-
-#endif /* INCLUDE_EXADG_CONVECTION_DIFFUSION_TIME_INTEGRATION_CREATE_TIME_INTEGRATOR_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_TIME_INTEGRATION_CREATE_TIME_INTEGRATOR_H_ */

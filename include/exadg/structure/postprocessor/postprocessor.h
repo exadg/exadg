@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_POSTPROCESSOR_POSTPROCESSOR_H_
-#define INCLUDE_EXADG_STRUCTURE_POSTPROCESSOR_POSTPROCESSOR_H_
+#ifndef EXADG_STRUCTURE_POSTPROCESSOR_POSTPROCESSOR_H_
+#define EXADG_STRUCTURE_POSTPROCESSOR_POSTPROCESSOR_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -71,4 +71,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_POSTPROCESSOR_POSTPROCESSOR_H_ */

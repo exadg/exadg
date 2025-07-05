@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_INTERIOR_PENALTY_PARAMETER_H_
-#define INCLUDE_EXADG_OPERATORS_INTERIOR_PENALTY_PARAMETER_H_
+#ifndef EXADG_OPERATORS_INTERIOR_PENALTY_PARAMETER_H_
+#define EXADG_OPERATORS_INTERIOR_PENALTY_PARAMETER_H_
 
 // deal.II
 #include <deal.II/base/aligned_vector.h>
@@ -131,5 +131,4 @@ get_penalty_factor(unsigned int const degree, ElementType element_type, Number c
 } // namespace IP
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_OPERATORS_INTERIOR_PENALTY_PARAMETER_H_ */
+#endif /* EXADG_OPERATORS_INTERIOR_PENALTY_PARAMETER_H_ */

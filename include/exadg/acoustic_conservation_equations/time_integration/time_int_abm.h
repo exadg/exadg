@@ -22,8 +22,10 @@
 #ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_TIME_INTEGRATION_TIME_INT_ABM_H_
 #define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_TIME_INTEGRATION_TIME_INT_ABM_H_
 
-
+// ExaDG
+#include <exadg/acoustic_conservation_equations/postprocessor/postprocessor_interface.h>
 #include <exadg/acoustic_conservation_equations/spatial_discretization/interface.h>
+#include <exadg/acoustic_conservation_equations/user_interface/parameters.h>
 #include <exadg/operators/grid_related_time_step_restrictions.h>
 #include <exadg/time_integration/time_int_abm_base.h>
 #include <exadg/time_integration/time_step_calculation.h>
@@ -136,4 +138,4 @@ private:
 } // namespace Acoustics
 } // namespace ExaDG
 
-#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_TIME_INTEGRATION_TIME_INT_ABM_H_*/
+#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_TIME_INTEGRATION_TIME_INT_ABM_H_ */

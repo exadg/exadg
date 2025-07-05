@@ -21,6 +21,8 @@
 
 #ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_ENUM_TYPES_H_
 #define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_ENUM_TYPES_H_
+
+// ExaDG
 #include <exadg/utilities/enum_utilities.h>
 
 namespace ExaDG
@@ -56,4 +58,4 @@ enum class TimeStepCalculation
 } // namespace Acoustics
 } // namespace ExaDG
 
-#endif /*EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_ENUM_TYPES_H_*/
+#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_ENUM_TYPES_H_ */

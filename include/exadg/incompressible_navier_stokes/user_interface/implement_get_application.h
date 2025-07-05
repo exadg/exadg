@@ -19,10 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
 
-
+// ExaDG
 #include <exadg/incompressible_navier_stokes/user_interface/application_base.h>
 
 namespace ExaDG
@@ -39,6 +39,5 @@ get_application(std::string input_file, MPI_Comm const & comm)
 } // namespace IncNS
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_ \
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_ \
         */

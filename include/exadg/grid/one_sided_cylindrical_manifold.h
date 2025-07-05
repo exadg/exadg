@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_ONESIDEDSPHERICALMANIFOLD_H_
-#define INCLUDE_FUNCTIONALITIES_ONESIDEDSPHERICALMANIFOLD_H_
+#ifndef EXADG_GRID_ONE_SIDED_CYLINDRICAL_MANIFOLD_H_
+#define EXADG_GRID_ONE_SIDED_CYLINDRICAL_MANIFOLD_H_
 
+// deal.II
 #include <deal.II/grid/manifold_lib.h>
 
 namespace ExaDG
@@ -760,6 +761,7 @@ public:
 private:
   dealii::Point<dim> center;
 };
+
 } // namespace ExaDG
 
-#endif /* INCLUDE_FUNCTIONALITIES_ONESIDEDSPHERICALMANIFOLD_H_ */
+#endif /* EXADG_GRID_ONE_SIDED_CYLINDRICAL_MANIFOLD_H_ */

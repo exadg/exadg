@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_MATERIAL_MATERIAL_H_
-#define INCLUDE_EXADG_STRUCTURE_MATERIAL_MATERIAL_H_
+#ifndef EXADG_STRUCTURE_MATERIAL_MATERIAL_H_
+#define EXADG_STRUCTURE_MATERIAL_MATERIAL_H_
 
 // deal.II
 #include <deal.II/base/tensor.h>
@@ -68,4 +68,4 @@ public:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_MATERIAL_MATERIAL_H_ */

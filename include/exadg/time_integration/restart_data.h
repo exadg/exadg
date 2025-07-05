@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_RESTART_DATA_H_
-#define INCLUDE_FUNCTIONALITIES_RESTART_DATA_H_
+#ifndef EXADG_TIME_INTEGRATION_RESTART_DATA_H_
+#define EXADG_TIME_INTEGRATION_RESTART_DATA_H_
 
 // C/C++
 #include <limits>
@@ -103,4 +103,4 @@ struct RestartData
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_FUNCTIONALITIES_RESTART_DATA_H_ */
+#endif /* EXADG_TIME_INTEGRATION_RESTART_DATA_H_ */

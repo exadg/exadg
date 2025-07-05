@@ -19,14 +19,12 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_ACOUSTICS_H_
-#define INCLUDE_EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_ACOUSTICS_H_
+#ifndef EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_ACOUSTICS_H_
+#define EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_ACOUSTICS_H_
 
-// Acoustics
+// ExaDG
 #include <exadg/acoustic_conservation_equations/time_integration/time_int_abm.h>
 #include <exadg/acoustic_conservation_equations/user_interface/application_base.h>
-
-// application
 #include <exadg/aero_acoustic/user_interface/application_base.h>
 
 namespace ExaDG
@@ -134,8 +132,7 @@ private:
   std::pair<unsigned int /* n_macro_dt */, unsigned long long /* n_sub_dt */> sub_time_steps;
 };
 
-
 } // namespace AeroAcoustic
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_ACOUSTICS_H_ */
+#endif /* EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_ACOUSTICS_H_ */

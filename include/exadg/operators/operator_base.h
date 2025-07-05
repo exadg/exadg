@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef OPERATION_BASE_H
-#define OPERATION_BASE_H
+#ifndef EXADG_OPERATORS_OPERATOR_BASE_H_
+#define EXADG_OPERATORS_OPERATOR_BASE_H_
 
 // deal.II
 #include <deal.II/base/subscriptor.h>
@@ -782,6 +782,7 @@ private:
   mutable Vec petsc_vector_dst;
 #endif
 };
+
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_OPERATORS_OPERATOR_BASE_H_ */

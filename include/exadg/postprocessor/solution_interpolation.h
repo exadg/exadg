@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POSTPROCESSOR_SOLUTION_INTERPOLATION_H_
-#define INCLUDE_EXADG_POSTPROCESSOR_SOLUTION_INTERPOLATION_H_
+#ifndef EXADG_POSTPROCESSOR_SOLUTION_INTERPOLATION_H_
+#define EXADG_POSTPROCESSOR_SOLUTION_INTERPOLATION_H_
 
 // deal.II
 #include <deal.II/base/point.h>
@@ -297,4 +297,4 @@ struct Interpolator<1, dim, Number>
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_POSTPROCESSOR_SOLUTION_INTERPOLATION_H_ */
+#endif /* EXADG_POSTPROCESSOR_SOLUTION_INTERPOLATION_H_ */

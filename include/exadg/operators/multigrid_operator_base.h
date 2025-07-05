@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef OPERATOR_PRECONDITIONABLE_H
-#define OPERATOR_PRECONDITIONABLE_H
+#ifndef EXADG_OPERATORS_MULTIGRID_OPERATOR_BASE_H_
+#define EXADG_OPERATORS_MULTIGRID_OPERATOR_BASE_H_
 
+// deal.II
 #include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/lac/petsc_sparse_matrix.h>
@@ -123,4 +124,4 @@ public:
 
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_OPERATORS_MULTIGRID_OPERATOR_BASE_H_ */
