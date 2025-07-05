@@ -112,8 +112,8 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="comment"> *  ______________________________________________________________________</span></div>
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="comment"> */</span></div>
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#ifndef INCLUDE_EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_H_</span></div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#define INCLUDE_EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_H_</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#ifndef EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATOR_H_</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#define EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATOR_H_</span></div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="comment">// deal.II</span></div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;deal.II/fe/fe_dgq.h&gt;</span></div>
@@ -527,9 +527,9 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00455" name="l00455"></a><span class="lineno">  455</span>} <span class="comment">// namespace ConvDiff</span></div>
 <div class="line"><a id="l00456" name="l00456"></a><span class="lineno">  456</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00457" name="l00457"></a><span class="lineno">  457</span> </div>
-<div class="line"><a id="l00458" name="l00458"></a><span class="lineno">  458</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1CombinedOperator_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1CombinedOperator.html">ExaDG::ConvDiff::CombinedOperator</a></div><div class="ttdef"><b>Definition</b> combined_operator.h:56</div></div>
-<div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1ConvectiveOperator_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1ConvectiveOperator.html">ExaDG::ConvDiff::ConvectiveOperator</a></div><div class="ttdef"><b>Definition</b> convective_operator.h:552</div></div>
+<div class="line"><a id="l00458" name="l00458"></a><span class="lineno">  458</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATOR_H_ */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1CombinedOperator_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1CombinedOperator.html">ExaDG::ConvDiff::CombinedOperator</a></div><div class="ttdef"><b>Definition</b> combined_operator.h:57</div></div>
+<div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1ConvectiveOperator_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1ConvectiveOperator.html">ExaDG::ConvDiff::ConvectiveOperator</a></div><div class="ttdef"><b>Definition</b> convective_operator.h:554</div></div>
 <div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1DiffusiveOperator_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1DiffusiveOperator.html">ExaDG::ConvDiff::DiffusiveOperator</a></div><div class="ttdef"><b>Definition</b> diffusive_operator.h:232</div></div>
 <div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1Interface_1_1Operator_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1Interface_1_1Operator.html">ExaDG::ConvDiff::Interface::Operator</a></div><div class="ttdef"><b>Definition</b> interface.h:39</div></div>
 <div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1Operator_html_a15f533352d75d8183fc50222043adf4b"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1Operator.html#a15f533352d75d8183fc50222043adf4b">ExaDG::ConvDiff::Operator::setup</a></div><div class="ttdeci">void setup()</div><div class="ttdef"><b>Definition</b> operator.cpp:315</div></div>
@@ -537,7 +537,7 @@ $(function(){ initResizable(false); });
 <div class="ttc" id="aclassExaDG_1_1Grid_html"><div class="ttname"><a href="classExaDG_1_1Grid.html">ExaDG::Grid</a></div><div class="ttdef"><b>Definition</b> grid.h:40</div></div>
 <div class="ttc" id="aclassExaDG_1_1InverseMassOperator_html"><div class="ttname"><a href="classExaDG_1_1InverseMassOperator.html">ExaDG::InverseMassOperator</a></div><div class="ttdef"><b>Definition</b> inverse_mass_operator.h:71</div></div>
 <div class="ttc" id="aclassExaDG_1_1MultigridMappings_html"><div class="ttname"><a href="classExaDG_1_1MultigridMappings.html">ExaDG::MultigridMappings</a></div><div class="ttdef"><b>Definition</b> grid.h:84</div></div>
-<div class="ttc" id="aclassExaDG_1_1RHSOperator_html"><div class="ttname"><a href="classExaDG_1_1RHSOperator.html">ExaDG::RHSOperator</a></div><div class="ttdef"><b>Definition</b> rhs_operator.h:107</div></div>
+<div class="ttc" id="aclassExaDG_1_1RHSOperator_html"><div class="ttname"><a href="classExaDG_1_1RHSOperator.html">ExaDG::RHSOperator</a></div><div class="ttdef"><b>Definition</b> rhs_operator.h:108</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 <div class="ttc" id="astructExaDG_1_1ConvDiff_1_1BoundaryDescriptor_html"><div class="ttname"><a href="structExaDG_1_1ConvDiff_1_1BoundaryDescriptor.html">ExaDG::ConvDiff::BoundaryDescriptor</a></div><div class="ttdef"><b>Definition</b> boundary_descriptor.h:46</div></div>
 <div class="ttc" id="astructExaDG_1_1ConvDiff_1_1FieldFunctions_html"><div class="ttname"><a href="structExaDG_1_1ConvDiff_1_1FieldFunctions.html">ExaDG::ConvDiff::FieldFunctions</a></div><div class="ttdef"><b>Definition</b> field_functions.h:31</div></div>
