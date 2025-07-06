@@ -212,7 +212,7 @@ struct SmootherData
   // Chebyshev smoother: sets the smoothing range (range of eigenvalues to be smoothed)
   double smoothing_range;
 
-  // Chebyshev smmother: number of CG iterations for estimation of eigenvalues
+  // Chebyshev smoother: number of CG iterations for estimation of eigenvalues
   unsigned int iterations_eigenvalue_estimation;
 };
 

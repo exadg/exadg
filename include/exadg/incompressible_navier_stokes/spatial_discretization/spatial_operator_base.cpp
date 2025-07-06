@@ -980,6 +980,12 @@ SpatialOperatorBase<dim, Number>::prescribe_initial_conditions(VectorType & velo
                         pressure,
                         field_functions->initial_solution_pressure,
                         time);
+
+  // Compute initial variable viscosity using the initial velocity field.
+  if(this->param.viscous_problem() and this->param.viscosity_is_variable())
+  {
+    this->update_viscosity(velocity);
+  }
 }
 
 template<int dim, typename Number>
@@ -1226,11 +1232,11 @@ SpatialOperatorBase<dim, Number>::compute_shear_rate(VectorType & dst, VectorTyp
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::get_viscosity(VectorType & dst, VectorType const & src) const
+SpatialOperatorBase<dim, Number>::access_viscosity(VectorType & dst, VectorType const & src) const
 {
   if(param.viscosity_is_variable())
   {
-    viscosity_calculator.get_viscosity(dst, src);
+    viscosity_calculator.access_viscosity(dst, src);
     inverse_mass_velocity_scalar.apply(dst, dst);
   }
   else

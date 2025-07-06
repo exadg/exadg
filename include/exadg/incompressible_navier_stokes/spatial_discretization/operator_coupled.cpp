@@ -547,9 +547,18 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
   auto type = this->param.preconditioner_pressure_block;
 
   InverseMassOperatorData<Number> inverse_mass_operator_data;
-  inverse_mass_operator_data.dof_index  = this->get_dof_index_pressure();
-  inverse_mass_operator_data.quad_index = this->get_quad_index_pressure();
-  inverse_mass_operator_data.parameters = this->param.inverse_mass_preconditioner;
+  inverse_mass_operator_data.dof_index               = this->get_dof_index_pressure();
+  inverse_mass_operator_data.quad_index              = this->get_quad_index_pressure();
+  inverse_mass_operator_data.parameters              = this->param.inverse_mass_preconditioner;
+  inverse_mass_operator_data.coefficient_is_variable = this->param.viscosity_is_variable();
+  if(this->param.viscosity_is_variable())
+  {
+    // The mass operator in the pressure space uses the inverse coefficient (q_h , p_h / nu).
+    // The viscous kernel manages the update of the variable coefficient.
+    inverse_mass_operator_data.consider_inverse_coefficient = true;
+    inverse_mass_operator_data.variable_coefficients =
+      this->viscous_kernel->get_viscosity_coefficients();
+  }
 
   if(type == SchurComplementPreconditioner::InverseMassMatrix)
   {
@@ -1129,9 +1138,15 @@ OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &  
   else if(type == SchurComplementPreconditioner::InverseMassMatrix)
   {
     // - S^{-1} = nu M_p^{-1}
-    // TODO consider variable viscosity here
     inverse_mass_preconditioner_schur_complement->vmult(dst, src);
-    dst *= this->param.viscosity;
+    if(this->param.viscosity_is_variable())
+    {
+      // Variable viscosity is accounted for in mass operator.
+    }
+    else
+    {
+      dst *= this->param.viscosity;
+    }
   }
   else if(type == SchurComplementPreconditioner::LaplaceOperator)
   {
@@ -1149,11 +1164,18 @@ OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &  
 
     // II. M_p^{-1}, apply inverse pressure mass operator to src-vector and store the result in a
     // temporary vector
-    // TODO consider variable viscosity here
     inverse_mass_preconditioner_schur_complement->vmult(tmp_scp_pressure, src);
 
     // III. add temporary vector scaled by viscosity
-    dst.add(this->param.viscosity, tmp_scp_pressure);
+    if(this->param.viscosity_is_variable())
+    {
+      // Variable viscosity is accounted for in mass operator.
+      dst += tmp_scp_pressure;
+    }
+    else
+    {
+      dst.add(this->param.viscosity, tmp_scp_pressure);
+    }
   }
   else if(type == SchurComplementPreconditioner::PressureConvectionDiffusion)
   {
@@ -1177,7 +1199,7 @@ OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &  
     pressure_conv_diff_operator->apply(dst, tmp_scp_pressure);
 
     // III. inverse pressure mass operator M_p^{-1}
-    // TODO consider variable viscosity here
+    // Variable viscosit is accounted for in mass operator.
     inverse_mass_preconditioner_schur_complement->vmult(dst, dst);
   }
   else

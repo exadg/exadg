@@ -170,7 +170,7 @@ public:
              IncNS::Operators::ViscousKernel<dim, Number> const & viscous_kernel_in);
 
   void
-  get_viscosity(VectorType & dst, VectorType const & src) const;
+  access_viscosity(VectorType & dst, VectorType const & src) const;
 
 private:
   void
