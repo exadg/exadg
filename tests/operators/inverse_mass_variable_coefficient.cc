@@ -133,7 +133,7 @@ private:
 
   VectorType vector;
 
-  std::shared_ptr<VariableCoefficients<dealii::VectorizedArray<Number>>> variable_coefficients;
+  VariableCoefficients<dealii::VectorizedArray<Number>> variable_coefficients;
 };
 
 template<int dim, int n_components>
@@ -296,11 +296,10 @@ Projector<dim, n_components>::compute(bool const consider_inverse_coefficient)
                      matrix_free_data.data);
 
   // Fill variable coefficients with smooth, positive analytical function.
-  variable_coefficients = std::make_shared<VariableCoefficients<dealii::VectorizedArray<Number>>>();
-  variable_coefficients->initialize(matrix_free,
-                                    0 /* quad_index */,
-                                    false /* store_face_data_in */,
-                                    false /* store_cell_based_face_data_in */);
+  variable_coefficients.initialize(matrix_free,
+                                   0 /* quad_index */,
+                                   false /* store_face_data_in */,
+                                   false /* store_cell_based_face_data_in */);
 
   matrix_free.cell_loop(&Projector<dim, n_components>::cell_loop_set_coefficient,
                         this,
@@ -311,7 +310,7 @@ Projector<dim, n_components>::compute(bool const consider_inverse_coefficient)
   // Setup a `MassOperator` with a variable coefficient.
   MassOperatorData<dim, Number> mass_operator_data;
   mass_operator_data.coefficient_is_variable      = true;
-  mass_operator_data.variable_coefficients        = variable_coefficients;
+  mass_operator_data.variable_coefficients        = &variable_coefficients;
   mass_operator_data.consider_inverse_coefficient = consider_inverse_coefficient;
 
   MassOperator<dim, n_components, Number> mass_operator;
@@ -322,14 +321,14 @@ Projector<dim, n_components>::compute(bool const consider_inverse_coefficient)
   inverse_mass_operator_data.dof_index                    = 0;
   inverse_mass_operator_data.quad_index                   = 0;
   inverse_mass_operator_data.coefficient_is_variable      = true;
-  inverse_mass_operator_data.variable_coefficients        = variable_coefficients;
+  inverse_mass_operator_data.variable_coefficients        = &variable_coefficients;
   inverse_mass_operator_data.consider_inverse_coefficient = consider_inverse_coefficient;
 
   inverse_mass_operator_data.parameters.implementation_type  = inverse_mass_implementation_type;
   inverse_mass_operator_data.parameters.preconditioner       = PreconditionerMass::PointJacobi;
   inverse_mass_operator_data.parameters.solver_data.max_iter = 1000;
-  inverse_mass_operator_data.parameters.solver_data.abs_tol  = 1e-18;
-  inverse_mass_operator_data.parameters.solver_data.rel_tol  = 1e-12;
+  inverse_mass_operator_data.parameters.solver_data.abs_tol  = 1e-12;
+  inverse_mass_operator_data.parameters.solver_data.rel_tol  = 1e-8;
 
   InverseMassOperator<dim, n_components, Number> inverse_mass_operator;
   inverse_mass_operator.initialize(matrix_free, inverse_mass_operator_data, &empty_constraints);
@@ -412,7 +411,7 @@ Projector<dim, n_components>::cell_loop_set_coefficient(
         value_vec[i] = value;
       }
 
-      variable_coefficients->set_coefficient_cell(cell, q, value_vec);
+      variable_coefficients.set_coefficient_cell(cell, q, value_vec);
     }
   }
 }

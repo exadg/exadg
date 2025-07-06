@@ -166,7 +166,7 @@ ViscosityCalculator<dim, Number>::initialize(
 
 template<int dim, typename Number>
 void
-ViscosityCalculator<dim, Number>::get_viscosity(VectorType & dst, VectorType const & src) const
+ViscosityCalculator<dim, Number>::access_viscosity(VectorType & dst, VectorType const & src) const
 {
   dst = 0.0;
 

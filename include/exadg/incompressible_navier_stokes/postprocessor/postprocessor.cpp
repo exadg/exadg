@@ -363,7 +363,7 @@ PostProcessor<dim, Number>::initialize_derived_fields()
       navier_stokes_operator->initialize_vector_velocity_scalar(dst);
     };
     viscosity.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
-      navier_stokes_operator->get_viscosity(dst, src);
+      navier_stokes_operator->access_viscosity(dst, src);
     };
 
     viscosity.reinit();

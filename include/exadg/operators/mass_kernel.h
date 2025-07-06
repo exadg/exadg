@@ -77,21 +77,19 @@ public:
    */
   void
   set_variable_coefficients_ptr(
-    std::shared_ptr<VariableCoefficients<dealii::VectorizedArray<Number>> const>
-      variable_coefficients_in)
+    VariableCoefficients<dealii::VectorizedArray<Number>> const * variable_coefficients_in)
   {
     variable_coefficients = variable_coefficients_in;
   }
 
-  std::shared_ptr<VariableCoefficients<dealii::VectorizedArray<Number>> const>
+  VariableCoefficients<dealii::VectorizedArray<Number>> const *
   get_variable_coefficients_ptr() const
   {
     return variable_coefficients;
   }
 
 private:
-  std::shared_ptr<VariableCoefficients<dealii::VectorizedArray<Number>> const>
-    variable_coefficients;
+  VariableCoefficients<dealii::VectorizedArray<Number>> const * variable_coefficients;
 };
 
 } // namespace ExaDG

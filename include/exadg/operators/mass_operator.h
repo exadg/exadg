@@ -42,9 +42,8 @@ struct MassOperatorData : public OperatorBaseData
   }
 
   // variable coefficients
-  bool coefficient_is_variable;
-  std::shared_ptr<VariableCoefficients<dealii::VectorizedArray<Number>> const>
-    variable_coefficients;
+  bool                                                          coefficient_is_variable;
+  VariableCoefficients<dealii::VectorizedArray<Number>> const * variable_coefficients;
   // use the inverse of the coefficients stored in `variable_coefficients`
   bool consider_inverse_coefficient;
 };

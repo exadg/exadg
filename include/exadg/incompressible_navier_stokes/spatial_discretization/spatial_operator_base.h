@@ -350,7 +350,7 @@ public:
 
   // get the current visosity field as vector
   void
-  get_viscosity(VectorType & dst, VectorType const & src) const;
+  access_viscosity(VectorType & dst, VectorType const & src) const;
 
   /*
    * Operators.

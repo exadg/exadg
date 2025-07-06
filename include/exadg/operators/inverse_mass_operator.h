@@ -62,8 +62,7 @@ struct InverseMassOperatorData
   // (2) : (u_h , v_h / c)_Omega
   bool consider_inverse_coefficient;
 
-  std::shared_ptr<VariableCoefficients<dealii::VectorizedArray<Number>> const>
-    variable_coefficients;
+  VariableCoefficients<dealii::VectorizedArray<Number>> const * variable_coefficients;
 };
 
 template<int dim, int n_components, typename Number>
@@ -413,8 +412,7 @@ private:
   bool coefficient_is_variable;
   bool consider_inverse_coefficient;
 
-  std::shared_ptr<VariableCoefficients<dealii::VectorizedArray<Number>> const>
-    variable_coefficients;
+  VariableCoefficients<dealii::VectorizedArray<Number>> const * variable_coefficients;
 
   // Solver and preconditioner for solving a global linear system of equations for all degrees of
   // freedom.

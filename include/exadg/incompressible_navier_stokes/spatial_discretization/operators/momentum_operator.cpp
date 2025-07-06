@@ -138,6 +138,9 @@ template<int dim, typename Number>
 dealii::LinearAlgebra::distributed::Vector<Number> const &
 MomentumOperator<dim, Number>::get_velocity() const
 {
+  AssertThrow(operator_data.convective_problem,
+              dealii::ExcMessage("Cannot access velocity stored in `convective_kernel`"));
+
   return convective_kernel->get_velocity();
 }
 
