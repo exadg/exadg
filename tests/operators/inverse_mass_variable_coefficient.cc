@@ -121,7 +121,7 @@ private:
 
   InverseMassType inverse_mass_implementation_type;
 
-  static unsigned int constexpr fe_degree = 2;
+  static unsigned int constexpr fe_degree = 1;
 
   dealii::parallel::fullydistributed::Triangulation<dim> tria;
 
@@ -317,7 +317,7 @@ Projector<dim, n_components>::compute(bool const consider_inverse_coefficient)
   MassOperator<dim, n_components, Number> mass_operator;
   mass_operator.initialize(matrix_free, empty_constraints, mass_operator_data);
 
-  // Setup a `InverseMassOperator` with a variable coefficient.
+  // Setup an `InverseMassOperator` with a variable coefficient.
   InverseMassOperatorData<Number> inverse_mass_operator_data;
   inverse_mass_operator_data.dof_index                    = 0;
   inverse_mass_operator_data.quad_index                   = 0;
@@ -442,35 +442,43 @@ main(int argc, char * argv[])
       bool RT_on_Hypercube = false;
 
       // Simplex tests FE_SimplexP or FE_SimplexDGP.
-      InverseMassType inverse_mass_type_simplex =
-        is_dg ? InverseMassType::ElementwiseKrylovSolver : InverseMassType::GlobalKrylovSolver;
+      for(unsigned int j = 0; j < 2; ++j)
       {
-        Projector<2 /* dim */, 1 /* n_components */> projector(is_dg,
-                                                               RT_on_Hypercube,
-                                                               ElementType::Simplex,
-                                                               inverse_mass_type_simplex);
-        projector.run();
-      }
-      {
-        Projector<2 /* dim */, 2 /* n_components */> projector(is_dg,
-                                                               RT_on_Hypercube,
-                                                               ElementType::Simplex,
-                                                               inverse_mass_type_simplex);
-        projector.run();
-      }
-      {
-        Projector<3 /* dim */, 1 /* n_components */> projector(is_dg,
-                                                               RT_on_Hypercube,
-                                                               ElementType::Simplex,
-                                                               inverse_mass_type_simplex);
-        projector.run();
-      }
-      {
-        Projector<3 /* dim */, 3 /* n_components */> projector(is_dg,
-                                                               RT_on_Hypercube,
-                                                               ElementType::Simplex,
-                                                               inverse_mass_type_simplex);
-        projector.run();
+        if(j == 0 or is_dg)
+        {
+          InverseMassType inverse_mass_type_dg =
+            j == 0 ? InverseMassType::ElementwiseKrylovSolver : InverseMassType::BlockMatrices;
+          InverseMassType inverse_mass_type_simplex =
+            is_dg ? inverse_mass_type_dg : InverseMassType::GlobalKrylovSolver;
+          {
+            Projector<2 /* dim */, 1 /* n_components */> projector(is_dg,
+                                                                   RT_on_Hypercube,
+                                                                   ElementType::Simplex,
+                                                                   inverse_mass_type_simplex);
+            projector.run();
+          }
+          {
+            Projector<2 /* dim */, 2 /* n_components */> projector(is_dg,
+                                                                   RT_on_Hypercube,
+                                                                   ElementType::Simplex,
+                                                                   inverse_mass_type_simplex);
+            projector.run();
+          }
+          {
+            Projector<3 /* dim */, 1 /* n_components */> projector(is_dg,
+                                                                   RT_on_Hypercube,
+                                                                   ElementType::Simplex,
+                                                                   inverse_mass_type_simplex);
+            projector.run();
+          }
+          {
+            Projector<3 /* dim */, 3 /* n_components */> projector(is_dg,
+                                                                   RT_on_Hypercube,
+                                                                   ElementType::Simplex,
+                                                                   inverse_mass_type_simplex);
+            projector.run();
+          }
+        }
       }
 
       // Hypercube tests FE_Q or FE_DGQ.
