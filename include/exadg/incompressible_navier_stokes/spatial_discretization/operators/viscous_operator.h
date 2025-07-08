@@ -63,6 +63,7 @@ template<int dim, typename Number>
 class ViscousKernel
 {
 private:
+  typedef dealii::LinearAlgebra::distributed::Vector<Number>      VectorType;
   typedef dealii::VectorizedArray<Number>                         scalar;
   typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
   typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
@@ -79,11 +80,12 @@ public:
   reinit(dealii::MatrixFree<dim, Number> const & matrix_free,
          ViscousKernelData const &               data,
          unsigned int const                      dof_index,
-         unsigned int const                      quad_index)
+         unsigned int const                      quad_index,
+         bool const                              use_velocity_own_storage)
   {
-    this->data = data;
-
-    this->quad_index = quad_index;
+    this->data                     = data;
+    this->quad_index               = quad_index;
+    this->use_velocity_own_storage = use_velocity_own_storage;
 
     dealii::FiniteElement<dim> const & fe = matrix_free.get_dof_handler(dof_index).get_fe();
     this->degree                          = fe.degree;
@@ -98,6 +100,12 @@ public:
       viscosity_coefficients.initialize(matrix_free, quad_index, true, false);
       viscosity_coefficients.set_coefficients(data.viscosity);
     }
+
+    // initialize vector holding the velocity
+    if(this->use_velocity_own_storage)
+    {
+      matrix_free.initialize_dof_vector(velocity, dof_index);
+    }
   }
 
   void
@@ -111,6 +119,30 @@ public:
   get_data() const
   {
     return this->data;
+  }
+
+  bool
+  get_use_velocity_own_storage() const
+  {
+    return this->use_velocity_own_storage;
+  }
+
+  VectorType const &
+  get_velocity() const
+  {
+    AssertThrow(this->use_velocity_own_storage,
+                dealii::ExcMessage("Velocity vector not stored in the viscous kernel."));
+
+    return velocity;
+  }
+
+  void
+  set_velocity_copy(VectorType const & src)
+  {
+    AssertThrow(this->use_velocity_own_storage,
+                dealii::ExcMessage("Velocity vector not stored in the viscous kernel."));
+
+    this->velocity = src;
   }
 
   VariableCoefficients<dealii::VectorizedArray<Number>> const *
@@ -548,6 +580,9 @@ private:
   dealii::AlignedVector<scalar> array_penalty_parameter;
 
   mutable scalar tau;
+
+  bool       use_velocity_own_storage;
+  VectorType velocity;
 
   VariableCoefficients<dealii::VectorizedArray<Number>> viscosity_coefficients;
 };
