@@ -551,7 +551,7 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
   inverse_mass_operator_data.quad_index              = this->get_quad_index_pressure();
   inverse_mass_operator_data.parameters              = this->param.inverse_mass_preconditioner;
   inverse_mass_operator_data.coefficient_is_variable = this->param.viscosity_is_variable();
-  if(this->param.viscosity_is_variable())
+  if(inverse_mass_operator_data.coefficient_is_variable)
   {
     // The mass operator in the pressure space uses the inverse coefficient (q_h , p_h / nu).
     // The viscous kernel manages the update of the variable coefficient.
@@ -880,8 +880,9 @@ OperatorCoupled<dim, Number>::update_block_preconditioner()
   // momentum block
   preconditioner_momentum->update();
 
-  // pressure block
-  if(this->param.ale_formulation) // only if mesh is moving
+  // Update pressure block preconditioner if mesh is moving or a variable coefficient is present
+  if(this->param.ale_formulation or
+     (this->param.viscous_problem() and this->param.viscosity_is_variable()))
   {
     auto const type = this->param.preconditioner_pressure_block;
 
@@ -893,17 +894,20 @@ OperatorCoupled<dim, Number>::update_block_preconditioner()
       inverse_mass_preconditioner_schur_complement->update();
     }
 
-    // Laplace operator
-    if(type == SchurComplementPreconditioner::LaplaceOperator or
-       type == SchurComplementPreconditioner::CahouetChabard or
-       type == SchurComplementPreconditioner::PressureConvectionDiffusion)
+    if(this->param.ale_formulation)
     {
-      if(this->param.iterative_solve_of_pressure_block == true)
+      // Laplace operator
+      if(type == SchurComplementPreconditioner::LaplaceOperator or
+         type == SchurComplementPreconditioner::CahouetChabard or
+         type == SchurComplementPreconditioner::PressureConvectionDiffusion)
       {
-        laplace_operator->update_penalty_parameter();
-      }
+        if(this->param.iterative_solve_of_pressure_block == true)
+        {
+          laplace_operator->update_penalty_parameter();
+        }
 
-      multigrid_preconditioner_schur_complement->update();
+        multigrid_preconditioner_schur_complement->update();
+      }
     }
   }
 }
