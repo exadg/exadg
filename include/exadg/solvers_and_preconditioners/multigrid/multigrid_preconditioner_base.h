@@ -210,6 +210,12 @@ protected:
   unsigned int
   get_number_of_levels() const;
 
+  /*
+   * Returns the correct mapping depending on the multigrid transfer type and the current h-level.
+   */
+  dealii::Mapping<dim> const &
+  get_mapping(unsigned int const h_level) const;
+
   /**
    * This is a generic function allowing to loop over all multigrid levels (including the coarsest
    * level). The operation to be performed on each level is passed as a lambda with argument level.
@@ -273,12 +279,6 @@ private:
    */
   void
   initialize_levels(unsigned int const degree, bool const is_dg);
-
-  /*
-   * Returns the correct mapping depending on the multigrid transfer type and the current h-level.
-   */
-  dealii::Mapping<dim> const &
-  get_mapping(unsigned int const h_level) const;
 
   /**
    * Returns the number of h-levels.
