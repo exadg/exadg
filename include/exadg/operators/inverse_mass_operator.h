@@ -265,26 +265,11 @@ public:
   void
   apply(VectorType & dst, VectorType const & src) const
   {
-    // Note that the inverse mass operator might be called like inverse_mass.apply(dst, dst),
-    // i.e. with identical destination and source vectors. In this case, we need to make sure
-    // that the result is still correct.
-    VectorType const * src_ptr;
-    VectorType         src_copy;
-    if(&dst == &src)
-    {
-      src_copy = src;
-      src_ptr  = &src_copy;
-    }
-    else
-    {
-      src_ptr = &src;
-    }
-
     if(data.implementation_type == InverseMassType::GlobalKrylovSolver)
     {
       AssertThrow(global_solver.get() != 0,
                   dealii::ExcMessage("Global mass solver has not been initialized."));
-      global_solver->solve(dst, *src_ptr);
+      global_solver->solve(dst, src);
     }
     else
     {
@@ -292,14 +277,14 @@ public:
 
       if(data.implementation_type == InverseMassType::MatrixfreeOperator)
       {
-        matrix_free->cell_loop(&This::cell_loop_matrix_free_operator, this, dst, *src_ptr);
+        matrix_free->cell_loop(&This::cell_loop_matrix_free_operator, this, dst, src);
       }
       else // ElementwiseKrylovSolver or BlockMatrices
       {
         AssertThrow(block_jacobi_preconditioner.get() != 0,
                     dealii::ExcMessage(
                       "Cell-wise iterative/direct block-Jacobi solver has not been initialized."));
-        block_jacobi_preconditioner->vmult(dst, *src_ptr);
+        block_jacobi_preconditioner->vmult(dst, src);
       }
     }
   }
@@ -354,7 +339,7 @@ private:
         integrator.read_dof_values(src, 0);
 
         dealii::AlignedVector<dealii::VectorizedArray<Number>> inverse_JxW_times_coefficient(
-          this->matrix_free->get_dofs_per_cell(dof_index));
+          integrator.n_q_points);
         inverse_mass.fill_inverse_JxW_values(inverse_JxW_times_coefficient);
 
         if(consider_inverse_coefficient)
