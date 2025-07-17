@@ -27,6 +27,7 @@
 
 // deal.II
 #include <deal.II/base/bounding_box.h>
+#include <deal.II/dofs/dof_tools.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_out.h>
 #include <deal.II/numerics/data_out.h>
@@ -145,6 +146,87 @@ write_points_in_dummy_triangulation(std::vector<dealii::Point<dim>> const & poin
 
   write_points(
     particle_dummy_tria, particle_dummy_mapping, points, folder, file, counter, mpi_comm);
+}
+
+template<int dim, typename VectorType>
+void
+write_vector(dealii::DoFHandler<dim> const & dof_handler,
+             dealii::Mapping<dim> const &    mapping,
+             VectorType const &              vector,
+             std::string const &             folder,
+             std::string const &             file,
+             unsigned int const              n_subdivisions,
+             unsigned int const              n_components = 1)
+{
+  // Write higher order output.
+  dealii::DataOut<dim>          data_out;
+  dealii::DataOutBase::VtkFlags flags;
+  flags.write_higher_order_cells = n_subdivisions > 1;
+  data_out.set_flags(flags);
+  data_out.attach_dof_handler(dof_handler);
+
+  // Get vector with locally relevant entries.
+  VectorType       rel_vector;
+  dealii::IndexSet rel_dofs;
+  dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, rel_dofs);
+  MPI_Comm const & mpi_comm = dof_handler.get_communicator();
+  rel_vector.reinit(dof_handler.locally_owned_dofs(), rel_dofs, mpi_comm);
+  rel_vector = vector;
+
+  // Vector entries are to be interpreted as components of a vector.
+  if(n_components > 1)
+  {
+    std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
+      data_component_interpretation(
+        dim, dealii::DataComponentInterpretation::component_is_part_of_vector);
+    std::vector<std::string> solution_names(n_components, "vector");
+    data_out.add_data_vector(rel_vector,
+                             "vector",
+                             dealii::DataOut<dim>::type_dof_data,
+                             data_component_interpretation);
+  }
+  else
+  {
+    data_out.add_data_vector(rel_vector, "vector");
+  }
+
+  auto const & triangulation = dof_handler.get_triangulation();
+
+  // Add vector indicating subdomain.
+  dealii::Vector<float> subdomain;
+  if constexpr(true)
+  {
+    subdomain.reinit(triangulation.n_active_cells());
+    for(unsigned int i = 0; i < subdomain.size(); ++i)
+    {
+      subdomain(i) = triangulation.locally_owned_subdomain();
+    }
+    data_out.add_data_vector(subdomain, "subdomain");
+  }
+
+  // Build patches, vectors to export must stay in scope until after this call.
+  data_out.build_patches(mapping, n_subdivisions, dealii::DataOut<dim>::curved_inner_cells);
+
+  // Create vtu files + pvtu record.
+  std::string filename =
+    folder + file + "_p" +
+    dealii::Utilities::int_to_string(triangulation.locally_owned_subdomain(), 4);
+  std::ofstream output((filename + ".vtu").c_str());
+  data_out.write_vtu(output);
+
+  // Combine outputs using rank 0.
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  {
+    std::vector<std::string> filenames;
+    for(unsigned int i = 0; i < dealii::Utilities::MPI::n_mpi_processes(mpi_comm); ++i)
+    {
+      filenames.push_back(folder + file + "_p" + dealii::Utilities::int_to_string(i, 4) + ".vtu");
+    }
+
+    // Combine outputs of individual threads.
+    std::ofstream master_output((folder + file + ".pvtu").c_str());
+    data_out.write_pvtu_record(master_output, filenames);
+  }
 }
 
 } // namespace ExaDG
