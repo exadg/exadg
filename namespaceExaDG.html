@@ -755,6 +755,10 @@ template&lt;int dim&gt; </td></tr>
 template&lt;int dim&gt; </td></tr>
 <tr class="memitem:a106419f65c362c30f1ea02f61395ae9f"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>write_points_in_dummy_triangulation</b> (std::vector&lt; dealii::Point&lt; dim &gt; &gt; const &amp;points, std::string const &amp;folder, std::string const &amp;file, unsigned int const counter, MPI_Comm const &amp;mpi_comm)</td></tr>
 <tr class="separator:a106419f65c362c30f1ea02f61395ae9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4630f3f132698aa912f0913d62e4cfdc" id="r_a4630f3f132698aa912f0913d62e4cfdc"><td class="memTemplParams" colspan="2"><a id="a4630f3f132698aa912f0913d62e4cfdc" name="a4630f3f132698aa912f0913d62e4cfdc"></a>
+template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </td></tr>
+<tr class="memitem:a4630f3f132698aa912f0913d62e4cfdc"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>write_vector</b> (dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler, dealii::Mapping&lt; dim &gt; const &amp;mapping, <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> const &amp;vector, std::string const &amp;folder, std::string const &amp;file, unsigned int const n_subdivisions, unsigned int const n_components=1)</td></tr>
+<tr class="separator:a4630f3f132698aa912f0913d62e4cfdc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f61a35f11fddf9bea2241f4010f1c3e" id="r_a6f61a35f11fddf9bea2241f4010f1c3e"><td class="memTemplParams" colspan="2"><a id="a6f61a35f11fddf9bea2241f4010f1c3e" name="a6f61a35f11fddf9bea2241f4010f1c3e"></a>
 template&lt;int dim, int spacedim&gt; </td></tr>
 <tr class="memitem:a6f61a35f11fddf9bea2241f4010f1c3e"><td class="memTemplItemLeft" align="right" valign="top">std::unique_ptr&lt; MPI_Comm, void(*)(MPI_Comm *)&gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><b>create_subcommunicator</b> (dealii::DoFHandler&lt; dim, spacedim &gt; const &amp;dof_handler)</td></tr>
