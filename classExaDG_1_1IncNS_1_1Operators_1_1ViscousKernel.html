@@ -98,15 +98,24 @@ $(function(){ initResizable(false); });
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a8f29d043dccf0229068838678ba77ef2" id="r_a8f29d043dccf0229068838678ba77ef2"><td class="memItemLeft" align="right" valign="top"><a id="a8f29d043dccf0229068838678ba77ef2" name="a8f29d043dccf0229068838678ba77ef2"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, <a class="el" href="structExaDG_1_1IncNS_1_1Operators_1_1ViscousKernelData.html">ViscousKernelData</a> const &amp;data, unsigned int const dof_index, unsigned int const quad_index)</td></tr>
-<tr class="separator:a8f29d043dccf0229068838678ba77ef2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0621f376c24a3da37be45fc0ff3bdcb8" id="r_a0621f376c24a3da37be45fc0ff3bdcb8"><td class="memItemLeft" align="right" valign="top"><a id="a0621f376c24a3da37be45fc0ff3bdcb8" name="a0621f376c24a3da37be45fc0ff3bdcb8"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, <a class="el" href="structExaDG_1_1IncNS_1_1Operators_1_1ViscousKernelData.html">ViscousKernelData</a> const &amp;data, unsigned int const dof_index, unsigned int const quad_index, bool const use_velocity_own_storage)</td></tr>
+<tr class="separator:a0621f376c24a3da37be45fc0ff3bdcb8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a38994d8654bf682f7e3cf6e7c2d8041b" id="r_a38994d8654bf682f7e3cf6e7c2d8041b"><td class="memItemLeft" align="right" valign="top"><a id="a38994d8654bf682f7e3cf6e7c2d8041b" name="a38994d8654bf682f7e3cf6e7c2d8041b"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_penalty_parameter</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, unsigned int const dof_index)</td></tr>
 <tr class="separator:a38994d8654bf682f7e3cf6e7c2d8041b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aba63c23be774b95f12821d7f6f5b4b22" id="r_aba63c23be774b95f12821d7f6f5b4b22"><td class="memItemLeft" align="right" valign="top"><a id="aba63c23be774b95f12821d7f6f5b4b22" name="aba63c23be774b95f12821d7f6f5b4b22"></a>
 <a class="el" href="structExaDG_1_1IncNS_1_1Operators_1_1ViscousKernelData.html">ViscousKernelData</a> const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_data</b> () const</td></tr>
 <tr class="separator:aba63c23be774b95f12821d7f6f5b4b22"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a99c32ebcddc30a974178ca78b48741dc" id="r_a99c32ebcddc30a974178ca78b48741dc"><td class="memItemLeft" align="right" valign="top"><a id="a99c32ebcddc30a974178ca78b48741dc" name="a99c32ebcddc30a974178ca78b48741dc"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>get_use_velocity_own_storage</b> () const</td></tr>
+<tr class="separator:a99c32ebcddc30a974178ca78b48741dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a97b36f651bf152038d4ff47885d6fb01" id="r_a97b36f651bf152038d4ff47885d6fb01"><td class="memItemLeft" align="right" valign="top"><a id="a97b36f651bf152038d4ff47885d6fb01" name="a97b36f651bf152038d4ff47885d6fb01"></a>
+VectorType const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_velocity</b> () const</td></tr>
+<tr class="separator:a97b36f651bf152038d4ff47885d6fb01"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad87105aeb531b30bbb3751cb3c57a02c" id="r_ad87105aeb531b30bbb3751cb3c57a02c"><td class="memItemLeft" align="right" valign="top"><a id="ad87105aeb531b30bbb3751cb3c57a02c" name="ad87105aeb531b30bbb3751cb3c57a02c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_velocity_copy</b> (VectorType const &amp;src)</td></tr>
+<tr class="separator:ad87105aeb531b30bbb3751cb3c57a02c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a61179bf7144d1ae43edecf55c5804abd" id="r_a61179bf7144d1ae43edecf55c5804abd"><td class="memItemLeft" align="right" valign="top"><a id="a61179bf7144d1ae43edecf55c5804abd" name="a61179bf7144d1ae43edecf55c5804abd"></a>
 <a class="el" href="classExaDG_1_1VariableCoefficients.html">VariableCoefficients</a>&lt; dealii::VectorizedArray&lt; Number &gt; &gt; const *&#160;</td><td class="memItemRight" valign="bottom"><b>get_viscosity_coefficients</b> () const</td></tr>
 <tr class="separator:a61179bf7144d1ae43edecf55c5804abd"><td class="memSeparator" colspan="2">&#160;</td></tr>

@@ -156,8 +156,8 @@ typedef dealii::FullMatrix&lt; dealii::TrilinosScalar &gt;&#160;</td><td class="
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ab280d4eae5bb22ddaaf323f2f2e3406b" id="r_ab280d4eae5bb22ddaaf323f2f2e3406b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab280d4eae5bb22ddaaf323f2f2e3406b">initialize</a> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;affine_constraints, <a class="el" href="structExaDG_1_1IncNS_1_1MomentumOperatorData.html">MomentumOperatorData</a>&lt; dim &gt; const &amp;data)</td></tr>
-<tr class="separator:ab280d4eae5bb22ddaaf323f2f2e3406b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5781f3f663fdc87fc1fe9b66f5ea1e98" id="r_a5781f3f663fdc87fc1fe9b66f5ea1e98"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5781f3f663fdc87fc1fe9b66f5ea1e98">initialize</a> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;affine_constraints, <a class="el" href="structExaDG_1_1IncNS_1_1MomentumOperatorData.html">MomentumOperatorData</a>&lt; dim &gt; const &amp;data, dealii::Mapping&lt; dim &gt; const &amp;mapping)</td></tr>
+<tr class="separator:a5781f3f663fdc87fc1fe9b66f5ea1e98"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aef81cbfbd92505f9a41afb5274f928b4" id="r_aef81cbfbd92505f9a41afb5274f928b4"><td class="memItemLeft" align="right" valign="top"><a id="aef81cbfbd92505f9a41afb5274f928b4" name="aef81cbfbd92505f9a41afb5274f928b4"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;affine_constraints, <a class="el" href="structExaDG_1_1IncNS_1_1MomentumOperatorData.html">MomentumOperatorData</a>&lt; dim &gt; const &amp;data, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1Operators_1_1ViscousKernel.html">Operators::ViscousKernel</a>&lt; dim, Number &gt; &gt; viscous_kernel, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1Operators_1_1ConvectiveKernel.html">Operators::ConvectiveKernel</a>&lt; dim, Number &gt; &gt; convective_kernel)</td></tr>
 <tr class="separator:aef81cbfbd92505f9a41afb5274f928b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -170,9 +170,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (deali
 <tr class="memitem:a5f0c4b88845e034550df75c970e7040e" id="r_a5f0c4b88845e034550df75c970e7040e"><td class="memItemLeft" align="right" valign="top"><a id="a5f0c4b88845e034550df75c970e7040e" name="a5f0c4b88845e034550df75c970e7040e"></a>
 <a class="el" href="structExaDG_1_1IncNS_1_1Operators_1_1ViscousKernelData.html">Operators::ViscousKernelData</a>&#160;</td><td class="memItemRight" valign="bottom"><b>get_viscous_kernel_data</b> () const</td></tr>
 <tr class="separator:a5f0c4b88845e034550df75c970e7040e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1a1e41728ff57403d75535c3bebd2bab" id="r_a1a1e41728ff57403d75535c3bebd2bab"><td class="memItemLeft" align="right" valign="top"><a id="a1a1e41728ff57403d75535c3bebd2bab" name="a1a1e41728ff57403d75535c3bebd2bab"></a>
-dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_velocity</b> () const</td></tr>
-<tr class="separator:a1a1e41728ff57403d75535c3bebd2bab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aab583d7466a7f8f9674905ec0b2ae40e" id="r_aab583d7466a7f8f9674905ec0b2ae40e"><td class="memItemLeft" align="right" valign="top"><a id="aab583d7466a7f8f9674905ec0b2ae40e" name="aab583d7466a7f8f9674905ec0b2ae40e"></a>
+VectorType const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_velocity</b> () const</td></tr>
+<tr class="separator:aab583d7466a7f8f9674905ec0b2ae40e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a52e984760e45fa441af7e55790e76223" id="r_a52e984760e45fa441af7e55790e76223"><td class="memItemLeft" align="right" valign="top"><a id="a52e984760e45fa441af7e55790e76223" name="a52e984760e45fa441af7e55790e76223"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_solution_linearization</b> (VectorType const &amp;velocity)</td></tr>
 <tr class="separator:a52e984760e45fa441af7e55790e76223"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -191,6 +191,9 @@ Number&#160;</td><td class="memItemRight" valign="bottom"><b>get_scaling_factor_
 <tr class="memitem:a1bc0b3d65b5b267a30047928e0466dab" id="r_a1bc0b3d65b5b267a30047928e0466dab"><td class="memItemLeft" align="right" valign="top"><a id="a1bc0b3d65b5b267a30047928e0466dab" name="a1bc0b3d65b5b267a30047928e0466dab"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_scaling_factor_mass_operator</b> (Number const &amp;number)</td></tr>
 <tr class="separator:a1bc0b3d65b5b267a30047928e0466dab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af714c907d55c27d631dddd6ca4fc5598" id="r_af714c907d55c27d631dddd6ca4fc5598"><td class="memItemLeft" align="right" valign="top"><a id="af714c907d55c27d631dddd6ca4fc5598" name="af714c907d55c27d631dddd6ca4fc5598"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>update_viscosity</b> (VectorType const &amp;velocity) const</td></tr>
+<tr class="separator:af714c907d55c27d631dddd6ca4fc5598"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6c4a43a47c89412b5e935e4827bae979" id="r_a6c4a43a47c89412b5e935e4827bae979"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6c4a43a47c89412b5e935e4827bae979">rhs</a> (VectorType &amp;dst) const final</td></tr>
 <tr class="separator:a6c4a43a47c89412b5e935e4827bae979"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac63502988b8d30e89f0d13b4164a9af6" id="r_ac63502988b8d30e89f0d13b4164a9af6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac63502988b8d30e89f0d13b4164a9af6">rhs_add</a> (VectorType &amp;dst) const final</td></tr>
@@ -639,8 +642,8 @@ template&lt;int dim, typename Number&gt; </div>
 
 </div>
 </div>
-<a id="ab280d4eae5bb22ddaaf323f2f2e3406b" name="ab280d4eae5bb22ddaaf323f2f2e3406b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab280d4eae5bb22ddaaf323f2f2e3406b">&#9670;&#160;</a></span>initialize()</h2>
+<a id="a5781f3f663fdc87fc1fe9b66f5ea1e98" name="a5781f3f663fdc87fc1fe9b66f5ea1e98"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5781f3f663fdc87fc1fe9b66f5ea1e98">&#9670;&#160;</a></span>initialize()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -660,7 +663,12 @@ template&lt;int dim, typename Number&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="structExaDG_1_1IncNS_1_1MomentumOperatorData.html">MomentumOperatorData</a>&lt; dim &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>data</em></span>&#160;)</td>
+          <td class="paramtype"><a class="el" href="structExaDG_1_1IncNS_1_1MomentumOperatorData.html">MomentumOperatorData</a>&lt; dim &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>data</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">dealii::Mapping&lt; dim &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>mapping</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
