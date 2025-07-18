@@ -476,7 +476,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
                             convective_kernel_data,
                             get_dof_index_velocity(),
                             get_quad_index_velocity_linearized(),
-                            false /* is_mg */);
+                            false /* is_mg =  use_velocity_own_storage */);
 
   dealii::AffineConstraints<Number> constraint_dummy;
   constraint_dummy.close();
@@ -501,11 +501,17 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   viscous_kernel_data.IP_formulation               = param.IP_formulation_viscous;
   viscous_kernel_data.viscosity_is_variable        = param.viscosity_is_variable();
   viscous_kernel_data.variable_normal_vector       = param.neumann_with_variable_normal_vector;
+
+  bool const use_velocity_own_storage_viscous_kernel = param.viscous_problem() and
+                                                       param.viscosity_is_variable() and
+                                                       not param.non_explicit_convective_problem();
+
   viscous_kernel = std::make_shared<Operators::ViscousKernel<dim, Number>>();
   viscous_kernel->reinit(*matrix_free,
                          viscous_kernel_data,
                          get_dof_index_velocity(),
-                         get_quad_index_velocity_standard());
+                         get_quad_index_velocity_standard(),
+                         use_velocity_own_storage_viscous_kernel);
 
   // initialize and check turbulence model data
   if(param.turbulence_model_data.is_active)
@@ -546,6 +552,9 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
 
   data.convective_kernel_data = convective_kernel_data;
   data.viscous_kernel_data    = viscous_kernel_data;
+
+  data.turbulence_model_data            = param.turbulence_model_data;
+  data.generalized_newtonian_model_data = param.generalized_newtonian_model_data;
 
   data.bc = boundary_descriptor->velocity;
 
@@ -1422,6 +1431,12 @@ SpatialOperatorBase<dim, Number>::update_viscosity(VectorType const & velocity) 
               dealii::ExcMessage(
                 "Updating viscosity reasonable for variable viscosity models only."));
 
+  // update linearization velocity vector in `viscous_kernel`
+  if(viscous_kernel->get_use_velocity_own_storage())
+  {
+    viscous_kernel->set_velocity_copy(velocity);
+  }
+
   // reset the viscosity stored
   // viscosity = viscosity_newtonian_limit
   viscous_kernel->set_constant_coefficient(viscous_kernel_data.viscosity);
@@ -1429,7 +1444,9 @@ SpatialOperatorBase<dim, Number>::update_viscosity(VectorType const & velocity) 
   // add contribution from generalized Newtonian model
   // viscosity += generalized_newtonian_viscosity(viscosity_newtonian_limit)
   if(param.generalized_newtonian_model_data.is_active)
+  {
     generalized_newtonian_model.add_viscosity(velocity);
+  }
 
   // add contribution from turbulence model
   // viscosity += turbulent_viscosity(viscosity)
@@ -1437,7 +1454,9 @@ SpatialOperatorBase<dim, Number>::update_viscosity(VectorType const & velocity) 
   // *sequence of calls matters*, i.e., we can only compute the turbulent viscosity once the laminar
   // viscosity has been computed
   if(param.turbulence_model_data.is_active)
+  {
     turbulence_model.add_viscosity(velocity);
+  }
 }
 
 template<int dim, typename Number>
