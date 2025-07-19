@@ -43,6 +43,7 @@ struct ErrorCalculationData
       write_errors_to_file(false),
       spatially_weight_error(false),
       weight(nullptr),
+      additional_quadrature_points(3),
       directory("output/"),
       name("all fields")
   {
@@ -84,6 +85,8 @@ struct ErrorCalculationData
   bool spatially_weight_error;
   // Weight used to compute spatially weighted error.
   std::shared_ptr<dealii::Function<dim>> weight;
+  // Number of quadrature points in 1D: fe_degree + additional_quadrature_points
+  unsigned int additional_quadrature_points;
 
   // directory and name (used as filename and as identifier for screen output)
   std::string directory;
