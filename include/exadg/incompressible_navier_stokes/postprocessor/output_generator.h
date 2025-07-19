@@ -43,8 +43,7 @@ struct OutputData : public OutputDataBase
       write_streamfunction(false),
       write_q_criterion(false),
       mean_velocity(TimeControlData()),
-      write_cfl(false),
-      write_aspect_ratio(false)
+      write_cfl(false)
   {
   }
 
@@ -104,9 +103,6 @@ struct OutputData : public OutputDataBase
 
   // write cfl
   bool write_cfl;
-
-  // write aspect ratio
-  bool write_aspect_ratio;
 };
 
 template<int dim, typename Number>
