@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.13.2"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::CheckMultigrid&lt; dim, Number, Operator, Preconditioner &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::VectorWriter&lt; dim, Number &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -83,42 +83,39 @@ $(function(){ initResizable(false); });
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><a class="el" href="classExaDG_1_1CheckMultigrid.html">CheckMultigrid</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespaceExaDG.html">ExaDG</a></li><li class="navelem"><a class="el" href="classExaDG_1_1VectorWriter.html">VectorWriter</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div id="doc-content">
 <div class="header">
   <div class="summary">
-<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="classExaDG_1_1CheckMultigrid-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::CheckMultigrid&lt; dim, Number, Operator, Preconditioner &gt; Class Template Reference</div></div>
+<a href="classExaDG_1_1VectorWriter-members.html">List of all members</a>  </div>
+  <div class="headertitle"><div class="title">ExaDG::VectorWriter&lt; dim, Number &gt; Class Template Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
-Public Types</h2></td></tr>
-<tr class="memitem:a40c1bad548c7da01f4b0f4bf6ee3c4d3" id="r_a40c1bad548c7da01f4b0f4bf6ee3c4d3"><td class="memItemLeft" align="right" valign="top"><a id="a40c1bad548c7da01f4b0f4bf6ee3c4d3" name="a40c1bad548c7da01f4b0f4bf6ee3c4d3"></a>
-typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:a40c1bad548c7da01f4b0f4bf6ee3c4d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a74d043fad5d515c463c63f6cfbe52cb5" id="r_a74d043fad5d515c463c63f6cfbe52cb5"><td class="memItemLeft" align="right" valign="top"><a id="a74d043fad5d515c463c63f6cfbe52cb5" name="a74d043fad5d515c463c63f6cfbe52cb5"></a>
-typedef dealii::LinearAlgebra::distributed::Vector&lt; typename Preconditioner::MultigridNumber &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorTypeMG</b></td></tr>
-<tr class="separator:a74d043fad5d515c463c63f6cfbe52cb5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a4101337818b95244c672628c28743375" id="r_a4101337818b95244c672628c28743375"><td class="memItemLeft" align="right" valign="top"><a id="a4101337818b95244c672628c28743375" name="a4101337818b95244c672628c28743375"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>CheckMultigrid</b> (Operator const &amp;underlying_operator_in, std::shared_ptr&lt; Preconditioner &gt; preconditioner_in, MPI_Comm const &amp;mpi_comm_in)</td></tr>
-<tr class="separator:a4101337818b95244c672628c28743375"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af991ef5ef4ab4a353ee28af19882a92e" id="r_af991ef5ef4ab4a353ee28af19882a92e"><td class="memItemLeft" align="right" valign="top"><a id="af991ef5ef4ab4a353ee28af19882a92e" name="af991ef5ef4ab4a353ee28af19882a92e"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>check</b> ()</td></tr>
-<tr class="separator:af991ef5ef4ab4a353ee28af19882a92e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a51b976dac646ddf6112eeb7410f6ae86" id="r_a51b976dac646ddf6112eeb7410f6ae86"><td class="memItemLeft" align="right" valign="top"><a id="a51b976dac646ddf6112eeb7410f6ae86" name="a51b976dac646ddf6112eeb7410f6ae86"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>write_output</b> (VectorType const &amp;initial_solution, VectorType const &amp;solution_after_mg_cycle, VectorTypeMG const &amp;solution_after_smoothing) const</td></tr>
-<tr class="separator:a51b976dac646ddf6112eeb7410f6ae86"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a788a262fae5b34b7214d2ac496ca436f" id="r_a788a262fae5b34b7214d2ac496ca436f"><td class="memItemLeft" align="right" valign="top"><a id="a788a262fae5b34b7214d2ac496ca436f" name="a788a262fae5b34b7214d2ac496ca436f"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>VectorWriter</b> (<a class="el" href="structExaDG_1_1OutputDataBase.html">OutputDataBase</a> const &amp;output_data, unsigned int const &amp;output_counter, MPI_Comm const &amp;mpi_comm)</td></tr>
+<tr class="separator:a788a262fae5b34b7214d2ac496ca436f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a77f54bf1f54758db6d602bd14663ea1e" id="r_a77f54bf1f54758db6d602bd14663ea1e"><td class="memTemplParams" colspan="2"><a id="a77f54bf1f54758db6d602bd14663ea1e" name="a77f54bf1f54758db6d602bd14663ea1e"></a>
+template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </td></tr>
+<tr class="memitem:a77f54bf1f54758db6d602bd14663ea1e"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>add_data_vector</b> (<a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> const &amp;vector, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler, std::vector&lt; std::string &gt; const &amp;component_names, std::vector&lt; bool &gt; const &amp;component_is_part_of_vector={false})</td></tr>
+<tr class="separator:a77f54bf1f54758db6d602bd14663ea1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac136ab3f74fcb75a4240167a636f9e9e" id="r_ac136ab3f74fcb75a4240167a636f9e9e"><td class="memItemLeft" align="right" valign="top"><a id="ac136ab3f74fcb75a4240167a636f9e9e" name="ac136ab3f74fcb75a4240167a636f9e9e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>add_fields</b> (std::vector&lt; dealii::SmartPointer&lt; <a class="el" href="classExaDG_1_1SolutionField.html">SolutionField</a>&lt; dim, Number &gt; &gt; &gt; const &amp;additional_fields)</td></tr>
+<tr class="separator:ac136ab3f74fcb75a4240167a636f9e9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0037818dcdc1f9e651cf0cc951368b0d" id="r_a0037818dcdc1f9e651cf0cc951368b0d"><td class="memItemLeft" align="right" valign="top"><a id="a0037818dcdc1f9e651cf0cc951368b0d" name="a0037818dcdc1f9e651cf0cc951368b0d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>write_aspect_ratio</b> (dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler, dealii::Mapping&lt; dim &gt; const &amp;mapping)</td></tr>
+<tr class="separator:a0037818dcdc1f9e651cf0cc951368b0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d5c6de39f20e12ed477eebcdc5263a2" id="r_a2d5c6de39f20e12ed477eebcdc5263a2"><td class="memItemLeft" align="right" valign="top"><a id="a2d5c6de39f20e12ed477eebcdc5263a2" name="a2d5c6de39f20e12ed477eebcdc5263a2"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>write_pvtu</b> (dealii::Mapping&lt; dim &gt; const *mapping=nullptr)</td></tr>
+<tr class="separator:a2d5c6de39f20e12ed477eebcdc5263a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/exadg/solvers_and_preconditioners/utilities/<a class="el" href="check__multigrid_8h_source.html">check_multigrid.h</a></li>
+<li>include/exadg/postprocessor/<a class="el" href="write__output_8h_source.html">write_output.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
