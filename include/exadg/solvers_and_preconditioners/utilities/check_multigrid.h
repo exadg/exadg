@@ -29,6 +29,10 @@
 #include <deal.II/lac/la_parallel_block_vector.h>
 #include <deal.II/numerics/data_out.h>
 
+// ExaDG
+#include <exadg/postprocessor/output_data_base.h>
+#include <exadg/postprocessor/write_output.h>
+
 namespace ExaDG
 {
 template<int dim, typename Number, typename Operator, typename Preconditioner>
@@ -50,9 +54,9 @@ public:
   }
 
   /*
-   *  Function that verifies the multgrid algorithm,
-   *  especially the smoothing (on the finest level) an
-   *  the whole multigrid cycle applied to a random solution vector
+   *  Function that verifies the multigrid algorithm,
+   *  especially the smoothing (on the finest level) via
+   *  applying the whole multigrid cycle to a random solution vector
    *
    *
    *  Richardson iteration: x^{k+1} = x^{k} + M^{-1} * ( b - A*x^{k} )
@@ -74,15 +78,15 @@ public:
      */
     VectorType initial_solution;
     underlying_operator.initialize_dof_vector(initial_solution);
-    VectorType solution_after_mg_cylce(initial_solution), tmp(initial_solution);
+    VectorType solution_after_mg_cycle(initial_solution), tmp(initial_solution);
 
     for(unsigned int i = 0; i < initial_solution.locally_owned_size(); ++i)
       initial_solution.local_element(i) = (double)rand() / RAND_MAX;
 
     underlying_operator.vmult(tmp, initial_solution);
     tmp *= -1.0;
-    preconditioner->vmult(solution_after_mg_cylce, tmp);
-    solution_after_mg_cylce += initial_solution;
+    preconditioner->vmult(solution_after_mg_cycle, tmp);
+    solution_after_mg_cycle += initial_solution;
 
     /*
      *  Smoothing
@@ -100,7 +104,7 @@ public:
     /*
      *  Output
      */
-    write_output(initial_solution, solution_after_mg_cylce, solution_after_smoothing);
+    write_output(initial_solution, solution_after_mg_cycle, solution_after_smoothing);
 
     /*
      *  Terminate simulation
@@ -110,90 +114,51 @@ public:
 
   void
   write_output(VectorType const &   initial_solution,
-               VectorType const &   solution_after_mg_cylce,
+               VectorType const &   solution_after_mg_cycle,
                VectorTypeMG const & solution_after_smoothing) const
   {
-    dealii::DataOut<dim>          data_out;
-    dealii::DataOutBase::VtkFlags flags;
-    flags.write_higher_order_cells = true;
-    data_out.set_flags(flags);
+    OutputDataBase output_data;
+    output_data.filename         = "smoothing";
+    unsigned int const dof_index = underlying_operator.get_dof_index();
+    output_data.degree =
+      underlying_operator.get_matrix_free().get_dof_handler(dof_index).get_fe().degree;
 
-    unsigned int dof_index = underlying_operator.get_dof_index();
+    VectorWriter<dim, Number> vector_writer(output_data, 0 /* output_counter */, mpi_comm);
 
-    // TODO: use scalar = false for velocity field
-    bool scalar = true;
-
-    if(scalar)
+    unsigned int const n_components =
+      underlying_operator.get_matrix_free().get_dof_handler(dof_index).get_fe().n_components();
+    dealii::DoFHandler<dim> const & dof_handler =
+      underlying_operator.get_matrix_free().get_dof_handler(dof_index);
+    if(n_components == 1)
     {
-      // pressure
-      data_out.add_data_vector(underlying_operator.get_matrix_free().get_dof_handler(dof_index),
-                               initial_solution,
-                               "initial");
-      data_out.add_data_vector(underlying_operator.get_matrix_free().get_dof_handler(dof_index),
-                               solution_after_mg_cylce,
-                               "mg_cycle");
-      data_out.add_data_vector(underlying_operator.get_matrix_free().get_dof_handler(dof_index),
-                               solution_after_smoothing,
-                               "smoother");
+      vector_writer.add_data_vector(initial_solution, dof_handler, {"initial"});
+      vector_writer.add_data_vector(solution_after_mg_cycle, dof_handler, {"after_mg_cycle"});
+      vector_writer.add_data_vector(solution_after_smoothing, dof_handler, {"after_smoothing"});
     }
     else
     {
-      // velocity
-      std::vector<std::string> initial(dim, "initial");
-      std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
-        initial_component_interpretation(
-          dim, dealii::DataComponentInterpretation::component_is_part_of_vector);
+      std::vector<bool>        component_is_part_of_vector(dim, true);
+      std::vector<std::string> component_names(dim, "initial");
 
-      data_out.add_data_vector(underlying_operator.get_matrix_free().get_dof_handler(dof_index),
-                               initial_solution,
-                               initial,
-                               initial_component_interpretation);
+      vector_writer.add_data_vector(initial_solution,
+                                    dof_handler,
+                                    component_names,
+                                    component_is_part_of_vector);
 
-      std::vector<std::string> mg_cycle(dim, "mg_cycle");
-      std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
-        mg_cylce_component_interpretation(
-          dim, dealii::DataComponentInterpretation::component_is_part_of_vector);
+      std::fill(component_names.begin(), component_names.end(), "after_mg_cycle");
+      vector_writer.add_data_vector(solution_after_mg_cycle,
+                                    dof_handler,
+                                    component_names,
+                                    component_is_part_of_vector);
 
-      data_out.add_data_vector(underlying_operator.get_matrix_free().get_dof_handler(dof_index),
-                               solution_after_mg_cylce,
-                               mg_cycle,
-                               mg_cylce_component_interpretation);
-
-      std::vector<std::string> smoother(dim, "smoother");
-      std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
-        smoother_component_interpretation(
-          dim, dealii::DataComponentInterpretation::component_is_part_of_vector);
-
-      data_out.add_data_vector(underlying_operator.get_matrix_free().get_dof_handler(dof_index),
-                               solution_after_smoothing,
-                               smoother,
-                               smoother_component_interpretation);
+      std::fill(component_names.begin(), component_names.end(), "after_smoothing");
+      vector_writer.add_data_vector(solution_after_smoothing,
+                                    dof_handler,
+                                    component_names,
+                                    component_is_part_of_vector);
     }
 
-    data_out.build_patches(
-      underlying_operator.get_matrix_free().get_dof_handler(dof_index).get_fe().degree);
-
-    std::ostringstream filename;
-    std::string        name = "smoothing";
-    filename << name << "_Proc" << dealii::Utilities::MPI::this_mpi_process(mpi_comm) << ".vtu";
-
-    std::ofstream output(filename.str().c_str());
-    data_out.write_vtu(output);
-
-    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-    {
-      std::vector<std::string> filenames;
-      for(unsigned int i = 0; i < dealii::Utilities::MPI::n_mpi_processes(mpi_comm); ++i)
-      {
-        std::ostringstream filename;
-        filename << name << "_Proc" << i << ".vtu";
-
-        filenames.push_back(filename.str().c_str());
-      }
-      std::string   master_name = name + ".pvtu";
-      std::ofstream master_output(master_name.c_str());
-      data_out.write_pvtu_record(master_output, filenames);
-    }
+    vector_writer.write_pvtu();
   }
 
 private:
