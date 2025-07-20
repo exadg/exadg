@@ -838,6 +838,17 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_sol
 
       break;
     }
+#ifdef DEAL_II_WITH_TRILINOS
+    case MultigridCoarseGridSolver::SparseDirect:
+    {
+      coarse_grid_solver =
+        std::make_shared<MGCoarseSparseDirect<Operator>>(coarse_operator,
+                                                         initialize_preconditioners,
+                                                         data.coarse_problem.sparse_direct_data);
+
+      break;
+    }
+#endif
     default:
     {
       AssertThrow(false, dealii::ExcMessage("Unknown coarse-grid solver specified."));
