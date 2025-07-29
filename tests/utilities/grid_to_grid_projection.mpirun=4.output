@@ -1,0 +1,324 @@
+  element_type == ElementType::Hypercube : 0
+  dim                          = 2
+  n_components                 = 1
+  vector_target_is_RT_else_DGQ = 0
+  vector_source_is_RT_else_DGQ = 0
+  Number of degrees of freedom:
+    TARGET: 6144
+            2176 (continuous)
+    SOURCE: 10240
+            4800 (continuous)
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 5.34535e-03
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 5.34535e-03
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 5.34535e-03
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 1.51442e-06
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 1.51442e-06
+
+
+  element_type == ElementType::Hypercube : 0
+  dim                          = 2
+  n_components                 = 2
+  vector_target_is_RT_else_DGQ = 0
+  vector_source_is_RT_else_DGQ = 0
+  Number of degrees of freedom:
+    TARGET: 12288
+            4352 (continuous)
+    SOURCE: 20480
+            9600 (continuous)
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 5.98645e-03
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 5.98645e-03
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 5.98645e-03
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 1.91480e-06
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 1.91480e-06
+
+
+  element_type == ElementType::Hypercube : 1
+  dim                          = 2
+  n_components                 = 2
+  vector_target_is_RT_else_DGQ = 1
+  vector_source_is_RT_else_DGQ = 1
+  Number of degrees of freedom:
+    TARGET: 1088
+            1152 (continuous)
+    SOURCE: 2400
+            2496 (continuous)
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 1.91093e-04
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 1.91093e-04
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 1.91093e-04
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 2.73476e-03
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 2.73476e-03
+
+
+  element_type == ElementType::Hypercube : 1
+  dim                          = 3
+  n_components                 = 3
+  vector_target_is_RT_else_DGQ = 1
+  vector_source_is_RT_else_DGQ = 1
+  Number of degrees of freedom:
+    TARGET: 26112
+            29376 (continuous)
+    SOURCE: 86400
+            93600 (continuous)
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 5.50903e-03
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 5.50903e-03
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 5.50903e-03
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.39129e-03
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.39129e-03
+
+
+  element_type == ElementType::Hypercube : 1
+  dim                          = 2
+  n_components                 = 2
+  vector_target_is_RT_else_DGQ = 1
+  vector_source_is_RT_else_DGQ = 0
+  Number of degrees of freedom:
+    TARGET: 1088
+            1152 (continuous)
+    SOURCE: 4096
+            2496 (continuous)
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 1.91093e-04
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 1.91093e-04
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 1.91093e-04
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.93064e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.93064e-05
+
+
+  element_type == ElementType::Hypercube : 1
+  dim                          = 3
+  n_components                 = 3
+  vector_target_is_RT_else_DGQ = 1
+  vector_source_is_RT_else_DGQ = 0
+  Number of degrees of freedom:
+    TARGET: 26112
+            29376 (continuous)
+    SOURCE: 196608
+            93600 (continuous)
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 5.50903e-03
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 5.50903e-03
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 5.50903e-03
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 2.95529e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 2.95529e-05
+
+
+  element_type == ElementType::Hypercube : 1
+  dim                          = 2
+  n_components                 = 2
+  vector_target_is_RT_else_DGQ = 0
+  vector_source_is_RT_else_DGQ = 1
+  Number of degrees of freedom:
+    TARGET: 2304
+            1152 (continuous)
+    SOURCE: 2400
+            2496 (continuous)
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.90768e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.90768e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.90768e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 2.73476e-03
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 2.73476e-03
+
+
+  element_type == ElementType::Hypercube : 1
+  dim                          = 3
+  n_components                 = 3
+  vector_target_is_RT_else_DGQ = 0
+  vector_source_is_RT_else_DGQ = 1
+  Number of degrees of freedom:
+    TARGET: 82944
+            29376 (continuous)
+    SOURCE: 86400
+            93600 (continuous)
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 2.93434e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 2.93434e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 2.93434e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.39129e-03
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.39129e-03
+
+
+  element_type == ElementType::Hypercube : 1
+  dim                          = 2
+  n_components                 = 2
+  vector_target_is_RT_else_DGQ = 0
+  vector_source_is_RT_else_DGQ = 0
+  Number of degrees of freedom:
+    TARGET: 2304
+            1152 (continuous)
+    SOURCE: 4096
+            2496 (continuous)
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.90768e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.90768e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.90768e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.93064e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.93064e-05
+
+
+  element_type == ElementType::Hypercube : 1
+  dim                          = 3
+  n_components                 = 3
+  vector_target_is_RT_else_DGQ = 0
+  vector_source_is_RT_else_DGQ = 0
+  Number of degrees of freedom:
+    TARGET: 82944
+            29376 (continuous)
+    SOURCE: 196608
+            93600 (continuous)
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 2.93434e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 2.93434e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 2.93434e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 2.95529e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 2.95529e-05
+
+
+  element_type == ElementType::Hypercube : 1
+  dim                          = 2
+  n_components                 = 1
+  vector_target_is_RT_else_DGQ = 0
+  vector_source_is_RT_else_DGQ = 0
+  Number of degrees of freedom:
+    TARGET: 1152
+            576 (continuous)
+    SOURCE: 2048
+            1248 (continuous)
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.48717e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.48717e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.48717e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.47141e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.47141e-05
+
+
+  element_type == ElementType::Hypercube : 1
+  dim                          = 3
+  n_components                 = 1
+  vector_target_is_RT_else_DGQ = 0
+  vector_source_is_RT_else_DGQ = 0
+  Number of degrees of freedom:
+    TARGET: 27648
+            9792 (continuous)
+    SOURCE: 65536
+            31200 (continuous)
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.48717e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.48717e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.48717e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.47141e-05
+
+Calculate error for all fields for initial data:
+  Relative error (L2-norm): 3.47141e-05
+
+
