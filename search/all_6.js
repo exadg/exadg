@@ -24,5 +24,6 @@ var searchData=
   ['gradientoperatordata_21',['GradientOperatorData',['../structExaDG_1_1IncNS_1_1GradientOperatorData.html',1,'ExaDG::IncNS']]],
   ['grid_22',['Grid',['../classExaDG_1_1Grid.html',1,'ExaDG']]],
   ['griddata_23',['GridData',['../structExaDG_1_1GridData.html',1,'ExaDG']]],
-  ['gridparameters_24',['GridParameters',['../structExaDG_1_1GridParameters.html',1,'ExaDG']]]
+  ['gridparameters_24',['GridParameters',['../structExaDG_1_1GridParameters.html',1,'ExaDG']]],
+  ['gridtogridprojectiondata_25',['GridToGridProjectionData',['../structExaDG_1_1GridToGridProjection_1_1GridToGridProjectionData.html',1,'ExaDG::GridToGridProjection']]]
 ];
