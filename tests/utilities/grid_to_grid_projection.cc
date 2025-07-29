@@ -41,7 +41,6 @@
 #include <exadg/postprocessor/error_calculation.h>
 #include <exadg/postprocessor/write_output.h>
 #include <exadg/utilities/numbers.h>
-#include <exadg/operators/solution_projection_between_triangulations.cpp> // temporary
 
 using namespace ExaDG;
 
