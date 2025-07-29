@@ -127,12 +127,11 @@ add_constraints(bool                                is_dg,
   affine_constraints_own.clear();
 
   // ... and set local dofs
-  dealii::IndexSet relevant_dofs;
-  if(level != dealii::numbers::invalid_unsigned_int)
-    dealii::DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);
-  else
-    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs);
-  affine_constraints_own.reinit(relevant_dofs);
+  dealii::IndexSet const relevant_dofs =
+    (level != dealii::numbers::invalid_unsigned_int) ?
+      dealii::DoFTools::extract_locally_relevant_level_dofs(dof_handler, level) :
+      dealii::DoFTools::extract_locally_relevant_dofs(dof_handler);
+  affine_constraints_own.reinit(dof_handler.locally_owned_dofs(), relevant_dofs);
 
   // 1) add periodic BCs
   add_periodicity_constraints<dim, Number>(dof_handler,

@@ -210,7 +210,7 @@ public:
 
   void
   add_fields(
-    std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields)
+    std::vector<dealii::ObserverPointer<SolutionField<dim, Number>>> const & additional_fields)
   {
     for(auto & additional_field : additional_fields)
     {
@@ -282,10 +282,10 @@ public:
   }
 
 private:
-  OutputDataBase const                             output_data;
-  unsigned int                                     output_counter;
-  dealii::SmartPointer<dealii::Mapping<dim> const> mapping;
-  MPI_Comm const                                   mpi_comm;
+  OutputDataBase const                                output_data;
+  unsigned int                                        output_counter;
+  dealii::ObserverPointer<dealii::Mapping<dim> const> mapping;
+  MPI_Comm const                                      mpi_comm;
 
   dealii::Vector<double> aspect_ratios;
 

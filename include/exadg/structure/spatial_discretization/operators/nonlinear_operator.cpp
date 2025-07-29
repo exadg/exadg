@@ -73,7 +73,7 @@ NonLinearOperator<dim, Number>::valid_deformation(VectorType const & displacemen
   // sum over all MPI processes
   Number valid = 0.0;
   valid        = dealii::Utilities::MPI::sum(
-    dst, this->matrix_free->get_dof_handler(this->operator_data.dof_index).get_communicator());
+    dst, this->matrix_free->get_dof_handler(this->operator_data.dof_index).get_mpi_communicator());
 
   return (valid == 0.0);
 }
@@ -289,7 +289,7 @@ NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
     if(this->operator_data.pull_back_traction)
     {
       tensor F = get_F<dim, Number>(integrator.get_gradient(q));
-      vector N = integrator.get_normal_vector(q);
+      vector N = integrator.normal_vector(q);
       // da/dA * n = det F F^{-T} * N := n_star
       // -> da/dA = n_star.norm()
       vector n_star = determinant(F) * transpose(invert(F)) * N;

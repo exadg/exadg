@@ -103,7 +103,7 @@ struct OperatorBaseData
 };
 
 template<int dim, typename Number, int n_components = 1>
-class OperatorBase : public dealii::Subscriptor
+class OperatorBase : public dealii::EnableObserverPointer
 {
 public:
   typedef OperatorBase<dim, Number, n_components> This;
@@ -272,6 +272,11 @@ public:
   void
   apply(VectorType & dst, VectorType const & src) const;
 
+  void
+  apply(VectorType &                                                        dst,
+        VectorType const &                                                  src,
+        const std::function<void(const unsigned int, const unsigned int)> & before_loop,
+        const std::function<void(const unsigned int, const unsigned int)> & after_loop) const;
   /*
    * See function apply() for a description.
    */

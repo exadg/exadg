@@ -65,8 +65,8 @@ public:
            bool const         unsteady);
 
 private:
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_velocity;
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_pressure;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler_velocity;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler_pressure;
 
   PointwiseOutputData<dim> pointwise_output_data;
 };

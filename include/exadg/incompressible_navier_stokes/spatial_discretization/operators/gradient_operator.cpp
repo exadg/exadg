@@ -226,7 +226,7 @@ GradientOperator<dim, Number>::do_face_integral(FaceIntegratorP & pressure_m,
     scalar flux = kernel.calculate_flux(value_m, value_p);
     if(data.formulation == FormulationPressureGradientTerm::Weak)
     {
-      vector flux_times_normal = flux * pressure_m.get_normal_vector(q);
+      vector flux_times_normal = flux * pressure_m.normal_vector(q);
 
       velocity_m.submit_value(flux_times_normal, q);
       // minus sign since n⁺ = - n⁻
@@ -234,7 +234,7 @@ GradientOperator<dim, Number>::do_face_integral(FaceIntegratorP & pressure_m,
     }
     else if(data.formulation == FormulationPressureGradientTerm::Strong)
     {
-      vector normal = pressure_m.get_normal_vector(q);
+      vector normal = pressure_m.normal_vector(q);
 
       velocity_m.submit_value((flux - value_m) * normal, q);
       // minus sign since n⁺ = - n⁻
@@ -280,7 +280,7 @@ GradientOperator<dim, Number>::do_boundary_integral(
     }
 
     scalar flux   = kernel.calculate_flux(value_m, value_p);
-    vector normal = pressure.get_normal_vector(q);
+    vector normal = pressure.normal_vector(q);
     if(data.formulation == FormulationPressureGradientTerm::Weak)
     {
       velocity.submit_value(flux * normal, q);
@@ -323,7 +323,7 @@ GradientOperator<dim, Number>::do_boundary_integral_from_dof_vector(
     }
 
     scalar flux   = kernel.calculate_flux(value_m, value_p);
-    vector normal = pressure.get_normal_vector(q);
+    vector normal = pressure.normal_vector(q);
     if(data.formulation == FormulationPressureGradientTerm::Weak)
     {
       velocity.submit_value(flux * normal, q);

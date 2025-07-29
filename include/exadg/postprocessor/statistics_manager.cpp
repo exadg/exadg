@@ -43,7 +43,7 @@ StatisticsManager<dim, Number>::StatisticsManager(
   : n_points_y_per_cell(0),
     dof_handler(dof_handler_velocity),
     mapping(mapping_in),
-    mpi_comm(dof_handler_velocity.get_communicator()),
+    mpi_comm(dof_handler_velocity.get_mpi_communicator()),
     number_of_samples(0),
     data(TurbulentChannelData())
 {

@@ -165,8 +165,8 @@ private:
 
   MPI_Comm const mpi_comm;
 
-  dealii::SmartPointer<dealii::Triangulation<dim> const>              triangulation;
-  dealii::SmartPointer<dealii::Mapping<dim> const>                    mapping;
+  dealii::ObserverPointer<dealii::Triangulation<dim> const>           triangulation;
+  dealii::ObserverPointer<dealii::Mapping<dim> const>                 mapping;
   PointwiseOutputDataBase<dim>                                        pointwise_output_data;
   dealii::Vector<Number>                                              componentwise_result;
   unsigned int                                                        n_out_samples;

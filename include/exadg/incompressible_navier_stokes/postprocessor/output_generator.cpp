@@ -101,11 +101,11 @@ OutputGenerator<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler_
 template<int dim, typename Number>
 void
 OutputGenerator<dim, Number>::evaluate(
-  VectorType const &                                                    velocity,
-  VectorType const &                                                    pressure,
-  std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
-  double const                                                          time,
-  bool const                                                            unsteady) const
+  VectorType const &                                                       velocity,
+  VectorType const &                                                       pressure,
+  std::vector<dealii::ObserverPointer<SolutionField<dim, Number>>> const & additional_fields,
+  double const                                                             time,
+  bool const                                                               unsteady) const
 {
   print_write_output_time(time, time_control.get_counter(), unsteady, mpi_comm);
 

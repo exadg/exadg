@@ -95,7 +95,7 @@ private:
 
   PostProcessorData<dim> pp_data;
 
-  dealii::SmartPointer<NavierStokesOperator const> navier_stokes_operator;
+  dealii::ObserverPointer<NavierStokesOperator const> navier_stokes_operator;
 
   // DoF vectors for derived quantities
   SolutionField<dim, Number> vorticity;

@@ -85,8 +85,7 @@ NormalFluxCalculator<dim, Number>::evaluate(VectorType const & solution,
 
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
-        flux_face +=
-          integrator.JxW(q) * integrator.get_gradient(q) * integrator.get_normal_vector(q);
+        flux_face += integrator.JxW(q) * integrator.get_gradient(q) * integrator.normal_vector(q);
       }
 
       // sum over all entries of dealii::VectorizedArray

@@ -257,7 +257,7 @@ CouplingBase<dim, data_dim, VectorizedArrayType>::print_info(bool const         
 {
   dealii::ConditionalOStream pcout(std::cout,
                                    dealii::Utilities::MPI::this_mpi_process(
-                                     matrix_free.get_dof_handler().get_communicator()) == 0);
+                                     matrix_free.get_dof_handler().get_mpi_communicator()) == 0);
   auto const                 map = (reader ? read_data_map : write_data_map);
 
   auto        names      = map.begin();
@@ -270,7 +270,8 @@ CouplingBase<dim, data_dim, VectorizedArrayType>::print_info(bool const         
         << "--     . data name(s): " << data_names << "\n"
         << "--     . associated mesh: " << mesh_name << "\n"
         << "--     . Number of coupling nodes: "
-        << dealii::Utilities::MPI::sum(local_size, matrix_free.get_dof_handler().get_communicator())
+        << dealii::Utilities::MPI::sum(local_size,
+                                       matrix_free.get_dof_handler().get_mpi_communicator())
         << "\n"
         << "--     . Node location: " << get_surface_type() << "\n"
         << std::endl;
