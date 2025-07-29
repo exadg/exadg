@@ -101,7 +101,7 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     solution,
    */
   if(output_generator.time_control.needs_evaluation(time, time_step_number))
   {
-    std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> additional_fields_vtu;
+    std::vector<dealii::ObserverPointer<SolutionField<dim, Number>>> additional_fields_vtu;
 
     if(pp_data.output_data.write_pressure)
     {

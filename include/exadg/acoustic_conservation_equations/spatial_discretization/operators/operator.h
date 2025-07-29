@@ -506,8 +506,8 @@ private:
 
   mutable Number evaluation_time;
 
-  dealii::SmartPointer<dealii::MatrixFree<dim, Number> const> matrix_free;
-  OperatorData<dim>                                           data;
+  dealii::ObserverPointer<dealii::MatrixFree<dim, Number> const> matrix_free;
+  OperatorData<dim>                                              data;
 
   Number tau;
   Number gamma;

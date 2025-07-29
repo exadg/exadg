@@ -77,7 +77,7 @@ public:
   bool
   reached_end_time() const;
 
-  bool
+  double
   get_epsilon() const;
 
 private:

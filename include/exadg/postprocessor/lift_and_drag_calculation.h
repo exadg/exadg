@@ -100,8 +100,8 @@ private:
 
   mutable bool clear_files;
 
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_velocity;
-  dealii::MatrixFree<dim, Number> const *             matrix_free;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler_velocity;
+  dealii::MatrixFree<dim, Number> const *                matrix_free;
   unsigned int dof_index_velocity, dof_index_pressure, quad_index;
 
   mutable double c_L_min, c_L_max, c_D_min, c_D_max;

@@ -430,8 +430,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
 
       AssertThrow(is_singular == false, dealii::ExcNotImplemented());
 
-      dealii::IndexSet locally_relevant_dofs;
-      dealii::DoFTools::extract_locally_relevant_dofs(*dof_handler, locally_relevant_dofs);
+      dealii::IndexSet const locally_relevant_dofs =
+        dealii::DoFTools::extract_locally_relevant_dofs(*dof_handler);
       affine_constraints_own->reinit(locally_relevant_dofs);
 
       // hanging nodes (needs to be done before imposing periodicity constraints and boundary

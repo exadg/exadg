@@ -160,9 +160,9 @@ private:
     }
   }
 
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_dst;
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_src;
-  dealii::Utilities::MPI::RemotePointEvaluation<dim>  rpe;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler_dst;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler_src;
+  dealii::Utilities::MPI::RemotePointEvaluation<dim>     rpe;
 };
 
 } // namespace ExaDG

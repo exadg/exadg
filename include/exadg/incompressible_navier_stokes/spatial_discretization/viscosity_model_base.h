@@ -39,7 +39,7 @@ namespace IncNS
  *  Base class for variable viscosity models.
  */
 template<int dim, typename Number>
-class ViscosityModelBase : public dealii::Subscriptor
+class ViscosityModelBase : public dealii::EnableObserverPointer
 {
 private:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;

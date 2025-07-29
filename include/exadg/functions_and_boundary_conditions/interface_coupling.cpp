@@ -55,11 +55,11 @@ InterfaceCoupling<rank, dim, Number>::setup(
   for(auto quad_index : interface_data_dst->get_quad_indices())
   {
     // exchange quadrature points with their owners
-    map_evaluator.emplace(quad_index,
-                          std::make_unique<dealii::Utilities::MPI::RemotePointEvaluation<dim>>(
-                            tolerance_, false, 0, [marked_vertices_src_]() {
-                              return marked_vertices_src_;
-                            }));
+    map_evaluator.emplace(
+      quad_index,
+      std::make_unique<dealii::Utilities::MPI::RemotePointEvaluation<dim>>(
+        typename dealii::Utilities::MPI::RemotePointEvaluation<dim>::AdditionalData(
+          tolerance_, false, 0, [marked_vertices_src_]() { return marked_vertices_src_; })));
 
     auto const * points = &interface_data_dst->get_array_q_points(quad_index);
 
@@ -80,7 +80,7 @@ InterfaceCoupling<rank, dim, Number>::setup(
         }
       }
       n_points_not_found =
-        dealii::Utilities::MPI::sum(n_points_not_found, dof_handler_src->get_communicator());
+        dealii::Utilities::MPI::sum(n_points_not_found, dof_handler_src->get_mpi_communicator());
 
       std::string const file_name =
         "interface_coupling_quad_index_" + dealii::Utilities::to_string(quad_index);
@@ -91,10 +91,10 @@ InterfaceCoupling<rank, dim, Number>::setup(
                  "./",
                  file_name,
                  0,
-                 dof_handler_src->get_communicator());
+                 dof_handler_src->get_mpi_communicator());
 
       write_points_in_dummy_triangulation(
-        points_not_found, "./", file_name, 0, dof_handler_src->get_communicator());
+        points_not_found, "./", file_name, 0, dof_handler_src->get_mpi_communicator());
 
       AssertThrow(map_evaluator[quad_index]->all_points_found(),
                   dealii::ExcMessage(std::string("Setup of InterfaceCoupling was not successful: " +
