@@ -53,7 +53,7 @@ create_subcommunicator(dealii::DoFHandler<dim, spacedim> const & dof_handler)
     if(cell->is_locally_owned())
       ++n_locally_owned_cells;
 
-  MPI_Comm const mpi_comm = dof_handler.get_communicator();
+  MPI_Comm const mpi_comm = dof_handler.get_mpi_communicator();
 
   // In case some of the MPI ranks do not have cells, we create a
   // sub-communicator to exclude all those processes from the MPI
@@ -172,7 +172,7 @@ public:
   {
     // initialize system matrix
     pde_operator.init_system_matrix(system_matrix,
-                                    op.get_matrix_free().get_dof_handler().get_communicator());
+                                    op.get_matrix_free().get_dof_handler().get_mpi_communicator());
 
     if(initialize)
     {

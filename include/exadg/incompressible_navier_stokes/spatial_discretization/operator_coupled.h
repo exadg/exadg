@@ -83,7 +83,7 @@ private:
 };
 
 template<int dim, typename Number>
-class LinearOperatorCoupled : public dealii::Subscriptor
+class LinearOperatorCoupled : public dealii::EnableObserverPointer
 {
 private:
   typedef dealii::LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
@@ -91,7 +91,7 @@ private:
   typedef OperatorCoupled<dim, Number> PDEOperator;
 
 public:
-  LinearOperatorCoupled() : dealii::Subscriptor(), pde_operator(nullptr)
+  LinearOperatorCoupled() : dealii::EnableObserverPointer(), pde_operator(nullptr)
   {
   }
 

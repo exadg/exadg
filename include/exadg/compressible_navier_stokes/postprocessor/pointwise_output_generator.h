@@ -62,8 +62,8 @@ public:
   evaluate(VectorType const & solution, double const time, bool const unsteady);
 
 private:
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
-  PointwiseOutputData<dim>                            pointwise_output_data;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler;
+  PointwiseOutputData<dim>                               pointwise_output_data;
 };
 
 } // namespace CompNS

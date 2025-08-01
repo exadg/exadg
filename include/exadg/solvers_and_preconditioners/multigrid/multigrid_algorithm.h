@@ -268,12 +268,12 @@ private:
   /**
    * The matrix for each level.
    */
-  dealii::SmartPointer<dealii::MGLevelObject<std::shared_ptr<MatrixType>> const> matrix;
+  dealii::ObserverPointer<dealii::MGLevelObject<std::shared_ptr<MatrixType>> const> matrix;
 
   /**
    * The matrix for each level.
    */
-  dealii::SmartPointer<dealii::MGCoarseGridBase<VectorType> const> coarse;
+  dealii::ObserverPointer<dealii::MGCoarseGridBase<VectorType> const> coarse;
 
   /**
    * Object for grid transfer.
@@ -283,7 +283,7 @@ private:
   /**
    * The smoothing object.
    */
-  dealii::SmartPointer<dealii::MGLevelObject<std::shared_ptr<SmootherType>> const> smoother;
+  dealii::ObserverPointer<dealii::MGLevelObject<std::shared_ptr<SmootherType>> const> smoother;
 
   MPI_Comm const mpi_comm;
 

@@ -165,7 +165,7 @@ TimeControl::reached_end_time() const
   return end_time_reached;
 }
 
-bool
+double
 TimeControl::get_epsilon() const
 {
   return EPSILON;

@@ -109,10 +109,10 @@ public:
   calculate(dealii::LinearAlgebra::distributed::Vector<Number> const & velocity);
 
 private:
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_velocity;
-  dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;
-  InflowData<dim>                                     inflow_data;
-  bool                                                inflow_data_has_been_initialized;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler_velocity;
+  dealii::ObserverPointer<dealii::Mapping<dim> const>    mapping;
+  InflowData<dim>                                        inflow_data;
+  bool                                                   inflow_data_has_been_initialized;
 
   MPI_Comm const mpi_comm;
 

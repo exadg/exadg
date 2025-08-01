@@ -372,7 +372,7 @@ apply_taylor_green_symmetry(dealii::DoFHandler<dim> const & dof_handler_symm,
   // determine some useful constants
   auto const & fe = dof_handler.get_fe();
 
-  MPI_Comm const comm = dof_handler.get_communicator();
+  MPI_Comm const comm = dof_handler.get_mpi_communicator();
 
   // determine which process has which index (lex numbering) and wants which
   dealii::IndexSet range_has_lex(dof_handler_symm.n_dofs());  // has in symm system
@@ -557,10 +557,10 @@ void
 initialize_dof_vector(dealii::LinearAlgebra::distributed::Vector<Number> & vec,
                       const MeshType &                                     dof_handler)
 {
-  dealii::IndexSet locally_relevant_dofs;
-  dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+  dealii::IndexSet const locally_relevant_dofs =
+    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler);
 
-  MPI_Comm const comm = dof_handler.get_communicator();
+  MPI_Comm const comm = dof_handler.get_mpi_communicator();
 
   vec.reinit(dof_handler.locally_owned_dofs(), locally_relevant_dofs, comm);
 }
