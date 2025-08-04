@@ -196,6 +196,15 @@ private:
     this->param.restart_data.interval_time_steps = 1e8;
     this->param.restart_data.filename =
       this->output_parameters.directory + this->output_parameters.filename + "_restart";
+
+    this->param.restart_data.degree_u                   = 5;
+    this->param.restart_data.degree_p                   = 5;
+    this->param.restart_data.triangulation_type         = TriangulationType::Distributed;
+    this->param.restart_data.discretization_identical   = false;
+    this->param.restart_data.consider_mapping           = true;
+    this->param.restart_data.mapping_degree             = 2;
+    this->param.restart_data.rpe_tolerance_unit_cell    = 1e-6;
+    this->param.restart_data.rpe_enforce_unique_mapping = false;
   }
 
   void
@@ -214,6 +223,13 @@ private:
         for(const auto & face : tria.active_face_iterators())
           if(face->at_boundary())
             face->set_boundary_id(1);
+
+        // Save the *coarse* triangulation for later deserialization.
+        if(write_restart and this->param.grid.triangulation_type == TriangulationType::Serial)
+        {
+          save_coarse_triangulation<dim, dealii::Triangulation<dim>>(
+            this->param.restart_data.filename, tria);
+        }
 
         tria.refine_global(global_refinements);
       };
