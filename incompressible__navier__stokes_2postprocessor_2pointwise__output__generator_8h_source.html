@@ -161,8 +161,8 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>           <span class="keywordtype">bool</span> <span class="keyword">const</span>         unsteady);</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  dealii::SmartPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler_velocity;</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  dealii::SmartPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler_pressure;</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  dealii::ObserverPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler_velocity;</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  dealii::ObserverPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler_pressure;</div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1PointwiseOutputData.html">PointwiseOutputData&lt;dim&gt;</a> pointwise_output_data;</div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>};</div>

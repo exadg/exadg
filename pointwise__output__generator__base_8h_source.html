@@ -261,8 +261,8 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span> </div>
 <div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
 <div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span> </div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  dealii::SmartPointer&lt;dealii::Triangulation&lt;dim&gt; <span class="keyword">const</span>&gt;              triangulation;</div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  dealii::SmartPointer&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;                    mapping;</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  dealii::ObserverPointer&lt;dealii::Triangulation&lt;dim&gt; <span class="keyword">const</span>&gt;           triangulation;</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  dealii::ObserverPointer&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;                 mapping;</div>
 <div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>  <a class="code hl_struct" href="structExaDG_1_1PointwiseOutputDataBase.html">PointwiseOutputDataBase&lt;dim&gt;</a>                                        pointwise_output_data;</div>
 <div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  dealii::Vector&lt;Number&gt;                                              componentwise_result;</div>
 <div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>                                                        n_out_samples;</div>

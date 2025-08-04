@@ -160,9 +160,9 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="keyword">mutable</span> <span class="keywordtype">bool</span> clear_files;</div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  dealii::SmartPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler_velocity;</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  dealii::SmartPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler_pressure;</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  dealii::SmartPointer&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;    mapping;</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  dealii::ObserverPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler_velocity;</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  dealii::ObserverPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler_pressure;</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  dealii::ObserverPointer&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;    mapping;</div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  <a class="code hl_struct" href="structExaDG_1_1IncNS_1_1LinePlotData.html">LinePlotData&lt;dim&gt;</a> data;</div>
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>};</div>

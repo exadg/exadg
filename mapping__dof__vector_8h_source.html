@@ -201,11 +201,11 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span><span class="keyword">  </span>{</div>
 <div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>    <span class="keywordflow">if</span>(grid_coordinates.size() != dof_handler.n_dofs())</div>
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>    {</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>      dealii::IndexSet relevant_dofs_grid;</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>      dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs_grid);</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>      dealii::IndexSet <span class="keyword">const</span> relevant_dofs_grid =</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>        dealii::DoFTools::extract_locally_relevant_dofs(dof_handler);</div>
 <div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>      grid_coordinates.reinit(dof_handler.locally_owned_dofs(),</div>
 <div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>                              relevant_dofs_grid,</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>                              dof_handler.get_communicator());</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>                              dof_handler.get_mpi_communicator());</div>
 <div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>    }</div>
 <div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>    <span class="keywordflow">else</span></div>
 <div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>    {</div>
@@ -289,11 +289,11 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>    VectorType displacement_vector_ghosted;</div>
 <div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>    <span class="keywordflow">if</span>(dof_handler.n_dofs() &gt; 0 and displacement_vector.size() == dof_handler.n_dofs())</div>
 <div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>    {</div>
-<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>      dealii::IndexSet locally_relevant_dofs;</div>
-<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>      dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);</div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>      dealii::IndexSet <span class="keyword">const</span> locally_relevant_dofs =</div>
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>        dealii::DoFTools::extract_locally_relevant_dofs(dof_handler);</div>
 <div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>      displacement_vector_ghosted.reinit(dof_handler.locally_owned_dofs(),</div>
 <div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>                                         locally_relevant_dofs,</div>
-<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>                                         dof_handler.get_communicator());</div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>                                         dof_handler.get_mpi_communicator());</div>
 <div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>      displacement_vector_ghosted.copy_locally_owned_data_from(displacement_vector);</div>
 <div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>      displacement_vector_ghosted.update_ghost_values();</div>
 <div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>    }</div>
@@ -435,8 +435,8 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00378" name="l00378"></a><span class="lineno">  378</span>  <span class="comment">// ghosting</span></div>
 <div class="line"><a id="l00379" name="l00379"></a><span class="lineno">  379</span>  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> level = 0; level &lt; n_levels; level++)</div>
 <div class="line"><a id="l00380" name="l00380"></a><span class="lineno">  380</span>  {</div>
-<div class="line"><a id="l00381" name="l00381"></a><span class="lineno">  381</span>    dealii::IndexSet relevant_dofs;</div>
-<div class="line"><a id="l00382" name="l00382"></a><span class="lineno">  382</span>    dealii::DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);</div>
+<div class="line"><a id="l00381" name="l00381"></a><span class="lineno">  381</span>    dealii::IndexSet <span class="keyword">const</span> relevant_dofs =</div>
+<div class="line"><a id="l00382" name="l00382"></a><span class="lineno">  382</span>      dealii::DoFTools::extract_locally_relevant_level_dofs(dof_handler, level);</div>
 <div class="line"><a id="l00383" name="l00383"></a><span class="lineno">  383</span> </div>
 <div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span>    grid_coordinates_all_levels_ghosted[level].reinit(</div>
 <div class="line"><a id="l00385" name="l00385"></a><span class="lineno">  385</span>      dof_handler.locally_owned_mg_dofs(level),</div>
@@ -567,76 +567,75 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00525" name="l00525"></a><span class="lineno">  525</span>  <span class="comment">// a function that initializes the dof-vector for a given level and dof_handler</span></div>
 <div class="line"><a id="l00526" name="l00526"></a><span class="lineno">  526</span>  <span class="keyword">const</span> std::function&lt;void(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>, VectorType &amp;)&gt; initialize_dof_vector =</div>
 <div class="line"><a id="l00527" name="l00527"></a><span class="lineno">  527</span>    [&amp;](<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> h_level, VectorType &amp; vector) {</div>
-<div class="line"><a id="l00528" name="l00528"></a><span class="lineno">  528</span>      dealii::IndexSet locally_relevant_dofs;</div>
-<div class="line"><a id="l00529" name="l00529"></a><span class="lineno">  529</span>      dealii::DoFTools::extract_locally_relevant_dofs(dof_handlers_all_levels[h_level],</div>
-<div class="line"><a id="l00530" name="l00530"></a><span class="lineno">  530</span>                                                      locally_relevant_dofs);</div>
-<div class="line"><a id="l00531" name="l00531"></a><span class="lineno">  531</span>      vector.reinit(dof_handlers_all_levels[h_level].locally_owned_dofs(),</div>
-<div class="line"><a id="l00532" name="l00532"></a><span class="lineno">  532</span>                    locally_relevant_dofs,</div>
-<div class="line"><a id="l00533" name="l00533"></a><span class="lineno">  533</span>                    dof_handlers_all_levels[h_level].get_communicator());</div>
-<div class="line"><a id="l00534" name="l00534"></a><span class="lineno">  534</span>    };</div>
-<div class="line"><a id="l00535" name="l00535"></a><span class="lineno">  535</span> </div>
-<div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span>  dealii::MGTransferGlobalCoarsening&lt;dim, VectorType&gt; mg_transfer_global_coarsening(</div>
-<div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span>    transfers, initialize_dof_vector);</div>
-<div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span> </div>
-<div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span>  <span class="comment">// Transfer grid coordinates to coarser h-levels.</span></div>
-<div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>  <span class="comment">// The dealii::DoFHandler object will not be used for global coarsening.</span></div>
-<div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span>  dealii::DoFHandler&lt;dim&gt;           dof_handler_dummy;</div>
-<div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span>  dealii::MGLevelObject&lt;VectorType&gt; grid_coordinates_all_levels(0, n_h_levels - 1);</div>
-<div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span>  mg_transfer_global_coarsening.interpolate_to_mg(dof_handler_dummy,</div>
-<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span>                                                  grid_coordinates_all_levels,</div>
-<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>                                                  grid_coordinates_fine_level);</div>
-<div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span> </div>
-<div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>  <span class="comment">// initialize mapping for all coarse h-levels using the dof-vectors with grid coordinates</span></div>
-<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span>  AssertThrow(coarse_mappings.size() == n_h_levels - 1,</div>
-<div class="line"><a id="l00549" name="l00549"></a><span class="lineno">  549</span>              dealii::ExcMessage(</div>
-<div class="line"><a id="l00550" name="l00550"></a><span class="lineno">  550</span>                <span class="stringliteral">&quot;coarse_mappings does not have correct size relative to coarse_triangulations.&quot;</span>));</div>
-<div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span> </div>
-<div class="line"><a id="l00552" name="l00552"></a><span class="lineno">  552</span>  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> h_level = 0; h_level &lt; coarse_mappings.size(); ++h_level)</div>
-<div class="line"><a id="l00553" name="l00553"></a><span class="lineno">  553</span>  {</div>
-<div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span>    coarse_mappings[h_level] =</div>
-<div class="line"><a id="l00555" name="l00555"></a><span class="lineno">  555</span>      std::make_shared&lt;MappingDoFVector&lt;dim, Number&gt;&gt;(degree_coarse_mappings);</div>
-<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span> </div>
-<div class="line"><a id="l00557" name="l00557"></a><span class="lineno">  557</span>    <span class="comment">// grid_coordinates_all_levels describes absolute coordinates -&gt; use an uninitialized mapping</span></div>
-<div class="line"><a id="l00558" name="l00558"></a><span class="lineno">  558</span>    <span class="comment">// in order to interpret the grid coordinates vector as absolute coordinates and not as</span></div>
-<div class="line"><a id="l00559" name="l00559"></a><span class="lineno">  559</span>    <span class="comment">// displacements.</span></div>
-<div class="line"><a id="l00560" name="l00560"></a><span class="lineno">  560</span>    std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; mapping_dummy;</div>
-<div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>    coarse_mappings[h_level]-&gt;initialize_mapping_from_dof_vector(</div>
-<div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span>      mapping_dummy, grid_coordinates_all_levels[h_level], dof_handlers_all_levels[h_level]);</div>
-<div class="line"><a id="l00563" name="l00563"></a><span class="lineno">  563</span>  }</div>
-<div class="line"><a id="l00564" name="l00564"></a><span class="lineno">  564</span>}</div>
-<div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span></div>
-<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span><span class="keywordtype">void</span></div>
-<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span>initialize_coarse_mappings(</div>
-<div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span>  std::vector&lt;std::shared_ptr&lt;MappingDoFVector&lt;dim, Number&gt;&gt;&gt; &amp;          coarse_mappings,</div>
-<div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                                     degree_coarse_mappings,</div>
-<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>  std::shared_ptr&lt;MappingDoFVector&lt;dim, Number&gt; <span class="keyword">const</span>&gt; <span class="keyword">const</span> &amp;           fine_mapping,</div>
-<div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span>  std::shared_ptr&lt;dealii::Triangulation&lt;dim&gt; <span class="keyword">const</span>&gt; <span class="keyword">const</span> &amp;              fine_triangulation,</div>
-<div class="line"><a id="l00588" name="l00588"></a><span class="lineno">  588</span>  std::vector&lt;std::shared_ptr&lt;dealii::Triangulation&lt;dim&gt; <span class="keyword">const</span>&gt;&gt; <span class="keyword">const</span> &amp; coarse_triangulations)</div>
-<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span>{</div>
-<div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span>  <span class="keywordflow">if</span>(fine_mapping.get())</div>
-<div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>  {</div>
-<div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>    <span class="keywordflow">if</span>(coarse_triangulations.size() &gt; 0)</div>
-<div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>    {</div>
-<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>      MappingTools::initialize_coarse_mappings_from_mapping_dof_vector&lt;dim, Number&gt;(</div>
-<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>        coarse_mappings,</div>
-<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>        degree_coarse_mappings,</div>
-<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>        fine_mapping,</div>
-<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>        fine_triangulation,</div>
-<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>        coarse_triangulations);</div>
-<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>    }</div>
-<div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>    <span class="keywordflow">else</span></div>
-<div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>    {</div>
-<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>      MappingTools::initialize_coarse_mappings_from_mapping_dof_vector&lt;dim, Number&gt;(</div>
-<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span>        coarse_mappings, degree_coarse_mappings, fine_mapping, *fine_triangulation);</div>
-<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span>    }</div>
-<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>  }</div>
-<div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span>}</div>
-<div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span> </div>
-<div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span>} <span class="comment">// namespace MappingTools</span></div>
-<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span> </div>
-<div class="line"><a id="l00612" name="l00612"></a><span class="lineno">  612</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_GRID_MAPPING_DOF_VECTOR_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00528" name="l00528"></a><span class="lineno">  528</span>      dealii::IndexSet <span class="keyword">const</span> locally_relevant_dofs =</div>
+<div class="line"><a id="l00529" name="l00529"></a><span class="lineno">  529</span>        dealii::DoFTools::extract_locally_relevant_dofs(dof_handlers_all_levels[h_level]);</div>
+<div class="line"><a id="l00530" name="l00530"></a><span class="lineno">  530</span>      vector.reinit(dof_handlers_all_levels[h_level].locally_owned_dofs(),</div>
+<div class="line"><a id="l00531" name="l00531"></a><span class="lineno">  531</span>                    locally_relevant_dofs,</div>
+<div class="line"><a id="l00532" name="l00532"></a><span class="lineno">  532</span>                    dof_handlers_all_levels[h_level].get_mpi_communicator());</div>
+<div class="line"><a id="l00533" name="l00533"></a><span class="lineno">  533</span>    };</div>
+<div class="line"><a id="l00534" name="l00534"></a><span class="lineno">  534</span> </div>
+<div class="line"><a id="l00535" name="l00535"></a><span class="lineno">  535</span>  dealii::MGTransferGlobalCoarsening&lt;dim, VectorType&gt; mg_transfer_global_coarsening(</div>
+<div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span>    transfers, initialize_dof_vector);</div>
+<div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span> </div>
+<div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span>  <span class="comment">// Transfer grid coordinates to coarser h-levels.</span></div>
+<div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span>  <span class="comment">// The dealii::DoFHandler object will not be used for global coarsening.</span></div>
+<div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>  dealii::DoFHandler&lt;dim&gt;           dof_handler_dummy;</div>
+<div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span>  dealii::MGLevelObject&lt;VectorType&gt; grid_coordinates_all_levels(0, n_h_levels - 1);</div>
+<div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span>  mg_transfer_global_coarsening.interpolate_to_mg(dof_handler_dummy,</div>
+<div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span>                                                  grid_coordinates_all_levels,</div>
+<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span>                                                  grid_coordinates_fine_level);</div>
+<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span> </div>
+<div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>  <span class="comment">// initialize mapping for all coarse h-levels using the dof-vectors with grid coordinates</span></div>
+<div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>  AssertThrow(coarse_mappings.size() == n_h_levels - 1,</div>
+<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span>              dealii::ExcMessage(</div>
+<div class="line"><a id="l00549" name="l00549"></a><span class="lineno">  549</span>                <span class="stringliteral">&quot;coarse_mappings does not have correct size relative to coarse_triangulations.&quot;</span>));</div>
+<div class="line"><a id="l00550" name="l00550"></a><span class="lineno">  550</span> </div>
+<div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span>  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> h_level = 0; h_level &lt; coarse_mappings.size(); ++h_level)</div>
+<div class="line"><a id="l00552" name="l00552"></a><span class="lineno">  552</span>  {</div>
+<div class="line"><a id="l00553" name="l00553"></a><span class="lineno">  553</span>    coarse_mappings[h_level] =</div>
+<div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span>      std::make_shared&lt;MappingDoFVector&lt;dim, Number&gt;&gt;(degree_coarse_mappings);</div>
+<div class="line"><a id="l00555" name="l00555"></a><span class="lineno">  555</span> </div>
+<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span>    <span class="comment">// grid_coordinates_all_levels describes absolute coordinates -&gt; use an uninitialized mapping</span></div>
+<div class="line"><a id="l00557" name="l00557"></a><span class="lineno">  557</span>    <span class="comment">// in order to interpret the grid coordinates vector as absolute coordinates and not as</span></div>
+<div class="line"><a id="l00558" name="l00558"></a><span class="lineno">  558</span>    <span class="comment">// displacements.</span></div>
+<div class="line"><a id="l00559" name="l00559"></a><span class="lineno">  559</span>    std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; mapping_dummy;</div>
+<div class="line"><a id="l00560" name="l00560"></a><span class="lineno">  560</span>    coarse_mappings[h_level]-&gt;initialize_mapping_from_dof_vector(</div>
+<div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>      mapping_dummy, grid_coordinates_all_levels[h_level], dof_handlers_all_levels[h_level]);</div>
+<div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span>  }</div>
+<div class="line"><a id="l00563" name="l00563"></a><span class="lineno">  563</span>}</div>
+<div class="line"><a id="l00564" name="l00564"></a><span class="lineno">  564</span></div>
+<div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
+<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span><span class="keywordtype">void</span></div>
+<div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span>initialize_coarse_mappings(</div>
+<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span>  std::vector&lt;std::shared_ptr&lt;MappingDoFVector&lt;dim, Number&gt;&gt;&gt; &amp;          coarse_mappings,</div>
+<div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                                     degree_coarse_mappings,</div>
+<div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span>  std::shared_ptr&lt;MappingDoFVector&lt;dim, Number&gt; <span class="keyword">const</span>&gt; <span class="keyword">const</span> &amp;           fine_mapping,</div>
+<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>  std::shared_ptr&lt;dealii::Triangulation&lt;dim&gt; <span class="keyword">const</span>&gt; <span class="keyword">const</span> &amp;              fine_triangulation,</div>
+<div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span>  std::vector&lt;std::shared_ptr&lt;dealii::Triangulation&lt;dim&gt; <span class="keyword">const</span>&gt;&gt; <span class="keyword">const</span> &amp; coarse_triangulations)</div>
+<div class="line"><a id="l00588" name="l00588"></a><span class="lineno">  588</span>{</div>
+<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span>  <span class="keywordflow">if</span>(fine_mapping.get())</div>
+<div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span>  {</div>
+<div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>    <span class="keywordflow">if</span>(coarse_triangulations.size() &gt; 0)</div>
+<div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>    {</div>
+<div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>      MappingTools::initialize_coarse_mappings_from_mapping_dof_vector&lt;dim, Number&gt;(</div>
+<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>        coarse_mappings,</div>
+<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>        degree_coarse_mappings,</div>
+<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>        fine_mapping,</div>
+<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>        fine_triangulation,</div>
+<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>        coarse_triangulations);</div>
+<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>    }</div>
+<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>    <span class="keywordflow">else</span></div>
+<div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>    {</div>
+<div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>      MappingTools::initialize_coarse_mappings_from_mapping_dof_vector&lt;dim, Number&gt;(</div>
+<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>        coarse_mappings, degree_coarse_mappings, fine_mapping, *fine_triangulation);</div>
+<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span>    }</div>
+<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span>  }</div>
+<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>}</div>
+<div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span> </div>
+<div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span>} <span class="comment">// namespace MappingTools</span></div>
+<div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span> </div>
+<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_GRID_MAPPING_DOF_VECTOR_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1MappingDoFVector_html_a0e945df21afeff8b5fb4aa37c7ed1ca3"><div class="ttname"><a href="classExaDG_1_1MappingDoFVector.html#a0e945df21afeff8b5fb4aa37c7ed1ca3">ExaDG::MappingDoFVector::MappingDoFVector</a></div><div class="ttdeci">MappingDoFVector(unsigned int const mapping_degree)</div><div class="ttdef"><b>Definition</b> mapping_dof_vector.h:61</div></div>
 <div class="ttc" id="aclassExaDG_1_1MappingDoFVector_html_a27442b3fd04244f83fe03a2b0dc4595c"><div class="ttname"><a href="classExaDG_1_1MappingDoFVector.html#a27442b3fd04244f83fe03a2b0dc4595c">ExaDG::MappingDoFVector::initialize_mapping_from_dof_vector</a></div><div class="ttdeci">void initialize_mapping_from_dof_vector(std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping, VectorType const &amp;displacement_vector, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler)</div><div class="ttdef"><b>Definition</b> mapping_dof_vector.h:212</div></div>
 <div class="ttc" id="aclassExaDG_1_1MappingDoFVector_html_a70fc04b5bbe83adc68c35f1289a7a196"><div class="ttname"><a href="classExaDG_1_1MappingDoFVector.html#a70fc04b5bbe83adc68c35f1289a7a196">ExaDG::MappingDoFVector::~MappingDoFVector</a></div><div class="ttdeci">virtual ~MappingDoFVector()</div><div class="ttdef"><b>Definition</b> mapping_dof_vector.h:74</div></div>

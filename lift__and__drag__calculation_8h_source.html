@@ -196,8 +196,8 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span> </div>
 <div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  <span class="keyword">mutable</span> <span class="keywordtype">bool</span> clear_files;</div>
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span> </div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  dealii::SmartPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler_velocity;</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> *             matrix_free;</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  dealii::ObserverPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler_velocity;</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> *                matrix_free;</div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> dof_index_velocity, dof_index_pressure, quad_index;</div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  <span class="keyword">mutable</span> <span class="keywordtype">double</span> c_L_min, c_L_max, c_D_min, c_D_max;</div>

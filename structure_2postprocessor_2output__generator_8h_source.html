@@ -148,9 +148,9 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><span class="keyword">private</span>:</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  dealii::SmartPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler;</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  dealii::SmartPointer&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;    mapping;</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <a class="code hl_struct" href="structExaDG_1_1OutputDataBase.html">OutputDataBase</a>                                      output_data;</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  dealii::ObserverPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler;</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  dealii::ObserverPointer&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;    mapping;</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <a class="code hl_struct" href="structExaDG_1_1OutputDataBase.html">OutputDataBase</a>                                         output_data;</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>};</div>
 </div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>

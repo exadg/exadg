@@ -215,8 +215,8 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span> </div>
 <div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  <span class="keywordtype">bool</span> clear_files_L2, clear_files_H1_seminorm;</div>
 <div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span> </div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  dealii::SmartPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler;</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  dealii::SmartPointer&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;    mapping;</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  dealii::ObserverPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler;</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  dealii::ObserverPointer&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;    mapping;</div>
 <div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span> </div>
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  <a class="code hl_struct" href="structExaDG_1_1ErrorCalculationData.html">ErrorCalculationData&lt;dim&gt;</a> error_data;</div>
 <div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>};</div>

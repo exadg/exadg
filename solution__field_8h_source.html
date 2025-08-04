@@ -130,7 +130,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
 <div class="foldopen" id="foldopen00039" data-start="{" data-end="};">
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno"><a class="line" href="classExaDG_1_1SolutionField.html">   39</a></span><span class="keyword">class </span>SolutionField : <span class="keyword">public</span> dealii::Subscriptor</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno"><a class="line" href="classExaDG_1_1SolutionField.html">   39</a></span><span class="keyword">class </span>SolutionField : <span class="keyword">public</span> dealii::EnableObserverPointer</div>
 <div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>{</div>
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="keyword">public</span>:</div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keyword">using </span>VectorType = dealii::LinearAlgebra::distributed::Vector&lt;Number&gt;;</div>

@@ -568,7 +568,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00474" name="l00474"></a><span class="lineno">  474</span>                  dealii::ExcMessage(<span class="stringliteral">&quot;Specified formulation of viscous term is not implemented.&quot;</span>));</div>
 <div class="line"><a id="l00475" name="l00475"></a><span class="lineno">  475</span>    }</div>
 <div class="line"><a id="l00476" name="l00476"></a><span class="lineno">  476</span> </div>
-<div class="line"><a id="l00477" name="l00477"></a><span class="lineno">  477</span>    vector normal_gradient = gradient * integrator.get_normal_vector(q);</div>
+<div class="line"><a id="l00477" name="l00477"></a><span class="lineno">  477</span>    vector normal_gradient = gradient * integrator.normal_vector(q);</div>
 <div class="line"><a id="l00478" name="l00478"></a><span class="lineno">  478</span> </div>
 <div class="line"><a id="l00479" name="l00479"></a><span class="lineno">  479</span>    <span class="keywordflow">return</span> normal_gradient;</div>
 <div class="line"><a id="l00480" name="l00480"></a><span class="lineno">  480</span>  }</div>

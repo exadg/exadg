@@ -194,26 +194,27 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>        <a class="code hl_struct" href="structExaDG_1_1CompNS_1_1OutputData.html">OutputData</a> <span class="keyword">const</span> &amp;              output_data_in);</div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span> </div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  evaluate(VectorType <span class="keyword">const</span> &amp;                                                    solution_conserved,</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>           std::vector&lt;dealii::SmartPointer&lt;<a class="code hl_class" href="classExaDG_1_1SolutionField.html">SolutionField&lt;dim, Number&gt;</a>&gt;&gt; <span class="keyword">const</span> &amp; additional_fields,</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>           <span class="keywordtype">double</span> <span class="keyword">const</span>                                                          time,</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>           <span class="keywordtype">bool</span> <span class="keyword">const</span>                                                            unsteady);</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span> </div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  <a class="code hl_class" href="classExaDG_1_1TimeControl.html">TimeControl</a> time_control;</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span> </div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  dealii::SmartPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler;</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  dealii::SmartPointer&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;    mapping;</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  <a class="code hl_struct" href="structExaDG_1_1CompNS_1_1OutputData.html">OutputData</a>                                          output_data;</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>};</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  evaluate(</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    VectorType <span class="keyword">const</span> &amp;                                                       solution_conserved,</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    std::vector&lt;dealii::ObserverPointer&lt;<a class="code hl_class" href="classExaDG_1_1SolutionField.html">SolutionField&lt;dim, Number&gt;</a>&gt;&gt; <span class="keyword">const</span> &amp; additional_fields,</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    <span class="keywordtype">double</span> <span class="keyword">const</span>                                                             time,</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    <span class="keywordtype">bool</span> <span class="keyword">const</span>                                                               unsteady);</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  <a class="code hl_class" href="classExaDG_1_1TimeControl.html">TimeControl</a> time_control;</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span> </div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span> </div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  dealii::ObserverPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler;</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  dealii::ObserverPointer&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;    mapping;</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  <a class="code hl_struct" href="structExaDG_1_1CompNS_1_1OutputData.html">OutputData</a>                                             output_data;</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>};</div>
 </div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>} <span class="comment">// namespace CompNS</span></div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_GENERATOR_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span> </div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>} <span class="comment">// namespace CompNS</span></div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span> </div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_GENERATOR_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1SolutionField_html"><div class="ttname"><a href="classExaDG_1_1SolutionField.html">ExaDG::SolutionField</a></div><div class="ttdef"><b>Definition</b> solution_field.h:40</div></div>
 <div class="ttc" id="aclassExaDG_1_1TimeControl_html"><div class="ttname"><a href="classExaDG_1_1TimeControl.html">ExaDG::TimeControl</a></div><div class="ttdef"><b>Definition</b> time_control.h:64</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>

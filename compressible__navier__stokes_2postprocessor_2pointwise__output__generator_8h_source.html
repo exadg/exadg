@@ -158,8 +158,8 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  evaluate(VectorType <span class="keyword">const</span> &amp; solution, <span class="keywordtype">double</span> <span class="keyword">const</span> time, <span class="keywordtype">bool</span> <span class="keyword">const</span> unsteady);</div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  dealii::SmartPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler;</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <a class="code hl_struct" href="structExaDG_1_1CompNS_1_1PointwiseOutputData.html">PointwiseOutputData&lt;dim&gt;</a>                            pointwise_output_data;</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  dealii::ObserverPointer&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler;</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <a class="code hl_struct" href="structExaDG_1_1CompNS_1_1PointwiseOutputData.html">PointwiseOutputData&lt;dim&gt;</a>                               pointwise_output_data;</div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>};</div>
 </div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>

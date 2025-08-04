@@ -310,7 +310,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>  <span class="keywordflow">if</span>(not rpe_source.all_points_found())</div>
 <div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>  {</div>
 <div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>    write_points_in_dummy_triangulation(</div>
-<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>      integration_points_target, <span class="stringliteral">&quot;./&quot;</span>, <span class="stringliteral">&quot;all_points&quot;</span>, 0, source_dof_handler.get_communicator());</div>
+<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>      integration_points_target, <span class="stringliteral">&quot;./&quot;</span>, <span class="stringliteral">&quot;all_points&quot;</span>, 0, source_dof_handler.get_mpi_communicator());</div>
 <div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span> </div>
 <div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>    std::vector&lt;dealii::Point&lt;dim&gt;&gt; points_not_found;</div>
 <div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>    points_not_found.reserve(integration_points_target.size());</div>
@@ -323,7 +323,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>    }</div>
 <div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span> </div>
 <div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>    write_points_in_dummy_triangulation(</div>
-<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>      points_not_found, <span class="stringliteral">&quot;./&quot;</span>, <span class="stringliteral">&quot;points_not_found&quot;</span>, 0, source_dof_handler.get_communicator());</div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>      points_not_found, <span class="stringliteral">&quot;./&quot;</span>, <span class="stringliteral">&quot;points_not_found&quot;</span>, 0, source_dof_handler.get_mpi_communicator());</div>
 <div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span> </div>
 <div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>    AssertThrow(rpe_source.all_points_found(),</div>
 <div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>                dealii::ExcMessage(</div>

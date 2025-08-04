@@ -697,7 +697,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>             FaceIntegratorScalar &amp; energy_p,</div>
 <div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>             <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>     q)<span class="keyword"> const</span></div>
 <div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>    vector normal = momentum_m.get_normal_vector(q);</div>
+<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>    vector normal = momentum_m.normal_vector(q);</div>
 <div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span> </div>
 <div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>    <span class="comment">// get values</span></div>
 <div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>    scalar rho_M   = density_m.get_value(q);</div>
@@ -754,7 +754,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span>                      dealii::types::boundary_id <span class="keyword">const</span> &amp; boundary_id,</div>
 <div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span>                      <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                 q)<span class="keyword"> const</span></div>
 <div class="line"><a id="l00652" name="l00652"></a><span class="lineno">  652</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>    vector normal = momentum.get_normal_vector(q);</div>
+<div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>    vector normal = momentum.normal_vector(q);</div>
 <div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span> </div>
 <div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span>    <span class="comment">// element e⁻</span></div>
 <div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span>    scalar rho_M   = density.get_value(q);</div>
@@ -1190,7 +1190,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l01082" name="l01082"></a><span class="lineno"> 1082</span>                      scalar <span class="keyword">const</span> &amp;         tau_IP,</div>
 <div class="line"><a id="l01083" name="l01083"></a><span class="lineno"> 1083</span>                      <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>     q)<span class="keyword"> const</span></div>
 <div class="line"><a id="l01084" name="l01084"></a><span class="lineno"> 1084</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l01085" name="l01085"></a><span class="lineno"> 1085</span>    vector normal = momentum_m.get_normal_vector(q);</div>
+<div class="line"><a id="l01085" name="l01085"></a><span class="lineno"> 1085</span>    vector normal = momentum_m.normal_vector(q);</div>
 <div class="line"><a id="l01086" name="l01086"></a><span class="lineno"> 1086</span> </div>
 <div class="line"><a id="l01087" name="l01087"></a><span class="lineno"> 1087</span>    <span class="comment">// density</span></div>
 <div class="line"><a id="l01088" name="l01088"></a><span class="lineno"> 1088</span>    scalar rho_M      = density_m.get_value(q);</div>
@@ -1260,7 +1260,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l01152" name="l01152"></a><span class="lineno"> 1152</span>                               dealii::types::boundary_id <span class="keyword">const</span> &amp; boundary_id,</div>
 <div class="line"><a id="l01153" name="l01153"></a><span class="lineno"> 1153</span>                               <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                 q)<span class="keyword"> const</span></div>
 <div class="line"><a id="l01154" name="l01154"></a><span class="lineno"> 1154</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l01155" name="l01155"></a><span class="lineno"> 1155</span>    vector normal = momentum.get_normal_vector(q);</div>
+<div class="line"><a id="l01155" name="l01155"></a><span class="lineno"> 1155</span>    vector normal = momentum.normal_vector(q);</div>
 <div class="line"><a id="l01156" name="l01156"></a><span class="lineno"> 1156</span> </div>
 <div class="line"><a id="l01157" name="l01157"></a><span class="lineno"> 1157</span>    <span class="comment">// density</span></div>
 <div class="line"><a id="l01158" name="l01158"></a><span class="lineno"> 1158</span>    scalar rho_M      = density.get_value(q);</div>
@@ -1372,7 +1372,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l01264" name="l01264"></a><span class="lineno"> 1264</span>                   FaceIntegratorScalar &amp; energy_p,</div>
 <div class="line"><a id="l01265" name="l01265"></a><span class="lineno"> 1265</span>                   <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>     q)<span class="keyword"> const</span></div>
 <div class="line"><a id="l01266" name="l01266"></a><span class="lineno"> 1266</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l01267" name="l01267"></a><span class="lineno"> 1267</span>    vector normal = momentum_m.get_normal_vector(q);</div>
+<div class="line"><a id="l01267" name="l01267"></a><span class="lineno"> 1267</span>    vector normal = momentum_m.normal_vector(q);</div>
 <div class="line"><a id="l01268" name="l01268"></a><span class="lineno"> 1268</span> </div>
 <div class="line"><a id="l01269" name="l01269"></a><span class="lineno"> 1269</span>    <span class="comment">// density</span></div>
 <div class="line"><a id="l01270" name="l01270"></a><span class="lineno"> 1270</span>    scalar rho_M = density_m.get_value(q);</div>
@@ -1452,7 +1452,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l01344" name="l01344"></a><span class="lineno"> 1344</span>                            dealii::types::boundary_id <span class="keyword">const</span> &amp; boundary_id,</div>
 <div class="line"><a id="l01345" name="l01345"></a><span class="lineno"> 1345</span>                            <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                 q)<span class="keyword"> const</span></div>
 <div class="line"><a id="l01346" name="l01346"></a><span class="lineno"> 1346</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l01347" name="l01347"></a><span class="lineno"> 1347</span>    vector normal = momentum.get_normal_vector(q);</div>
+<div class="line"><a id="l01347" name="l01347"></a><span class="lineno"> 1347</span>    vector normal = momentum.normal_vector(q);</div>
 <div class="line"><a id="l01348" name="l01348"></a><span class="lineno"> 1348</span> </div>
 <div class="line"><a id="l01349" name="l01349"></a><span class="lineno"> 1349</span>    <span class="comment">// density</span></div>
 <div class="line"><a id="l01350" name="l01350"></a><span class="lineno"> 1350</span>    scalar rho_M = density.get_value(q);</div>

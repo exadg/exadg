@@ -146,7 +146,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    <span class="keywordflow">if</span>(cell-&gt;is_locally_owned())</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>      ++n_locally_owned_cells;</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  MPI_Comm <span class="keyword">const</span> mpi_comm = dof_handler.get_communicator();</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  MPI_Comm <span class="keyword">const</span> mpi_comm = dof_handler.get_mpi_communicator();</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="comment">// In case some of the MPI ranks do not have cells, we create a</span></div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="comment">// sub-communicator to exclude all those processes from the MPI</span></div>
@@ -265,7 +265,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>  {</div>
 <div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>    <span class="comment">// initialize system matrix</span></div>
 <div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>    pde_operator.init_system_matrix(system_matrix,</div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>                                    op.get_matrix_free().get_dof_handler().get_communicator());</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>                                    op.get_matrix_free().get_dof_handler().get_mpi_communicator());</div>
 <div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span> </div>
 <div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>    <span class="keywordflow">if</span>(initialize)</div>
 <div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>    {</div>
