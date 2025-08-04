@@ -57,7 +57,7 @@ private:
   void
   calculate_detailed(VectorType const & velocity, double const time);
 
-  dealii::SmartPointer<NavierStokesOperator const> navier_stokes_operator;
+  dealii::ObserverPointer<NavierStokesOperator const> navier_stokes_operator;
 };
 
 } // namespace IncNS

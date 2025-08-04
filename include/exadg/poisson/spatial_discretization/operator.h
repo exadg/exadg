@@ -38,7 +38,7 @@ namespace ExaDG
 namespace Poisson
 {
 template<int dim, int n_components, typename Number>
-class Operator : public dealii::Subscriptor
+class Operator : public dealii::EnableObserverPointer
 {
 private:
   static unsigned int const rank =
