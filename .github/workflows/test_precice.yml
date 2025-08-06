@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: ${{github.event_name == 'pull_request'}}
 
 env:
-  COMPILE_JOBS: 2
+  COMPILE_JOBS: 4
 
 jobs:
   build:
@@ -28,7 +28,7 @@ jobs:
         use_precice: ["ON"]
 
     container:
-      image: dealii/dealii:${{ matrix.dealii_version }}-focal
+      image: dealii/dealii:${{ matrix.dealii_version }}-noble
       options: --user root
 
     steps:
@@ -41,8 +41,8 @@ jobs:
                  libboost-log-dev \
                  libboost-filesystem-dev \
                  libboost-test-dev
-          wget https://github.com/precice/precice/releases/download/v2.3.0/libprecice2_2.3.0_focal.deb
-          sudo apt-get -y install ./libprecice2_2.3.0_focal.deb
+          wget https://github.com/precice/precice/releases/download/v2.5.1/libprecice2_2.5.1_noble.deb
+          sudo apt-get -y install ./libprecice2_2.5.1_noble.deb
 
       - name: Compile
         run: |
