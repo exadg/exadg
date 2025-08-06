@@ -1152,16 +1152,12 @@ SpatialOperatorBase<dim, Number>::adjust_pressure_level_if_undefined(VectorType 
       field_functions->analytical_solution_pressure->set_time(time);
       double const exact = field_functions->analytical_solution_pressure->value(first_point);
 
-      double current = 0.;
+      double current = -std::numeric_limits<double>::max();
       if(pressure.locally_owned_elements().is_element(dof_index_first_point))
         current = pressure(dof_index_first_point);
-      current = dealii::Utilities::MPI::sum(current, mpi_comm);
+      current = dealii::Utilities::MPI::max(current, mpi_comm);
 
-      VectorType vec_temp(pressure);
-      for(unsigned int i = 0; i < vec_temp.locally_owned_size(); ++i)
-        vec_temp.local_element(i) = 1.;
-
-      pressure.add(exact - current, vec_temp);
+      pressure.add(exact - current);
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
     {
@@ -1189,11 +1185,7 @@ SpatialOperatorBase<dim, Number>::adjust_pressure_level_if_undefined(VectorType 
       double const exact   = vec_double.mean_value();
       double const current = pressure.mean_value();
 
-      VectorType vec_temp(pressure);
-      for(unsigned int i = 0; i < vec_temp.locally_owned_size(); ++i)
-        vec_temp.local_element(i) = 1.;
-
-      pressure.add(exact - current, vec_temp);
+      pressure.add(exact - current);
     }
     else
     {
