@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
-#define INCLUDE_EXADG_STRUCTURE_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
+#ifndef EXADG_STRUCTURE_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
+#define EXADG_STRUCTURE_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
 
+// ExaDG
 #include <exadg/operators/multigrid_operator.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h>
 #include <exadg/structure/spatial_discretization/operators/elasticity_operator_base.h>
@@ -119,4 +120,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_ */

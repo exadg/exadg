@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_ADAPTER_BASE_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_ADAPTER_BASE_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MULTIGRID_PRECONDITIONER_BASE_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MULTIGRID_PRECONDITIONER_BASE_H_
 
 // deal.II
 #include <deal.II/base/mg_level_object.h>
@@ -285,6 +285,12 @@ private:
   void
   initialize_levels(unsigned int const degree, bool const is_dg);
 
+  /**
+   * Returns the number of h-levels.
+   */
+  unsigned int
+  get_number_of_h_levels() const;
+
   /*
    * Data structures needed for matrix-free operator evaluation.
    */
@@ -341,7 +347,7 @@ private:
 
   std::shared_ptr<MultigridAlgorithm<VectorTypeMG, Operator, Smoother>> multigrid_algorithm;
 };
+
 } // namespace ExaDG
 
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_ADAPTER_BASE_H_ \
-        */
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MULTIGRID_PRECONDITIONER_BASE_H_ */

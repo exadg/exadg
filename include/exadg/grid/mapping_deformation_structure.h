@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_MAPPING_DEFORMATION_STRUCTURE_H_
-#define INCLUDE_EXADG_GRID_MAPPING_DEFORMATION_STRUCTURE_H_
+#ifndef EXADG_GRID_MAPPING_DEFORMATION_STRUCTURE_H_
+#define EXADG_GRID_MAPPING_DEFORMATION_STRUCTURE_H_
 
 // deal.II
 #include <deal.II/base/timer.h>
@@ -220,4 +220,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_GRID_MAPPING_DEFORMATION_STRUCTURE_H_ */
+#endif /* EXADG_GRID_MAPPING_DEFORMATION_STRUCTURE_H_ */

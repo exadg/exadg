@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_GRID_DATA_H_
-#define INCLUDE_EXADG_GRID_GRID_DATA_H_
+#ifndef EXADG_GRID_GRID_DATA_H_
+#define EXADG_GRID_GRID_DATA_H_
 
 // C/C++
 #include <string>
@@ -147,6 +147,4 @@ struct GridData
 
 } // namespace ExaDG
 
-
-
-#endif /* INCLUDE_EXADG_GRID_GRID_DATA_H_ */
+#endif /* EXADG_GRID_GRID_DATA_H_ */

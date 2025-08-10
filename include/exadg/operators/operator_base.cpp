@@ -37,7 +37,7 @@ namespace ExaDG
 {
 template<int dim, typename Number, int n_components>
 OperatorBase<dim, Number, n_components>::OperatorBase()
-  : dealii::Subscriptor(),
+  : dealii::EnableObserverPointer(),
     matrix_free(),
     time(0.0),
     is_mg(false),
@@ -85,7 +85,7 @@ OperatorBase<dim, Number, n_components>::reinit(
   dealii::DoFHandler<dim> const & dof_handler =
     this->matrix_free->get_dof_handler(this->data.dof_index);
 
-  n_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(dof_handler.get_communicator());
+  n_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(dof_handler.get_mpi_communicator());
 }
 
 template<int dim, typename Number, int n_components>
@@ -273,7 +273,7 @@ OperatorBase<dim, Number, n_components>::calculate_inverse_diagonal(VectorType &
   if(false)
   {
     verify_calculation_of_diagonal(
-      *this, diagonal, matrix_free->get_dof_handler(this->data.dof_index).get_communicator());
+      *this, diagonal, matrix_free->get_dof_handler(this->data.dof_index).get_mpi_communicator());
   }
 
   invert_diagonal(diagonal);
@@ -449,7 +449,7 @@ OperatorBase<dim, Number, n_components>::assemble_matrix_if_necessary() const
       if(this->data.sparse_matrix_type == SparseMatrixType::Trilinos)
       {
 #ifdef DEAL_II_WITH_TRILINOS
-        init_system_matrix(system_matrix_trilinos, dof_handler.get_communicator());
+        init_system_matrix(system_matrix_trilinos, dof_handler.get_mpi_communicator());
 #else
         AssertThrow(
           false,
@@ -460,7 +460,7 @@ OperatorBase<dim, Number, n_components>::assemble_matrix_if_necessary() const
       else if(this->data.sparse_matrix_type == SparseMatrixType::PETSc)
       {
 #ifdef DEAL_II_WITH_PETSC
-        init_system_matrix(system_matrix_petsc, dof_handler.get_communicator());
+        init_system_matrix(system_matrix_petsc, dof_handler.get_mpi_communicator());
 #else
         AssertThrow(
           false,
@@ -1097,11 +1097,10 @@ OperatorBase<dim, Number, n_components>::internal_init_system_matrix(
                 std::to_string(sum_of_locally_owned_dofs) + " vs " +
                 std::to_string(owned_dofs.size())));
 
-  dealii::IndexSet relevant_dofs;
-  if(is_mg)
-    dealii::DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);
-  else
-    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs);
+  dealii::IndexSet const relevant_dofs =
+    is_mg ? dealii::DoFTools::extract_locally_relevant_level_dofs(dof_handler, level) :
+            dealii::DoFTools::extract_locally_relevant_dofs(dof_handler);
+
   dsp.reinit(relevant_dofs.size(), relevant_dofs.size(), relevant_dofs);
 
   if(is_dg and is_mg)
@@ -1146,6 +1145,32 @@ OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix(
 
   // communicate overlapping matrix parts
   system_matrix.compress(dealii::VectorOperation::add);
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::get_constant_modes(
+  std::vector<std::vector<bool>> &   constant_modes,
+  std::vector<std::vector<double>> & constant_modes_values) const
+{
+  (void)constant_modes_values;
+
+  dealii::DoFHandler<dim> const & dof_handler =
+    this->matrix_free->get_dof_handler(this->data.dof_index);
+
+  if(dof_handler.has_level_dofs())
+  {
+    constant_modes =
+      dealii::DoFTools::extract_level_constant_modes(0,
+                                                     dof_handler,
+                                                     dealii::ComponentMask(n_components, true));
+  }
+  else
+  {
+    constant_modes =
+      dealii::DoFTools::extract_constant_modes(dof_handler,
+                                               dealii::ComponentMask(n_components, true));
+  }
 }
 
 template<int dim, typename Number, int n_components>
@@ -2518,7 +2543,7 @@ OperatorBase<dim, Number, n_components>::internal_compute_factorized_additive_sc
     // assemble a temporary sparse matrix to cut out the blocks
     SparseMatrix                   tmp_matrix;
     dealii::DynamicSparsityPattern dsp;
-    internal_init_system_matrix(tmp_matrix, dsp, dof_handler.get_communicator());
+    internal_init_system_matrix(tmp_matrix, dsp, dof_handler.get_mpi_communicator());
     internal_calculate_system_matrix(tmp_matrix);
 
     // collect the DoF indices of all cells

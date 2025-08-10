@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_LINEAR_ALGEBRA_UTILITIES_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_LINEAR_ALGEBRA_UTILITIES_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_UTILITIES_LINEAR_ALGEBRA_UTILITIES_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_UTILITIES_LINEAR_ALGEBRA_UTILITIES_H_
 
+// deal.II
 #include <deal.II/base/exceptions.h>
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/lac/petsc_vector.h>
@@ -153,6 +154,7 @@ apply_function_in_double_precision(
     dealii::LinearAlgebra::distributed::Vector<double> dst_double, src_double;
     dst_double.reinit(dst, true); // do not zero entries
     src_double.reinit(src, true); // do not zero entries
+    dst_double.copy_locally_owned_data_from(dst);
     src_double.copy_locally_owned_data_from(src);
 
     operation(dst_double, src_double);
@@ -164,4 +166,4 @@ apply_function_in_double_precision(
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_LINEAR_ALGEBRA_UTILITIES_H_ */
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_UTILITIES_LINEAR_ALGEBRA_UTILITIES_H_ */

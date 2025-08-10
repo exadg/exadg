@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_ITERATIVESOLVERS_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_ITERATIVESOLVERS_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_SOLVERS_ITERATIVE_SOLVERS_DEALII_WRAPPER_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_SOLVERS_ITERATIVE_SOLVERS_DEALII_WRAPPER_H_
 
 // deal.II
 #include <deal.II/base/timer.h>
@@ -411,8 +411,8 @@ private:
   Preconditioner &       preconditioner;
   SolverDataFGMRES const solver_data;
 };
-} // namespace Krylov
 
+} // namespace Krylov
 } // namespace ExaDG
 
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_ITERATIVESOLVERS_H_ */
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_SOLVERS_ITERATIVE_SOLVERS_DEALII_WRAPPER_H_ */

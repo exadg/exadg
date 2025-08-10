@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CURL_COMPUTE_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CURL_COMPUTE_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CURL_COMPUTE_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CURL_COMPUTE_H_
 
+// deal.II
 #include <deal.II/base/tensor.h>
 #include <deal.II/base/vectorization.h>
 
@@ -32,8 +33,8 @@ namespace IncNS
 template<int dim, typename FEEval>
 struct CurlCompute
 {
-  static dealii::Tensor<1, dim, dealii::VectorizedArray<typename FEEval::number_type>>
-  compute(FEEval & fe_eval, unsigned int const q_point)
+  static typename FEEval::value_type
+  compute(FEEval const & fe_eval, unsigned int const q_point)
   {
     return fe_eval.get_curl(q_point);
   }
@@ -43,21 +44,20 @@ struct CurlCompute
 template<typename FEEval>
 struct CurlCompute<2, FEEval>
 {
-  static dealii::Tensor<1, 2, dealii::VectorizedArray<typename FEEval::number_type>>
-  compute(FEEval & fe_eval, unsigned int const q_point)
+  static typename FEEval::value_type
+  compute(FEEval const & fe_eval, unsigned int const q_point)
   {
-    dealii::Tensor<1, 2, dealii::VectorizedArray<typename FEEval::number_type>> curl;
     /*
      * fe_eval = / phi \   _____\   grad(fe_eval) = / d(phi)/dx1   d(phi)/dx2 \
      *           \  0  /        /                   \     0             0     /
      */
-    dealii::Tensor<2, 2, dealii::VectorizedArray<typename FEEval::number_type>> temp =
-      fe_eval.get_gradient(q_point);
+    typename FEEval::gradient_type temp = fe_eval.get_gradient(q_point);
     /*
      *         __    /  0  \     /   d(phi)/dx2 \
      *  curl = \/ X  |  0  |  =  | - d(phi)/dx1 |
      *               \ phi /     \      0       /
      */
+    typename FEEval::value_type curl;
     curl[0] = temp[0][1];  //   d(phi)/dx2
     curl[1] = -temp[0][0]; // - d(phi)/dx1
     return curl;
@@ -67,5 +67,4 @@ struct CurlCompute<2, FEEval>
 } // namespace IncNS
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CURL_COMPUTE_H_ */
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CURL_COMPUTE_H_ */

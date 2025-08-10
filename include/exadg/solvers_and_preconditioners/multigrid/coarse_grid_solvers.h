@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MGCOARSEGRIDSOLVERS_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MGCOARSEGRIDSOLVERS_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_COARSE_GRID_SOLVERS_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_COARSE_GRID_SOLVERS_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -98,12 +98,10 @@ public:
     AMGData amg_data;
   };
 
-  MGCoarseKrylov(Operator const &                pde_operator_in,
-                 bool const                      initialize,
-                 AdditionalData const &          additional_data,
-                 dealii::DoFHandler<dim> const & dof_handler,
-                 dealii::Mapping<dim> const &    mapping,
-                 MPI_Comm const &                comm)
+  MGCoarseKrylov(Operator const &       pde_operator_in,
+                 bool const             initialize,
+                 AdditionalData const & additional_data,
+                 MPI_Comm const &       comm)
     : pde_operator(pde_operator_in), additional_data(additional_data), mpi_comm(comm)
   {
     if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi)
@@ -121,8 +119,10 @@ public:
     }
     else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
     {
-      preconditioner = std::make_shared<PreconditionerAMG<dim, Operator, Number>>(
-        pde_operator, initialize, additional_data.amg_data, dof_handler, mapping);
+      preconditioner =
+        std::make_shared<PreconditionerAMG<Operator, Number>>(pde_operator,
+                                                              initialize,
+                                                              additional_data.amg_data);
     }
     else
     {
@@ -161,71 +161,88 @@ public:
     if(additional_data.operator_is_singular)
       dealii::VectorTools::subtract_mean_value(r);
 
-    std::shared_ptr<Krylov::SolverBase<VectorType>> solver;
-
-    if(additional_data.solver_type == MultigridCoarseGridSolver::CG)
+    if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
     {
-      Krylov::SolverDataCG solver_data;
-      solver_data.max_iter             = additional_data.solver_data.max_iter;
-      solver_data.solver_tolerance_abs = additional_data.solver_data.abs_tol;
-      solver_data.solver_tolerance_rel = additional_data.solver_data.rel_tol;
+      std::shared_ptr<PreconditionerAMG<Operator, Number>> preconditioner_amg =
+        std::dynamic_pointer_cast<PreconditionerAMG<Operator, Number>>(preconditioner);
 
-      if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::None)
-      {
-        solver_data.use_preconditioner = false;
-      }
-      else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi or
-              additional_data.preconditioner == MultigridCoarseGridPreconditioner::BlockJacobi or
-              additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
-      {
-        solver_data.use_preconditioner = true;
-      }
-      else
-      {
-        AssertThrow(false, dealii::ExcMessage("Not implemented."));
-      }
+      AssertThrow(preconditioner_amg != nullptr,
+                  dealii::ExcMessage("Constructed preconditioner is not of type "
+                                     "PreconditionerAMG<Operator, Number>."));
 
-      solver.reset(new Krylov::SolverCG<Operator, PreconditionerBase<Number>, VectorType>(
-        pde_operator, *preconditioner, solver_data));
-    }
-    else if(additional_data.solver_type == MultigridCoarseGridSolver::GMRES)
-    {
-      Krylov::SolverDataGMRES solver_data;
-
-      solver_data.max_iter             = additional_data.solver_data.max_iter;
-      solver_data.solver_tolerance_abs = additional_data.solver_data.abs_tol;
-      solver_data.solver_tolerance_rel = additional_data.solver_data.rel_tol;
-      solver_data.max_n_tmp_vectors    = additional_data.solver_data.max_krylov_size;
-
-      if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::None)
-      {
-        solver_data.use_preconditioner = false;
-      }
-      else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi or
-              additional_data.preconditioner == MultigridCoarseGridPreconditioner::BlockJacobi or
-              additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
-      {
-        solver_data.use_preconditioner = true;
-      }
-      else
-      {
-        AssertThrow(false, dealii::ExcMessage("Not implemented."));
-      }
-
-      solver.reset(new Krylov::SolverGMRES<Operator, PreconditionerBase<Number>, VectorType>(
-        pde_operator, *preconditioner, solver_data, mpi_comm));
+      preconditioner_amg->apply_krylov_solver_with_amg_preconditioner(dst,
+                                                                      r,
+                                                                      additional_data.solver_type,
+                                                                      additional_data.solver_data);
     }
     else
     {
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
-    }
+      std::shared_ptr<Krylov::SolverBase<VectorType>> solver;
 
-    // Note that the preconditioner has already been updated
-    solver->solve(dst, r);
+      if(additional_data.solver_type == MultigridCoarseGridSolver::CG)
+      {
+        Krylov::SolverDataCG solver_data;
+        solver_data.max_iter             = additional_data.solver_data.max_iter;
+        solver_data.solver_tolerance_abs = additional_data.solver_data.abs_tol;
+        solver_data.solver_tolerance_rel = additional_data.solver_data.rel_tol;
+
+        if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::None)
+        {
+          solver_data.use_preconditioner = false;
+        }
+        else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi or
+                additional_data.preconditioner == MultigridCoarseGridPreconditioner::BlockJacobi or
+                additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
+        {
+          solver_data.use_preconditioner = true;
+        }
+        else
+        {
+          AssertThrow(false, dealii::ExcMessage("Not implemented."));
+        }
+
+        solver.reset(new Krylov::SolverCG<Operator, PreconditionerBase<Number>, VectorType>(
+          pde_operator, *preconditioner, solver_data));
+      }
+      else if(additional_data.solver_type == MultigridCoarseGridSolver::GMRES)
+      {
+        Krylov::SolverDataGMRES solver_data;
+
+        solver_data.max_iter             = additional_data.solver_data.max_iter;
+        solver_data.solver_tolerance_abs = additional_data.solver_data.abs_tol;
+        solver_data.solver_tolerance_rel = additional_data.solver_data.rel_tol;
+        solver_data.max_n_tmp_vectors    = additional_data.solver_data.max_krylov_size;
+
+        if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::None)
+        {
+          solver_data.use_preconditioner = false;
+        }
+        else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi or
+                additional_data.preconditioner == MultigridCoarseGridPreconditioner::BlockJacobi or
+                additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
+        {
+          solver_data.use_preconditioner = true;
+        }
+        else
+        {
+          AssertThrow(false, dealii::ExcMessage("Not implemented."));
+        }
+
+        solver.reset(new Krylov::SolverGMRES<Operator, PreconditionerBase<Number>, VectorType>(
+          pde_operator, *preconditioner, solver_data, mpi_comm));
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      }
+
+      // Note that the preconditioner has already been updated
+      solver->solve(dst, r);
+    }
   }
 
 private:
-  const Operator & pde_operator;
+  Operator const & pde_operator;
 
   std::shared_ptr<PreconditionerBase<Number>> preconditioner;
 
@@ -322,7 +339,7 @@ private:
 };
 
 /**
- * The aim if this class is to translate PreconditionerAMG to a coarse-grid solver with the function
+ * The aim of this class is to translate PreconditionerAMG to a coarse-grid solver with the function
  * operator()().
  */
 template<int dim, typename Operator>
@@ -334,14 +351,10 @@ private:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  MGCoarseAMG(Operator const &                op,
-              bool const                      initialize,
-              dealii::DoFHandler<dim> const & dof_handler,
-              dealii::Mapping<dim> const &    mapping,
-              AMGData                         data = AMGData())
+  MGCoarseAMG(Operator const & op, bool const initialize, AMGData data = AMGData())
   {
-    amg_preconditioner = std::make_shared<PreconditionerAMG<dim, Operator, Number>>(
-      op, initialize, data, dof_handler, mapping);
+    amg_preconditioner =
+      std::make_shared<PreconditionerAMG<Operator, Number>>(op, initialize, data);
   }
 
   void
@@ -357,9 +370,9 @@ public:
   }
 
 private:
-  std::shared_ptr<PreconditionerAMG<dim, Operator, Number>> amg_preconditioner;
+  std::shared_ptr<PreconditionerAMG<Operator, Number>> amg_preconditioner;
 };
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MGCOARSEGRIDSOLVERS_H_ */
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_COARSE_GRID_SOLVERS_H_ */

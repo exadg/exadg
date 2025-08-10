@@ -19,14 +19,13 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_SOLUTION_TRANSFER_H
-#define INCLUDE_EXADG_OPERATORS_SOLUTION_TRANSFER_H
+#ifndef EXADG_OPERATORS_SOLUTION_TRANSFER_H_
+#define EXADG_OPERATORS_SOLUTION_TRANSFER_H_
 
 // deal.II
 #include <deal.II/distributed/solution_transfer.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/tria.h>
-//#include <deal.II/numerics/solution_transfer.h>
 
 namespace ExaDG
 {
@@ -53,8 +52,7 @@ public:
     }
 
     pd_solution_transfer =
-      std::make_shared<dealii::parallel::distributed::SolutionTransfer<dim, VectorType>>(
-        *dof_handler);
+      std::make_shared<dealii::SolutionTransfer<dim, VectorType>>(*dof_handler);
 
     pd_solution_transfer->prepare_for_coarsening_and_refinement(vectors_old_grid_ptr);
   }
@@ -69,11 +67,11 @@ public:
   }
 
 private:
-  std::shared_ptr<dealii::parallel::distributed::SolutionTransfer<dim, VectorType>>
-    pd_solution_transfer;
+  std::shared_ptr<dealii::SolutionTransfer<dim, VectorType>> pd_solution_transfer;
 
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler;
 };
+
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_OPERATORS_SOLUTION_TRANSFER_H */
+#endif /* EXADG_OPERATORS_SOLUTION_TRANSFER_H_ */

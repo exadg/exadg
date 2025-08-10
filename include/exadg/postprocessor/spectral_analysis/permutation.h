@@ -19,10 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef DEAL_SPECTRUM_PERMUTATION
-#define DEAL_SPECTRUM_PERMUTATION
+#ifndef EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_PERMUTATION_H_
+#define EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_PERMUTATION_H_
 
-// std
+// C/C++
 #include <math.h>
 #include <mpi.h>
 #include <stdio.h>
@@ -497,4 +497,4 @@ private:
 
 } // namespace dealspectrum
 
-#endif
+#endif /* EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_PERMUTATION_H_ */

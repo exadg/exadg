@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_GRID_RELATED_TIME_STEP_RESTRICTIONS_H_
-#define INCLUDE_EXADG_OPERATORS_GRID_RELATED_TIME_STEP_RESTRICTIONS_H_
+#ifndef EXADG_OPERATORS_GRID_RELATED_TIME_STEP_RESTRICTIONS_H_
+#define EXADG_OPERATORS_GRID_RELATED_TIME_STEP_RESTRICTIONS_H_
 
 // deal.II
 #include <deal.II/base/function.h>
@@ -329,5 +329,4 @@ calculate_cfl(dealii::LinearAlgebra::distributed::Vector<value_type> &       cfl
 
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_OPERATORS_GRID_RELATED_TIME_STEP_RESTRICTIONS_H_ */
+#endif /* EXADG_OPERATORS_GRID_RELATED_TIME_STEP_RESTRICTIONS_H_ */

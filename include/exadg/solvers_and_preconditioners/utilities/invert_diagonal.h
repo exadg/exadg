@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_INVERTDIAGONAL_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_INVERTDIAGONAL_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_UTILITIES_INVERT_DIAGONAL_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_UTILITIES_INVERT_DIAGONAL_H_
 
+// deal.II
 #include <deal.II/lac/la_parallel_vector.h>
 
 namespace ExaDG
@@ -46,4 +47,4 @@ invert_diagonal(dealii::LinearAlgebra::distributed::Vector<Number> & diagonal)
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_INVERTDIAGONAL_H_ */
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_UTILITIES_INVERT_DIAGONAL_H_ */

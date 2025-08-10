@@ -19,10 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_AERO_ACOUSTIC_USER_INTERFACE_DECLARE_GET_APPLICATION_H_
-#define INCLUDE_EXADG_AERO_ACOUSTIC_USER_INTERFACE_DECLARE_GET_APPLICATION_H_
+#ifndef EXADG_AERO_ACOUSTIC_USER_INTERFACE_DECLARE_GET_APPLICATION_H_
+#define EXADG_AERO_ACOUSTIC_USER_INTERFACE_DECLARE_GET_APPLICATION_H_
 
-
+// ExaDG
 #include <exadg/aero_acoustic/user_interface/application_base.h>
 
 namespace ExaDG
@@ -36,5 +36,4 @@ get_application(std::string input_file, MPI_Comm const & comm);
 } // namespace AeroAcoustic
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_AERO_ACOUSTIC_USER_INTERFACE_DECLARE_GET_APPLICATION_H_ */
+#endif /* EXADG_AERO_ACOUSTIC_USER_INTERFACE_DECLARE_GET_APPLICATION_H_ */

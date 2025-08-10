@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_GENERATOR_SCALAR_H_
-#define INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_GENERATOR_SCALAR_H_
+#ifndef EXADG_POSTPROCESSOR_OUTPUT_GENERATOR_SCALAR_H_
+#define EXADG_POSTPROCESSOR_OUTPUT_GENERATOR_SCALAR_H_
 
 // deal.II
 #include <deal.II/dofs/dof_handler.h>
@@ -54,11 +54,11 @@ public:
 private:
   MPI_Comm const mpi_comm;
 
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
-  dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;
-  OutputDataBase                                      output_data;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler;
+  dealii::ObserverPointer<dealii::Mapping<dim> const>    mapping;
+  OutputDataBase                                         output_data;
 };
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_GENERATOR_SCALAR_H_ */
+#endif /* EXADG_POSTPROCESSOR_OUTPUT_GENERATOR_SCALAR_H_ */

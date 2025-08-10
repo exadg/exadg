@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_SOLID_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_SOLID_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_SOLID_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_SOLID_H_
 
 // ExaDG
 #include <exadg/fluid_structure_interaction/single_field_solvers/structure.h>
@@ -244,5 +244,4 @@ private:
 } // namespace FSI
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_H_ */
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_H_ */

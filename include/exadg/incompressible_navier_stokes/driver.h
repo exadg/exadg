@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
 
+// ExaDG
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/grid/mapping_deformation_function.h>
 #include <exadg/grid/mapping_deformation_poisson.h>
@@ -209,4 +210,4 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_H_ */
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_H_ */

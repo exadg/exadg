@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_INPUT_PARAMETERS_H_
-#define INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_INPUT_PARAMETERS_H_
+#ifndef EXADG_STRUCTURE_USER_INTERFACE_PARAMETERS_H_
+#define EXADG_STRUCTURE_USER_INTERFACE_PARAMETERS_H_
 
 // ExaDG
 #include <exadg/grid/grid_data.h>
@@ -248,4 +248,4 @@ public:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_USER_INTERFACE_PARAMETERS_H_ */

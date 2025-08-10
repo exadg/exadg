@@ -112,7 +112,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_boundary_
                                                    q_points,
                                                    this->evaluation_time);
 
-        scalar flux_times_normal = rhs * integrator.get_normal_vector(q);
+        scalar flux_times_normal = rhs * integrator.normal_vector(q);
         // minus sign is introduced here which allows to call a function of type ...add()
         // and avoids a scaling of the resulting vector by the factor -1.0
         integrator.submit_value(-flux_times_normal, q);
@@ -200,7 +200,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
       if(boundary_type == BoundaryTypeU::Dirichlet or
          boundary_type == BoundaryTypeU::DirichletCached)
       {
-        vector normal = pressure.get_normal_vector(q);
+        vector normal = pressure.normal_vector(q);
 
         vector u      = velocity.get_value(q);
         tensor grad_u = velocity.get_gradient(q);
@@ -294,7 +294,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_numerical_time_derivative_
     {
       if(boundary_type == BoundaryTypeP::Neumann)
       {
-        vector normal = integrator_velocity.get_normal_vector(q);
+        vector normal = integrator_velocity.normal_vector(q);
         vector dudt   = integrator_velocity.get_value(q);
         scalar h      = -normal * dudt;
 
@@ -366,7 +366,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_bounda
                                                    q_points,
                                                    this->evaluation_time);
 
-        vector normal = integrator.get_normal_vector(q);
+        vector normal = integrator.normal_vector(q);
 
         scalar h = normal * rhs;
 
@@ -439,7 +439,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_boundary_fa
     {
       if(boundary_type == BoundaryTypeP::Neumann)
       {
-        vector normal = pressure.get_normal_vector(q);
+        vector normal = pressure.normal_vector(q);
 
         vector u      = velocity.get_value(q);
         tensor grad_u = velocity.get_gradient(q);
@@ -528,13 +528,11 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary_face(
 
       if(boundary_type == BoundaryTypeP::Neumann)
       {
-        scalar h = dealii::make_vectorized_array<Number>(0.0);
+        vector const normal = pressure.normal_vector(q);
 
-        vector normal = pressure.get_normal_vector(q);
+        vector const curl_omega = CurlCompute<dim, FaceIntegratorU>::compute(omega, q);
 
-        vector curl_omega = CurlCompute<dim, FaceIntegratorU>::compute(omega, q);
-
-        h = -normal * (viscosity * curl_omega);
+        scalar const h = -normal * (viscosity * curl_omega);
 
         pressure.submit_value(h, q);
       }
@@ -595,11 +593,8 @@ OperatorDualSplitting<dim, Number>::local_interpolate_velocity_dirichlet_bc_boun
   VectorType const &,
   Range const & face_range) const
 {
-  unsigned int const dof_index = this->get_dof_index_velocity();
-  AssertThrow(
-    matrix_free.get_dof_handler(dof_index).get_triangulation().all_reference_cells_are_hyper_cube(),
-    dealii::ExcMessage("This function is only implemented for hypercube elements."));
-  unsigned int const quad_index = this->get_quad_index_velocity_gauss_lobatto();
+  unsigned int const dof_index  = this->get_dof_index_velocity();
+  unsigned int const quad_index = this->get_quad_index_velocity_nodal_points();
 
   FaceIntegratorU integrator(matrix_free, true, dof_index, quad_index);
 

@@ -21,12 +21,12 @@
 
 // deal.II
 #include <deal.II/fe/fe_values.h>
-#include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
 #include <exadg/convection_diffusion/preconditioners/multigrid_preconditioner.h>
 #include <exadg/convection_diffusion/spatial_discretization/operator.h>
 #include <exadg/convection_diffusion/spatial_discretization/project_velocity.h>
+#include <exadg/functions_and_boundary_conditions/interpolate.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/operators/finite_element.h>
 #include <exadg/operators/grid_related_time_step_restrictions.h>
@@ -50,7 +50,7 @@ Operator<dim, Number>::Operator(
   Parameters const &                                    param_in,
   std::string const &                                   field_in,
   MPI_Comm const &                                      mpi_comm_in)
-  : dealii::Subscriptor(),
+  : dealii::EnableObserverPointer(),
     grid(grid_in),
     mapping(mapping_in),
     multigrid_mappings(multigrid_mappings_in),
@@ -160,7 +160,7 @@ void
 Operator<dim, Number>::setup_operators()
 {
   // mass operator
-  MassOperatorData<dim> mass_operator_data;
+  MassOperatorData<dim, Number> mass_operator_data;
   mass_operator_data.dof_index            = get_dof_index();
   mass_operator_data.quad_index           = get_quad_index();
   mass_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
@@ -170,7 +170,7 @@ Operator<dim, Number>::setup_operators()
   mass_operator.initialize(*matrix_free, affine_constraints, mass_operator_data);
 
   // inverse mass operator
-  InverseMassOperatorData inverse_mass_operator_data;
+  InverseMassOperatorData<Number> inverse_mass_operator_data;
   inverse_mass_operator_data.dof_index  = get_dof_index();
   inverse_mass_operator_data.quad_index = get_quad_index();
   inverse_mass_operator_data.parameters = param.inverse_mass_operator;
@@ -390,7 +390,7 @@ Operator<dim, Number>::setup_preconditioner()
 {
   if(param.preconditioner == Preconditioner::InverseMassMatrix)
   {
-    InverseMassOperatorData inverse_mass_operator_data;
+    InverseMassOperatorData<Number> inverse_mass_operator_data;
     inverse_mass_operator_data.dof_index  = get_dof_index();
     inverse_mass_operator_data.quad_index = get_quad_index();
     inverse_mass_operator_data.parameters = param.inverse_mass_preconditioner;
@@ -551,19 +551,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::interpolate_velocity(VectorType & velocity, double const time) const
 {
-  field_functions->velocity->set_time(time);
-
-  // This is necessary if Number == float
-  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-
-  VectorTypeDouble vector_double;
-  vector_double = velocity;
-
-  dealii::VectorTools::interpolate(get_dof_handler_velocity(),
-                                   *(field_functions->velocity),
-                                   vector_double);
-
-  velocity = vector_double;
+  Utilities::interpolate(get_dof_handler_velocity(), *(field_functions->velocity), velocity, time);
 }
 
 template<int dim, typename Number>
@@ -572,7 +560,7 @@ Operator<dim, Number>::project_velocity(VectorType & velocity, double const time
 {
   VelocityProjection<dim, Number> l2_projection;
 
-  InverseMassOperatorData inverse_mass_operator_data_l2_projection;
+  InverseMassOperatorData<Number> inverse_mass_operator_data_l2_projection;
   inverse_mass_operator_data_l2_projection.dof_index  = get_dof_index_velocity();
   inverse_mass_operator_data_l2_projection.quad_index = get_quad_index();
 
@@ -587,17 +575,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::prescribe_initial_conditions(VectorType & src, double const time) const
 {
-  field_functions->initial_solution->set_time(time);
-
-  // This is necessary if Number == float
-  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-
-  VectorTypeDouble src_double;
-  src_double = src;
-
-  dealii::VectorTools::interpolate(dof_handler, *(field_functions->initial_solution), src_double);
-
-  src = src_double;
+  Utilities::interpolate(dof_handler, *(field_functions->initial_solution), src, time);
 }
 
 template<int dim, typename Number>

@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_VISCOUS_OPERATOR_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_VISCOUS_OPERATOR_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_VISCOUS_OPERATOR_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_VISCOUS_OPERATOR_H_
 
+// ExaDG
 #include <exadg/grid/grid_data.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/weak_boundary_conditions.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
@@ -62,6 +63,7 @@ template<int dim, typename Number>
 class ViscousKernel
 {
 private:
+  typedef dealii::LinearAlgebra::distributed::Vector<Number>      VectorType;
   typedef dealii::VectorizedArray<Number>                         scalar;
   typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
   typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
@@ -78,11 +80,12 @@ public:
   reinit(dealii::MatrixFree<dim, Number> const & matrix_free,
          ViscousKernelData const &               data,
          unsigned int const                      dof_index,
-         unsigned int const                      quad_index)
+         unsigned int const                      quad_index,
+         bool const                              use_velocity_own_storage)
   {
-    this->data = data;
-
-    this->quad_index = quad_index;
+    this->data                     = data;
+    this->quad_index               = quad_index;
+    this->use_velocity_own_storage = use_velocity_own_storage;
 
     dealii::FiniteElement<dim> const & fe = matrix_free.get_dof_handler(dof_index).get_fe();
     this->degree                          = fe.degree;
@@ -97,6 +100,12 @@ public:
       viscosity_coefficients.initialize(matrix_free, quad_index, true, false);
       viscosity_coefficients.set_coefficients(data.viscosity);
     }
+
+    // initialize vector holding the velocity
+    if(this->use_velocity_own_storage)
+    {
+      matrix_free.initialize_dof_vector(velocity, dof_index);
+    }
   }
 
   void
@@ -110,6 +119,36 @@ public:
   get_data() const
   {
     return this->data;
+  }
+
+  bool
+  get_use_velocity_own_storage() const
+  {
+    return this->use_velocity_own_storage;
+  }
+
+  VectorType const &
+  get_velocity() const
+  {
+    AssertThrow(this->use_velocity_own_storage,
+                dealii::ExcMessage("Velocity vector not stored in the viscous kernel."));
+
+    return velocity;
+  }
+
+  void
+  set_velocity_copy(VectorType const & src)
+  {
+    AssertThrow(this->use_velocity_own_storage,
+                dealii::ExcMessage("Velocity vector not stored in the viscous kernel."));
+
+    this->velocity = src;
+  }
+
+  VariableCoefficients<dealii::VectorizedArray<Number>> const *
+  get_viscosity_coefficients() const
+  {
+    return &viscosity_coefficients;
   }
 
   unsigned int
@@ -435,7 +474,7 @@ public:
                   dealii::ExcMessage("Specified formulation of viscous term is not implemented."));
     }
 
-    vector normal_gradient = gradient * integrator.get_normal_vector(q);
+    vector normal_gradient = gradient * integrator.normal_vector(q);
 
     return normal_gradient;
   }
@@ -542,6 +581,9 @@ private:
 
   mutable scalar tau;
 
+  bool       use_velocity_own_storage;
+  VectorType velocity;
+
   VariableCoefficients<dealii::VectorizedArray<Number>> viscosity_coefficients;
 };
 
@@ -624,5 +666,5 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_VISCOUS_OPERATOR_H_ \
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_VISCOUS_OPERATOR_H_ \
         */

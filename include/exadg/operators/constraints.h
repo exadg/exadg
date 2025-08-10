@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_CONSTRAINTS_H_
-#define INCLUDE_EXADG_OPERATORS_CONSTRAINTS_H_
+#ifndef EXADG_OPERATORS_CONSTRAINTS_H_
+#define EXADG_OPERATORS_CONSTRAINTS_H_
 
 // deal.II
 #include <deal.II/dofs/dof_tools.h>
@@ -40,9 +40,9 @@ add_hanging_node_and_periodicity_constraints(dealii::AffineConstraints<Number> &
                                              Grid<dim> const &                   grid,
                                              dealii::DoFHandler<dim> const &     dof_handler)
 {
-  dealii::IndexSet locally_relevant_dofs;
-  dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
-  affine_constraints.reinit(locally_relevant_dofs);
+  dealii::IndexSet const locally_relevant_dofs =
+    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler);
+  affine_constraints.reinit(dof_handler.locally_owned_dofs(), locally_relevant_dofs);
 
   // hanging nodes (needs to be done before imposing periodicity constraints
   if(grid.triangulation->has_hanging_nodes())
@@ -118,4 +118,4 @@ add_homogeneous_dirichlet_constraints(
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_OPERATORS_CONSTRAINTS_H_ */
+#endif /* EXADG_OPERATORS_CONSTRAINTS_H_ */

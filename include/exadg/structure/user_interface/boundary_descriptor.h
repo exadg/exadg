@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_
-#define INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_
+#ifndef EXADG_STRUCTURE_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_
+#define EXADG_STRUCTURE_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_
 
 // deal.II
 #include <deal.II/base/function.h>
@@ -217,4 +217,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_ */

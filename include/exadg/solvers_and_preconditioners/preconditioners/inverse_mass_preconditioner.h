@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_INVERSEMASSMATRIXPRECONDITIONER_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_INVERSEMASSMATRIXPRECONDITIONER_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONERS_INVERSE_MASS_PRECONDITIONER_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONERS_INVERSE_MASS_PRECONDITIONER_H_
 
+// ExaDG
 #include <exadg/operators/inverse_mass_operator.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 
@@ -44,7 +45,7 @@ public:
   typedef typename PreconditionerBase<Number>::VectorType VectorType;
 
   InverseMassPreconditioner(dealii::MatrixFree<dim, Number> const & matrix_free,
-                            InverseMassOperatorData const           inverse_mass_operator_data)
+                            InverseMassOperatorData<Number> const   inverse_mass_operator_data)
   {
     inverse_mass_operator.initialize(matrix_free, inverse_mass_operator_data);
 
@@ -68,7 +69,7 @@ public:
 private:
   InverseMassOperator<dim, n_components, Number> inverse_mass_operator;
 };
+
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_INVERSEMASSMATRIXPRECONDITIONER_H_ */
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONERS_INVERSE_MASS_PRECONDITIONER_H_ */

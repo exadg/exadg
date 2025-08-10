@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_MULTIGRID_PRECONDITIONER_H_
-#define INCLUDE_CONVECTION_DIFFUSION_MULTIGRID_PRECONDITIONER_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
+#define EXADG_CONVECTION_DIFFUSION_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
 
+// ExaDG
 #include <exadg/convection_diffusion/spatial_discretization/operators/combined_operator.h>
 #include <exadg/operators/multigrid_operator.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h>
@@ -122,4 +123,4 @@ private:
 } // namespace ConvDiff
 } // namespace ExaDG
 
-#endif /* INCLUDE_CONVECTION_DIFFUSION_MULTIGRID_PRECONDITIONER_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_ */

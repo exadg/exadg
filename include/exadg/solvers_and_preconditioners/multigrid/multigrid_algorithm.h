@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MULTIGRID_ALGORITHM_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MULTIGRID_ALGORITHM_H_
 
 // deal.II
 #include <deal.II/base/function_lib.h>
@@ -290,12 +290,12 @@ private:
   /**
    * The matrix for each level.
    */
-  dealii::SmartPointer<dealii::MGLevelObject<std::shared_ptr<MatrixType>> const> matrix;
+  dealii::ObserverPointer<dealii::MGLevelObject<std::shared_ptr<MatrixType>> const> matrix;
 
   /**
    * The matrix for each level.
    */
-  dealii::SmartPointer<dealii::MGCoarseGridBase<VectorType> const> coarse;
+  dealii::ObserverPointer<dealii::MGCoarseGridBase<VectorType> const> coarse;
 
   /**
    * Object for grid transfer.
@@ -305,7 +305,7 @@ private:
   /**
    * The smoothing object.
    */
-  dealii::SmartPointer<dealii::MGLevelObject<std::shared_ptr<SmootherType>> const> smoother;
+  dealii::ObserverPointer<dealii::MGLevelObject<std::shared_ptr<SmootherType>> const> smoother;
 
   MPI_Comm const mpi_comm;
 
@@ -316,4 +316,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_ */
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MULTIGRID_ALGORITHM_H_ */

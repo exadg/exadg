@@ -76,9 +76,9 @@ private:
 
   OutputData output_data;
 
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_pressure;
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_velocity;
-  dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler_pressure;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler_velocity;
+  dealii::ObserverPointer<dealii::Mapping<dim> const>    mapping;
 };
 
 } // namespace Acoustics

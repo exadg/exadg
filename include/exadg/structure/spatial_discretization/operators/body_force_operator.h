@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_RHS_OPERATOR_H_
-#define INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_RHS_OPERATOR_H_
+#ifndef EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_BODY_FORCE_OPERATOR_H_
+#define EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_BODY_FORCE_OPERATOR_H_
 
 // ExaDG
 #include <exadg/matrix_free/integrators.h>
@@ -95,4 +95,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_BODY_FORCE_OPERATOR_H_ */

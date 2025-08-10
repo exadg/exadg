@@ -21,10 +21,10 @@
 
 // deal.II
 #include <deal.II/base/timer.h>
-#include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
 #include <exadg/compressible_navier_stokes/spatial_discretization/operator.h>
+#include <exadg/functions_and_boundary_conditions/interpolate.h>
 #include <exadg/operators/finite_element.h>
 #include <exadg/operators/grid_related_time_step_restrictions.h>
 #include <exadg/operators/quadrature.h>
@@ -42,7 +42,7 @@ Operator<dim, Number>::Operator(
   Parameters const &                             param_in,
   std::string const &                            field_in,
   MPI_Comm const &                               mpi_comm_in)
-  : dealii::Subscriptor(),
+  : dealii::EnableObserverPointer(),
     grid(grid_in),
     mapping(mapping_in),
     boundary_descriptor(boundary_descriptor_in),
@@ -164,19 +164,19 @@ Operator<dim, Number>::setup_operators()
   mass_operator.initialize(*matrix_free, mass_operator_data);
 
   // inverse mass operator
-  InverseMassOperatorData inverse_mass_operator_data_all;
+  InverseMassOperatorData<Number> inverse_mass_operator_data_all;
   inverse_mass_operator_data_all.dof_index  = get_dof_index_all();
   inverse_mass_operator_data_all.quad_index = get_quad_index_standard();
   inverse_mass_operator_data_all.parameters = param.inverse_mass_operator;
   inverse_mass_all.initialize(*matrix_free, inverse_mass_operator_data_all);
 
-  InverseMassOperatorData inverse_mass_operator_data_vector;
+  InverseMassOperatorData<Number> inverse_mass_operator_data_vector;
   inverse_mass_operator_data_vector.dof_index  = get_dof_index_vector();
   inverse_mass_operator_data_vector.quad_index = get_quad_index_standard();
   inverse_mass_operator_data_vector.parameters = param.inverse_mass_operator;
   inverse_mass_vector.initialize(*matrix_free, inverse_mass_operator_data_vector);
 
-  InverseMassOperatorData inverse_mass_operator_data_scalar;
+  InverseMassOperatorData<Number> inverse_mass_operator_data_scalar;
   inverse_mass_operator_data_scalar.dof_index  = get_dof_index_scalar();
   inverse_mass_operator_data_scalar.quad_index = get_quad_index_standard();
   inverse_mass_operator_data_scalar.parameters = param.inverse_mass_operator;
@@ -323,20 +323,8 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::prescribe_initial_conditions(VectorType & src, double const time) const
 {
-  this->field_functions->initial_solution->set_time(time);
-
-  // This is necessary if Number == float
-  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-
-  VectorTypeDouble src_double;
-  src_double = src;
-
-  dealii::VectorTools::interpolate(*mapping,
-                                   dof_handler,
-                                   *(this->field_functions->initial_solution),
-                                   src_double);
-
-  src = src_double;
+  Utilities::interpolate(
+    *mapping, dof_handler, *(this->field_functions->initial_solution), src, time);
 }
 
 template<int dim, typename Number>

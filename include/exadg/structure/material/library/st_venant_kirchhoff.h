@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef STRUCTURE_MATERIAL_LIBRARY_STVENANTKIRCHHOFF
-#define STRUCTURE_MATERIAL_LIBRARY_STVENANTKIRCHHOFF
+#ifndef EXADG_STRUCTURE_MATERIAL_LIBRARY_ST_VENANT_KIRCHHOFF_H_
+#define EXADG_STRUCTURE_MATERIAL_LIBRARY_ST_VENANT_KIRCHHOFF_H_
 
 // deal.II
 #include <deal.II/base/function.h>
@@ -144,7 +144,8 @@ private:
   mutable VariableCoefficients<dealii::VectorizedArray<Number>> f1_coefficients;
   mutable VariableCoefficients<dealii::VectorizedArray<Number>> f2_coefficients;
 };
+
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_MATERIAL_LIBRARY_ST_VENANT_KIRCHHOFF_H_ */

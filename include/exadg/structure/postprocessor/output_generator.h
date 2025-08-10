@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_POSTPROCESSOR_OUTPUT_GENERATOR_H_
-#define INCLUDE_EXADG_STRUCTURE_POSTPROCESSOR_OUTPUT_GENERATOR_H_
+#ifndef EXADG_STRUCTURE_POSTPROCESSOR_OUTPUT_GENERATOR_H_
+#define EXADG_STRUCTURE_POSTPROCESSOR_OUTPUT_GENERATOR_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -54,12 +54,12 @@ public:
 private:
   MPI_Comm const mpi_comm;
 
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
-  dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;
-  OutputDataBase                                      output_data;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler;
+  dealii::ObserverPointer<dealii::Mapping<dim> const>    mapping;
+  OutputDataBase                                         output_data;
 };
 
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_POSTPROCESSOR_OUTPUT_GENERATOR_H_ */

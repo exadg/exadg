@@ -19,21 +19,33 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_OPERATORS_MASS_OPERATOR_H_
-#define INCLUDE_OPERATORS_MASS_OPERATOR_H_
+#ifndef EXADG_OPERATORS_MASS_OPERATOR_H_
+#define EXADG_OPERATORS_MASS_OPERATOR_H_
 
+// ExaDG
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/mass_kernel.h>
 #include <exadg/operators/operator_base.h>
+#include <exadg/operators/variable_coefficients.h>
 
 namespace ExaDG
 {
-template<int dim>
+template<int dim, typename Number>
 struct MassOperatorData : public OperatorBaseData
 {
-  MassOperatorData() : OperatorBaseData()
+  MassOperatorData()
+    : OperatorBaseData(),
+      coefficient_is_variable(false),
+      variable_coefficients(nullptr),
+      consider_inverse_coefficient(false)
   {
   }
+
+  // variable coefficients
+  bool                                                          coefficient_is_variable;
+  VariableCoefficients<dealii::VectorizedArray<Number>> const * variable_coefficients;
+  // use the inverse of the coefficients stored in `variable_coefficients`
+  bool consider_inverse_coefficient;
 };
 
 template<int dim, int n_components, typename Number>
@@ -52,7 +64,7 @@ public:
   void
   initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
              dealii::AffineConstraints<Number> const & affine_constraints,
-             MassOperatorData<dim> const &             data);
+             MassOperatorData<dim, Number> const &     data);
 
   void
   set_scaling_factor(Number const & number);
@@ -70,8 +82,11 @@ private:
   MassKernel<dim, Number> kernel;
 
   mutable double scaling_factor;
+
+  // Variable coefficients not managed by this class.
+  MassOperatorData<dim, Number> operator_data;
 };
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_OPERATORS_MASS_OPERATOR_H_ */
+#endif /* EXADG_OPERATORS_MASS_OPERATOR_H_ */

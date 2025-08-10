@@ -77,7 +77,7 @@ OperatorPressureCorrection<dim, Number>::setup_inverse_mass_operator_pressure()
 {
   // inverse mass operator pressure (needed for pressure update in case of rotational
   // formulation)
-  InverseMassOperatorData inverse_mass_operator_data_pressure;
+  InverseMassOperatorData<Number> inverse_mass_operator_data_pressure;
   inverse_mass_operator_data_pressure.dof_index  = this->get_dof_index_pressure();
   inverse_mass_operator_data_pressure.quad_index = this->get_quad_index_pressure();
   inverse_mass_operator_data_pressure.parameters = this->param.inverse_mass_operator;
@@ -226,11 +226,8 @@ OperatorPressureCorrection<dim, Number>::local_interpolate_pressure_dirichlet_bc
   VectorType const &,
   Range const & face_range) const
 {
-  unsigned int const dof_index = this->get_dof_index_pressure();
-  AssertThrow(
-    matrix_free.get_dof_handler(dof_index).get_triangulation().all_reference_cells_are_hyper_cube(),
-    dealii::ExcMessage("This function is only implemented for hypercube elements."));
-  unsigned int const quad_index = this->get_quad_index_pressure_gauss_lobatto();
+  unsigned int const dof_index  = this->get_dof_index_pressure();
+  unsigned int const quad_index = this->get_quad_index_pressure_nodal_points();
 
   FaceIntegratorP integrator(matrix_free, true, dof_index, quad_index);
 

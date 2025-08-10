@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_ENUM_TYPES_H_
-#define INCLUDE_EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_ENUM_TYPES_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_ENUM_TYPES_H_
+#define EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_ENUM_TYPES_H_
 
+// C/C++
 #include <string>
 
 namespace ExaDG
@@ -219,5 +220,4 @@ enum class MultigridOperatorType
 } // namespace ConvDiff
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_ENUM_TYPES_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_ENUM_TYPES_H_ */

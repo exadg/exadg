@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_
 
+// ExaDG
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf.h>
 
 namespace ExaDG
@@ -36,6 +37,9 @@ template<int dim, typename Number>
 class TimeIntBDFDualSplitting : public TimeIntBDF<dim, Number>
 {
 private:
+  using BoostInputArchiveType  = TimeIntBase::BoostInputArchiveType;
+  using BoostOutputArchiveType = TimeIntBase::BoostOutputArchiveType;
+
   typedef TimeIntBDF<dim, Number> Base;
 
   typedef typename Base::VectorType VectorType;
@@ -80,10 +84,10 @@ private:
   setup_derived() final;
 
   void
-  read_restart_vectors(boost::archive::binary_iarchive & ia) final;
+  read_restart_vectors(BoostInputArchiveType & ia) final;
 
   void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const final;
+  write_restart_vectors(BoostOutputArchiveType & oa) const final;
 
   void
   do_timestep_solve() final;
@@ -188,5 +192,5 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_ \
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_ \
         */

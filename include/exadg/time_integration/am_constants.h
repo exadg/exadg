@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_AM_CONSTANTS_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_AM_CONSTANTS_H_
+#ifndef EXADG_TIME_INTEGRATION_AM_CONSTANTS_H_
+#define EXADG_TIME_INTEGRATION_AM_CONSTANTS_H_
 
 // C/C++
 #include <vector>
@@ -64,4 +64,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_AM_CONSTANTS_H_ */
+#endif /* EXADG_TIME_INTEGRATION_AM_CONSTANTS_H_ */

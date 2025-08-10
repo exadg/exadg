@@ -30,7 +30,7 @@
         "AbsTol": "1.e-9",
         "RelTol": "1.e-3",
         "OmegaInit": "0.3",
-        "UseExtrapolation": "false",
+        "InitialGuessCouplingScheme": "ConvergedSolutionPreviousTimeStep",
         "PartitionedIterMax": "100",
         "ReusedTimeSteps": "10",
         "GeometricTolerance": "1.e-8"

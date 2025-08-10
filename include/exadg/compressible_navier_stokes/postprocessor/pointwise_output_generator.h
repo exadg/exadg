@@ -19,11 +19,13 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_H_
-#define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_H_
+#ifndef EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_H_
+#define EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_H_
 
+// deal.II
 #include <deal.II/lac/la_parallel_vector.h>
 
+// ExaDG
 #include <exadg/postprocessor/pointwise_output_generator_base.h>
 
 namespace ExaDG
@@ -60,13 +62,11 @@ public:
   evaluate(VectorType const & solution, double const time, bool const unsteady);
 
 private:
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
-  PointwiseOutputData<dim>                            pointwise_output_data;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler;
+  PointwiseOutputData<dim>                               pointwise_output_data;
 };
 
 } // namespace CompNS
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_H_ \
-        */
+#endif /* EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_H_ */

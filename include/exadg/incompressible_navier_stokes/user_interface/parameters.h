@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_PARAMETERS_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_PARAMETERS_H_
 
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
@@ -472,14 +472,10 @@ public:
   /*                 Solver parameters for mass matrix problem                          */
   /*                                                                                    */
   /**************************************************************************************/
-  // These parameters are relevant if the inverse mass can not be realized as a
-  // matrix-free operator evaluation. The typical use case is a DG formulation with non
-  // hypercube elements (e.g. simplex).
-
+  // These parameters are relevant if the inverse mass can not be realized as a cell-wise
+  // matrix-free operator evaluation. The typical use case is a DG formulation with non hypercube
+  // elements (e.g. simplex) or a continuous finite element space.
   InverseMassParameters inverse_mass_operator;
-
-  // This parameter is only relevant if an H(div)-conforming formulation is chosen.
-  InverseMassParametersHdiv inverse_mass_operator_hdiv;
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -681,7 +677,7 @@ public:
   // The momentum block is inverted "exactly" in block preconditioner
   // by solving the velocity convection-diffusion problem to a given
   // relative tolerance
-  bool exact_inversion_of_velocity_block;
+  bool iterative_solve_of_velocity_block;
 
   // solver data for velocity block (only relevant if velocity block
   // is inverted exactly)
@@ -695,14 +691,14 @@ public:
 
   // The Laplace operator is inverted "exactly" in block preconditioner
   // by solving the Laplace problem to a given relative tolerance
-  bool exact_inversion_of_laplace_operator;
+  bool iterative_solve_of_pressure_block;
 
   // solver data for Schur complement
-  // (only relevant if exact_inversion_of_laplace_operator == true)
+  // (only relevant if iterative_solve_of_pressure_block == true)
   SolverData solver_data_pressure_block;
 };
 
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_ */
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_PARAMETERS_H_ */

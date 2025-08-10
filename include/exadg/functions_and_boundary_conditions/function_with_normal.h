@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_FUNCTION_WITH_NORMAL_H_
-#define INCLUDE_FUNCTION_WITH_NORMAL_H_
+#ifndef EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_FUNCTION_WITH_NORMAL_H_
+#define EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_FUNCTION_WITH_NORMAL_H_
 
 namespace ExaDG
 {
@@ -59,4 +59,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_FUNCTION_WITH_NORMAL_H_ */
+#endif /* EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_FUNCTION_WITH_NORMAL_H_ */

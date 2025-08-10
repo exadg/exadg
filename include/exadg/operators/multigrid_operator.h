@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_MULTIGRID_OPERATOR_H_
-#define INCLUDE_EXADG_OPERATORS_MULTIGRID_OPERATOR_H_
+#ifndef EXADG_OPERATORS_MULTIGRID_OPERATOR_H_
+#define EXADG_OPERATORS_MULTIGRID_OPERATOR_H_
 
+// ExaDG
 #include <exadg/operators/multigrid_operator_base.h>
 
 namespace ExaDG
@@ -191,10 +192,17 @@ public:
   }
 #endif
 
+  void
+  get_constant_modes(std::vector<std::vector<bool>> &   constant_modes,
+                     std::vector<std::vector<double>> & constant_modes_values) const final
+  {
+    pde_operator->get_constant_modes(constant_modes, constant_modes_values);
+  }
+
 private:
   std::shared_ptr<Operator> pde_operator;
 };
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_OPERATORS_MULTIGRID_OPERATOR_H_ */
+#endif /* EXADG_OPERATORS_MULTIGRID_OPERATOR_H_ */

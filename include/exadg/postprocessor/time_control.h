@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_TIME_CONTROL_H_
-#define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_TIME_CONTROL_H_
+#ifndef EXADG_POSTPROCESSOR_TIME_CONTROL_H_
+#define EXADG_POSTPROCESSOR_TIME_CONTROL_H_
 
 /**
  *This class provides information at which time steps a certain action should be triggered. It is
@@ -77,7 +77,7 @@ public:
   bool
   reached_end_time() const;
 
-  bool
+  double
   get_epsilon() const;
 
 private:
@@ -90,8 +90,6 @@ private:
   TimeControlData time_control_data;
 };
 
-
 } // namespace ExaDG
 
-
-#endif /*INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_TIME_CONTROL_H_*/
+#endif /* EXADG_POSTPROCESSOR_TIME_CONTROL_H_ */

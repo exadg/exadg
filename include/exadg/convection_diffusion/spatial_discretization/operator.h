@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_H_
-#define INCLUDE_EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATOR_H_
+#define EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATOR_H_
 
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
@@ -45,7 +45,7 @@ namespace ExaDG
 namespace ConvDiff
 {
 template<int dim, typename Number>
-class Operator : public dealii::Subscriptor, public Interface::Operator<Number>
+class Operator : public dealii::EnableObserverPointer, public Interface::Operator<Number>
 {
 private:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -455,4 +455,4 @@ private:
 } // namespace ConvDiff
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATOR_H_ */

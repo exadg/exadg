@@ -19,23 +19,17 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SOLVER_PRECURSOR_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SOLVER_PRECURSOR_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_PRECURSOR_SOLVER_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_PRECURSOR_SOLVER_H_
 
 // deal.II
 #include <deal.II/base/parameter_handler.h>
 
 // ExaDG
-#include <exadg/utilities/enum_patterns.h>
-
-// driver
 #include <exadg/incompressible_navier_stokes/precursor/driver.h>
-
-// utilities
-#include <exadg/utilities/general_parameters.h>
-
-// application
 #include <exadg/incompressible_navier_stokes/precursor/user_interface/declare_get_application.h>
+#include <exadg/utilities/enum_patterns.h>
+#include <exadg/utilities/general_parameters.h>
 
 namespace ExaDG
 {
@@ -142,4 +136,4 @@ main(int argc, char ** argv)
   return 0;
 }
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SOLVER_PRECURSOR_H_ */
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_PRECURSOR_SOLVER_H_ */

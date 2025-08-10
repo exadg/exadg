@@ -22,6 +22,7 @@
 #ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_BASE_H_
 #define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_BASE_H_
 
+// ExaDG
 #include <exadg/acoustic_conservation_equations/postprocessor/postprocessor_interface.h>
 #include <exadg/acoustic_conservation_equations/spatial_discretization/spatial_operator.h>
 
@@ -51,7 +52,6 @@ public:
   virtual void
   setup(AcousticsOperator const & pde_operator) = 0;
 };
-
 
 } // namespace Acoustics
 } // namespace ExaDG

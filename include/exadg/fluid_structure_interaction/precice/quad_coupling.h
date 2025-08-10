@@ -19,11 +19,13 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_QUAD_COUPLING_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_QUAD_COUPLING_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_QUAD_COUPLING_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_QUAD_COUPLING_H_
 
+// deal.II
 #include <deal.II/matrix_free/fe_evaluation.h>
 
+// ExaDG
 #include <exadg/fluid_structure_interaction/precice/coupling_base.h>
 
 namespace ExaDG
@@ -327,4 +329,4 @@ QuadCoupling<dim, data_dim, VectorizedArrayType>::get_surface_type() const
 } // namespace preCICE
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_QUAD_COUPLING_H_ */

@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_NEWTON_NEWTON_SOLVER_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_NEWTON_NEWTON_SOLVER_H_
 
 // deal.II
 #include <deal.II/base/exceptions.h>
@@ -175,4 +175,4 @@ private:
 } // namespace Newton
 } // namespace ExaDG
 
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_H_ */
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_NEWTON_NEWTON_SOLVER_H_ */

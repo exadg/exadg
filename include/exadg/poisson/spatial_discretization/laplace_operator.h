@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef LAPLACE_OPERATOR_H
-#define LAPLACE_OPERATOR_H
+#ifndef EXADG_POISSON_SPATIAL_DISCRETIZATION_LAPLACE_OPERATOR_H_
+#define EXADG_POISSON_SPATIAL_DISCRETIZATION_LAPLACE_OPERATOR_H_
 
+// ExaDG
 #include <exadg/grid/grid_data.h>
 #include <exadg/operators/interior_penalty_parameter.h>
 #include <exadg/operators/operator_base.h>
@@ -350,4 +351,4 @@ private:
 } // namespace Poisson
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_POISSON_SPATIAL_DISCRETIZATION_LAPLACE_OPERATOR_H_ */

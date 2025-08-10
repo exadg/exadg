@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_DRIVER_H_
-#define INCLUDE_EXADG_STRUCTURE_DRIVER_H_
+#ifndef EXADG_STRUCTURE_DRIVER_H_
+#define EXADG_STRUCTURE_DRIVER_H_
 
 // deal.II
 #include <deal.II/distributed/fully_distributed_tria.h>
@@ -97,9 +97,6 @@ private:
 
   std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
 
-  // user parameters
-  Parameters param;
-
   // operator
   std::shared_ptr<Operator<dim, Number>> pde_operator;
 
@@ -122,4 +119,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_STRUCTURE_DRIVER_H_ */
+#endif /* EXADG_STRUCTURE_DRIVER_H_ */

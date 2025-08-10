@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_MESH_H_
-#define INCLUDE_FUNCTIONALITIES_MESH_H_
+#ifndef EXADG_GRID_MAPPING_DOF_VECTOR_H_
+#define EXADG_GRID_MAPPING_DOF_VECTOR_H_
 
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
@@ -123,11 +123,11 @@ public:
   {
     if(grid_coordinates.size() != dof_handler.n_dofs())
     {
-      dealii::IndexSet relevant_dofs_grid;
-      dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs_grid);
+      dealii::IndexSet const relevant_dofs_grid =
+        dealii::DoFTools::extract_locally_relevant_dofs(dof_handler);
       grid_coordinates.reinit(dof_handler.locally_owned_dofs(),
                               relevant_dofs_grid,
-                              dof_handler.get_communicator());
+                              dof_handler.get_mpi_communicator());
     }
     else
     {
@@ -221,11 +221,11 @@ public:
     VectorType displacement_vector_ghosted;
     if(dof_handler.n_dofs() > 0 and displacement_vector.size() == dof_handler.n_dofs())
     {
-      dealii::IndexSet locally_relevant_dofs;
-      dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+      dealii::IndexSet const locally_relevant_dofs =
+        dealii::DoFTools::extract_locally_relevant_dofs(dof_handler);
       displacement_vector_ghosted.reinit(dof_handler.locally_owned_dofs(),
                                          locally_relevant_dofs,
-                                         dof_handler.get_communicator());
+                                         dof_handler.get_mpi_communicator());
       displacement_vector_ghosted.copy_locally_owned_data_from(displacement_vector);
       displacement_vector_ghosted.update_ghost_values();
     }
@@ -378,8 +378,8 @@ initialize_coarse_mappings_from_mapping_dof_vector(
   // ghosting
   for(unsigned int level = 0; level < n_levels; level++)
   {
-    dealii::IndexSet relevant_dofs;
-    dealii::DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);
+    dealii::IndexSet const relevant_dofs =
+      dealii::DoFTools::extract_locally_relevant_level_dofs(dof_handler, level);
 
     grid_coordinates_all_levels_ghosted[level].reinit(
       dof_handler.locally_owned_mg_dofs(level),
@@ -525,12 +525,11 @@ initialize_coarse_mappings_from_mapping_dof_vector(
   // a function that initializes the dof-vector for a given level and dof_handler
   const std::function<void(unsigned int const, VectorType &)> initialize_dof_vector =
     [&](unsigned int const h_level, VectorType & vector) {
-      dealii::IndexSet locally_relevant_dofs;
-      dealii::DoFTools::extract_locally_relevant_dofs(dof_handlers_all_levels[h_level],
-                                                      locally_relevant_dofs);
+      dealii::IndexSet const locally_relevant_dofs =
+        dealii::DoFTools::extract_locally_relevant_dofs(dof_handlers_all_levels[h_level]);
       vector.reinit(dof_handlers_all_levels[h_level].locally_owned_dofs(),
                     locally_relevant_dofs,
-                    dof_handlers_all_levels[h_level].get_communicator());
+                    dof_handlers_all_levels[h_level].get_mpi_communicator());
     };
 
   dealii::MGTransferGlobalCoarsening<dim, VectorType> mg_transfer_global_coarsening(
@@ -606,9 +605,7 @@ initialize_coarse_mappings(
   }
 }
 
-
 } // namespace MappingTools
-
 } // namespace ExaDG
 
-#endif /* INCLUDE_FUNCTIONALITIES_MESH_H_ */
+#endif /* EXADG_GRID_MAPPING_DOF_VECTOR_H_ */

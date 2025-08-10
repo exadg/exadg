@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_SOLVER_INFO_DATA_H_
-#define INCLUDE_FUNCTIONALITIES_SOLVER_INFO_DATA_H_
+#ifndef EXADG_TIME_INTEGRATION_SOLVER_INFO_DATA_H_
+#define EXADG_TIME_INTEGRATION_SOLVER_INFO_DATA_H_
 
 // C/C++
 #include <limits>
@@ -117,5 +117,4 @@ struct SolverInfoData
 
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_FUNCTIONALITIES_SOLVER_INFO_DATA_H_ */
+#endif /* EXADG_TIME_INTEGRATION_SOLVER_INFO_DATA_H_ */

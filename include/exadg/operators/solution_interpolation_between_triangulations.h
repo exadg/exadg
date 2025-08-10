@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_SOLUTION_INTERPOLATION_BETWEEN_TRIANGULATIONS_H
-#define INCLUDE_EXADG_OPERATORS_SOLUTION_INTERPOLATION_BETWEEN_TRIANGULATIONS_H
+#ifndef EXADG_OPERATORS_SOLUTION_INTERPOLATION_BETWEEN_TRIANGULATIONS_H_
+#define EXADG_OPERATORS_SOLUTION_INTERPOLATION_BETWEEN_TRIANGULATIONS_H_
 
 // deal.II
 #include <deal.II/base/mpi_remote_point_evaluation.h>
@@ -160,11 +160,11 @@ private:
     }
   }
 
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_dst;
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_src;
-  dealii::Utilities::MPI::RemotePointEvaluation<dim>  rpe;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler_dst;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler_src;
+  dealii::Utilities::MPI::RemotePointEvaluation<dim>     rpe;
 };
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_OPERATORS_SOLUTION_INTERPOLATION_BETWEEN_TRIANGULATIONS_H */
+#endif /* EXADG_OPERATORS_SOLUTION_INTERPOLATION_BETWEEN_TRIANGULATIONS_H_ */

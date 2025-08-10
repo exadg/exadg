@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POSTPROCESSOR_STATISTICS_MANAGER_H_
-#define INCLUDE_EXADG_POSTPROCESSOR_STATISTICS_MANAGER_H_
+#ifndef EXADG_POSTPROCESSOR_STATISTICS_MANAGER_H_
+#define EXADG_POSTPROCESSOR_STATISTICS_MANAGER_H_
 
 // deal.II
 #include <deal.II/dofs/dof_handler.h>
@@ -149,4 +149,4 @@ private:
 
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_POSTPROCESSOR_STATISTICS_MANAGER_H_ */

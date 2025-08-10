@@ -19,21 +19,17 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_SOLVER_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_SOLVER_H_
+#ifndef EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_SOLVER_H_
+#define EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_SOLVER_H_
 
 // deal.II
 #include <deal.II/base/parameter_handler.h>
 
-// driver
+// ExaDG
 #include <exadg/incompressible_flow_with_transport/driver.h>
-
-// utilities
+#include <exadg/incompressible_flow_with_transport/user_interface/declare_get_application.h>
 #include <exadg/utilities/enum_patterns.h>
 #include <exadg/utilities/general_parameters.h>
-
-// application
-#include <exadg/incompressible_flow_with_transport/user_interface/declare_get_application.h>
 
 namespace ExaDG
 {
@@ -140,4 +136,4 @@ main(int argc, char ** argv)
   return 0;
 }
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_SOLVER_H_ */
+#endif /* EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_SOLVER_H_ */

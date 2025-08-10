@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_MARKED_VERTICES_H_
-#define INCLUDE_EXADG_GRID_MARKED_VERTICES_H_
+#ifndef EXADG_GRID_MARKED_VERTICES_H_
+#define EXADG_GRID_MARKED_VERTICES_H_
 
 // deal.II
 #include <deal.II/grid/tria.h>
@@ -71,6 +71,4 @@ get_marked_vertices_via_boundary_ids(dealii::Triangulation<dim> const &         
   return marked_vertices;
 }
 
-
-
-#endif /* INCLUDE_EXADG_GRID_MARKED_VERTICES_H_ */
+#endif /* EXADG_GRID_MARKED_VERTICES_H_ */

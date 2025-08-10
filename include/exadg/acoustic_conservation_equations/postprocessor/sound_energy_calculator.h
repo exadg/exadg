@@ -19,16 +19,18 @@
  *  ______________________________________________________________________
  */
 
+#ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_SOUND_ENERGY_CALCULATOR_H_
+#define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_SOUND_ENERGY_CALCULATOR_H_
 
-#ifndef EXADG_ACOUSTIC_CONSERVATION_LAWS_POSTPROCESSOR_POINTWISE_SOUND_ENERGY_CALCULATIOR_H_
-#define EXADG_ACOUSTIC_CONSERVATION_LAWS_POSTPROCESSOR_POINTWISE_SOUND_ENERGY_CALCULATIOR_H_
-
+// deal.II
 #include <deal.II/matrix_free/matrix_free.h>
 
+// ExaDG
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/utilities/create_directories.h>
 #include <exadg/utilities/print_functions.h>
 
+// C/C++
 #include <fstream>
 
 namespace ExaDG
@@ -255,4 +257,4 @@ private:
 } // namespace Acoustics
 } // namespace ExaDG
 
-#endif /*EXADG_ACOUSTIC_CONSERVATION_LAWS_POSTPROCESSOR_POINTWISE_SOUND_ENERGY_CALCULATIOR_H_*/
+#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_SOUND_ENERGY_CALCULATOR_H_ */

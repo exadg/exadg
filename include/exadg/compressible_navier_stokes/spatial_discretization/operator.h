@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_H_
-#define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_H_
+#ifndef EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_H_
+#define EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_H_
 
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
@@ -44,7 +44,7 @@ namespace ExaDG
 namespace CompNS
 {
 template<int dim, typename Number>
-class Operator : public dealii::Subscriptor, public Interface::Operator<Number>
+class Operator : public dealii::EnableObserverPointer, public Interface::Operator<Number>
 {
 private:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -298,4 +298,4 @@ private:
 } // namespace CompNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_CONVECTION_DIFFUSION_DG_CONVECTION_DIFFUSION_OPERATION_H_ */
+#endif /* EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_H_ */

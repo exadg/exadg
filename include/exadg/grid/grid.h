@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_GRID_H_
-#define INCLUDE_EXADG_GRID_GRID_H_
+#ifndef EXADG_GRID_GRID_H_
+#define EXADG_GRID_GRID_H_
 
 // deal.II
 #include <deal.II/grid/grid_tools.h>
@@ -276,5 +276,4 @@ private:
 
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_GRID_GRID_H_ */
+#endif /* EXADG_GRID_GRID_H_ */

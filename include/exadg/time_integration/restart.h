@@ -19,15 +19,21 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_RESTART_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_RESTART_H_
+#ifndef EXADG_TIME_INTEGRATION_RESTART_H_
+#define EXADG_TIME_INTEGRATION_RESTART_H_
 
 // C/C++
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
 #include <fstream>
 #include <sstream>
 
 // deal.II
 #include <deal.II/base/mpi.h>
+#include <deal.II/lac/la_parallel_block_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 
 namespace ExaDG
 {
@@ -66,6 +72,72 @@ write_restart_file(std::ostringstream & oss, std::string const & filename)
   stream << oss.str() << std::endl;
 }
 
+template<typename VectorType>
+inline void
+print_vector_l2_norm(VectorType const & vector)
+{
+  MPI_Comm const & mpi_comm = vector.get_mpi_communicator();
+  double const     l2_norm  = vector.l2_norm();
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  {
+    std::cout << "    vector global l2 norm: " << std::scientific << std::setprecision(8)
+              << std::setw(20) << l2_norm << "\n";
+  }
+}
+
+/**
+ * Utility function to read or write the local entries of a
+ * dealii::LinearAlgebra::distributed::(Block)Vector
+ * from/to a boost archive per block and entry.
+ * Using the `&` operator, loading from or writing to the
+ * archive is determined from the type.
+ */
+template<typename VectorType, typename BoostArchiveType>
+inline void
+read_write_distributed_vector(VectorType & vector, BoostArchiveType & archive)
+{
+  // Print vector norm here only *before* writing.
+  if(std::is_same<BoostArchiveType, boost::archive::text_oarchive>::value or
+     std::is_same<BoostArchiveType, boost::archive::binary_oarchive>::value)
+  {
+    print_vector_l2_norm(vector);
+  }
+
+  // Depending on VectorType, we have to loop over the blocks to
+  // access the local entries via vector.local_element(i).
+  using Number = typename VectorType::value_type;
+  if constexpr(std::is_same<std::remove_cv_t<VectorType>,
+                            dealii::LinearAlgebra::distributed::Vector<Number>>::value)
+  {
+    for(unsigned int i = 0; i < vector.locally_owned_size(); ++i)
+    {
+      archive & vector.local_element(i);
+    }
+  }
+  else if constexpr(std::is_same<std::remove_cv_t<VectorType>,
+                                 dealii::LinearAlgebra::distributed::BlockVector<Number>>::value)
+  {
+    for(unsigned int i = 0; i < vector.n_blocks(); ++i)
+    {
+      for(unsigned int j = 0; j < vector.block(i).locally_owned_size(); ++j)
+      {
+        archive & vector.block(i).local_element(j);
+      }
+    }
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("Reading into this VectorType not supported."));
+  }
+
+  // Print vector norm here only *after* reading.
+  if(std::is_same<BoostArchiveType, boost::archive::text_iarchive>::value or
+     std::is_same<BoostArchiveType, boost::archive::binary_iarchive>::value)
+  {
+    print_vector_l2_norm(vector);
+  }
+}
+
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_RESTART_H_ */
+#endif /* EXADG_TIME_INTEGRATION_RESTART_H_ */

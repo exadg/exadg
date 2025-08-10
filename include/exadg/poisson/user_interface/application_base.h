@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POISSON_USER_INTERFACE_APPLICATION_BASE_H_
-#define INCLUDE_EXADG_POISSON_USER_INTERFACE_APPLICATION_BASE_H_
+#ifndef EXADG_POISSON_USER_INTERFACE_APPLICATION_BASE_H_
+#define EXADG_POISSON_USER_INTERFACE_APPLICATION_BASE_H_
 
 // deal.II
 #include <deal.II/grid/grid_generator.h>
@@ -198,5 +198,4 @@ private:
 } // namespace Poisson
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_POISSON_USER_INTERFACE_APPLICATION_BASE_H_ */
+#endif /* EXADG_POISSON_USER_INTERFACE_APPLICATION_BASE_H_ */

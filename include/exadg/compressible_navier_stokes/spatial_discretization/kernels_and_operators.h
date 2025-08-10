@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_KERNELS_AND_OPERATORS_H_
-#define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_KERNELS_AND_OPERATORS_H_
+#ifndef EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_KERNELS_AND_OPERATORS_H_
+#define EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_KERNELS_AND_OPERATORS_H_
 
 // C/C++
 #include <iostream>
@@ -593,7 +593,7 @@ public:
              FaceIntegratorScalar & energy_p,
              unsigned int const     q) const
   {
-    vector normal = momentum_m.get_normal_vector(q);
+    vector normal = momentum_m.normal_vector(q);
 
     // get values
     scalar rho_M   = density_m.get_value(q);
@@ -650,7 +650,7 @@ public:
                       dealii::types::boundary_id const & boundary_id,
                       unsigned int const                 q) const
   {
-    vector normal = momentum.get_normal_vector(q);
+    vector normal = momentum.normal_vector(q);
 
     // element e⁻
     scalar rho_M   = density.get_value(q);
@@ -1082,7 +1082,7 @@ public:
                       scalar const &         tau_IP,
                       unsigned int const     q) const
   {
-    vector normal = momentum_m.get_normal_vector(q);
+    vector normal = momentum_m.normal_vector(q);
 
     // density
     scalar rho_M      = density_m.get_value(q);
@@ -1152,7 +1152,7 @@ public:
                                dealii::types::boundary_id const & boundary_id,
                                unsigned int const                 q) const
   {
-    vector normal = momentum.get_normal_vector(q);
+    vector normal = momentum.normal_vector(q);
 
     // density
     scalar rho_M      = density.get_value(q);
@@ -1264,7 +1264,7 @@ public:
                    FaceIntegratorScalar & energy_p,
                    unsigned int const     q) const
   {
-    vector normal = momentum_m.get_normal_vector(q);
+    vector normal = momentum_m.normal_vector(q);
 
     // density
     scalar rho_M = density_m.get_value(q);
@@ -1344,7 +1344,7 @@ public:
                             dealii::types::boundary_id const & boundary_id,
                             unsigned int const                 q) const
   {
-    vector normal = momentum.get_normal_vector(q);
+    vector normal = momentum.normal_vector(q);
 
     // density
     scalar rho_M = density.get_value(q);
@@ -1990,5 +1990,4 @@ private:
 } // namespace CompNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_KERNELS_AND_OPERATORS_H_ \
-        */
+#endif /* EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_KERNELS_AND_OPERATORS_H_ */

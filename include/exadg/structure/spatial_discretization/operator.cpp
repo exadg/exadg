@@ -19,10 +19,8 @@
  *  ______________________________________________________________________
  */
 
-// deal.II
-#include <deal.II/numerics/vector_tools.h>
-
 // ExaDG
+#include <exadg/functions_and_boundary_conditions/interpolate.h>
 #include <exadg/grid/grid_data.h>
 #include <exadg/operators/constraints.h>
 #include <exadg/operators/finite_element.h>
@@ -50,7 +48,7 @@ Operator<dim, Number>::Operator(
   Parameters const &                                    param_in,
   std::string const &                                   field_in,
   MPI_Comm const &                                      mpi_comm_in)
-  : dealii::Subscriptor(),
+  : dealii::EnableObserverPointer(),
     grid(grid_in),
     mapping(mapping_in),
     multigrid_mappings(multigrid_mappings_in),
@@ -272,7 +270,7 @@ Operator<dim, Number>::setup_operators()
   // (boundary) mass operator and related solver for inversion
   if(param.problem_type == ProblemType::Unsteady)
   {
-    Structure::MassOperatorData<dim> mass_data;
+    Structure::MassOperatorData<dim, Number> mass_data;
     mass_data.dof_index               = get_dof_index();
     mass_data.dof_index_inhomogeneous = get_dof_index_periodicity_and_hanging_node_constraints();
     mass_data.quad_index              = get_quad_index();
@@ -483,21 +481,17 @@ Operator<dim, Number>::setup_preconditioner()
   {
     if(param.large_deformation)
     {
-      typedef PreconditionerAMG<dim, NonLinearOperator<dim, Number>, Number> AMG;
+      typedef PreconditionerAMG<NonLinearOperator<dim, Number>, Number> AMG;
       preconditioner = std::make_shared<AMG>(elasticity_operator_nonlinear,
-                                             false,
-                                             param.multigrid_data.coarse_problem.amg_data,
-                                             dof_handler,
-                                             *mapping);
+                                             false /* initialize */,
+                                             param.multigrid_data.coarse_problem.amg_data);
     }
     else
     {
-      typedef PreconditionerAMG<dim, LinearOperator<dim, Number>, Number> AMG;
+      typedef PreconditionerAMG<LinearOperator<dim, Number>, Number> AMG;
       preconditioner = std::make_shared<AMG>(elasticity_operator_linear,
-                                             false,
-                                             param.multigrid_data.coarse_problem.amg_data,
-                                             dof_handler,
-                                             *mapping);
+                                             false /* initialize */,
+                                             param.multigrid_data.coarse_problem.amg_data);
     }
   }
   else
@@ -707,32 +701,14 @@ void
 Operator<dim, Number>::prescribe_initial_displacement(VectorType & displacement,
                                                       double const time) const
 {
-  // This is necessary if Number == float
-  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-
-  VectorTypeDouble src_double;
-  src_double = displacement;
-
-  field_functions->initial_displacement->set_time(time);
-  dealii::VectorTools::interpolate(dof_handler, *field_functions->initial_displacement, src_double);
-
-  displacement = src_double;
+  Utilities::interpolate(dof_handler, *field_functions->initial_displacement, displacement, time);
 }
 
 template<int dim, typename Number>
 void
 Operator<dim, Number>::prescribe_initial_velocity(VectorType & velocity, double const time) const
 {
-  // This is necessary if Number == float
-  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-
-  VectorTypeDouble src_double;
-  src_double = velocity;
-
-  field_functions->initial_velocity->set_time(time);
-  dealii::VectorTools::interpolate(dof_handler, *field_functions->initial_velocity, src_double);
-
-  velocity = src_double;
+  Utilities::interpolate(dof_handler, *field_functions->initial_velocity, velocity, time);
 }
 
 template<int dim, typename Number>
@@ -743,18 +719,10 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
 {
   if(field_functions->initial_acceleration.get())
   {
-    // This is necessary if Number == float
-    typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-
-    VectorTypeDouble src_double;
-    src_double = initial_acceleration;
-
-    field_functions->initial_acceleration->set_time(time);
-    dealii::VectorTools::interpolate(dof_handler,
-                                     *field_functions->initial_acceleration,
-                                     src_double);
-
-    initial_acceleration = src_double;
+    Utilities::interpolate(dof_handler,
+                           *field_functions->initial_acceleration,
+                           initial_acceleration,
+                           time);
   }
   else
   {

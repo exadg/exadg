@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_WEAK_BOUNDARY_CONDITIONS_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_WEAK_BOUNDARY_CONDITIONS_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_WEAK_BOUNDARY_CONDITIONS_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_WEAK_BOUNDARY_CONDITIONS_H_
 
+// ExaDG
 #include <exadg/functions_and_boundary_conditions/evaluate_functions.h>
 #include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/incompressible_navier_stokes/user_interface/enum_types.h>
@@ -135,8 +136,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else if(boundary_type == BoundaryTypeU::Symmetry)
   {
-    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normal_m =
-      integrator.get_normal_vector(q);
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normal_m = integrator.normal_vector(q);
 
     value_p = value_m - 2.0 * (value_m * normal_m) * normal_m;
   }
@@ -227,8 +227,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else if(boundary_type == BoundaryTypeU::Symmetry)
   {
-    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normal_m =
-      integrator.get_normal_vector(q);
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normal_m = integrator.normal_vector(q);
 
     u_p = u_m - 2. * (u_m * normal_m) * normal_m;
   }
@@ -277,7 +276,7 @@ inline DEAL_II_ALWAYS_INLINE //
   else if(boundary_type == BoundaryTypeU::Symmetry)
   {
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normal_m =
-      integrator_bc.get_normal_vector(q);
+      integrator_bc.normal_vector(q);
 
     value_p = value_m - 2.0 * (value_m * normal_m) * normal_m;
   }
@@ -488,7 +487,7 @@ inline DEAL_II_ALWAYS_INLINE //
       }
       else
       {
-        auto normals_m = integrator.get_normal_vector(q);
+        auto normals_m = integrator.normal_vector(q);
         h              = FunctionEvaluator<1, dim, Number>::value(
           *(std::dynamic_pointer_cast<FunctionWithNormal<dim>>(bc)), q_points, normals_m, time);
       }
@@ -506,7 +505,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else if(boundary_type == BoundaryTypeU::Symmetry)
   {
-    auto normal_m     = integrator.get_normal_vector(q);
+    auto normal_m     = integrator.normal_vector(q);
     normal_gradient_p = -normal_gradient_m + 2.0 * (normal_gradient_m * normal_m) * normal_m;
   }
   else
@@ -520,5 +519,5 @@ inline DEAL_II_ALWAYS_INLINE //
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_WEAK_BOUNDARY_CONDITIONS_H_ \
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_WEAK_BOUNDARY_CONDITIONS_H_ \
         */
