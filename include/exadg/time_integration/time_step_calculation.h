@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_TIME_STEP_CALCULATION_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_TIME_STEP_CALCULATION_H_
+#ifndef EXADG_TIME_INTEGRATION_TIME_STEP_CALCULATION_H_
+#define EXADG_TIME_INTEGRATION_TIME_STEP_CALCULATION_H_
 
 namespace ExaDG
 {
@@ -65,4 +65,4 @@ calculate_const_time_step(double const dt, unsigned int const n_refine_time)
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_TIME_STEP_CALCULATION_H_ */
+#endif /* EXADG_TIME_INTEGRATION_TIME_STEP_CALCULATION_H_ */

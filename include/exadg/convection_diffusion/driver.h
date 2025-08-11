@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_CONVECTION_DIFFUSION_DRIVER_H_
-#define INCLUDE_EXADG_CONVECTION_DIFFUSION_DRIVER_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_DRIVER_H_
+#define EXADG_CONVECTION_DIFFUSION_DRIVER_H_
 
 // deal.II
 #include <deal.II/base/revision.h>
@@ -148,4 +148,4 @@ private:
 } // namespace ConvDiff
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_CONVECTION_DIFFUSION_DRIVER_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_DRIVER_H_ */

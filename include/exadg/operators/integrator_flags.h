@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_INTEGRATOR_FLAGS_H_
-#define INCLUDE_EXADG_OPERATORS_INTEGRATOR_FLAGS_H_
+#ifndef EXADG_OPERATORS_INTEGRATOR_FLAGS_H_
+#define EXADG_OPERATORS_INTEGRATOR_FLAGS_H_
 
+// deal.II
 #include <deal.II/matrix_free/evaluation_flags.h>
 
 namespace ExaDG
@@ -51,4 +52,4 @@ struct IntegratorFlags
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_OPERATORS_INTEGRATOR_FLAGS_H_ */
+#endif /* EXADG_OPERATORS_INTEGRATOR_FLAGS_H_ */

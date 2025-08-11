@@ -19,12 +19,14 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_ANALYTICAL_TIME_INT_FLUID_H_
-#define INCLUDE_EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_ANALYTICAL_TIME_INT_FLUID_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_INTERPOLATE_ANALYTICAL_SOLUTION_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_INTERPOLATE_ANALYTICAL_SOLUTION_H_
 
+// ExaDG
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf.h>
 #include <exadg/time_integration/push_back_vectors.h>
 #include <exadg/utilities/print_solver_results.h>
+
 namespace ExaDG
 {
 namespace IncNS
@@ -123,9 +125,6 @@ private:
   void
   do_timestep_solve() final
   {
-    velocity_np.zero_out_ghost_values();
-    pressure_np.zero_out_ghost_values();
-
     this->operator_base->interpolate_analytical_solution(velocity_np,
                                                          pressure_np,
                                                          this->get_next_time());
@@ -197,4 +196,5 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /*INCLUDE_EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_ANALYTICAL_TIME_INT_FLUID_H_*/
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_INTERPOLATE_ANALYTICAL_SOLUTION_H_ \
+        */

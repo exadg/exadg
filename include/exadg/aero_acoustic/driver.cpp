@@ -51,9 +51,6 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up aero-acoustic solver:" << std::endl;
 
-  // setup application
-  application->setup();
-
   // setup acoustic solver
   {
     dealii::Timer timer_local;
@@ -71,6 +68,9 @@ Driver<dim, Number>::setup()
 
     timer_tree.insert({"AeroAcoustic", "Setup", "Fluid"}, timer_local.wall_time());
   }
+
+  // setup application
+  application->setup();
 
   setup_volume_coupling();
 

@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_TIME_INTEGRATION_DRIVER_STEADY_PROBLEMS_H_
-#define INCLUDE_EXADG_STRUCTURE_TIME_INTEGRATION_DRIVER_STEADY_PROBLEMS_H_
+#ifndef EXADG_STRUCTURE_TIME_INTEGRATION_DRIVER_STEADY_PROBLEMS_H_
+#define EXADG_STRUCTURE_TIME_INTEGRATION_DRIVER_STEADY_PROBLEMS_H_
 
 // deal.II
 #include <deal.II/base/timer.h>
@@ -101,4 +101,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_TIME_INTEGRATION_DRIVER_STEADY_PROBLEMS_H_ */

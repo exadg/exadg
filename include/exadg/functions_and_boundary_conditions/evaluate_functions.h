@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_EVALUATE_FUNCTIONS_H_
-#define INCLUDE_EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_EVALUATE_FUNCTIONS_H_
+#ifndef EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_EVALUATE_FUNCTIONS_H_
+#define EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_EVALUATE_FUNCTIONS_H_
 
 // deal.II
 #include <deal.II/base/function.h>
@@ -28,9 +28,11 @@
 #include <deal.II/base/tensor.h>
 #include <deal.II/base/vectorization.h>
 
+// ExaDG
 #include <exadg/functions_and_boundary_conditions/container_interface_data.h>
 #include <exadg/functions_and_boundary_conditions/function_with_normal.h>
 
+// C/C++
 #include <memory>
 
 namespace ExaDG
@@ -430,4 +432,4 @@ struct FunctionEvaluator<2, dim, Number>
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_EVALUATE_FUNCTIONS_H_ */
+#endif /* EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_EVALUATE_FUNCTIONS_H_ */

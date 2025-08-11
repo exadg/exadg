@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_LAPLACE_ANALYTICAL_SOLUTION_H_
-#define INCLUDE_LAPLACE_ANALYTICAL_SOLUTION_H_
+#ifndef EXADG_POISSON_USER_INTERFACE_ANALYTICAL_SOLUTION_H_
+#define EXADG_POISSON_USER_INTERFACE_ANALYTICAL_SOLUTION_H_
 
+// deal.II
 #include <deal.II/base/function.h>
 
 namespace ExaDG
@@ -37,4 +38,4 @@ struct AnalyticalSolution
 } // namespace Poisson
 } // namespace ExaDG
 
-#endif /* INCLUDE_LAPLACE_ANALYTICAL_SOLUTION_H_ */
+#endif /* EXADG_POISSON_USER_INTERFACE_ANALYTICAL_SOLUTION_H_ */

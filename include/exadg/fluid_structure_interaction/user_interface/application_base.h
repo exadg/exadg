@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_USER_INTERFACE_APPLICATION_BASE_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_USER_INTERFACE_APPLICATION_BASE_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_USER_INTERFACE_APPLICATION_BASE_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_USER_INTERFACE_APPLICATION_BASE_H_
 
 // deal.II
 #include <deal.II/distributed/fully_distributed_tria.h>
@@ -32,28 +32,22 @@
 // ExaDG
 #include <exadg/grid/grid.h>
 #include <exadg/grid/grid_utilities.h>
-#include <exadg/operators/resolution_parameters.h>
-#include <exadg/postprocessor/output_parameters.h>
-
-// Fluid
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
 #include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
-
-// Structure (and ALE elasticity)
+#include <exadg/operators/resolution_parameters.h>
+#include <exadg/poisson/user_interface/analytical_solution.h>
+#include <exadg/poisson/user_interface/boundary_descriptor.h>
+#include <exadg/poisson/user_interface/field_functions.h>
+#include <exadg/poisson/user_interface/parameters.h>
+#include <exadg/postprocessor/output_parameters.h>
 #include <exadg/structure/material/library/st_venant_kirchhoff.h>
 #include <exadg/structure/postprocessor/postprocessor.h>
 #include <exadg/structure/user_interface/boundary_descriptor.h>
 #include <exadg/structure/user_interface/field_functions.h>
 #include <exadg/structure/user_interface/material_descriptor.h>
 #include <exadg/structure/user_interface/parameters.h>
-
-// ALE Poisson
-#include <exadg/poisson/user_interface/analytical_solution.h>
-#include <exadg/poisson/user_interface/boundary_descriptor.h>
-#include <exadg/poisson/user_interface/field_functions.h>
-#include <exadg/poisson/user_interface/parameters.h>
 
 namespace ExaDG
 {
@@ -489,4 +483,4 @@ public:
 } // namespace FSI
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_USER_INTERFACE_APPLICATION_BASE_H_ */
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_USER_INTERFACE_APPLICATION_BASE_H_ */

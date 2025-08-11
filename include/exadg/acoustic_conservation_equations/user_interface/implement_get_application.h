@@ -22,7 +22,7 @@
 #ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
 #define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
 
-
+// ExaDG
 #include <exadg/incompressible_navier_stokes/user_interface/application_base.h>
 
 namespace ExaDG
@@ -38,6 +38,5 @@ get_application(std::string input_file, MPI_Comm const & comm)
 
 } // namespace Acoustics
 } // namespace ExaDG
-
 
 #endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_ */

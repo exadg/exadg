@@ -19,18 +19,14 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_AERO_ACOUSTIC_DRIVER_H_
-#define INCLUDE_EXADG_AERO_ACOUSTIC_DRIVER_H_
+#ifndef EXADG_AERO_ACOUSTIC_DRIVER_H_
+#define EXADG_AERO_ACOUSTIC_DRIVER_H_
 
-// application
-#include <exadg/aero_acoustic/user_interface/application_base.h>
-
-// AeroAcoustic
+// ExaDG
 #include <exadg/aero_acoustic/single_field_solvers/acoustics.h>
 #include <exadg/aero_acoustic/single_field_solvers/fluid.h>
+#include <exadg/aero_acoustic/user_interface/application_base.h>
 #include <exadg/aero_acoustic/volume_coupling.h>
-
-// utilities
 #include <exadg/utilities/timer_tree.h>
 
 namespace ExaDG
@@ -91,5 +87,4 @@ private:
 } // namespace AeroAcoustic
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_AERO_ACOUSTIC_DRIVER_H_ */
+#endif /* EXADG_AERO_ACOUSTIC_DRIVER_H_ */

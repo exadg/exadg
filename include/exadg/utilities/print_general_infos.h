@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_PRINT_GENERAL_INFOS_H_
-#define INCLUDE_EXADG_UTILITIES_PRINT_GENERAL_INFOS_H_
+#ifndef EXADG_UTILITIES_PRINT_GENERAL_INFOS_H_
+#define EXADG_UTILITIES_PRINT_GENERAL_INFOS_H_
 
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
@@ -120,4 +120,4 @@ print_general_info(dealii::ConditionalOStream const & pcout,
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_UTILITIES_PRINT_GENERAL_INFOS_H_ */
+#endif /* EXADG_UTILITIES_PRINT_GENERAL_INFOS_H_ */

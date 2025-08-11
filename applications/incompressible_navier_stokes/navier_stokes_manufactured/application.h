@@ -718,6 +718,7 @@ private:
     pp_data.output_data.filename           = this->output_parameters.filename;
     pp_data.output_data.write_divergence   = true;
     pp_data.output_data.write_shear_rate   = true;
+    pp_data.output_data.write_viscosity    = true;
     pp_data.output_data.degree             = this->param.degree_u;
     pp_data.output_data.write_higher_order = true;
 

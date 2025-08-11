@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_TIME_CONTROL_STATISTICS_H_
-#define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_TIME_CONTROL_STATISTICS_H_
+#ifndef EXADG_POSTPROCESSOR_TIME_CONTROL_STATISTICS_H_
+#define EXADG_POSTPROCESSOR_TIME_CONTROL_STATISTICS_H_
 
 // ExaDG
 #include <exadg/postprocessor/time_control.h>
@@ -58,7 +58,6 @@ private:
   mutable bool              final_output_written;
 };
 
-
 } // namespace ExaDG
 
-#endif /*INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_TIME_CONTROL_STATISTICS_H_*/
+#endif /* EXADG_POSTPROCESSOR_TIME_CONTROL_STATISTICS_H_ */

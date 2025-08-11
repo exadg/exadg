@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_BALANCED_GRANULARITY_PARTITION_POLICY_H_
-#define INCLUDE_EXADG_GRID_BALANCED_GRANULARITY_PARTITION_POLICY_H_
+#ifndef EXADG_GRID_BALANCED_GRANULARITY_PARTITION_POLICY_H_
+#define EXADG_GRID_BALANCED_GRANULARITY_PARTITION_POLICY_H_
 
 // deal.II
 #include <deal.II/distributed/fully_distributed_tria.h>
@@ -74,5 +74,4 @@ private:
 };
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_GRID_BALANCED_GRANULARITY_PARTITION_POLICY_H_ */
+#endif /* EXADG_GRID_BALANCED_GRANULARITY_PARTITION_POLICY_H_ */

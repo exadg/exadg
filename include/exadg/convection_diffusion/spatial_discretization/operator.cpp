@@ -21,16 +21,17 @@
 
 // deal.II
 #include <deal.II/fe/fe_values.h>
-#include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
 #include <exadg/convection_diffusion/preconditioners/multigrid_preconditioner.h>
 #include <exadg/convection_diffusion/spatial_discretization/operator.h>
 #include <exadg/convection_diffusion/spatial_discretization/project_velocity.h>
+#include <exadg/functions_and_boundary_conditions/interpolate.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/operators/finite_element.h>
 #include <exadg/operators/grid_related_time_step_restrictions.h>
 #include <exadg/operators/quadrature.h>
+#include <exadg/operators/solution_projection_between_triangulations.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
@@ -173,7 +174,7 @@ void
 Operator<dim, Number>::setup_operators()
 {
   // mass operator
-  MassOperatorData<dim> mass_operator_data;
+  MassOperatorData<dim, Number> mass_operator_data;
   mass_operator_data.dof_index            = get_dof_index();
   mass_operator_data.quad_index           = get_quad_index();
   mass_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
@@ -183,7 +184,7 @@ Operator<dim, Number>::setup_operators()
   mass_operator.initialize(*matrix_free, affine_constraints, mass_operator_data);
 
   // inverse mass operator
-  InverseMassOperatorData inverse_mass_operator_data;
+  InverseMassOperatorData<Number> inverse_mass_operator_data;
   inverse_mass_operator_data.dof_index  = get_dof_index();
   inverse_mass_operator_data.quad_index = get_quad_index();
   inverse_mass_operator_data.parameters = param.inverse_mass_operator;
@@ -403,7 +404,7 @@ Operator<dim, Number>::setup_preconditioner()
 {
   if(param.preconditioner == Preconditioner::InverseMassMatrix)
   {
-    InverseMassOperatorData inverse_mass_operator_data;
+    InverseMassOperatorData<Number> inverse_mass_operator_data;
     inverse_mass_operator_data.dof_index  = get_dof_index();
     inverse_mass_operator_data.quad_index = get_quad_index();
     inverse_mass_operator_data.parameters = param.inverse_mass_preconditioner;
@@ -564,19 +565,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::interpolate_velocity(VectorType & velocity, double const time) const
 {
-  field_functions->velocity->set_time(time);
-
-  // This is necessary if Number == float
-  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-
-  VectorTypeDouble vector_double;
-  vector_double = velocity;
-
-  dealii::VectorTools::interpolate(get_dof_handler_velocity(),
-                                   *(field_functions->velocity),
-                                   vector_double);
-
-  velocity = vector_double;
+  Utilities::interpolate(get_dof_handler_velocity(), *(field_functions->velocity), velocity, time);
 }
 
 template<int dim, typename Number>
@@ -585,7 +574,7 @@ Operator<dim, Number>::project_velocity(VectorType & velocity, double const time
 {
   VelocityProjection<dim, Number> l2_projection;
 
-  InverseMassOperatorData inverse_mass_operator_data_l2_projection;
+  InverseMassOperatorData<Number> inverse_mass_operator_data_l2_projection;
   inverse_mass_operator_data_l2_projection.dof_index  = get_dof_index_velocity();
   inverse_mass_operator_data_l2_projection.quad_index = get_quad_index();
 
@@ -606,7 +595,8 @@ Operator<dim, Number>::serialize_vectors(std::vector<VectorType const *> const &
     std::vector<std::vector<VectorType const *>> vectors_per_dof_handler{vectors};
     if(param.restart_data.consider_mapping)
     {
-      store_vectors_in_triangulation_and_serialize(param.restart_data.filename,
+      store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
+                                                   param.restart_data.filename,
                                                    vectors_per_dof_handler,
                                                    dof_handlers,
                                                    *this->get_mapping(),
@@ -615,7 +605,8 @@ Operator<dim, Number>::serialize_vectors(std::vector<VectorType const *> const &
     }
     else
     {
-      store_vectors_in_triangulation_and_serialize(param.restart_data.filename,
+      store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
+                                                   param.restart_data.filename,
                                                    vectors_per_dof_handler,
                                                    dof_handlers);
     }
@@ -637,24 +628,20 @@ Operator<dim, Number>::deserialize_vectors(std::vector<VectorType *> const & vec
 
     // Load potentially unfitting checkpoint triangulation of TriangulationType.
     std::shared_ptr<dealii::Triangulation<dim>> checkpoint_triangulation =
-      deserialize_triangulation<dim>(dof_handler.get_triangulation(),
+      deserialize_triangulation<dim>(param.restart_data.directory,
                                      param.restart_data.filename,
                                      param.restart_data.triangulation_type,
                                      mpi_comm);
 
     // Setup DoFHandlers *as checkpointed*, sequence matches `this->serialize_vectors()`.
     dealii::DoFHandler<dim> checkpoint_dof_handler(*checkpoint_triangulation);
-    dealii::DoFHandler<dim> checkpoint_dof_handler_mapping(*checkpoint_triangulation);
 
     ElementType const checkpoint_element_type = get_element_type(*checkpoint_triangulation);
 
     std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe =
       create_finite_element<dim>(checkpoint_element_type, true, 1, param.restart_data.degree_p);
-    std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_mapping = create_finite_element<dim>(
-      checkpoint_element_type, true, dim, param.restart_data.mapping_degree);
 
     checkpoint_dof_handler.distribute_dofs(*checkpoint_fe);
-    checkpoint_dof_handler_mapping.distribute_dofs(*checkpoint_fe_mapping);
 
     std::vector<dealii::DoFHandler<dim> const *> checkpoint_dof_handlers{&checkpoint_dof_handler};
 
@@ -679,44 +666,66 @@ Operator<dim, Number>::deserialize_vectors(std::vector<VectorType *> const & vec
     }
     else
     {
-      // Perform global projection in case of a non-matching discretization.
+      // Perform projection in case of a non-matching discretization.
       std::vector<dealii::DoFHandler<dim> const *> dof_handlers{&dof_handler};
       std::vector<std::vector<VectorType *>>       vectors_per_dof_handler{vectors};
 
       // Deserialize mapping from vector or project on reference trianuglations.
       std::shared_ptr<dealii::Mapping<dim> const> target_mapping;
-      std::shared_ptr<dealii::Mapping<dim>>       checkpoint_mapping;
+      std::shared_ptr<dealii::Mapping<dim> const> checkpoint_mapping;
+      std::shared_ptr<MappingDoFVector<dim, typename VectorType::value_type>>
+        checkpoint_mapping_dof_vector;
       if(param.restart_data.consider_mapping)
       {
-        target_mapping     = this->get_mapping();
-        checkpoint_mapping = load_vectors(checkpoint_vectors_ptr,
-                                          checkpoint_dof_handlers,
-                                          &checkpoint_dof_handler_mapping,
-                                          param.restart_data.mapping_degree);
+        target_mapping = this->get_mapping();
+        dealii::DoFHandler<dim> checkpoint_dof_handler_mapping(*checkpoint_triangulation);
+        std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_mapping =
+          create_finite_element<dim>(checkpoint_element_type,
+                                     true,
+                                     dim,
+                                     param.restart_data.mapping_degree);
+        checkpoint_dof_handler_mapping.distribute_dofs(*checkpoint_fe_mapping);
+
+        checkpoint_mapping_dof_vector = load_vectors(checkpoint_vectors_ptr,
+                                                     checkpoint_dof_handlers,
+                                                     &checkpoint_dof_handler_mapping,
+                                                     param.restart_data.mapping_degree);
+
+        checkpoint_mapping = checkpoint_mapping_dof_vector->get_mapping();
       }
       else
       {
         load_vectors(checkpoint_vectors_ptr, checkpoint_dof_handlers);
 
         // Create dummy linear mappings since we have no mapping serialized to restore.
-        GridUtilities::create_mapping(checkpoint_mapping,
-                                      get_element_type(*checkpoint_triangulation),
-                                      1 /* mapping_degree */);
-        std::shared_ptr<dealii::Mapping<dim>> tmp;
-        GridUtilities::create_mapping(tmp,
-                                      get_element_type(dof_handlers.at(0)->get_triangulation()),
-                                      1 /* mapping_degree */);
-        target_mapping = std::const_pointer_cast<dealii::Mapping<dim> const>(tmp);
+        {
+          std::shared_ptr<dealii::Mapping<dim>> tmp;
+          GridUtilities::create_mapping(tmp,
+                                        get_element_type(*checkpoint_triangulation),
+                                        1 /* mapping_degree */);
+          checkpoint_mapping = std::const_pointer_cast<dealii::Mapping<dim> const>(tmp);
+        }
+        {
+          std::shared_ptr<dealii::Mapping<dim>> tmp;
+          GridUtilities::create_mapping(tmp,
+                                        get_element_type(dof_handlers.at(0)->get_triangulation()),
+                                        1 /* mapping_degree */);
+          target_mapping = std::const_pointer_cast<dealii::Mapping<dim> const>(tmp);
+        }
       }
 
-      grid_to_grid_projection(checkpoint_vectors_ptr,
-                              checkpoint_dof_handlers,
-                              checkpoint_mapping,
-                              vectors_per_dof_handler,
-                              dof_handlers,
-                              target_mapping,
-                              param.restart_data.rpe_tolerance_unit_cell,
-                              param.restart_data.rpe_enforce_unique_mapping);
+      ExaDG::GridToGridProjection::GridToGridProjectionData<dim> data;
+      data.rpe_data.tolerance              = param.restart_data.rpe_tolerance_unit_cell;
+      data.rpe_data.enforce_unique_mapping = param.restart_data.rpe_enforce_unique_mapping;
+
+      ExaDG::GridToGridProjection::do_grid_to_grid_projection<dim, Number, VectorType>(
+        checkpoint_vectors_ptr,
+        checkpoint_dof_handlers,
+        checkpoint_mapping,
+        vectors_per_dof_handler,
+        dof_handlers,
+        *matrix_free,
+        data);
     }
 
     // Recover ghost vector state.
@@ -732,17 +741,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::prescribe_initial_conditions(VectorType & src, double const time) const
 {
-  field_functions->initial_solution->set_time(time);
-
-  // This is necessary if Number == float
-  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-
-  VectorTypeDouble src_double;
-  src_double = src;
-
-  dealii::VectorTools::interpolate(dof_handler, *(field_functions->initial_solution), src_double);
-
-  src = src_double;
+  Utilities::interpolate(dof_handler, *(field_functions->initial_solution), src, time);
 }
 
 template<int dim, typename Number>

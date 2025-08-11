@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_APPLICATION_BASE_H_
-#define INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_APPLICATION_BASE_H_
+#ifndef EXADG_STRUCTURE_USER_INTERFACE_APPLICATION_BASE_H_
+#define EXADG_STRUCTURE_USER_INTERFACE_APPLICATION_BASE_H_
 
 // deal.II
 #include <deal.II/distributed/tria.h>
@@ -188,4 +188,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_USER_INTERFACE_APPLICATION_BASE_H_ */

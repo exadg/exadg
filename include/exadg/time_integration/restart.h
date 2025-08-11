@@ -19,14 +19,15 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_RESTART_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_RESTART_H_
+#ifndef EXADG_TIME_INTEGRATION_RESTART_H_
+#define EXADG_TIME_INTEGRATION_RESTART_H_
 
 // C/C++
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 
@@ -51,6 +52,7 @@
 #include <exadg/operators/mass_operator.h>
 #include <exadg/operators/quadrature.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
+#include <exadg/utilities/create_directories.h>
 
 namespace ExaDG
 {
@@ -156,7 +158,7 @@ read_write_distributed_vector(VectorType & vector, BoostArchiveType & archive)
 }
 
 /** Utility function to convert a vector of block vector pointers into a
- * vector of vectors of VectorType pointers, where all vectors from each
+ * vector of vectors of `VectorType` pointers, where all vectors from each
  * individual block are summarized in a std::vector.
  * This is useful for solution transfer and serialization.
  */
@@ -186,8 +188,8 @@ get_vectors_per_block(std::vector<BlockVectorType *> const & block_vectors)
   return vectors_per_block;
 }
 
-/** Utility function to setup a BlockVector given a vector
- * of DoFHandlers only containing owned DoFs. This can be used
+/** Utility function to setup a `BlockVector` given a vector
+ * of `DoFHandlers` only containing owned DoFs. This can be used
  * in combination with `get_vectors_per_block()` to obtain vectors
  * of VectorType pointers as required for `dealii::SolutionTransfer`.
  */
@@ -199,7 +201,7 @@ get_block_vectors_from_dof_handlers(
 {
   unsigned int const n_blocks = dof_handlers.size();
 
-  // Setup first BlockVector
+  // Setup first `BlockVector`
   BlockVectorType block_vector(n_blocks);
   for(unsigned int i = 0; i < n_blocks; ++i)
   {
@@ -253,7 +255,8 @@ set_ghost_state(std::vector<VectorType *> const & vectors,
  */
 template<int dim, typename TriangulationType>
 inline void
-save_coarse_triangulation(std::string const &       filename_base,
+save_coarse_triangulation(std::string const &       directory,
+                          std::string const &       filename_base,
                           TriangulationType const & triangulation)
 {
   if constexpr(std::is_same<std::remove_cv_t<TriangulationType>,
@@ -266,8 +269,13 @@ save_coarse_triangulation(std::string const &       filename_base,
                                    "dealii::Triangulation<dim> supported."));
   }
 
-  std::string const filename = filename_base + ".coarse_triangulation";
-  if(dealii::Utilities::MPI::this_mpi_process(triangulation.get_communicator()) == 0)
+  MPI_Comm const & mpi_comm = triangulation.get_communicator();
+
+  // Create folder if not existent.
+  create_directories(directory, mpi_comm);
+
+  std::string const filename = directory + filename_base + ".coarse_triangulation";
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     // Serialization only creates a single file, move with one process only.
     rename_restart_files(filename + ".info");
@@ -279,16 +287,18 @@ save_coarse_triangulation(std::string const &       filename_base,
 }
 
 /**
- * Utility function to store a std::vector<VectorType> in a triangulation and serialize.
- * We assume that the Triangulation(s) linked to the DoFHandlers are all identical.
- * Note also that the sequence of vectors and DoFHandlers here and in
- * deserialize_triangulation_and_load_vectors() *must* be identical.
- * This function does not consider a mapping to be stored, if it is
- * not provided within the `dof_handlers` (and hence treated like all other vectors).
+ * Utility function to store a `std::vector<VectorType>` in a triangulation and serialize.
+ * We assume that the `Triangulation(s)` linked to the `DoFHandlers` are all identical.
+ * Note also that the sequence of vectors and `DoFHandlers` here and in
+ * `deserialize_triangulation_and_load_vectors()` *must* be identical.
+ * This function does not consider a mapping to be stored, which has to be
+ * provided within the `dof_handlers`, hence treated like all other vectors in serialization), and
+ * re-applied after deserialization.
  */
 template<int dim, typename VectorType>
 inline void
 store_vectors_in_triangulation_and_serialize(
+  std::string const &                                       directory,
   std::string const &                                       filename_base,
   std::vector<std::vector<VectorType const *>> const &      vectors_per_dof_handler,
   std::vector<dealii::DoFHandler<dim, dim> const *> const & dof_handlers)
@@ -299,22 +309,28 @@ store_vectors_in_triangulation_and_serialize(
               dealii::ExcMessage("Number of vectors of vectors and DoFHandlers do not match."));
   auto const & triangulation = dof_handlers.at(0)->get_triangulation();
 
-  // Check if all the Triangulation(s) associated with the DoFHandlers point to the same object.
+  // Check if all the `Triangulation(s)` associated with the DoFHandlers point to the same object.
   for(unsigned int i = 1; i < dof_handlers.size(); ++i)
   {
     AssertThrow(&dof_handlers[i]->get_triangulation() == &triangulation,
                 dealii::ExcMessage("Triangulations of DoFHandlers are not identical."));
   }
 
-  // Loop over the DoFHandlers and store the vectors in the triangulation.
+  // Loop over the `DoFHandlers` and store the vectors in the triangulation.
   std::vector<std::shared_ptr<dealii::parallel::distributed::SolutionTransfer<dim, VectorType>>>
-    solution_transfers;
+                                 solution_transfers;
+  std::vector<std::vector<bool>> has_ghost_elements_per_dof_handler;
   for(unsigned int i = 0; i < dof_handlers.size(); ++i)
   {
+    // Store ghost state.
+    std::vector<bool> has_ghost_elements = get_ghost_state(vectors_per_dof_handler[i]);
+    has_ghost_elements_per_dof_handler.push_back(has_ghost_elements);
     for(unsigned int j = 0; j < vectors_per_dof_handler[i].size(); ++j)
     {
+      vectors_per_dof_handler[i][j]->update_ghost_values();
       print_vector_l2_norm(*vectors_per_dof_handler[i][j]);
     }
+
     solution_transfers.push_back(
       std::make_shared<dealii::parallel::distributed::SolutionTransfer<dim, VectorType>>(
         *dof_handlers[i]));
@@ -322,8 +338,9 @@ store_vectors_in_triangulation_and_serialize(
   }
 
   // Serialize the triangulation keeping a maximum of two snapshots.
-  std::string const filename = filename_base + ".triangulation";
-  if(dealii::Utilities::MPI::this_mpi_process(dof_handlers[0]->get_communicator()) == 0)
+  std::string const filename = directory + filename_base + ".triangulation";
+  MPI_Comm const &  mpi_comm = dof_handlers[0]->get_communicator();
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     // Serialization only creates a single file, move with one process only.
     rename_restart_files(filename);
@@ -332,8 +349,14 @@ store_vectors_in_triangulation_and_serialize(
     rename_restart_files(filename + "_triangulation.data");
   }
 
-  // Collective call for serialization.
+  // Collective call for serialization, general case requires ghosted vectors.
   triangulation.save(filename);
+
+  // Recover ghost state.
+  for(unsigned int i = 0; i < dof_handlers.size(); ++i)
+  {
+    set_ghost_state(vectors_per_dof_handler[i], has_ghost_elements_per_dof_handler[i]);
+  }
 }
 
 /**
@@ -344,6 +367,7 @@ store_vectors_in_triangulation_and_serialize(
 template<int dim, typename VectorType>
 inline void
 store_vectors_in_triangulation_and_serialize(
+  std::string const &                                       directory,
   std::string const &                                       filename_base,
   std::vector<std::vector<VectorType const *>> const &      vectors_per_dof_handler,
   std::vector<dealii::DoFHandler<dim, dim> const *> const & dof_handlers,
@@ -358,7 +382,7 @@ store_vectors_in_triangulation_and_serialize(
 
   auto const & triangulation = dof_handlers.at(0)->get_triangulation();
 
-  // Check if all the Triangulation(s) associated with the DoFHandlers point to the same object.
+  // Check if all the `Triangulation(s)` associated with the `DoFHandlers` point to the same object.
   for(unsigned int i = 1; i < dof_handlers.size(); ++i)
   {
     AssertThrow(&dof_handlers[i]->get_triangulation() == &triangulation,
@@ -411,7 +435,8 @@ store_vectors_in_triangulation_and_serialize(
   dof_handlers_extended.push_back(dof_handler_mapping);
 
   // Use utility function that ignores the mapping.
-  store_vectors_in_triangulation_and_serialize(filename_base,
+  store_vectors_in_triangulation_and_serialize(directory,
+                                               filename_base,
                                                vectors_per_dof_handler_extended,
                                                dof_handlers_extended);
 }
@@ -419,30 +444,22 @@ store_vectors_in_triangulation_and_serialize(
 /**
  * Utility function to deserialize the stored triangulation.
  */
-template<int dim, typename TriangulationTypeDeserialize>
+template<int dim>
 inline std::shared_ptr<dealii::Triangulation<dim>>
-deserialize_triangulation(TriangulationTypeDeserialize const & triangulation_new,
-                          std::string const &                  filename_base,
-                          TriangulationType const              triangulation_type,
-                          MPI_Comm const &                     mpi_communicator)
+deserialize_triangulation(std::string const &     directory,
+                          std::string const &     filename_base,
+                          TriangulationType const triangulation_type,
+                          MPI_Comm const &        mpi_communicator)
 {
   std::shared_ptr<dealii::Triangulation<dim>> triangulation_old;
+
+  std::string const filename = directory + filename_base;
 
   // Deserialize the checkpointed triangulation,
   if(triangulation_type == TriangulationType::Serial)
   {
     triangulation_old = std::make_shared<dealii::Triangulation<dim>>();
-    triangulation_old->load(filename_base + ".triangulation");
-
-    // In case the coarse triangulation has manifolds assigned, copy them.
-    // We assume here that the `dealii::Manifold`s to be copied are exactly the same.
-    for(dealii::types::manifold_id const manifold_id : triangulation_new.get_manifold_ids())
-    {
-      if(manifold_id != dealii::numbers::flat_manifold_id)
-      {
-        triangulation_old->set_manifold(manifold_id, triangulation_new.get_manifold(manifold_id));
-      }
-    }
+    triangulation_old->load(filename + ".triangulation");
   }
   else if(triangulation_type == TriangulationType::Distributed)
   {
@@ -451,13 +468,13 @@ deserialize_triangulation(TriangulationTypeDeserialize const & triangulation_new
     dealii::Triangulation<dim, dim> coarse_triangulation;
     try
     {
-      coarse_triangulation.load(filename_base + ".coarse_triangulation");
+      coarse_triangulation.load(filename + ".coarse_triangulation");
     }
     catch(...)
     {
       AssertThrow(false,
                   dealii::ExcMessage(
-                    "Deserializing coarse triangulation expected in\n" + filename_base +
+                    "Deserializing coarse triangulation expected in\n" + filename +
                     ".coarse_triangulation\n"
                     "make sure to store the coarse grid during `create_grid`\n"
                     "in the respective application.h using TriangulationType::Serial."));
@@ -469,16 +486,11 @@ deserialize_triangulation(TriangulationTypeDeserialize const & triangulation_new
     tmp->copy_triangulation(coarse_triangulation);
     coarse_triangulation.clear();
 
-    // In case the coarse triangulation has manifolds assigned, copy them.
-    // We assume here that the `dealii::Manifold`s to be copied are exactly the same.
-    for(dealii::types::manifold_id const manifold_id : triangulation_new.get_manifold_ids())
-    {
-      if(manifold_id != dealii::numbers::flat_manifold_id)
-      {
-        tmp->set_manifold(manifold_id, triangulation_new.get_manifold(manifold_id));
-      }
-    }
-    tmp->load(filename_base + ".triangulation");
+    // We do not need manifolds when applying the refinements, since we recover the mapping
+    // separately.
+    tmp->reset_all_manifolds();
+    tmp->set_all_manifold_ids(dealii::numbers::flat_manifold_id);
+    tmp->load(filename + ".triangulation");
 
     triangulation_old = std::dynamic_pointer_cast<dealii::Triangulation<dim>>(tmp);
   }
@@ -488,17 +500,7 @@ deserialize_triangulation(TriangulationTypeDeserialize const & triangulation_new
     // saved with cannot change and hence autopartitioning is disabled.
     std::shared_ptr<dealii::parallel::fullydistributed::Triangulation<dim>> tmp =
       std::make_shared<dealii::parallel::fullydistributed::Triangulation<dim>>(mpi_communicator);
-    tmp->load(filename_base + ".triangulation");
-
-    // In case the coarse triangulation has manifolds assigned, copy them.
-    // We assume here that the `dealii::Manifold`s to be copied are exactly the same.
-    for(dealii::types::manifold_id const manifold_id : triangulation_new.get_manifold_ids())
-    {
-      if(manifold_id != dealii::numbers::flat_manifold_id)
-      {
-        tmp->set_manifold(manifold_id, triangulation_new.get_manifold(manifold_id));
-      }
-    }
+    tmp->load(filename + ".triangulation");
 
     triangulation_old = std::dynamic_pointer_cast<dealii::Triangulation<dim>>(tmp);
   }
@@ -520,8 +522,8 @@ inline void
 load_vectors(std::vector<std::vector<VectorType *>> &                  vectors_per_dof_handler,
              std::vector<dealii::DoFHandler<dim, dim> const *> const & dof_handlers)
 {
-  // The DoFHandlers and vectors are already initialized and
-  // ``vectors_per_dof_handler`` contain only owned DoFs.
+  // The `dof_handlers` and `vectors_per_dof_handler` are already initialized and
+  // `vectors_per_dof_handler` contain only owned DoFs.
   AssertThrow(vectors_per_dof_handler.size() > 0,
               dealii::ExcMessage("No vectors to load into from triangulation."));
   AssertThrow(vectors_per_dof_handler.size() == dof_handlers.size(),
@@ -533,6 +535,33 @@ load_vectors(std::vector<std::vector<VectorType *>> &                  vectors_p
   {
     dealii::parallel::distributed::SolutionTransfer<dim, VectorType> solution_transfer(
       *dof_handlers[i]);
+
+    // Reinit vectors that do not already have ghost entries.
+    bool all_ghosted = false;
+    for(unsigned int j = 0; j < vectors_per_dof_handler[i].size(); ++j)
+    {
+      if(not vectors_per_dof_handler[i][j]->has_ghost_elements())
+      {
+        all_ghosted = false;
+        break;
+      }
+    }
+    if(not all_ghosted)
+    {
+      dealii::IndexSet const & locally_owned_dofs = dof_handlers[i]->locally_owned_dofs();
+      dealii::IndexSet const   locally_relevant_dofs =
+        dealii::DoFTools::extract_locally_relevant_dofs(*dof_handlers[i]);
+      for(unsigned int j = 0; j < vectors_per_dof_handler[i].size(); ++j)
+      {
+        if(not vectors_per_dof_handler[i][j]->has_ghost_elements())
+        {
+          vectors_per_dof_handler[i][j]->reinit(locally_owned_dofs,
+                                                locally_relevant_dofs,
+                                                dof_handlers[i]->get_communicator());
+        }
+      }
+    }
+
     solution_transfer.deserialize(vectors_per_dof_handler[i]);
 
     for(unsigned int j = 0; j < vectors_per_dof_handler[i].size(); ++j)
@@ -547,7 +576,7 @@ load_vectors(std::vector<std::vector<VectorType *>> &                  vectors_p
  * added during `store_vectors_in_triangulation_and_serialize()`.
  */
 template<int dim, typename VectorType>
-inline std::shared_ptr<dealii::Mapping<dim>>
+inline std::shared_ptr<MappingDoFVector<dim, typename VectorType::value_type>>
 load_vectors(std::vector<std::vector<VectorType *>> &                  vectors_per_dof_handler,
              std::vector<dealii::DoFHandler<dim, dim> const *> const & dof_handlers,
              dealii::DoFHandler<dim> const *                           dof_handler_mapping,
@@ -556,11 +585,7 @@ load_vectors(std::vector<std::vector<VectorType *>> &                  vectors_p
   // We need a collective call to `SolutionTransfer::deserialize()` with all vectors in a
   // single container. Hence, create a mapping vector and add a pointer to the input argument.
   dealii::IndexSet const & locally_owned_dofs = dof_handler_mapping->locally_owned_dofs();
-  dealii::IndexSet const & locally_relevant_dofs =
-    dealii::DoFTools::extract_locally_relevant_dofs(*dof_handler_mapping);
-  VectorType vector_grid_coordinates(locally_owned_dofs,
-                                     locally_relevant_dofs,
-                                     dof_handler_mapping->get_communicator());
+  VectorType vector_grid_coordinates(locally_owned_dofs, dof_handler_mapping->get_communicator());
 
   // Standard utility function, sequence as in `store_vectors_in_triangulation_and_serialize()`.
   std::vector<std::vector<VectorType *>> vectors_per_dof_handler_extended = vectors_per_dof_handler;
@@ -572,339 +597,14 @@ load_vectors(std::vector<std::vector<VectorType *>> &                  vectors_p
   load_vectors(vectors_per_dof_handler_extended, dof_handlers_extended);
 
   // Reconstruct the mapping given the deserialized grid coordinate vector.
-  std::shared_ptr<dealii::Mapping<dim>> mapping;
-  GridUtilities::create_mapping(mapping,
-                                get_element_type(dof_handler_mapping->get_triangulation()),
-                                mapping_degree);
-  MappingDoFVector<dim, typename VectorType::value_type> mapping_dof_vector(mapping_degree);
-  mapping_dof_vector.fill_grid_coordinates_vector(*mapping,
-                                                  vector_grid_coordinates,
-                                                  *dof_handler_mapping);
-
-  return mapping;
-}
-
-/**
- * Utility function to collect integration points via `dealii::FEEvaluation`.
- */
-template<int dim, int n_components, typename Number>
-inline std::vector<dealii::Point<dim>>
-collect_integration_points(
-  dealii::MatrixFree<dim, Number, dealii::VectorizedArray<Number>> const & matrix_free,
-  unsigned int const                                                       dof_index,
-  unsigned int const                                                       quad_index)
-{
-  CellIntegrator<dim, n_components, Number> fe_eval(matrix_free, dof_index, quad_index);
-
-  // Conservative estimate for the number of points.
-  std::vector<dealii::Point<dim>> integration_points;
-  integration_points.reserve(
-    matrix_free.get_dof_handler(dof_index).get_triangulation().n_active_cells() *
-    fe_eval.n_q_points);
-
-  for(unsigned int cell_batch_idx = 0; cell_batch_idx < matrix_free.n_cell_batches();
-      ++cell_batch_idx)
-  {
-    fe_eval.reinit(cell_batch_idx);
-    for(const unsigned int q : fe_eval.quadrature_point_indices())
-    {
-      dealii::Point<dim, dealii::VectorizedArray<Number>> const cell_batch_points =
-        fe_eval.quadrature_point(q);
-      for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
-      {
-        dealii::Point<dim> p;
-        for(unsigned int d = 0; d < dim; ++d)
-        {
-          p[d] = cell_batch_points[d][i];
-        }
-        integration_points.push_back(p);
-      }
-    }
-  }
-
-  return integration_points;
-}
-
-/**
- * Utility function to compute the right hand side of a projection with values given in integration
- * points obtained via `collect_integration_points()`.
- */
-template<int dim, int n_components, typename Number, typename VectorType>
-inline VectorType
-assemble_projection_rhs(
-  dealii::MatrixFree<dim, Number, dealii::VectorizedArray<Number>> const & matrix_free,
-  CellIntegrator<dim, n_components, Number> &                              fe_eval,
-  std::vector<
-    typename dealii::FEPointEvaluation<n_components, dim, dim, Number>::value_type> const &
-                     values_source_in_q_points_target,
-  unsigned int const dof_index)
-{
-  VectorType system_rhs;
-  matrix_free.initialize_dof_vector(system_rhs, dof_index);
-
-  unsigned int idx_q_point = 0;
-
-  for(unsigned int cell_batch_idx = 0; cell_batch_idx < matrix_free.n_cell_batches();
-      ++cell_batch_idx)
-  {
-    fe_eval.reinit(cell_batch_idx);
-    for(unsigned int const q : fe_eval.quadrature_point_indices())
-    {
-      dealii::Tensor<1, n_components, dealii::VectorizedArray<Number>> tmp;
-
-      for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
-      {
-        typename dealii::FEPointEvaluation<n_components, dim, dim, Number>::value_type const
-          values = values_source_in_q_points_target[idx_q_point];
-
-        // Increment index into `values_source_in_q_points_target` which is dictated
-        // by `integration_points_target`, i.e., `collect_integration_points()`.
-        ++idx_q_point;
-
-        if constexpr(n_components == 1)
-        {
-          tmp[0][i] = values;
-        }
-        else
-        {
-          for(unsigned int c = 0; c < n_components; ++c)
-          {
-            tmp[c][i] = values[c];
-          }
-        }
-      }
-
-      fe_eval.submit_value(tmp, q);
-    }
-    fe_eval.integrate(dealii::EvaluationFlags::values);
-    fe_eval.distribute_local_to_global(system_rhs);
-  }
-  system_rhs.compress(dealii::VectorOperation::add);
-
-  return system_rhs;
-}
-
-/**
- * Utilitiy function to project vectors from a source to a target triangulation
- * via `dealii::RemotePointEvaluation`, matrix-free mass operator evaluation
- * and a Jacobi-preconditioned CG solver.
- */
-template<int dim, typename Number, int n_components, typename VectorType>
-inline void
-project_vectors(
-  std::vector<VectorType *> const &                                        source_vectors,
-  dealii::DoFHandler<dim> const &                                          source_dof_handler,
-  std::shared_ptr<dealii::Mapping<dim>> const &                            source_mapping,
-  std::vector<VectorType *> const &                                        target_vectors,
-  dealii::DoFHandler<dim> const &                                          target_dof_handler,
-  dealii::MatrixFree<dim, Number, dealii::VectorizedArray<Number>> const & target_matrix_free,
-  dealii::AffineConstraints<Number> const &                                constraints,
-  unsigned int const                                                       dof_index,
-  unsigned int const                                                       quad_index,
-  double const &                                                           rpe_tolerance_unit_cell,
-  bool const rpe_enforce_unique_mapping)
-{
-  // Setup operator and preconditioner outside of the loop since the operator remains unchanged.
-  MassOperatorData<dim> mass_operator_data;
-  mass_operator_data.dof_index  = dof_index;
-  mass_operator_data.quad_index = quad_index;
-
-  MassOperator<dim, n_components, Number> mass_operator;
-  mass_operator.initialize(target_matrix_free, constraints, mass_operator_data);
-
-  JacobiPreconditioner<MassOperator<dim, n_components, Number>> jacobi_preconditioner(
-    mass_operator, true /* initialize_preconditioner */);
-
-  // Setup RemotePointEvaluation since the `source_vectors` all live on the same triangulation.
-  typename dealii::Utilities::MPI::RemotePointEvaluation<dim>::AdditionalData rpe_data(
-    rpe_tolerance_unit_cell,
-    rpe_enforce_unique_mapping,
-    0 /* rtree_level */,
-    {} /* marked_vertices */);
-
-  dealii::Utilities::MPI::RemotePointEvaluation<dim> rpe_source(rpe_data);
-
-  // The sequence of integration points follows from the sequence of points as encountered during
-  // cell batch loop.
-  std::vector<dealii::Point<dim>> integration_points_target =
-    collect_integration_points<dim, n_components, Number>(target_matrix_free,
-                                                          dof_index,
-                                                          quad_index);
-
-  rpe_source.reinit(integration_points_target,
-                    source_dof_handler.get_triangulation(),
-                    *source_mapping);
-  AssertThrow(rpe_source.all_points_found(),
-              dealii::ExcMessage("Could not interpolate source grid vector in target grid."));
-
-  CellIntegrator<dim, n_components, Number> fe_eval(target_matrix_free, dof_index, quad_index);
-
-  // Loop over vectors and project.
-  for(unsigned int i = 0; i < target_vectors.size(); ++i)
-  {
-    // Evaluate the source vector at the target integration points.
-    VectorType const & source_vector = *source_vectors.at(i);
-    source_vector.update_ghost_values();
-
-    std::vector<
-      typename dealii::FEPointEvaluation<n_components, dim, dim, Number>::value_type> const
-      values_source_in_q_points_target = dealii::VectorTools::point_values<n_components>(
-        rpe_source, source_dof_handler, source_vector, dealii::VectorTools::EvaluationFlags::avg);
-
-    // Assemble right hand side vector for the projection.
-    VectorType system_rhs = assemble_projection_rhs<dim, n_components, Number, VectorType>(
-      target_matrix_free, fe_eval, values_source_in_q_points_target, dof_index);
-
-    // CG solver for global projection.
-    unsigned int constexpr max_iter = 10000;
-    double const abs_tol            = 1e-16 * system_rhs.l2_norm();
-    double constexpr rel_tol        = 1e-12;
-
-    dealii::ReductionControl     reduction_control(max_iter, abs_tol, rel_tol);
-    dealii::SolverCG<VectorType> solver_cg(reduction_control);
-
-    VectorType sol;
-    sol.reinit(system_rhs, false /* omit_zeroing_entries */);
-
-    solver_cg.solve(mass_operator, sol, system_rhs, jacobi_preconditioner);
-
-    *target_vectors[i] = sol;
-
-    if(dealii::Utilities::MPI::this_mpi_process(target_dof_handler.get_communicator()) == 0)
-    {
-      std::cout << "    global projection required " << reduction_control.last_step()
-                << " CG iterations.\n";
-    }
-  }
-}
-
-/**
- * Utility function to perform grid-to-grid projection using `dealii::RemotePointEvaluation`. We
- * assume we only have a single `dealii::FiniteElement` per `dealii::DoFHandler`. The VectorType
- * template argument is assumed not to be of `BlockVector` type. Note that this function initializes
- * `dealii::MatrixFree` and `dealii::RemotePointEvaluation` object and hence should be used with
- * caution.
- */
-template<int dim, typename VectorType>
-inline void
-grid_to_grid_projection(
-  std::vector<std::vector<VectorType *>> const &       source_vectors_per_dof_handler,
-  std::vector<dealii::DoFHandler<dim> const *> const & source_dof_handlers,
-  std::shared_ptr<dealii::Mapping<dim>> const &        source_mapping,
-  std::vector<std::vector<VectorType *>> &             target_vectors_per_dof_handler,
-  std::vector<dealii::DoFHandler<dim> const *> const & target_dof_handlers,
-  std::shared_ptr<dealii::Mapping<dim> const> const &  target_mapping,
-  double const &                                       rpe_tolerance_unit_cell,
-  bool const                                           rpe_enforce_unique_mapping)
-{
-  // Check input dimensions.
-  AssertThrow(source_vectors_per_dof_handler.size() == source_dof_handlers.size(),
-              dealii::ExcMessage("First dimension of source vector of vectors "
-                                 "has to match source DoFHandler count."));
-  AssertThrow(target_vectors_per_dof_handler.size() == target_dof_handlers.size(),
-              dealii::ExcMessage("First dimension of target vector of vectors "
-                                 "has to match target DoFHandler count."));
-  AssertThrow(source_dof_handlers.size() == target_dof_handlers.size(),
-              dealii::ExcMessage("Target and source DoFHandler counts have to match"));
-  AssertThrow(source_vectors_per_dof_handler.size() > 0,
-              dealii::ExcMessage("Vector of source vectors empty."));
-  for(unsigned int i = 0; i < source_vectors_per_dof_handler.size(); ++i)
-  {
-    AssertThrow(source_vectors_per_dof_handler[i].size() ==
-                  target_vectors_per_dof_handler.at(i).size(),
-                dealii::ExcMessage("Vectors of source and target vectors need to have same size."));
-  }
-
-  // Setup `dealii::MatrixFree` object with multiple `dealii::DoFHandler`s.
-  using Number = typename VectorType::value_type;
-  MatrixFreeData<dim, Number> matrix_free_data;
-
-  MappingFlags mapping_flags;
-  mapping_flags.cells =
-    dealii::update_quadrature_points | dealii::update_values | dealii::update_JxW_values;
-  matrix_free_data.append_mapping_flags(mapping_flags);
-
-  dealii::AffineConstraints<Number> empty_constraints;
-  empty_constraints.clear();
-  empty_constraints.close();
-  for(unsigned int i = 0; i < target_dof_handlers.size(); ++i)
-  {
-    matrix_free_data.insert_dof_handler(target_dof_handlers[i], std::to_string(i));
-    matrix_free_data.insert_constraint(&empty_constraints, std::to_string(i));
-
-    ElementType element_type = get_element_type(target_dof_handlers[i]->get_triangulation());
-
-    std::shared_ptr<dealii::Quadrature<dim>> quadrature =
-      create_quadrature<dim>(element_type, target_dof_handlers[i]->get_fe().degree + 2);
-
-    matrix_free_data.insert_quadrature(*quadrature, std::to_string(i));
-  }
-
-  dealii::MatrixFree<dim, Number, dealii::VectorizedArray<Number>> matrix_free;
-  matrix_free.reinit(*target_mapping,
-                     matrix_free_data.get_dof_handler_vector(),
-                     matrix_free_data.get_constraint_vector(),
-                     matrix_free_data.get_quadrature_vector(),
-                     matrix_free_data.data);
-
-  // Project vectors per `dealii::DoFHandler`.
-  for(unsigned int i = 0; i < target_dof_handlers.size(); ++i)
-  {
-    unsigned int const n_components = target_dof_handlers[i]->get_fe().n_components();
-    if(n_components == 1)
-    {
-      project_vectors<dim, Number, 1 /* n_components */, VectorType>(
-        source_vectors_per_dof_handler.at(i),
-        *source_dof_handlers.at(i),
-        source_mapping,
-        target_vectors_per_dof_handler.at(i),
-        *target_dof_handlers.at(i),
-        matrix_free,
-        empty_constraints,
-        i /* dof_index */,
-        i /* quad_index */,
-        rpe_tolerance_unit_cell,
-        rpe_enforce_unique_mapping);
-    }
-    else if(n_components == dim)
-    {
-      project_vectors<dim, Number, dim /* n_components */, VectorType>(
-        source_vectors_per_dof_handler.at(i),
-        *source_dof_handlers.at(i),
-        source_mapping,
-        target_vectors_per_dof_handler.at(i),
-        *target_dof_handlers.at(i),
-        matrix_free,
-        empty_constraints,
-        i /* dof_index */,
-        i /* quad_index */,
-        rpe_tolerance_unit_cell,
-        rpe_enforce_unique_mapping);
-    }
-    else if(n_components == dim + 2)
-    {
-      project_vectors<dim, Number, dim + 2 /* n_components */, VectorType>(
-        source_vectors_per_dof_handler.at(i),
-        *source_dof_handlers.at(i),
-        source_mapping,
-        target_vectors_per_dof_handler.at(i),
-        *target_dof_handlers.at(i),
-        matrix_free,
-        empty_constraints,
-        i /* dof_index */,
-        i /* quad_index */,
-        rpe_tolerance_unit_cell,
-        rpe_enforce_unique_mapping);
-    }
-    else
-    {
-      AssertThrow(n_components == 1 or n_components == dim,
-                  dealii::ExcMessage("The requested number of components is not"
-                                     "supported in `grid_to_grid_projection()`."));
-    }
-  }
+  std::shared_ptr<MappingDoFVector<dim, typename VectorType::value_type>> mapping_dof_vector =
+    std::make_shared<MappingDoFVector<dim, typename VectorType::value_type>>(mapping_degree);
+  mapping_dof_vector->initialize_mapping_from_dof_vector(nullptr /* mapping */,
+                                                         vector_grid_coordinates,
+                                                         *dof_handler_mapping);
+  return mapping_dof_vector;
 }
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_RESTART_H_ */
+#endif /* EXADG_TIME_INTEGRATION_RESTART_H_ */

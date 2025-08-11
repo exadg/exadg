@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_AERO_ACOUSTIC_VOLUME_COUPLING_H_
-#define INCLUDE_EXADG_AERO_ACOUSTIC_VOLUME_COUPLING_H_
+#ifndef EXADG_AERO_ACOUSTIC_VOLUME_COUPLING_H_
+#define EXADG_AERO_ACOUSTIC_VOLUME_COUPLING_H_
 
+// ExaDG
 #include <exadg/aero_acoustic/calculators/source_term_calculator.h>
 #include <exadg/aero_acoustic/single_field_solvers/acoustics.h>
 #include <exadg/aero_acoustic/single_field_solvers/fluid.h>
@@ -145,7 +146,8 @@ private:
   // Aeroacoustic source term defined on the fluid mesh
   VectorType source_term_fluid;
 };
+
 } // namespace AeroAcoustic
 } // namespace ExaDG
 
-#endif /*INCLUDE_EXADG_AERO_ACOUSTIC_VOLUME_COUPLING_H_*/
+#endif /*EXADG_AERO_ACOUSTIC_VOLUME_COUPLING_H_*/

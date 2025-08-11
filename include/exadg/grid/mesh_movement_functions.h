@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_
-#define INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_
+#ifndef EXADG_GRID_MESH_MOVEMENT_FUNCTIONS_H_
+#define EXADG_GRID_MESH_MOVEMENT_FUNCTIONS_H_
 
 namespace ExaDG
 {
@@ -299,4 +299,4 @@ protected:
 
 } // namespace ExaDG
 
-#endif /*INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_*/
+#endif /* EXADG_GRID_MESH_MOVEMENT_FUNCTIONS_H_ */

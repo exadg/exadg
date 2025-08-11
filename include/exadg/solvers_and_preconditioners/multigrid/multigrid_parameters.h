@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRIDINPUTPARAMETERS_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRIDINPUTPARAMETERS_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MULTIGRID_PARAMETERS_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MULTIGRID_PARAMETERS_H_
 
 // C/C++
 #include <string>
@@ -209,10 +209,10 @@ struct SmootherData
   // damping/relaxation factor for Jacobi smoother
   double relaxation_factor;
 
-  // Chebyshev smmother: sets the smoothing range (range of eigenvalues to be smoothed)
+  // Chebyshev smoother: sets the smoothing range (range of eigenvalues to be smoothed)
   double smoothing_range;
 
-  // Chebyshev smmother: number of CG iterations for estimation of eigenvalues
+  // Chebyshev smoother: number of CG iterations for estimation of eigenvalues
   unsigned int iterations_eigenvalue_estimation;
 };
 
@@ -304,5 +304,4 @@ struct MultigridData
 
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRIDINPUTPARAMETERS_H_ */
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MULTIGRID_PARAMETERS_H_ */

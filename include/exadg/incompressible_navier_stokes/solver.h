@@ -19,19 +19,15 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SOLVER_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SOLVER_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SOLVER_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SOLVER_H_
 
-// driver
+// ExaDG
 #include <exadg/incompressible_navier_stokes/driver.h>
-
-// utilities
+#include <exadg/incompressible_navier_stokes/user_interface/declare_get_application.h>
 #include <exadg/operators/resolution_parameters.h>
 #include <exadg/time_integration/resolution_parameters.h>
 #include <exadg/utilities/general_parameters.h>
-
-// application
-#include <exadg/incompressible_navier_stokes/user_interface/declare_get_application.h>
 
 namespace ExaDG
 {
@@ -202,4 +198,4 @@ main(int argc, char ** argv)
   return 0;
 }
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SOLVER_H_ */
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SOLVER_H_ */

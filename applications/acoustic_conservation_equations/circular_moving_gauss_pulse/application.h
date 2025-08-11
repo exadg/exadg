@@ -194,8 +194,8 @@ private:
     this->param.restart_data.interval_time = (this->param.end_time - this->param.start_time) * 0.4;
     this->param.restart_data.interval_wall_time  = 1.e6;
     this->param.restart_data.interval_time_steps = 1e8;
-    this->param.restart_data.filename =
-      this->output_parameters.directory + this->output_parameters.filename + "_restart";
+    this->param.restart_data.directory           = this->output_parameters.directory;
+    this->param.restart_data.filename            = this->output_parameters.filename + "_restart";
 
     this->param.restart_data.degree_u                   = 5;
     this->param.restart_data.degree_p                   = 5;
@@ -228,7 +228,7 @@ private:
         if(write_restart and this->param.grid.triangulation_type == TriangulationType::Serial)
         {
           save_coarse_triangulation<dim, dealii::Triangulation<dim>>(
-            this->param.restart_data.filename, tria);
+            this->param.restart_data.directory, this->param.restart_data.filename, tria);
         }
 
         tria.refine_global(global_refinements);
@@ -317,10 +317,9 @@ private:
     return (2.0 * dealii::numbers::PI / xi);
   }
 
-  double const start_time = 0.0;
-
-  bool read_restart  = false;
-  bool write_restart = false;
+  double const start_time    = 0.0;
+  bool         write_restart = false;
+  bool         read_restart  = false;
 };
 
 } // namespace Acoustics

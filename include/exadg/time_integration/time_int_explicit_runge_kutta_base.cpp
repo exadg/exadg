@@ -151,7 +151,7 @@ TimeIntExplRKBase<Number>::do_write_restart(std::string const & filename) const
   std::vector<VectorType const *> vectors{&solution_n};
   this->write_restart_vectors(vectors);
 
-  // Remains for comparison.
+  // Remains for comparison. ##+
   read_write_distributed_vector(solution_n, oa);
 
   write_restart_file(oss, filename);
@@ -190,7 +190,7 @@ TimeIntExplRKBase<Number>::do_read_restart(std::ifstream & in)
   std::vector<VectorType *> vectors{&solution_n};
   this->read_restart_vectors(vectors);
 
-  // Remains for comparison.
+  // Remains for comparison. ##+
   try
   {
     VectorType solution_n_compare(solution_n);

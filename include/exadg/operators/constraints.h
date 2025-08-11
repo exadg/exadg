@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_CONSTRAINTS_H_
-#define INCLUDE_EXADG_OPERATORS_CONSTRAINTS_H_
+#ifndef EXADG_OPERATORS_CONSTRAINTS_H_
+#define EXADG_OPERATORS_CONSTRAINTS_H_
 
 // deal.II
 #include <deal.II/dofs/dof_tools.h>
@@ -118,4 +118,4 @@ add_homogeneous_dirichlet_constraints(
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_OPERATORS_CONSTRAINTS_H_ */
+#endif /* EXADG_OPERATORS_CONSTRAINTS_H_ */

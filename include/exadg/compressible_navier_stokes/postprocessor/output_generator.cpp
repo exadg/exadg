@@ -19,9 +19,6 @@
  *  ______________________________________________________________________
  */
 
-// deal.II
-#include <deal.II/numerics/data_out.h>
-
 // ExaDG
 #include <exadg/compressible_navier_stokes/postprocessor/output_generator.h>
 #include <exadg/postprocessor/write_output.h>
@@ -31,75 +28,6 @@ namespace ExaDG
 {
 namespace CompNS
 {
-template<int dim, typename Number, typename VectorType>
-void
-write_output(
-  OutputData const &                                                    output_data,
-  dealii::DoFHandler<dim> const &                                       dof_handler,
-  dealii::Mapping<dim> const &                                          mapping,
-  VectorType const &                                                    solution_conserved,
-  std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
-  unsigned int const                                                    output_counter,
-  MPI_Comm const &                                                      mpi_comm)
-{
-  std::string folder = output_data.directory, file = output_data.filename;
-
-  dealii::DataOutBase::VtkFlags flags;
-  flags.write_higher_order_cells = output_data.write_higher_order;
-
-  dealii::DataOut<dim> data_out;
-  data_out.set_flags(flags);
-
-  // conserved variables
-  std::vector<std::string> solution_names_conserved(dim + 2, "rho_u");
-  solution_names_conserved[0]       = "rho";
-  solution_names_conserved[1 + dim] = "rho_E";
-
-  std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
-    solution_component_interpretation(
-      dim + 2, dealii::DataComponentInterpretation::component_is_part_of_vector);
-
-  solution_component_interpretation[0] = dealii::DataComponentInterpretation::component_is_scalar;
-  solution_component_interpretation[1 + dim] =
-    dealii::DataComponentInterpretation::component_is_scalar;
-
-  data_out.add_data_vector(dof_handler,
-                           solution_conserved,
-                           solution_names_conserved,
-                           solution_component_interpretation);
-
-  // additional solution fields
-  for(auto & additional_field : additional_fields)
-  {
-    if(additional_field->get_type() == SolutionFieldType::scalar)
-    {
-      data_out.add_data_vector(additional_field->get_dof_handler(),
-                               additional_field->get(),
-                               additional_field->get_name());
-    }
-    else if(additional_field->get_type() == SolutionFieldType::vector)
-    {
-      std::vector<std::string> names(dim, additional_field->get_name());
-      std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
-        component_interpretation(dim,
-                                 dealii::DataComponentInterpretation::component_is_part_of_vector);
-
-      data_out.add_data_vector(additional_field->get_dof_handler(),
-                               additional_field->get(),
-                               names,
-                               component_interpretation);
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
-    }
-  }
-
-  data_out.build_patches(mapping, output_data.degree, dealii::DataOut<dim>::curved_inner_cells);
-
-  data_out.write_vtu_with_pvtu_record(folder, file, output_counter, mpi_comm, 4);
-}
-
 template<int dim, typename Number>
 OutputGenerator<dim, Number>::OutputGenerator(MPI_Comm const & comm) : mpi_comm(comm)
 {
@@ -178,13 +106,26 @@ OutputGenerator<dim, Number>::evaluate(
 {
   print_write_output_time(time, time_control.get_counter(), unsteady, mpi_comm);
 
-  write_output<dim, Number, VectorType>(output_data,
-                                        *dof_handler,
-                                        *mapping,
-                                        solution_conserved,
-                                        additional_fields,
-                                        time_control.get_counter(),
-                                        mpi_comm);
+  VectorWriter<dim, Number> vector_writer(output_data, time_control.get_counter(), mpi_comm);
+
+  std::vector<std::string> component_names(dim + 2, "rho_u");
+  component_names[0]       = "rho";
+  component_names[dim + 1] = "rho_E";
+
+  std::vector<bool> component_is_part_of_vector(dim + 2, true);
+  component_is_part_of_vector[0]       = false;
+  component_is_part_of_vector[dim + 1] = false;
+
+  vector_writer.add_data_vector(solution_conserved,
+                                *dof_handler,
+                                component_names,
+                                component_is_part_of_vector);
+
+  vector_writer.add_fields(additional_fields);
+
+  vector_writer.write_aspect_ratio(*dof_handler, *mapping);
+
+  vector_writer.write_pvtu(&(*mapping));
 }
 
 

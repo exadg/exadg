@@ -19,11 +19,13 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_GENERAL_PARAMETERS_H_
-#define INCLUDE_EXADG_UTILITIES_GENERAL_PARAMETERS_H_
+#ifndef EXADG_UTILITIES_GENERAL_PARAMETERS_H_
+#define EXADG_UTILITIES_GENERAL_PARAMETERS_H_
 
+// deal.II
 #include <deal.II/base/parameter_handler.h>
 
+// ExaDG
 #include <exadg/utilities/enum_patterns.h>
 
 namespace ExaDG
@@ -71,6 +73,4 @@ struct GeneralParameters
 
 } // namespace ExaDG
 
-
-
-#endif /* INCLUDE_EXADG_UTILITIES_GENERAL_PARAMETERS_H_ */
+#endif /* EXADG_UTILITIES_GENERAL_PARAMETERS_H_ */
