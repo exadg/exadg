@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef PRECONDITIONER_AMG
-#define PRECONDITIONER_AMG
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONERS_PRECONDITIONER_AMG_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONERS_PRECONDITIONER_AMG_H_
 
+// deal.II
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/lac/petsc_precondition.h>
 #include <deal.II/lac/petsc_solver.h>
@@ -29,10 +30,12 @@
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
 
+// Trilinos
 #ifdef DEAL_II_WITH_TRILINOS
 #  include <ml_MultiLevelPreconditioner.h>
 #endif
 
+// ExaDG
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
@@ -54,7 +57,7 @@ create_subcommunicator(dealii::DoFHandler<dim, spacedim> const & dof_handler)
 
   // In case some of the MPI ranks do not have cells, we create a
   // sub-communicator to exclude all those processes from the MPI
-  // communication in the matrix-based operation sand hence speed up those
+  // communication in the matrix-based operations and hence speed up those
   // operations. Note that we have to free the communicator again, which is
   // done by a custom deleter of the unique pointer that is run when it goes
   // out of scope.
@@ -232,12 +235,17 @@ public:
     std::vector<std::vector<bool>>   constant_modes;
     std::vector<std::vector<double>> constant_modes_values;
     pde_operator.get_constant_modes(constant_modes, constant_modes_values);
-    if(constant_modes.empty())
+    MPI_Comm const & mpi_comm = system_matrix.get_mpi_communicator();
+    bool const       some_constant_mode_set =
+      dealii::Utilities::MPI::logical_or(constant_modes.size() > 0, mpi_comm);
+    if(not some_constant_mode_set)
     {
-      AssertThrow(constant_modes_values.size() > 0,
+      bool const some_constant_mode_values_set =
+        dealii::Utilities::MPI::logical_or(constant_modes_values.size() > 0, mpi_comm);
+      AssertThrow(some_constant_mode_values_set > 0,
                   dealii::ExcMessage(
                     "Neither `constant_modes` nor `constant_modes_values` were provided. "
-                    "AMG setup requires near null sapce basis vectors."));
+                    "AMG setup requires near null space basis vectors."));
       ml_data.constant_modes_values = constant_modes_values;
     }
     else
@@ -570,4 +578,4 @@ private:
 
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONERS_PRECONDITIONER_AMG_H_ */

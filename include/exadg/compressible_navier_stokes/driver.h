@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
-#define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
+#ifndef EXADG_COMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
+#define EXADG_COMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
 
+// ExaDG
 #include <exadg/compressible_navier_stokes/spatial_discretization/operator.h>
 #include <exadg/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.h>
 #include <exadg/compressible_navier_stokes/user_interface/analytical_solution.h>
@@ -109,4 +110,4 @@ private:
 } // namespace CompNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_DRIVER_H_ */
+#endif /* EXADG_COMPRESSIBLE_NAVIER_STOKES_DRIVER_H_ */

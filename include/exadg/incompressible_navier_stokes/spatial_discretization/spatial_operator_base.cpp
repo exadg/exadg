@@ -19,10 +19,8 @@
  *  ______________________________________________________________________
  */
 
-// deal.II
-#include <deal.II/numerics/vector_tools.h>
-
 // ExaDG
+#include <exadg/functions_and_boundary_conditions/interpolate.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_projection.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
@@ -406,29 +404,24 @@ void
 SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_index_temperature)
 {
   // mass operator
-  MassOperatorData<dim> mass_operator_data;
+  MassOperatorData<dim, Number> mass_operator_data;
   mass_operator_data.dof_index  = get_dof_index_velocity();
   mass_operator_data.quad_index = get_quad_index_velocity_standard();
   mass_operator.initialize(*matrix_free, constraint_u, mass_operator_data);
 
-  InverseMassOperatorDataHdiv inverse_mass_data_hdiv;
-  inverse_mass_data_hdiv.dof_index  = get_dof_index_velocity();
-  inverse_mass_data_hdiv.quad_index = get_quad_index_velocity_standard();
-  inverse_mass_data_hdiv.parameters = this->param.inverse_mass_operator_hdiv;
+  // inverse mass operator velocity
+  InverseMassOperatorData<Number> inverse_mass_operator_data_velocity;
+  inverse_mass_operator_data_velocity.dof_index  = get_dof_index_velocity();
+  inverse_mass_operator_data_velocity.quad_index = get_quad_index_velocity_standard();
+  inverse_mass_operator_data_velocity.parameters = param.inverse_mass_operator;
+  inverse_mass_velocity.initialize(*matrix_free,
+                                   inverse_mass_operator_data_velocity,
+                                   param.spatial_discretization == SpatialDiscretization::L2 ?
+                                     nullptr :
+                                     &constraint_u);
 
-  inverse_mass_hdiv.initialize(*matrix_free, constraint_u, inverse_mass_data_hdiv);
-
-  // inverse mass operator
-  if(param.spatial_discretization == SpatialDiscretization::L2)
-  {
-    InverseMassOperatorData inverse_mass_operator_data_velocity;
-    inverse_mass_operator_data_velocity.dof_index  = get_dof_index_velocity();
-    inverse_mass_operator_data_velocity.quad_index = get_quad_index_velocity_standard();
-    inverse_mass_operator_data_velocity.parameters = param.inverse_mass_operator;
-    inverse_mass_velocity.initialize(*matrix_free, inverse_mass_operator_data_velocity);
-  }
   // inverse mass operator velocity scalar
-  InverseMassOperatorData inverse_mass_operator_data_velocity_scalar;
+  InverseMassOperatorData<Number> inverse_mass_operator_data_velocity_scalar;
   inverse_mass_operator_data_velocity_scalar.dof_index  = get_dof_index_velocity_scalar();
   inverse_mass_operator_data_velocity_scalar.quad_index = get_quad_index_velocity_standard();
   inverse_mass_operator_data_velocity_scalar.parameters = param.inverse_mass_operator;
@@ -483,7 +476,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
                             convective_kernel_data,
                             get_dof_index_velocity(),
                             get_quad_index_velocity_linearized(),
-                            false /* is_mg */);
+                            false /* is_mg =  use_velocity_own_storage */);
 
   dealii::AffineConstraints<Number> constraint_dummy;
   constraint_dummy.close();
@@ -508,11 +501,17 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   viscous_kernel_data.IP_formulation               = param.IP_formulation_viscous;
   viscous_kernel_data.viscosity_is_variable        = param.viscosity_is_variable();
   viscous_kernel_data.variable_normal_vector       = param.neumann_with_variable_normal_vector;
+
+  bool const use_velocity_own_storage_viscous_kernel = param.viscous_problem() and
+                                                       param.viscosity_is_variable() and
+                                                       not param.non_explicit_convective_problem();
+
   viscous_kernel = std::make_shared<Operators::ViscousKernel<dim, Number>>();
   viscous_kernel->reinit(*matrix_free,
                          viscous_kernel_data,
                          get_dof_index_velocity(),
-                         get_quad_index_velocity_standard());
+                         get_quad_index_velocity_standard(),
+                         use_velocity_own_storage_viscous_kernel);
 
   // initialize and check turbulence model data
   if(param.turbulence_model_data.is_active)
@@ -553,6 +552,9 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
 
   data.convective_kernel_data = convective_kernel_data;
   data.viscous_kernel_data    = viscous_kernel_data;
+
+  data.turbulence_model_data            = param.turbulence_model_data;
+  data.generalized_newtonian_model_data = param.generalized_newtonian_model_data;
 
   data.bc = boundary_descriptor->velocity;
 
@@ -667,6 +669,10 @@ SpatialOperatorBase<dim, Number>::initialize_calculators_for_derived_quantities(
                                    get_dof_index_velocity(),
                                    get_dof_index_velocity_scalar(),
                                    get_quad_index_velocity_standard());
+  viscosity_calculator.initialize(*matrix_free,
+                                  get_dof_index_velocity_scalar(),
+                                  get_quad_index_velocity_standard(),
+                                  *viscous_kernel);
   magnitude_calculator.initialize(*matrix_free,
                                   get_dof_index_velocity(),
                                   get_dof_index_velocity_scalar(),
@@ -958,33 +964,37 @@ SpatialOperatorBase<dim, Number>::initialize_block_vector_velocity_pressure(
 
 template<int dim, typename Number>
 void
+SpatialOperatorBase<dim, Number>::interpolate_functions(
+  VectorType &                                   velocity,
+  std::shared_ptr<dealii::Function<dim>> const & f_velocity,
+  VectorType &                                   pressure,
+  std::shared_ptr<dealii::Function<dim>> const & f_pressure,
+  double const                                   time) const
+{
+  AssertThrow(f_velocity, dealii::ExcMessage("Function not set"));
+  AssertThrow(f_pressure, dealii::ExcMessage("Function not set"));
+
+  Utilities::interpolate(*get_mapping(), dof_handler_u, *f_velocity, velocity, time);
+  Utilities::interpolate(*get_mapping(), dof_handler_p, *f_pressure, pressure, time);
+}
+
+template<int dim, typename Number>
+void
 SpatialOperatorBase<dim, Number>::prescribe_initial_conditions(VectorType & velocity,
                                                                VectorType & pressure,
                                                                double const time) const
 {
-  field_functions->initial_solution_velocity->set_time(time);
-  field_functions->initial_solution_pressure->set_time(time);
+  interpolate_functions(velocity,
+                        field_functions->initial_solution_velocity,
+                        pressure,
+                        field_functions->initial_solution_pressure,
+                        time);
 
-  // This is necessary if Number == float
-  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-
-  VectorTypeDouble velocity_double;
-  VectorTypeDouble pressure_double;
-  velocity_double = velocity;
-  pressure_double = pressure;
-
-  dealii::VectorTools::interpolate(*get_mapping(),
-                                   dof_handler_u,
-                                   *(field_functions->initial_solution_velocity),
-                                   velocity_double);
-
-  dealii::VectorTools::interpolate(*get_mapping(),
-                                   dof_handler_p,
-                                   *(field_functions->initial_solution_pressure),
-                                   pressure_double);
-
-  velocity = velocity_double;
-  pressure = pressure_double;
+  // Compute initial variable viscosity using the initial velocity field.
+  if(this->param.viscous_problem() and this->param.viscosity_is_variable())
+  {
+    this->update_viscosity(velocity);
+  }
 }
 
 template<int dim, typename Number>
@@ -993,34 +1003,11 @@ SpatialOperatorBase<dim, Number>::interpolate_analytical_solution(VectorType & v
                                                                   VectorType & pressure,
                                                                   double const time) const
 {
-  AssertThrow(field_functions->analytical_solution_velocity,
-              dealii::ExcMessage("FieldFunctions::analytical_solution_velocity not set"));
-  AssertThrow(field_functions->analytical_solution_pressure,
-              dealii::ExcMessage("FieldFunctions::analytical_solution_pressure not set"));
-
-  field_functions->analytical_solution_velocity->set_time(time);
-  field_functions->analytical_solution_pressure->set_time(time);
-
-  // This is necessary if Number == float
-  using VectorTypeDouble = dealii::LinearAlgebra::distributed::Vector<double>;
-
-  VectorTypeDouble velocity_double;
-  VectorTypeDouble pressure_double;
-  velocity_double = velocity;
-  pressure_double = pressure;
-
-  dealii::VectorTools::interpolate(*get_mapping(),
-                                   get_dof_handler_u(),
-                                   *(field_functions->analytical_solution_velocity),
-                                   velocity_double);
-
-  dealii::VectorTools::interpolate(*get_mapping(),
-                                   get_dof_handler_p(),
-                                   *(field_functions->analytical_solution_pressure),
-                                   pressure_double);
-
-  velocity = velocity_double;
-  pressure = pressure_double;
+  interpolate_functions(velocity,
+                        field_functions->analytical_solution_velocity,
+                        pressure,
+                        field_functions->analytical_solution_pressure,
+                        time);
 }
 
 template<int dim, typename Number>
@@ -1254,6 +1241,21 @@ SpatialOperatorBase<dim, Number>::compute_shear_rate(VectorType & dst, VectorTyp
 
 template<int dim, typename Number>
 void
+SpatialOperatorBase<dim, Number>::access_viscosity(VectorType & dst, VectorType const & src) const
+{
+  if(param.viscosity_is_variable())
+  {
+    viscosity_calculator.access_viscosity(dst, src);
+    inverse_mass_velocity_scalar.apply(dst, dst);
+  }
+  else
+  {
+    dst = param.viscosity;
+  }
+}
+
+template<int dim, typename Number>
+void
 SpatialOperatorBase<dim, Number>::compute_velocity_magnitude(VectorType &       dst,
                                                              VectorType const & src) const
 {
@@ -1382,18 +1384,7 @@ unsigned int
 SpatialOperatorBase<dim, Number>::apply_inverse_mass_operator(VectorType &       dst,
                                                               VectorType const & src) const
 {
-  if(param.spatial_discretization == SpatialDiscretization::L2)
-  {
-    inverse_mass_velocity.apply(dst, src);
-  }
-  else if(param.spatial_discretization == SpatialDiscretization::HDIV)
-  {
-    inverse_mass_hdiv.apply(dst, src);
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("Not implemented."));
-  }
+  inverse_mass_velocity.apply(dst, src);
   return 0;
 }
 
@@ -1440,6 +1431,12 @@ SpatialOperatorBase<dim, Number>::update_viscosity(VectorType const & velocity) 
               dealii::ExcMessage(
                 "Updating viscosity reasonable for variable viscosity models only."));
 
+  // update linearization velocity vector in `viscous_kernel`
+  if(viscous_kernel->get_use_velocity_own_storage())
+  {
+    viscous_kernel->set_velocity_copy(velocity);
+  }
+
   // reset the viscosity stored
   // viscosity = viscosity_newtonian_limit
   viscous_kernel->set_constant_coefficient(viscous_kernel_data.viscosity);
@@ -1447,7 +1444,9 @@ SpatialOperatorBase<dim, Number>::update_viscosity(VectorType const & velocity) 
   // add contribution from generalized Newtonian model
   // viscosity += generalized_newtonian_viscosity(viscosity_newtonian_limit)
   if(param.generalized_newtonian_model_data.is_active)
+  {
     generalized_newtonian_model.add_viscosity(velocity);
+  }
 
   // add contribution from turbulence model
   // viscosity += turbulent_viscosity(viscosity)
@@ -1455,7 +1454,9 @@ SpatialOperatorBase<dim, Number>::update_viscosity(VectorType const & velocity) 
   // *sequence of calls matters*, i.e., we can only compute the turbulent viscosity once the laminar
   // viscosity has been computed
   if(param.turbulence_model_data.is_active)
+  {
     turbulence_model.add_viscosity(velocity);
+  }
 }
 
 template<int dim, typename Number>
@@ -1650,7 +1651,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
     }
     else if(param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
     {
-      InverseMassOperatorData inverse_mass_operator_data;
+      InverseMassOperatorData<Number> inverse_mass_operator_data;
       inverse_mass_operator_data.dof_index  = get_dof_index_velocity();
       inverse_mass_operator_data.quad_index = get_quad_index_velocity_standard();
       inverse_mass_operator_data.parameters = param.inverse_mass_preconditioner;

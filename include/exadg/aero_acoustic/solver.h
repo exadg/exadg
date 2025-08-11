@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_AERO_ACOUSTIC_SOLVER_H_
-#define INCLUDE_EXADG_AERO_ACOUSTIC_SOLVER_H_
+#ifndef EXADG_AERO_ACOUSTIC_SOLVER_H_
+#define EXADG_AERO_ACOUSTIC_SOLVER_H_
 
 // deal.II
 #include <deal.II/base/parameter_handler.h>
@@ -136,4 +136,4 @@ main(int argc, char ** argv)
   return 0;
 }
 
-#endif /* INCLUDE_EXADG_AERO_ACOUSTIC_SOLVER_H_ */
+#endif /* EXADG_AERO_ACOUSTIC_SOLVER_H_ */

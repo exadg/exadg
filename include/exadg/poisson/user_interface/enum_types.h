@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POISSON_USER_INTERFACE_ENUM_TYPES_H_
-#define INCLUDE_EXADG_POISSON_USER_INTERFACE_ENUM_TYPES_H_
+#ifndef EXADG_POISSON_USER_INTERFACE_ENUM_TYPES_H_
+#define EXADG_POISSON_USER_INTERFACE_ENUM_TYPES_H_
 
 namespace ExaDG
 {
@@ -83,5 +83,4 @@ enum class Preconditioner
 } // namespace Poisson
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_POISSON_USER_INTERFACE_ENUM_TYPES_H_ */
+#endif /* EXADG_POISSON_USER_INTERFACE_ENUM_TYPES_H_ */

@@ -19,10 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
-#define INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
+#ifndef EXADG_STRUCTURE_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
+#define EXADG_STRUCTURE_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
 
-
+// ExaDG
 #include <exadg/structure/user_interface/application_base.h>
 
 namespace ExaDG
@@ -39,5 +39,4 @@ get_application(std::string input_file, MPI_Comm const & comm)
 } // namespace Structure
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_ */
+#endif /* EXADG_STRUCTURE_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_ */

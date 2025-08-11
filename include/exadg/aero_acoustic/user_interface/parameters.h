@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef EXADG_AERO_ACOUSTIC_USER_INTERFACE_INPUT_PARAMETERS_H_
-#define EXADG_AERO_ACOUSTIC_USER_INTERFACE_INPUT_PARAMETERS_H_
+#ifndef EXADG_AERO_ACOUSTIC_USER_INTERFACE_PARAMETERS_H_
+#define EXADG_AERO_ACOUSTIC_USER_INTERFACE_PARAMETERS_H_
 
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
@@ -142,4 +142,4 @@ public:
 } // namespace AeroAcoustic
 } // namespace ExaDG
 
-#endif /* EXADG_AERO_ACOUSTIC_USER_INTERFACE_INPUT_PARAMETERS_H_ */
+#endif /* EXADG_AERO_ACOUSTIC_USER_INTERFACE_PARAMETERS_H_ */

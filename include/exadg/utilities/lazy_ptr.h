@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_LAZY_PTR_H_
-#define INCLUDE_EXADG_UTILITIES_LAZY_PTR_H_
+#ifndef EXADG_UTILITIES_LAZY_PTR_H_
+#define EXADG_UTILITIES_LAZY_PTR_H_
 
 namespace ExaDG
 {
@@ -72,4 +72,4 @@ private:
 
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_UTILITIES_LAZY_PTR_H_ */

@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATOR_H_
-#define INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATOR_H_
+#ifndef EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATOR_H_
+#define EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATOR_H_
 
 // deal.II
 #include <deal.II/fe/fe_system.h>
@@ -512,4 +512,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATOR_H_ */
+#endif /* EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATOR_H_ */

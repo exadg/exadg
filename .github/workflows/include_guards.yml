@@ -1,0 +1,19 @@
+name: include guards
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: sbeyer/include-guards-check-action@v2.0.0
+      with:
+        path: 'include/exadg/'
+        pattern: 'EXADG_{dirs}_{file}_'
+        

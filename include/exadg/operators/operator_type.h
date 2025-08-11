@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_OPERATOR_TYPE_H_
-#define INCLUDE_EXADG_OPERATORS_OPERATOR_TYPE_H_
+#ifndef EXADG_OPERATORS_OPERATOR_TYPE_H_
+#define EXADG_OPERATORS_OPERATOR_TYPE_H_
 
 namespace ExaDG
 {
@@ -32,4 +32,4 @@ enum class OperatorType
 };
 }
 
-#endif
+#endif /* EXADG_OPERATORS_OPERATOR_TYPE_H_ */

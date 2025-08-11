@@ -18,8 +18,8 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
-#ifndef INCLUDE_EXADG_STRUCTURE_POSTPROCESSOR_POSTPROCESSOR_BASE_H_
-#define INCLUDE_EXADG_STRUCTURE_POSTPROCESSOR_POSTPROCESSOR_BASE_H_
+#ifndef EXADG_STRUCTURE_POSTPROCESSOR_POSTPROCESSOR_BASE_H_
+#define EXADG_STRUCTURE_POSTPROCESSOR_POSTPROCESSOR_BASE_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -51,5 +51,4 @@ public:
 } // namespace Structure
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_STRUCTURE_POSTPROCESSOR_POSTPROCESSOR_BASE_H_ */
+#endif /* EXADG_STRUCTURE_POSTPROCESSOR_POSTPROCESSOR_BASE_H_ */

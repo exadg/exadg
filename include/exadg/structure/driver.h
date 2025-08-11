@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_DRIVER_H_
-#define INCLUDE_EXADG_STRUCTURE_DRIVER_H_
+#ifndef EXADG_STRUCTURE_DRIVER_H_
+#define EXADG_STRUCTURE_DRIVER_H_
 
 // deal.II
 #include <deal.II/distributed/fully_distributed_tria.h>
@@ -119,4 +119,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_STRUCTURE_DRIVER_H_ */
+#endif /* EXADG_STRUCTURE_DRIVER_H_ */

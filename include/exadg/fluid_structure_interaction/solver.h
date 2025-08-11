@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_SOLVER_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_SOLVER_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_SOLVER_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_SOLVER_H_
 
 // deal.II
 #include <deal.II/base/parameter_handler.h>
@@ -140,4 +140,4 @@ main(int argc, char ** argv)
   return 0;
 }
 
-#endif /* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_SOLVER_H_ */
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_SOLVER_H_ */

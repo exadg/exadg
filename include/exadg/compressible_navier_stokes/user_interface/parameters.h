@@ -18,9 +18,11 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
-#ifndef INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_
-#define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_
 
+#ifndef EXADG_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_PARAMETERS_H_
+#define EXADG_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_PARAMETERS_H_
+
+// ExaDG
 #include <exadg/compressible_navier_stokes/user_interface/enum_types.h>
 #include <exadg/grid/grid_data.h>
 #include <exadg/operators/inverse_mass_parameters.h>
@@ -211,4 +213,4 @@ public:
 } // namespace CompNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_*/
+#endif /* EXADG_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_PARAMETERS_H_ */

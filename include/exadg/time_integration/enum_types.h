@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_ENUM_TYPES_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_ENUM_TYPES_H_
+#ifndef EXADG_TIME_INTEGRATION_ENUM_TYPES_H_
+#define EXADG_TIME_INTEGRATION_ENUM_TYPES_H_
 
 // C/C++
 #include <string>
@@ -43,4 +43,4 @@ enum class GenAlphaType
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_ENUM_TYPES_H_ */
+#endif /* EXADG_TIME_INTEGRATION_ENUM_TYPES_H_ */

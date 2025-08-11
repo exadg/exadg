@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_PROJECT_VELOCITY_H_
-#define INCLUDE_EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_PROJECT_VELOCITY_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_PROJECT_VELOCITY_H_
+#define EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_PROJECT_VELOCITY_H_
 
+// ExaDG
 #include <exadg/functions_and_boundary_conditions/evaluate_functions.h>
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/inverse_mass_operator.h>
@@ -44,7 +45,7 @@ public:
    */
   void
   apply(dealii::MatrixFree<dim, Number> const &      matrix_free,
-        InverseMassOperatorData const                inverse_mass_operator_data,
+        InverseMassOperatorData<Number> const        inverse_mass_operator_data,
         std::shared_ptr<dealii::Function<dim>> const function,
         double const &                               time,
         VectorType &                                 vector)
@@ -58,7 +59,7 @@ public:
     VectorType src;
     matrix_free.cell_loop(&VelocityProjection<dim, Number>::cell_loop, this, vector, src);
 
-    // apply M^{-1}
+    // construct and apply M^{-1}
     InverseMassOperator<dim, dim, Number> inverse_mass;
     inverse_mass.initialize(matrix_free, inverse_mass_operator_data);
     inverse_mass.apply(vector, vector);
@@ -100,4 +101,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_PROJECT_VELOCITY_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_PROJECT_VELOCITY_H_ */

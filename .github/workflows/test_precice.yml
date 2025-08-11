@@ -10,7 +10,7 @@ on:
 
 concurrency:
   group: ${ {github.event_name }}-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{github.event_name == 'pull_request'}}    
+  cancel-in-progress: ${{github.event_name == 'pull_request'}}
 
 env:
   COMPILE_JOBS: 2
@@ -26,7 +26,7 @@ jobs:
         build_type: ["Debug"]
         dealii_version: ["master"]
         use_precice: ["ON"]
-    
+
     container:
       image: dealii/dealii:${{ matrix.dealii_version }}-focal
       options: --user root
@@ -37,6 +37,10 @@ jobs:
       - name: Install preCICE
         run: |
           sudo apt-get -y update
+          sudo apt-get install -y \
+                 libboost-log-dev \
+                 libboost-filesystem-dev \
+                 libboost-test-dev
           wget https://github.com/precice/precice/releases/download/v2.3.0/libprecice2_2.3.0_focal.deb
           sudo apt-get -y install ./libprecice2_2.3.0_focal.deb
 
@@ -46,4 +50,4 @@ jobs:
           cd build
           cmake ../ -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DEXADG_WITH_PRECICE=${{ matrix.use_precice }}
           make -j${{ env.COMPILE_JOBS }}
-          
+

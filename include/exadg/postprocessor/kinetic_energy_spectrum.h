@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POSTPROCESSOR_KINETIC_ENERGY_SPECTRUM_H_
-#define INCLUDE_EXADG_POSTPROCESSOR_KINETIC_ENERGY_SPECTRUM_H_
+#ifndef EXADG_POSTPROCESSOR_KINETIC_ENERGY_SPECTRUM_H_
+#define EXADG_POSTPROCESSOR_KINETIC_ENERGY_SPECTRUM_H_
 
 // deal.II
 #include <deal.II/fe/fe_system.h>
@@ -147,4 +147,4 @@ private:
 };
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_POSTPROCESSOR_KINETIC_ENERGY_SPECTRUM_H_ */
+#endif /* EXADG_POSTPROCESSOR_KINETIC_ENERGY_SPECTRUM_H_ */

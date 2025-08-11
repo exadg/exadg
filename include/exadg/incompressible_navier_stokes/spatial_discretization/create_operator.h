@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CREATE_OPERATOR_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CREATE_OPERATOR_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CREATE_OPERATOR_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CREATE_OPERATOR_H_
 
 // ExaDG
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
@@ -97,6 +97,4 @@ create_operator(std::shared_ptr<Grid<dim> const>                      grid,
 } // namespace IncNS
 } // namespace ExaDG
 
-
-
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CREATE_OPERATOR_H_ */
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CREATE_OPERATOR_H_ */

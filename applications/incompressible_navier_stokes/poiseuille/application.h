@@ -498,6 +498,7 @@ private:
     pp_data.output_data.write_velocity_magnitude  = true;
     pp_data.output_data.write_vorticity_magnitude = true;
     pp_data.output_data.write_processor_id        = true;
+    pp_data.output_data.write_aspect_ratio        = true;
     pp_data.output_data.write_q_criterion         = true;
     pp_data.output_data.degree                    = this->param.degree_u;
     pp_data.output_data.write_higher_order        = true;

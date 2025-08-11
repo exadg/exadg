@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef DEAL_SPECTRUM_TIMER
-#define DEAL_SPECTRUM_TIMER
+#ifndef EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_TIMER_H_
+#define EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_TIMER_H_
 
 namespace dealspectrum
 {
@@ -139,4 +139,4 @@ public:
 
 } // namespace dealspectrum
 
-#endif
+#endif /* EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_TIMER_H_ */

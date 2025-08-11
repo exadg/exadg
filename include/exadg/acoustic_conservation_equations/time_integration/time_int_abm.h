@@ -22,8 +22,10 @@
 #ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_TIME_INTEGRATION_TIME_INT_ABM_H_
 #define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_TIME_INTEGRATION_TIME_INT_ABM_H_
 
-
+// ExaDG
+#include <exadg/acoustic_conservation_equations/postprocessor/postprocessor_interface.h>
 #include <exadg/acoustic_conservation_equations/spatial_discretization/interface.h>
+#include <exadg/acoustic_conservation_equations/user_interface/parameters.h>
 #include <exadg/operators/grid_related_time_step_restrictions.h>
 #include <exadg/time_integration/time_int_abm_base.h>
 #include <exadg/time_integration/time_step_calculation.h>
@@ -32,19 +34,18 @@ namespace ExaDG
 {
 namespace Acoustics
 {
-template<int dim, typename Number>
+template<typename Number>
 class TimeIntAdamsBashforthMoulton
-  : public TimeIntAdamsBashforthMoultonBase<Interface::SpatialOperator<dim, Number>,
+  : public TimeIntAdamsBashforthMoultonBase<Interface::SpatialOperator<Number>,
                                             dealii::LinearAlgebra::distributed::BlockVector<Number>>
 {
 public:
-  TimeIntAdamsBashforthMoulton(
-    std::shared_ptr<Interface::SpatialOperator<dim, Number>> pde_operator_in,
-    Parameters const &                                       param_in,
-    std::shared_ptr<PostProcessorInterface<Number>>          postprocessor_in,
-    MPI_Comm const &                                         mpi_comm_in,
-    bool const                                               is_test_in)
-    : TimeIntAdamsBashforthMoultonBase<Interface::SpatialOperator<dim, Number>,
+  TimeIntAdamsBashforthMoulton(std::shared_ptr<Interface::SpatialOperator<Number>> pde_operator_in,
+                               Parameters const &                                  param_in,
+                               std::shared_ptr<PostProcessorInterface<Number>>     postprocessor_in,
+                               MPI_Comm const &                                    mpi_comm_in,
+                               bool const                                          is_test_in)
+    : TimeIntAdamsBashforthMoultonBase<Interface::SpatialOperator<Number>,
                                        dealii::LinearAlgebra::distributed::BlockVector<Number>>(
         pde_operator_in,
         param_in.start_time,
@@ -137,4 +138,4 @@ private:
 } // namespace Acoustics
 } // namespace ExaDG
 
-#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_TIME_INTEGRATION_TIME_INT_ABM_H_*/
+#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_TIME_INTEGRATION_TIME_INT_ABM_H_ */

@@ -19,9 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_BASE_H_
-#define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_BASE_H_
-
+#ifndef EXADG_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_BASE_H_
+#define EXADG_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_BASE_H_
 
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
@@ -41,7 +40,6 @@
 // ExaDG
 #include <exadg/postprocessor/time_control.h>
 #include <exadg/utilities/tensor_utilities.h>
-
 
 namespace ExaDG
 {
@@ -184,4 +182,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_BASE_H_*/
+#endif /* EXADG_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_BASE_H_ */

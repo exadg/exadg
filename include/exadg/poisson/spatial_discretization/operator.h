@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POISSON_SPATIAL_DISCRETIZATION_OPERATOR_H_
-#define INCLUDE_EXADG_POISSON_SPATIAL_DISCRETIZATION_OPERATOR_H_
+#ifndef EXADG_POISSON_SPATIAL_DISCRETIZATION_OPERATOR_H_
+#define EXADG_POISSON_SPATIAL_DISCRETIZATION_OPERATOR_H_
 
 // ExaDG
 #include <exadg/grid/grid.h>
@@ -248,4 +248,4 @@ private:
 } // namespace Poisson
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_POISSON_SPATIAL_DISCRETIZATION_OPERATOR_H_ */
+#endif /* EXADG_POISSON_SPATIAL_DISCRETIZATION_OPERATOR_H_ */

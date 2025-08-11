@@ -19,10 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_ABM_BASE_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_ABM_BASE_H_
+#ifndef EXADG_TIME_INTEGRATION_TIME_INT_ABM_BASE_H_
+#define EXADG_TIME_INTEGRATION_TIME_INT_ABM_BASE_H_
 
-
+// ExaDG
 #include <exadg/time_integration/ab_constants.h>
 #include <exadg/time_integration/am_constants.h>
 #include <exadg/time_integration/push_back_vectors.h>
@@ -231,7 +231,7 @@ private:
 
     pde_operator->deserialize_vectors(vectors);
 
-    // Remains for comparison.
+    // Remains for comparison. ##+
     try
     {
       VectorType solution_compare(solution);
@@ -284,7 +284,7 @@ private:
 
     pde_operator->serialize_vectors(vectors);
 
-    // Remains for comparison.
+    // Remains for comparison. ##+
     read_write_distributed_vector(solution, oa);
     read_write_distributed_vector(prediction, oa);
 
@@ -319,4 +319,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_ABM_BASE_H_*/
+#endif /* EXADG_TIME_INTEGRATION_TIME_INT_ABM_BASE_H_*/

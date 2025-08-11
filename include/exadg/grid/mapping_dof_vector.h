@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_MESH_H_
-#define INCLUDE_FUNCTIONALITIES_MESH_H_
+#ifndef EXADG_GRID_MAPPING_DOF_VECTOR_H_
+#define EXADG_GRID_MAPPING_DOF_VECTOR_H_
 
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
@@ -606,9 +606,7 @@ initialize_coarse_mappings(
   }
 }
 
-
 } // namespace MappingTools
-
 } // namespace ExaDG
 
-#endif /* INCLUDE_FUNCTIONALITIES_MESH_H_ */
+#endif /* EXADG_GRID_MAPPING_DOF_VECTOR_H_ */

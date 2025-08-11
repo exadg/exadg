@@ -19,11 +19,6 @@
  *  ______________________________________________________________________
  */
 
-// deal.II
-#include <deal.II/grid/grid_out.h>
-#include <deal.II/numerics/data_out.h>
-#include <deal.II/numerics/data_out_dof_data.h>
-
 // ExaDG
 #include <exadg/postprocessor/write_output.h>
 #include <exadg/structure/postprocessor/output_generator.h>
@@ -33,33 +28,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-template<int dim, typename VectorType>
-void
-write_output(OutputDataBase const &          output_data,
-             dealii::DoFHandler<dim> const & dof_handler,
-             dealii::Mapping<dim> const &    mapping,
-             VectorType const &              solution_vector,
-             unsigned int const              output_counter,
-             MPI_Comm const &                mpi_comm)
-{
-  dealii::DataOutBase::VtkFlags flags;
-  flags.write_higher_order_cells = output_data.write_higher_order;
-
-  dealii::DataOut<dim> data_out;
-  data_out.set_flags(flags);
-
-  std::vector<std::string> names(dim, "displacement");
-  std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
-    component_interpretation(dim, dealii::DataComponentInterpretation::component_is_part_of_vector);
-
-  data_out.add_data_vector(dof_handler, solution_vector, names, component_interpretation);
-
-  data_out.build_patches(mapping, output_data.degree, dealii::DataOut<dim>::curved_inner_cells);
-
-  data_out.write_vtu_with_pvtu_record(
-    output_data.directory, output_data.filename, output_counter, mpi_comm, 4);
-}
-
 template<int dim, typename Number>
 OutputGenerator<dim, Number>::OutputGenerator(MPI_Comm const & comm) : mpi_comm(comm)
 {
@@ -125,8 +93,18 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & solution,
 {
   print_write_output_time(time, time_control.get_counter(), unsteady, mpi_comm);
 
-  write_output<dim>(
-    output_data, *dof_handler, *mapping, solution, time_control.get_counter(), mpi_comm);
+  VectorWriter<dim, Number> vector_writer(output_data, time_control.get_counter(), mpi_comm);
+
+  std::vector<std::string> component_names(dim, "displacement");
+  std::vector<bool>        component_is_part_of_vector(dim, true);
+  vector_writer.add_data_vector(solution,
+                                *dof_handler,
+                                component_names,
+                                component_is_part_of_vector);
+
+  vector_writer.write_aspect_ratio(*dof_handler, *mapping);
+
+  vector_writer.write_pvtu(&(*mapping));
 }
 
 template class OutputGenerator<2, float>;
