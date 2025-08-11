@@ -337,13 +337,11 @@ SpatialOperator<dim, Number>::deserialize_vectors(
       get_vectors_per_block<VectorType, BlockVectorType>(block_vectors);
 
     // Deserialize mapping from vector or project on reference triangulations.
-    std::shared_ptr<dealii::Mapping<dim> const> target_mapping;
     std::shared_ptr<dealii::Mapping<dim> const> checkpoint_mapping;
     std::shared_ptr<MappingDoFVector<dim, typename VectorType::value_type>>
       checkpoint_mapping_dof_vector;
     if(param.restart_data.consider_mapping)
     {
-      target_mapping = this->get_mapping();
       dealii::DoFHandler<dim> checkpoint_dof_handler_mapping(*checkpoint_triangulation);
       std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_mapping =
         create_finite_element<dim>(checkpoint_element_type,
@@ -363,21 +361,12 @@ SpatialOperator<dim, Number>::deserialize_vectors(
     {
       load_vectors(checkpoint_vectors, checkpoint_dof_handlers);
 
-      // Create dummy linear mappings since we have no mapping serialized to restore.
-      {
-        std::shared_ptr<dealii::Mapping<dim>> tmp;
-        GridUtilities::create_mapping(tmp,
-                                      get_element_type(*checkpoint_triangulation),
-                                      1 /* mapping_degree */);
-        checkpoint_mapping = std::const_pointer_cast<dealii::Mapping<dim> const>(tmp);
-      }
-      {
-        std::shared_ptr<dealii::Mapping<dim>> tmp;
-        GridUtilities::create_mapping(tmp,
-                                      get_element_type(dof_handlers.at(0)->get_triangulation()),
-                                      1 /* mapping_degree */);
-        target_mapping = std::const_pointer_cast<dealii::Mapping<dim> const>(tmp);
-      }
+      // Create dummy linear mapping since we have no mapping serialized to restore.
+      std::shared_ptr<dealii::Mapping<dim>> tmp;
+      GridUtilities::create_mapping(tmp,
+                                    get_element_type(*checkpoint_triangulation),
+                                    1 /* mapping_degree */);
+      checkpoint_mapping = std::const_pointer_cast<dealii::Mapping<dim> const>(tmp);
     }
 
     ExaDG::GridToGridProjection::GridToGridProjectionData<dim> data;
