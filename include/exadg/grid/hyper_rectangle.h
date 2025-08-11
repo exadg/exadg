@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_HYPER_RECTANGLE_H_
-#define INCLUDE_EXADG_GRID_HYPER_RECTANGLE_H_
+#ifndef EXADG_GRID_HYPER_RECTANGLE_H_
+#define EXADG_GRID_HYPER_RECTANGLE_H_
 
 // deal.II
 #include <deal.II/distributed/tria.h>
@@ -62,5 +62,4 @@ create_subdivided_hyper_rectangle(dealii::Triangulation<dim> &      tria,
 }
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_GRID_HYPER_RECTANGLE_H_ */
+#endif /* EXADG_GRID_HYPER_RECTANGLE_H_ */

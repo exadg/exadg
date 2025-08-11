@@ -19,14 +19,12 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_ACOUSTICS_H_
-#define INCLUDE_EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_ACOUSTICS_H_
+#ifndef EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_ACOUSTICS_H_
+#define EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_ACOUSTICS_H_
 
-// Acoustics
+// ExaDG
 #include <exadg/acoustic_conservation_equations/time_integration/time_int_abm.h>
 #include <exadg/acoustic_conservation_equations/user_interface/application_base.h>
-
-// application
 #include <exadg/aero_acoustic/user_interface/application_base.h>
 
 namespace ExaDG
@@ -62,7 +60,7 @@ public:
     postprocessor->setup(*pde_operator);
 
     // initialize time integrator
-    time_integrator = std::make_shared<Acoustics::TimeIntAdamsBashforthMoulton<dim, Number>>(
+    time_integrator = std::make_shared<Acoustics::TimeIntAdamsBashforthMoulton<Number>>(
       pde_operator, application->get_parameters(), postprocessor, mpi_comm, is_test);
 
     time_integrator->setup(application->get_parameters().restarted_simulation);
@@ -125,7 +123,7 @@ public:
   std::shared_ptr<Acoustics::SpatialOperator<dim, Number>> pde_operator;
 
   // temporal discretization
-  std::shared_ptr<Acoustics::TimeIntAdamsBashforthMoulton<dim, Number>> time_integrator;
+  std::shared_ptr<Acoustics::TimeIntAdamsBashforthMoulton<Number>> time_integrator;
 
   // postprocessor
   std::shared_ptr<Acoustics::PostProcessorBase<dim, Number>> postprocessor;
@@ -134,8 +132,7 @@ private:
   std::pair<unsigned int /* n_macro_dt */, unsigned long long /* n_sub_dt */> sub_time_steps;
 };
 
-
 } // namespace AeroAcoustic
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_ACOUSTICS_H_ */
+#endif /* EXADG_AERO_ACOUSTIC_SINGLE_FIELD_SOLVERS_ACOUSTICS_H_ */

@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_POISSON_MULTIGRID_PRECONDITIONER_H_
-#define INCLUDE_POISSON_MULTIGRID_PRECONDITIONER_H_
+#ifndef EXADG_POISSON_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
+#define EXADG_POISSON_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
 
+// ExaDG
 #include <exadg/operators/multigrid_operator.h>
 #include <exadg/poisson/spatial_discretization/laplace_operator.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h>
@@ -93,4 +94,4 @@ private:
 } // namespace Poisson
 } // namespace ExaDG
 
-#endif /* INCLUDE_POISSON_MULTIGRID_PRECONDITIONER_H_ */
+#endif /* EXADG_POISSON_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_ */

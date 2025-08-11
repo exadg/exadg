@@ -19,24 +19,20 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_THROUGHPUT_H_
-#define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_THROUGHPUT_H_
+#ifndef EXADG_COMPRESSIBLE_NAVIER_STOKES_THROUGHPUT_H_
+#define EXADG_COMPRESSIBLE_NAVIER_STOKES_THROUGHPUT_H_
 
 #ifdef EXADG_WITH_LIKWID
 #  include <likwid.h>
 #endif
 
-// driver
+// ExaDG
 #include <exadg/compressible_navier_stokes/driver.h>
-
-// utilities
+#include <exadg/compressible_navier_stokes/user_interface/declare_get_application.h>
 #include <exadg/operators/finite_element.h>
 #include <exadg/operators/hypercube_resolution_parameters.h>
 #include <exadg/operators/throughput_parameters.h>
 #include <exadg/utilities/general_parameters.h>
-
-// application
-#include <exadg/compressible_navier_stokes/user_interface/declare_get_application.h>
 
 namespace ExaDG
 {
@@ -196,4 +192,4 @@ main(int argc, char ** argv)
   return 0;
 }
 
-#endif /* INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_THROUGHPUT_H_ */
+#endif /* EXADG_COMPRESSIBLE_NAVIER_STOKES_THROUGHPUT_H_ */

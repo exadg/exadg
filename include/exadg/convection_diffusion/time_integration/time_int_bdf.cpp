@@ -459,7 +459,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
 
   pde_operator->deserialize_vectors(vectors);
 
-  // Remains for comparison.
+  // Remains for comparison. ##+
   try
   {
     VectorType tmp;
@@ -547,7 +547,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
 
   pde_operator->serialize_vectors(vectors);
 
-  // Remains for comparison.
+  // Remains for comparison. ##+
   for(unsigned int i = 0; i < this->order; i++)
   {
     read_write_distributed_vector(solution[i], oa);

@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef OPERATOR_CONSTRAINTS_H
-#define OPERATOR_CONSTRAINTS_H
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_CONSTRAINTS_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_CONSTRAINTS_H_
 
+// deal.II
 #include <deal.II/multigrid/mg_constrained_dofs.h>
 
 namespace ExaDG
@@ -186,9 +187,8 @@ add_constraints(bool                                is_dg,
   affine_constraints_own.close();
 }
 
-
-} // namespace
+} // anonymous namespace
 } // namespace ConstraintUtil
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_CONSTRAINTS_H_ */

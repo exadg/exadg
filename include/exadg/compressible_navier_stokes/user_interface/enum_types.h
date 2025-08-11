@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_ENUM_TYPES_H_
-#define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_ENUM_TYPES_H_
+#ifndef EXADG_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_ENUM_TYPES_H_
+#define EXADG_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_ENUM_TYPES_H_
 
+// C/C++
 #include <string>
 
 namespace ExaDG
@@ -62,8 +63,6 @@ enum class EnergyBoundaryVariable
 /**************************************************************************************/
 
 // there are currently no enums for this section
-
-
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -117,14 +116,13 @@ enum class QuadratureRule
   Overintegration2k
 };
 
-
 /**************************************************************************************/
 /*                                                                                    */
 /*                                       SOLVER                                       */
 /*                                                                                    */
 /**************************************************************************************/
 
-
+// there are currently no enums for this section
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -132,9 +130,9 @@ enum class QuadratureRule
 /*                                                                                    */
 /**************************************************************************************/
 
+// there are currently no enums for this section
 
 } // namespace CompNS
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_ENUM_TYPES_H_ */
+#endif /* EXADG_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_ENUM_TYPES_H_ */

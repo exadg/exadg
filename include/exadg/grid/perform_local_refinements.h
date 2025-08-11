@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_PERFORM_LOCAL_REFINEMENTS_H_
-#define INCLUDE_EXADG_GRID_PERFORM_LOCAL_REFINEMENTS_H_
+#ifndef EXADG_GRID_PERFORM_LOCAL_REFINEMENTS_H_
+#define EXADG_GRID_PERFORM_LOCAL_REFINEMENTS_H_
 
 // C/C++
 #include <vector>
@@ -74,5 +74,4 @@ refine_local(dealii::Triangulation<dim> &      tria,
 
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_GRID_PERFORM_LOCAL_REFINEMENTS_H_ */
+#endif /* EXADG_GRID_PERFORM_LOCAL_REFINEMENTS_H_ */

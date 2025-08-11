@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef EXADG_AERO_UTILITIES_SPATIAL_AWARE_FUNCTION_H_
-#define EXADG_AERO_UTILITIES_SPATIAL_AWARE_FUNCTION_H_
+#ifndef EXADG_UTILITIES_SPATIAL_AWARE_FUNCTION_H_
+#define EXADG_UTILITIES_SPATIAL_AWARE_FUNCTION_H_
 
+// deal.II
 #include <deal.II/base/function.h>
 
 namespace ExaDG
@@ -62,4 +63,4 @@ public:
 } // namespace Utilities
 } // namespace ExaDG
 
-#endif /*EXADG_AERO_UTILITIES_SPATIAL_AWARE_FUNCTION_H_*/
+#endif /* EXADG_UTILITIES_SPATIAL_AWARE_FUNCTION_H_ */

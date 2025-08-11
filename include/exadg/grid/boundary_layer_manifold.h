@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_BOUNDARY_LAYER_MANIFOLD_H_
-#define INCLUDE_EXADG_GRID_BOUNDARY_LAYER_MANIFOLD_H_
+#ifndef EXADG_GRID_BOUNDARY_LAYER_MANIFOLD_H_
+#define EXADG_GRID_BOUNDARY_LAYER_MANIFOLD_H_
 
+// deal.II
 #include <deal.II/grid/manifold_lib.h>
 
 namespace ExaDG
@@ -135,6 +136,4 @@ private:
 };
 } // namespace ExaDG
 
-
-
-#endif /* INCLUDE_EXADG_GRID_BOUNDARY_LAYER_MANIFOLD_H_ */
+#endif /* EXADG_GRID_BOUNDARY_LAYER_MANIFOLD_H_ */

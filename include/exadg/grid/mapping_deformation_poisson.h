@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_MAPPING_DEFORMATION_POISSON_H_
-#define INCLUDE_EXADG_GRID_MAPPING_DEFORMATION_POISSON_H_
+#ifndef EXADG_GRID_MAPPING_DEFORMATION_POISSON_H_
+#define EXADG_GRID_MAPPING_DEFORMATION_POISSON_H_
 
 // deal.II
 #include <deal.II/base/timer.h>
@@ -158,4 +158,4 @@ private:
 } // namespace Poisson
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_GRID_MAPPING_DEFORMATION_POISSON_H_ */
+#endif /* EXADG_GRID_MAPPING_DEFORMATION_POISSON_H_ */

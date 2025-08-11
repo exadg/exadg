@@ -22,8 +22,10 @@
 #ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_H_
 #define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_H_
 
+// deal.II
 #include <deal.II/lac/la_parallel_vector.h>
 
+// ExaDG
 #include <exadg/postprocessor/pointwise_output_generator_base.h>
 
 namespace ExaDG
@@ -71,7 +73,6 @@ private:
 
 } // namespace Acoustics
 } // namespace ExaDG
-
 
 #endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_H_ \
         */

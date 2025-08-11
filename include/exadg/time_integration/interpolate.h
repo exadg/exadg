@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_INTERPOLATE_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_INTERPOLATE_H_
+#ifndef EXADG_TIME_INTEGRATION_INTERPOLATE_H_
+#define EXADG_TIME_INTEGRATION_INTERPOLATE_H_
 
 namespace ExaDG
 {
@@ -60,4 +60,4 @@ interpolate(VectorType &                            dst,
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_INTERPOLATE_H_ */
+#endif /* EXADG_TIME_INTEGRATION_INTERPOLATE_H_ */

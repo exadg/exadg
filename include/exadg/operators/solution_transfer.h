@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_SOLUTION_TRANSFER_H
-#define INCLUDE_EXADG_OPERATORS_SOLUTION_TRANSFER_H
+#ifndef EXADG_OPERATORS_SOLUTION_TRANSFER_H_
+#define EXADG_OPERATORS_SOLUTION_TRANSFER_H_
 
 // deal.II
 #include <deal.II/distributed/solution_transfer.h>
@@ -73,6 +73,7 @@ private:
 
   dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
 };
+
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_OPERATORS_SOLUTION_TRANSFER_H */
+#endif /* EXADG_OPERATORS_SOLUTION_TRANSFER_H_ */

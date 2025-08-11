@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_VERIFY_CALCULATION_OF_DIAGONAL_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_VERIFY_CALCULATION_OF_DIAGONAL_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_UTILITIES_VERIFY_CALCULATION_OF_DIAGONAL_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_UTILITIES_VERIFY_CALCULATION_OF_DIAGONAL_H_
 
+// deal.II
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
@@ -90,5 +91,4 @@ verify_calculation_of_diagonal(Operator &                                       
 
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_VERIFY_CALCULATION_OF_DIAGONAL_H_ */
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_UTILITIES_VERIFY_CALCULATION_OF_DIAGONAL_H_ */

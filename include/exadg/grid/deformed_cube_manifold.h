@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef APPLICATIONS_GRID_TOOLS_DEFORMED_CUBE_MANIFOLD_H_
-#define APPLICATIONS_GRID_TOOLS_DEFORMED_CUBE_MANIFOLD_H_
+#ifndef EXADG_GRID_DEFORMED_CUBE_MANIFOLD_H_
+#define EXADG_GRID_DEFORMED_CUBE_MANIFOLD_H_
 
+// deal.II
 #include <deal.II/grid/manifold_lib.h>
 
 namespace ExaDG
@@ -157,4 +158,4 @@ apply_deformed_cube_manifold(dealii::Triangulation<dim> & triangulation,
 
 } // namespace ExaDG
 
-#endif /* APPLICATIONS_GRID_TOOLS_DEFORMED_CUBE_MANIFOLD_H_ */
+#endif /* EXADG_GRID_DEFORMED_CUBE_MANIFOLD_H_ */

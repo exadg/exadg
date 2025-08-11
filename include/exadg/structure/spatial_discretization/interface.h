@@ -19,10 +19,13 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_INTERFACE_H_
-#define INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_INTERFACE_H_
+#ifndef EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_INTERFACE_H_
+#define EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_INTERFACE_H_
 
+// deal.II
 #include <deal.II/lac/la_parallel_vector.h>
+
+// ExaDG
 #include <exadg/structure/time_integration/time_int_gen_alpha.h>
 
 namespace ExaDG
@@ -89,4 +92,4 @@ public:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_INTERFACE_H_ */
+#endif /* EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_INTERFACE_H_ */

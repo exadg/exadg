@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_POSTPROCESSOR_H_
-#define INCLUDE_CONVECTION_DIFFUSION_POSTPROCESSOR_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_POSTPROCESSOR_POSTPROCESSOR_H_
+#define EXADG_CONVECTION_DIFFUSION_POSTPROCESSOR_POSTPROCESSOR_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -82,5 +82,4 @@ private:
 } // namespace ConvDiff
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_CONVECTION_DIFFUSION_POSTPROCESSOR_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_POSTPROCESSOR_POSTPROCESSOR_H_ */

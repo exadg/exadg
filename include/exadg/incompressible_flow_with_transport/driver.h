@@ -19,26 +19,16 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_DRIVER_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_DRIVER_H_
+#ifndef EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_DRIVER_H_
+#define EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_DRIVER_H_
 
-// application
-#include <exadg/incompressible_flow_with_transport/user_interface/application_base.h>
-
-// utilities
-#include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
-#include <exadg/matrix_free/matrix_free_data.h>
-#include <exadg/utilities/print_functions.h>
-#include <exadg/utilities/print_general_infos.h>
-#include <exadg/utilities/timer_tree.h>
-
-// ConvDiff
+// ExaDG
+#include <exadg/convection_diffusion/spatial_discretization/operator.h>
 #include <exadg/convection_diffusion/time_integration/time_int_bdf.h>
 #include <exadg/convection_diffusion/time_integration/time_int_explicit_runge_kutta.h>
-
-// IncNS
-#include <exadg/convection_diffusion/spatial_discretization/operator.h>
+#include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/grid/mapping_deformation_function.h>
+#include <exadg/incompressible_flow_with_transport/user_interface/application_base.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.h>
@@ -46,6 +36,10 @@
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
+#include <exadg/matrix_free/matrix_free_data.h>
+#include <exadg/utilities/print_functions.h>
+#include <exadg/utilities/print_general_infos.h>
+#include <exadg/utilities/timer_tree.h>
 
 namespace ExaDG
 {
@@ -154,5 +148,4 @@ private:
 } // namespace FTI
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_DRIVER_H_ */
+#endif /* EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_DRIVER_H_ */

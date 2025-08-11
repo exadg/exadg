@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_PROJECTION_OPERATOR_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_PROJECTION_OPERATOR_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_PROJECTION_OPERATOR_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_PROJECTION_OPERATOR_H_
 
+// ExaDG
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/continuity_penalty_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/divergence_penalty_operator.h>
 #include <exadg/operators/operator_base.h>
@@ -175,5 +176,5 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_PROJECTION_OPERATOR_H_ \
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_PROJECTION_OPERATOR_H_ \
         */

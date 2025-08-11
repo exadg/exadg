@@ -176,9 +176,7 @@ private:
   set_field_functions() = 0;
 };
 
-
 } // namespace Acoustics
 } // namespace ExaDG
-
 
 #endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_APPLICATION_BASE_H_ */

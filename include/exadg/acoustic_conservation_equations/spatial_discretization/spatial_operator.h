@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_
-#define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_
+#ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_H_
+#define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_H_
 
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
@@ -53,10 +53,10 @@ namespace Acoustics
  * already scaled by the density rho * u.
  */
 template<int dim, typename Number>
-class SpatialOperator : public Interface::SpatialOperator<dim, Number>
+class SpatialOperator : public Interface::SpatialOperator<Number>
 {
-  using VectorType      = typename Interface::SpatialOperator<dim, Number>::VectorType;
-  using BlockVectorType = typename Interface::SpatialOperator<dim, Number>::BlockVectorType;
+  using VectorType      = typename Interface::SpatialOperator<Number>::VectorType;
+  using BlockVectorType = typename Interface::SpatialOperator<Number>::BlockVectorType;
 
 public:
   static unsigned int const block_index_pressure = 0;
@@ -293,4 +293,4 @@ private:
 } // namespace Acoustics
 } // namespace ExaDG
 
-#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_ */
+#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_H_ */

@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_TIME_INT_BDF_H_
-#define INCLUDE_CONVECTION_DIFFUSION_TIME_INT_BDF_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_TIME_INTEGRATION_TIME_INT_BDF_H_
+#define EXADG_CONVECTION_DIFFUSION_TIME_INTEGRATION_TIME_INT_BDF_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -163,4 +163,4 @@ private:
 } // namespace ConvDiff
 } // namespace ExaDG
 
-#endif /* INCLUDE_CONVECTION_DIFFUSION_TIME_INT_BDF_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_TIME_INTEGRATION_TIME_INT_BDF_H_ */

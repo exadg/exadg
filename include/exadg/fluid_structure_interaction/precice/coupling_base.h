@@ -19,13 +19,12 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_COUPLING_BASE_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_COUPLING_BASE_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_COUPLING_BASE_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_COUPLING_BASE_H_
 
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/vectorization.h>
-
 #include <deal.II/matrix_free/matrix_free.h>
 
 // ExaDG
@@ -280,4 +279,4 @@ CouplingBase<dim, data_dim, VectorizedArrayType>::print_info(bool const         
 } // namespace preCICE
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_COUPLING_BASE_H_ */

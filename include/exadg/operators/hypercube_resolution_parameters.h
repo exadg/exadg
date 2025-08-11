@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_HYPERCUBE_RESOLUTION_PARAMETERS_H_
-#define INCLUDE_EXADG_OPERATORS_HYPERCUBE_RESOLUTION_PARAMETERS_H_
+#ifndef EXADG_OPERATORS_HYPERCUBE_RESOLUTION_PARAMETERS_H_
+#define EXADG_OPERATORS_HYPERCUBE_RESOLUTION_PARAMETERS_H_
 
 // deal.II
 #include <deal.II/base/parameter_handler.h>
@@ -326,5 +326,4 @@ struct HypercubeResolutionParameters
 };
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_OPERATORS_HYPERCUBE_RESOLUTION_PARAMETERS_H_ */
+#endif /* EXADG_OPERATORS_HYPERCUBE_RESOLUTION_PARAMETERS_H_ */

@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_EXCEPTIONS_H_
-#define INCLUDE_EXADG_UTILITIES_EXCEPTIONS_H_
+#ifndef EXADG_UTILITIES_EXCEPTIONS_H_
+#define EXADG_UTILITIES_EXCEPTIONS_H_
 
+// deal.II
 #include <deal.II/base/exceptions.h>
 
 namespace ExaDG
@@ -43,6 +44,4 @@ DeclExceptionMsg(ExcNotImplemented,
 
 } // namespace ExaDG
 
-
-
-#endif /* INCLUDE_EXADG_UTILITIES_EXCEPTIONS_H_ */
+#endif /* EXADG_UTILITIES_EXCEPTIONS_H_ */

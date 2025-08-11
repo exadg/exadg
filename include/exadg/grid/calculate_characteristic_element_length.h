@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_
-#define INCLUDE_FUNCTIONALITIES_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_
+#ifndef EXADG_GRID_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_
+#define EXADG_GRID_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_
 
 // deal.II
 #include <deal.II/base/mpi.h>
@@ -119,4 +119,4 @@ calculate_high_order_element_length(Number const       element_length,
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_FUNCTIONALITIES_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_ */
+#endif /* EXADG_GRID_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_ */

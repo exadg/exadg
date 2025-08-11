@@ -19,8 +19,15 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_PARAMETERS_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_PARAMETERS_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_PARAMETERS_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_PARAMETERS_H_
+
+// deal.II
+#include <deal.II/base/parameter_handler.h>
+#include <deal.II/base/patterns.h>
+
+// ExaDG
+#include <exadg/utilities/enum_patterns.h>
 
 namespace ExaDG
 {
@@ -112,9 +119,8 @@ struct Parameters
   // tolerance used to locate points at the fluid-structure interface
   double geometric_tolerance;
 };
+
 } // namespace FSI
 } // namespace ExaDG
 
-
-
-#endif /* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_PARAMETERS_H_ */
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_PARAMETERS_H_ */

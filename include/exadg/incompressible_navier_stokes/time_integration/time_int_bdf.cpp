@@ -329,7 +329,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
 
   this->set_vectors_deserialization(vectors_velocity_add, vectors_pressure_add);
 
-  // Remains for comparison.
+  // Remains for comparison. ##+
   try
   {
     double diff_max = 0.0;
@@ -435,7 +435,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
 
   operator_base->serialize_vectors(vectors_velocity, vectors_pressure);
 
-  // Remains for comparison.
+  // Remains for comparison. ##+
   for(unsigned int i = 0; i < this->order; i++)
   {
     read_write_distributed_vector(get_velocity(i), oa);

@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_RESTART_DATA_H_
-#define INCLUDE_FUNCTIONALITIES_RESTART_DATA_H_
+#ifndef EXADG_TIME_INTEGRATION_RESTART_DATA_H_
+#define EXADG_TIME_INTEGRATION_RESTART_DATA_H_
 
 // C/C++
 #include <limits>
@@ -43,6 +43,7 @@ struct RestartData
       interval_time(std::numeric_limits<double>::max()),
       interval_wall_time(std::numeric_limits<double>::max()),
       interval_time_steps(std::numeric_limits<unsigned int>::max()),
+      directory("./output/"),
       filename("restart"),
       counter(1),
       degree_u(dealii::numbers::invalid_unsigned_int),
@@ -68,6 +69,7 @@ struct RestartData
       print_parameter(pcout, "Interval physical time", interval_time);
       print_parameter(pcout, "Interval wall time", interval_wall_time);
       print_parameter(pcout, "Interval time steps", interval_time_steps);
+      print_parameter(pcout, "Directory", directory);
       print_parameter(pcout, "Filename", filename);
     }
   }
@@ -105,6 +107,9 @@ struct RestartData
   // number of time steps after which to write restart
   unsigned int interval_time_steps;
 
+  // directory for restart files
+  std::string directory;
+
   // filename for restart files
   std::string filename;
 
@@ -121,11 +126,11 @@ struct RestartData
   // Finite element space used when the restart data was written.
   IncNS::SpatialDiscretization spatial_discretization;
 
-  // The discretization used when writing the restart data was identical to the current one
-  // (after calling `ApplicationBase::create_grid()`). Note that this includes the finite
-  // element, uniform and adaptive refinement, and the TriangulationType, *but* one might
-  // consider a different number of MPI ranks for `dealii::parallel::distributed::Triangulation``
-  // without the need for the otherwise necessary global projection.
+  // The discretization used when writing the restart data was identical to the current one.
+  // Note that this includes the finite element, uniform and adaptive refinement, and the
+  // `TriangulationType`, *but* one might consider a different number of MPI ranks for
+  // `dealii::parallel::distributed::Triangulation` without the need for the otherwise
+  // necessary global projection.
   bool discretization_identical;
 
   // The mapping of the triangulation should be de-/serialized as well to consider for a mapped
@@ -144,4 +149,4 @@ struct RestartData
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_FUNCTIONALITIES_RESTART_DATA_H_ */
+#endif /* EXADG_TIME_INTEGRATION_RESTART_DATA_H_ */

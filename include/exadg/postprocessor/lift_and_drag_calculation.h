@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POSTPROCESSOR_LIFT_AND_DRAG_CALCULATION_H_
-#define INCLUDE_EXADG_POSTPROCESSOR_LIFT_AND_DRAG_CALCULATION_H_
+#ifndef EXADG_POSTPROCESSOR_LIFT_AND_DRAG_CALCULATION_H_
+#define EXADG_POSTPROCESSOR_LIFT_AND_DRAG_CALCULATION_H_
 
 // deal.ii
 #include <deal.II/base/conditional_ostream.h>
@@ -111,5 +111,4 @@ private:
 
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_POSTPROCESSOR_LIFT_AND_DRAG_CALCULATION_H_ */
+#endif /* EXADG_POSTPROCESSOR_LIFT_AND_DRAG_CALCULATION_H_ */

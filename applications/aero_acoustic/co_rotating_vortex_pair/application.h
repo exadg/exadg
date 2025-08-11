@@ -658,6 +658,9 @@ public:
   BlendInFunction(double const blend_in_start, double const blend_in_end)
     : Utilities::SpatialAwareFunction<dim>(1, 0.0), start(blend_in_start), end(blend_in_end)
   {
+    AssertThrow(start < end,
+                dealii::ExcMessage(
+                  "End of blend in has to be smaller compared to start of blend in."));
   }
 
   double
@@ -791,24 +794,20 @@ public:
   Application(std::string input_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(input_file, comm)
   {
-  }
-
-private:
-  void
-  set_single_field_solvers(std::string input_file, MPI_Comm const & comm) final
-  {
     this->acoustic =
       std::make_shared<AcousticsAeroAcoustic::Application<dim, Number>>(input_file, comm);
     this->fluid = std::make_shared<FluidAeroAcoustic::Application<dim, Number>>(input_file, comm);
   }
 
+private:
   void
   set_field_functions() final
   {
     this->field_functions->source_term_blend_in =
       std::make_shared<BlendInFunction<dim>>(this->acoustic->get_parameters().start_time,
-                                             0.1 * (this->acoustic->get_parameters().end_time -
-                                                    this->acoustic->get_parameters().start_time));
+                                             this->acoustic->get_parameters().start_time +
+                                               0.1 * (this->acoustic->get_parameters().end_time -
+                                                      this->acoustic->get_parameters().start_time));
 
     this->field_functions->analytical_aero_acoustic_source_term =
       std::make_shared<AnalyticalSourceTerm<dim>>(source_term_with_convection, intensity, r_0, r_c);

@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_
 
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
@@ -250,6 +250,16 @@ public:
                       std::vector<VectorType *> vectors_pressure);
 
   /*
+   * Interpolate given functions to the corresponding vectors.
+   */
+  void
+  interpolate_functions(VectorType &                                   velocity,
+                        std::shared_ptr<dealii::Function<dim>> const & f_velocity,
+                        VectorType &                                   pressure,
+                        std::shared_ptr<dealii::Function<dim>> const & f_pressure,
+                        double const                                   time) const;
+
+  /*
    * Interpolate analytical solution functions.
    */
   void
@@ -348,6 +358,10 @@ public:
   // Q criterion
   void
   compute_q_criterion(VectorType & dst, VectorType const & src) const;
+
+  // get the current visosity field as vector
+  void
+  access_viscosity(VectorType & dst, VectorType const & src) const;
 
   /*
    * Operators.
@@ -577,15 +591,10 @@ protected:
   mutable MomentumOperator<dim, Number> momentum_operator;
 
   /*
-   * Inverse mass operator (for L2 spaces)
+   * Inverse mass operator.
    */
   InverseMassOperator<dim, dim, Number> inverse_mass_velocity;
   InverseMassOperator<dim, 1, Number>   inverse_mass_velocity_scalar;
-
-  /*
-   * Inverse mass operator used in case of H(div)-conforming space
-   */
-  InverseMassOperatorHdiv<dim, dim, Number> inverse_mass_hdiv;
 
   /*
    * Projection operator.
@@ -616,6 +625,7 @@ protected:
   VorticityCalculator<dim, Number>  vorticity_calculator;
   DivergenceCalculator<dim, Number> divergence_calculator;
   ShearRateCalculator<dim, Number>  shear_rate_calculator;
+  ViscosityCalculator<dim, Number>  viscosity_calculator;
   MagnitudeCalculator<dim, Number>  magnitude_calculator;
   QCriterionCalculator<dim, Number> q_criterion_calculator;
 
@@ -692,5 +702,5 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_ \
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_ \
         */

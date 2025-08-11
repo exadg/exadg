@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_GRID_MAPPING_DEFORMATION_FUNCTION_H_
-#define INCLUDE_GRID_MAPPING_DEFORMATION_FUNCTION_H_
+#ifndef EXADG_GRID_MAPPING_DEFORMATION_FUNCTION_H_
+#define EXADG_GRID_MAPPING_DEFORMATION_FUNCTION_H_
 
+// ExaDG
 #include <exadg/grid/grid_data.h>
 #include <exadg/grid/mapping_deformation_base.h>
 
@@ -124,4 +125,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /*INCLUDE_GRID_MAPPING_DEFORMATION_FUNCTION_H_*/
+#endif /* EXADG_GRID_MAPPING_DEFORMATION_FUNCTION_H_ */

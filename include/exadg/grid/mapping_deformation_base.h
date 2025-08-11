@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_MAPPING_DEFORMATION_BASE_H_
-#define INCLUDE_EXADG_GRID_MAPPING_DEFORMATION_BASE_H_
+#ifndef EXADG_GRID_MAPPING_DEFORMATION_BASE_H_
+#define EXADG_GRID_MAPPING_DEFORMATION_BASE_H_
 
 // deal.II
 #include <deal.II/dofs/dof_handler.h>
@@ -108,4 +108,4 @@ protected:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_GRID_MAPPING_DEFORMATION_BASE_H_ */
+#endif /* EXADG_GRID_MAPPING_DEFORMATION_BASE_H_ */

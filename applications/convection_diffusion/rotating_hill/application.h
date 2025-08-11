@@ -142,8 +142,8 @@ private:
     this->param.restarted_simulation       = read_restart;
     this->param.restart_data.write_restart = write_restart;
     this->param.restart_data.interval_time = (this->param.end_time - this->param.start_time) * 0.4;
-    this->param.restart_data.filename =
-      this->output_parameters.directory + this->output_parameters.filename + "_restart";
+    this->param.restart_data.directory     = this->output_parameters.directory;
+    this->param.restart_data.filename      = this->output_parameters.filename + "_restart";
     this->param.restart_data.interval_wall_time  = 1.e6;
     this->param.restart_data.interval_time_steps = 1e8;
 
@@ -241,7 +241,7 @@ private:
         if(write_restart and this->param.grid.triangulation_type == TriangulationType::Serial)
         {
           save_coarse_triangulation<dim, dealii::Triangulation<dim>>(
-            this->param.restart_data.filename, tria);
+            this->param.restart_data.directory, this->param.restart_data.filename, tria);
         }
 
         tria.refine_global(global_refinements);

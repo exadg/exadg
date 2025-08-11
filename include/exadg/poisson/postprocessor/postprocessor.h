@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_POISSON_POSTPROCESSOR_H_
-#define INCLUDE_POISSON_POSTPROCESSOR_H_
+#ifndef EXADG_POISSON_POSTPROCESSOR_POSTPROCESSOR_H_
+#define EXADG_POISSON_POSTPROCESSOR_POSTPROCESSOR_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -82,5 +82,4 @@ private:
 } // namespace Poisson
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_POISSON_POSTPROCESSOR_H_ */
+#endif /* EXADG_POISSON_POSTPROCESSOR_POSTPROCESSOR_H_ */
