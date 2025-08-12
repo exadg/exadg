@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: ${{github.event_name == 'pull_request'}}    
 
 env:
-  COMPILE_JOBS: 2
+  COMPILE_JOBS: 4
 
 jobs:
   build:
@@ -27,7 +27,7 @@ jobs:
         dealii_version: ["master"]
     
     container:
-      image: dealii/dealii:${{ matrix.dealii_version }}-focal
+      image: dealii/dealii:${{ matrix.dealii_version }}-noble
       options: --user root
 
     steps:

@@ -170,10 +170,10 @@ DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div_face(
     {
       diff_mass_flux_vec +=
         integrator_m.JxW(q) * std::abs((integrator_m.get_value(q) - integrator_p.get_value(q)) *
-                                       integrator_m.get_normal_vector(q));
+                                       integrator_m.normal_vector(q));
       mean_mass_flux_vec += integrator_m.JxW(q) *
                             std::abs(0.5 * (integrator_m.get_value(q) + integrator_p.get_value(q)) *
-                                     integrator_m.get_normal_vector(q));
+                                     integrator_m.normal_vector(q));
     }
 
     // sum over entries of dealii::VectorizedArray, but only over those that are "active"

@@ -27,7 +27,7 @@ namespace IncNS
 {
 template<int dim, typename Number>
 ViscosityModelBase<dim, Number>::ViscosityModelBase()
-  : dealii::Subscriptor(), dof_index_velocity(0), matrix_free(nullptr)
+  : dealii::EnableObserverPointer(), dof_index_velocity(0), matrix_free(nullptr)
 {
 }
 

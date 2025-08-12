@@ -434,7 +434,7 @@ MomentumOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
   {
     vector value_m  = integrator_m.get_value(q);
     vector value_p  = integrator_p.get_value(q);
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     vector value_flux_m, value_flux_p;
     tensor gradient_flux;
@@ -492,7 +492,7 @@ MomentumOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_
   {
     vector value_m = integrator_m.get_value(q);
     vector value_p; // set exterior value to zero
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     vector value_flux_m;
     tensor gradient_flux;
@@ -543,7 +543,7 @@ MomentumOperator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & 
   {
     vector value_m = integrator_m.get_value(q);
     vector value_p; // set exterior value to zero
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     vector value_flux_m;
     tensor gradient_flux;
@@ -600,7 +600,7 @@ MomentumOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_
     vector value_m; // set exterior values to zero
     vector value_p = integrator_p.get_value(q);
     // multiply by -1.0 to get the correct normal vector !
-    vector normal_p = -integrator_p.get_normal_vector(q);
+    vector normal_p = -integrator_p.normal_vector(q);
 
     vector value_flux_p;
     tensor gradient_flux;
@@ -658,7 +658,7 @@ MomentumOperator<dim, Number>::do_boundary_integral(
     vector value_m = calculate_interior_value(q, integrator, operator_type);
 
     vector value_p;
-    vector normal_m = integrator.get_normal_vector(q);
+    vector normal_m = integrator.normal_vector(q);
 
     vector value_flux_m;
     tensor gradient_flux;

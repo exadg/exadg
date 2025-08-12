@@ -45,7 +45,7 @@ namespace ExaDG
 namespace ConvDiff
 {
 template<int dim, typename Number>
-class Operator : public dealii::Subscriptor, public Interface::Operator<Number>
+class Operator : public dealii::EnableObserverPointer, public Interface::Operator<Number>
 {
 private:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;

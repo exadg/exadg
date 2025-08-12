@@ -28,8 +28,8 @@ do_test()
   dealii::DoFHandler<dim> dof_handler(tria);
   dof_handler.distribute_dofs(fe);
 
-  dealii::IndexSet relevant_dofs;
-  dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs);
+  dealii::IndexSet const relevant_dofs =
+    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler);
 
   dealii::LinearAlgebra::distributed::Vector<double> position;
   dealii::LinearAlgebra::distributed::Vector<double> displacement;

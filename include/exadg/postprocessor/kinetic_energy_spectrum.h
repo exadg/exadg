@@ -138,7 +138,7 @@ private:
 
   std::shared_ptr<DealSpectrumWrapper> deal_spectrum_wrapper;
 
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler;
 
   std::shared_ptr<VectorType>                 velocity_full;
   std::shared_ptr<dealii::Triangulation<dim>> tria_full;

@@ -98,19 +98,20 @@ public:
         OutputData const &              output_data_in);
 
   void
-  evaluate(VectorType const &                                                    solution_conserved,
-           std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
-           double const                                                          time,
-           bool const                                                            unsteady);
+  evaluate(
+    VectorType const &                                                       solution_conserved,
+    std::vector<dealii::ObserverPointer<SolutionField<dim, Number>>> const & additional_fields,
+    double const                                                             time,
+    bool const                                                               unsteady);
 
   TimeControl time_control;
 
 private:
   MPI_Comm const mpi_comm;
 
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
-  dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;
-  OutputData                                          output_data;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler;
+  dealii::ObserverPointer<dealii::Mapping<dim> const>    mapping;
+  OutputData                                             output_data;
 };
 
 } // namespace CompNS

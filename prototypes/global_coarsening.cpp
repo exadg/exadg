@@ -13,7 +13,7 @@ print_mesh(const dealii::Triangulation<dim> & tria)
   dealii::DataOut<dim> data_out;
   data_out.attach_triangulation(tria);
   data_out.build_patches(1);
-  data_out.write_vtu_in_parallel("output/mesh_active.vtu", tria.get_communicator());
+  data_out.write_vtu_in_parallel("output/mesh_active.vtu", tria.get_mpi_communicator());
 }
 
 template<int dim>
@@ -67,7 +67,7 @@ print_mesh(const dealii::Triangulation<dim> &                                   
       if(i == 1.0)
         level = l;
 
-  level = dealii::Utilities::MPI::max(level, tria.get_communicator());
+  level = dealii::Utilities::MPI::max(level, tria.get_mpi_communicator());
 
   data_out.write_vtu_in_parallel("output/mesh_level_" + std::to_string(level) + ".vtu",
                                  MPI_COMM_WORLD);

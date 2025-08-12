@@ -103,7 +103,7 @@ struct OperatorBaseData
 };
 
 template<int dim, typename Number, int n_components = 1>
-class OperatorBase : public dealii::Subscriptor
+class OperatorBase : public dealii::EnableObserverPointer
 {
 public:
   typedef OperatorBase<dim, Number, n_components> This;
