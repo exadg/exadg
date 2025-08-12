@@ -136,7 +136,8 @@ struct RestartData
   // The mapping of the triangulation should be de-/serialized as well to consider for a mapped
   // geometry at serialization and during deserialization. This is option toggles storing the
   // mapping via a displacement vector *and* reading it back in. Hence, this parameter needs to
-  // match in serialization/deserialization runs.
+  // match in serialization/deserialization runs. Note that the mapping of the grid at restart
+  // might not be set depending on the sequence in the initialization routines.
   bool consider_mapping;
 
   // The `mapping_degree` considered when storing or reading the grid.
