@@ -5,8 +5,8 @@
         "IsTest": "true"
     },
     "SpatialResolution": {
-        "DegreeMin": "4",
-        "DegreeMax": "4",
+        "DegreeMin": "5",
+        "DegreeMax": "5",
         "RefineSpaceMin": "3",
         "RefineSpaceMax": "3"
     },
@@ -16,7 +16,7 @@
     },
     "Application": {
         "EnableAdaptivity": "true",
-        "UseExplicitTimeIntegration": "false"
+        "UseExplicitTimeIntegration": "true"
     },
     "Output": {
         "OutputDirectory": "output/rotating_hill/",
