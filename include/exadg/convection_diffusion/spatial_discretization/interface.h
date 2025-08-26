@@ -80,6 +80,13 @@ public:
   virtual void
   project_velocity(VectorType & velocity, double const time) const = 0;
 
+  // required for restart functionality
+  virtual void
+  serialize_vectors(std::vector<VectorType const *> const & vectors) const = 0;
+
+  virtual void
+  deserialize_vectors(std::vector<VectorType *> const & vectors) = 0;
+
   // time integration: prescribe initial conditions
   virtual void
   prescribe_initial_conditions(VectorType & src, double const evaluation_time) const = 0;

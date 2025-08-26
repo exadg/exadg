@@ -121,6 +121,20 @@ TimeIntExplRK<Number>::initialize_solution()
   pde_operator->prescribe_initial_conditions(this->solution_n, this->time);
 }
 
+template<typename Number>
+void
+TimeIntExplRK<Number>::read_restart_vectors(std::vector<VectorType *> const & vectors)
+{
+  pde_operator->deserialize_vectors(vectors);
+}
+
+template<typename Number>
+void
+TimeIntExplRK<Number>::write_restart_vectors(std::vector<VectorType const *> const & vectors) const
+{
+  pde_operator->serialize_vectors(vectors);
+}
+
 /*
  *  calculate time step size
  */

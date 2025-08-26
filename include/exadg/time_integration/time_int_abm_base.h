@@ -223,18 +223,68 @@ private:
   void
   read_restart_vectors(BoostInputArchiveType & ia) final
   {
-    read_write_distributed_vector(solution, ia);
-    read_write_distributed_vector(prediction, ia);
-
+    std::vector<VectorType *> vectors{&solution, &prediction};
     for(unsigned int i = 0; i < vec_evaluated_operators.size(); ++i)
     {
-      read_write_distributed_vector(vec_evaluated_operators[i], ia);
+      vectors.push_back(&vec_evaluated_operators[i]);
+    }
+
+    pde_operator->deserialize_vectors(vectors);
+
+    // Remains for comparison. ##+
+    try
+    {
+      VectorType solution_compare(solution);
+      VectorType prediction_compare(prediction);
+
+      read_write_distributed_vector(solution_compare, ia);
+      read_write_distributed_vector(prediction_compare, ia);
+
+      std::vector<VectorType> vec_evaluated_operators_compare = vec_evaluated_operators;
+      for(unsigned int i = 0; i < vec_evaluated_operators.size(); ++i)
+      {
+        read_write_distributed_vector(vec_evaluated_operators_compare[i], ia);
+      }
+
+      solution_compare -= solution;
+      prediction_compare -= prediction;
+      double diff_max = std::max(solution_compare.linfty_norm(), prediction_compare.linfty_norm());
+      for(unsigned int i = 0; i < vec_evaluated_operators.size(); ++i)
+      {
+        vec_evaluated_operators_compare[i] -= vec_evaluated_operators[i];
+        vec_evaluated_operators_compare[i] *=
+          solution.linfty_norm() / vec_evaluated_operators[i].linfty_norm();
+        diff_max =
+          std::max(static_cast<double>(vec_evaluated_operators_compare[i].linfty_norm()), diff_max);
+      }
+
+      if(dealii::Utilities::MPI::this_mpi_process(solution.get_mpi_communicator()) == 0)
+      {
+        std::cout << "|difference|_inf = " << diff_max << "\n"
+                  << "(only useful for identical discretization)";
+      }
+    }
+    catch(...)
+    {
+      std::cout << "Comparison to previous serialization not possible.\n"
+                << "This can only be done with identical processor "
+                << "counts and enough data in the archives."
+                << "\n";
     }
   }
 
   void
   write_restart_vectors(BoostOutputArchiveType & oa) const final
   {
+    std::vector<VectorType const *> vectors{&solution, &prediction};
+    for(unsigned int i = 0; i < vec_evaluated_operators.size(); ++i)
+    {
+      vectors.push_back(&vec_evaluated_operators[i]);
+    }
+
+    pde_operator->serialize_vectors(vectors);
+
+    // Remains for comparison. ##+
     read_write_distributed_vector(solution, oa);
     read_write_distributed_vector(prediction, oa);
 

@@ -45,7 +45,7 @@ enum class PreconditionerMass
 
 /**
  * Data struct for mass operator inversion covering L2-conforming or Hdiv-conforming discontinuous
- * Galerkin methods and continuous Glarking methods. Depending on the underlying discretization,
+ * Galerkin methods and continuous Galerkin methods. Depending on the underlying discretization,
  * various implementations exploiting the structure of the matrix related to the discretized mass
  * operator are available. Choices not approximating the inverse operator up to linear solver
  * tolerance are asserted.

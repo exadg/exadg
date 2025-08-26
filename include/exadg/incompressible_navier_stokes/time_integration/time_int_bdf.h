@@ -115,6 +115,14 @@ protected:
   void
   write_restart_vectors(BoostOutputArchiveType & oa) const override;
 
+  virtual void
+  get_vectors_serialization(std::vector<VectorType const *> & vectors_velocity,
+                            std::vector<VectorType const *> & vectors_pressure) const;
+
+  virtual void
+  set_vectors_deserialization(std::vector<VectorType> const & vectors_velocity,
+                              std::vector<VectorType> const & vectors_pressure);
+
   void
   prepare_vectors_for_next_timestep() override;
 

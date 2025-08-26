@@ -148,6 +148,10 @@ TimeIntExplRKBase<Number>::do_write_restart(std::string const & filename) const
   oa & time_step;
 
   // 4. solution vectors
+  std::vector<VectorType const *> vectors{&solution_n};
+  this->write_restart_vectors(vectors);
+
+  // Remains for comparison. ##+
   read_write_distributed_vector(solution_n, oa);
 
   write_restart_file(oss, filename);
@@ -183,7 +187,51 @@ TimeIntExplRKBase<Number>::do_read_restart(std::ifstream & in)
   ia & time_step;
 
   // 4. solution vectors
-  read_write_distributed_vector(solution_n, ia);
+  std::vector<VectorType *> vectors{&solution_n};
+  this->read_restart_vectors(vectors);
+
+  // Remains for comparison. ##+
+  try
+  {
+    VectorType solution_n_compare(solution_n);
+    read_write_distributed_vector(solution_n_compare, ia);
+
+    solution_n_compare -= solution_n;
+    double diff_max = solution_n_compare.linfty_norm();
+    if(dealii::Utilities::MPI::this_mpi_process(solution_n.get_mpi_communicator()) == 0)
+    {
+      std::cout << "|difference|_inf = " << diff_max << "\n"
+                << "(only useful for identical discretization)";
+    }
+  }
+  catch(...)
+  {
+    std::cout << "Comparison to previous serialization not possible.\n"
+              << "This can only be done with identical processor "
+              << "counts and enough data in the archives."
+              << "\n";
+  }
+}
+
+template<typename Number>
+void
+TimeIntExplRKBase<Number>::read_restart_vectors(std::vector<VectorType *> const & vectors)
+{
+  (void)vectors;
+  AssertThrow(false,
+              dealii::ExcMessage("Overwrite this method in the derived "
+                                 "class to enable de-/serialization."));
+}
+
+template<typename Number>
+void
+TimeIntExplRKBase<Number>::write_restart_vectors(
+  std::vector<VectorType const *> const & vectors) const
+{
+  (void)vectors;
+  AssertThrow(false,
+              dealii::ExcMessage("Overwrite this method in the derived "
+                                 "class to enable de-/serialization."));
 }
 
 // instantiations

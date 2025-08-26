@@ -75,6 +75,12 @@ private:
   initialize_solution() final;
 
   void
+  read_restart_vectors(std::vector<VectorType *> const & vectors) final;
+
+  void
+  write_restart_vectors(std::vector<VectorType const *> const & vectors) const final;
+
+  void
   detect_instabilities() const;
 
   void
