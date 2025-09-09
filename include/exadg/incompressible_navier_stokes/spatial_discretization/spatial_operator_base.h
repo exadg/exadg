@@ -64,7 +64,7 @@ template<int dim, typename Number>
 class SpatialOperatorBase;
 
 template<int dim, typename Number>
-class SpatialOperatorBase : public dealii::Subscriptor
+class SpatialOperatorBase : public dealii::EnableObserverPointer
 {
 protected:
   typedef dealii::LinearAlgebra::distributed::Vector<Number>      VectorType;

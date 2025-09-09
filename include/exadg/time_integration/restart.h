@@ -34,7 +34,6 @@
 // deal.II
 #include <deal.II/base/mpi.h>
 #include <deal.II/distributed/fully_distributed_tria.h>
-#include <deal.II/distributed/solution_transfer.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/manifold.h>
@@ -43,9 +42,8 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/matrix_free/fe_point_evaluation.h>
+#include <deal.II/numerics/solution_transfer.h>
 #include <deal.II/numerics/vector_tools.h>
-#include <deal.II/particles/data_out.h>
-#include <deal.II/particles/particle_handler.h>
 
 // ExaDG
 #include <exadg/grid/grid_data.h>
@@ -209,7 +207,7 @@ get_block_vectors_from_dof_handlers(
   for(unsigned int i = 0; i < n_blocks; ++i)
   {
     block_vector.block(i).reinit(dof_handlers[i]->locally_owned_dofs(),
-                                 dof_handlers[i]->get_communicator());
+                                 dof_handlers[i]->get_mpi_communicator());
   }
   block_vector.collect_sizes();
 
@@ -272,7 +270,7 @@ save_coarse_triangulation(std::string const &       filename_base,
   }
 
   std::string const filename = filename_base + ".coarse_triangulation";
-  MPI_Comm const &  mpi_comm = triangulation.get_communicator();
+  MPI_Comm const &  mpi_comm = triangulation.get_mpi_communicator();
   if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     // Serialization only creates a single file, move with one process only.
@@ -314,8 +312,7 @@ store_vectors_in_triangulation_and_serialize(
   }
 
   // Loop over the `DoFHandlers` and store the vectors in the triangulation.
-  std::vector<std::shared_ptr<dealii::parallel::distributed::SolutionTransfer<dim, VectorType>>>
-                                 solution_transfers;
+  std::vector<std::shared_ptr<dealii::SolutionTransfer<dim, VectorType>>> solution_transfers;
   std::vector<std::vector<bool>> has_ghost_elements_per_dof_handler;
   for(unsigned int i = 0; i < dof_handlers.size(); ++i)
   {
@@ -329,14 +326,13 @@ store_vectors_in_triangulation_and_serialize(
     }
 
     solution_transfers.push_back(
-      std::make_shared<dealii::parallel::distributed::SolutionTransfer<dim, VectorType>>(
-        *dof_handlers[i]));
+      std::make_shared<dealii::SolutionTransfer<dim, VectorType>>(*dof_handlers[i]));
     solution_transfers[i]->prepare_for_serialization(vectors_per_dof_handler[i]);
   }
 
   // Serialize the triangulation keeping a maximum of two snapshots.
   std::string const filename = filename_base + ".triangulation";
-  MPI_Comm const &  mpi_comm = dof_handlers[0]->get_communicator();
+  MPI_Comm const &  mpi_comm = dof_handlers[0]->get_mpi_communicator();
   if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     // Serialization only creates a single file, move with one process only.
@@ -412,7 +408,7 @@ store_vectors_in_triangulation_and_serialize(
       dealii::DoFTools::extract_locally_relevant_dofs(*dof_handler_mapping);
     vector_grid_coordinates.reinit(locally_owned_dofs,
                                    locally_relevant_dofs,
-                                   dof_handler_mapping->get_communicator());
+                                   dof_handler_mapping->get_mpi_communicator());
   }
 
   // Fill vector with mapping.
@@ -525,8 +521,7 @@ load_vectors(std::vector<std::vector<VectorType *>> &                  vectors_p
   // the triangulation the DoFHandlers were initialized with.
   for(unsigned int i = 0; i < dof_handlers.size(); ++i)
   {
-    dealii::parallel::distributed::SolutionTransfer<dim, VectorType> solution_transfer(
-      *dof_handlers[i]);
+    dealii::SolutionTransfer<dim, VectorType> solution_transfer(*dof_handlers[i]);
 
     // Reinit vectors that do not already have ghost entries.
     bool all_ghosted = false;
@@ -549,7 +544,7 @@ load_vectors(std::vector<std::vector<VectorType *>> &                  vectors_p
         {
           vectors_per_dof_handler[i][j]->reinit(locally_owned_dofs,
                                                 locally_relevant_dofs,
-                                                dof_handlers[i]->get_communicator());
+                                                dof_handlers[i]->get_mpi_communicator());
         }
       }
     }
@@ -577,7 +572,8 @@ load_vectors(std::vector<std::vector<VectorType *>> &                  vectors_p
   // We need a collective call to `SolutionTransfer::deserialize()` with all vectors in a
   // single container. Hence, create a mapping vector and add a pointer to the input argument.
   dealii::IndexSet const & locally_owned_dofs = dof_handler_mapping->locally_owned_dofs();
-  VectorType vector_grid_coordinates(locally_owned_dofs, dof_handler_mapping->get_communicator());
+  VectorType               vector_grid_coordinates(locally_owned_dofs,
+                                     dof_handler_mapping->get_mpi_communicator());
 
   // Standard utility function, sequence as in `store_vectors_in_triangulation_and_serialize()`.
   std::vector<std::vector<VectorType *>> vectors_per_dof_handler_extended = vectors_per_dof_handler;

@@ -85,7 +85,7 @@ private:
 
   PostProcessorData<dim> pp_data;
 
-  dealii::SmartPointer<Operator<dim, Number> const> navier_stokes_operator;
+  dealii::ObserverPointer<Operator<dim, Number> const> navier_stokes_operator;
 
   OutputGenerator<dim, Number>                 output_generator;
   PointwiseOutputGenerator<dim, Number>        pointwise_output_generator;

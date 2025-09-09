@@ -32,7 +32,7 @@
 namespace ExaDG
 {
 template<int dim, typename Number>
-class MultigridOperatorBase : public dealii::Subscriptor
+class MultigridOperatorBase : public dealii::EnableObserverPointer
 {
 public:
   typedef Number                                             value_type;
@@ -40,7 +40,7 @@ public:
 
   static unsigned int const dimension = dim;
 
-  MultigridOperatorBase() : dealii::Subscriptor()
+  MultigridOperatorBase() : dealii::EnableObserverPointer()
   {
   }
 

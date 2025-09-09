@@ -31,7 +31,7 @@ jobs:
         with:
           build-args: branch_name=${{github.ref_name}}
           context: ./contrib/docker/
-          cache-from: type=registry,ref=dealii/dealii:master-focal
+          cache-from: type=registry,ref=dealii/dealii:master-noble
           cache-to: type=inline
           push: true
-          tags: exadg/exadg:${{github.ref_name}}-focal
+          tags: exadg/exadg:${{github.ref_name}}-noble

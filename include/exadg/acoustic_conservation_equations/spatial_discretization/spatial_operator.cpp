@@ -260,7 +260,7 @@ SpatialOperator<dim, Number>::serialize_vectors(
                                                  vectors_per_dof_handler,
                                                  dof_handlers,
                                                  *this->get_mapping(),
-                                                 &(*dof_handler_mapping),
+                                                 dof_handler_mapping.get(),
                                                  param.mapping_degree);
   }
   else

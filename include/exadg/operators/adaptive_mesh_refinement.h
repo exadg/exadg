@@ -28,7 +28,6 @@
 // deal.II
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/distributed/grid_refinement.h>
-#include <deal.II/distributed/solution_transfer.h>
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/grid/grid_refinement.h>
 #include <deal.II/numerics/error_estimator.h>
@@ -140,7 +139,7 @@ any_cells_flagged_for_coarsening_or_refinement(dealii::Triangulation<dim> const 
     }
   }
 
-  any_flag_set = dealii::Utilities::MPI::logical_or(any_flag_set, tria.get_communicator());
+  any_flag_set = dealii::Utilities::MPI::logical_or(any_flag_set, tria.get_mpi_communicator());
 
   return any_flag_set;
 }
@@ -158,7 +157,7 @@ mark_cells_kelly_error_estimator(dealii::Triangulation<dim> &              tria,
   VectorType locally_relevant_solution;
   locally_relevant_solution.reinit(dof_handler.locally_owned_dofs(),
                                    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler),
-                                   dof_handler.get_communicator());
+                                   dof_handler.get_mpi_communicator());
   locally_relevant_solution.copy_locally_owned_data_from(solution);
   constraints.distribute(locally_relevant_solution);
   locally_relevant_solution.update_ghost_values();
