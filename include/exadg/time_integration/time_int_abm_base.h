@@ -223,25 +223,29 @@ private:
   void
   read_restart_vectors(BoostInputArchiveType & ia) final
   {
-    read_write_distributed_vector(solution, ia);
-    read_write_distributed_vector(prediction, ia);
+    (void)ia;
 
+    std::vector<VectorType *> vectors{&solution, &prediction};
     for(unsigned int i = 0; i < vec_evaluated_operators.size(); ++i)
     {
-      read_write_distributed_vector(vec_evaluated_operators[i], ia);
+      vectors.push_back(&vec_evaluated_operators[i]);
     }
+
+    pde_operator->deserialize_vectors(vectors);
   }
 
   void
   write_restart_vectors(BoostOutputArchiveType & oa) const final
   {
-    read_write_distributed_vector(solution, oa);
-    read_write_distributed_vector(prediction, oa);
+    (void)oa;
 
+    std::vector<VectorType const *> vectors{&solution, &prediction};
     for(unsigned int i = 0; i < vec_evaluated_operators.size(); ++i)
     {
-      read_write_distributed_vector(vec_evaluated_operators[i], oa);
+      vectors.push_back(&vec_evaluated_operators[i]);
     }
+
+    pde_operator->serialize_vectors(vectors);
   }
 
   void
