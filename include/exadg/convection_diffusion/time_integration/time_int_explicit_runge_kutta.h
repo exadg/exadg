@@ -93,6 +93,12 @@ private:
   void
   initialize_time_integrator() final;
 
+  void
+  read_restart_vectors(std::vector<VectorType *> const & vectors) final;
+
+  void
+  write_restart_vectors(std::vector<VectorType const *> const & vectors) const final;
+
   std::shared_ptr<Interface::Operator<Number>> pde_operator;
 
   std::shared_ptr<OperatorExplRK<Number>> expl_rk_operator;

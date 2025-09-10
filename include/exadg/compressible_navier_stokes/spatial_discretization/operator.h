@@ -89,6 +89,13 @@ public:
   void
   initialize_dof_vector_dim_components(VectorType & src) const;
 
+  // required for restart functionality
+  void
+  serialize_vectors(std::vector<VectorType const *> const & vectors) const final;
+
+  void
+  deserialize_vectors(std::vector<VectorType *> const & vectors) final;
+
   // set initial conditions
   void
   prescribe_initial_conditions(VectorType & src, double const time) const final;
@@ -242,6 +249,10 @@ private:
   std::string const quad_index_standard             = "standard";
   std::string const quad_index_overintegration_conv = "overintegration_conv";
   std::string const quad_index_overintegration_vis  = "overintegration_vis";
+
+  // required for de-/serialization
+  std::shared_ptr<dealii::FiniteElement<dim>> fe_mapping;
+  std::shared_ptr<dealii::DoFHandler<dim>>    dof_handler_mapping;
 
   std::string const quad_index_l2_projections = quad_index_standard;
   // alternative: use more accurate over-integration strategy
