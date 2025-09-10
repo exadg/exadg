@@ -8,5 +8,6 @@ var searchData=
   ['deformedmappingbase_5',['DeformedMappingBase',['../classExaDG_1_1DeformedMappingBase.html#ae025a213ed6674ca414964c8ead2e70d',1,'ExaDG::DeformedMappingBase']]],
   ['deformedmappingfunction_6',['DeformedMappingFunction',['../classExaDG_1_1DeformedMappingFunction.html#aa8ee6401760c44448ac737642de0d94b',1,'ExaDG::DeformedMappingFunction']]],
   ['deserialize_7',['deserialize',['../classdealspectrum_1_1Interpolator.html#abf5f310c4036f825328ad8dd924f775a',1,'dealspectrum::Interpolator::deserialize(char const *filename)'],['../classdealspectrum_1_1Interpolator.html#a29da807cd1fe3ae6775e3e303b61896a',1,'dealspectrum::Interpolator::deserialize(char const *filename, double *&amp;src)'],['../classdealspectrum_1_1SpectralAnalysis.html#a4f6dd67f9c9aa0df92244eeb1c78169c',1,'dealspectrum::SpectralAnalysis::deserialize()']]],
-  ['disable_5fhigh_5forder_5fconstants_8',['disable_high_order_constants',['../classExaDG_1_1TimeIntegratorConstantsBase.html#a72710849ce4a0630d752febbe16313d0',1,'ExaDG::TimeIntegratorConstantsBase']]]
+  ['deserialize_5ftriangulation_8',['deserialize_triangulation',['../namespaceExaDG.html#a9cb09e5e47189ed5d03301ba40bb2fa4',1,'ExaDG']]],
+  ['disable_5fhigh_5forder_5fconstants_9',['disable_high_order_constants',['../classExaDG_1_1TimeIntegratorConstantsBase.html#a72710849ce4a0630d752febbe16313d0',1,'ExaDG::TimeIntegratorConstantsBase']]]
 ];

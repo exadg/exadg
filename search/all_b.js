@@ -33,9 +33,10 @@ var searchData=
   ['lineplotdata_30',['LinePlotData',['../structExaDG_1_1IncNS_1_1LinePlotData.html',1,'ExaDG::IncNS']]],
   ['lineplotdatabase_31',['LinePlotDataBase',['../structExaDG_1_1IncNS_1_1LinePlotDataBase.html',1,'ExaDG::IncNS']]],
   ['lineplotdatastatistics_32',['LinePlotDataStatistics',['../structExaDG_1_1IncNS_1_1LinePlotDataStatistics.html',1,'ExaDG::IncNS']]],
-  ['lowstoragerk3stage4reg2c_33',['LowStorageRK3Stage4Reg2C',['../classExaDG_1_1LowStorageRK3Stage4Reg2C.html',1,'ExaDG']]],
-  ['lowstoragerk4stage5reg2c_34',['LowStorageRK4Stage5Reg2C',['../classExaDG_1_1LowStorageRK4Stage5Reg2C.html',1,'ExaDG']]],
-  ['lowstoragerk4stage5reg3c_35',['LowStorageRK4Stage5Reg3C',['../classExaDG_1_1LowStorageRK4Stage5Reg3C.html',1,'ExaDG']]],
-  ['lowstoragerk5stage9reg2s_36',['LowStorageRK5Stage9Reg2S',['../classExaDG_1_1LowStorageRK5Stage9Reg2S.html',1,'ExaDG']]],
-  ['lowstoragerktd_37',['LowStorageRKTD',['../classExaDG_1_1LowStorageRKTD.html',1,'ExaDG']]]
+  ['load_5fvectors_33',['load_vectors',['../namespaceExaDG.html#aca69f1a8971e73e273eed50e05557ab3',1,'ExaDG::load_vectors(std::vector&lt; std::vector&lt; VectorType * &gt; &gt; &amp;vectors_per_dof_handler, std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;dof_handlers)'],['../namespaceExaDG.html#a40be486066fffd6ff8837076802b63ee',1,'ExaDG::load_vectors(std::vector&lt; std::vector&lt; VectorType * &gt; &gt; &amp;vectors_per_dof_handler, std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;dof_handlers, dealii::DoFHandler&lt; dim &gt; const *dof_handler_mapping, unsigned int const mapping_degree)']]],
+  ['lowstoragerk3stage4reg2c_34',['LowStorageRK3Stage4Reg2C',['../classExaDG_1_1LowStorageRK3Stage4Reg2C.html',1,'ExaDG']]],
+  ['lowstoragerk4stage5reg2c_35',['LowStorageRK4Stage5Reg2C',['../classExaDG_1_1LowStorageRK4Stage5Reg2C.html',1,'ExaDG']]],
+  ['lowstoragerk4stage5reg3c_36',['LowStorageRK4Stage5Reg3C',['../classExaDG_1_1LowStorageRK4Stage5Reg3C.html',1,'ExaDG']]],
+  ['lowstoragerk5stage9reg2s_37',['LowStorageRK5Stage9Reg2S',['../classExaDG_1_1LowStorageRK5Stage9Reg2S.html',1,'ExaDG']]],
+  ['lowstoragerktd_38',['LowStorageRKTD',['../classExaDG_1_1LowStorageRKTD.html',1,'ExaDG']]]
 ];

@@ -107,6 +107,9 @@ Inheritance diagram for ExaDG::Acoustics::Interface::SpatialOperator&lt; Number 
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
+<tr class="memitem:aebb7afe926fa30ec523a9624e941cde6" id="r_aebb7afe926fa30ec523a9624e941cde6"><td class="memItemLeft" align="right" valign="top"><a id="aebb7afe926fa30ec523a9624e941cde6" name="aebb7afe926fa30ec523a9624e941cde6"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b> = dealii::LinearAlgebra::distributed::Vector&lt;Number&gt;</td></tr>
+<tr class="separator:aebb7afe926fa30ec523a9624e941cde6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adddfdef83ae180eba856d08fd32e0879" id="r_adddfdef83ae180eba856d08fd32e0879"><td class="memItemLeft" align="right" valign="top"><a id="adddfdef83ae180eba856d08fd32e0879" name="adddfdef83ae180eba856d08fd32e0879"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>BlockVectorType</b> = dealii::LinearAlgebra::distributed::BlockVector&lt;Number&gt;</td></tr>
 <tr class="separator:adddfdef83ae180eba856d08fd32e0879"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -122,6 +125,12 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>prescribe_ini
 <tr class="memitem:a2bfd1f6563c4a2de5e67fecc456ef4f4" id="r_a2bfd1f6563c4a2de5e67fecc456ef4f4"><td class="memItemLeft" align="right" valign="top"><a id="a2bfd1f6563c4a2de5e67fecc456ef4f4" name="a2bfd1f6563c4a2de5e67fecc456ef4f4"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (BlockVectorType &amp;dst, BlockVectorType const &amp;src, double const time) const =0</td></tr>
 <tr class="separator:a2bfd1f6563c4a2de5e67fecc456ef4f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a655aa180eadee569e7e31d70b31b832c" id="r_a655aa180eadee569e7e31d70b31b832c"><td class="memItemLeft" align="right" valign="top"><a id="a655aa180eadee569e7e31d70b31b832c" name="a655aa180eadee569e7e31d70b31b832c"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>serialize_vectors</b> (std::vector&lt; BlockVectorType const * &gt; const &amp;block_vectors) const =0</td></tr>
+<tr class="separator:a655aa180eadee569e7e31d70b31b832c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa68ee8695bc12cf24dada3c583bbb91d" id="r_aa68ee8695bc12cf24dada3c583bbb91d"><td class="memItemLeft" align="right" valign="top"><a id="aa68ee8695bc12cf24dada3c583bbb91d" name="aa68ee8695bc12cf24dada3c583bbb91d"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>deserialize_vectors</b> (std::vector&lt; BlockVectorType * &gt; const &amp;block_vectors) const =0</td></tr>
+<tr class="separator:aa68ee8695bc12cf24dada3c583bbb91d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad340b2a1cf8f5daefc999405a67a986a" id="r_ad340b2a1cf8f5daefc999405a67a986a"><td class="memItemLeft" align="right" valign="top"><a id="ad340b2a1cf8f5daefc999405a67a986a" name="ad340b2a1cf8f5daefc999405a67a986a"></a>
 virtual double&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_time_step_cfl</b> () const =0</td></tr>
 <tr class="separator:ad340b2a1cf8f5daefc999405a67a986a"><td class="memSeparator" colspan="2">&#160;</td></tr>

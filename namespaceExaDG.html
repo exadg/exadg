@@ -820,6 +820,38 @@ template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">
 <tr class="memitem:a5b0e6da132568638daf46851b20078a1" id="r_a5b0e6da132568638daf46851b20078a1"><td class="memTemplParams" colspan="2">template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>, typename BoostArchiveType&gt; </td></tr>
 <tr class="memitem:a5b0e6da132568638daf46851b20078a1"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#a5b0e6da132568638daf46851b20078a1">read_write_distributed_vector</a> (<a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> &amp;vector, BoostArchiveType &amp;archive)</td></tr>
 <tr class="separator:a5b0e6da132568638daf46851b20078a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a95e3012032faab25e1436fcea7e5fd2f" id="r_a95e3012032faab25e1436fcea7e5fd2f"><td class="memTemplParams" colspan="2">template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>, typename BlockVectorType&gt; </td></tr>
+<tr class="memitem:a95e3012032faab25e1436fcea7e5fd2f"><td class="memTemplItemLeft" align="right" valign="top">std::vector&lt; std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> * &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#a95e3012032faab25e1436fcea7e5fd2f">get_vectors_per_block</a> (std::vector&lt; BlockVectorType * &gt; const &amp;block_vectors)</td></tr>
+<tr class="separator:a95e3012032faab25e1436fcea7e5fd2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a561153226fd49ac3426d0115377c553c" id="r_a561153226fd49ac3426d0115377c553c"><td class="memTemplParams" colspan="2">template&lt;int dim, typename BlockVectorType&gt; </td></tr>
+<tr class="memitem:a561153226fd49ac3426d0115377c553c"><td class="memTemplItemLeft" align="right" valign="top">std::vector&lt; BlockVectorType &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#a561153226fd49ac3426d0115377c553c">get_block_vectors_from_dof_handlers</a> (unsigned int const n_vectors, std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;dof_handlers)</td></tr>
+<tr class="separator:a561153226fd49ac3426d0115377c553c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5ea2e3f3c143d3adbb3582f2095bfb6" id="r_ae5ea2e3f3c143d3adbb3582f2095bfb6"><td class="memTemplParams" colspan="2"><a id="ae5ea2e3f3c143d3adbb3582f2095bfb6" name="ae5ea2e3f3c143d3adbb3582f2095bfb6"></a>
+template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </td></tr>
+<tr class="memitem:ae5ea2e3f3c143d3adbb3582f2095bfb6"><td class="memTemplItemLeft" align="right" valign="top">std::vector&lt; bool &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get_ghost_state</b> (std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> * &gt; const &amp;vectors)</td></tr>
+<tr class="separator:ae5ea2e3f3c143d3adbb3582f2095bfb6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a35e16848ddfb235f871347994e1c4829" id="r_a35e16848ddfb235f871347994e1c4829"><td class="memTemplParams" colspan="2"><a id="a35e16848ddfb235f871347994e1c4829" name="a35e16848ddfb235f871347994e1c4829"></a>
+template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </td></tr>
+<tr class="memitem:a35e16848ddfb235f871347994e1c4829"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>set_ghost_state</b> (std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> * &gt; const &amp;vectors, std::vector&lt; bool &gt; const &amp;had_ghost_elements)</td></tr>
+<tr class="separator:a35e16848ddfb235f871347994e1c4829"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5dcfb8e16e1f550210e6e610950c751f" id="r_a5dcfb8e16e1f550210e6e610950c751f"><td class="memTemplParams" colspan="2">template&lt;int dim, typename TriangulationType&gt; </td></tr>
+<tr class="memitem:a5dcfb8e16e1f550210e6e610950c751f"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#a5dcfb8e16e1f550210e6e610950c751f">save_coarse_triangulation</a> (std::string const &amp;filename_base, TriangulationType const &amp;triangulation)</td></tr>
+<tr class="separator:a5dcfb8e16e1f550210e6e610950c751f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a94c5a1337facf28ae3e2045b1ea04a01" id="r_a94c5a1337facf28ae3e2045b1ea04a01"><td class="memTemplParams" colspan="2">template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </td></tr>
+<tr class="memitem:a94c5a1337facf28ae3e2045b1ea04a01"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#a94c5a1337facf28ae3e2045b1ea04a01">store_vectors_in_triangulation_and_serialize</a> (std::string const &amp;filename_base, std::vector&lt; std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> const * &gt; &gt; const &amp;vectors_per_dof_handler, std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;dof_handlers)</td></tr>
+<tr class="separator:a94c5a1337facf28ae3e2045b1ea04a01"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad08cc18cf1e458c73abd28233c7ffcb7" id="r_ad08cc18cf1e458c73abd28233c7ffcb7"><td class="memTemplParams" colspan="2">template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </td></tr>
+<tr class="memitem:ad08cc18cf1e458c73abd28233c7ffcb7"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#ad08cc18cf1e458c73abd28233c7ffcb7">store_vectors_in_triangulation_and_serialize</a> (std::string const &amp;filename_base, std::vector&lt; std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> const * &gt; &gt; const &amp;vectors_per_dof_handler, std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;dof_handlers, dealii::Mapping&lt; dim &gt; const &amp;mapping, dealii::DoFHandler&lt; dim &gt; const *dof_handler_mapping, unsigned int const mapping_degree)</td></tr>
+<tr class="separator:ad08cc18cf1e458c73abd28233c7ffcb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9cb09e5e47189ed5d03301ba40bb2fa4" id="r_a9cb09e5e47189ed5d03301ba40bb2fa4"><td class="memTemplParams" colspan="2">template&lt;int dim&gt; </td></tr>
+<tr class="memitem:a9cb09e5e47189ed5d03301ba40bb2fa4"><td class="memTemplItemLeft" align="right" valign="top">std::shared_ptr&lt; dealii::Triangulation&lt; dim &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#a9cb09e5e47189ed5d03301ba40bb2fa4">deserialize_triangulation</a> (std::string const &amp;filename_base, TriangulationType const triangulation_type, MPI_Comm const &amp;mpi_communicator)</td></tr>
+<tr class="separator:a9cb09e5e47189ed5d03301ba40bb2fa4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aca69f1a8971e73e273eed50e05557ab3" id="r_aca69f1a8971e73e273eed50e05557ab3"><td class="memTemplParams" colspan="2">template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </td></tr>
+<tr class="memitem:aca69f1a8971e73e273eed50e05557ab3"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#aca69f1a8971e73e273eed50e05557ab3">load_vectors</a> (std::vector&lt; std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> * &gt; &gt; &amp;vectors_per_dof_handler, std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;dof_handlers)</td></tr>
+<tr class="separator:aca69f1a8971e73e273eed50e05557ab3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a40be486066fffd6ff8837076802b63ee" id="r_a40be486066fffd6ff8837076802b63ee"><td class="memTemplParams" colspan="2">template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </td></tr>
+<tr class="memitem:a40be486066fffd6ff8837076802b63ee"><td class="memTemplItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MappingDoFVector.html">MappingDoFVector</a>&lt; dim, typename VectorType::value_type &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#a40be486066fffd6ff8837076802b63ee">load_vectors</a> (std::vector&lt; std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> * &gt; &gt; &amp;vectors_per_dof_handler, std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;dof_handlers, dealii::DoFHandler&lt; dim &gt; const *dof_handler_mapping, unsigned int const mapping_degree)</td></tr>
+<tr class="separator:a40be486066fffd6ff8837076802b63ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a71f5976da8ee493a4427722a6b9366f3" id="r_a71f5976da8ee493a4427722a6b9366f3"><td class="memItemLeft" align="right" valign="top"><a id="a71f5976da8ee493a4427722a6b9366f3" name="a71f5976da8ee493a4427722a6b9366f3"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>limit_time_step_change</b> (double &amp;new_time_step, double const &amp;last_time_step, double const &amp;fac)</td></tr>
 <tr class="separator:a71f5976da8ee493a4427722a6b9366f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1346,6 +1378,43 @@ template&lt;int dim&gt; </div>
 
 </div>
 </div>
+<a id="a9cb09e5e47189ed5d03301ba40bb2fa4" name="a9cb09e5e47189ed5d03301ba40bb2fa4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9cb09e5e47189ed5d03301ba40bb2fa4">&#9670;&#160;</a></span>deserialize_triangulation()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt; dealii::Triangulation&lt; dim &gt; &gt; ExaDG::deserialize_triangulation </td>
+          <td>(</td>
+          <td class="paramtype">std::string const &amp;</td>          <td class="paramname"><span class="paramname"><em>filename_base</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">TriangulationType const</td>          <td class="paramname"><span class="paramname"><em>triangulation_type</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MPI_Comm const &amp;</td>          <td class="paramname"><span class="paramname"><em>mpi_communicator</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Utility function to deserialize the stored triangulation. </p>
+
+</div>
+</div>
 <a id="ac2d3af52a3837e6d1d32060f1f6655bd" name="ac2d3af52a3837e6d1d32060f1f6655bd"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac2d3af52a3837e6d1d32060f1f6655bd">&#9670;&#160;</a></span>extract_component_from_tensors() <span class="overload">[1/2]</span></h2>
 
@@ -1487,6 +1556,30 @@ template&lt;typename Key, typename Data&gt; </div>
 
 </div>
 </div>
+<a id="a561153226fd49ac3426d0115377c553c" name="a561153226fd49ac3426d0115377c553c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a561153226fd49ac3426d0115377c553c">&#9670;&#160;</a></span>get_block_vectors_from_dof_handlers()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename BlockVectorType&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt; BlockVectorType &gt; ExaDG::get_block_vectors_from_dof_handlers </td>
+          <td>(</td>
+          <td class="paramtype">unsigned int const</td>          <td class="paramname"><span class="paramname"><em>n_vectors</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>dof_handlers</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Utility function to setup a <code>BlockVector</code> given a vector of <code>DoFHandlers</code> only containing owned DoFs. This can be used in combination with <code><a class="el" href="#a95e3012032faab25e1436fcea7e5fd2f">get_vectors_per_block()</a></code> to obtain vectors of <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> pointers as required for <code>dealii::SolutionTransfer</code>. </p>
+
+</div>
+</div>
 <a id="aa9171da72c58101e3d2929f4146ac00b" name="aa9171da72c58101e3d2929f4146ac00b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa9171da72c58101e3d2929f4146ac00b">&#9670;&#160;</a></span>get_element_type()</h2>
 
@@ -1504,6 +1597,26 @@ template&lt;int dim&gt; </div>
       </table>
 </div><div class="memdoc">
 <p>Returns the type of elements, where we currently only allow triangulations consisting of the same type of elements. </p>
+
+</div>
+</div>
+<a id="a95e3012032faab25e1436fcea7e5fd2f" name="a95e3012032faab25e1436fcea7e5fd2f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a95e3012032faab25e1436fcea7e5fd2f">&#9670;&#160;</a></span>get_vectors_per_block()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>, typename BlockVectorType&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt; std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> * &gt; &gt; ExaDG::get_vectors_per_block </td>
+          <td>(</td>
+          <td class="paramtype">std::vector&lt; BlockVectorType * &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>block_vectors</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Utility function to convert a vector of block vector pointers into a vector of vectors of <code><a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a></code> pointers, where all vectors from each individual block are summarized in a std::vector. This is useful for solution transfer and serialization. </p>
 
 </div>
 </div>
@@ -1528,6 +1641,80 @@ template&lt;int dim&gt; </div>
       </table>
 </div><div class="memdoc">
 <p>Limit the coarsening and refinement by adapting the flags set in the triangulation. This considers the maximum and minimum refinement levels provided and might remove refinement flags set on the boundary if requested. </p>
+
+</div>
+</div>
+<a id="aca69f1a8971e73e273eed50e05557ab3" name="aca69f1a8971e73e273eed50e05557ab3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aca69f1a8971e73e273eed50e05557ab3">&#9670;&#160;</a></span>load_vectors() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ExaDG::load_vectors </td>
+          <td>(</td>
+          <td class="paramtype">std::vector&lt; std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> * &gt; &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>vectors_per_dof_handler</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>dof_handlers</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Utility function to load vectors via <code>dealii::SolutionTransfer</code> assuming the <code>Triangulation</code> the <code>DoFHandler</code> was initialized with actually stores the related data. </p>
+
+</div>
+</div>
+<a id="a40be486066fffd6ff8837076802b63ee" name="a40be486066fffd6ff8837076802b63ee"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a40be486066fffd6ff8837076802b63ee">&#9670;&#160;</a></span>load_vectors() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MappingDoFVector.html">MappingDoFVector</a>&lt; dim, typename VectorType::value_type &gt; &gt; ExaDG::load_vectors </td>
+          <td>(</td>
+          <td class="paramtype">std::vector&lt; std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> * &gt; &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>vectors_per_dof_handler</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>dof_handlers</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">dealii::DoFHandler&lt; dim &gt; const *</td>          <td class="paramname"><span class="paramname"><em>dof_handler_mapping</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int const</td>          <td class="paramname"><span class="paramname"><em>mapping_degree</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Same as the above function, but consider for a mapping added as an additional vector added during <code><a class="el" href="#a94c5a1337facf28ae3e2045b1ea04a01">store_vectors_in_triangulation_and_serialize()</a></code>. </p>
 
 </div>
 </div>
@@ -1585,6 +1772,127 @@ template&lt;int dim&gt; </div>
 </div><div class="memdoc">
 <p>This function performs local refinements on a given triangulation, where the number of local refinements is described by a vector containing the number of local refinements for each material id, i.e. vector[material_id] = n_local_refinements.</p>
 <p>TODO: change the design of this function from a vector towards a map from material IDs to the number of local refinements. </p>
+
+</div>
+</div>
+<a id="a5dcfb8e16e1f550210e6e610950c751f" name="a5dcfb8e16e1f550210e6e610950c751f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5dcfb8e16e1f550210e6e610950c751f">&#9670;&#160;</a></span>save_coarse_triangulation()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename TriangulationType&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ExaDG::save_coarse_triangulation </td>
+          <td>(</td>
+          <td class="paramtype">std::string const &amp;</td>          <td class="paramname"><span class="paramname"><em>filename_base</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">TriangulationType const &amp;</td>          <td class="paramname"><span class="paramname"><em>triangulation</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Utility function to serialize a <code>dealii::Triangulation</code>. This is only implemented for the serial case since we only require the coarsest triangulation to be read from file when deserializing into a <code>dealii::parallel::distributed::Triangulation</code>. </p>
+
+</div>
+</div>
+<a id="a94c5a1337facf28ae3e2045b1ea04a01" name="a94c5a1337facf28ae3e2045b1ea04a01"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a94c5a1337facf28ae3e2045b1ea04a01">&#9670;&#160;</a></span>store_vectors_in_triangulation_and_serialize() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ExaDG::store_vectors_in_triangulation_and_serialize </td>
+          <td>(</td>
+          <td class="paramtype">std::string const &amp;</td>          <td class="paramname"><span class="paramname"><em>filename_base</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> const * &gt; &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>vectors_per_dof_handler</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>dof_handlers</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Utility function to store a <code>std::vector&lt;<a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt;</code> in a triangulation and serialize. We assume that the <code>Triangulation(s)</code> linked to the <code>DoFHandlers</code> are all identical. Note also that the sequence of vectors and <code>DoFHandlers</code> here and in <code>deserialize_triangulation_and_load_vectors()</code> <em>must</em> be identical. This function does not consider a mapping to be stored, which has to be provided within the <code>dof_handlers</code>, hence treated like all other vectors in serialization), and re-applied after deserialization. </p>
+
+</div>
+</div>
+<a id="ad08cc18cf1e458c73abd28233c7ffcb7" name="ad08cc18cf1e458c73abd28233c7ffcb7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad08cc18cf1e458c73abd28233c7ffcb7">&#9670;&#160;</a></span>store_vectors_in_triangulation_and_serialize() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ExaDG::store_vectors_in_triangulation_and_serialize </td>
+          <td>(</td>
+          <td class="paramtype">std::string const &amp;</td>          <td class="paramname"><span class="paramname"><em>filename_base</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> const * &gt; &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>vectors_per_dof_handler</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>dof_handlers</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">dealii::Mapping&lt; dim &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>mapping</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">dealii::DoFHandler&lt; dim &gt; const *</td>          <td class="paramname"><span class="paramname"><em>dof_handler_mapping</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int const</td>          <td class="paramname"><span class="paramname"><em>mapping_degree</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Same as the function above, but the mapping is stored for tensor-product elements as one of the vectors, while for any other element type, we ignore the mapping in the projection when deserializing. </p>
 
 </div>
 </div>

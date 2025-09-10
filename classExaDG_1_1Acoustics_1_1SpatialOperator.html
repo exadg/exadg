@@ -158,6 +158,10 @@ dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" v
 <tr class="memitem:a5f48bf82cd88f188093cc8b1de2e04d7" id="r_a5f48bf82cd88f188093cc8b1de2e04d7"><td class="memItemLeft" align="right" valign="top"><a id="a5f48bf82cd88f188093cc8b1de2e04d7" name="a5f48bf82cd88f188093cc8b1de2e04d7"></a>
 dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler_u</b> () const</td></tr>
 <tr class="separator:a5f48bf82cd88f188093cc8b1de2e04d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad1c5fdd5114b8a5c97e7e0f87a8890f9" id="r_ad1c5fdd5114b8a5c97e7e0f87a8890f9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad1c5fdd5114b8a5c97e7e0f87a8890f9">serialize_vectors</a> (std::vector&lt; BlockVectorType const * &gt; const &amp;block_vectors) const final</td></tr>
+<tr class="separator:ad1c5fdd5114b8a5c97e7e0f87a8890f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad60d823eac9223f71abffc91a2f66a91" id="r_ad60d823eac9223f71abffc91a2f66a91"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad60d823eac9223f71abffc91a2f66a91">deserialize_vectors</a> (std::vector&lt; BlockVectorType * &gt; const &amp;block_vectors) const final</td></tr>
+<tr class="separator:ad60d823eac9223f71abffc91a2f66a91"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adc06df07a40881c94047c5a4afcc520b" id="r_adc06df07a40881c94047c5a4afcc520b"><td class="memItemLeft" align="right" valign="top"><a id="adc06df07a40881c94047c5a4afcc520b" name="adc06df07a40881c94047c5a4afcc520b"></a>
 dealii::AffineConstraints&lt; Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_constraint_p</b> () const</td></tr>
 <tr class="separator:adc06df07a40881c94047c5a4afcc520b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -199,6 +203,9 @@ static unsigned int const&#160;</td><td class="memItemRight" valign="bottom"><b>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pub_types_classExaDG_1_1Acoustics_1_1Interface_1_1SpatialOperator"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_types_classExaDG_1_1Acoustics_1_1Interface_1_1SpatialOperator')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classExaDG_1_1Acoustics_1_1Interface_1_1SpatialOperator.html">ExaDG::Acoustics::Interface::SpatialOperator&lt; Number &gt;</a></td></tr>
+<tr class="memitem:aebb7afe926fa30ec523a9624e941cde6 inherit pub_types_classExaDG_1_1Acoustics_1_1Interface_1_1SpatialOperator" id="r_aebb7afe926fa30ec523a9624e941cde6"><td class="memItemLeft" align="right" valign="top">
+using&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b> = dealii::LinearAlgebra::distributed::Vector&lt;Number&gt;</td></tr>
+<tr class="separator:aebb7afe926fa30ec523a9624e941cde6 inherit pub_types_classExaDG_1_1Acoustics_1_1Interface_1_1SpatialOperator"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adddfdef83ae180eba856d08fd32e0879 inherit pub_types_classExaDG_1_1Acoustics_1_1Interface_1_1SpatialOperator" id="r_adddfdef83ae180eba856d08fd32e0879"><td class="memItemLeft" align="right" valign="top">
 using&#160;</td><td class="memItemRight" valign="bottom"><b>BlockVectorType</b> = dealii::LinearAlgebra::distributed::BlockVector&lt;Number&gt;</td></tr>
 <tr class="separator:adddfdef83ae180eba856d08fd32e0879 inherit pub_types_classExaDG_1_1Acoustics_1_1Interface_1_1SpatialOperator"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -249,6 +256,35 @@ template&lt;int dim, typename Number&gt; </div>
           <td class="memname">double <a class="el" href="classExaDG_1_1Acoustics_1_1SpatialOperator.html">ExaDG::Acoustics::SpatialOperator</a>&lt; dim, Number &gt;::calculate_time_step_cfl </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel final">final</span><span class="mlabel virtual">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1Acoustics_1_1Interface_1_1SpatialOperator.html">ExaDG::Acoustics::Interface::SpatialOperator&lt; Number &gt;</a>.</p>
+
+</div>
+</div>
+<a id="ad60d823eac9223f71abffc91a2f66a91" name="ad60d823eac9223f71abffc91a2f66a91"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad60d823eac9223f71abffc91a2f66a91">&#9670;&#160;</a></span>deserialize_vectors()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1Acoustics_1_1SpatialOperator.html">ExaDG::Acoustics::SpatialOperator</a>&lt; dim, Number &gt;::deserialize_vectors </td>
+          <td>(</td>
+          <td class="paramtype">std::vector&lt; BlockVectorType * &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>block_vectors</em></span></td><td>)</td>
           <td> const</td>
         </tr>
       </table>
@@ -350,6 +386,35 @@ template&lt;int dim, typename Number&gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">double const</td>          <td class="paramname"><span class="paramname"><em>time</em></span>&#160;) const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel final">final</span><span class="mlabel virtual">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1Acoustics_1_1Interface_1_1SpatialOperator.html">ExaDG::Acoustics::Interface::SpatialOperator&lt; Number &gt;</a>.</p>
+
+</div>
+</div>
+<a id="ad1c5fdd5114b8a5c97e7e0f87a8890f9" name="ad1c5fdd5114b8a5c97e7e0f87a8890f9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad1c5fdd5114b8a5c97e7e0f87a8890f9">&#9670;&#160;</a></span>serialize_vectors()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1Acoustics_1_1SpatialOperator.html">ExaDG::Acoustics::SpatialOperator</a>&lt; dim, Number &gt;::serialize_vectors </td>
+          <td>(</td>
+          <td class="paramtype">std::vector&lt; BlockVectorType const * &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>block_vectors</em></span></td><td>)</td>
+          <td> const</td>
         </tr>
       </table>
   </td>
