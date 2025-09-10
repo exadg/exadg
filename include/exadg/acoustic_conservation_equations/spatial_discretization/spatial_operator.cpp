@@ -303,7 +303,8 @@ SpatialOperator<dim, Number>::deserialize_vectors(
   checkpoint_dof_handlers[block_index_velocity] = &checkpoint_dof_handler_u;
   checkpoint_dof_handlers[block_index_pressure] = &checkpoint_dof_handler_p;
 
-  // Deserialize vectors stored in triangulation, sequence matches `this->serialize_vectors()`.
+  // Deserialize the stored vectors associated with the previous triangulation / dof handlers,
+  // in the sequence if blocks (velocity/pressure) matching the one in `this->serialize_vectors()`.
   std::vector<BlockVectorType> checkpoint_block_vectors =
     get_block_vectors_from_dof_handlers<dim, BlockVectorType>(block_vectors.size(),
                                                               checkpoint_dof_handlers);
