@@ -127,6 +127,10 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_dof_vector
 <tr class="memitem:a07f47f9359bd8d02288eeae9578f7a8e" id="r_a07f47f9359bd8d02288eeae9578f7a8e"><td class="memItemLeft" align="right" valign="top"><a id="a07f47f9359bd8d02288eeae9578f7a8e" name="a07f47f9359bd8d02288eeae9578f7a8e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_dof_vector_dim_components</b> (VectorType &amp;src) const</td></tr>
 <tr class="separator:a07f47f9359bd8d02288eeae9578f7a8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a588942ab1fe183f603818f5626a205da" id="r_a588942ab1fe183f603818f5626a205da"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a588942ab1fe183f603818f5626a205da">serialize_vectors</a> (std::vector&lt; VectorType const * &gt; const &amp;vectors) const final</td></tr>
+<tr class="separator:a588942ab1fe183f603818f5626a205da"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c04f6ca93725686aca3675b292b1543" id="r_a2c04f6ca93725686aca3675b292b1543"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2c04f6ca93725686aca3675b292b1543">deserialize_vectors</a> (std::vector&lt; VectorType * &gt; const &amp;vectors) final</td></tr>
+<tr class="separator:a2c04f6ca93725686aca3675b292b1543"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0ff1c9cf4a00f89b53ce2301dd5bb09f" id="r_a0ff1c9cf4a00f89b53ce2301dd5bb09f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0ff1c9cf4a00f89b53ce2301dd5bb09f">prescribe_initial_conditions</a> (VectorType &amp;src, double const time) const final</td></tr>
 <tr class="separator:a0ff1c9cf4a00f89b53ce2301dd5bb09f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af71da182addd4f6c5150b0b47fdec593" id="r_af71da182addd4f6c5150b0b47fdec593"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af71da182addd4f6c5150b0b47fdec593">evaluate</a> (VectorType &amp;dst, VectorType const &amp;src, Number const time) const final</td></tr>
@@ -261,6 +265,35 @@ template&lt;int dim, typename Number&gt; </div>
 
 </div>
 </div>
+<a id="a2c04f6ca93725686aca3675b292b1543" name="a2c04f6ca93725686aca3675b292b1543"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2c04f6ca93725686aca3675b292b1543">&#9670;&#160;</a></span>deserialize_vectors()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1CompNS_1_1Operator.html">ExaDG::CompNS::Operator</a>&lt; dim, Number &gt;::deserialize_vectors </td>
+          <td>(</td>
+          <td class="paramtype">std::vector&lt; VectorType * &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>vectors</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel final">final</span><span class="mlabel virtual">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1CompNS_1_1Interface_1_1Operator.html">ExaDG::CompNS::Interface::Operator&lt; Number &gt;</a>.</p>
+
+</div>
+</div>
 <a id="af71da182addd4f6c5150b0b47fdec593" name="af71da182addd4f6c5150b0b47fdec593"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af71da182addd4f6c5150b0b47fdec593">&#9670;&#160;</a></span>evaluate()</h2>
 
@@ -377,6 +410,35 @@ template&lt;int dim, typename Number&gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">double const</td>          <td class="paramname"><span class="paramname"><em>time</em></span>&#160;) const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel final">final</span><span class="mlabel virtual">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1CompNS_1_1Interface_1_1Operator.html">ExaDG::CompNS::Interface::Operator&lt; Number &gt;</a>.</p>
+
+</div>
+</div>
+<a id="a588942ab1fe183f603818f5626a205da" name="a588942ab1fe183f603818f5626a205da"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a588942ab1fe183f603818f5626a205da">&#9670;&#160;</a></span>serialize_vectors()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1CompNS_1_1Operator.html">ExaDG::CompNS::Operator</a>&lt; dim, Number &gt;::serialize_vectors </td>
+          <td>(</td>
+          <td class="paramtype">std::vector&lt; VectorType const * &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>vectors</em></span></td><td>)</td>
+          <td> const</td>
         </tr>
       </table>
   </td>

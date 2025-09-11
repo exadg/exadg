@@ -834,18 +834,18 @@ template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">
 template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </td></tr>
 <tr class="memitem:a35e16848ddfb235f871347994e1c4829"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>set_ghost_state</b> (std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> * &gt; const &amp;vectors, std::vector&lt; bool &gt; const &amp;had_ghost_elements)</td></tr>
 <tr class="separator:a35e16848ddfb235f871347994e1c4829"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5dcfb8e16e1f550210e6e610950c751f" id="r_a5dcfb8e16e1f550210e6e610950c751f"><td class="memTemplParams" colspan="2">template&lt;int dim, typename TriangulationType&gt; </td></tr>
-<tr class="memitem:a5dcfb8e16e1f550210e6e610950c751f"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#a5dcfb8e16e1f550210e6e610950c751f">save_coarse_triangulation</a> (std::string const &amp;filename_base, TriangulationType const &amp;triangulation)</td></tr>
-<tr class="separator:a5dcfb8e16e1f550210e6e610950c751f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a94c5a1337facf28ae3e2045b1ea04a01" id="r_a94c5a1337facf28ae3e2045b1ea04a01"><td class="memTemplParams" colspan="2">template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </td></tr>
-<tr class="memitem:a94c5a1337facf28ae3e2045b1ea04a01"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#a94c5a1337facf28ae3e2045b1ea04a01">store_vectors_in_triangulation_and_serialize</a> (std::string const &amp;filename_base, std::vector&lt; std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> const * &gt; &gt; const &amp;vectors_per_dof_handler, std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;dof_handlers)</td></tr>
-<tr class="separator:a94c5a1337facf28ae3e2045b1ea04a01"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad08cc18cf1e458c73abd28233c7ffcb7" id="r_ad08cc18cf1e458c73abd28233c7ffcb7"><td class="memTemplParams" colspan="2">template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </td></tr>
-<tr class="memitem:ad08cc18cf1e458c73abd28233c7ffcb7"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#ad08cc18cf1e458c73abd28233c7ffcb7">store_vectors_in_triangulation_and_serialize</a> (std::string const &amp;filename_base, std::vector&lt; std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> const * &gt; &gt; const &amp;vectors_per_dof_handler, std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;dof_handlers, dealii::Mapping&lt; dim &gt; const &amp;mapping, dealii::DoFHandler&lt; dim &gt; const *dof_handler_mapping, unsigned int const mapping_degree)</td></tr>
-<tr class="separator:ad08cc18cf1e458c73abd28233c7ffcb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9cb09e5e47189ed5d03301ba40bb2fa4" id="r_a9cb09e5e47189ed5d03301ba40bb2fa4"><td class="memTemplParams" colspan="2">template&lt;int dim&gt; </td></tr>
-<tr class="memitem:a9cb09e5e47189ed5d03301ba40bb2fa4"><td class="memTemplItemLeft" align="right" valign="top">std::shared_ptr&lt; dealii::Triangulation&lt; dim &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#a9cb09e5e47189ed5d03301ba40bb2fa4">deserialize_triangulation</a> (std::string const &amp;filename_base, TriangulationType const triangulation_type, MPI_Comm const &amp;mpi_communicator)</td></tr>
-<tr class="separator:a9cb09e5e47189ed5d03301ba40bb2fa4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0aebd2a478e275416f81f1da6c536bd6" id="r_a0aebd2a478e275416f81f1da6c536bd6"><td class="memTemplParams" colspan="2">template&lt;int dim, typename TriangulationType&gt; </td></tr>
+<tr class="memitem:a0aebd2a478e275416f81f1da6c536bd6"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#a0aebd2a478e275416f81f1da6c536bd6">save_coarse_triangulation</a> (std::string const &amp;directory, std::string const &amp;filename_base, TriangulationType const &amp;triangulation)</td></tr>
+<tr class="separator:a0aebd2a478e275416f81f1da6c536bd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1b254d7db84fe99a3c94c7efa24364d1" id="r_a1b254d7db84fe99a3c94c7efa24364d1"><td class="memTemplParams" colspan="2">template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </td></tr>
+<tr class="memitem:a1b254d7db84fe99a3c94c7efa24364d1"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#a1b254d7db84fe99a3c94c7efa24364d1">store_vectors_in_triangulation_and_serialize</a> (std::string const &amp;directory, std::string const &amp;filename_base, std::vector&lt; std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> const * &gt; &gt; const &amp;vectors_per_dof_handler, std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;dof_handlers)</td></tr>
+<tr class="separator:a1b254d7db84fe99a3c94c7efa24364d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa43f3357902fc9f49060d527996ba9e6" id="r_aa43f3357902fc9f49060d527996ba9e6"><td class="memTemplParams" colspan="2">template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </td></tr>
+<tr class="memitem:aa43f3357902fc9f49060d527996ba9e6"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#aa43f3357902fc9f49060d527996ba9e6">store_vectors_in_triangulation_and_serialize</a> (std::string const &amp;directory, std::string const &amp;filename_base, std::vector&lt; std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> const * &gt; &gt; const &amp;vectors_per_dof_handler, std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;dof_handlers, dealii::Mapping&lt; dim &gt; const &amp;mapping, dealii::DoFHandler&lt; dim &gt; const *dof_handler_mapping, unsigned int const mapping_degree)</td></tr>
+<tr class="separator:aa43f3357902fc9f49060d527996ba9e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9b859f6a115cb4b258120398357c037a" id="r_a9b859f6a115cb4b258120398357c037a"><td class="memTemplParams" colspan="2">template&lt;int dim&gt; </td></tr>
+<tr class="memitem:a9b859f6a115cb4b258120398357c037a"><td class="memTemplItemLeft" align="right" valign="top">std::shared_ptr&lt; dealii::Triangulation&lt; dim &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#a9b859f6a115cb4b258120398357c037a">deserialize_triangulation</a> (std::string const &amp;directory, std::string const &amp;filename_base, TriangulationType const triangulation_type, MPI_Comm const &amp;mpi_communicator)</td></tr>
+<tr class="separator:a9b859f6a115cb4b258120398357c037a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aca69f1a8971e73e273eed50e05557ab3" id="r_aca69f1a8971e73e273eed50e05557ab3"><td class="memTemplParams" colspan="2">template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </td></tr>
 <tr class="memitem:aca69f1a8971e73e273eed50e05557ab3"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#aca69f1a8971e73e273eed50e05557ab3">load_vectors</a> (std::vector&lt; std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> * &gt; &gt; &amp;vectors_per_dof_handler, std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;dof_handlers)</td></tr>
 <tr class="separator:aca69f1a8971e73e273eed50e05557ab3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1378,8 +1378,8 @@ template&lt;int dim&gt; </div>
 
 </div>
 </div>
-<a id="a9cb09e5e47189ed5d03301ba40bb2fa4" name="a9cb09e5e47189ed5d03301ba40bb2fa4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9cb09e5e47189ed5d03301ba40bb2fa4">&#9670;&#160;</a></span>deserialize_triangulation()</h2>
+<a id="a9b859f6a115cb4b258120398357c037a" name="a9b859f6a115cb4b258120398357c037a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9b859f6a115cb4b258120398357c037a">&#9670;&#160;</a></span>deserialize_triangulation()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1392,6 +1392,11 @@ template&lt;int dim&gt; </div>
         <tr>
           <td class="memname">std::shared_ptr&lt; dealii::Triangulation&lt; dim &gt; &gt; ExaDG::deserialize_triangulation </td>
           <td>(</td>
+          <td class="paramtype">std::string const &amp;</td>          <td class="paramname"><span class="paramname"><em>directory</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">std::string const &amp;</td>          <td class="paramname"><span class="paramname"><em>filename_base</em></span>, </td>
         </tr>
         <tr>
@@ -1714,7 +1719,7 @@ template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBa
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Same as the above function, but consider for a mapping added as an additional vector added during <code><a class="el" href="#a94c5a1337facf28ae3e2045b1ea04a01">store_vectors_in_triangulation_and_serialize()</a></code>. </p>
+<p>Same as the above function, but consider for a mapping added as an additional vector added during <code><a class="el" href="#a1b254d7db84fe99a3c94c7efa24364d1">store_vectors_in_triangulation_and_serialize()</a></code>. </p>
 
 </div>
 </div>
@@ -1775,8 +1780,8 @@ template&lt;int dim&gt; </div>
 
 </div>
 </div>
-<a id="a5dcfb8e16e1f550210e6e610950c751f" name="a5dcfb8e16e1f550210e6e610950c751f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5dcfb8e16e1f550210e6e610950c751f">&#9670;&#160;</a></span>save_coarse_triangulation()</h2>
+<a id="a0aebd2a478e275416f81f1da6c536bd6" name="a0aebd2a478e275416f81f1da6c536bd6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0aebd2a478e275416f81f1da6c536bd6">&#9670;&#160;</a></span>save_coarse_triangulation()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1789,6 +1794,11 @@ template&lt;int dim, typename TriangulationType&gt; </div>
         <tr>
           <td class="memname">void ExaDG::save_coarse_triangulation </td>
           <td>(</td>
+          <td class="paramtype">std::string const &amp;</td>          <td class="paramname"><span class="paramname"><em>directory</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">std::string const &amp;</td>          <td class="paramname"><span class="paramname"><em>filename_base</em></span>, </td>
         </tr>
         <tr>
@@ -1807,8 +1817,8 @@ template&lt;int dim, typename TriangulationType&gt; </div>
 
 </div>
 </div>
-<a id="a94c5a1337facf28ae3e2045b1ea04a01" name="a94c5a1337facf28ae3e2045b1ea04a01"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a94c5a1337facf28ae3e2045b1ea04a01">&#9670;&#160;</a></span>store_vectors_in_triangulation_and_serialize() <span class="overload">[1/2]</span></h2>
+<a id="a1b254d7db84fe99a3c94c7efa24364d1" name="a1b254d7db84fe99a3c94c7efa24364d1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1b254d7db84fe99a3c94c7efa24364d1">&#9670;&#160;</a></span>store_vectors_in_triangulation_and_serialize() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1821,6 +1831,11 @@ template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBa
         <tr>
           <td class="memname">void ExaDG::store_vectors_in_triangulation_and_serialize </td>
           <td>(</td>
+          <td class="paramtype">std::string const &amp;</td>          <td class="paramname"><span class="paramname"><em>directory</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">std::string const &amp;</td>          <td class="paramname"><span class="paramname"><em>filename_base</em></span>, </td>
         </tr>
         <tr>
@@ -1844,8 +1859,8 @@ template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBa
 
 </div>
 </div>
-<a id="ad08cc18cf1e458c73abd28233c7ffcb7" name="ad08cc18cf1e458c73abd28233c7ffcb7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad08cc18cf1e458c73abd28233c7ffcb7">&#9670;&#160;</a></span>store_vectors_in_triangulation_and_serialize() <span class="overload">[2/2]</span></h2>
+<a id="aa43f3357902fc9f49060d527996ba9e6" name="aa43f3357902fc9f49060d527996ba9e6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa43f3357902fc9f49060d527996ba9e6">&#9670;&#160;</a></span>store_vectors_in_triangulation_and_serialize() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1858,6 +1873,11 @@ template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBa
         <tr>
           <td class="memname">void ExaDG::store_vectors_in_triangulation_and_serialize </td>
           <td>(</td>
+          <td class="paramtype">std::string const &amp;</td>          <td class="paramname"><span class="paramname"><em>directory</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">std::string const &amp;</td>          <td class="paramname"><span class="paramname"><em>filename_base</em></span>, </td>
         </tr>
         <tr>

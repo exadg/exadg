@@ -128,6 +128,10 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>interpolate_velocity<
 <tr class="separator:ac7960935983374eee2277a4d28ac38cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ada2fb701ce21294093d9b4a8750e24c8" id="r_ada2fb701ce21294093d9b4a8750e24c8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ada2fb701ce21294093d9b4a8750e24c8">project_velocity</a> (VectorType &amp;velocity, double const time) const final</td></tr>
 <tr class="separator:ada2fb701ce21294093d9b4a8750e24c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad72b60a5cba74ebb27b14a79a1f1a299" id="r_ad72b60a5cba74ebb27b14a79a1f1a299"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad72b60a5cba74ebb27b14a79a1f1a299">serialize_vectors</a> (std::vector&lt; VectorType const * &gt; const &amp;vectors) const final</td></tr>
+<tr class="separator:ad72b60a5cba74ebb27b14a79a1f1a299"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04559da252c969f2f13578640fee26ed" id="r_a04559da252c969f2f13578640fee26ed"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a04559da252c969f2f13578640fee26ed">deserialize_vectors</a> (std::vector&lt; VectorType * &gt; const &amp;vectors) final</td></tr>
+<tr class="separator:a04559da252c969f2f13578640fee26ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae4951dea8935b315a0e69ee95ceb759c" id="r_ae4951dea8935b315a0e69ee95ceb759c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae4951dea8935b315a0e69ee95ceb759c">prescribe_initial_conditions</a> (VectorType &amp;src, double const evaluation_time) const final</td></tr>
 <tr class="separator:ae4951dea8935b315a0e69ee95ceb759c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a39ff743fd3b5410900df653376e502b6" id="r_a39ff743fd3b5410900df653376e502b6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a39ff743fd3b5410900df653376e502b6">evaluate_explicit_time_int</a> (VectorType &amp;dst, VectorType const &amp;src, double const evaluation_time, VectorType const *velocity=nullptr) const final</td></tr>
@@ -360,6 +364,35 @@ template&lt;int dim, typename Number&gt; </div>
 
 </div>
 </div>
+<a id="a04559da252c969f2f13578640fee26ed" name="a04559da252c969f2f13578640fee26ed"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a04559da252c969f2f13578640fee26ed">&#9670;&#160;</a></span>deserialize_vectors()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::deserialize_vectors </td>
+          <td>(</td>
+          <td class="paramtype">std::vector&lt; VectorType * &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>vectors</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel final">final</span><span class="mlabel virtual">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1ConvDiff_1_1Interface_1_1Operator.html">ExaDG::ConvDiff::Interface::Operator&lt; Number &gt;</a>.</p>
+
+</div>
+</div>
 <a id="a39ff743fd3b5410900df653376e502b6" name="a39ff743fd3b5410900df653376e502b6"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a39ff743fd3b5410900df653376e502b6">&#9670;&#160;</a></span>evaluate_explicit_time_int()</h2>
 
@@ -552,6 +585,35 @@ template&lt;int dim, typename Number&gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">VectorType const *</td>          <td class="paramname"><span class="paramname"><em>velocity</em></span><span class="paramdefsep"> = </span><span class="paramdefval">nullptr</span>&#160;) const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel final">final</span><span class="mlabel virtual">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1ConvDiff_1_1Interface_1_1Operator.html">ExaDG::ConvDiff::Interface::Operator&lt; Number &gt;</a>.</p>
+
+</div>
+</div>
+<a id="ad72b60a5cba74ebb27b14a79a1f1a299" name="ad72b60a5cba74ebb27b14a79a1f1a299"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad72b60a5cba74ebb27b14a79a1f1a299">&#9670;&#160;</a></span>serialize_vectors()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::serialize_vectors </td>
+          <td>(</td>
+          <td class="paramtype">std::vector&lt; VectorType const * &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>vectors</em></span></td><td>)</td>
+          <td> const</td>
         </tr>
       </table>
   </td>
