@@ -27,33 +27,20 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
-#include <algorithm>
 #include <fstream>
-#include <sstream>
 
 // deal.II
-#include <deal.II/base/mpi.h>
 #include <deal.II/distributed/fully_distributed_tria.h>
 #include <deal.II/distributed/tria.h>
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/manifold.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/lac/la_parallel_block_vector.h>
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/lac/solver_cg.h>
-#include <deal.II/matrix_free/fe_point_evaluation.h>
 #include <deal.II/numerics/solution_transfer.h>
-#include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
-#include <exadg/grid/grid_data.h>
 #include <exadg/grid/grid_utilities.h>
 #include <exadg/grid/mapping_dof_vector.h>
-#include <exadg/matrix_free/matrix_free_data.h>
-#include <exadg/operators/mapping_flags.h>
-#include <exadg/operators/mass_operator.h>
-#include <exadg/operators/quadrature.h>
-#include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
+#include <exadg/utilities/create_directories.h>
 
 namespace ExaDG
 {
@@ -256,7 +243,8 @@ set_ghost_state(std::vector<VectorType *> const & vectors,
  */
 template<int dim, typename TriangulationType>
 inline void
-save_coarse_triangulation(std::string const &       filename_base,
+save_coarse_triangulation(std::string const &       directory,
+                          std::string const &       filename_base,
                           TriangulationType const & triangulation)
 {
   if constexpr(std::is_same<std::remove_cv_t<TriangulationType>,
@@ -269,8 +257,12 @@ save_coarse_triangulation(std::string const &       filename_base,
                                    "dealii::Triangulation<dim> supported."));
   }
 
-  std::string const filename = filename_base + ".coarse_triangulation";
-  MPI_Comm const &  mpi_comm = triangulation.get_mpi_communicator();
+  MPI_Comm const & mpi_comm = triangulation.get_mpi_communicator();
+
+  // Create folder if not existent.
+  create_directories(directory, mpi_comm);
+
+  std::string const filename = directory + filename_base + ".coarse_triangulation";
   if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     // Serialization only creates a single file, move with one process only.
@@ -294,6 +286,7 @@ save_coarse_triangulation(std::string const &       filename_base,
 template<int dim, typename VectorType>
 inline void
 store_vectors_in_triangulation_and_serialize(
+  std::string const &                                       directory,
   std::string const &                                       filename_base,
   std::vector<std::vector<VectorType const *>> const &      vectors_per_dof_handler,
   std::vector<dealii::DoFHandler<dim, dim> const *> const & dof_handlers)
@@ -331,7 +324,7 @@ store_vectors_in_triangulation_and_serialize(
   }
 
   // Serialize the triangulation keeping a maximum of two snapshots.
-  std::string const filename = filename_base + ".triangulation";
+  std::string const filename = directory + filename_base + ".triangulation";
   MPI_Comm const &  mpi_comm = dof_handlers[0]->get_mpi_communicator();
   if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
@@ -360,6 +353,7 @@ store_vectors_in_triangulation_and_serialize(
 template<int dim, typename VectorType>
 inline void
 store_vectors_in_triangulation_and_serialize(
+  std::string const &                                       directory,
   std::string const &                                       filename_base,
   std::vector<std::vector<VectorType const *>> const &      vectors_per_dof_handler,
   std::vector<dealii::DoFHandler<dim, dim> const *> const & dof_handlers,
@@ -427,7 +421,8 @@ store_vectors_in_triangulation_and_serialize(
   dof_handlers_extended.push_back(dof_handler_mapping);
 
   // Use utility function that ignores the mapping.
-  store_vectors_in_triangulation_and_serialize(filename_base,
+  store_vectors_in_triangulation_and_serialize(directory,
+                                               filename_base,
                                                vectors_per_dof_handler_extended,
                                                dof_handlers_extended);
 }
@@ -437,17 +432,20 @@ store_vectors_in_triangulation_and_serialize(
  */
 template<int dim>
 inline std::shared_ptr<dealii::Triangulation<dim>>
-deserialize_triangulation(std::string const &     filename_base,
+deserialize_triangulation(std::string const &     directory,
+                          std::string const &     filename_base,
                           TriangulationType const triangulation_type,
                           MPI_Comm const &        mpi_communicator)
 {
   std::shared_ptr<dealii::Triangulation<dim>> triangulation_old;
 
+  std::string const filename = directory + filename_base;
+
   // Deserialize the checkpointed triangulation,
   if(triangulation_type == TriangulationType::Serial)
   {
     triangulation_old = std::make_shared<dealii::Triangulation<dim>>();
-    triangulation_old->load(filename_base + ".triangulation");
+    triangulation_old->load(filename + ".triangulation");
   }
   else if(triangulation_type == TriangulationType::Distributed)
   {
@@ -456,13 +454,13 @@ deserialize_triangulation(std::string const &     filename_base,
     dealii::Triangulation<dim, dim> coarse_triangulation;
     try
     {
-      coarse_triangulation.load(filename_base + ".coarse_triangulation");
+      coarse_triangulation.load(filename + ".coarse_triangulation");
     }
     catch(...)
     {
       AssertThrow(false,
                   dealii::ExcMessage(
-                    "Deserializing coarse triangulation expected in\n" + filename_base +
+                    "Deserializing coarse triangulation expected in\n" + filename +
                     ".coarse_triangulation\n"
                     "make sure to store the coarse grid during `create_grid`\n"
                     "in the respective application.h using TriangulationType::Serial."));
@@ -478,7 +476,7 @@ deserialize_triangulation(std::string const &     filename_base,
     // separately.
     tmp->reset_all_manifolds();
     tmp->set_all_manifold_ids(dealii::numbers::flat_manifold_id);
-    tmp->load(filename_base + ".triangulation");
+    tmp->load(filename + ".triangulation");
 
     triangulation_old = std::dynamic_pointer_cast<dealii::Triangulation<dim>>(tmp);
   }
@@ -488,7 +486,7 @@ deserialize_triangulation(std::string const &     filename_base,
     // saved with cannot change and hence autopartitioning is disabled.
     std::shared_ptr<dealii::parallel::fullydistributed::Triangulation<dim>> tmp =
       std::make_shared<dealii::parallel::fullydistributed::Triangulation<dim>>(mpi_communicator);
-    tmp->load(filename_base + ".triangulation");
+    tmp->load(filename + ".triangulation");
 
     triangulation_old = std::dynamic_pointer_cast<dealii::Triangulation<dim>>(tmp);
   }
@@ -510,7 +508,7 @@ inline void
 load_vectors(std::vector<std::vector<VectorType *>> &                  vectors_per_dof_handler,
              std::vector<dealii::DoFHandler<dim, dim> const *> const & dof_handlers)
 {
-  // The `DoFHandlers and vectors` are already initialized and
+  // The `dof_handlers` and `vectors_per_dof_handler` are already initialized and
   // `vectors_per_dof_handler` contain only owned DoFs.
   AssertThrow(vectors_per_dof_handler.size() > 0,
               dealii::ExcMessage("No vectors to load into from triangulation."));

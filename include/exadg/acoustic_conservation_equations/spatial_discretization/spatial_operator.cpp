@@ -256,7 +256,8 @@ SpatialOperator<dim, Number>::serialize_vectors(
 
   if(param.restart_data.consider_mapping)
   {
-    store_vectors_in_triangulation_and_serialize(param.restart_data.filename,
+    store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
+                                                 param.restart_data.filename,
                                                  vectors_per_dof_handler,
                                                  dof_handlers,
                                                  *this->get_mapping(),
@@ -265,7 +266,8 @@ SpatialOperator<dim, Number>::serialize_vectors(
   }
   else
   {
-    store_vectors_in_triangulation_and_serialize(param.restart_data.filename,
+    store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
+                                                 param.restart_data.filename,
                                                  vectors_per_dof_handler,
                                                  dof_handlers);
   }
@@ -281,7 +283,8 @@ SpatialOperator<dim, Number>::deserialize_vectors(
 
   // Load potentially unfitting checkpoint triangulation of TriangulationType.
   std::shared_ptr<dealii::Triangulation<dim>> checkpoint_triangulation =
-    deserialize_triangulation<dim>(param.restart_data.filename,
+    deserialize_triangulation<dim>(param.restart_data.directory,
+                                   param.restart_data.filename,
                                    param.restart_data.triangulation_type,
                                    mpi_comm);
 
@@ -329,7 +332,7 @@ SpatialOperator<dim, Number>::deserialize_vectors(
   }
   else
   {
-    // Perform global projection in case of a non-matching discretization.
+    // Perform projection in case of a non-matching discretization.
     std::vector<dealii::DoFHandler<dim> const *> dof_handlers(2);
     dof_handlers.at(block_index_velocity) = &this->get_dof_handler_u();
     dof_handlers.at(block_index_pressure) = &this->get_dof_handler_p();

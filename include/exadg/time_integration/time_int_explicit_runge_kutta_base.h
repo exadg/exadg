@@ -99,6 +99,12 @@ private:
 
   void
   do_read_restart(std::ifstream & in) final;
+
+  virtual void
+  read_restart_vectors(std::vector<VectorType *> const & vectors);
+
+  virtual void
+  write_restart_vectors(std::vector<VectorType const *> const & vectors) const;
 };
 
 } // namespace ExaDG
