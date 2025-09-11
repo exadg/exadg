@@ -589,31 +589,24 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::serialize_vectors(std::vector<VectorType const *> const & vectors) const
 {
-  if(param.temporal_discretization == TemporalDiscretization::ExplRK)
+  std::vector<dealii::DoFHandler<dim> const *> dof_handlers{&dof_handler};
+  std::vector<std::vector<VectorType const *>> vectors_per_dof_handler{vectors};
+  if(param.restart_data.consider_mapping)
   {
-    std::vector<dealii::DoFHandler<dim> const *> dof_handlers{&dof_handler};
-    std::vector<std::vector<VectorType const *>> vectors_per_dof_handler{vectors};
-    if(param.restart_data.consider_mapping)
-    {
-      store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
-                                                   param.restart_data.filename,
-                                                   vectors_per_dof_handler,
-                                                   dof_handlers,
-                                                   *this->get_mapping(),
-                                                   dof_handler_mapping.get(),
-                                                   param.mapping_degree);
-    }
-    else
-    {
-      store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
-                                                   param.restart_data.filename,
-                                                   vectors_per_dof_handler,
-                                                   dof_handlers);
-    }
+    store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
+                                                 param.restart_data.filename,
+                                                 vectors_per_dof_handler,
+                                                 dof_handlers,
+                                                 *this->get_mapping(),
+                                                 dof_handler_mapping.get(),
+                                                 param.mapping_degree);
   }
   else
   {
-    AssertThrow(false, dealii::ExcNotImplemented());
+    store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
+                                                 param.restart_data.filename,
+                                                 vectors_per_dof_handler,
+                                                 dof_handlers);
   }
 }
 
@@ -621,7 +614,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::deserialize_vectors(std::vector<VectorType *> const & vectors)
 {
-  if(param.temporal_discretization == TemporalDiscretization::ExplRK)
+  if(true)
   {
     // Store ghost state to recover after deserialization.
     std::vector<bool> const has_ghost_elements = get_ghost_state(vectors);
@@ -719,10 +712,6 @@ Operator<dim, Number>::deserialize_vectors(std::vector<VectorType *> const & vec
 
     // Recover ghost vector state.
     set_ghost_state(vectors, has_ghost_elements);
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcNotImplemented());
   }
 }
 

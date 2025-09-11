@@ -430,9 +430,11 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
 {
+  std::vector<VectorType *> vectors;
+
   for(unsigned int i = 0; i < this->order; i++)
   {
-    read_write_distributed_vector(solution[i], ia);
+    vectors.push_back(&solution[i]);
   }
 
   if(param.convective_problem() and
@@ -442,7 +444,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
     {
       for(unsigned int i = 0; i < this->order; i++)
       {
-        read_write_distributed_vector(vec_convective_term[i], ia);
+        vectors.push_back(&vec_convective_term[i]);
       }
     }
   }
@@ -451,8 +453,64 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
   {
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
-      read_write_distributed_vector(vec_grid_coordinates[i], ia);
+      vectors.push_back(&vec_grid_coordinates[i]);
     }
+  }
+
+  pde_operator->deserialize_vectors(vectors);
+
+  // Remains for comparison. ##+
+  try
+  {
+    VectorType tmp;
+    tmp.reinit(solution[0], false /* omit_zeroing_entries */);
+    double diff_max = 0.0;
+    for(unsigned int i = 0; i < this->order; i++)
+    {
+      tmp = 0.0;
+      read_write_distributed_vector(tmp, ia);
+      tmp -= solution[i];
+      diff_max = std::max(diff_max, (double)tmp.linfty_norm());
+    }
+
+    if(param.convective_problem() and
+       param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+    {
+      if(this->param.ale_formulation == false)
+      {
+        for(unsigned int i = 0; i < this->order; i++)
+        {
+          tmp = 0.0;
+          read_write_distributed_vector(tmp, ia);
+          tmp -= vec_convective_term[i];
+          diff_max = std::max(diff_max, (double)tmp.linfty_norm());
+        }
+      }
+    }
+
+    if(this->param.ale_formulation)
+    {
+      for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
+      {
+        tmp = 0.0;
+        read_write_distributed_vector(tmp, ia);
+        tmp -= vec_grid_coordinates[i];
+        diff_max = std::max(diff_max, (double)tmp.linfty_norm());
+      }
+    }
+
+    if(dealii::Utilities::MPI::this_mpi_process(tmp.get_mpi_communicator()) == 0)
+    {
+      std::cout << "|difference|_inf = " << diff_max << "\n"
+                << "(only useful for identical discretization)";
+    }
+  }
+  catch(...)
+  {
+    std::cout << "Comparison to previous serialization not possible.\n"
+              << "This can only be done with identical processor "
+              << "counts and enough data in the archives."
+              << "\n";
   }
 }
 
@@ -460,6 +518,36 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) const
 {
+  std::vector<VectorType const *> vectors;
+
+  for(unsigned int i = 0; i < this->order; i++)
+  {
+    vectors.push_back(&solution[i]);
+  }
+
+  if(param.convective_problem() and
+     param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
+    if(this->param.ale_formulation == false)
+    {
+      for(unsigned int i = 0; i < this->order; i++)
+      {
+        vectors.push_back(&vec_convective_term[i]);
+      }
+    }
+  }
+
+  if(this->param.ale_formulation)
+  {
+    for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
+    {
+      vectors.push_back(&vec_grid_coordinates[i]);
+    }
+  }
+
+  pde_operator->serialize_vectors(vectors);
+
+  // Remains for comparison. ##+
   for(unsigned int i = 0; i < this->order; i++)
   {
     read_write_distributed_vector(solution[i], oa);
