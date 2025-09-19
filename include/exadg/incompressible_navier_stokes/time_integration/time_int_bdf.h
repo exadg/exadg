@@ -110,10 +110,10 @@ protected:
   setup_derived() override;
 
   void
-  read_restart_vectors(BoostInputArchiveType & ia) override;
+  read_restart_vectors(BoostInputArchiveType & ia) final;
 
   void
-  write_restart_vectors(BoostOutputArchiveType & oa) const override;
+  write_restart_vectors(BoostOutputArchiveType & oa) const final;
 
   virtual void
   get_vectors_serialization(std::vector<VectorType const *> & vectors_velocity,

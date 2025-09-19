@@ -93,12 +93,6 @@ private:
   initialize_former_multistep_dof_vectors() final;
 
   void
-  read_restart_vectors(BoostInputArchiveType & ia) final;
-
-  void
-  write_restart_vectors(BoostOutputArchiveType & oa) const final;
-
-  void
   get_vectors_serialization(std::vector<VectorType const *> & vectors_velocity,
                             std::vector<VectorType const *> & vectors_pressure) const final;
 

@@ -256,6 +256,8 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
 {
+  (void)ia;
+
   // Setup vectors locally to read into.
   std::vector<VectorType> vectors_velocity;
   std::vector<VectorType> vectors_pressure;
@@ -328,72 +330,14 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
   }
 
   this->set_vectors_deserialization(vectors_velocity_add, vectors_pressure_add);
-
-  // Remains for comparison. ##+
-  try
-  {
-    double diff_max = 0.0;
-    for(unsigned int i = 0; i < this->order; i++)
-    {
-      VectorType tmp = get_velocity(i);
-      read_write_distributed_vector(tmp, ia);
-      tmp -= get_velocity(i);
-      diff_max = std::max(diff_max, (double)tmp.linfty_norm());
-    }
-    for(unsigned int i = 0; i < this->order; i++)
-    {
-      VectorType tmp = get_pressure(i);
-      read_write_distributed_vector(tmp, ia);
-      tmp -= get_pressure(i);
-      diff_max = std::max(diff_max, (double)tmp.linfty_norm());
-    }
-
-    if(needs_vector_convective_term)
-    {
-      if(this->param.ale_formulation == false)
-      {
-        for(unsigned int i = 0; i < this->order; i++)
-        {
-          VectorType tmp;
-          tmp.reinit(vec_convective_term[i], false /* omit_zeroing_entries */);
-          read_write_distributed_vector(tmp, ia);
-          tmp -= vec_convective_term[i];
-          diff_max = std::max(diff_max, (double)tmp.linfty_norm());
-        }
-      }
-    }
-
-    if(this->param.ale_formulation)
-    {
-      for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
-      {
-        VectorType tmp;
-        tmp.reinit(vec_grid_coordinates[i], false /* omit_zeroing_entries */);
-        read_write_distributed_vector(tmp, ia);
-        tmp -= vec_grid_coordinates[i];
-        diff_max = std::max(diff_max, (double)tmp.linfty_norm());
-      }
-    }
-
-    if(dealii::Utilities::MPI::this_mpi_process(this->mpi_comm) == 0)
-    {
-      std::cout << "|difference|_inf = " << diff_max << "\n"
-                << "(only useful for identical discretization)";
-    }
-  }
-  catch(...)
-  {
-    std::cout << "Comparison to previous serialization not possible.\n"
-              << "This can only be done with identical processor "
-              << "counts and enough data in the archives."
-              << "\n";
-  }
 }
 
 template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) const
 {
+  (void)oa;
+
   std::vector<VectorType const *> vectors_velocity;
   std::vector<VectorType const *> vectors_pressure;
 
@@ -434,35 +378,6 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
                           vectors_pressure_add.end());
 
   operator_base->serialize_vectors(vectors_velocity, vectors_pressure);
-
-  // Remains for comparison. ##+
-  for(unsigned int i = 0; i < this->order; i++)
-  {
-    read_write_distributed_vector(get_velocity(i), oa);
-  }
-  for(unsigned int i = 0; i < this->order; i++)
-  {
-    read_write_distributed_vector(get_pressure(i), oa);
-  }
-
-  if(needs_vector_convective_term)
-  {
-    if(this->param.ale_formulation == false)
-    {
-      for(unsigned int i = 0; i < this->order; i++)
-      {
-        read_write_distributed_vector(vec_convective_term[i], oa);
-      }
-    }
-  }
-
-  if(this->param.ale_formulation)
-  {
-    for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
-    {
-      read_write_distributed_vector(vec_grid_coordinates[i], oa);
-    }
-  }
 }
 
 template<int dim, typename Number>

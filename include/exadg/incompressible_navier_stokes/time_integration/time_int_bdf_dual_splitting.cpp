@@ -89,42 +89,6 @@ TimeIntBDFDualSplitting<dim, Number>::setup_derived()
 
 template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
-{
-  Base::read_restart_vectors(ia);
-
-  // Remains for comparison. ##+
-  double max_diff_derived = 0.0;
-  for(unsigned int i = 0; i < velocity_dbc.size(); i++)
-  {
-    VectorType tmp;
-    tmp.reinit(velocity_dbc[i], false /* omit_zeroing_entries */);
-    read_write_distributed_vector(tmp, ia);
-    tmp -= velocity_dbc[i];
-    max_diff_derived = std::max(max_diff_derived, (double)tmp.linfty_norm());
-
-    if(i == velocity_dbc.size() - 1 and
-       dealii::Utilities::MPI::this_mpi_process(tmp.get_mpi_communicator()) == 0)
-    {
-      std::cout << "max_diff_derived = " << max_diff_derived << "##+ \n";
-    }
-  }
-}
-
-template<int dim, typename Number>
-void
-TimeIntBDFDualSplitting<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) const
-{
-  Base::write_restart_vectors(oa);
-
-  for(unsigned int i = 0; i < velocity_dbc.size(); i++)
-  {
-    read_write_distributed_vector(velocity_dbc[i], oa);
-  }
-}
-
-template<int dim, typename Number>
-void
 TimeIntBDFDualSplitting<dim, Number>::get_vectors_serialization(
   std::vector<VectorType const *> & vectors_velocity,
   std::vector<VectorType const *> & vectors_pressure) const
