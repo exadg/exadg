@@ -636,6 +636,8 @@ Operator<dim, Number>::deserialize_vectors(std::vector<VectorType *> const & vec
 
   std::vector<dealii::DoFHandler<dim> const *> checkpoint_dof_handlers{&checkpoint_dof_handler};
 
+  // Deserialize the stored vectors associated with the previous triangulation / dof handlers,
+  // in the sequence if blocks (velocity/pressure) matching the one in `this->serialize_vectors()`.
   std::vector<VectorType>                checkpoint_vectors(vectors.size());
   std::vector<std::vector<VectorType *>> checkpoint_vectors_ptr(1);
   checkpoint_vectors_ptr[0].resize(vectors.size());

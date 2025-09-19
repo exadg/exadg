@@ -15,28 +15,32 @@
         "RefineTimeMax": "4"
     },
     "Application": {
-         "IncludeConvectiveTerm": "true",
-         "PureDirichletProblem": "true",
-         "StartTime": "0.0",
-         "EndTime": "0.0001",
-         "IntervalStart": "0.0",
-         "IntervalEnd": "1.0",
-         "Density": "1000.0",
-         "KinematicViscosity": "1e-6",
-         "UseGeneralizedNewtonianModel": "true",
-         "FormulationViscousTermLaplaceFormulation" : "false",
-         "TemporalDiscretization" : "BDFPressureCorrection",
-         "TreatmentOfConvectiveTermImplicit" : "true",
-         "TreatmentOfVariableViscosityImplicit" : "true",
-         "GeneralizedNewtonianViscosityMargin": "49e-6",
-         "GeneralizedNewtonianKappa": "1.0",
-         "GeneralizedNewtonianLambda": "1.0",
-         "GeneralizedNewtonianA": "2.0",
-         "GeneralizedNewtonianN": "0.5"
+        "SpatialDiscretization": "L2",
+        "MoveGrid": "false",
+        "ReadRestart": "false",
+        "WriteRestart": "false",
+        "IncludeConvectiveTerm": "true",
+        "PureDirichletProblem": "true",
+        "StartTime": "0.0",
+        "EndTime": "0.0001",
+        "IntervalStart": "0.0",
+        "IntervalEnd": "1.0",
+        "Density": "1000.0",
+        "KinematicViscosity": "1e-6",
+        "UseGeneralizedNewtonianModel": "true",
+        "FormulationViscousTermLaplaceFormulation" : "false",
+        "TemporalDiscretization" : "BDFPressureCorrection",
+        "TreatmentOfConvectiveTermImplicit" : "true",
+        "TreatmentOfVariableViscosityImplicit" : "true",
+        "GeneralizedNewtonianViscosityMargin": "49e-6",
+        "GeneralizedNewtonianKappa": "1.0",
+        "GeneralizedNewtonianLambda": "1.0",
+        "GeneralizedNewtonianA": "2.0",
+        "GeneralizedNewtonianN": "0.5"
     },
     "Output": {
         "OutputDirectory": "output/",
         "OutputName": "test",
-        "WriteOutput": "true"
+        "WriteOutput": "false"
     }
 }
