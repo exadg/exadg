@@ -83,9 +83,9 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
 
   this->initialize_matrix_free_objects();
 
-  this->initialize_transfer_operators();
-
   this->initialize_operators();
+
+  this->initialize_transfer_operators();
 
   this->initialize_smoothers(initialize_preconditioners);
 
