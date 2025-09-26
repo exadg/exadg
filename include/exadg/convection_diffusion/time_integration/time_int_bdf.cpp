@@ -430,9 +430,13 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
 {
+  (void)ia;
+
+  std::vector<VectorType *> vectors;
+
   for(unsigned int i = 0; i < this->order; i++)
   {
-    read_write_distributed_vector(solution[i], ia);
+    vectors.push_back(&solution[i]);
   }
 
   if(param.convective_problem() and
@@ -442,7 +446,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
     {
       for(unsigned int i = 0; i < this->order; i++)
       {
-        read_write_distributed_vector(vec_convective_term[i], ia);
+        vectors.push_back(&vec_convective_term[i]);
       }
     }
   }
@@ -451,18 +455,24 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
   {
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
-      read_write_distributed_vector(vec_grid_coordinates[i], ia);
+      vectors.push_back(&vec_grid_coordinates[i]);
     }
   }
+
+  pde_operator->deserialize_vectors(vectors);
 }
 
 template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) const
 {
+  (void)oa;
+
+  std::vector<VectorType const *> vectors;
+
   for(unsigned int i = 0; i < this->order; i++)
   {
-    read_write_distributed_vector(solution[i], oa);
+    vectors.push_back(&solution[i]);
   }
 
   if(param.convective_problem() and
@@ -472,7 +482,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
     {
       for(unsigned int i = 0; i < this->order; i++)
       {
-        read_write_distributed_vector(vec_convective_term[i], oa);
+        vectors.push_back(&vec_convective_term[i]);
       }
     }
   }
@@ -481,9 +491,11 @@ TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) cons
   {
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
-      read_write_distributed_vector(vec_grid_coordinates[i], oa);
+      vectors.push_back(&vec_grid_coordinates[i]);
     }
   }
+
+  pde_operator->serialize_vectors(vectors);
 }
 
 template<int dim, typename Number>

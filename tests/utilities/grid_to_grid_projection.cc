@@ -25,6 +25,7 @@
 #include <deal.II/base/index_set.h>
 #include <deal.II/distributed/fully_distributed_tria.h>
 #include <deal.II/dofs/dof_handler.h>
+#include <deal.II/fe/fe_data.h>
 #include <deal.II/fe/fe_raviart_thomas.h>
 #include <deal.II/fe/mapping_fe.h>
 #include <deal.II/grid/grid_generator.h>
@@ -467,35 +468,7 @@ GridToGridProjector<dim, n_components>::project()
   data.rpe_data.rtree_level            = 0;
 
   data.additional_quadrature_points = 1;
-
-  data.is_test = true;
-
-  bool all_dg = true;
-  for(unsigned int i = 0; i < target_dof_handlers.size(); ++i)
-  {
-    bool is_dg = target_dof_handlers[i]->get_fe().dofs_per_vertex == 0;
-    if(not is_dg)
-    {
-      all_dg = false;
-    }
-  }
-
-  data.preconditioner = PreconditionerMass::PointJacobi;
-  if(all_dg)
-  {
-    if(element_type == ElementType::Hypercube)
-    {
-      data.inverse_mass_type = InverseMassType::MatrixfreeOperator;
-    }
-    else
-    {
-      data.inverse_mass_type = InverseMassType::ElementwiseKrylovSolver;
-    }
-  }
-  else
-  {
-    data.inverse_mass_type = InverseMassType::GlobalKrylovSolver;
-  }
+  data.preconditioner               = PreconditionerMass::PointJacobi;
 
   GridToGridProjection::grid_to_grid_projection<dim, VectorType::value_type, VectorType>(
     source_vectors_per_dof_handler,

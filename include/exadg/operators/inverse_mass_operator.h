@@ -23,10 +23,12 @@
 #define EXADG_OPERATORS_INVERSE_MASS_OPERATOR_H_
 
 // deal.II
+#include <deal.II/fe/fe_data.h>
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/operators.h>
 
 // ExaDG
+#include <exadg/grid/grid_data.h>
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/inverse_mass_parameters.h>
 #include <exadg/operators/mass_operator.h>
@@ -46,6 +48,30 @@ struct InverseMassOperatorData
       consider_inverse_coefficient(false),
       variable_coefficients(nullptr)
   {
+  }
+
+  // Get optimal in the sense of (most likely) fastest implementation type of the inverse mass
+  // operator depending on the approximation space.
+  template<int dim>
+  static InverseMassType
+  get_optimal_inverse_mass_type(dealii::FiniteElement<dim> const & fe,
+                                ElementType const                  element_type)
+  {
+    if(fe.conforms(dealii::FiniteElementData<dim>::L2))
+    {
+      if(element_type == ElementType::Hypercube)
+      {
+        return InverseMassType::MatrixfreeOperator;
+      }
+      else
+      {
+        return InverseMassType::ElementwiseKrylovSolver;
+      }
+    }
+    else
+    {
+      return InverseMassType::GlobalKrylovSolver;
+    }
   }
 
   // Parameters referring to dealii::MatrixFree

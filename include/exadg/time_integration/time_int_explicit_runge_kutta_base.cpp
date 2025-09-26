@@ -148,7 +148,8 @@ TimeIntExplRKBase<Number>::do_write_restart(std::string const & filename) const
   oa & time_step;
 
   // 4. solution vectors
-  read_write_distributed_vector(solution_n, oa);
+  std::vector<VectorType const *> vectors{&solution_n};
+  this->write_restart_vectors(vectors);
 
   write_restart_file(oss, filename);
 }
@@ -183,7 +184,29 @@ TimeIntExplRKBase<Number>::do_read_restart(std::ifstream & in)
   ia & time_step;
 
   // 4. solution vectors
-  read_write_distributed_vector(solution_n, ia);
+  std::vector<VectorType *> vectors{&solution_n};
+  this->read_restart_vectors(vectors);
+}
+
+template<typename Number>
+void
+TimeIntExplRKBase<Number>::read_restart_vectors(std::vector<VectorType *> const & vectors)
+{
+  (void)vectors;
+  AssertThrow(false,
+              dealii::ExcMessage("Overwrite this method in the derived "
+                                 "class to enable de-/serialization."));
+}
+
+template<typename Number>
+void
+TimeIntExplRKBase<Number>::write_restart_vectors(
+  std::vector<VectorType const *> const & vectors) const
+{
+  (void)vectors;
+  AssertThrow(false,
+              dealii::ExcMessage("Overwrite this method in the derived "
+                                 "class to enable de-/serialization."));
 }
 
 // instantiations

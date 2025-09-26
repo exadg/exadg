@@ -60,6 +60,19 @@ public:
   {
   }
 
+  void
+  add_parameters(dealii::ParameterHandler & prm) final
+  {
+    ApplicationBase<dim, Number>::add_parameters(prm);
+
+    prm.enter_subsection("Application");
+    {
+      prm.add_parameter("WriteRestart", write_restart, "Should restart files be written?");
+      prm.add_parameter("ReadRestart", read_restart, "Is this a restarted simulation?");
+    }
+    prm.leave_subsection();
+  }
+
 private:
   void
   set_parameters() final
@@ -113,6 +126,24 @@ private:
     // NUMERICAL PARAMETERS
     this->param.use_combined_operator                   = true;
     this->param.store_analytical_velocity_in_dof_vector = false;
+
+    // restart
+    this->param.restarted_simulation       = read_restart;
+    this->param.restart_data.write_restart = write_restart;
+    this->param.restart_data.interval_time = (this->param.end_time - this->param.start_time) * 0.4;
+    this->param.restart_data.interval_wall_time  = 1.e6;
+    this->param.restart_data.interval_time_steps = 1e8;
+    this->param.restart_data.directory           = this->output_parameters.directory;
+    this->param.restart_data.filename            = this->output_parameters.filename + "_restart";
+
+    this->param.restart_data.degree_u                   = 7;
+    this->param.restart_data.degree_p                   = 7;
+    this->param.restart_data.triangulation_type         = TriangulationType::Distributed;
+    this->param.restart_data.discretization_identical   = false;
+    this->param.restart_data.consider_mapping           = false;
+    this->param.restart_data.mapping_degree             = this->param.mapping_degree;
+    this->param.restart_data.rpe_tolerance_unit_cell    = 1e-6;
+    this->param.restart_data.rpe_enforce_unique_mapping = false;
   }
 
   void
@@ -143,6 +174,14 @@ private:
             if((std::fabs(cell.face(f)->center()(0) - right) < 1e-12))
               cell.face(f)->set_boundary_id(1);
           }
+        }
+
+        // Save the *coarse* triangulation for later deserialization.
+        if(write_restart and this->param.grid.triangulation_type == TriangulationType::Serial)
+        {
+          save_coarse_triangulation<dim>(this->param.restart_data.directory,
+                                         this->param.restart_data.filename,
+                                         tria);
         }
 
         tria.refine_global(global_refinements);
@@ -235,6 +274,9 @@ private:
   double const right = +1.0;
 
   bool const ale = false;
+
+  bool read_restart  = false;
+  bool write_restart = false;
 };
 
 } // namespace ConvDiff

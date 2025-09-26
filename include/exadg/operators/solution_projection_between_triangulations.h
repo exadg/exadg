@@ -28,10 +28,13 @@
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/mpi_remote_point_evaluation.h>
+#include <deal.II/base/timer.h>
+#include <deal.II/matrix_free/fe_point_evaluation.h>
 #include <deal.II/matrix_free/matrix_free.h>
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
+#include <exadg/grid/grid_data.h>
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
@@ -52,9 +55,7 @@ struct GridToGridProjectionData
     : rpe_data(),
       solver_data(),
       preconditioner(PreconditionerMass::PointJacobi),
-      inverse_mass_type(InverseMassType::MatrixfreeOperator),
-      additional_quadrature_points(1),
-      is_test(false)
+      additional_quadrature_points(1)
   {
   }
 
@@ -76,9 +77,6 @@ struct GridToGridProjectionData
   // The default `additional_quadrature_points = 1` considers `fe_degree + 1` quadrature points in
   // 1D using the `fe_degree` of the target grid's finite element.
   unsigned int additional_quadrature_points;
-
-  // Toggle iteration count and timing output.
-  bool is_test;
 };
 
 /**
@@ -202,11 +200,14 @@ project_vectors(
 {
   // Setup inverse mass operator.
   InverseMassOperatorData<Number> inverse_mass_operator_data;
-  inverse_mass_operator_data.dof_index                      = dof_index;
-  inverse_mass_operator_data.quad_index                     = quad_index;
-  inverse_mass_operator_data.parameters.preconditioner      = PreconditionerMass::PointJacobi;
-  inverse_mass_operator_data.parameters.solver_data         = data.solver_data;
-  inverse_mass_operator_data.parameters.implementation_type = data.inverse_mass_type;
+  inverse_mass_operator_data.dof_index                 = dof_index;
+  inverse_mass_operator_data.quad_index                = quad_index;
+  inverse_mass_operator_data.parameters.preconditioner = PreconditionerMass::PointJacobi;
+  inverse_mass_operator_data.parameters.solver_data    = data.solver_data;
+  inverse_mass_operator_data.parameters.implementation_type =
+    InverseMassOperatorData<Number>::template get_optimal_inverse_mass_type<dim>(
+      target_matrix_free.get_dof_handler(dof_index).get_fe(),
+      get_element_type(target_matrix_free.get_dof_handler(dof_index).get_triangulation()));
 
   InverseMassOperator<dim, n_components, Number> inverse_mass_operator;
   inverse_mass_operator.initialize(target_matrix_free, inverse_mass_operator_data);

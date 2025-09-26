@@ -331,6 +331,20 @@ TimeIntExplRK<Number>::initialize_time_integrator()
 }
 
 template<typename Number>
+void
+TimeIntExplRK<Number>::read_restart_vectors(std::vector<VectorType *> const & vectors)
+{
+  pde_operator->deserialize_vectors(vectors);
+}
+
+template<typename Number>
+void
+TimeIntExplRK<Number>::write_restart_vectors(std::vector<VectorType const *> const & vectors) const
+{
+  pde_operator->serialize_vectors(vectors);
+}
+
+template<typename Number>
 bool
 TimeIntExplRK<Number>::print_solver_info() const
 {

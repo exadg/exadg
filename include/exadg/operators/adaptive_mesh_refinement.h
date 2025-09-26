@@ -28,7 +28,6 @@
 // deal.II
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/distributed/grid_refinement.h>
-#include <deal.II/distributed/solution_transfer.h>
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/grid/grid_refinement.h>
 #include <deal.II/numerics/error_estimator.h>

@@ -23,9 +23,9 @@
 #define EXADG_OPERATORS_SOLUTION_TRANSFER_H_
 
 // deal.II
-#include <deal.II/distributed/solution_transfer.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/tria.h>
+#include <deal.II/numerics/solution_transfer.h>
 
 namespace ExaDG
 {
