@@ -171,7 +171,7 @@ BoundaryMassOperator<dim, Number, n_components>::do_boundary_segment_integral(
     {
       integrator_m.submit_value(
         kernel.get_boundary_mass_normal_value(scaled_coefficient,
-                                              integrator_m.get_normal_vector(q),
+                                              integrator_m.normal_vector(q),
                                               integrator_m.get_value(q)),
         q);
     }

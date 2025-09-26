@@ -660,7 +660,7 @@ NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
 
           if(normal_projection_displacement)
           {
-            vector const N = integrator.get_normal_vector(q);
+            vector const N = integrator.normal_vector(q);
             traction += N * (coefficient_displacement * (N * integrator.get_value(q)));
           }
           else
@@ -675,7 +675,7 @@ NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
 
             if(normal_projection_velocity)
             {
-              vector const N = integrator.get_normal_vector(q);
+              vector const N = integrator.normal_vector(q);
               traction += N * (coefficient_velocity * this->scaling_factor_mass_boundary *
                                (N * integrator.get_value(q)));
             }

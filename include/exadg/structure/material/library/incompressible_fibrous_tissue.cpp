@@ -204,7 +204,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     // Read the suitable vector from binary format.
     dealii::DoFHandler<dim> const & dof_handler = matrix_free.get_dof_handler(dof_index);
     unsigned int const              degree      = dof_handler.get_fe().base_element(0).degree;
-    MPI_Comm const &                mpi_comm    = dof_handler.get_communicator();
+    MPI_Comm const &                mpi_comm    = dof_handler.get_mpi_communicator();
     dealii::ConditionalOStream      pcout(std::cout,
                                      dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);
 

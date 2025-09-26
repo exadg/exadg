@@ -98,7 +98,7 @@ LinearOperator<dim, Number>::do_boundary_integral_continuous(
 
           if(normal_projection_displacement)
           {
-            vector const N = integrator_m.get_normal_vector(q);
+            vector const N = integrator_m.normal_vector(q);
             traction += N * (coefficient_displacement * (N * integrator_m.get_value(q)));
           }
           else
@@ -113,7 +113,7 @@ LinearOperator<dim, Number>::do_boundary_integral_continuous(
 
             if(normal_projection_velocity)
             {
-              vector const N = integrator_m.get_normal_vector(q);
+              vector const N = integrator_m.normal_vector(q);
               traction += N * (coefficient_velocity * this->scaling_factor_mass_boundary *
                                (N * integrator_m.get_value(q)));
             }
