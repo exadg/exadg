@@ -169,11 +169,10 @@ BoundaryMassOperator<dim, Number, n_components>::do_boundary_segment_integral(
   {
     for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
     {
-      integrator_m.submit_value(
-        kernel.get_boundary_mass_normal_value(scaled_coefficient,
-                                              integrator_m.normal_vector(q),
-                                              integrator_m.get_value(q)),
-        q);
+      integrator_m.submit_value(kernel.get_boundary_mass_normal_value(scaled_coefficient,
+                                                                      integrator_m.normal_vector(q),
+                                                                      integrator_m.get_value(q)),
+                                q);
     }
   }
   else
