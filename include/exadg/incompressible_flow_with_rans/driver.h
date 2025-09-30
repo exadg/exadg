@@ -32,20 +32,20 @@
 #include <exadg/utilities/print_general_infos.h>
 #include <exadg/utilities/timer_tree.h>
 
-// ConvDiff
-#include <exadg/convection_diffusion/time_integration/time_int_bdf.h>
-#include <exadg/convection_diffusion/time_integration/time_int_explicit_runge_kutta.h>
+// RANS
+#include <exadg/rans_equations/time_integration/time_int_bdf.h>
+#include <exadg/rans_equations/time_integration/time_int_explicit_runge_kutta.h>
 
-// IncNS
-#include <exadg/convection_diffusion/spatial_discretization/operator.h>
+// IncRANS
+#include <exadg/rans_equations/spatial_discretization/operator.h>
 #include <exadg/grid/mapping_deformation_function.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.h>
-#include <exadg/incompressible_navier_stokes/time_integration/driver_steady_problems.h>
-#include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h>
-#include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
-#include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
+#include <exadg/incompressible_navier_stokes_for_rans/spatial_discretization/operator_coupled.h>
+#include <exadg/incompressible_navier_stokes_for_rans/spatial_discretization/operator_dual_splitting.h>
+#include <exadg/incompressible_navier_stokes_for_rans/spatial_discretization/operator_pressure_correction.h>
+#include <exadg/incompressible_navier_stokes_for_rans/time_integration/driver_steady_problems.h>
+#include <exadg/incompressible_navier_stokes_for_rans/time_integration/time_int_bdf_coupled_solver.h>
+#include <exadg/incompressible_navier_stokes_for_rans/time_integration/time_int_bdf_dual_splitting.h>
+#include <exadg/incompressible_navier_stokes_for_rans/time_integration/time_int_bdf_pressure_correction.h>
 
 namespace ExaDG
 {
@@ -120,24 +120,24 @@ private:
 
   // INCOMPRESSIBLE NAVIER-STOKES
 
-  std::shared_ptr<IncNS::SpatialOperatorBase<dim, Number>> fluid_operator;
+  std::shared_ptr<IncRANS::SpatialOperatorBase<dim, Number>> fluid_operator;
 
-  typedef IncNS::PostProcessorBase<dim, Number> Postprocessor;
+  typedef IncRANS::PostProcessorBase<dim, Number> Postprocessor;
 
   std::shared_ptr<Postprocessor> fluid_postprocessor;
 
-  std::shared_ptr<IncNS::TimeIntBDF<dim, Number>> fluid_time_integrator;
+  std::shared_ptr<IncRANS::TimeIntBDF<dim, Number>> fluid_time_integrator;
 
   // steady solver
-  typedef IncNS::DriverSteadyProblems<dim, Number> DriverSteady;
+  typedef IncRANS::DriverSteadyProblems<dim, Number> DriverSteady;
 
   std::shared_ptr<DriverSteady> fluid_driver_steady;
 
   // SCALAR TRANSPORT
 
-  std::vector<std::shared_ptr<ConvDiff::Operator<dim, Number>>> scalar_operator;
+  std::vector<std::shared_ptr<RANS::Operator<dim, Number>>> scalar_operator;
 
-  std::vector<std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>> scalar_postprocessor;
+  std::vector<std::shared_ptr<RANS::PostProcessorBase<dim, Number>>> scalar_postprocessor;
 
   std::vector<std::shared_ptr<TimeIntBase>> scalar_time_integrator;
 

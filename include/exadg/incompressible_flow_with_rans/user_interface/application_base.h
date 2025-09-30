@@ -31,15 +31,15 @@
 #include <exadg/grid/grid.h>
 #include <exadg/grid/grid_utilities.h>
 
-#include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
-#include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
-#include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
-#include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
+#include <exadg/incompressible_navier_stokes_for_rans/postprocessor/postprocessor.h>
+#include <exadg/incompressible_navier_stokes_for_rans/user_interface/boundary_descriptor.h>
+#include <exadg/incompressible_navier_stokes_for_rans/user_interface/field_functions.h>
+#include <exadg/incompressible_navier_stokes_for_rans/user_interface/parameters.h>
 
-#include <exadg/convection_diffusion/postprocessor/postprocessor.h>
-#include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
-#include <exadg/convection_diffusion/user_interface/field_functions.h>
-#include <exadg/convection_diffusion/user_interface/parameters.h>
+#include <exadg/rans_equations/postprocessor/postprocessor.h>
+#include <exadg/rans_equations/user_interface/boundary_descriptor.h>
+#include <exadg/rans_equations/user_interface/field_functions.h>
+#include <exadg/rans_equations/user_interface/parameters.h>
 
 #include <exadg/operators/resolution_parameters.h>
 #include <exadg/postprocessor/output_parameters.h>
@@ -104,31 +104,31 @@ public:
     print_grid_info(pcout, *grid);
 
     // boundary conditions
-    boundary_descriptor = std::make_shared<IncNS::BoundaryDescriptor<dim>>();
+    boundary_descriptor = std::make_shared<IncRANS::BoundaryDescriptor<dim>>();
     set_boundary_descriptor();
     verify_boundary_conditions<dim>(*boundary_descriptor, *grid);
 
     // field functions
-    field_functions = std::make_shared<IncNS::FieldFunctions<dim>>();
+    field_functions = std::make_shared<IncRANS::FieldFunctions<dim>>();
     set_field_functions();
   }
 
-  virtual std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
+  virtual std::shared_ptr<IncRANS::PostProcessorBase<dim, Number>>
   create_postprocessor() = 0;
 
-  IncNS::Parameters const &
+  IncRANS::Parameters const &
   get_parameters() const
   {
     return param;
   }
 
-  std::shared_ptr<IncNS::BoundaryDescriptor<dim> const>
+  std::shared_ptr<IncRANS::BoundaryDescriptor<dim> const>
   get_boundary_descriptor() const
   {
     return boundary_descriptor;
   }
 
-  std::shared_ptr<IncNS::FieldFunctions<dim> const>
+  std::shared_ptr<IncRANS::FieldFunctions<dim> const>
   get_field_functions() const
   {
     return field_functions;
@@ -157,10 +157,10 @@ protected:
 
   dealii::ConditionalOStream pcout;
 
-  IncNS::Parameters param;
+  IncRANS::Parameters param;
 
-  std::shared_ptr<IncNS::FieldFunctions<dim>>     field_functions;
-  std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor;
+  std::shared_ptr<IncRANS::FieldFunctions<dim>>     field_functions;
+  std::shared_ptr<IncRANS::BoundaryDescriptor<dim>> boundary_descriptor;
 
   std::string parameter_file;
 
@@ -241,31 +241,31 @@ public:
     param.print(this->pcout, "List of parameters for quantity " + subsection_names.back() + ":");
 
     // boundary conditions
-    boundary_descriptor = std::make_shared<ConvDiff::BoundaryDescriptor<dim>>();
+    boundary_descriptor = std::make_shared<RANS::BoundaryDescriptor<dim>>();
     set_boundary_descriptor();
     verify_boundary_conditions(*boundary_descriptor, grid);
 
     // field functions
-    field_functions = std::make_shared<ConvDiff::FieldFunctions<dim>>();
+    field_functions = std::make_shared<RANS::FieldFunctions<dim>>();
     set_field_functions();
   }
 
-  virtual std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
+  virtual std::shared_ptr<RANS::PostProcessorBase<dim, Number>>
   create_postprocessor() = 0;
 
-  ConvDiff::Parameters const &
+  RANS::Parameters const &
   get_parameters() const
   {
     return param;
   }
 
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> const>
+  std::shared_ptr<RANS::BoundaryDescriptor<dim> const>
   get_boundary_descriptor() const
   {
     return boundary_descriptor;
   }
 
-  std::shared_ptr<ConvDiff::FieldFunctions<dim> const>
+  std::shared_ptr<RANS::FieldFunctions<dim> const>
   get_field_functions() const
   {
     return field_functions;
@@ -284,9 +284,9 @@ protected:
 
   dealii::ConditionalOStream pcout;
 
-  ConvDiff::Parameters                               param;
-  std::shared_ptr<ConvDiff::FieldFunctions<dim>>     field_functions;
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor;
+  RANS::Parameters                               param;
+  std::shared_ptr<RANS::FieldFunctions<dim>>     field_functions;
+  std::shared_ptr<RANS::BoundaryDescriptor<dim>> boundary_descriptor;
 
   std::string parameter_file;
 
