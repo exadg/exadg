@@ -1,0 +1,72 @@
+/*  ______________________________________________________________________
+ *
+ *  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
+ *
+ *  Copyright (C) 2021 by the ExaDG authors
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  ______________________________________________________________________
+ */
+
+#ifndef INCLUDE_EXADG_RANS_EQUATIONS_TIME_INTEGRATION_CREATE_TIME_INTEGRATOR_H_
+#define INCLUDE_EXADG_RANS_EQUATIONS_TIME_INTEGRATION_CREATE_TIME_INTEGRATOR_H_
+
+#include <exadg/rans_equations/time_integration/time_int_bdf.h>
+#include <exadg/rans_equations/time_integration/time_int_explicit_runge_kutta.h>
+#include <exadg/rans_equations/user_interface/parameters.h>
+
+namespace ExaDG
+{
+namespace RANS
+{
+/**
+ * Creates time integrator depending on type of time integration strategy.
+ */
+template<int dim, typename Number>
+std::shared_ptr<TimeIntBase>
+create_time_integrator(std::shared_ptr<Operator<dim, Number>>          pde_operator,
+                       std::shared_ptr<HelpersALE<dim, Number> const>  helpers_ale,
+                       std::shared_ptr<PostProcessorInterface<Number>> postprocessor,
+                       Parameters const &                              parameters,
+                       MPI_Comm const &                                mpi_comm,
+                       bool const                                      is_test)
+{
+  std::shared_ptr<TimeIntBase> time_integrator;
+
+  if(parameters.temporal_discretization == TemporalDiscretization::ExplRK)
+  {
+    time_integrator = std::make_shared<TimeIntExplRK<Number>>(
+      pde_operator, postprocessor, parameters, mpi_comm, is_test);
+  }
+  else if(parameters.temporal_discretization == TemporalDiscretization::BDF)
+  {
+    time_integrator = std::make_shared<TimeIntBDF<dim, Number>>(
+      pde_operator, helpers_ale, postprocessor, parameters, mpi_comm, is_test);
+  }
+  else
+  {
+    AssertThrow(parameters.temporal_discretization == TemporalDiscretization::ExplRK or
+                  parameters.temporal_discretization == TemporalDiscretization::BDF,
+                dealii::ExcMessage("Specified time integration scheme is not implemented!"));
+  }
+
+  return time_integrator;
+}
+
+} // namespace RANS
+} // namespace ExaDG
+
+
+
+#endif /* INCLUDE_EXADG_RANS_EQUATIONS_TIME_INTEGRATION_CREATE_TIME_INTEGRATOR_H_ */

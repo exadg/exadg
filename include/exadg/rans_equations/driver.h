@@ -1,0 +1,151 @@
+/*  ______________________________________________________________________
+ *
+ *  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
+ *
+ *  Copyright (C) 2021 by the ExaDG authors
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  ______________________________________________________________________
+ */
+
+#ifndef INCLUDE_EXADG_RANS_EQUATIONS_DRIVER_H_
+#define INCLUDE_EXADG_RANS_EQUATIONS_DRIVER_H_
+
+// deal.II
+#include <deal.II/base/revision.h>
+#include <deal.II/distributed/fully_distributed_tria.h>
+#include <deal.II/distributed/tria.h>
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_tools.h>
+#include <deal.II/grid/manifold_lib.h>
+
+// ExaDG
+#include <exadg/rans_equations/postprocessor/postprocessor_base.h>
+#include <exadg/rans_equations/spatial_discretization/interface.h>
+#include <exadg/rans_equations/spatial_discretization/operator.h>
+#include <exadg/rans_equations/time_integration/driver_steady_problems.h>
+#include <exadg/rans_equations/time_integration/time_int_bdf.h>
+#include <exadg/rans_equations/time_integration/time_int_explicit_runge_kutta.h>
+#include <exadg/rans_equations/user_interface/analytical_solution.h>
+#include <exadg/rans_equations/user_interface/application_base.h>
+#include <exadg/rans_equations/user_interface/boundary_descriptor.h>
+#include <exadg/rans_equations/user_interface/field_functions.h>
+#include <exadg/rans_equations/user_interface/parameters.h>
+#include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
+#include <exadg/grid/mapping_deformation_function.h>
+#include <exadg/matrix_free/matrix_free_data.h>
+#include <exadg/operators/adaptive_mesh_refinement.h>
+#include <exadg/utilities/print_functions.h>
+#include <exadg/utilities/print_general_infos.h>
+
+namespace ExaDG
+{
+namespace RANS
+{
+enum class OperatorType
+{
+  MassOperator,
+  ConvectiveOperator,
+  DiffusiveOperator,
+  MassConvectionDiffusionOperator
+};
+
+template<int dim, typename Number = double>
+class Driver
+{
+public:
+  using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
+
+  Driver(MPI_Comm const &                              mpi_comm,
+         std::shared_ptr<ApplicationBase<dim, Number>> application,
+         bool const                                    is_test,
+         bool const                                    is_throughput_study);
+
+  void
+  setup();
+
+  void
+  solve();
+
+  void
+  print_performance_results(double const total_time) const;
+
+  /*
+   * Throughput study
+   */
+  std::tuple<unsigned int, dealii::types::global_dof_index, double>
+  apply_operator(OperatorType const & operator_type,
+                 unsigned int const   n_repetitions_inner,
+                 unsigned int const   n_repetitions_outer) const;
+
+private:
+  void
+  ale_update() const;
+
+  void
+  mark_cells_coarsening_and_refinement(dealii::Triangulation<dim> & tria,
+                                       VectorType const &           solution) const;
+
+  void
+  setup_after_coarsening_and_refinement();
+
+  void
+  do_adaptive_refinement();
+
+  // MPI communicator
+  MPI_Comm const mpi_comm;
+
+  // output to std::cout
+  dealii::ConditionalOStream pcout;
+
+  // do not print wall times if is_test
+  bool const is_test;
+
+  // do not set up certain data structures (solver, postprocessor) in case of throughput study
+  bool const is_throughput_study;
+
+  // application
+  std::shared_ptr<ApplicationBase<dim, Number>> application;
+
+  // Grid and mapping
+  std::shared_ptr<Grid<dim>> grid;
+
+  std::shared_ptr<dealii::Mapping<dim>> mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> multigrid_mappings;
+
+  // ALE mapping
+  std::shared_ptr<DeformedMappingFunction<dim, Number>> ale_mapping;
+
+  std::shared_ptr<MultigridMappings<dim, Number>> ale_multigrid_mappings;
+
+  // ALE helper functions required by time integrator
+  std::shared_ptr<HelpersALE<dim, Number>> helpers_ale;
+
+  std::shared_ptr<Operator<dim, Number>> pde_operator;
+
+  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
+
+  std::shared_ptr<TimeIntBase> time_integrator;
+
+  std::shared_ptr<DriverSteadyProblems<Number>> driver_steady;
+
+  // Computation time (wall clock time)
+  mutable TimerTree timer_tree;
+};
+
+} // namespace RANS
+} // namespace ExaDG
+
+#endif /* INCLUDE_EXADG_RANS_EQUATIONS_DRIVER_H_ */

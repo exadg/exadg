@@ -118,6 +118,19 @@ SET(TARGET_SRC
      include/exadg/postprocessor/output_generator_scalar.cpp
      include/exadg/postprocessor/pointwise_output_generator_base.cpp
      include/exadg/convection_diffusion/driver.cpp
+     # rans equations
+     include/exadg/rans_equations/user_interface/parameters.cpp
+     include/exadg/rans_equations/spatial_discretization/operators/convective_operator.cpp
+     include/exadg/rans_equations/spatial_discretization/operators/diffusive_operator.cpp
+     include/exadg/rans_equations/spatial_discretization/operators/combined_operator.cpp
+     include/exadg/rans_equations/spatial_discretization/operator.cpp
+     include/exadg/rans_equations/spatial_discretization/interface.cpp
+     include/exadg/rans_equations/preconditioners/multigrid_preconditioner.cpp
+     include/exadg/rans_equations/time_integration/time_int_bdf.cpp
+     include/exadg/rans_equations/time_integration/time_int_explicit_runge_kutta.cpp
+     include/exadg/rans_equations/time_integration/driver_steady_problems.cpp
+     include/exadg/rans_equations/postprocessor/postprocessor.cpp
+     include/exadg/rans_equations/driver.cpp
      # incompressible Navier-Stokes equations
      include/exadg/incompressible_navier_stokes/user_interface/parameters.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/operators/convective_operator.cpp
