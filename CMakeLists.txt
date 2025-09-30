@@ -95,6 +95,7 @@ SET(TARGET_SRC
      include/exadg/operators/mass_operator.cpp
      include/exadg/operators/rhs_operator.cpp
      include/exadg/operators/navier_stokes_calculators.cpp
+     include/exadg/operators/rans_operator.cpp
      # Poisson equation
      include/exadg/poisson/user_interface/parameters.cpp
      include/exadg/poisson/spatial_discretization/operator.cpp
@@ -171,6 +172,46 @@ SET(TARGET_SRC
      include/exadg/incompressible_navier_stokes/postprocessor/postprocessor.cpp
      include/exadg/incompressible_navier_stokes/driver.cpp
      include/exadg/incompressible_navier_stokes/precursor/driver.cpp
+     # incompressible Navier-Stokes equations for RANS
+     include/exadg/incompressible_navier_stokes_for_rans/user_interface/parameters.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/spatial_discretization/operators/convective_operator.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/spatial_discretization/operators/viscous_operator.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/spatial_discretization/operators/gradient_operator.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/spatial_discretization/operators/divergence_operator.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/spatial_discretization/operators/rhs_operator.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/spatial_discretization/operators/divergence_penalty_operator.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/spatial_discretization/operators/continuity_penalty_operator.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/spatial_discretization/operators/momentum_operator.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/spatial_discretization/operators/projection_operator.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/spatial_discretization/viscosity_model_base.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/spatial_discretization/turbulence_model.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/spatial_discretization/generalized_newtonian_model.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/spatial_discretization/spatial_operator_base.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/spatial_discretization/operator_projection_methods.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/spatial_discretization/operator_dual_splitting.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/spatial_discretization/operator_pressure_correction.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/spatial_discretization/operator_coupled.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/spatial_discretization/calculators/streamfunction_calculator_rhs_operator.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/preconditioners/multigrid_preconditioner_momentum.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/preconditioners/multigrid_preconditioner_projection.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/time_integration/time_int_bdf.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/time_integration/time_int_bdf_coupled_solver.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/time_integration/time_int_bdf_dual_splitting.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/time_integration/time_int_bdf_pressure_correction.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/time_integration/driver_steady_problems.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/postprocessor/output_generator.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/postprocessor/pointwise_output_generator.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/postprocessor/divergence_and_mass_error.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/postprocessor/inflow_data_calculator.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/postprocessor/kinetic_energy_dissipation_detailed.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/postprocessor/line_plot_calculation.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/postprocessor/line_plot_calculation_statistics.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/postprocessor/line_plot_calculation_statistics_homogeneous.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/postprocessor/mean_velocity_calculator.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/postprocessor/flow_rate_calculator.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/postprocessor/postprocessor.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/driver.cpp
+     include/exadg/incompressible_navier_stokes_for_rans/precursor/driver.cpp
      # incompressible flow with transport
      include/exadg/incompressible_flow_with_transport/driver.cpp
      # incompressible flow with rans
