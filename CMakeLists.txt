@@ -160,6 +160,8 @@ SET(TARGET_SRC
      include/exadg/incompressible_navier_stokes/precursor/driver.cpp
      # incompressible flow with transport
      include/exadg/incompressible_flow_with_transport/driver.cpp
+     # incompressible flow with rans
+     include/exadg/incompressible_flow_with_rans/driver.cpp
      # compressible Navier-Stokes equations
      include/exadg/compressible_navier_stokes/user_interface/parameters.cpp
      include/exadg/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.cpp
