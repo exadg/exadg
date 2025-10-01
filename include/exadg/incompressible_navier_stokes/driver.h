@@ -83,17 +83,17 @@ get_dofs_per_element(OperatorType const &     operator_type,
   else
     AssertThrow(false, dealii::ExcMessage("Not implemented."));
 
-  unsigned int const velocity_dofs_per_element = ExaDG::get_dofs_per_element(
+  double const velocity_dofs_per_element = ExaDG::get_dofs_per_element(
     element_type, true /* is_dg */, dim /* n_components */, degree, dim);
 
-  unsigned int const pressure_dofs_per_element = ExaDG::get_dofs_per_element(
+  double const pressure_dofs_per_element = ExaDG::get_dofs_per_element(
     element_type, true /* is_dg */, 1 /* n_components */, degree_p, dim);
 
   // coupled/monolithic problem
   if(operator_type == OperatorType::CoupledNonlinearResidual or
      operator_type == OperatorType::CoupledLinearized)
   {
-    return velocity_dofs_per_element + pressure_dofs_per_element;
+    return static_cast<unsigned int>(velocity_dofs_per_element + pressure_dofs_per_element);
   }
   // velocity only
   else if(operator_type == OperatorType::ConvectiveOperator or
@@ -102,12 +102,12 @@ get_dofs_per_element(OperatorType const &     operator_type,
           operator_type == OperatorType::ProjectionOperator or
           operator_type == OperatorType::InverseMassOperator)
   {
-    return velocity_dofs_per_element;
+    return static_cast<unsigned int>(velocity_dofs_per_element);
   }
   // pressure only
   else if(operator_type == OperatorType::PressurePoissonOperator)
   {
-    return pressure_dofs_per_element;
+    return static_cast<unsigned int>(pressure_dofs_per_element);
   }
   else
   {
