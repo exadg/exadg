@@ -817,9 +817,6 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>write_restart_file</b
 template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </td></tr>
 <tr class="memitem:a952e1eb43f16ece7eb956e70712cc1bf"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>print_vector_l2_norm</b> (<a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> const &amp;vector)</td></tr>
 <tr class="separator:a952e1eb43f16ece7eb956e70712cc1bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5b0e6da132568638daf46851b20078a1" id="r_a5b0e6da132568638daf46851b20078a1"><td class="memTemplParams" colspan="2">template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>, typename BoostArchiveType&gt; </td></tr>
-<tr class="memitem:a5b0e6da132568638daf46851b20078a1"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#a5b0e6da132568638daf46851b20078a1">read_write_distributed_vector</a> (<a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> &amp;vector, BoostArchiveType &amp;archive)</td></tr>
-<tr class="separator:a5b0e6da132568638daf46851b20078a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a95e3012032faab25e1436fcea7e5fd2f" id="r_a95e3012032faab25e1436fcea7e5fd2f"><td class="memTemplParams" colspan="2">template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>, typename BlockVectorType&gt; </td></tr>
 <tr class="memitem:a95e3012032faab25e1436fcea7e5fd2f"><td class="memTemplItemLeft" align="right" valign="top">std::vector&lt; std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> * &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#a95e3012032faab25e1436fcea7e5fd2f">get_vectors_per_block</a> (std::vector&lt; BlockVectorType * &gt; const &amp;block_vectors)</td></tr>
 <tr class="separator:a95e3012032faab25e1436fcea7e5fd2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1720,38 +1717,6 @@ template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBa
 </table>
 </div><div class="memdoc">
 <p>Same as the above function, but consider for a mapping added as an additional vector added during <code><a class="el" href="#a87f9680d82a629401ee548515308bd39">store_vectors_in_triangulation_and_serialize()</a></code>. </p>
-
-</div>
-</div>
-<a id="a5b0e6da132568638daf46851b20078a1" name="a5b0e6da132568638daf46851b20078a1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5b0e6da132568638daf46851b20078a1">&#9670;&#160;</a></span>read_write_distributed_vector()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>, typename BoostArchiveType&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void ExaDG::read_write_distributed_vector </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>vector</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">BoostArchiveType &amp;</td>          <td class="paramname"><span class="paramname"><em>archive</em></span>&#160;)</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Utility function to read or write the local entries of a dealii::LinearAlgebra::distributed::(Block)Vector from/to a boost archive per block and entry. Using the <code>&amp;</code> operator, loading from or writing to the archive is determined from the type. </p>
 
 </div>
 </div>
