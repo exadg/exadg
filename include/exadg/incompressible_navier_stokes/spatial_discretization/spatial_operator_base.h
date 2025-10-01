@@ -242,12 +242,12 @@ public:
    * De-/serialization of the solution components.
    */
   void
-  serialize_vectors(std::vector<VectorType const *> vectors_velocity,
-                    std::vector<VectorType const *> vectors_pressure) const;
+  serialize_vectors(std::vector<VectorType const *> & vectors_velocity,
+                    std::vector<VectorType const *> & vectors_pressure) const;
 
   void
-  deserialize_vectors(std::vector<VectorType *> vectors_velocity,
-                      std::vector<VectorType *> vectors_pressure);
+  deserialize_vectors(std::vector<VectorType *> & vectors_velocity,
+                      std::vector<VectorType *> & vectors_pressure);
 
   /*
    * Interpolate given functions to the corresponding vectors.

@@ -98,7 +98,7 @@ SpatialOperatorBase<dim, Number>::initialize_dof_handler_and_constraints()
      (param.restart_data.write_restart or param.restarted_simulation))
   {
     fe_mapping =
-      create_finite_element<dim>(ElementType::Hypercube, true, dim, param.mapping_degree);
+      create_finite_element<dim>(param.grid.element_type, true, dim, param.mapping_degree);
     dof_handler_mapping = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
     dof_handler_mapping->distribute_dofs(*fe_mapping);
   }
@@ -991,8 +991,8 @@ SpatialOperatorBase<dim, Number>::prescribe_initial_conditions(VectorType & velo
 template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::serialize_vectors(
-  std::vector<VectorType const *> vectors_velocity,
-  std::vector<VectorType const *> vectors_pressure) const
+  std::vector<VectorType const *> & vectors_velocity,
+  std::vector<VectorType const *> & vectors_pressure) const
 {
   std::vector<dealii::DoFHandler<dim> const *> dof_handlers{&dof_handler_u, &dof_handler_p};
   std::vector<std::vector<VectorType const *>> vectors_per_dof_handler{vectors_velocity,
@@ -1018,8 +1018,8 @@ SpatialOperatorBase<dim, Number>::serialize_vectors(
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::deserialize_vectors(std::vector<VectorType *> vectors_velocity,
-                                                      std::vector<VectorType *> vectors_pressure)
+SpatialOperatorBase<dim, Number>::deserialize_vectors(std::vector<VectorType *> & vectors_velocity,
+                                                      std::vector<VectorType *> & vectors_pressure)
 {
   // Store ghost state to recover after deserialization.
   std::vector<bool> const has_ghost_elements_velocity = get_ghost_state(vectors_velocity);
@@ -1032,7 +1032,7 @@ SpatialOperatorBase<dim, Number>::deserialize_vectors(std::vector<VectorType *> 
                                    param.restart_data.triangulation_type,
                                    mpi_comm);
 
-  // Setup DoFHandlers *as checkpointed*, sequence matches `this->serialize_vectors()`.
+  // Set up DoFHandlers *as checkpointed*, sequence matches `this->serialize_vectors()`.
   dealii::DoFHandler<dim> checkpoint_dof_handler_u(*checkpoint_triangulation);
   dealii::DoFHandler<dim> checkpoint_dof_handler_p(*checkpoint_triangulation);
 
@@ -1075,11 +1075,11 @@ SpatialOperatorBase<dim, Number>::deserialize_vectors(std::vector<VectorType *> 
     load_vectors(checkpoint_vectors, checkpoint_dof_handlers);
     for(unsigned int i = 0; i < vectors_velocity.size(); ++i)
     {
-      *vectors_velocity[i] = checkpoint_vectors_velocity[i];
+      vectors_velocity[i]->copy_locally_owned_data_from(checkpoint_vectors_velocity[i]);
     }
     for(unsigned int i = 0; i < vectors_pressure.size(); ++i)
     {
-      *vectors_pressure[i] = checkpoint_vectors_pressure[i];
+      vectors_pressure[i]->copy_locally_owned_data_from(checkpoint_vectors_pressure[i]);
     }
   }
   else

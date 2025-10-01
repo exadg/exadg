@@ -459,7 +459,7 @@ private:
     this->param.solver_type                   = SolverType::Unsteady;
     this->param.temporal_discretization       = temporal_discretization;
     this->param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
-    this->param.time_step_size                = std::abs(end_time - start_time) / 1.0;
+    this->param.time_step_size                = std::abs(end_time - start_time);
     this->param.order_time_integrator         = 2;     // 1; // 2; // 3;
     this->param.start_with_low_order          = false; // true;
 
@@ -532,6 +532,7 @@ private:
     // RESTART
     this->param.restarted_simulation       = read_restart;
     this->param.restart_data.write_restart = write_restart;
+    // write restart every 40% of the simulation time
     this->param.restart_data.interval_time = (this->param.end_time - this->param.start_time) * 0.4;
     this->param.restart_data.directory     = this->output_parameters.directory;
     this->param.restart_data.filename      = this->output_parameters.filename + "_restart";
@@ -768,7 +769,7 @@ private:
     // write output for visualization of results
     pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
     pp_data.output_data.time_control_data.start_time       = start_time;
-    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 1.0;
+    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time);
     pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = this->output_parameters.filename;
     pp_data.output_data.write_divergence   = true;
