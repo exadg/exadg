@@ -1001,18 +1001,18 @@ SpatialOperatorBase<dim, Number>::serialize_vectors(
   {
     store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
                                                  param.restart_data.filename,
-                                                 vectors_per_dof_handler,
                                                  dof_handlers,
+                                                 vectors_per_dof_handler,
                                                  *this->get_mapping(),
-                                                 &(*dof_handler_mapping),
+                                                 dof_handler_mapping.get(),
                                                  param.mapping_degree);
   }
   else
   {
     store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
                                                  param.restart_data.filename,
-                                                 vectors_per_dof_handler,
-                                                 dof_handlers);
+                                                 dof_handlers,
+                                                 vectors_per_dof_handler);
   }
 }
 

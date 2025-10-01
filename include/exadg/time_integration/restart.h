@@ -288,8 +288,8 @@ inline void
 store_vectors_in_triangulation_and_serialize(
   std::string const &                                       directory,
   std::string const &                                       filename_base,
-  std::vector<std::vector<VectorType const *>> const &      vectors_per_dof_handler,
-  std::vector<dealii::DoFHandler<dim, dim> const *> const & dof_handlers)
+  std::vector<dealii::DoFHandler<dim, dim> const *> const & dof_handlers,
+  std::vector<std::vector<VectorType const *>> const &      vectors_per_dof_handler)
 {
   AssertThrow(vectors_per_dof_handler.size() > 0,
               dealii::ExcMessage("No vectors to store in triangulation."));
@@ -355,8 +355,8 @@ inline void
 store_vectors_in_triangulation_and_serialize(
   std::string const &                                       directory,
   std::string const &                                       filename_base,
-  std::vector<std::vector<VectorType const *>> const &      vectors_per_dof_handler,
   std::vector<dealii::DoFHandler<dim, dim> const *> const & dof_handlers,
+  std::vector<std::vector<VectorType const *>> const &      vectors_per_dof_handler,
   dealii::Mapping<dim> const &                              mapping,
   dealii::DoFHandler<dim> const *                           dof_handler_mapping,
   unsigned int const                                        mapping_degree)
@@ -423,8 +423,8 @@ store_vectors_in_triangulation_and_serialize(
   // Use utility function that ignores the mapping.
   store_vectors_in_triangulation_and_serialize(directory,
                                                filename_base,
-                                               vectors_per_dof_handler_extended,
-                                               dof_handlers_extended);
+                                               dof_handlers_extended,
+                                               vectors_per_dof_handler_extended);
 }
 
 /**
