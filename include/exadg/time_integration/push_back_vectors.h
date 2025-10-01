@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_PUSH_BACK_VECTORS_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_PUSH_BACK_VECTORS_H_
+#ifndef EXADG_TIME_INTEGRATION_PUSH_BACK_VECTORS_H_
+#define EXADG_TIME_INTEGRATION_PUSH_BACK_VECTORS_H_
 
 // C/C++
 #include <vector>
@@ -59,4 +59,4 @@ push_back(std::vector<VectorType> & vector)
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_PUSH_BACK_VECTORS_H_ */
+#endif /* EXADG_TIME_INTEGRATION_PUSH_BACK_VECTORS_H_ */

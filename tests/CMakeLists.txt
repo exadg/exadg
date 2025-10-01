@@ -28,3 +28,4 @@
 ADD_SUBDIRECTORY(solvers_and_preconditioners)
 ADD_SUBDIRECTORY(utilities)
 ADD_SUBDIRECTORY(time_integration)
+ADD_SUBDIRECTORY(operators)

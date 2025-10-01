@@ -277,8 +277,8 @@ private:
       this->param.preconditioner_momentum = MomentumPreconditioner::PointJacobi;
     }
 
-    this->param.inverse_mass_operator_hdiv.preconditioner = PreconditionerMass::LumpedDiagonal;
-    this->param.inverse_mass_operator_hdiv.solver_data = SolverData(1000, ABS_TOL, 0.1 * REL_TOL);
+    //this->param.inverse_mass_operator_hdiv.preconditioner = PreconditionerMass::LumpedDiagonal;
+    //this->param.inverse_mass_operator_hdiv.solver_data = SolverData(1000, ABS_TOL, 0.1 * REL_TOL);
 
 
     // PRESSURE-CORRECTION SCHEME

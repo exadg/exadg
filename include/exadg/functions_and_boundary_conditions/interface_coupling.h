@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_INTERFACE_COUPLING_H_
-#define INCLUDE_FUNCTIONALITIES_INTERFACE_COUPLING_H_
+#ifndef EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_INTERFACE_COUPLING_H_
+#define EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_INTERFACE_COUPLING_H_
 
 // deal.II
 #include <deal.II/numerics/vector_tools.h>
@@ -84,4 +84,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_FUNCTIONALITIES_INTERFACE_COUPLING_H_ */
+#endif /* EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_INTERFACE_COUPLING_H_ */

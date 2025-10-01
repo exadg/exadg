@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_
-#define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_
+#ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_H_
+#define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_H_
 
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
@@ -55,8 +55,8 @@ namespace Acoustics
 template<int dim, typename Number>
 class SpatialOperator : public Interface::SpatialOperator<Number>
 {
+  using VectorType      = typename Interface::SpatialOperator<Number>::VectorType;
   using BlockVectorType = typename Interface::SpatialOperator<Number>::BlockVectorType;
-  using VectorType      = dealii::LinearAlgebra::distributed::Vector<Number>;
 
 public:
   static unsigned int const block_index_pressure = 0;
@@ -133,6 +133,12 @@ public:
 
   dealii::DoFHandler<dim> const &
   get_dof_handler_u() const;
+
+  void
+  serialize_vectors(std::vector<BlockVectorType const *> const & block_vectors) const final;
+
+  void
+  deserialize_vectors(std::vector<BlockVectorType *> const & block_vectors) const final;
 
   dealii::AffineConstraints<Number> const &
   get_constraint_p() const;
@@ -241,6 +247,9 @@ private:
   dealii::DoFHandler<dim> dof_handler_p;
   dealii::DoFHandler<dim> dof_handler_u;
 
+  std::shared_ptr<dealii::FiniteElement<dim>> fe_mapping;
+  std::shared_ptr<dealii::DoFHandler<dim>>    dof_handler_mapping;
+
   dealii::AffineConstraints<Number> constraint_p, constraint_u;
 
   std::string const dof_index_p = "pressure";
@@ -284,4 +293,4 @@ private:
 } // namespace Acoustics
 } // namespace ExaDG
 
-#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_ */
+#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_H_ */

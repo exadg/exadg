@@ -19,17 +19,8 @@
  *  ______________________________________________________________________
  */
 
-// C/C++
-#include <fstream>
-
-// deal.II
-#include <deal.II/grid/grid_tools.h>
-#include <deal.II/numerics/data_out.h>
-
 // ExaDG
-#include <exadg/grid/grid_data.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/output_generator.h>
-#include <exadg/operators/quadrature.h>
 #include <exadg/postprocessor/write_output.h>
 #include <exadg/utilities/create_directories.h>
 
@@ -37,91 +28,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-template<int dim, typename Number>
-void
-write_output(
-  OutputData const &                                                    output_data,
-  dealii::DoFHandler<dim> const &                                       dof_handler_velocity,
-  dealii::DoFHandler<dim> const &                                       dof_handler_pressure,
-  dealii::Mapping<dim> const &                                          mapping,
-  dealii::LinearAlgebra::distributed::Vector<Number> const &            velocity,
-  dealii::LinearAlgebra::distributed::Vector<Number> const &            pressure,
-  std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
-  unsigned int const                                                    output_counter,
-  MPI_Comm const &                                                      mpi_comm)
-{
-  std::string folder = output_data.directory, file = output_data.filename;
-
-  dealii::DataOutBase::VtkFlags flags;
-  flags.write_higher_order_cells = output_data.write_higher_order;
-
-  dealii::DataOut<dim> data_out;
-  data_out.set_flags(flags);
-
-  std::vector<std::string> velocity_names(dim, "velocity");
-  std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
-    velocity_component_interpretation(
-      dim, dealii::DataComponentInterpretation::component_is_part_of_vector);
-
-  data_out.add_data_vector(dof_handler_velocity,
-                           velocity,
-                           velocity_names,
-                           velocity_component_interpretation);
-
-  data_out.add_data_vector(dof_handler_pressure, pressure, "p");
-
-  // vector needs to survive until build_patches
-  dealii::Vector<double> aspect_ratios;
-  if(output_data.write_aspect_ratio)
-  {
-    dealii::Triangulation<dim> const & tria = dof_handler_velocity.get_triangulation();
-
-    ElementType const element_type = get_element_type(tria);
-
-    std::shared_ptr<dealii::Quadrature<dim>> quadrature = create_quadrature<dim>(element_type, 4);
-
-    aspect_ratios = dealii::GridTools::compute_aspect_ratio_of_cells(mapping, tria, *quadrature);
-    data_out.add_data_vector(aspect_ratios, "aspect_ratio");
-  }
-
-  for(auto & additional_field : additional_fields)
-  {
-    if(additional_field->get_type() == SolutionFieldType::scalar)
-    {
-      data_out.add_data_vector(additional_field->get_dof_handler(),
-                               additional_field->get(),
-                               additional_field->get_name());
-    }
-    else if(additional_field->get_type() == SolutionFieldType::cellwise)
-    {
-      data_out.add_data_vector(additional_field->get(), additional_field->get_name());
-    }
-    else if(additional_field->get_type() == SolutionFieldType::vector)
-    {
-      std::vector<std::string> names(dim, additional_field->get_name());
-      std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
-        component_interpretation(dim,
-                                 dealii::DataComponentInterpretation::component_is_part_of_vector);
-
-      data_out.add_data_vector(additional_field->get_dof_handler(),
-                               additional_field->get(),
-                               names,
-                               component_interpretation);
-    }
-    else
-    {
-      AssertThrow(false, dealii::ExcMessage("Not implemented."));
-    }
-  }
-
-  data_out.build_patches(mapping, output_data.degree, dealii::DataOut<dim>::curved_inner_cells);
-
-  // data_out.write_vtu_with_pvtu_record(folder, file, output_counter, mpi_comm, 4);
-  data_out.write_vtu_in_parallel(folder + file + "_" +
-                                   dealii::Utilities::to_string(output_counter, 4) + ".vtu",
-                                 mpi_comm);
-}
-
 template<int dim, typename Number>
 OutputGenerator<dim, Number>::OutputGenerator(MPI_Comm const & comm) : mpi_comm(comm)
 {
@@ -195,23 +101,30 @@ OutputGenerator<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler_
 template<int dim, typename Number>
 void
 OutputGenerator<dim, Number>::evaluate(
-  VectorType const &                                                    velocity,
-  VectorType const &                                                    pressure,
-  std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
-  double const                                                          time,
-  bool const                                                            unsteady) const
+  VectorType const &                                                       velocity,
+  VectorType const &                                                       pressure,
+  std::vector<dealii::ObserverPointer<SolutionField<dim, Number>>> const & additional_fields,
+  double const                                                             time,
+  bool const                                                               unsteady) const
 {
   print_write_output_time(time, time_control.get_counter(), unsteady, mpi_comm);
 
-  write_output<dim>(output_data,
-                    *dof_handler_velocity,
-                    *dof_handler_pressure,
-                    *mapping,
-                    velocity,
-                    pressure,
-                    additional_fields,
-                    time_control.get_counter(),
-                    mpi_comm);
+  VectorWriter<dim, Number> vector_writer(output_data, time_control.get_counter(), mpi_comm);
+
+  std::vector<std::string> component_names(dim, "velocity");
+  std::vector<bool>        component_is_part_of_vector(dim, true);
+  vector_writer.add_data_vector(velocity,
+                                *dof_handler_velocity,
+                                component_names,
+                                component_is_part_of_vector);
+
+  vector_writer.add_data_vector(pressure, *dof_handler_pressure, {"pressure"});
+
+  vector_writer.write_aspect_ratio(*dof_handler_velocity, *mapping);
+
+  vector_writer.add_fields(additional_fields);
+
+  vector_writer.write_pvtu(&(*mapping));
 }
 
 template class OutputGenerator<2, float>;

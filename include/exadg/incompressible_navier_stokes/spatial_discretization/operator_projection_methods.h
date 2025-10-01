@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_PROJECTION_METHODS_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_PROJECTION_METHODS_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_PROJECTION_METHODS_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_PROJECTION_METHODS_H_
 
+// ExaDG
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_momentum.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver.h>
@@ -262,6 +263,5 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_PROJECTION_METHODS_H_ \
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_PROJECTION_METHODS_H_ \
         */

@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_MULTIGRID_OPERATOR_H_
-#define INCLUDE_EXADG_OPERATORS_MULTIGRID_OPERATOR_H_
+#ifndef EXADG_OPERATORS_MULTIGRID_OPERATOR_H_
+#define EXADG_OPERATORS_MULTIGRID_OPERATOR_H_
 
+// ExaDG
 #include <exadg/operators/multigrid_operator_base.h>
 
 namespace ExaDG
@@ -195,4 +196,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_OPERATORS_MULTIGRID_OPERATOR_H_ */
+#endif /* EXADG_OPERATORS_MULTIGRID_OPERATOR_H_ */

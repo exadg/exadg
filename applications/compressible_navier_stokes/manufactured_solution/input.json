@@ -15,6 +15,8 @@
         "RefineTimeMax": "0"
     },
     "Application": {
+        "ReadRestart": "false",
+        "WriteRestart": "false"
     },
     "Output": {
         "OutputDirectory": "output/manufactured_solution/",

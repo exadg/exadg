@@ -145,6 +145,61 @@ ShearRateCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> cons
 }
 
 template<int dim, typename Number>
+ViscosityCalculator<dim, Number>::ViscosityCalculator()
+  : matrix_free(nullptr), dof_index_u_scalar(0), quad_index(0), viscous_kernel(nullptr)
+{
+}
+
+template<int dim, typename Number>
+void
+ViscosityCalculator<dim, Number>::initialize(
+  dealii::MatrixFree<dim, Number> const &              matrix_free_in,
+  unsigned int const                                   dof_index_u_scalar_in,
+  unsigned int const                                   quad_index_in,
+  IncNS::Operators::ViscousKernel<dim, Number> const & viscous_kernel_in)
+{
+  matrix_free        = &matrix_free_in;
+  dof_index_u_scalar = dof_index_u_scalar_in;
+  quad_index         = quad_index_in;
+  viscous_kernel     = &viscous_kernel_in;
+}
+
+template<int dim, typename Number>
+void
+ViscosityCalculator<dim, Number>::access_viscosity(VectorType & dst, VectorType const & src) const
+{
+  dst = 0.0;
+
+  matrix_free->cell_loop(&This::cell_loop, this, dst, src);
+}
+
+template<int dim, typename Number>
+void
+ViscosityCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                            VectorType &                            dst,
+                                            VectorType const &                      src,
+                                            Range const & cell_range) const
+{
+  (void)src;
+
+  CellIntegratorScalar integrator_scalar(matrix_free, dof_index_u_scalar, quad_index);
+
+  for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
+  {
+    integrator_scalar.reinit(cell);
+
+    for(unsigned int q = 0; q < integrator_scalar.n_q_points; q++)
+    {
+      scalar viscosity = this->viscous_kernel->get_viscosity_cell(cell, q);
+
+      integrator_scalar.submit_value(viscosity, q);
+    }
+
+    integrator_scalar.integrate_scatter(dealii::EvaluationFlags::values, dst);
+  }
+}
+
+template<int dim, typename Number>
 VorticityCalculator<dim, Number>::VorticityCalculator()
   : matrix_free(nullptr), dof_index(0), quad_index(0)
 {
@@ -353,6 +408,12 @@ template class ShearRateCalculator<2, double>;
 
 template class ShearRateCalculator<3, float>;
 template class ShearRateCalculator<3, double>;
+
+template class ViscosityCalculator<2, float>;
+template class ViscosityCalculator<2, double>;
+
+template class ViscosityCalculator<3, float>;
+template class ViscosityCalculator<3, double>;
 
 template class VorticityCalculator<2, float>;
 template class VorticityCalculator<2, double>;

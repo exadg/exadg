@@ -307,8 +307,7 @@ MeanVelocityCalculator<dim, Number>::do_calculate_flow_rate_area(VectorType cons
 
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
-        flow_rate_face +=
-          integrator.JxW(q) * integrator.get_value(q) * integrator.get_normal_vector(q);
+        flow_rate_face += integrator.JxW(q) * integrator.get_value(q) * integrator.normal_vector(q);
       }
 
       // sum over all entries of dealii::VectorizedArray

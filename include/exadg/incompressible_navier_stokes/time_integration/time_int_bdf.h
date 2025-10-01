@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -45,9 +45,11 @@ template<int dim, typename Number>
 class TimeIntBDF : public TimeIntBDFBase
 {
 public:
-  using Base            = TimeIntBDFBase;
-  using VectorType      = dealii::LinearAlgebra::distributed::Vector<Number>;
-  using BlockVectorType = dealii::LinearAlgebra::distributed::BlockVector<Number>;
+  using Base                   = TimeIntBDFBase;
+  using VectorType             = dealii::LinearAlgebra::distributed::Vector<Number>;
+  using BlockVectorType        = dealii::LinearAlgebra::distributed::BlockVector<Number>;
+  using BoostInputArchiveType  = TimeIntBase::BoostInputArchiveType;
+  using BoostOutputArchiveType = TimeIntBase::BoostOutputArchiveType;
 
   TimeIntBDF(std::shared_ptr<SpatialOperatorBase<dim, Number>> operator_in,
              std::shared_ptr<HelpersALE<dim, Number> const>    helpers_ale_in,
@@ -108,10 +110,18 @@ protected:
   setup_derived() override;
 
   void
-  read_restart_vectors(boost::archive::binary_iarchive & ia) override;
+  read_restart_vectors(BoostInputArchiveType & ia) final;
 
   void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const override;
+  write_restart_vectors(BoostOutputArchiveType & oa) const final;
+
+  virtual void
+  get_vectors_serialization(std::vector<VectorType const *> & vectors_velocity,
+                            std::vector<VectorType const *> & vectors_pressure) const;
+
+  virtual void
+  set_vectors_deserialization(std::vector<VectorType> const & vectors_velocity,
+                              std::vector<VectorType> const & vectors_pressure);
 
   void
   prepare_vectors_for_next_timestep() override;
@@ -190,4 +200,4 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_H_ */
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_H_ */

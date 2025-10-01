@@ -19,11 +19,15 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MOMENTUM_OPERATOR_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MOMENTUM_OPERATOR_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MOMENTUM_OPERATOR_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MOMENTUM_OPERATOR_H_
 
+// ExaDG
+#include <exadg/incompressible_navier_stokes/spatial_discretization/generalized_newtonian_model.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/convective_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/turbulence_model.h>
+#include <exadg/incompressible_navier_stokes/user_interface/viscosity_model_data.h>
 #include <exadg/operators/mass_kernel.h>
 #include <exadg/operators/operator_base.h>
 
@@ -42,6 +46,9 @@ struct MomentumOperatorData : public OperatorBaseData
   bool unsteady_problem;
   bool convective_problem;
   bool viscous_problem;
+
+  TurbulenceModelData           turbulence_model_data;
+  GeneralizedNewtonianModelData generalized_newtonian_model_data;
 
   Operators::ConvectiveKernelData convective_kernel_data;
   Operators::ViscousKernelData    viscous_kernel_data;
@@ -76,7 +83,8 @@ public:
   void
   initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
              dealii::AffineConstraints<Number> const & affine_constraints,
-             MomentumOperatorData<dim> const &         data);
+             MomentumOperatorData<dim> const &         data,
+             dealii::Mapping<dim> const &              mapping);
 
   void
   initialize(dealii::MatrixFree<dim, Number> const &                   matrix_free,
@@ -94,7 +102,7 @@ public:
   Operators::ViscousKernelData
   get_viscous_kernel_data() const;
 
-  dealii::LinearAlgebra::distributed::Vector<Number> const &
+  VectorType const &
   get_velocity() const;
 
   /*
@@ -120,6 +128,9 @@ public:
 
   void
   set_scaling_factor_mass_operator(Number const & number);
+
+  void
+  update_viscosity(VectorType const & velocity) const;
 
   /*
    * Interfaces of OperatorBase.
@@ -193,11 +204,18 @@ private:
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
   std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel;
 
+  // Flag signaling that the `viscous_kernel` is managed by this class.
+  bool viscous_kernel_own_storage;
+
+  // Variable viscosity models for when `viscous_kernel` is managed by this class.
+  mutable TurbulenceModel<dim, Number>           turbulence_model_own_storage;
+  mutable GeneralizedNewtonianModel<dim, Number> generalized_newtonian_model_own_storage;
+
   double scaling_factor_mass;
 };
 
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MOMENTUM_OPERATOR_H_ \
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MOMENTUM_OPERATOR_H_ \
         */

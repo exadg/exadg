@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef OPERATOR_CONSTRAINTS_H
-#define OPERATOR_CONSTRAINTS_H
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_CONSTRAINTS_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_CONSTRAINTS_H_
 
+// deal.II
 #include <deal.II/multigrid/mg_constrained_dofs.h>
 
 namespace ExaDG
@@ -126,12 +127,18 @@ add_constraints(bool                                is_dg,
   affine_constraints_own.clear();
 
   // ... and set local dofs
-  dealii::IndexSet relevant_dofs;
-  if(level != dealii::numbers::invalid_unsigned_int)
-    dealii::DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);
+  if(level == dealii::numbers::invalid_unsigned_int)
+  {
+    dealii::IndexSet const relevant_dofs =
+      dealii::DoFTools::extract_locally_relevant_dofs(dof_handler);
+    affine_constraints_own.reinit(dof_handler.locally_owned_dofs(), relevant_dofs);
+  }
   else
-    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs);
-  affine_constraints_own.reinit(relevant_dofs);
+  {
+    dealii::IndexSet const relevant_dofs =
+      dealii::DoFTools::extract_locally_relevant_level_dofs(dof_handler, level);
+    affine_constraints_own.reinit(dof_handler.locally_owned_mg_dofs(level), relevant_dofs);
+  }
 
   // 1) add periodic BCs
   add_periodicity_constraints<dim, Number>(dof_handler,
@@ -186,9 +193,8 @@ add_constraints(bool                                is_dg,
   affine_constraints_own.close();
 }
 
-
-} // namespace
+} // anonymous namespace
 } // namespace ConstraintUtil
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_CONSTRAINTS_H_ */

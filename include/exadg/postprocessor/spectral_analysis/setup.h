@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef DEAL_SPECTRUM_SETUP
-#define DEAL_SPECTRUM_SETUP
+#ifndef EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_SETUP_H_
+#define EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_SETUP_H_
 
 // C/C++
 #include <mpi.h>
@@ -231,4 +231,4 @@ public:
 
 } // namespace dealspectrum
 
-#endif
+#endif /* EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_SETUP_H_ */

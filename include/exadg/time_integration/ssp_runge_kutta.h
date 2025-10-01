@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_SSP_RUNGE_KUTTA_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_SSP_RUNGE_KUTTA_H_
+#ifndef EXADG_TIME_INTEGRATION_SSP_RUNGE_KUTTA_H_
+#define EXADG_TIME_INTEGRATION_SSP_RUNGE_KUTTA_H_
 
 // deal.II
 #include <deal.II/lac/full_matrix.h>
@@ -955,4 +955,4 @@ SSPRK<Operator, VectorType>::initialize_coeffs(unsigned int const stages)
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_SSP_RUNGE_KUTTA_H_ */
+#endif /* EXADG_TIME_INTEGRATION_SSP_RUNGE_KUTTA_H_ */

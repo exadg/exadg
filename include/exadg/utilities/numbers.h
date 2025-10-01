@@ -19,8 +19,11 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_NUMBERS_H_
-#define INCLUDE_EXADG_UTILITIES_NUMBERS_H_
+#ifndef EXADG_UTILITIES_NUMBERS_H_
+#define EXADG_UTILITIES_NUMBERS_H_
+
+// C/C++
+#include <limits>
 
 namespace ExaDG
 {
@@ -50,4 +53,4 @@ is_valid_timestep(types::time_step const timestep)
 } // namespace Utilities
 } // namespace ExaDG
 
-#endif /*INCLUDE_EXADG_UTILITIES_NUMBERS_H_*/
+#endif /*EXADG_UTILITIES_NUMBERS_H_*/

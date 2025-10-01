@@ -19,6 +19,7 @@
  *  ______________________________________________________________________
  */
 
+#include <exadg/time_integration/restart.h>
 #include <exadg/time_integration/time_int_explicit_runge_kutta_base.h>
 
 namespace ExaDG
@@ -133,7 +134,7 @@ TimeIntExplRKBase<Number>::do_write_restart(std::string const & filename) const
 {
   std::ostringstream oss;
 
-  boost::archive::binary_oarchive oa(oss);
+  BoostOutputArchiveType oa(oss);
 
   unsigned int n_ranks = dealii::Utilities::MPI::n_mpi_processes(this->mpi_comm);
 
@@ -147,7 +148,8 @@ TimeIntExplRKBase<Number>::do_write_restart(std::string const & filename) const
   oa & time_step;
 
   // 4. solution vectors
-  oa << solution_n;
+  std::vector<VectorType const *> vectors{&solution_n};
+  this->write_restart_vectors(vectors);
 
   write_restart_file(oss, filename);
 }
@@ -156,7 +158,7 @@ template<typename Number>
 void
 TimeIntExplRKBase<Number>::do_read_restart(std::ifstream & in)
 {
-  boost::archive::binary_iarchive ia(in);
+  BoostInputArchiveType ia(in);
 
   // Note that the operations done here must be in sync with the output.
 
@@ -182,7 +184,29 @@ TimeIntExplRKBase<Number>::do_read_restart(std::ifstream & in)
   ia & time_step;
 
   // 4. solution vectors
-  ia >> solution_n;
+  std::vector<VectorType *> vectors{&solution_n};
+  this->read_restart_vectors(vectors);
+}
+
+template<typename Number>
+void
+TimeIntExplRKBase<Number>::read_restart_vectors(std::vector<VectorType *> const & vectors)
+{
+  (void)vectors;
+  AssertThrow(false,
+              dealii::ExcMessage("Overwrite this method in the derived "
+                                 "class to enable de-/serialization."));
+}
+
+template<typename Number>
+void
+TimeIntExplRKBase<Number>::write_restart_vectors(
+  std::vector<VectorType const *> const & vectors) const
+{
+  (void)vectors;
+  AssertThrow(false,
+              dealii::ExcMessage("Overwrite this method in the derived "
+                                 "class to enable de-/serialization."));
 }
 
 // instantiations

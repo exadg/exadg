@@ -25,6 +25,7 @@
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/time_integration/push_back_vectors.h>
+#include <exadg/time_integration/restart.h>
 #include <exadg/time_integration/time_step_calculation.h>
 #include <exadg/utilities/print_solver_results.h>
 
@@ -88,26 +89,29 @@ TimeIntBDFDualSplitting<dim, Number>::setup_derived()
 
 template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::read_restart_vectors(boost::archive::binary_iarchive & ia)
+TimeIntBDFDualSplitting<dim, Number>::get_vectors_serialization(
+  std::vector<VectorType const *> & vectors_velocity,
+  std::vector<VectorType const *> & vectors_pressure) const
 {
-  Base::read_restart_vectors(ia);
+  (void)vectors_pressure;
 
   for(unsigned int i = 0; i < velocity_dbc.size(); i++)
   {
-    ia >> velocity_dbc[i];
+    vectors_velocity.push_back(&velocity_dbc[i]);
   }
 }
 
 template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::write_restart_vectors(
-  boost::archive::binary_oarchive & oa) const
+TimeIntBDFDualSplitting<dim, Number>::set_vectors_deserialization(
+  std::vector<VectorType> const & vectors_velocity,
+  std::vector<VectorType> const & vectors_pressure)
 {
-  Base::write_restart_vectors(oa);
+  (void)vectors_pressure;
 
   for(unsigned int i = 0; i < velocity_dbc.size(); i++)
   {
-    oa << velocity_dbc[i];
+    velocity_dbc[i] = vectors_velocity[i];
   }
 }
 

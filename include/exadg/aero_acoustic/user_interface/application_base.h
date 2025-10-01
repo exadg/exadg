@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_AERO_ACOUSTIC_USER_INTERFACE_APPLICATION_BASE_H_
-#define INCLUDE_EXADG_AERO_ACOUSTIC_USER_INTERFACE_APPLICATION_BASE_H_
+#ifndef EXADG_AERO_ACOUSTIC_USER_INTERFACE_APPLICATION_BASE_H_
+#define EXADG_AERO_ACOUSTIC_USER_INTERFACE_APPLICATION_BASE_H_
 
 // deal.II
 #include <deal.II/distributed/fully_distributed_tria.h>
@@ -30,26 +30,20 @@
 #include <deal.II/grid/manifold_lib.h>
 
 // ExaDG
-#include <exadg/grid/grid.h>
-#include <exadg/grid/grid_utilities.h>
-#include <exadg/operators/resolution_parameters.h>
-#include <exadg/postprocessor/output_parameters.h>
-
-// Fluid
-#include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
-#include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
-#include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
-#include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
-
-// Acoustic
 #include <exadg/acoustic_conservation_equations/postprocessor/postprocessor.h>
 #include <exadg/acoustic_conservation_equations/user_interface/boundary_descriptor.h>
 #include <exadg/acoustic_conservation_equations/user_interface/field_functions.h>
 #include <exadg/acoustic_conservation_equations/user_interface/parameters.h>
-
-// AeroAcoustic
 #include <exadg/aero_acoustic/user_interface/field_functions.h>
 #include <exadg/aero_acoustic/user_interface/parameters.h>
+#include <exadg/grid/grid.h>
+#include <exadg/grid/grid_utilities.h>
+#include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
+#include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
+#include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
+#include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
+#include <exadg/operators/resolution_parameters.h>
+#include <exadg/postprocessor/output_parameters.h>
 
 namespace ExaDG
 {
@@ -324,12 +318,11 @@ public:
   void
   setup()
   {
-    set_single_field_solvers(parameter_file, mpi_comm);
-
     parse_parameters();
     parameters.check();
     parameters.print(pcout, "List of parameters for aero-acoustic solver");
 
+    // field functions
     field_functions = std::make_shared<FieldFunctions<dim>>();
     set_field_functions();
   }
@@ -351,6 +344,9 @@ public:
   std::shared_ptr<FieldFunctions<dim>> field_functions;
 
 private:
+  virtual void
+  set_field_functions() = 0;
+
   void
   parse_parameters()
   {
@@ -358,12 +354,6 @@ private:
     add_parameters(prm);
     prm.parse_input(parameter_file, "", true, true);
   }
-
-  virtual void
-  set_single_field_solvers(std::string input_file, MPI_Comm const & comm) = 0;
-
-  virtual void
-  set_field_functions() = 0;
 
   std::string const          parameter_file;
   MPI_Comm const             mpi_comm;
@@ -373,4 +363,4 @@ private:
 } // namespace AeroAcoustic
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_AERO_ACOUSTIC_USER_INTERFACE_APPLICATION_BASE_H_ */
+#endif /* EXADG_AERO_ACOUSTIC_USER_INTERFACE_APPLICATION_BASE_H_ */

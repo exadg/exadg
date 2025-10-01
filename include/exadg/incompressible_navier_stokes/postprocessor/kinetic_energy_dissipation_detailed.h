@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_KINETIC_ENERGY_DISSIPATION_DETAILED_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_KINETIC_ENERGY_DISSIPATION_DETAILED_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_KINETIC_ENERGY_DISSIPATION_DETAILED_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_KINETIC_ENERGY_DISSIPATION_DETAILED_H_
 
+// ExaDG
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 #include <exadg/postprocessor/kinetic_energy_calculation.h>
 #include <exadg/postprocessor/time_control.h>
@@ -56,12 +57,11 @@ private:
   void
   calculate_detailed(VectorType const & velocity, double const time);
 
-  dealii::SmartPointer<NavierStokesOperator const> navier_stokes_operator;
+  dealii::ObserverPointer<NavierStokesOperator const> navier_stokes_operator;
 };
 
 } // namespace IncNS
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_KINETIC_ENERGY_DISSIPATION_DETAILED_H_ \
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_KINETIC_ENERGY_DISSIPATION_DETAILED_H_ \
         */

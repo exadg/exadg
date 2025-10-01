@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_MATRIX_FREE_INTEGRATORS_H_
-#define INCLUDE_EXADG_MATRIX_FREE_INTEGRATORS_H_
+#ifndef EXADG_MATRIX_FREE_INTEGRATORS_H_
+#define EXADG_MATRIX_FREE_INTEGRATORS_H_
 
 // deal.II
 #include <deal.II/base/config.h>
@@ -39,4 +39,4 @@ template<int dim,
 using FaceIntegrator =
   dealii::FEFaceEvaluation<dim, -1, 0, n_components, Number, VectorizedArrayType>;
 
-#endif
+#endif /* EXADG_MATRIX_FREE_INTEGRATORS_H_ */

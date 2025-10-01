@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_OPERATORS_RHS_OPERATOR
-#define INCLUDE_OPERATORS_RHS_OPERATOR
+#ifndef EXADG_OPERATORS_RHS_OPERATOR_H_
+#define EXADG_OPERATORS_RHS_OPERATOR_H_
 
+// ExaDG
 #include <exadg/functions_and_boundary_conditions/evaluate_functions.h>
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/mapping_flags.h>
@@ -164,4 +165,4 @@ private:
 
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_OPERATORS_RHS_OPERATOR_H_ */

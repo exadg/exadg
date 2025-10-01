@@ -177,7 +177,8 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
                                             time,
                                             dealii::VectorTools::L2_norm,
                                             error_data.spatially_weight_error,
-                                            error_data.weight);
+                                            error_data.weight,
+                                            error_data.additional_quadrature_points);
 
   dealii::ConditionalOStream pcout(std::cout,
                                    dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);
@@ -223,7 +224,8 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
                                               time,
                                               dealii::VectorTools::H1_seminorm,
                                               error_data.spatially_weight_error,
-                                              error_data.weight);
+                                              error_data.weight,
+                                              error_data.additional_quadrature_points);
 
     dealii::ConditionalOStream pcout(std::cout,
                                      dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);

@@ -19,10 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_DECLARE_GET_APPLICATION_H_
-#define INCLUDE_EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_DECLARE_GET_APPLICATION_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_DECLARE_GET_APPLICATION_H_
+#define EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_DECLARE_GET_APPLICATION_H_
 
-
+// ExaDG
 #include <exadg/convection_diffusion/user_interface/application_base.h>
 
 namespace ExaDG
@@ -36,5 +36,4 @@ get_application(std::string input_file, MPI_Comm const & comm);
 } // namespace ConvDiff
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_DECLARE_GET_APPLICATION_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_DECLARE_GET_APPLICATION_H_ */

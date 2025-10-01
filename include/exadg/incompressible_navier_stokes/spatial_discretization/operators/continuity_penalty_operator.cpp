@@ -295,7 +295,7 @@ ContinuityPenaltyOperator<dim, Number>::do_face_integral(IntegratorFace & integr
   {
     vector u_m      = integrator_m.get_value(q);
     vector u_p      = integrator_p.get_value(q);
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     vector flux = kernel->calculate_flux(u_m, u_p, normal_m);
 
@@ -318,7 +318,7 @@ ContinuityPenaltyOperator<dim, Number>::do_boundary_integral(
     vector u_m = calculate_interior_value(q, integrator_m, operator_type);
     vector u_p = calculate_exterior_value(
       u_m, q, integrator_m, operator_type, boundary_type, boundary_id, data.bc, time);
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     vector flux = kernel->calculate_flux(u_m, u_p, normal_m);
 

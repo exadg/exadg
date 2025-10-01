@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef OPERATION_BASE_H
-#define OPERATION_BASE_H
+#ifndef EXADG_OPERATORS_OPERATOR_BASE_H_
+#define EXADG_OPERATORS_OPERATOR_BASE_H_
 
 // deal.II
 #include <deal.II/base/subscriptor.h>
@@ -103,7 +103,7 @@ struct OperatorBaseData
 };
 
 template<int dim, typename Number, int n_components = 1>
-class OperatorBase : public dealii::Subscriptor
+class OperatorBase : public dealii::EnableObserverPointer
 {
 public:
   typedef OperatorBase<dim, Number, n_components> This;
@@ -267,27 +267,7 @@ public:
    */
   virtual void
   get_constant_modes(std::vector<std::vector<bool>> &   constant_modes,
-                     std::vector<std::vector<double>> & constant_modes_values) const
-  {
-    (void)constant_modes_values;
-
-    dealii::DoFHandler<dim> const & dof_handler =
-      this->matrix_free->get_dof_handler(this->data.dof_index);
-
-    if(dof_handler.has_level_dofs())
-    {
-      constant_modes =
-        dealii::DoFTools::extract_level_constant_modes(0,
-                                                       dof_handler,
-                                                       dealii::ComponentMask(n_components, true));
-    }
-    else
-    {
-      constant_modes =
-        dealii::DoFTools::extract_constant_modes(dof_handler,
-                                                 dealii::ComponentMask(n_components, true));
-    }
-  }
+                     std::vector<std::vector<double>> & constant_modes_values) const;
 
   /*
    * Evaluate the homogeneous part of an operator. The homogeneous operator is the operator that is
@@ -808,6 +788,7 @@ private:
   mutable Vec petsc_vector_dst;
 #endif
 };
+
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_OPERATORS_OPERATOR_BASE_H_ */

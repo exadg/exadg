@@ -19,15 +19,36 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_ENUM_PATTERNS_H_
-#define INCLUDE_EXADG_UTILITIES_ENUM_PATTERNS_H_
+#ifndef EXADG_UTILITIES_ENUM_PATTERNS_H_
+#define EXADG_UTILITIES_ENUM_PATTERNS_H_
 
+// deal.II
 #include <deal.II/base/patterns.h>
 
+// ExaDG
 #include <exadg/utilities/enum_utilities.h>
 
+// C/C++
 #include <string>
 
+#ifdef DEAL_II_WITH_MAGIC_ENUM
+namespace ExaDG
+{
+namespace Patterns
+{
+/**
+ * Utility function to explicitly get the automatically generated enum pattern.
+ */
+template<typename T>
+dealii::Patterns::List
+Enum()
+{
+  return *dealii::Patterns::Tools::Convert<T>::to_pattern();
+}
+
+} // namespace Patterns
+} // namespace ExaDG
+#else
 namespace dealii
 {
 namespace Patterns
@@ -83,7 +104,6 @@ struct Convert<T, typename std::enable_if<ExaDG::Utilities::is_enum<T>()>::type>
 } // namespace Patterns
 } // namespace dealii
 
-
 namespace ExaDG
 {
 namespace Patterns
@@ -97,7 +117,9 @@ Enum()
 {
   return *dealii::Patterns::Tools::Convert<T>::to_pattern();
 }
+
 } // namespace Patterns
 } // namespace ExaDG
+#endif
 
-#endif /*INCLUDE_EXADG_UTILITIES_ENUM_PATTERNS_H_*/
+#endif /*EXADG_UTILITIES_ENUM_PATTERNS_H_*/

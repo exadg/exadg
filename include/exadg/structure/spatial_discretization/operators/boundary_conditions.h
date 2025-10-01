@@ -18,9 +18,10 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
-#ifndef INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_BOUNDARY_CONDITIONS_H_
-#define INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_BOUNDARY_CONDITIONS_H_
+#ifndef EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_BOUNDARY_CONDITIONS_H_
+#define EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_BOUNDARY_CONDITIONS_H_
 
+// ExaDG
 #include <exadg/functions_and_boundary_conditions/evaluate_functions.h>
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/structure/user_interface/boundary_descriptor.h>
@@ -75,5 +76,4 @@ inline DEAL_II_ALWAYS_INLINE //
 } // namespace Structure
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_BOUNDARY_CONDITIONS_H_ */
+#endif /* EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_BOUNDARY_CONDITIONS_H_ */

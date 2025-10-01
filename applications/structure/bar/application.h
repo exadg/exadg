@@ -255,9 +255,7 @@ public:
       prm.add_parameter("LargeDeformation",
                         large_deformation,
                         "Consider finite strains or linear elasticity.");
-      prm.add_parameter("Preconditioner",
-                        preconditioner,
-                        "None, PointJacobi, AMG, AdditiveSchwarz or Multigrid");
+      prm.add_parameter("Preconditioner", preconditioner, "Preconditioner for the linear system.");
       prm.add_parameter("WeakDamping",
                         weak_damping_coefficient,
                         "Weak damping coefficient for unsteady problems.");

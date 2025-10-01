@@ -22,9 +22,9 @@
 // deal.II
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/lac/petsc_vector.h>
-#include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
+#include <exadg/functions_and_boundary_conditions/interpolate.h>
 #include <exadg/grid/grid_data.h>
 #include <exadg/operators/constraints.h>
 #include <exadg/operators/finite_element.h>
@@ -54,7 +54,7 @@ Operator<dim, n_components, Number>::Operator(
   Parameters const &                                    param_in,
   std::string const &                                   field_in,
   MPI_Comm const &                                      mpi_comm_in)
-  : dealii::Subscriptor(),
+  : dealii::EnableObserverPointer(),
     grid(grid_in),
     mapping(mapping_in),
     multigrid_mappings(multigrid_mappings_in),
@@ -433,17 +433,7 @@ template<int dim, int n_components, typename Number>
 void
 Operator<dim, n_components, Number>::prescribe_initial_conditions(VectorType & src) const
 {
-  field_functions->initial_solution->set_time(0.0);
-
-  // This is necessary if Number == float
-  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-
-  VectorTypeDouble src_double;
-  src_double = src;
-
-  dealii::VectorTools::interpolate(dof_handler, *(field_functions->initial_solution), src_double);
-
-  src = src_double;
+  Utilities::interpolate(dof_handler, *(field_functions->initial_solution), src, 0.0);
 }
 
 template<int dim, int n_components, typename Number>

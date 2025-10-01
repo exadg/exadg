@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_FIELD_FUNCTIONS_H_
-#define INCLUDE_CONVECTION_DIFFUSION_FIELD_FUNCTIONS_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_FIELD_FUNCTIONS_H_
+#define EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_FIELD_FUNCTIONS_H_
 
 namespace ExaDG
 {
@@ -37,4 +37,4 @@ struct FieldFunctions
 } // namespace ConvDiff
 } // namespace ExaDG
 
-#endif /* INCLUDE_CONVECTION_DIFFUSION_FIELD_FUNCTIONS_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_FIELD_FUNCTIONS_H_ */

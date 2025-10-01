@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_DATA_BASE_H_
-#define INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_DATA_BASE_H_
+#ifndef EXADG_POSTPROCESSOR_OUTPUT_DATA_BASE_H_
+#define EXADG_POSTPROCESSOR_OUTPUT_DATA_BASE_H_
 
+// ExaDG
 #include <exadg/postprocessor/time_control.h>
 #include <exadg/utilities/print_functions.h>
 
@@ -35,6 +36,7 @@ struct OutputDataBase
       write_surface_mesh(false),
       write_boundary_IDs(false),
       write_grid(false),
+      write_aspect_ratio(false),
       write_processor_id(false),
       write_higher_order(true),
       degree(1)
@@ -54,6 +56,7 @@ struct OutputDataBase
       print_parameter(pcout, "Write surface mesh", write_surface_mesh);
       print_parameter(pcout, "Write boundary IDs", write_boundary_IDs);
 
+      print_parameter(pcout, "Write aspect ratio", write_aspect_ratio);
       print_parameter(pcout, "Write processor ID", write_processor_id);
 
       print_parameter(pcout, "Write higher order", write_higher_order);
@@ -81,6 +84,9 @@ struct OutputDataBase
   // write grid output for debug meshing
   bool write_grid;
 
+  // write the aspect ratio to check the mesh quality
+  bool write_aspect_ratio;
+
   // write processor ID to scalar field in order to visualize the
   // distribution of cells to processors
   bool write_processor_id;
@@ -98,4 +104,4 @@ struct OutputDataBase
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_DATA_BASE_H_ */
+#endif /* EXADG_POSTPROCESSOR_OUTPUT_DATA_BASE_H_ */

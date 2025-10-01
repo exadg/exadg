@@ -135,7 +135,7 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
    */
   if(output_generator.time_control.needs_evaluation(time, time_step_number))
   {
-    std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> additional_fields_vtu;
+    std::vector<dealii::ObserverPointer<SolutionField<dim, Number>>> additional_fields_vtu;
     if(pp_data.output_data.write_vorticity)
     {
       vorticity.evaluate(velocity);
@@ -160,6 +160,11 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
     {
       shear_rate.evaluate(velocity);
       additional_fields_vtu.push_back(&shear_rate);
+    }
+    if(pp_data.output_data.write_viscosity)
+    {
+      viscosity.evaluate(velocity);
+      additional_fields_vtu.push_back(&viscosity);
     }
     if(pp_data.output_data.write_velocity_magnitude)
     {
@@ -348,6 +353,22 @@ PostProcessor<dim, Number>::initialize_derived_fields()
     shear_rate.reinit();
   }
 
+  // viscosity
+  if(pp_data.output_data.write_viscosity)
+  {
+    viscosity.type              = SolutionFieldType::scalar;
+    viscosity.name              = "viscosity";
+    viscosity.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
+    viscosity.initialize_vector = [&](VectorType & dst) {
+      navier_stokes_operator->initialize_vector_velocity_scalar(dst);
+    };
+    viscosity.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
+      navier_stokes_operator->access_viscosity(dst, src);
+    };
+
+    viscosity.reinit();
+  }
+
   // velocity magnitude
   if(pp_data.output_data.write_velocity_magnitude)
   {
@@ -423,6 +444,7 @@ PostProcessor<dim, Number>::invalidate_derived_fields()
   vorticity.invalidate();
   divergence.invalidate();
   shear_rate.invalidate();
+  viscosity.invalidate();
   velocity_magnitude.invalidate();
   vorticity_magnitude.invalidate();
   streamfunction.invalidate();

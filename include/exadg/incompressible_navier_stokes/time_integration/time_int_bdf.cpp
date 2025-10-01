@@ -24,6 +24,7 @@
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/time_integration/push_back_vectors.h>
+#include <exadg/time_integration/restart.h>
 #include <exadg/time_integration/time_step_calculation.h>
 
 namespace ExaDG
@@ -253,19 +254,25 @@ TimeIntBDF<dim, Number>::initialize_vec_convective_term()
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::read_restart_vectors(boost::archive::binary_iarchive & ia)
+TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
 {
+  (void)ia;
+
+  // Setup vectors locally to read into.
+  std::vector<VectorType> vectors_velocity;
+  std::vector<VectorType> vectors_pressure;
   for(unsigned int i = 0; i < this->order; i++)
   {
-    VectorType tmp = get_velocity(i);
-    ia >> tmp;
-    set_velocity(tmp, i);
+    vectors_velocity.push_back(get_velocity(i));
+    vectors_pressure.push_back(get_pressure(i));
   }
+
+  std::vector<VectorType *> vectors_velocity_ptr;
+  std::vector<VectorType *> vectors_pressure_ptr;
   for(unsigned int i = 0; i < this->order; i++)
   {
-    VectorType tmp = get_pressure(i);
-    ia >> tmp;
-    set_pressure(tmp, i);
+    vectors_velocity_ptr.push_back(&vectors_velocity[i]);
+    vectors_pressure_ptr.push_back(&vectors_pressure[i]);
   }
 
   if(needs_vector_convective_term)
@@ -274,7 +281,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(boost::archive::binary_iarchive & 
     {
       for(unsigned int i = 0; i < this->order; i++)
       {
-        ia >> vec_convective_term[i];
+        vectors_velocity_ptr.push_back(&vec_convective_term[i]);
       }
     }
   }
@@ -283,22 +290,61 @@ TimeIntBDF<dim, Number>::read_restart_vectors(boost::archive::binary_iarchive & 
   {
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
-      ia >> vec_grid_coordinates[i];
+      vectors_velocity_ptr.push_back(&vec_grid_coordinates[i]);
     }
   }
+
+  // Add vectors potentially defined in derived class.
+  std::vector<VectorType const *> vectors_velocity_add_ptr;
+  std::vector<VectorType const *> vectors_pressure_add_ptr;
+  this->get_vectors_serialization(vectors_velocity_add_ptr, vectors_pressure_add_ptr);
+  std::vector<VectorType> vectors_velocity_add;
+  std::vector<VectorType> vectors_pressure_add;
+  for(unsigned int i = 0; i < vectors_velocity_add_ptr.size(); ++i)
+  {
+    vectors_velocity_add.push_back(*vectors_velocity_add_ptr[i]);
+  }
+  for(unsigned int i = 0; i < vectors_pressure_add_ptr.size(); ++i)
+  {
+    vectors_pressure_add.push_back(*vectors_pressure_add_ptr[i]);
+  }
+  for(unsigned int i = 0; i < vectors_velocity_add.size(); ++i)
+  {
+    vectors_velocity_ptr.push_back(&vectors_velocity_add[i]);
+  }
+  for(unsigned int i = 0; i < vectors_pressure_add_ptr.size(); ++i)
+  {
+    vectors_pressure_ptr.push_back(&vectors_pressure_add[i]);
+  }
+
+  operator_base->deserialize_vectors(vectors_velocity_ptr, vectors_pressure_ptr);
+
+  // Copy contents from deserialized to used vectors.
+  for(unsigned int i = 0; i < this->order; i++)
+  {
+    set_velocity(vectors_velocity[i], i);
+  }
+  for(unsigned int i = 0; i < this->order; i++)
+  {
+    set_pressure(vectors_pressure[i], i);
+  }
+
+  this->set_vectors_deserialization(vectors_velocity_add, vectors_pressure_add);
 }
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::write_restart_vectors(boost::archive::binary_oarchive & oa) const
+TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) const
 {
+  (void)oa;
+
+  std::vector<VectorType const *> vectors_velocity;
+  std::vector<VectorType const *> vectors_pressure;
+
   for(unsigned int i = 0; i < this->order; i++)
   {
-    oa << get_velocity(i);
-  }
-  for(unsigned int i = 0; i < this->order; i++)
-  {
-    oa << get_pressure(i);
+    vectors_velocity.push_back(&get_velocity(i));
+    vectors_pressure.push_back(&get_pressure(i));
   }
 
   if(needs_vector_convective_term)
@@ -307,7 +353,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(boost::archive::binary_oarchive &
     {
       for(unsigned int i = 0; i < this->order; i++)
       {
-        oa << vec_convective_term[i];
+        vectors_velocity.push_back(&vec_convective_term[i]);
       }
     }
   }
@@ -316,9 +362,45 @@ TimeIntBDF<dim, Number>::write_restart_vectors(boost::archive::binary_oarchive &
   {
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
-      oa << vec_grid_coordinates[i];
+      vectors_velocity.push_back(&vec_grid_coordinates[i]);
     }
   }
+
+  // Add vectors potentially defined in derived class.
+  std::vector<VectorType const *> vectors_velocity_add;
+  std::vector<VectorType const *> vectors_pressure_add;
+  this->get_vectors_serialization(vectors_velocity_add, vectors_pressure_add);
+  vectors_velocity.insert(vectors_velocity.end(),
+                          vectors_velocity_add.begin(),
+                          vectors_velocity_add.end());
+  vectors_pressure.insert(vectors_pressure.end(),
+                          vectors_pressure_add.begin(),
+                          vectors_pressure_add.end());
+
+  operator_base->serialize_vectors(vectors_velocity, vectors_pressure);
+}
+
+template<int dim, typename Number>
+void
+TimeIntBDF<dim, Number>::get_vectors_serialization(
+  std::vector<VectorType const *> & vectors_velocity,
+  std::vector<VectorType const *> & vectors_pressure) const
+{
+  // Overwrite this method in the derived class to attach additional vectors for serialization.
+  (void)vectors_velocity;
+  (void)vectors_pressure;
+}
+
+template<int dim, typename Number>
+void
+TimeIntBDF<dim, Number>::set_vectors_deserialization(
+  std::vector<VectorType> const & vectors_velocity,
+  std::vector<VectorType> const & vectors_pressure)
+{
+  // Overwrite this method in the derived class to process the attached vectors after
+  // deserialization.
+  (void)vectors_velocity;
+  (void)vectors_pressure;
 }
 
 template<int dim, typename Number>

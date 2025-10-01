@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_EXPLICIT_RUNGE_KUTTA_BASE_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_EXPLICIT_RUNGE_KUTTA_BASE_H_
+#ifndef EXADG_TIME_INTEGRATION_TIME_INT_EXPLICIT_RUNGE_KUTTA_BASE_H_
+#define EXADG_TIME_INTEGRATION_TIME_INT_EXPLICIT_RUNGE_KUTTA_BASE_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -99,8 +99,14 @@ private:
 
   void
   do_read_restart(std::ifstream & in) final;
+
+  virtual void
+  read_restart_vectors(std::vector<VectorType *> const & vectors);
+
+  virtual void
+  write_restart_vectors(std::vector<VectorType const *> const & vectors) const;
 };
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_EXPLICIT_RUNGE_KUTTA_BASE_H_ */
+#endif /* EXADG_TIME_INTEGRATION_TIME_INT_EXPLICIT_RUNGE_KUTTA_BASE_H_ */

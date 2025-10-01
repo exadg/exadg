@@ -254,8 +254,9 @@ private:
     this->param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-3);
     this->param.preconditioner_momentum = MomentumPreconditioner::PointJacobi;
 
-    this->param.inverse_mass_operator_hdiv.preconditioner = PreconditionerMass::PointJacobi;
-    this->param.inverse_mass_operator_hdiv.solver_data = SolverData(1000, 1e-12, 1e-4);
+    this->param.inverse_mass_operator.implementation_type = InverseMassType::GlobalKrylovSolver;
+    this->param.inverse_mass_operator.preconditioner = PreconditionerMass::PointJacobi;
+    this->param.inverse_mass_operator.solver_data = SolverData(1000, 1e-12, 1e-4);
   }
 
   void

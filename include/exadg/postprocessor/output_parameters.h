@@ -19,11 +19,13 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_PARAMETERS_H_
-#define INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_PARAMETERS_H_
+#ifndef EXADG_POSTPROCESSOR_OUTPUT_PARAMETERS_H_
+#define EXADG_POSTPROCESSOR_OUTPUT_PARAMETERS_H_
 
+// deal.II
 #include <deal.II/base/parameter_handler.h>
 
+// ExaDG
 #include <exadg/utilities/enum_patterns.h>
 
 namespace ExaDG
@@ -52,6 +54,4 @@ struct OutputParameters
 };
 } // namespace ExaDG
 
-
-
-#endif /* INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_PARAMETERS_H_ */
+#endif /* EXADG_POSTPROCESSOR_OUTPUT_PARAMETERS_H_ */

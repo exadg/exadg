@@ -113,7 +113,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_boundary_
                                                    q_points,
                                                    this->evaluation_time);
 
-        scalar flux_times_normal = rhs * integrator.get_normal_vector(q);
+        scalar flux_times_normal = rhs * integrator.normal_vector(q);
         // minus sign is introduced here which allows to call a function of type ...add()
         // and avoids a scaling of the resulting vector by the factor -1.0
         integrator.submit_value(-flux_times_normal, q);
@@ -201,7 +201,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
       if(boundary_type == BoundaryTypeU::Dirichlet or
          boundary_type == BoundaryTypeU::DirichletCached)
       {
-        vector normal = pressure.get_normal_vector(q);
+        vector normal = pressure.normal_vector(q);
 
         vector u      = velocity.get_value(q);
         tensor grad_u = velocity.get_gradient(q);
@@ -295,7 +295,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_numerical_time_derivative_
     {
       if(boundary_type == BoundaryTypeP::Neumann)
       {
-        vector normal = integrator_velocity.get_normal_vector(q);
+        vector normal = integrator_velocity.normal_vector(q);
         vector dudt   = integrator_velocity.get_value(q);
         scalar h      = -normal * dudt;
 
@@ -367,7 +367,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_bounda
                                                    q_points,
                                                    this->evaluation_time);
 
-        vector normal = integrator.get_normal_vector(q);
+        vector normal = integrator.normal_vector(q);
 
         scalar h = normal * rhs;
 
@@ -440,7 +440,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_boundary_fa
     {
       if(boundary_type == BoundaryTypeP::Neumann)
       {
-        vector normal = pressure.get_normal_vector(q);
+        vector normal = pressure.normal_vector(q);
 
         vector u      = velocity.get_value(q);
         tensor grad_u = velocity.get_gradient(q);
@@ -533,7 +533,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary_face(
       velocity.reinit(cell_indices);
       velocity.gather_evaluate(src, dealii::EvaluationFlags::gradients);
 
-      for(unsigned int q = 0; q < velocity.n_q_points; ++q)
+      for(const unsigned int q : velocity.quadrature_point_indices())
       {
         vector curl_u = CurlCompute<dim, CellIntegrator<dim, dim, Number>>::compute(velocity, q);
         for(unsigned int d = 0; d < dim; ++d)
@@ -542,11 +542,11 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary_face(
 
       omega.evaluate(dealii::EvaluationFlags::gradients);
 
-      for(unsigned int q = 0; q < pressure.n_q_points; ++q)
+      for(const unsigned int q : pressure.quadrature_point_indices())
       {
         scalar const viscosity = this->get_viscosity_boundary_face(face, q);
 
-        vector const normal = pressure.get_normal_vector(q);
+        vector const normal = pressure.normal_vector(q);
 
         vector const curl_omega = CurlCompute<dim, FaceIntegratorU>::compute(omega, q);
 

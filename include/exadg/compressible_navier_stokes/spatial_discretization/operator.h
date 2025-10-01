@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_H_
-#define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_H_
+#ifndef EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_H_
+#define EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_H_
 
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
@@ -44,7 +44,7 @@ namespace ExaDG
 namespace CompNS
 {
 template<int dim, typename Number>
-class Operator : public dealii::Subscriptor, public Interface::Operator<Number>
+class Operator : public dealii::EnableObserverPointer, public Interface::Operator<Number>
 {
 private:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -88,6 +88,13 @@ public:
 
   void
   initialize_dof_vector_dim_components(VectorType & src) const;
+
+  // required for restart functionality
+  void
+  serialize_vectors(std::vector<VectorType const *> const & vectors) const final;
+
+  void
+  deserialize_vectors(std::vector<VectorType *> const & vectors) final;
 
   // set initial conditions
   void
@@ -243,6 +250,10 @@ private:
   std::string const quad_index_overintegration_conv = "overintegration_conv";
   std::string const quad_index_overintegration_vis  = "overintegration_vis";
 
+  // required for de-/serialization
+  std::shared_ptr<dealii::FiniteElement<dim>> fe_mapping;
+  std::shared_ptr<dealii::DoFHandler<dim>>    dof_handler_mapping;
+
   std::string const quad_index_l2_projections = quad_index_standard;
   // alternative: use more accurate over-integration strategy
   //  std::string const quad_index_l2_projections = quad_index_overintegration_conv;
@@ -298,4 +309,4 @@ private:
 } // namespace CompNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_CONVECTION_DIFFUSION_DG_CONVECTION_DIFFUSION_OPERATION_H_ */
+#endif /* EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_H_ */

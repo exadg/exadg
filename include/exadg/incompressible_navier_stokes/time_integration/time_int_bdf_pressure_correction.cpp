@@ -25,6 +25,7 @@
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/time_integration/push_back_vectors.h>
+#include <exadg/time_integration/restart.h>
 #include <exadg/time_integration/time_step_calculation.h>
 #include <exadg/utilities/print_solver_results.h>
 
@@ -97,27 +98,29 @@ TimeIntBDFPressureCorrection<dim, Number>::setup_derived()
 
 template<int dim, typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::read_restart_vectors(
-  boost::archive::binary_iarchive & ia)
+TimeIntBDFPressureCorrection<dim, Number>::get_vectors_serialization(
+  std::vector<VectorType const *> & vectors_velocity,
+  std::vector<VectorType const *> & vectors_pressure) const
 {
-  Base::read_restart_vectors(ia);
+  (void)vectors_velocity;
 
   for(unsigned int i = 0; i < pressure_dbc.size(); i++)
   {
-    ia >> pressure_dbc[i];
+    vectors_pressure.push_back(&pressure_dbc[i]);
   }
 }
 
 template<int dim, typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::write_restart_vectors(
-  boost::archive::binary_oarchive & oa) const
+TimeIntBDFPressureCorrection<dim, Number>::set_vectors_deserialization(
+  std::vector<VectorType> const & vectors_velocity,
+  std::vector<VectorType> const & vectors_pressure)
 {
-  Base::write_restart_vectors(oa);
+  (void)vectors_velocity;
 
   for(unsigned int i = 0; i < pressure_dbc.size(); i++)
   {
-    oa << pressure_dbc[i];
+    pressure_dbc[i] = vectors_pressure[i];
   }
 }
 

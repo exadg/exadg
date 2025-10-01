@@ -210,13 +210,13 @@ Parameters::Parameters()
     preconditioner_velocity_block(MomentumPreconditioner::InverseMassMatrix),
     multigrid_operator_type_velocity_block(MultigridOperatorType::Undefined),
     multigrid_data_velocity_block(MultigridData()),
-    exact_inversion_of_velocity_block(false),
+    iterative_solve_of_velocity_block(false),
     solver_data_velocity_block(SolverData(1e4, 1.e-12, 1.e-6, 100)),
 
     // preconditioner pressure/Schur-complement block
     preconditioner_pressure_block(SchurComplementPreconditioner::PressureConvectionDiffusion),
     multigrid_data_pressure_block(MultigridData()),
-    exact_inversion_of_laplace_operator(false),
+    iterative_solve_of_pressure_block(false),
     solver_data_pressure_block(SolverData(1e4, 1.e-12, 1.e-6, 100))
 {
 }
@@ -1284,9 +1284,9 @@ Parameters::print_parameters_coupled_solver(dealii::ConditionalOStream const & p
 
     multigrid_data_velocity_block.print(pcout);
 
-    print_parameter(pcout, "Exact inversion of velocity block", exact_inversion_of_velocity_block);
+    print_parameter(pcout, "Exact inversion of velocity block", iterative_solve_of_velocity_block);
 
-    if(exact_inversion_of_velocity_block == true)
+    if(iterative_solve_of_velocity_block == true)
     {
       solver_data_velocity_block.print(pcout);
     }
@@ -1304,9 +1304,9 @@ Parameters::print_parameters_coupled_solver(dealii::ConditionalOStream const & p
 
     print_parameter(pcout,
                     "Exact inversion of Laplace operator",
-                    exact_inversion_of_laplace_operator);
+                    iterative_solve_of_pressure_block);
 
-    if(exact_inversion_of_laplace_operator)
+    if(iterative_solve_of_pressure_block)
     {
       solver_data_pressure_block.print(pcout);
     }

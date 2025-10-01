@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POSTPROCESSOR_LIFT_AND_DRAG_CALCULATION_H_
-#define INCLUDE_EXADG_POSTPROCESSOR_LIFT_AND_DRAG_CALCULATION_H_
+#ifndef EXADG_POSTPROCESSOR_LIFT_AND_DRAG_CALCULATION_H_
+#define EXADG_POSTPROCESSOR_LIFT_AND_DRAG_CALCULATION_H_
 
 // deal.ii
 #include <deal.II/base/conditional_ostream.h>
@@ -100,8 +100,8 @@ private:
 
   mutable bool clear_files;
 
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_velocity;
-  dealii::MatrixFree<dim, Number> const *             matrix_free;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler_velocity;
+  dealii::MatrixFree<dim, Number> const *                matrix_free;
   unsigned int dof_index_velocity, dof_index_pressure, quad_index;
 
   mutable double c_L_min, c_L_max, c_D_min, c_D_max;
@@ -111,5 +111,4 @@ private:
 
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_POSTPROCESSOR_LIFT_AND_DRAG_CALCULATION_H_ */
+#endif /* EXADG_POSTPROCESSOR_LIFT_AND_DRAG_CALCULATION_H_ */

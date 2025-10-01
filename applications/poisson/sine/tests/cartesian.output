@@ -51,15 +51,11 @@ Solver:
   Smoothing range:                           2.0000e+01
   Iterations eigenvalue estimation:          20
   Coarse grid solver:                        CG
-  Coarse grid preconditioner:                AMG
+  Coarse grid preconditioner:                PointJacobi
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-03
   Maximum size of Krylov space:              30
-      AMG type:                              ML
-      Smoother sweeps:                       1
-      Number of cycles:                      1
-      Smoother type:                         ILU
 
 Numerical parameters:
   Enable cell-based face loops:              false
@@ -142,15 +138,11 @@ Solver:
   Smoothing range:                           2.0000e+01
   Iterations eigenvalue estimation:          20
   Coarse grid solver:                        CG
-  Coarse grid preconditioner:                AMG
+  Coarse grid preconditioner:                PointJacobi
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-03
   Maximum size of Krylov space:              30
-      AMG type:                              ML
-      Smoother sweeps:                       1
-      Number of cycles:                      1
-      Smoother type:                         ILU
 
 Numerical parameters:
   Enable cell-based face loops:              false
@@ -233,15 +225,11 @@ Solver:
   Smoothing range:                           2.0000e+01
   Iterations eigenvalue estimation:          20
   Coarse grid solver:                        CG
-  Coarse grid preconditioner:                AMG
+  Coarse grid preconditioner:                PointJacobi
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-03
   Maximum size of Krylov space:              30
-      AMG type:                              ML
-      Smoother sweeps:                       1
-      Number of cycles:                      1
-      Smoother type:                         ILU
 
 Numerical parameters:
   Enable cell-based face loops:              false
@@ -324,15 +312,11 @@ Solver:
   Smoothing range:                           2.0000e+01
   Iterations eigenvalue estimation:          20
   Coarse grid solver:                        CG
-  Coarse grid preconditioner:                AMG
+  Coarse grid preconditioner:                PointJacobi
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-03
   Maximum size of Krylov space:              30
-      AMG type:                              ML
-      Smoother sweeps:                       1
-      Number of cycles:                      1
-      Smoother type:                         ILU
 
 Numerical parameters:
   Enable cell-based face loops:              false
@@ -415,15 +399,11 @@ Solver:
   Smoothing range:                           2.0000e+01
   Iterations eigenvalue estimation:          20
   Coarse grid solver:                        CG
-  Coarse grid preconditioner:                AMG
+  Coarse grid preconditioner:                PointJacobi
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-03
   Maximum size of Krylov space:              30
-      AMG type:                              ML
-      Smoother sweeps:                       1
-      Number of cycles:                      1
-      Smoother type:                         ILU
 
 Numerical parameters:
   Enable cell-based face loops:              false
@@ -506,15 +486,11 @@ Solver:
   Smoothing range:                           2.0000e+01
   Iterations eigenvalue estimation:          20
   Coarse grid solver:                        CG
-  Coarse grid preconditioner:                AMG
+  Coarse grid preconditioner:                PointJacobi
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-03
   Maximum size of Krylov space:              30
-      AMG type:                              ML
-      Smoother sweeps:                       1
-      Number of cycles:                      1
-      Smoother type:                         ILU
 
 Numerical parameters:
   Enable cell-based face loops:              false
@@ -597,15 +573,11 @@ Solver:
   Smoothing range:                           2.0000e+01
   Iterations eigenvalue estimation:          20
   Coarse grid solver:                        CG
-  Coarse grid preconditioner:                AMG
+  Coarse grid preconditioner:                PointJacobi
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-03
   Maximum size of Krylov space:              30
-      AMG type:                              ML
-      Smoother sweeps:                       1
-      Number of cycles:                      1
-      Smoother type:                         ILU
 
 Numerical parameters:
   Enable cell-based face loops:              false

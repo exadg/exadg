@@ -212,7 +212,7 @@ ProjectionOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
   {
     vector u_m      = integrator_m.get_value(q);
     vector u_p      = integrator_p.get_value(q);
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     vector flux = time_step_size * kernel->calculate_flux(u_m, u_p, normal_m);
 
@@ -232,7 +232,7 @@ ProjectionOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrato
   {
     vector u_m = integrator_m.get_value(q);
     vector u_p; // set u_p to zero
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     vector flux = time_step_size * kernel->calculate_flux(u_m, u_p, normal_m);
 
@@ -251,7 +251,7 @@ ProjectionOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrato
   {
     vector u_m; // set u_m to zero
     vector u_p      = integrator_p.get_value(q);
-    vector normal_p = -integrator_p.get_normal_vector(q);
+    vector normal_p = -integrator_p.normal_vector(q);
 
     vector flux = time_step_size * kernel->calculate_flux(u_p, u_m, normal_p);
 
@@ -281,7 +281,7 @@ ProjectionOperator<dim, Number>::do_boundary_integral(
                                             boundary_id,
                                             operator_data.bc,
                                             this->time);
-      vector normal_m = integrator_m.get_normal_vector(q);
+      vector normal_m = integrator_m.normal_vector(q);
 
       vector flux = time_step_size * kernel->calculate_flux(u_m, u_p, normal_m);
 

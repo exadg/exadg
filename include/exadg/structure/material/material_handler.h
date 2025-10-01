@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_MATERIAL_MATERIAL_HANDLER_H_
-#define INCLUDE_EXADG_STRUCTURE_MATERIAL_MATERIAL_HANDLER_H_
+#ifndef EXADG_STRUCTURE_MATERIAL_MATERIAL_HANDLER_H_
+#define EXADG_STRUCTURE_MATERIAL_MATERIAL_HANDLER_H_
 
 // deal.II
 #include <deal.II/matrix_free/matrix_free.h>
@@ -120,4 +120,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_STRUCTURE_MATERIAL_MATERIAL_HANDLER_H_ */
+#endif /* EXADG_STRUCTURE_MATERIAL_MATERIAL_HANDLER_H_ */

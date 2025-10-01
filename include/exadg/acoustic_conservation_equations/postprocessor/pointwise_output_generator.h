@@ -22,8 +22,10 @@
 #ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_H_
 #define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_H_
 
+// deal.II
 #include <deal.II/lac/la_parallel_vector.h>
 
+// ExaDG
 #include <exadg/postprocessor/pointwise_output_generator_base.h>
 
 namespace ExaDG
@@ -63,15 +65,14 @@ public:
            bool const         unsteady);
 
 private:
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_pressure;
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_velocity;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler_pressure;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler_velocity;
 
   PointwiseOutputData<dim> pointwise_output_data;
 };
 
 } // namespace Acoustics
 } // namespace ExaDG
-
 
 #endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_H_ \
         */

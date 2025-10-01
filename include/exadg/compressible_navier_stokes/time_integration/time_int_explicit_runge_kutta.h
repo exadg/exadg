@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_EXPLICIT_RUNGE_KUTTA_H_
-#define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_EXPLICIT_RUNGE_KUTTA_H_
+#ifndef EXADG_COMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_EXPLICIT_RUNGE_KUTTA_H_
+#define EXADG_COMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_EXPLICIT_RUNGE_KUTTA_H_
 
 // deal.II
 #include <deal.II/base/timer.h>
@@ -73,6 +73,12 @@ private:
 
   void
   initialize_solution() final;
+
+  void
+  read_restart_vectors(std::vector<VectorType *> const & vectors) final;
+
+  void
+  write_restart_vectors(std::vector<VectorType const *> const & vectors) const final;
 
   void
   detect_instabilities() const;
@@ -128,5 +134,4 @@ private:
 } // namespace CompNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_EXPLICIT_RUNGE_KUTTA_H_ \
-        */
+#endif /* EXADG_COMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_EXPLICIT_RUNGE_KUTTA_H_ */

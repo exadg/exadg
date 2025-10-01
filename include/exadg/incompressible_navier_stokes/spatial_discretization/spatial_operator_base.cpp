@@ -19,10 +19,9 @@
  *  ______________________________________________________________________
  */
 
-// deal.II
-#include <deal.II/numerics/vector_tools.h>
-
 // ExaDG
+#include <exadg/functions_and_boundary_conditions/interpolate.h>
+#include <exadg/grid/grid_utilities.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/incompressible_navier_stokes/preconditioners/block_preconditioner_projection.h>
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_projection.h>
@@ -30,9 +29,11 @@
 #include <exadg/operators/finite_element.h>
 #include <exadg/operators/grid_related_time_step_restrictions.h>
 #include <exadg/operators/quadrature.h>
+#include <exadg/operators/solution_projection_between_triangulations.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
+#include <exadg/time_integration/restart.h>
 #include <exadg/utilities/exceptions.h>
 
 namespace ExaDG
@@ -49,7 +50,7 @@ SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
   Parameters const &                                    parameters_in,
   std::string const &                                   field_in,
   MPI_Comm const &                                      mpi_comm_in)
-  : dealii::Subscriptor(),
+  : dealii::EnableObserverPointer(),
     grid(grid_in),
     mapping(mapping_in),
     multigrid_mappings(multigrid_mappings_in),
@@ -92,26 +93,15 @@ SpatialOperatorBase<dim, Number>::initialize_dof_handler_and_constraints()
 
   fe_u_scalar = create_finite_element<dim>(param.grid.element_type, true, 1, param.degree_u);
 
-  if(param.spatial_discretization == SpatialDiscretization::L2)
-  {
-    fe_u = create_finite_element<dim>(param.grid.element_type, true, dim, param.degree_u);
-  }
-  else if(param.spatial_discretization == SpatialDiscretization::HDIV)
-  {
-    AssertThrow(
-      param.grid.element_type == ElementType::Hypercube,
-      dealii::ExcMessage(
-        "SpatialDiscretization::HDIV is currently only implemented for hypercube elements. "
-        "You might want to change the element type of the grid, or the function space, "
-        "or implement HDIV for element types other than hypercube."));
+  fe_u = setup_fe_u(param.spatial_discretization, param.grid.element_type, param.degree_u);
 
-    // The constructor of FE_RaviartThomas takes the degree in tangential direction as an
-    // argument.
-    fe_u = std::make_shared<dealii::FE_RaviartThomasNodal<dim>>(param.degree_u - 1);
-  }
-  else
+  if(param.restart_data.consider_mapping and
+     (param.restart_data.write_restart or param.restarted_simulation))
   {
-    AssertThrow(false, dealii::ExcMessage("FE not implemented."));
+    fe_mapping =
+      create_finite_element<dim>(param.grid.element_type, true, dim, param.mapping_degree);
+    dof_handler_mapping = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
+    dof_handler_mapping->distribute_dofs(*fe_mapping);
   }
 
   // enumerate degrees of freedom
@@ -125,9 +115,8 @@ SpatialOperatorBase<dim, Number>::initialize_dof_handler_and_constraints()
     // Periodic boundaries
     // We need to make sure the normal dofs are shared between cells on the periodic boundaries,
     // since these are continuous for HDIV.
-    dealii::IndexSet relevant_dofs;
-    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler_u, relevant_dofs);
-    constraint_u.reinit(relevant_dofs);
+    dealii::IndexSet relevant_dofs = dealii::DoFTools::extract_locally_relevant_dofs(dof_handler_u);
+    constraint_u.reinit(dof_handler_u.locally_owned_dofs(), relevant_dofs);
 
     for(auto const & face : grid->periodic_face_pairs)
       dealii::DoFTools::make_periodicity_constraints(
@@ -397,30 +386,24 @@ void
 SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_index_temperature)
 {
   // mass operator
-  MassOperatorData<dim> mass_operator_data;
+  MassOperatorData<dim, Number> mass_operator_data;
   mass_operator_data.dof_index  = get_dof_index_velocity();
   mass_operator_data.quad_index = get_quad_index_velocity_standard();
   mass_operator.initialize(*matrix_free, constraint_u, mass_operator_data);
 
-  InverseMassOperatorDataHdiv inverse_mass_data_hdiv;
-  inverse_mass_data_hdiv.dof_index  = get_dof_index_velocity();
-  inverse_mass_data_hdiv.quad_index = get_quad_index_velocity_standard();
-  inverse_mass_data_hdiv.parameters = this->param.inverse_mass_operator_hdiv;
+  // inverse mass operator velocity
+  InverseMassOperatorData<Number> inverse_mass_operator_data_velocity;
+  inverse_mass_operator_data_velocity.dof_index  = get_dof_index_velocity();
+  inverse_mass_operator_data_velocity.quad_index = get_quad_index_velocity_standard();
+  inverse_mass_operator_data_velocity.parameters = param.inverse_mass_operator;
+  inverse_mass_velocity.initialize(*matrix_free,
+                                   inverse_mass_operator_data_velocity,
+                                   param.spatial_discretization == SpatialDiscretization::L2 ?
+                                     nullptr :
+                                     &constraint_u);
 
-  if(param.spatial_discretization == SpatialDiscretization::HDIV)
-    inverse_mass_hdiv.initialize(*matrix_free, constraint_u, inverse_mass_data_hdiv);
-
-  // inverse mass operator
-  if(param.spatial_discretization == SpatialDiscretization::L2)
-  {
-    InverseMassOperatorData inverse_mass_operator_data_velocity;
-    inverse_mass_operator_data_velocity.dof_index  = get_dof_index_velocity();
-    inverse_mass_operator_data_velocity.quad_index = get_quad_index_velocity_standard();
-    inverse_mass_operator_data_velocity.parameters = param.inverse_mass_operator;
-    inverse_mass_velocity.initialize(*matrix_free, inverse_mass_operator_data_velocity);
-  }
   // inverse mass operator velocity scalar
-  InverseMassOperatorData inverse_mass_operator_data_velocity_scalar;
+  InverseMassOperatorData<Number> inverse_mass_operator_data_velocity_scalar;
   inverse_mass_operator_data_velocity_scalar.dof_index  = get_dof_index_velocity_scalar();
   inverse_mass_operator_data_velocity_scalar.quad_index = get_quad_index_velocity_standard();
   inverse_mass_operator_data_velocity_scalar.parameters = param.inverse_mass_operator;
@@ -475,7 +458,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
                             convective_kernel_data,
                             get_dof_index_velocity(),
                             get_quad_index_velocity_linearized(),
-                            false /* is_mg */);
+                            false /* is_mg =  use_velocity_own_storage */);
 
   dealii::AffineConstraints<Number> constraint_dummy;
   constraint_dummy.close();
@@ -500,11 +483,17 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   viscous_kernel_data.IP_formulation               = param.IP_formulation_viscous;
   viscous_kernel_data.viscosity_is_variable        = param.viscosity_is_variable();
   viscous_kernel_data.variable_normal_vector       = param.neumann_with_variable_normal_vector;
+
+  bool const use_velocity_own_storage_viscous_kernel = param.viscous_problem() and
+                                                       param.viscosity_is_variable() and
+                                                       not param.non_explicit_convective_problem();
+
   viscous_kernel = std::make_shared<Operators::ViscousKernel<dim, Number>>();
   viscous_kernel->reinit(*matrix_free,
                          viscous_kernel_data,
                          get_dof_index_velocity(),
-                         get_quad_index_velocity_standard());
+                         get_quad_index_velocity_standard(),
+                         use_velocity_own_storage_viscous_kernel);
 
   // initialize and check turbulence model data
   if(param.turbulence_model_data.is_active)
@@ -545,6 +534,9 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
 
   data.convective_kernel_data = convective_kernel_data;
   data.viscous_kernel_data    = viscous_kernel_data;
+
+  data.turbulence_model_data            = param.turbulence_model_data;
+  data.generalized_newtonian_model_data = param.generalized_newtonian_model_data;
 
   data.bc = boundary_descriptor->velocity;
 
@@ -624,6 +616,10 @@ SpatialOperatorBase<dim, Number>::initialize_calculators_for_derived_quantities(
                                    get_dof_index_velocity(),
                                    get_dof_index_velocity_scalar(),
                                    get_quad_index_velocity_standard());
+  viscosity_calculator.initialize(*matrix_free,
+                                  get_dof_index_velocity_scalar(),
+                                  get_quad_index_velocity_standard(),
+                                  *viscous_kernel);
   magnitude_calculator.initialize(*matrix_free,
                                   get_dof_index_velocity(),
                                   get_dof_index_velocity_scalar(),
@@ -915,35 +911,199 @@ SpatialOperatorBase<dim, Number>::initialize_block_vector_velocity_pressure(
 
 template<int dim, typename Number>
 void
+SpatialOperatorBase<dim, Number>::interpolate_functions(
+  VectorType &                                   velocity,
+  std::shared_ptr<dealii::Function<dim>> const & f_velocity,
+  VectorType &                                   pressure,
+  std::shared_ptr<dealii::Function<dim>> const & f_pressure,
+  double const                                   time) const
+{
+  AssertThrow(f_velocity, dealii::ExcMessage("Function not set"));
+  AssertThrow(f_pressure, dealii::ExcMessage("Function not set"));
+
+  Utilities::interpolate(*get_mapping(), dof_handler_u, *f_velocity, velocity, time);
+  Utilities::interpolate(*get_mapping(), dof_handler_p, *f_pressure, pressure, time);
+}
+
+template<int dim, typename Number>
+void
 SpatialOperatorBase<dim, Number>::prescribe_initial_conditions(VectorType & velocity,
                                                                VectorType & pressure,
                                                                double const time) const
 {
-  field_functions->initial_solution_velocity->set_time(time);
-  field_functions->initial_solution_pressure->set_time(time);
+  interpolate_functions(velocity,
+                        field_functions->initial_solution_velocity,
+                        pressure,
+                        field_functions->initial_solution_pressure,
+                        time);
 
-  // This is necessary if Number == float
-  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+  // Compute initial variable viscosity using the initial velocity field.
+  if(this->param.viscous_problem() and this->param.viscosity_is_variable())
+  {
+    this->update_viscosity(velocity);
+  }
+}
 
-  VectorTypeDouble velocity_double;
-  VectorTypeDouble pressure_double;
-  velocity_double.reinit(velocity.get_partitioner());
-  pressure_double.reinit(pressure.get_partitioner());
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::serialize_vectors(
+  std::vector<VectorType const *> & vectors_velocity,
+  std::vector<VectorType const *> & vectors_pressure) const
+{
+  std::vector<dealii::DoFHandler<dim> const *> dof_handlers{&dof_handler_u, &dof_handler_p};
+  std::vector<std::vector<VectorType const *>> vectors_per_dof_handler{vectors_velocity,
+                                                                       vectors_pressure};
+  if(param.restart_data.consider_mapping)
+  {
+    store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
+                                                 param.restart_data.filename,
+                                                 vectors_per_dof_handler,
+                                                 dof_handlers,
+                                                 *this->get_mapping(),
+                                                 &(*dof_handler_mapping),
+                                                 param.mapping_degree);
+  }
+  else
+  {
+    store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
+                                                 param.restart_data.filename,
+                                                 vectors_per_dof_handler,
+                                                 dof_handlers);
+  }
+}
 
-  dealii::VectorTools::interpolate(*get_mapping(),
-                                   dof_handler_u,
-                                   *(field_functions->initial_solution_velocity),
-                                   velocity_double);
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::deserialize_vectors(std::vector<VectorType *> & vectors_velocity,
+                                                      std::vector<VectorType *> & vectors_pressure)
+{
+  // Store ghost state to recover after deserialization.
+  std::vector<bool> const has_ghost_elements_velocity = get_ghost_state(vectors_velocity);
+  std::vector<bool> const has_ghost_elements_pressure = get_ghost_state(vectors_pressure);
 
-  dealii::VectorTools::interpolate(*get_mapping(),
-                                   dof_handler_p,
-                                   *(field_functions->initial_solution_pressure),
-                                   pressure_double);
+  // Load potentially unfitting checkpoint triangulation of TriangulationType.
+  std::shared_ptr<dealii::Triangulation<dim>> checkpoint_triangulation =
+    deserialize_triangulation<dim>(param.restart_data.directory,
+                                   param.restart_data.filename,
+                                   param.restart_data.triangulation_type,
+                                   mpi_comm);
 
-  velocity.copy_locally_owned_data_from(velocity_double);
-  velocity.zero_out_ghost_values();
-  pressure.copy_locally_owned_data_from(pressure_double);
-  pressure.zero_out_ghost_values();
+  // Set up DoFHandlers *as checkpointed*, sequence matches `this->serialize_vectors()`.
+  dealii::DoFHandler<dim> checkpoint_dof_handler_u(*checkpoint_triangulation);
+  dealii::DoFHandler<dim> checkpoint_dof_handler_p(*checkpoint_triangulation);
+
+  ElementType const checkpoint_element_type = get_element_type(*checkpoint_triangulation);
+
+  std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_u =
+    setup_fe_u(param.restart_data.spatial_discretization,
+               checkpoint_element_type,
+               param.restart_data.degree_u);
+
+  std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_p =
+    create_finite_element<dim>(checkpoint_element_type, true, 1, param.restart_data.degree_p);
+
+  checkpoint_dof_handler_u.distribute_dofs(*checkpoint_fe_u);
+  checkpoint_dof_handler_p.distribute_dofs(*checkpoint_fe_p);
+
+  std::vector<dealii::DoFHandler<dim> const *> checkpoint_dof_handlers{&checkpoint_dof_handler_u,
+                                                                       &checkpoint_dof_handler_p};
+
+  // Deserialize vectors stored in triangulation, sequence matches `this->serialize_vectors()`.
+  std::vector<VectorType>                checkpoint_vectors_velocity(vectors_velocity.size());
+  std::vector<VectorType>                checkpoint_vectors_pressure(vectors_pressure.size());
+  std::vector<std::vector<VectorType *>> checkpoint_vectors(2);
+
+  for(unsigned int i = 0; i < vectors_velocity.size(); ++i)
+  {
+    checkpoint_vectors_velocity[i].reinit(checkpoint_dof_handler_u.locally_owned_dofs(), mpi_comm);
+    checkpoint_vectors[0 /* velocity */].push_back(&checkpoint_vectors_velocity[i]);
+  }
+  for(unsigned int i = 0; i < vectors_pressure.size(); ++i)
+  {
+    checkpoint_vectors_pressure[i].reinit(checkpoint_dof_handler_p.locally_owned_dofs(), mpi_comm);
+    checkpoint_vectors[1 /* pressure */].push_back(&checkpoint_vectors_pressure[i]);
+  }
+
+  if(param.restart_data.discretization_identical)
+  {
+    // DoFHandlers need to be setup with `checkpoint_triangulation`, otherwise
+    // they are identical. We can simply copy the vector contents.
+    load_vectors(checkpoint_vectors, checkpoint_dof_handlers);
+    for(unsigned int i = 0; i < vectors_velocity.size(); ++i)
+    {
+      vectors_velocity[i]->copy_locally_owned_data_from(checkpoint_vectors_velocity[i]);
+    }
+    for(unsigned int i = 0; i < vectors_pressure.size(); ++i)
+    {
+      vectors_pressure[i]->copy_locally_owned_data_from(checkpoint_vectors_pressure[i]);
+    }
+  }
+  else
+  {
+    // Perform global projection in case of a non-matching discretization.
+    std::vector<dealii::DoFHandler<dim> const *> dof_handlers{&this->get_dof_handler_u(),
+                                                              &this->get_dof_handler_p()};
+
+    std::vector<std::vector<VectorType *>> vectors_per_dof_handler(2);
+    for(unsigned int i = 0; i < vectors_velocity.size(); ++i)
+    {
+      vectors_per_dof_handler[0 /* velocity */].push_back(vectors_velocity[i]);
+    }
+    for(unsigned int i = 0; i < vectors_pressure.size(); ++i)
+    {
+      vectors_per_dof_handler[1 /* pressure */].push_back(vectors_pressure[i]);
+    }
+
+    // Deserialize mapping from vector or project on reference triangulations.
+    std::shared_ptr<dealii::Mapping<dim> const> checkpoint_mapping;
+    std::shared_ptr<MappingDoFVector<dim, typename VectorType::value_type>>
+      checkpoint_mapping_dof_vector;
+    if(param.restart_data.consider_mapping)
+    {
+      dealii::DoFHandler<dim> checkpoint_dof_handler_mapping(*checkpoint_triangulation);
+      std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_mapping =
+        create_finite_element<dim>(checkpoint_element_type,
+                                   true,
+                                   dim,
+                                   param.restart_data.mapping_degree);
+      checkpoint_dof_handler_mapping.distribute_dofs(*checkpoint_fe_mapping);
+
+      checkpoint_mapping_dof_vector = load_vectors(checkpoint_vectors,
+                                                   checkpoint_dof_handlers,
+                                                   &checkpoint_dof_handler_mapping,
+                                                   param.restart_data.mapping_degree);
+
+      checkpoint_mapping = checkpoint_mapping_dof_vector->get_mapping();
+    }
+    else
+    {
+      load_vectors(checkpoint_vectors, checkpoint_dof_handlers);
+
+      // Create dummy linear mapping since we have no mapping serialized to restore.
+      std::shared_ptr<dealii::Mapping<dim>> tmp;
+      GridUtilities::create_mapping(tmp,
+                                    get_element_type(*checkpoint_triangulation),
+                                    1 /* mapping_degree */);
+      checkpoint_mapping = std::const_pointer_cast<dealii::Mapping<dim> const>(tmp);
+    }
+
+    ExaDG::GridToGridProjection::GridToGridProjectionData<dim> data;
+    data.rpe_data.tolerance              = param.restart_data.rpe_tolerance_unit_cell;
+    data.rpe_data.enforce_unique_mapping = param.restart_data.rpe_enforce_unique_mapping;
+
+    ExaDG::GridToGridProjection::do_grid_to_grid_projection<dim, Number, VectorType>(
+      checkpoint_vectors,
+      checkpoint_dof_handlers,
+      checkpoint_mapping,
+      vectors_per_dof_handler,
+      dof_handlers,
+      *matrix_free,
+      data);
+  }
+
+  // Recover ghost vector state.
+  set_ghost_state(vectors_velocity, has_ghost_elements_velocity);
+  set_ghost_state(vectors_pressure, has_ghost_elements_pressure);
 }
 
 template<int dim, typename Number>
@@ -952,34 +1112,11 @@ SpatialOperatorBase<dim, Number>::interpolate_analytical_solution(VectorType & v
                                                                   VectorType & pressure,
                                                                   double const time) const
 {
-  AssertThrow(field_functions->analytical_solution_velocity,
-              dealii::ExcMessage("FieldFunctions::analytical_solution_velocity not set"));
-  AssertThrow(field_functions->analytical_solution_pressure,
-              dealii::ExcMessage("FieldFunctions::analytical_solution_pressure not set"));
-
-  field_functions->analytical_solution_velocity->set_time(time);
-  field_functions->analytical_solution_pressure->set_time(time);
-
-  // This is necessary if Number == float
-  using VectorTypeDouble = dealii::LinearAlgebra::distributed::Vector<double>;
-
-  VectorTypeDouble velocity_double;
-  VectorTypeDouble pressure_double;
-  velocity_double = velocity;
-  pressure_double = pressure;
-
-  dealii::VectorTools::interpolate(*get_mapping(),
-                                   get_dof_handler_u(),
-                                   *(field_functions->analytical_solution_velocity),
-                                   velocity_double);
-
-  dealii::VectorTools::interpolate(*get_mapping(),
-                                   get_dof_handler_p(),
-                                   *(field_functions->analytical_solution_pressure),
-                                   pressure_double);
-
-  velocity = velocity_double;
-  pressure = pressure_double;
+  interpolate_functions(velocity,
+                        field_functions->analytical_solution_velocity,
+                        pressure,
+                        field_functions->analytical_solution_pressure,
+                        time);
 }
 
 template<int dim, typename Number>
@@ -1003,6 +1140,38 @@ SpatialOperatorBase<dim, Number>::interpolate_stress_bc(VectorType &       stres
 
   velocity_ptr = nullptr;
   pressure_ptr = nullptr;
+}
+
+template<int dim, typename Number>
+std::shared_ptr<dealii::FiniteElement<dim>>
+SpatialOperatorBase<dim, Number>::setup_fe_u(SpatialDiscretization const spatial_discretization,
+                                             ElementType const           element_type,
+                                             unsigned int const          degree) const
+{
+  std::shared_ptr<dealii::FiniteElement<dim>> fe;
+  if(spatial_discretization == SpatialDiscretization::L2)
+  {
+    fe = create_finite_element<dim>(element_type, true, dim, degree);
+  }
+  else if(spatial_discretization == SpatialDiscretization::HDIV)
+  {
+    AssertThrow(
+      element_type == ElementType::Hypercube,
+      dealii::ExcMessage(
+        "SpatialDiscretization::HDIV is currently only implemented for hypercube elements. "
+        "You might want to change the element type of the grid, or the function space, "
+        "or implement HDIV for element types other than hypercube."));
+
+    // The constructor of FE_RaviartThomas takes the degree in tangential direction as an
+    // argument.
+    fe = std::make_shared<dealii::FE_RaviartThomasNodal<dim>>(degree - 1);
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("FE not implemented."));
+  }
+
+  return fe;
 }
 
 template<int dim, typename Number>
@@ -1134,16 +1303,12 @@ SpatialOperatorBase<dim, Number>::adjust_pressure_level_if_undefined(VectorType 
       field_functions->analytical_solution_pressure->set_time(time);
       double const exact = field_functions->analytical_solution_pressure->value(first_point);
 
-      double current = 0.;
+      double current = -std::numeric_limits<double>::max();
       if(pressure.locally_owned_elements().is_element(dof_index_first_point))
         current = pressure(dof_index_first_point);
-      current = dealii::Utilities::MPI::sum(current, mpi_comm);
+      current = dealii::Utilities::MPI::max(current, mpi_comm);
 
-      VectorType vec_temp(pressure);
-      for(unsigned int i = 0; i < vec_temp.locally_owned_size(); ++i)
-        vec_temp.local_element(i) = 1.;
-
-      pressure.add(exact - current, vec_temp);
+      pressure.add(exact - current);
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
     {
@@ -1171,11 +1336,7 @@ SpatialOperatorBase<dim, Number>::adjust_pressure_level_if_undefined(VectorType 
       double const exact   = vec_double.mean_value();
       double const current = pressure.mean_value();
 
-      VectorType vec_temp(pressure);
-      for(unsigned int i = 0; i < vec_temp.locally_owned_size(); ++i)
-        vec_temp.local_element(i) = 1.;
-
-      pressure.add(exact - current, vec_temp);
+      pressure.add(exact - current);
     }
     else
     {
@@ -1218,6 +1379,21 @@ SpatialOperatorBase<dim, Number>::compute_shear_rate(VectorType & dst, VectorTyp
   shear_rate_calculator.compute_shear_rate(dst, src);
 
   inverse_mass_velocity_scalar.apply(dst, dst);
+}
+
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::access_viscosity(VectorType & dst, VectorType const & src) const
+{
+  if(param.viscosity_is_variable())
+  {
+    viscosity_calculator.access_viscosity(dst, src);
+    inverse_mass_velocity_scalar.apply(dst, dst);
+  }
+  else
+  {
+    dst = param.viscosity;
+  }
 }
 
 template<int dim, typename Number>
@@ -1350,18 +1526,7 @@ unsigned int
 SpatialOperatorBase<dim, Number>::apply_inverse_mass_operator(VectorType &       dst,
                                                               VectorType const & src) const
 {
-  if(param.spatial_discretization == SpatialDiscretization::L2)
-  {
-    inverse_mass_velocity.apply(dst, src);
-  }
-  else if(param.spatial_discretization == SpatialDiscretization::HDIV)
-  {
-    return inverse_mass_hdiv.apply(dst, src);
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("Not implemented."));
-  }
+  inverse_mass_velocity.apply(dst, src);
   return 0;
 }
 
@@ -1408,6 +1573,12 @@ SpatialOperatorBase<dim, Number>::update_viscosity(VectorType const & velocity) 
               dealii::ExcMessage(
                 "Updating viscosity reasonable for variable viscosity models only."));
 
+  // update linearization velocity vector in `viscous_kernel`
+  if(viscous_kernel->get_use_velocity_own_storage())
+  {
+    viscous_kernel->set_velocity_copy(velocity);
+  }
+
   // reset the viscosity stored
   // viscosity = viscosity_newtonian_limit
   viscous_kernel->set_constant_coefficient(viscous_kernel_data.viscosity);
@@ -1415,7 +1586,9 @@ SpatialOperatorBase<dim, Number>::update_viscosity(VectorType const & velocity) 
   // add contribution from generalized Newtonian model
   // viscosity += generalized_newtonian_viscosity(viscosity_newtonian_limit)
   if(param.generalized_newtonian_model_data.is_active)
+  {
     generalized_newtonian_model.add_viscosity(velocity);
+  }
 
   // add contribution from turbulence model
   // viscosity += turbulent_viscosity(viscosity)
@@ -1423,7 +1596,9 @@ SpatialOperatorBase<dim, Number>::update_viscosity(VectorType const & velocity) 
   // *sequence of calls matters*, i.e., we can only compute the turbulent viscosity once the laminar
   // viscosity has been computed
   if(param.turbulence_model_data.is_active)
+  {
     turbulence_model.add_viscosity(velocity);
+  }
 }
 
 template<int dim, typename Number>
@@ -1598,7 +1773,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
     }
     else if(param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
     {
-      InverseMassOperatorData inverse_mass_operator_data;
+      InverseMassOperatorData<Number> inverse_mass_operator_data;
       inverse_mass_operator_data.dof_index  = get_dof_index_velocity();
       inverse_mass_operator_data.quad_index = get_quad_index_velocity_standard();
       inverse_mass_operator_data.parameters = param.inverse_mass_preconditioner;
@@ -1813,7 +1988,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
 
         // compute traction acting on structure with normal vector in opposite direction
         // as compared to the fluid domain
-        vector normal = integrator_u.get_normal_vector(q);
+        vector normal = integrator_u.normal_vector(q);
         tensor grad_u = integrator_u.get_gradient(q);
         scalar p      = integrator_p.get_value(q);
 

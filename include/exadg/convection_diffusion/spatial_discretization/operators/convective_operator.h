@@ -19,15 +19,17 @@
  *  ______________________________________________________________________
  */
 
-#ifndef CONV_DIFF_CONVECTION_OPERATOR
-#define CONV_DIFF_CONVECTION_OPERATOR
+#ifndef EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_CONVECTIVE_OPERATOR_H_
+#define EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_CONVECTIVE_OPERATOR_H_
 
+// ExaDG
 #include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/convection_diffusion/user_interface/parameters.h>
 #include <exadg/functions_and_boundary_conditions/evaluate_functions.h>
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/operator_base.h>
 
+// C/C++
 #include <memory>
 
 namespace ExaDG
@@ -623,7 +625,8 @@ private:
 
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel;
 };
+
 } // namespace ConvDiff
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_CONVECTIVE_OPERATOR_H_ */

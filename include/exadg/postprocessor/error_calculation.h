@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_ERROR_CALCULATION_H_
-#define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_ERROR_CALCULATION_H_
+#ifndef EXADG_POSTPROCESSOR_ERROR_CALCULATION_H_
+#define EXADG_POSTPROCESSOR_ERROR_CALCULATION_H_
 
 // deal.II
 #include <deal.II/base/function.h>
@@ -43,6 +43,7 @@ struct ErrorCalculationData
       write_errors_to_file(false),
       spatially_weight_error(false),
       weight(nullptr),
+      additional_quadrature_points(3),
       directory("output/"),
       name("all fields")
   {
@@ -84,6 +85,8 @@ struct ErrorCalculationData
   bool spatially_weight_error;
   // Weight used to compute spatially weighted error.
   std::shared_ptr<dealii::Function<dim>> weight;
+  // Number of quadrature points in 1D: fe_degree + additional_quadrature_points
+  unsigned int additional_quadrature_points;
 
   // directory and name (used as filename and as identifier for screen output)
   std::string directory;
@@ -116,12 +119,12 @@ private:
 
   bool clear_files_L2, clear_files_H1_seminorm;
 
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
-  dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler;
+  dealii::ObserverPointer<dealii::Mapping<dim> const>    mapping;
 
   ErrorCalculationData<dim> error_data;
 };
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_ERROR_CALCULATION_H_ */
+#endif /* EXADG_POSTPROCESSOR_ERROR_CALCULATION_H_ */

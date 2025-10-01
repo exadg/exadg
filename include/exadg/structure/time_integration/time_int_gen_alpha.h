@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_TIME_INTEGRATION_TIME_INT_GEN_ALPHA_H_
-#define INCLUDE_EXADG_STRUCTURE_TIME_INTEGRATION_TIME_INT_GEN_ALPHA_H_
+#ifndef EXADG_STRUCTURE_TIME_INTEGRATION_TIME_INT_GEN_ALPHA_H_
+#define EXADG_STRUCTURE_TIME_INTEGRATION_TIME_INT_GEN_ALPHA_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -154,5 +154,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_STRUCTURE_TIME_INTEGRATION_TIME_INT_GEN_ALPHA_H_ */
+#endif /* EXADG_STRUCTURE_TIME_INTEGRATION_TIME_INT_GEN_ALPHA_H_ */

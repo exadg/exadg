@@ -153,6 +153,8 @@ public:
                         number_of_rotations,
                         "Number of pulse rotations during runtime.",
                         dealii::Patterns::Double(1.0e-12));
+      prm.add_parameter("WriteRestart", write_restart, "Should restart files be written?");
+      prm.add_parameter("ReadRestart", read_restart, "Is this a restarted simulation?");
     }
     prm.leave_subsection();
   }
@@ -172,6 +174,7 @@ private:
 
     // TEMPORAL DISCRETIZATION
     this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+    this->param.time_step_size                = compute_rotation_duration() / 1000.0;
     this->param.cfl                           = 0.59;
     this->param.order_time_integrator         = 2;
     this->param.start_with_low_order          = false;
@@ -184,6 +187,25 @@ private:
     this->param.mapping_degree          = 2;
     this->param.degree_p                = this->param.degree_u;
     this->param.degree_u                = this->param.degree_p;
+
+    // restart
+    this->param.restarted_simulation       = read_restart;
+    this->param.restart_data.write_restart = write_restart;
+    // write restart every 40% of the simulation time
+    this->param.restart_data.interval_time = (this->param.end_time - this->param.start_time) * 0.4;
+    this->param.restart_data.interval_wall_time  = 1.e6;
+    this->param.restart_data.interval_time_steps = 1e8;
+    this->param.restart_data.directory           = this->output_parameters.directory;
+    this->param.restart_data.filename            = this->output_parameters.filename + "_restart";
+
+    this->param.restart_data.degree_u                   = 5;
+    this->param.restart_data.degree_p                   = 5;
+    this->param.restart_data.triangulation_type         = TriangulationType::Distributed;
+    this->param.restart_data.discretization_identical   = false;
+    this->param.restart_data.consider_mapping           = true;
+    this->param.restart_data.mapping_degree             = 2;
+    this->param.restart_data.rpe_tolerance_unit_cell    = 1e-6;
+    this->param.restart_data.rpe_enforce_unique_mapping = false;
   }
 
   void
@@ -202,6 +224,14 @@ private:
         for(const auto & face : tria.active_face_iterators())
           if(face->at_boundary())
             face->set_boundary_id(1);
+
+        // Save the *coarse* triangulation for later deserialization.
+        if(write_restart and this->param.grid.triangulation_type == TriangulationType::Serial)
+        {
+          save_coarse_triangulation<dim>(this->param.restart_data.directory,
+                                         this->param.restart_data.filename,
+                                         tria);
+        }
 
         tria.refine_global(global_refinements);
       };
@@ -289,7 +319,9 @@ private:
     return (2.0 * dealii::numbers::PI / xi);
   }
 
-  double const start_time = 0.0;
+  double const start_time    = 0.0;
+  bool         write_restart = false;
+  bool         read_restart  = false;
 };
 
 } // namespace Acoustics

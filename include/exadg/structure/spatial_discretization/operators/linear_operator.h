@@ -19,9 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_LINEAR_OPERATOR_H_
-#define INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_LINEAR_OPERATOR_H_
+#ifndef EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_LINEAR_OPERATOR_H_
+#define EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_LINEAR_OPERATOR_H_
 
+// ExaDG
 #include <exadg/structure/spatial_discretization/operators/elasticity_operator_base.h>
 
 namespace ExaDG
@@ -69,4 +70,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_LINEAR_OPERATOR_H_ */

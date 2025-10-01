@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_INTERFACE_H_
-#define INCLUDE_EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_INTERFACE_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_INTERFACE_H_
+#define EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_INTERFACE_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -79,6 +79,13 @@ public:
 
   virtual void
   project_velocity(VectorType & velocity, double const time) const = 0;
+
+  // required for restart functionality
+  virtual void
+  serialize_vectors(std::vector<VectorType const *> const & vectors) const = 0;
+
+  virtual void
+  deserialize_vectors(std::vector<VectorType *> const & vectors) = 0;
 
   // time integration: prescribe initial conditions
   virtual void
@@ -166,4 +173,4 @@ private:
 } // namespace ConvDiff
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_INTERFACE_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_INTERFACE_H_ */

@@ -195,7 +195,7 @@ DivergenceOperator<dim, Number>::do_face_integral(FaceIntegratorU & velocity_m,
     vector flux = kernel.calculate_flux(value_m, value_p);
     if(data.formulation == FormulationVelocityDivergenceTerm::Weak)
     {
-      scalar flux_times_normal = flux * velocity_m.get_normal_vector(q);
+      scalar flux_times_normal = flux * velocity_m.normal_vector(q);
 
       pressure_m.submit_value(flux_times_normal, q);
       // minus sign since n⁺ = - n⁻
@@ -203,7 +203,7 @@ DivergenceOperator<dim, Number>::do_face_integral(FaceIntegratorU & velocity_m,
     }
     else if(data.formulation == FormulationVelocityDivergenceTerm::Strong)
     {
-      vector normal = velocity_m.get_normal_vector(q);
+      vector normal = velocity_m.normal_vector(q);
 
       pressure_m.submit_value((flux - value_m) * normal, q);
       // minus sign since n⁺ = - n⁻
@@ -241,7 +241,7 @@ DivergenceOperator<dim, Number>::do_boundary_integral(
     }
 
     vector flux   = kernel.calculate_flux(value_m, value_p);
-    vector normal = velocity.get_normal_vector(q);
+    vector normal = velocity.normal_vector(q);
     if(data.formulation == FormulationVelocityDivergenceTerm::Weak)
     {
       pressure.submit_value(flux * normal, q);
@@ -283,7 +283,7 @@ DivergenceOperator<dim, Number>::do_boundary_integral_from_dof_vector(
     }
 
     vector flux   = kernel.calculate_flux(value_m, value_p);
-    vector normal = velocity.get_normal_vector(q);
+    vector normal = velocity.normal_vector(q);
     if(data.formulation == FormulationVelocityDivergenceTerm::Weak)
     {
       pressure.submit_value(flux * normal, q);

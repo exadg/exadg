@@ -19,15 +19,13 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_STRUCTURE_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_STRUCTURE_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_STRUCTURE_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_STRUCTURE_H_
 
-// Structure
+// ExaDG
+#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 #include <exadg/structure/spatial_discretization/operator.h>
 #include <exadg/structure/time_integration/time_int_gen_alpha.h>
-
-// application
-#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 
 namespace ExaDG
 {
@@ -111,4 +109,4 @@ SolverStructure<dim, Number>::setup(
 } // namespace FSI
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_STRUCTURE_H_ */
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_STRUCTURE_H_ */

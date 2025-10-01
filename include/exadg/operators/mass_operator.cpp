@@ -33,11 +33,18 @@ void
 MassOperator<dim, n_components, Number>::initialize(
   dealii::MatrixFree<dim, Number> const &   matrix_free,
   dealii::AffineConstraints<Number> const & affine_constraints,
-  MassOperatorData<dim> const &             data)
+  MassOperatorData<dim, Number> const &     data)
 {
   Base::reinit(matrix_free, affine_constraints, data);
 
+  operator_data = data;
+
   this->integrator_flags = kernel.get_integrator_flags();
+
+  AssertThrow(not operator_data.coefficient_is_variable or
+                operator_data.variable_coefficients != nullptr,
+              dealii::ExcMessage("Pointer to variable coefficients not set properly."));
+  kernel.set_variable_coefficients_ptr(operator_data.variable_coefficients);
 }
 
 template<int dim, int n_components, typename Number>
@@ -78,9 +85,43 @@ void
 MassOperator<dim, n_components, Number>::do_cell_integral(IntegratorCell & integrator) const
 {
   Number const scaling = this->scaling_factor;
-  for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+  if(operator_data.coefficient_is_variable)
   {
-    integrator.submit_value(kernel.get_volume_flux(scaling, integrator.get_value(q)), q);
+    if(operator_data.consider_inverse_coefficient)
+    {
+      // Consider a mass matrix of the form (u_h , v_h / c)_Omega
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        dealii::VectorizedArray<Number> const & coefficient =
+          kernel.get_variable_coefficients_ptr()->get_coefficient_cell(
+            integrator.get_current_cell_index(), q);
+
+        integrator.submit_value(kernel.get_volume_flux(scaling, integrator.get_value(q)) /
+                                  coefficient,
+                                q);
+      }
+    }
+    else
+    {
+      // Consider a mass matrix of the form (u_h , v_h * c)_Omega
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        dealii::VectorizedArray<Number> const & coefficient =
+          kernel.get_variable_coefficients_ptr()->get_coefficient_cell(
+            integrator.get_current_cell_index(), q);
+
+        integrator.submit_value(kernel.get_volume_flux(scaling, integrator.get_value(q)) *
+                                  coefficient,
+                                q);
+      }
+    }
+  }
+  else
+  {
+    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+    {
+      integrator.submit_value(kernel.get_volume_flux(scaling, integrator.get_value(q)), q);
+    }
   }
 }
 

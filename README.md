@@ -9,7 +9,7 @@ ExaDG's range of applicability currently also covers coupled flow-transport prob
 
 ## Philosophy
 
-ExaDG does not intend to reinvent the wheel. This project therefore relies on well-established third party libraries where possible. ExaDG mainly builds upon *deal.II*, a generic finite element library written in C++. The *deal.II* library provides sophisticated interfaces and data structures, and highly-efficient matrix-free algorithms. Aspects of parallelization are almost completely hidden by *deal.II*. While *deal.II* has a strong focus on aspects of computer science and software development, ExaDG bridges the gap to the application world in the field of computational fluid dynamics and offers efficient solver, e.g., for fluid dynamics and turbulence researchers whose primary interest might not be software development.
+ExaDG does not intend to reinvent the wheel. This project therefore relies on well-established third party libraries where possible. ExaDG mainly builds upon *deal.II*, a generic finite element library written in C++. The *deal.II* library provides sophisticated interfaces and data structures, and highly-efficient matrix-free algorithms. Aspects of parallelization are almost completely hidden by *deal.II*. While *deal.II* has a strong focus on aspects of computer science and software development, ExaDG bridges the gap to the application world in the field of computational fluid dynamics and offers efficient solvers, e.g., to fluid dynamics and turbulence researchers whose primary interest might not be software development.
 
 Our motto is to provide a software that is intuitive to use and where changes and new features can be realized easily. We want to develop computationally efficient solvers at the frontiers of research. This requires agility in software development, and a lightweight code base. In this early stage of ExaDG, we want to enable changes to the software design whenever we realize that parts of the code are too rigid and hinder our daily work, of course, with the goal to maintain compatibility as much as possible. New modules that have proven both robust and computationally efficient, and that can be realized generically, are migrated to third party libraries such as *deal.II*, in order to let a broader community benefit from the developments, and in order to keep the present software project lean. ExaDG is an interdisciplinary effort and a community project where all contributions are highly welcome!
 
@@ -44,11 +44,8 @@ There is currently no paper dedicated to the software project **ExaDG**. A detai
 
 ## Authors
 
-ExaDG's principal developers are:
+ExaDG's principal developer is [Niklas Fehn](https://scholar.google.de/citations?user=8Dm3CikAAAAJ&hl=de&oi=ao) ([@nfehn](https://github.com/nfehn)).
 
-- [Niklas Fehn](https://www.epc.ed.tum.de/lnm/staff/niklas-fehn/) ([@nfehn](https://github.com/nfehn))
-- [Martin Kronbichler](https://www.uni-augsburg.de/en/fakultaet/mntf/math/prof/hpc/team/kronbichler/) ([@kronbichler](https://github.com/kronbichler))
-- [Peter Munch](https://www.uni-augsburg.de/en/fakultaet/mntf/math/prof/hpc/team/munch/) ([@peterrum](https://github.com/peterrum))
 
 ## License
 

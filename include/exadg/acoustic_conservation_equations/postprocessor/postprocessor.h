@@ -22,12 +22,12 @@
 #ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_H_
 #define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_H_
 
+// ExaDG
 #include <exadg/acoustic_conservation_equations/postprocessor/output_generator.h>
 #include <exadg/acoustic_conservation_equations/postprocessor/pointwise_output_generator.h>
 #include <exadg/acoustic_conservation_equations/postprocessor/postprocessor_base.h>
 #include <exadg/acoustic_conservation_equations/postprocessor/sound_energy_calculator.h>
 #include <exadg/postprocessor/error_calculation.h>
-
 
 namespace ExaDG
 {
@@ -88,10 +88,7 @@ private:
   SoundEnergyCalculator<dim, Number> sound_energy_calculator;
 };
 
-
-
 } // namespace Acoustics
 } // namespace ExaDG
 
-
-#endif /*EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_H_*/
+#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_H_ */

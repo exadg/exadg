@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POSTPROCESSOR_KINETIC_ENERGY_SPECTRUM_H_
-#define INCLUDE_EXADG_POSTPROCESSOR_KINETIC_ENERGY_SPECTRUM_H_
+#ifndef EXADG_POSTPROCESSOR_KINETIC_ENERGY_SPECTRUM_H_
+#define EXADG_POSTPROCESSOR_KINETIC_ENERGY_SPECTRUM_H_
 
 // deal.II
 #include <deal.II/fe/fe_system.h>
@@ -138,7 +138,7 @@ private:
 
   std::shared_ptr<DealSpectrumWrapper> deal_spectrum_wrapper;
 
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler;
 
   std::shared_ptr<VectorType>                 velocity_full;
   std::shared_ptr<dealii::Triangulation<dim>> tria_full;
@@ -147,4 +147,4 @@ private:
 };
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_POSTPROCESSOR_KINETIC_ENERGY_SPECTRUM_H_ */
+#endif /* EXADG_POSTPROCESSOR_KINETIC_ENERGY_SPECTRUM_H_ */
