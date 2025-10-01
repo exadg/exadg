@@ -53,6 +53,7 @@ struct RestartData
       discretization_identical(false),
       consider_mapping(false),
       mapping_degree(dealii::numbers::invalid_unsigned_int),
+      rpe_rtree_level(0),
       rpe_tolerance_unit_cell(1e-12),
       rpe_enforce_unique_mapping(false)
   {
@@ -123,7 +124,8 @@ struct RestartData
   // TriangulationType used when restart data was written (relevant for restart run only).
   TriangulationType triangulation_type;
 
-  // Finite element space used when the restart data was written.
+  // Finite element space used when the restart data was written, relevant only for incompressible
+  // flow.
   IncNS::SpatialDiscretization spatial_discretization;
 
   // The discretization used when writing the restart data was identical to the current one.
@@ -142,9 +144,11 @@ struct RestartData
   // The `mapping_degree` considered when storing or reading the grid.
   unsigned int mapping_degree;
 
-  // Parameters for `dealii::RemotePointEvaluation` used for grid-to-grid projection.
-  double rpe_tolerance_unit_cell;
-  bool   rpe_enforce_unique_mapping;
+  // Parameters for `dealii::Utilities::MPI::RemotePointEvaluation<dim>::RemotePointEvaluation`
+  // used for grid-to-grid projection. Mirrored here to avoid `dim` template parameter.
+  unsigned int rpr_rtree_level;
+  double       rpe_tolerance_unit_cell;
+  bool         rpe_enforce_unique_mapping;
 };
 
 } // namespace ExaDG

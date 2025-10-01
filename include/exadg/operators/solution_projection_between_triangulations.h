@@ -67,7 +67,7 @@ struct GridToGridProjectionData
     print_parameter(pcout, "RPE rtree level", rpe_data.rtree_level);
 
     // These parameters play only a role if an iterative scheme is used for projection.
-    // That is, for InverseMassType != InverseMassType::MatrixfreeOperator determined at runtime.
+    // That is for `InverseMassType != InverseMassType::MatrixfreeOperator` determined at runtime.
     solver_data.print(pcout);
     print_parameter(pcout, "Preconditioner", preconditioner);
   }

@@ -448,6 +448,7 @@ Operator<dim, Number>::deserialize_vectors(std::vector<VectorType *> const & vec
     }
 
     ExaDG::GridToGridProjection::GridToGridProjectionData<dim> data;
+    data.rpe_data.rtree_level            = param.restart_data.rpr_rtree_level;
     data.rpe_data.tolerance              = param.restart_data.rpe_tolerance_unit_cell;
     data.rpe_data.enforce_unique_mapping = param.restart_data.rpe_enforce_unique_mapping;
 
