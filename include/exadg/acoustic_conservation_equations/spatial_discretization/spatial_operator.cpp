@@ -288,7 +288,7 @@ SpatialOperator<dim, Number>::deserialize_vectors(
                                    param.restart_data.triangulation_type,
                                    mpi_comm);
 
-  // Setup DoFHandlers *as checkpointed*, sequence matches `this->serialize_vectors()`.
+  // Set up DoFHandlers *as checkpointed*, sequence matches `this->serialize_vectors()`.
   dealii::DoFHandler<dim> checkpoint_dof_handler_u(*checkpoint_triangulation);
   dealii::DoFHandler<dim> checkpoint_dof_handler_p(*checkpoint_triangulation);
 
@@ -327,7 +327,7 @@ SpatialOperator<dim, Number>::deserialize_vectors(
     load_vectors(checkpoint_vectors, checkpoint_dof_handlers);
     for(unsigned int i = 0; i < block_vectors.size(); ++i)
     {
-      *block_vectors[i] = checkpoint_block_vectors[i];
+      block_vectors[i]->copy_locally_owned_data_from(checkpoint_block_vectors[i]);
     }
   }
   else

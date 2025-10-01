@@ -377,7 +377,7 @@ Operator<dim, Number>::deserialize_vectors(std::vector<VectorType *> const & vec
                                    param.restart_data.triangulation_type,
                                    mpi_comm);
 
-  // Setup DoFHandlers *as checkpointed*, sequence matches `this->serialize_vectors()`.
+  // Set up DoFHandlers *as checkpointed*, sequence matches `this->serialize_vectors()`.
   dealii::DoFHandler<dim> checkpoint_dof_handler(*checkpoint_triangulation);
 
   ElementType const checkpoint_element_type = get_element_type(*checkpoint_triangulation);
@@ -405,7 +405,7 @@ Operator<dim, Number>::deserialize_vectors(std::vector<VectorType *> const & vec
     load_vectors(checkpoint_vectors_ptr, checkpoint_dof_handlers);
     for(unsigned int i = 0; i < vectors.size(); ++i)
     {
-      *vectors[i] = checkpoint_vectors[i];
+      vectors[i]->copy_locally_owned_data_from(checkpoint_vectors[i]);
     }
   }
   else

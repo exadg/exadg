@@ -98,25 +98,29 @@ TimeIntBDFPressureCorrection<dim, Number>::setup_derived()
 
 template<int dim, typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
+TimeIntBDFPressureCorrection<dim, Number>::get_vectors_serialization(
+  std::vector<VectorType const *> & vectors_velocity,
+  std::vector<VectorType const *> & vectors_pressure) const
 {
-  Base::read_restart_vectors(ia);
+  (void)vectors_velocity;
 
   for(unsigned int i = 0; i < pressure_dbc.size(); i++)
   {
-    read_write_distributed_vector(pressure_dbc[i], ia);
+    vectors_pressure.push_back(&pressure_dbc[i]);
   }
 }
 
 template<int dim, typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) const
+TimeIntBDFPressureCorrection<dim, Number>::set_vectors_deserialization(
+  std::vector<VectorType> const & vectors_velocity,
+  std::vector<VectorType> const & vectors_pressure)
 {
-  Base::write_restart_vectors(oa);
+  (void)vectors_velocity;
 
   for(unsigned int i = 0; i < pressure_dbc.size(); i++)
   {
-    read_write_distributed_vector(pressure_dbc[i], oa);
+    pressure_dbc[i] = vectors_pressure[i];
   }
 }
 
