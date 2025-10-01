@@ -544,8 +544,10 @@ private:
     this->param.restart_data.triangulation_type         = TriangulationType::Distributed;
     this->param.restart_data.spatial_discretization     = SpatialDiscretization::L2;
     this->param.restart_data.discretization_identical   = false;
-    this->param.restart_data.consider_mapping           = false;
-    this->param.restart_data.mapping_degree             = 5;
+    this->param.restart_data.consider_mapping_write     = false;
+    this->param.restart_data.consider_mapping_read      = false;
+    this->param.restart_data.mapping_degree_read        = 5;
+    this->param.restart_data.rpe_rtree_level            = 0;
     this->param.restart_data.rpe_tolerance_unit_cell    = 1e-2;
     this->param.restart_data.rpe_enforce_unique_mapping = false;
 

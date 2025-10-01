@@ -152,8 +152,10 @@ private:
     this->param.restart_data.degree_p                   = 5;
     this->param.restart_data.triangulation_type         = TriangulationType::Distributed;
     this->param.restart_data.discretization_identical   = false;
-    this->param.restart_data.consider_mapping           = true;
-    this->param.restart_data.mapping_degree             = this->param.mapping_degree;
+    this->param.restart_data.consider_mapping_write     = true;
+    this->param.restart_data.consider_mapping_read      = true;
+    this->param.restart_data.mapping_degree_read        = this->param.mapping_degree;
+    this->param.restart_data.rpe_rtree_level            = 0;
     this->param.restart_data.rpe_tolerance_unit_cell    = 1e-2;
     this->param.restart_data.rpe_enforce_unique_mapping = false;
 

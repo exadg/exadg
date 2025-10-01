@@ -254,7 +254,7 @@ SpatialOperator<dim, Number>::serialize_vectors(
   std::vector<std::vector<VectorType const *>> vectors_per_dof_handler =
     get_vectors_per_block<VectorType const, BlockVectorType const>(block_vectors);
 
-  if(param.restart_data.consider_mapping)
+  if(param.restart_data.consider_mapping_write)
   {
     store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
                                                  param.restart_data.filename,
@@ -344,20 +344,20 @@ SpatialOperator<dim, Number>::deserialize_vectors(
     std::shared_ptr<dealii::Mapping<dim> const> checkpoint_mapping;
     std::shared_ptr<MappingDoFVector<dim, typename VectorType::value_type>>
       checkpoint_mapping_dof_vector;
-    if(param.restart_data.consider_mapping)
+    if(param.restart_data.consider_mapping_read)
     {
       dealii::DoFHandler<dim> checkpoint_dof_handler_mapping(*checkpoint_triangulation);
       std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_mapping =
         create_finite_element<dim>(checkpoint_element_type,
                                    true,
                                    dim,
-                                   param.restart_data.mapping_degree);
+                                   param.restart_data.mapping_degree_read);
       checkpoint_dof_handler_mapping.distribute_dofs(*checkpoint_fe_mapping);
 
       checkpoint_mapping_dof_vector = load_vectors(checkpoint_vectors,
                                                    checkpoint_dof_handlers,
                                                    &checkpoint_dof_handler_mapping,
-                                                   param.restart_data.mapping_degree);
+                                                   param.restart_data.mapping_degree_read);
 
       checkpoint_mapping = checkpoint_mapping_dof_vector->get_mapping();
     }
@@ -539,8 +539,8 @@ SpatialOperator<dim, Number>::initialize_dof_handler_and_constraints()
   dof_handler_u.distribute_dofs(*fe_u);
 
   // de-/serialization of mapping requires DoFHandler
-  if(param.restart_data.consider_mapping and
-     (param.restarted_simulation or param.restart_data.write_restart))
+  if((param.restart_data.consider_mapping_write and param.restart_data.write_restart) or
+     (param.restart_data.consider_mapping_read and param.restarted_simulation))
   {
     fe_mapping =
       create_finite_element<dim>(param.grid.element_type, true, dim, param.mapping_degree);

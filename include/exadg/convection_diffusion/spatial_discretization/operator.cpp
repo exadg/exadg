@@ -591,7 +591,7 @@ Operator<dim, Number>::serialize_vectors(std::vector<VectorType const *> const &
 {
   std::vector<dealii::DoFHandler<dim> const *> dof_handlers{&dof_handler};
   std::vector<std::vector<VectorType const *>> vectors_per_dof_handler{vectors};
-  if(param.restart_data.consider_mapping)
+  if(param.restart_data.consider_mapping_write)
   {
     store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
                                                  param.restart_data.filename,
@@ -667,20 +667,20 @@ Operator<dim, Number>::deserialize_vectors(std::vector<VectorType *> const & vec
     std::shared_ptr<dealii::Mapping<dim> const> checkpoint_mapping;
     std::shared_ptr<MappingDoFVector<dim, typename VectorType::value_type>>
       checkpoint_mapping_dof_vector;
-    if(param.restart_data.consider_mapping)
+    if(param.restart_data.consider_mapping_read)
     {
       dealii::DoFHandler<dim> checkpoint_dof_handler_mapping(*checkpoint_triangulation);
       std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_mapping =
         create_finite_element<dim>(checkpoint_element_type,
                                    true,
                                    dim,
-                                   param.restart_data.mapping_degree);
+                                   param.restart_data.mapping_degree_read);
       checkpoint_dof_handler_mapping.distribute_dofs(*checkpoint_fe_mapping);
 
       checkpoint_mapping_dof_vector = load_vectors(checkpoint_vectors_ptr,
                                                    checkpoint_dof_handlers,
                                                    &checkpoint_dof_handler_mapping,
-                                                   param.restart_data.mapping_degree);
+                                                   param.restart_data.mapping_degree_read);
 
       checkpoint_mapping = checkpoint_mapping_dof_vector->get_mapping();
     }
@@ -1126,8 +1126,8 @@ template<int dim, typename Number>
 bool
 Operator<dim, Number>::needs_dof_handler_mapping() const
 {
-  return param.restart_data.consider_mapping and
-         (param.restart_data.write_restart or param.restarted_simulation);
+  return ((param.restart_data.consider_mapping_write and param.restart_data.write_restart) or
+          (param.restart_data.consider_mapping_read and param.restarted_simulation));
 }
 
 template<int dim, typename Number>

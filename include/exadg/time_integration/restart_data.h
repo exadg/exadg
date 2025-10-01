@@ -51,8 +51,9 @@ struct RestartData
       triangulation_type(TriangulationType::Serial),
       spatial_discretization(IncNS::SpatialDiscretization::L2),
       discretization_identical(false),
-      consider_mapping(false),
-      mapping_degree(dealii::numbers::invalid_unsigned_int),
+      consider_mapping_write(false),
+      consider_mapping_read(false),
+      mapping_degree_read(dealii::numbers::invalid_unsigned_int),
       rpe_rtree_level(0),
       rpe_tolerance_unit_cell(1e-12),
       rpe_enforce_unique_mapping(false)
@@ -135,18 +136,17 @@ struct RestartData
   // necessary global projection.
   bool discretization_identical;
 
-  // The mapping of the triangulation should be de-/serialized as well to consider for a mapped
-  // geometry at serialization and during deserialization. This is option toggles storing the
-  // mapping via a displacement vector *and* reading it back in. Hence, this parameter needs to
-  // match in serialization/deserialization runs.
-  bool consider_mapping;
+  // These options toggle storing/reading the mapping via a displacement vector/reading it back in.
+  // Mismatching parameters might lead to undesired configurations, use with care.
+  bool consider_mapping_write;
+  bool consider_mapping_read;
 
   // The `mapping_degree` considered when storing or reading the grid.
-  unsigned int mapping_degree;
+  unsigned int mapping_degree_read;
 
   // Parameters for `dealii::Utilities::MPI::RemotePointEvaluation<dim>::RemotePointEvaluation`
   // used for grid-to-grid projection. Mirrored here to avoid `dim` template parameter.
-  unsigned int rpr_rtree_level;
+  unsigned int rpe_rtree_level;
   double       rpe_tolerance_unit_cell;
   bool         rpe_enforce_unique_mapping;
 };

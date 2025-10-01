@@ -94,8 +94,8 @@ SpatialOperatorBase<dim, Number>::initialize_dof_handler_and_constraints()
 
   fe_u = setup_fe_u(param.spatial_discretization, param.grid.element_type, param.degree_u);
 
-  if(param.restart_data.consider_mapping and
-     (param.restart_data.write_restart or param.restarted_simulation))
+  if((param.restart_data.consider_mapping_write and param.restart_data.write_restart) or
+     (param.restart_data.consider_mapping_read and param.restarted_simulation))
   {
     fe_mapping =
       create_finite_element<dim>(param.grid.element_type, true, dim, param.mapping_degree);
@@ -997,7 +997,7 @@ SpatialOperatorBase<dim, Number>::serialize_vectors(
   std::vector<dealii::DoFHandler<dim> const *> dof_handlers{&dof_handler_u, &dof_handler_p};
   std::vector<std::vector<VectorType const *>> vectors_per_dof_handler{vectors_velocity,
                                                                        vectors_pressure};
-  if(param.restart_data.consider_mapping)
+  if(param.restart_data.consider_mapping_write)
   {
     store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
                                                  param.restart_data.filename,
@@ -1102,20 +1102,20 @@ SpatialOperatorBase<dim, Number>::deserialize_vectors(std::vector<VectorType *> 
     std::shared_ptr<dealii::Mapping<dim> const> checkpoint_mapping;
     std::shared_ptr<MappingDoFVector<dim, typename VectorType::value_type>>
       checkpoint_mapping_dof_vector;
-    if(param.restart_data.consider_mapping)
+    if(param.restart_data.consider_mapping_read)
     {
       dealii::DoFHandler<dim> checkpoint_dof_handler_mapping(*checkpoint_triangulation);
       std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_mapping =
         create_finite_element<dim>(checkpoint_element_type,
                                    true,
                                    dim,
-                                   param.restart_data.mapping_degree);
+                                   param.restart_data.mapping_degree_read);
       checkpoint_dof_handler_mapping.distribute_dofs(*checkpoint_fe_mapping);
 
       checkpoint_mapping_dof_vector = load_vectors(checkpoint_vectors,
                                                    checkpoint_dof_handlers,
                                                    &checkpoint_dof_handler_mapping,
-                                                   param.restart_data.mapping_degree);
+                                                   param.restart_data.mapping_degree_read);
 
       checkpoint_mapping = checkpoint_mapping_dof_vector->get_mapping();
     }
