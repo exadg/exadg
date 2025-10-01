@@ -49,13 +49,13 @@ get_dofs_per_element(unsigned int const       dim,
                      unsigned int const       degree,
                      ExaDG::ElementType const element_type)
 {
-  unsigned int const pressure_dofs_per_element =
+  double const pressure_dofs_per_element =
     ExaDG::get_dofs_per_element(element_type, true /* is_dg */, 1 /* n_components */, degree, dim);
 
-  unsigned int const velocity_dofs_per_element = ExaDG::get_dofs_per_element(
+  double const velocity_dofs_per_element = ExaDG::get_dofs_per_element(
     element_type, true /* is_dg */, dim /* n_components */, degree, dim);
 
-  return velocity_dofs_per_element + pressure_dofs_per_element;
+  return static_cast<unsigned int>(velocity_dofs_per_element + pressure_dofs_per_element);
 }
 
 template<int dim, typename Number>

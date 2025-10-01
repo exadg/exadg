@@ -640,12 +640,12 @@ public:
   double const REL_TOL_LINEAR = 1.e-2;
 
   // parameters specified via input.json
-  double n_rotations                          = 2.0;
-  double additional_refinements_around_source = 0;
-  double domain_radius                        = 40.0;
-  double intensity                            = 7.54;
-  double r_0                                  = 1.0;
-  double r_c                                  = 0.1 * r_0;
+  double       n_rotations                          = 2.0;
+  unsigned int additional_refinements_around_source = 0;
+  double       domain_radius                        = 40.0;
+  double       intensity                            = 7.54;
+  double       r_0                                  = 1.0;
+  double       r_c                                  = 0.1 * r_0;
 };
 } // namespace FluidAeroAcoustic
 
