@@ -1,0 +1,28 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "Fluid": {
+        "SpatialResolution": {
+            "Degree": "2",
+            "RefineSpace": "3"
+        },
+        "Output": {
+            "OutputDirectory": "output/",
+            "OutputName": "fluid",
+            "WriteOutput": "true"
+        }
+    },
+    "Scalar0": {
+        "SpatialResolution": {
+            "Degree": "1"
+        },
+        "Output": {
+            "OutputDirectory": "output/",
+            "OutputName": "scalar0",
+            "WriteOutput": "true"
+        }
+    }
+}
