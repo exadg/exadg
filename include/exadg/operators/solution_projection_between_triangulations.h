@@ -65,12 +65,16 @@ struct GridToGridProjectionData
     print_parameter(pcout, "RPE tolerance", rpe_data.tolerance);
     print_parameter(pcout, "RPE enforce unique mapping", rpe_data.enforce_unique_mapping);
     print_parameter(pcout, "RPE rtree level", rpe_data.rtree_level);
+
+    // These parameters play only a role if an iterative scheme is used for projection.
+    // That is, for InverseMassType != InverseMassType::MatrixfreeOperator determined at runtime.
+    solver_data.print(pcout);
+    print_parameter(pcout, "Preconditioner", preconditioner);
   }
 
   typename dealii::Utilities::MPI::RemotePointEvaluation<dim>::AdditionalData rpe_data;
   SolverData                                                                  solver_data;
   PreconditionerMass                                                          preconditioner;
-  InverseMassType                                                             inverse_mass_type;
 
   // Number of additional integration points used for sampling the source grid.
   // The default `additional_quadrature_points = 1` considers `fe_degree + 1` quadrature points in
@@ -201,7 +205,7 @@ project_vectors(
   InverseMassOperatorData<Number> inverse_mass_operator_data;
   inverse_mass_operator_data.dof_index                 = dof_index;
   inverse_mass_operator_data.quad_index                = quad_index;
-  inverse_mass_operator_data.parameters.preconditioner = PreconditionerMass::PointJacobi;
+  inverse_mass_operator_data.parameters.preconditioner = data.preconditioner;
   inverse_mass_operator_data.parameters.solver_data    = data.solver_data;
   inverse_mass_operator_data.parameters.implementation_type =
     InverseMassOperatorData<Number>::template get_optimal_inverse_mass_type<dim>(
