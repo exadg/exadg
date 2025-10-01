@@ -244,7 +244,7 @@ TimeIntMultistepBase::do_read_restart(std::ifstream & in)
 {
   BoostInputArchiveType ia(in);
   read_restart_preamble(ia);
-  read_restart_vectors(ia);
+  read_restart_vectors();
 
   // In order to change the CFL number (or the time step calculation criterion in general),
   // start_with_low_order = true has to be used. Otherwise, the old solutions would not fit the
@@ -258,31 +258,20 @@ TimeIntMultistepBase::read_restart_preamble(BoostInputArchiveType & ia)
 {
   // Note that the operations done here must be in sync with the output.
 
-  // 1. ranks
-  unsigned int n_old_ranks = 1;
-  ia &         n_old_ranks;
-
-  unsigned int n_ranks = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
-  AssertThrow(n_old_ranks == n_ranks,
-              dealii::ExcMessage("Tried to restart with " + dealii::Utilities::to_string(n_ranks) +
-                                 " processes, "
-                                 "but restart was written on " +
-                                 dealii::Utilities::to_string(n_old_ranks) + " processes."));
-
-  // 2. time
+  // 1. time
   ia & time;
 
   // Note that start_time has to be set to the new start_time (since param.start_time might still be
   // the original start time).
   this->start_time = time;
 
-  // 3. order
+  // 2. order
   unsigned int old_order = 1;
   ia &         old_order;
 
   AssertThrow(old_order == order, dealii::ExcMessage("Order of time integrator may not change."));
 
-  // 4. time step sizes
+  // 3. time step sizes
   for(unsigned int i = 0; i < order; i++)
     ia & time_steps[i];
 }
@@ -295,25 +284,20 @@ TimeIntMultistepBase::do_write_restart(std::string const & filename) const
   BoostOutputArchiveType oa(oss);
 
   write_restart_preamble(oa);
-  write_restart_vectors(oa);
+  write_restart_vectors();
   write_restart_file(oss, filename);
 }
 
 void
 TimeIntMultistepBase::write_restart_preamble(BoostOutputArchiveType & oa) const
 {
-  unsigned int n_ranks = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
-
-  // 1. ranks
-  oa & n_ranks;
-
-  // 2. time
+  // 1. time
   oa & time;
 
-  // 3. order
+  // 2. order
   oa & order;
 
-  // 4. time step sizes
+  // 3. time step sizes
   for(unsigned int i = 0; i < order; i++)
     oa & time_steps[i];
 }

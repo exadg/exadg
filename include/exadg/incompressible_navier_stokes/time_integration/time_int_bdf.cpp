@@ -254,10 +254,8 @@ TimeIntBDF<dim, Number>::initialize_vec_convective_term()
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
+TimeIntBDF<dim, Number>::read_restart_vectors()
 {
-  (void)ia;
-
   // Setup vectors locally to read into.
   std::vector<VectorType> vectors_velocity;
   std::vector<VectorType> vectors_pressure;
@@ -334,10 +332,8 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) const
+TimeIntBDF<dim, Number>::write_restart_vectors() const
 {
-  (void)oa;
-
   std::vector<VectorType const *> vectors_velocity;
   std::vector<VectorType const *> vectors_pressure;
 

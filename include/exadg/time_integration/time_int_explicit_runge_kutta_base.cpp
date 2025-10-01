@@ -136,18 +136,13 @@ TimeIntExplRKBase<Number>::do_write_restart(std::string const & filename) const
 
   BoostOutputArchiveType oa(oss);
 
-  unsigned int n_ranks = dealii::Utilities::MPI::n_mpi_processes(this->mpi_comm);
-
-  // 1. ranks
-  oa & n_ranks;
-
-  // 2. time
+  // 1. time
   oa & time;
 
-  // 3. time step size
+  // 2. time step size
   oa & time_step;
 
-  // 4. solution vectors
+  // 3. solution vectors
   std::vector<VectorType const *> vectors{&solution_n};
   this->write_restart_vectors(vectors);
 
@@ -162,28 +157,17 @@ TimeIntExplRKBase<Number>::do_read_restart(std::ifstream & in)
 
   // Note that the operations done here must be in sync with the output.
 
-  // 1. ranks
-  unsigned int n_old_ranks = 1;
-  ia &         n_old_ranks;
-
-  unsigned int n_ranks = dealii::Utilities::MPI::n_mpi_processes(this->mpi_comm);
-  AssertThrow(n_old_ranks == n_ranks,
-              dealii::ExcMessage("Tried to restart with " + dealii::Utilities::to_string(n_ranks) +
-                                 " processes, "
-                                 "but restart was written on " +
-                                 dealii::Utilities::to_string(n_old_ranks) + " processes."));
-
-  // 2. time
+  // 1. time
   ia & time;
 
   // Note that start_time has to be set to the new start_time (since param.start_time might still be
   // the original start time).
   this->start_time = time;
 
-  // 3. time step size
+  // 2. time step size
   ia & time_step;
 
-  // 4. solution vectors
+  // 3. solution vectors
   std::vector<VectorType *> vectors{&solution_n};
   this->read_restart_vectors(vectors);
 }

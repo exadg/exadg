@@ -53,18 +53,15 @@ public:
 
 private:
   void
-  setup();
-  void
   write_and_read();
   void
   check();
 
   MPI_Comm           mpi_communicator;
   ConditionalOStream pcout;
-  IndexSet           locally_owned_dofs;
 
-  LinearAlgebra::distributed::Vector<double> vector_out;
-  LinearAlgebra::distributed::Vector<double> vector_in;
+  static double constexpr number_to_archive = 1.23456;
+  double number_read_from_archive           = 0.0;
 };
 
 template<int dim>
@@ -76,60 +73,29 @@ ArchiveVector<dim>::ArchiveVector()
 
 template<int dim>
 void
-ArchiveVector<dim>::setup()
-{
-  pcout << "Setting up vector.\n";
-
-  parallel::distributed::Triangulation<dim> triangulation(mpi_communicator);
-  GridGenerator::hyper_cube(triangulation);
-  triangulation.refine_global(4);
-
-  DoFHandler<dim> dof_handler(triangulation);
-  const FE_Q<dim> fe(2);
-  dof_handler.distribute_dofs(fe);
-  locally_owned_dofs = dof_handler.locally_owned_dofs();
-
-  // Fill vector with global indices
-  pcout << "Filling vector with ordered global indices [0, " << locally_owned_dofs.size() << ").\n";
-
-  vector_out.reinit(locally_owned_dofs, mpi_communicator);
-
-  double const this_mpi_process =
-    static_cast<double>(Utilities::MPI::this_mpi_process(mpi_communicator));
-
-  for(unsigned int i = 0; i < locally_owned_dofs.n_elements(); ++i)
-  {
-    vector_out.local_element(i) = static_cast<double>(locally_owned_dofs.nth_index_in_set(i));
-  }
-}
-
-template<int dim>
-void
 ArchiveVector<dim>::write_and_read()
 {
   std::string filename =
-    "vector_proc_" + std::to_string(Utilities::MPI::this_mpi_process(mpi_communicator));
+    "number_proc_" + std::to_string(Utilities::MPI::this_mpi_process(mpi_communicator));
 
-  pcout << "Storing the vector in the archive.\n";
+  pcout << "Storing the number in the archive.\n";
   {
     std::ofstream stream(filename);
     AssertThrow(stream, ExcMessage("Could not write to file."));
 
     boost::archive::text_oarchive output_archive(stream);
 
-    ExaDG::read_write_distributed_vector(vector_out, output_archive);
+    output_archive & number_to_archive;
   }
 
-  vector_in.reinit(locally_owned_dofs, mpi_communicator);
-
-  pcout << "Reading the vector from the archive.\n";
+  pcout << "Reading the number from the archive.\n";
   {
     std::ifstream stream(filename);
     AssertThrow(stream, ExcMessage("Could not read from file."));
 
     boost::archive::text_iarchive input_archive(stream);
 
-    ExaDG::read_write_distributed_vector(vector_in, input_archive);
+    input_archive & number_read_from_archive;
   }
 }
 
@@ -137,24 +103,21 @@ template<int dim>
 void
 ArchiveVector<dim>::check()
 {
-  double norm = vector_out.linfty_norm();
-  pcout << "vector_out.linfty_norm() = " << norm << "\n";
-  norm = vector_out.l2_norm();
-  pcout << "vector_out.l2_norm()     = " << norm << "\n\n";
+  // Read the number with all processes from the archive and compute the maximum relative
+  // difference.
+  double norm =
+    std::abs(number_to_archive - number_read_from_archive) / std::abs(number_to_archive);
 
-  vector_in -= vector_out;
+  norm = Utilities::MPI::max(norm, mpi_communicator);
 
-  norm = vector_in.linfty_norm();
-  pcout << "error in linfty_norm = " << norm << "\n";
-  norm = vector_in.l2_norm();
-  pcout << "error in l2_norm     = " << norm << "\n";
+  pcout << "Maximum relative difference in numbers written and read over all processors:\n"
+        << norm << "\n";
 }
 
 template<int dim>
 void
 ArchiveVector<dim>::run()
 {
-  setup();
   write_and_read();
   check();
 }
