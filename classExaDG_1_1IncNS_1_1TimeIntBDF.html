@@ -261,10 +261,16 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:a470ac057aa986e4bc9fc4384a038ddde"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abf703ee90776c2b026ced6a78ce5a099" id="r_abf703ee90776c2b026ced6a78ce5a099"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abf703ee90776c2b026ced6a78ce5a099">setup_derived</a> () override</td></tr>
 <tr class="separator:abf703ee90776c2b026ced6a78ce5a099"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0768b7c14566b600b35f2ade248dc22d" id="r_a0768b7c14566b600b35f2ade248dc22d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0768b7c14566b600b35f2ade248dc22d">read_restart_vectors</a> (BoostInputArchiveType &amp;ia) override</td></tr>
-<tr class="separator:a0768b7c14566b600b35f2ade248dc22d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a64bf7ece83cced4e46a04645e473dd7d" id="r_a64bf7ece83cced4e46a04645e473dd7d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a64bf7ece83cced4e46a04645e473dd7d">write_restart_vectors</a> (BoostOutputArchiveType &amp;oa) const override</td></tr>
-<tr class="separator:a64bf7ece83cced4e46a04645e473dd7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a730c59baa41c2f72956497bff247912a" id="r_a730c59baa41c2f72956497bff247912a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a730c59baa41c2f72956497bff247912a">read_restart_vectors</a> (BoostInputArchiveType &amp;ia) final</td></tr>
+<tr class="separator:a730c59baa41c2f72956497bff247912a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afac13f9695d0c397eb90a8ad4a9293e3" id="r_afac13f9695d0c397eb90a8ad4a9293e3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afac13f9695d0c397eb90a8ad4a9293e3">write_restart_vectors</a> (BoostOutputArchiveType &amp;oa) const final</td></tr>
+<tr class="separator:afac13f9695d0c397eb90a8ad4a9293e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae6d2300076bc50e420f806a6b4df47e7" id="r_ae6d2300076bc50e420f806a6b4df47e7"><td class="memItemLeft" align="right" valign="top"><a id="ae6d2300076bc50e420f806a6b4df47e7" name="ae6d2300076bc50e420f806a6b4df47e7"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>get_vectors_serialization</b> (std::vector&lt; VectorType const * &gt; &amp;vectors_velocity, std::vector&lt; VectorType const * &gt; &amp;vectors_pressure) const</td></tr>
+<tr class="separator:ae6d2300076bc50e420f806a6b4df47e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a544f077c260ece5faf7eaaa8f4f7e054" id="r_a544f077c260ece5faf7eaaa8f4f7e054"><td class="memItemLeft" align="right" valign="top"><a id="a544f077c260ece5faf7eaaa8f4f7e054" name="a544f077c260ece5faf7eaaa8f4f7e054"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_vectors_deserialization</b> (std::vector&lt; VectorType &gt; const &amp;vectors_velocity, std::vector&lt; VectorType &gt; const &amp;vectors_pressure)</td></tr>
+<tr class="separator:a544f077c260ece5faf7eaaa8f4f7e054"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa102fe0c6032b6673862e19099584c81" id="r_aa102fe0c6032b6673862e19099584c81"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa102fe0c6032b6673862e19099584c81">prepare_vectors_for_next_timestep</a> () override</td></tr>
 <tr class="separator:aa102fe0c6032b6673862e19099584c81"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classExaDG_1_1TimeIntBDFBase"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pro_methods_classExaDG_1_1TimeIntBDFBase')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classExaDG_1_1TimeIntBDFBase.html">ExaDG::TimeIntBDFBase</a></td></tr>
@@ -488,8 +494,8 @@ template&lt;int dim, typename Number&gt; </div>
 
 </div>
 </div>
-<a id="a0768b7c14566b600b35f2ade248dc22d" name="a0768b7c14566b600b35f2ade248dc22d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0768b7c14566b600b35f2ade248dc22d">&#9670;&#160;</a></span>read_restart_vectors()</h2>
+<a id="a730c59baa41c2f72956497bff247912a" name="a730c59baa41c2f72956497bff247912a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a730c59baa41c2f72956497bff247912a">&#9670;&#160;</a></span>read_restart_vectors()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -508,7 +514,7 @@ template&lt;int dim, typename Number&gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel override">override</span><span class="mlabel protected">protected</span><span class="mlabel virtual">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel final">final</span><span class="mlabel protected">protected</span><span class="mlabel virtual">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -546,8 +552,8 @@ template&lt;int dim, typename Number&gt; </div>
 
 </div>
 </div>
-<a id="a64bf7ece83cced4e46a04645e473dd7d" name="a64bf7ece83cced4e46a04645e473dd7d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a64bf7ece83cced4e46a04645e473dd7d">&#9670;&#160;</a></span>write_restart_vectors()</h2>
+<a id="afac13f9695d0c397eb90a8ad4a9293e3" name="afac13f9695d0c397eb90a8ad4a9293e3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afac13f9695d0c397eb90a8ad4a9293e3">&#9670;&#160;</a></span>write_restart_vectors()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -566,7 +572,7 @@ template&lt;int dim, typename Number&gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel override">override</span><span class="mlabel protected">protected</span><span class="mlabel virtual">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel final">final</span><span class="mlabel protected">protected</span><span class="mlabel virtual">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
