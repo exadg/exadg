@@ -36,6 +36,50 @@
 
 namespace ExaDG
 {
+struct DeserializationParameters
+{
+  DeserializationParameters()
+    : degree(dealii::numbers::invalid_unsigned_int),
+      degree_u(dealii::numbers::invalid_unsigned_int),
+      degree_p(dealii::numbers::invalid_unsigned_int),
+      mapping_degree(dealii::numbers::invalid_unsigned_int),
+      consider_mapping_write(false),
+      triangulation_type(TriangulationType::Serial),
+      spatial_discretization(IncNS::SpatialDiscretization::L2)
+  {
+  }
+
+  void
+  print(dealii::ConditionalOStream const & pcout) const
+  {
+    pcout << "  Deserialization parameters:" << std::endl;
+    print_parameter(pcout, "Polynomial degree `degree`", degree);
+    print_parameter(pcout, "Polynomial degree `degree_u`", degree_u);
+    print_parameter(pcout, "Polynomial degree `degree_p`", degree_p);
+    print_parameter(pcout, "Mapping degree", mapping_degree);
+    print_parameter(pcout, "Consider mapping", consider_mapping_write);
+    print_parameter(pcout, "Triangulation type", triangulation_type);
+    print_parameter(pcout, "Spatial discretization", spatial_discretization);
+  }
+
+  // Polynomial degrees of the finite elements used at serialization.
+  unsigned int degree;
+  unsigned int degree_u;
+  unsigned int degree_p;
+
+  // Polynomial degree of the mapping used at serialization.
+  unsigned int mapping_degree;
+
+  // The mapping is stored during serialization.
+  bool consider_mapping_write;
+
+  // Triangulation type used at serialization.
+  TriangulationType triangulation_type;
+
+  // Spatial discretization used at serialization. Relevant for incompressible Navier-Stokes only.
+  IncNS::SpatialDiscretization spatial_discretization;
+};
+
 struct RestartData
 {
   RestartData()
@@ -46,14 +90,9 @@ struct RestartData
       directory("./output/"),
       filename("restart"),
       counter(1),
-      degree_u(dealii::numbers::invalid_unsigned_int),
-      degree_p(dealii::numbers::invalid_unsigned_int),
-      triangulation_type(TriangulationType::Serial),
-      spatial_discretization(IncNS::SpatialDiscretization::L2),
       discretization_identical(false),
       consider_mapping_write(false),
       consider_mapping_read(false),
-      mapping_degree_read(dealii::numbers::invalid_unsigned_int),
       rpe_rtree_level(0),
       rpe_tolerance_unit_cell(1e-12),
       rpe_enforce_unique_mapping(false)
@@ -118,17 +157,6 @@ struct RestartData
   // counter needed do decide when to write restart
   mutable unsigned int counter;
 
-  // Finite element degree used when restart data was written (relevant for restart run only).
-  unsigned int degree_u;
-  unsigned int degree_p;
-
-  // TriangulationType used when restart data was written (relevant for restart run only).
-  TriangulationType triangulation_type;
-
-  // Finite element space used when the restart data was written, relevant only for incompressible
-  // flow.
-  IncNS::SpatialDiscretization spatial_discretization;
-
   // The discretization used when writing the restart data was identical to the current one.
   // Note that this includes the finite element, uniform and adaptive refinement, and the
   // `TriangulationType`, *but* one might consider a different number of MPI ranks for
@@ -140,9 +168,6 @@ struct RestartData
   // Mismatching parameters might lead to undesired configurations, use with care.
   bool consider_mapping_write;
   bool consider_mapping_read;
-
-  // The `mapping_degree` considered when storing or reading the grid.
-  unsigned int mapping_degree_read;
 
   // Parameters for `dealii::Utilities::MPI::RemotePointEvaluation<dim>::RemotePointEvaluation`
   // used for grid-to-grid projection. Mirrored here to avoid `dim` template parameter.
