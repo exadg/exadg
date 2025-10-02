@@ -95,7 +95,7 @@ SpatialOperatorBase<dim, Number>::initialize_dof_handler_and_constraints()
   fe_u = setup_fe_u(param.spatial_discretization, param.grid.element_type, param.degree_u);
 
   if((param.restart_data.consider_mapping_write and param.restart_data.write_restart) or
-     (param.restart_data.consider_mapping_read and param.restarted_simulation))
+     (param.restart_data.consider_mapping_read_source and param.restarted_simulation))
   {
     fe_mapping =
       create_finite_element<dim>(param.grid.element_type, true, dim, param.mapping_degree);
@@ -1119,12 +1119,12 @@ SpatialOperatorBase<dim, Number>::deserialize_vectors(std::vector<VectorType *> 
     }
 
     // Deserialize mapping from vector or project on reference triangulations.
-    check_mapping_deserialization(param.restart_data.consider_mapping_read,
+    check_mapping_deserialization(param.restart_data.consider_mapping_read_source,
                                   deserialization_parameters.consider_mapping_write);
     std::shared_ptr<dealii::Mapping<dim> const> checkpoint_mapping;
     std::shared_ptr<MappingDoFVector<dim, typename VectorType::value_type>>
       checkpoint_mapping_dof_vector;
-    if(param.restart_data.consider_mapping_read)
+    if(param.restart_data.consider_mapping_read_source)
     {
       dealii::DoFHandler<dim> checkpoint_dof_handler_mapping(*checkpoint_triangulation);
       std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_mapping =
@@ -1158,14 +1158,39 @@ SpatialOperatorBase<dim, Number>::deserialize_vectors(std::vector<VectorType *> 
     data.rpe_data.tolerance              = param.restart_data.rpe_tolerance_unit_cell;
     data.rpe_data.enforce_unique_mapping = param.restart_data.rpe_enforce_unique_mapping;
 
-    ExaDG::GridToGridProjection::do_grid_to_grid_projection<dim, Number, VectorType>(
-      checkpoint_vectors,
-      checkpoint_dof_handlers,
-      checkpoint_mapping,
-      vectors_per_dof_handler,
-      dof_handlers,
-      *matrix_free,
-      data);
+    if(param.restart_data.consider_mapping_read_target)
+    {
+      // Consider mapping in target grid such that we can re-use the matrix-free object.
+      ExaDG::GridToGridProjection::do_grid_to_grid_projection<dim, Number, VectorType>(
+        checkpoint_vectors,
+        checkpoint_dof_handlers,
+        checkpoint_mapping,
+        vectors_per_dof_handler,
+        dof_handlers,
+        *matrix_free,
+        data);
+    }
+    else
+    {
+      // Create dummy linear mapping since we want to neglect the mapping in the target grid.
+      std::shared_ptr<dealii::Mapping<dim> const> target_mapping;
+      std::shared_ptr<dealii::Mapping<dim>>       tmp;
+      GridUtilities::create_mapping(tmp,
+                                    get_element_type(*grid->triangulation),
+                                    1 /* mapping_degree */);
+      target_mapping = std::const_pointer_cast<dealii::Mapping<dim> const>(tmp);
+
+      // Note that this construct a new matrix-free object on target grid to avoid wiping the
+      // mapping data in the current one.
+      ExaDG::GridToGridProjection::grid_to_grid_projection<dim, Number, VectorType>(
+        checkpoint_vectors,
+        checkpoint_dof_handlers,
+        checkpoint_mapping,
+        vectors_per_dof_handler,
+        dof_handlers,
+        target_mapping,
+        data);
+    }
   }
 
   // Recover ghost vector state.

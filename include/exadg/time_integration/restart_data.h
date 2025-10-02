@@ -70,7 +70,7 @@ struct DeserializationParameters
   // Polynomial degree of the mapping used at serialization.
   unsigned int mapping_degree;
 
-  // The mapping is stored during serialization.
+  // The mapping is stored during serialization as a displacement vector.
   bool consider_mapping_write;
 
   // Triangulation type used at serialization.
@@ -92,7 +92,7 @@ struct RestartData
       counter(1),
       discretization_identical(false),
       consider_mapping_write(false),
-      consider_mapping_read(false),
+      consider_mapping_read_source(false),
       rpe_rtree_level(0),
       rpe_tolerance_unit_cell(1e-12),
       rpe_enforce_unique_mapping(false)
@@ -164,10 +164,22 @@ struct RestartData
   // necessary global projection.
   bool discretization_identical;
 
-  // These options toggle storing/reading the mapping via a displacement vector/reading it back in.
-  // Mismatching parameters might lead to undesired configurations, use with care.
+  /**
+   * The following options are only effective for the grid-to-grid projection, when
+   * `discretization_identical == false`
+   * These options toggle storing and reading the mapping via a displacement vector.
+   * Mismatching parameters might lead to undesired configurations, use with care.
+   */
+
+  // Attache the mapping as a displacement vector when *writing* the restart data.
   bool consider_mapping_write;
-  bool consider_mapping_read;
+
+  // Reconstruct the mapping for the serialized grid (`source`) in the grid-to-grid projection at
+  // restart.
+  bool consider_mapping_read_source;
+
+  // Use the mapping of the grid at restart (`target`) in the grid-to-grid projection at restart.
+  bool consider_mapping_read_target;
 
   // Parameters for `dealii::Utilities::MPI::RemotePointEvaluation<dim>::RemotePointEvaluation`
   // used for grid-to-grid projection. Mirrored here to avoid `dim` template parameter.

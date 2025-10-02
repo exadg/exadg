@@ -197,7 +197,7 @@ write_deserialization_parameters(MPI_Comm const &                  mpi_comm,
   // Create folder if not existent.
   create_directories(directory, mpi_comm);
 
-  // Filename for deserialization parameters has to match read_deserialization_parameters().
+  // Filename for deserialization parameters has to match `read_deserialization_parameters()`.
   std::string const filename = directory + filename_base + ".deserialization_parameters";
 
   // Write the parameters with a single processor.
@@ -236,7 +236,7 @@ read_deserialization_parameters(MPI_Comm const &    mpi_comm,
 {
   DeserializationParameters parameters;
 
-  // Filename for deserialization parameters has to match write_deserialization_parameters().
+  // Filename for deserialization parameters has to match `write_deserialization_parameters()`.
   std::string const filename = directory + filename_base + ".deserialization_parameters";
 
   // Read the parameters with a single processor.
@@ -261,7 +261,9 @@ read_deserialization_parameters(MPI_Comm const &    mpi_comm,
   }
 
   // Broadcast parameters to all processes.
+  std::cout << "Broadcasting deserialization parameters..." << std::endl;
   parameters = dealii::Utilities::MPI::broadcast(mpi_comm, parameters, 0);
+  std::cout << "Done." << std::endl;
 
   return parameters;
 }
@@ -273,10 +275,10 @@ read_deserialization_parameters(MPI_Comm const &    mpi_comm,
  * might also be de-/serialized, while we have to deserialize exactly what we serialized.
  */
 inline void
-check_mapping_deserialization(bool const consider_mapping_read,
+check_mapping_deserialization(bool const consider_mapping_read_source,
                               bool const consider_mapping_write_as_serialized)
 {
-  if(consider_mapping_read)
+  if(consider_mapping_read_source)
   {
     if(consider_mapping_write_as_serialized == false)
     {

@@ -301,6 +301,14 @@ SpatialOperator<dim, Number>::deserialize_vectors(
                                     param.restart_data.directory,
                                     param.restart_data.filename);
 
+  pcout << "Deserialization parameters: ##+\n"
+        << "deserialization_parameters.consider_mapping_write = "
+        << deserialization_parameters.consider_mapping_write << "\n"
+        << "param.restart_data.consider_mapping_read_source ="
+        << param.restart_data.consider_mapping_read_source << "\n"
+        << "param.restart_data.consider_mapping_read_target ="
+        << param.restart_data.consider_mapping_read_target << "\n";
+
   // Load potentially unfitting checkpoint triangulation of TriangulationType.
   std::shared_ptr<dealii::Triangulation<dim>> checkpoint_triangulation =
     deserialize_triangulation<dim>(param.restart_data.directory,
@@ -361,12 +369,12 @@ SpatialOperator<dim, Number>::deserialize_vectors(
       get_vectors_per_block<VectorType, BlockVectorType>(block_vectors);
 
     // Deserialize mapping from vector or project on reference triangulations.
-    check_mapping_deserialization(param.restart_data.consider_mapping_read,
+    check_mapping_deserialization(param.restart_data.consider_mapping_read_source,
                                   deserialization_parameters.consider_mapping_write);
     std::shared_ptr<dealii::Mapping<dim> const> checkpoint_mapping;
     std::shared_ptr<MappingDoFVector<dim, typename VectorType::value_type>>
       checkpoint_mapping_dof_vector;
-    if(param.restart_data.consider_mapping_read)
+    if(param.restart_data.consider_mapping_read_source)
     {
       dealii::DoFHandler<dim> checkpoint_dof_handler_mapping(*checkpoint_triangulation);
       std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_mapping =
@@ -400,14 +408,85 @@ SpatialOperator<dim, Number>::deserialize_vectors(
     data.rpe_data.tolerance              = param.restart_data.rpe_tolerance_unit_cell;
     data.rpe_data.enforce_unique_mapping = param.restart_data.rpe_enforce_unique_mapping;
 
-    ExaDG::GridToGridProjection::do_grid_to_grid_projection<dim, Number, VectorType>(
-      checkpoint_vectors,
-      checkpoint_dof_handlers,
-      checkpoint_mapping,
-      vectors_per_dof_handler,
-      dof_handlers,
-      *matrix_free,
-      data);
+    if(param.restart_data.consider_mapping_read_target)
+    {
+      // Consider mapping in target grid such that we can re-use the matrix-free object.
+      ExaDG::GridToGridProjection::do_grid_to_grid_projection<dim, Number, VectorType>(
+        checkpoint_vectors,
+        checkpoint_dof_handlers,
+        checkpoint_mapping,
+        vectors_per_dof_handler,
+        dof_handlers,
+        *matrix_free,
+        data);
+    }
+    else
+    {
+      pcout << "CORRECT PATH ##+\n";
+
+      // Create dummy linear mapping since we want to neglect the mapping in the target grid.
+      std::shared_ptr<dealii::Mapping<dim> const> target_mapping;
+      std::shared_ptr<dealii::Mapping<dim>>       tmp;
+      GridUtilities::create_mapping(tmp,
+                                    get_element_type(*grid->triangulation),
+                                    1 /* mapping_degree */);
+      target_mapping = std::const_pointer_cast<dealii::Mapping<dim> const>(tmp);
+
+      pcout << "pre stash ##+\n";
+      // stash manifold ids and set all to flat
+      grid->stash_manifold_ids();
+
+      pcout << "pre reset manifold ids ##+\n";
+      grid->set_manifold_ids_to_flat();
+
+      pcout << "checkpoint_dof_handlers[0]->n_dofs()" << checkpoint_dof_handlers[0]->n_dofs()
+            << "\n";
+
+      pcout << "pre undo refinement ##+\n";
+      pcout << "dof_handlers[0]->n_dofs()" << dof_handlers[0]->n_dofs() << "\n";
+      // undo the refinement that considered the manifolds
+      grid->undo_refinement_fine_level();
+
+      pcout << "dof_handlers[0]->n_dofs()" << dof_handlers[0]->n_dofs() << "\n";
+
+      // redo refinement not considering manifolds
+      grid->redo_refinement_fine_level();
+
+      // Setup dofhandlers again
+      dealii::DoFHandler<dim> tmp_dof_handler_u(*grid->triangulation);
+      dealii::DoFHandler<dim> tmp_dof_handler_p(*grid->triangulation);
+      tmp_dof_handler_u.distribute_dofs(this->get_fe_u());
+      tmp_dof_handler_p.distribute_dofs(this->get_fe_p());
+      std::vector<dealii::DoFHandler<dim> const *> tmp_dof_handlers(2);
+      tmp_dof_handlers.at(block_index_velocity) = &tmp_dof_handler_u;
+      tmp_dof_handlers.at(block_index_pressure) = &tmp_dof_handler_p;
+
+      pcout << "dof_handlers[0]->n_dofs()" << dof_handlers[0]->n_dofs() << "\n";
+      pcout << "tmp_dof_handlers[0]->n_dofs()" << tmp_dof_handlers[0]->n_dofs() << "\n";
+
+      pcout << "project ##+\n";
+      // Note that this construct a new matrix-free object on target grid to avoid wiping the
+      // mapping data in the current one.
+      ExaDG::GridToGridProjection::grid_to_grid_projection<dim, Number, VectorType>(
+        checkpoint_vectors,
+        checkpoint_dof_handlers,
+        checkpoint_mapping,
+        vectors_per_dof_handler,
+        tmp_dof_handlers,
+        target_mapping, // passing mapping here ##+
+        data);
+
+      pcout << "unstash manifold ids##+\n";
+      grid->unstash_manifold_ids();
+
+      pcout << "undo refinement that did not consider manifold ids##+\n";
+      // undo the refinement that did not consider the manifolds
+      grid->undo_refinement_fine_level();
+
+      pcout << "redo refinement ##+\n";
+      // redo refinement not considering manifolds
+      grid->redo_refinement_fine_level();
+    }
   }
 
   // Recover ghost vector state.
@@ -562,7 +641,7 @@ SpatialOperator<dim, Number>::initialize_dof_handler_and_constraints()
 
   // de-/serialization of mapping requires DoFHandler
   if((param.restart_data.consider_mapping_write and param.restart_data.write_restart) or
-     (param.restart_data.consider_mapping_read and param.restarted_simulation))
+     (param.restart_data.consider_mapping_read_source and param.restarted_simulation))
   {
     fe_mapping =
       create_finite_element<dim>(param.grid.element_type, true, dim, param.mapping_degree);

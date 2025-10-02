@@ -60,7 +60,7 @@ public:
    * This vector only contains levels coarser than the fine triangulation. The first entry
    * corresponds to the coarsest triangulation.
    */
-  std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> coarse_triangulations;
+  mutable std::vector<std::shared_ptr<dealii::Triangulation<dim> const>> coarse_triangulations;
 
   /**
    * A vector of dealii::GridTools::PeriodicFacePair's for the coarse triangulations required for
@@ -70,6 +70,192 @@ public:
    * corresponds to the coarsest triangulation.
    */
   std::vector<PeriodicFacePairs> coarse_periodic_face_pairs;
+
+  /**
+   * Functionality to stash the `manifold_id`s of the `triangulation` and `coarse_triangulations`.
+   */
+  void
+  stash_manifold_ids() const
+  {
+    // stash `manifold_id`s of fine triangulation
+    if(has_non_flat_manifold_ids())
+    {
+      stashed_manifold_ids.resize(triangulation->n_active_cells());
+
+      unsigned int counter = 0;
+      for(auto const & cell : triangulation->active_cell_iterators())
+        stashed_manifold_ids[counter++] = cell->manifold_id();
+
+      // stash `manifold_id`s of coarse triangulations
+      coarse_stashed_manifold_ids.resize(coarse_triangulations.size());
+      for(unsigned int i = 0; i < coarse_triangulations.size(); ++i)
+      {
+        coarse_stashed_manifold_ids[i].resize(coarse_triangulations[i]->n_active_cells());
+
+        counter = 0;
+        for(auto const & cell : coarse_triangulations[i]->active_cell_iterators())
+          coarse_stashed_manifold_ids[i][counter++] = cell->manifold_id();
+      }
+    }
+  }
+
+  /**
+   * Set the `manifold_id`s to the default value of `manifold_id::flat`.
+   */
+  void
+  set_manifold_ids_to_flat() const
+  {
+    if(has_non_flat_manifold_ids())
+    {
+      // set `manifold_id`s of fine triangulation to flat
+      for(auto & cell : triangulation->active_cell_iterators())
+        cell->set_manifold_id(dealii::numbers::flat_manifold_id);
+
+      // set `manifold_id`s of coarse triangulations to flat
+      for(unsigned int i = 0; i < coarse_triangulations.size(); ++i)
+      {
+        for(auto & cell : coarse_triangulations[i]->active_cell_iterators())
+          cell->set_manifold_id(dealii::numbers::flat_manifold_id);
+      }
+    }
+  }
+
+  /**
+   * Restore the `manifold_id`s of the triangulation.
+   */
+  void
+  unstash_manifold_ids() const
+  {
+    // restore `manifold_id`s of fine triangulation
+    {
+      AssertThrow(stashed_manifold_ids.size() == triangulation->n_active_cells(),
+                  dealii::ExcMessage("The number of stashed `manifold_id`s does not match the "
+                                     "number of active cells on the fine triangulation."));
+
+      unsigned int counter = 0;
+      for(auto & cell : triangulation->active_cell_iterators())
+        cell->set_manifold_id(stashed_manifold_ids[counter++]);
+
+      // restore `manifold_id`s of coarse triangulations
+      AssertThrow(coarse_stashed_manifold_ids.size() == coarse_triangulations.size(),
+                  dealii::ExcMessage("The number of levels of stashed `manifold_id`s does not "
+                                     "match the number of coarse triangulations."));
+
+      for(unsigned int i = 0; i < coarse_triangulations.size(); ++i)
+      {
+        AssertThrow(coarse_stashed_manifold_ids[i].size() ==
+                      coarse_triangulations[i]->n_active_cells(),
+                    dealii::ExcMessage("The number of stashed `manifold_id`s does not match the "
+                                       "number of active cells on the coarse triangulation."));
+
+        counter = 0;
+        for(auto & cell : coarse_triangulations[i]->active_cell_iterators())
+          cell->set_manifold_id(coarse_stashed_manifold_ids[i][counter++]);
+      }
+    }
+  }
+
+  /**
+   * Utility function to undo any refinement and return to the initial coarse mesh.
+   * The coarsening history is stored to a bitvector to recover it at a later point.
+   */
+  void
+  undo_refinement_fine_level() const
+  {
+    // Reset history member variable.
+    mesh_history.clear();
+    coarsening_loops_executed = 0;
+
+    bool any_cell_coarsened = true;
+    while(any_cell_coarsened)
+    {
+      any_cell_coarsened = false;
+
+      std::cout << "Undoing refinement step..." << coarsening_loops_executed << std::endl;
+
+      // Set coarsen flags in all locally owned cells if possible.
+      for(auto const & cell : triangulation->active_cell_iterators())
+      {
+        if(cell->is_locally_owned())
+        {
+          cell->set_coarsen_flag();
+        }
+      }
+
+      // Store coarsening flags to bitvector and coarsen mesh.
+      coarsening_loops_executed++;
+      triangulation->save_coarsen_flags(mesh_history);
+      unsigned int n_active_cells_pre = triangulation->n_global_active_cells();
+      triangulation->execute_coarsening_and_refinement();
+      unsigned int n_active_cells_post = triangulation->n_global_active_cells();
+
+      // Synchronize break criterion.
+      if(n_active_cells_post < n_active_cells_pre)
+      {
+        any_cell_coarsened = true;
+        std::cout << "found a cell to coarsen..." << std::endl;
+      }
+    }
+  }
+
+  /**
+   * Utility function to redo any refinement and return to the initial fine mesh
+   * based on the coarsening history read from the bitvector.
+   */
+  void
+  redo_refinement_fine_level() const
+  {
+    AssertThrow(mesh_history.size() > 0,
+                dealii::ExcMessage("No coarsening history stored to redo refinement."));
+
+    for(unsigned int step = 0; step < coarsening_loops_executed; ++step)
+    {
+      std::cout << "Redoing refinement step..." << step << std::endl;
+      triangulation->load_coarsen_flags(mesh_history);
+
+      // If the coarsen flags were set before, we refine at this point.
+      for(auto const & cell : triangulation->active_cell_iterators())
+      {
+        if(cell->is_locally_owned())
+        {
+          if(cell->coarsen_flag_set())
+          {
+            cell->clear_coarsen_flag();
+            cell->set_refine_flag();
+          }
+        }
+      }
+
+      triangulation->execute_coarsening_and_refinement();
+    }
+  }
+
+private:
+  /**
+   * Check if the triangulation has non-flat manifold ids.
+   */
+  bool
+  has_non_flat_manifold_ids() const
+  {
+    std::vector<dealii::types::manifold_id> const manifold_ids = triangulation->get_manifold_ids();
+
+    bool has_only_flat_manifold_id =
+      manifold_ids.size() == 1 and manifold_ids[0] == dealii::numbers::flat_manifold_id;
+
+    return not has_only_flat_manifold_id;
+  }
+
+  /**
+   * Stashed `manifold_id`s of the triangulation.
+   */
+  mutable std::vector<dealii::types::manifold_id>              stashed_manifold_ids;
+  mutable std::vector<std::vector<dealii::types::manifold_id>> coarse_stashed_manifold_ids;
+
+  /**
+   * Coarsening history of the mesh stored to a bitvector to recover it at a later point.
+   */
+  mutable unsigned int      coarsening_loops_executed;
+  mutable std::vector<bool> mesh_history;
 };
 
 /**
