@@ -202,7 +202,7 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
 
             // find index within the y-values: first do a binary search to find
             // the next larger value of y in the list...
-            double const y = evaluator.real_point(i)[1];
+            double const y = evaluator.quadrature_point(i)[1];
 
             // identify index for first point located on the boundary of the cell because for this
             // point the mapping can not cause any trouble. For interior points, the deviations
@@ -448,7 +448,7 @@ StatisticsManager<dim, Number>::do_evaluate(const std::vector<VectorType const *
 
         // find index within the y-values: first do a binary search to find
         // the next larger value of y in the list...
-        double const y = evaluator.real_point(i * gauss_2d.size())[1];
+        double const y = evaluator.quadrature_point(i * gauss_2d.size())[1];
         // std::lower_bound: returns iterator to first element that is >= y.
         // Note that the vector y_glob has to be sorted. As a result, the
         // index might be too large.
