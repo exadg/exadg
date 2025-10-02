@@ -67,11 +67,10 @@ struct GridToGridProjectionData
     print_parameter(pcout, "RPE rtree level", rpe_data.rtree_level);
   }
 
-  typename dealii::Utilities::MPI::RemotePointEvaluation<dim>::AdditionalData::AdditionalData
-                     rpe_data;
-  SolverData         solver_data;
-  PreconditionerMass preconditioner;
-  InverseMassType    inverse_mass_type;
+  typename dealii::Utilities::MPI::RemotePointEvaluation<dim>::AdditionalData rpe_data;
+  SolverData                                                                  solver_data;
+  PreconditionerMass                                                          preconditioner;
+  InverseMassType                                                             inverse_mass_type;
 
   // Number of additional integration points used for sampling the source grid.
   // The default `additional_quadrature_points = 1` considers `fe_degree + 1` quadrature points in

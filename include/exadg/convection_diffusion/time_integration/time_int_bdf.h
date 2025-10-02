@@ -117,10 +117,10 @@ private:
   print_solver_info() const final;
 
   void
-  read_restart_vectors(BoostInputArchiveType & ia) final;
+  read_restart_vectors() final;
 
   void
-  write_restart_vectors(BoostOutputArchiveType & oa) const final;
+  write_restart_vectors() const final;
 
   void
   postprocessing() const final;

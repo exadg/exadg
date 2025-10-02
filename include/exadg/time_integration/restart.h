@@ -92,59 +92,6 @@ print_vector_l2_norm(VectorType const & vector)
   }
 }
 
-/**
- * Utility function to read or write the local entries of a
- * dealii::LinearAlgebra::distributed::(Block)Vector
- * from/to a boost archive per block and entry.
- * Using the `&` operator, loading from or writing to the
- * archive is determined from the type.
- */
-template<typename VectorType, typename BoostArchiveType>
-inline void
-read_write_distributed_vector(VectorType & vector, BoostArchiveType & archive)
-{
-  // Print vector norm here only *before* writing.
-  if(std::is_same<BoostArchiveType, boost::archive::text_oarchive>::value or
-     std::is_same<BoostArchiveType, boost::archive::binary_oarchive>::value)
-  {
-    print_vector_l2_norm(vector);
-  }
-
-  // Depending on VectorType, we have to loop over the blocks to
-  // access the local entries via vector.local_element(i).
-  using Number = typename VectorType::value_type;
-  if constexpr(std::is_same<std::remove_cv_t<VectorType>,
-                            dealii::LinearAlgebra::distributed::Vector<Number>>::value)
-  {
-    for(unsigned int i = 0; i < vector.locally_owned_size(); ++i)
-    {
-      archive & vector.local_element(i);
-    }
-  }
-  else if constexpr(std::is_same<std::remove_cv_t<VectorType>,
-                                 dealii::LinearAlgebra::distributed::BlockVector<Number>>::value)
-  {
-    for(unsigned int i = 0; i < vector.n_blocks(); ++i)
-    {
-      for(unsigned int j = 0; j < vector.block(i).locally_owned_size(); ++j)
-      {
-        archive & vector.block(i).local_element(j);
-      }
-    }
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("Reading into this VectorType not supported."));
-  }
-
-  // Print vector norm here only *after* reading.
-  if(std::is_same<BoostArchiveType, boost::archive::text_iarchive>::value or
-     std::is_same<BoostArchiveType, boost::archive::binary_iarchive>::value)
-  {
-    print_vector_l2_norm(vector);
-  }
-}
-
 /** Utility function to convert a vector of block vector pointers into a
  * vector of vectors of `VectorType` pointers, where all vectors from each
  * individual block are summarized in a std::vector.
@@ -288,8 +235,8 @@ inline void
 store_vectors_in_triangulation_and_serialize(
   std::string const &                                       directory,
   std::string const &                                       filename_base,
-  std::vector<std::vector<VectorType const *>> const &      vectors_per_dof_handler,
-  std::vector<dealii::DoFHandler<dim, dim> const *> const & dof_handlers)
+  std::vector<dealii::DoFHandler<dim, dim> const *> const & dof_handlers,
+  std::vector<std::vector<VectorType const *>> const &      vectors_per_dof_handler)
 {
   AssertThrow(vectors_per_dof_handler.size() > 0,
               dealii::ExcMessage("No vectors to store in triangulation."));
@@ -355,8 +302,8 @@ inline void
 store_vectors_in_triangulation_and_serialize(
   std::string const &                                       directory,
   std::string const &                                       filename_base,
-  std::vector<std::vector<VectorType const *>> const &      vectors_per_dof_handler,
   std::vector<dealii::DoFHandler<dim, dim> const *> const & dof_handlers,
+  std::vector<std::vector<VectorType const *>> const &      vectors_per_dof_handler,
   dealii::Mapping<dim> const &                              mapping,
   dealii::DoFHandler<dim> const *                           dof_handler_mapping,
   unsigned int const                                        mapping_degree)
@@ -423,8 +370,8 @@ store_vectors_in_triangulation_and_serialize(
   // Use utility function that ignores the mapping.
   store_vectors_in_triangulation_and_serialize(directory,
                                                filename_base,
-                                               vectors_per_dof_handler_extended,
-                                               dof_handlers_extended);
+                                               dof_handlers_extended,
+                                               vectors_per_dof_handler_extended);
 }
 
 /**

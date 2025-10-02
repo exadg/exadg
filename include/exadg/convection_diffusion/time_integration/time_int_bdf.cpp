@@ -428,10 +428,8 @@ TimeIntBDF<dim, Number>::print_solver_info() const
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
+TimeIntBDF<dim, Number>::read_restart_vectors()
 {
-  (void)ia;
-
   std::vector<VectorType *> vectors;
 
   for(unsigned int i = 0; i < this->order; i++)
@@ -464,10 +462,8 @@ TimeIntBDF<dim, Number>::read_restart_vectors(BoostInputArchiveType & ia)
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::write_restart_vectors(BoostOutputArchiveType & oa) const
+TimeIntBDF<dim, Number>::write_restart_vectors() const
 {
-  (void)oa;
-
   std::vector<VectorType const *> vectors;
 
   for(unsigned int i = 0; i < this->order; i++)
