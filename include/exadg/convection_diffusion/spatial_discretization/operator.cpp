@@ -723,12 +723,12 @@ Operator<dim, Number>::deserialize_vectors(std::vector<VectorType *> const & vec
     data.rpe_data.enforce_unique_mapping = param.restart_data.rpe_enforce_unique_mapping;
 
     ExaDG::GridToGridProjection::do_grid_to_grid_projection<dim, Number, VectorType>(
-      checkpoint_vectors_ptr,
-      checkpoint_dof_handlers,
       checkpoint_mapping,
-      vectors_per_dof_handler,
+      checkpoint_dof_handlers,
+      checkpoint_vectors_ptr,
       dof_handlers,
       *matrix_free,
+      vectors_per_dof_handler,
       data);
   }
 
