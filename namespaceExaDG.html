@@ -143,6 +143,8 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1DeformedMappingFunction.html">DeformedMappingFunction</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structExaDG_1_1DeserializationParameters.html">DeserializationParameters</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1DivergenceCalculator.html">DivergenceCalculator</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structExaDG_1_1EigenvalueTracker.html">EigenvalueTracker</a></td></tr>
@@ -804,9 +806,9 @@ template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">
 template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </td></tr>
 <tr class="memitem:a261e259f1181229273b9206b9961d3dd"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>push_back</b> (std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> &gt; &amp;vector)</td></tr>
 <tr class="separator:a261e259f1181229273b9206b9961d3dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3ca436af915bfdba1f094b06efa60611" id="r_a3ca436af915bfdba1f094b06efa60611"><td class="memItemLeft" align="right" valign="top"><a id="a3ca436af915bfdba1f094b06efa60611" name="a3ca436af915bfdba1f094b06efa60611"></a>
-std::string&#160;</td><td class="memItemRight" valign="bottom"><b>restart_filename</b> (std::string const &amp;name, MPI_Comm const &amp;mpi_comm)</td></tr>
-<tr class="separator:a3ca436af915bfdba1f094b06efa60611"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8fdae8e603292112cb7539c99eb58cca" id="r_a8fdae8e603292112cb7539c99eb58cca"><td class="memItemLeft" align="right" valign="top"><a id="a8fdae8e603292112cb7539c99eb58cca" name="a8fdae8e603292112cb7539c99eb58cca"></a>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><b>generate_restart_filename</b> (std::string const &amp;name)</td></tr>
+<tr class="separator:a8fdae8e603292112cb7539c99eb58cca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a988b8f6503d68313b8f0ffb60e78d451" id="r_a988b8f6503d68313b8f0ffb60e78d451"><td class="memItemLeft" align="right" valign="top"><a id="a988b8f6503d68313b8f0ffb60e78d451" name="a988b8f6503d68313b8f0ffb60e78d451"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>rename_restart_files</b> (std::string const &amp;filename)</td></tr>
 <tr class="separator:a988b8f6503d68313b8f0ffb60e78d451"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -831,6 +833,13 @@ template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">
 template&lt;typename <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>&gt; </td></tr>
 <tr class="memitem:a35e16848ddfb235f871347994e1c4829"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>set_ghost_state</b> (std::vector&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> * &gt; const &amp;vectors, std::vector&lt; bool &gt; const &amp;had_ghost_elements)</td></tr>
 <tr class="separator:a35e16848ddfb235f871347994e1c4829"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6a6edfc2a0a63a92d67ca30856d7b024" id="r_a6a6edfc2a0a63a92d67ca30856d7b024"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6a6edfc2a0a63a92d67ca30856d7b024">write_deserialization_parameters</a> (MPI_Comm const &amp;mpi_comm, std::string const &amp;directory, std::string const &amp;filename_base, <a class="el" href="structExaDG_1_1DeserializationParameters.html">DeserializationParameters</a> const &amp;parameters)</td></tr>
+<tr class="separator:a6a6edfc2a0a63a92d67ca30856d7b024"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6cea8bbc94285b1f3baa5b1c9a91e5b9" id="r_a6cea8bbc94285b1f3baa5b1c9a91e5b9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structExaDG_1_1DeserializationParameters.html">DeserializationParameters</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6cea8bbc94285b1f3baa5b1c9a91e5b9">read_deserialization_parameters</a> (MPI_Comm const &amp;mpi_comm, std::string const &amp;directory, std::string const &amp;filename_base)</td></tr>
+<tr class="separator:a6cea8bbc94285b1f3baa5b1c9a91e5b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2e21fa358a451797d121b67468510453" id="r_a2e21fa358a451797d121b67468510453"><td class="memItemLeft" align="right" valign="top"><a id="a2e21fa358a451797d121b67468510453" name="a2e21fa358a451797d121b67468510453"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>check_mapping_deserialization</b> (bool const consider_mapping_read_source, bool const consider_mapping_write_as_serialized)</td></tr>
+<tr class="separator:a2e21fa358a451797d121b67468510453"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0aebd2a478e275416f81f1da6c536bd6" id="r_a0aebd2a478e275416f81f1da6c536bd6"><td class="memTemplParams" colspan="2">template&lt;int dim, typename TriangulationType&gt; </td></tr>
 <tr class="memitem:a0aebd2a478e275416f81f1da6c536bd6"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="#a0aebd2a478e275416f81f1da6c536bd6">save_coarse_triangulation</a> (std::string const &amp;directory, std::string const &amp;filename_base, TriangulationType const &amp;triangulation)</td></tr>
 <tr class="separator:a0aebd2a478e275416f81f1da6c536bd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1720,6 +1729,41 @@ template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBa
 
 </div>
 </div>
+<a id="a6cea8bbc94285b1f3baa5b1c9a91e5b9" name="a6cea8bbc94285b1f3baa5b1c9a91e5b9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6cea8bbc94285b1f3baa5b1c9a91e5b9">&#9670;&#160;</a></span>read_deserialization_parameters()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structExaDG_1_1DeserializationParameters.html">DeserializationParameters</a> ExaDG::read_deserialization_parameters </td>
+          <td>(</td>
+          <td class="paramtype">MPI_Comm const &amp;</td>          <td class="paramname"><span class="paramname"><em>mpi_comm</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string const &amp;</td>          <td class="paramname"><span class="paramname"><em>directory</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string const &amp;</td>          <td class="paramname"><span class="paramname"><em>filename_base</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Utility function to read the parameters a discretization is serialized with. This is to recover the parameters when deserializing. </p>
+
+</div>
+</div>
 <a id="ac26ac75e95c9fbc45eaa00fa0c05a2b7" name="ac26ac75e95c9fbc45eaa00fa0c05a2b7"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac26ac75e95c9fbc45eaa00fa0c05a2b7">&#9670;&#160;</a></span>refine_local()</h2>
 
@@ -1908,6 +1952,46 @@ template&lt;int dim, typename <a class="el" href="classExaDG_1_1PreconditionerBa
 </table>
 </div><div class="memdoc">
 <p>Check if adaptive mesh refinement should be triggered depending on the time_step_number. </p>
+
+</div>
+</div>
+<a id="a6a6edfc2a0a63a92d67ca30856d7b024" name="a6a6edfc2a0a63a92d67ca30856d7b024"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6a6edfc2a0a63a92d67ca30856d7b024">&#9670;&#160;</a></span>write_deserialization_parameters()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ExaDG::write_deserialization_parameters </td>
+          <td>(</td>
+          <td class="paramtype">MPI_Comm const &amp;</td>          <td class="paramname"><span class="paramname"><em>mpi_comm</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string const &amp;</td>          <td class="paramname"><span class="paramname"><em>directory</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string const &amp;</td>          <td class="paramname"><span class="paramname"><em>filename_base</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structExaDG_1_1DeserializationParameters.html">DeserializationParameters</a> const &amp;</td>          <td class="paramname"><span class="paramname"><em>parameters</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Utility function to write the parameters a discretization is serialized with. This is to recover the parameters when deserializing. </p>
 
 </div>
 </div>
