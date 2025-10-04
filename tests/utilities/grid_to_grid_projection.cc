@@ -471,12 +471,12 @@ GridToGridProjector<dim, n_components>::project()
   data.preconditioner               = PreconditionerMass::PointJacobi;
 
   GridToGridProjection::grid_to_grid_projection<dim, VectorType::value_type, VectorType>(
-    source_vectors_per_dof_handler,
+    mapping,
     source_dof_handlers,
+    source_vectors_per_dof_handler,
     mapping,
-    target_vectors_per_dof_handler,
     target_dof_handlers,
-    mapping,
+    target_vectors_per_dof_handler,
     data);
 }
 

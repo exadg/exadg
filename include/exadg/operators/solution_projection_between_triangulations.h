@@ -192,11 +192,11 @@ assemble_projection_rhs(
 template<int dim, typename Number, int n_components, typename VectorType>
 void
 project_vectors(
-  std::vector<VectorType *> const &                                        source_vectors,
-  dealii::DoFHandler<dim> const &                                          source_dof_handler,
   std::shared_ptr<dealii::Mapping<dim> const> const &                      source_mapping,
-  std::vector<VectorType *> const &                                        target_vectors,
+  dealii::DoFHandler<dim> const &                                          source_dof_handler,
+  std::vector<VectorType *> const &                                        source_vectors,
   dealii::MatrixFree<dim, Number, dealii::VectorizedArray<Number>> const & target_matrix_free,
+  std::vector<VectorType *> const &                                        target_vectors,
   unsigned int const                                                       dof_index,
   unsigned int const                                                       quad_index,
   GridToGridProjectionData<dim> const &                                    data)
@@ -288,13 +288,13 @@ project_vectors(
 template<int dim, typename Number, typename VectorType>
 void
 do_grid_to_grid_projection(
-  std::vector<std::vector<VectorType *>> const &       source_vectors_per_dof_handler,
-  std::vector<dealii::DoFHandler<dim> const *> const & source_dof_handlers,
   std::shared_ptr<dealii::Mapping<dim> const> const &  source_mapping,
-  std::vector<std::vector<VectorType *>> &             target_vectors_per_dof_handler,
+  std::vector<dealii::DoFHandler<dim> const *> const & source_dof_handlers,
+  std::vector<std::vector<VectorType *>> const &       source_vectors_per_dof_handler,
   std::vector<dealii::DoFHandler<dim> const *> const & target_dof_handlers,
   dealii::MatrixFree<dim, Number, dealii::VectorizedArray<Number>> const & target_matrix_free,
-  GridToGridProjectionData<dim> const &                                    data)
+  std::vector<std::vector<VectorType *>> & target_vectors_per_dof_handler,
+  GridToGridProjectionData<dim> const &    data)
 {
   // Check input dimensions.
   AssertThrow(source_vectors_per_dof_handler.size() == source_dof_handlers.size(),
@@ -321,11 +321,11 @@ do_grid_to_grid_projection(
     if(n_components == 1)
     {
       project_vectors<dim, Number, 1 /* n_components */, VectorType>(
-        source_vectors_per_dof_handler.at(i),
-        *source_dof_handlers.at(i),
         source_mapping,
-        target_vectors_per_dof_handler.at(i),
+        *source_dof_handlers.at(i),
+        source_vectors_per_dof_handler.at(i),
         target_matrix_free,
+        target_vectors_per_dof_handler.at(i),
         i /* dof_index */,
         i /* quad_index */,
         data);
@@ -333,11 +333,11 @@ do_grid_to_grid_projection(
     else if(n_components == dim)
     {
       project_vectors<dim, Number, dim /* n_components */, VectorType>(
-        source_vectors_per_dof_handler.at(i),
-        *source_dof_handlers.at(i),
         source_mapping,
-        target_vectors_per_dof_handler.at(i),
+        *source_dof_handlers.at(i),
+        source_vectors_per_dof_handler.at(i),
         target_matrix_free,
+        target_vectors_per_dof_handler.at(i),
         i /* dof_index */,
         i /* quad_index */,
         data);
@@ -345,11 +345,11 @@ do_grid_to_grid_projection(
     else if(n_components == dim + 2)
     {
       project_vectors<dim, Number, dim + 2 /* n_components */, VectorType>(
-        source_vectors_per_dof_handler.at(i),
-        *source_dof_handlers.at(i),
         source_mapping,
-        target_vectors_per_dof_handler.at(i),
+        *source_dof_handlers.at(i),
+        source_vectors_per_dof_handler.at(i),
         target_matrix_free,
+        target_vectors_per_dof_handler.at(i),
         i /* dof_index */,
         i /* quad_index */,
         data);
@@ -369,12 +369,12 @@ do_grid_to_grid_projection(
 template<int dim, typename Number, typename VectorType>
 void
 grid_to_grid_projection(
-  std::vector<std::vector<VectorType *>> const &       source_vectors_per_dof_handler,
-  std::vector<dealii::DoFHandler<dim> const *> const & source_dof_handlers,
   std::shared_ptr<dealii::Mapping<dim> const> const &  source_mapping,
-  std::vector<std::vector<VectorType *>> &             target_vectors_per_dof_handler,
-  std::vector<dealii::DoFHandler<dim> const *> const & target_dof_handlers,
+  std::vector<dealii::DoFHandler<dim> const *> const & source_dof_handlers,
+  std::vector<std::vector<VectorType *>> const &       source_vectors_per_dof_handler,
   std::shared_ptr<dealii::Mapping<dim> const> const &  target_mapping,
+  std::vector<dealii::DoFHandler<dim> const *> const & target_dof_handlers,
+  std::vector<std::vector<VectorType *>> &             target_vectors_per_dof_handler,
   GridToGridProjectionData<dim> const &                data)
 {
   // Setup a single `dealii::MatrixFree` object with multiple `dealii::DoFHandler`s.
@@ -409,12 +409,12 @@ grid_to_grid_projection(
                             target_matrix_free_data.get_quadrature_vector(),
                             target_matrix_free_data.data);
 
-  do_grid_to_grid_projection<dim, Number, VectorType>(source_vectors_per_dof_handler,
+  do_grid_to_grid_projection<dim, Number, VectorType>(source_mapping,
                                                       source_dof_handlers,
-                                                      source_mapping,
-                                                      target_vectors_per_dof_handler,
+                                                      source_vectors_per_dof_handler,
                                                       target_dof_handlers,
                                                       target_matrix_free,
+                                                      target_vectors_per_dof_handler,
                                                       data);
 }
 
