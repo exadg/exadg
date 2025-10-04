@@ -275,11 +275,11 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number, <span class="keywordtype">int</span> n_components, <span class="keyword">typename</span> VectorType&gt;</div>
 <div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span><span class="keywordtype">void</span></div>
 <div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>project_vectors(</div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>  std::vector&lt;VectorType *&gt; <span class="keyword">const</span> &amp;                                        source_vectors,</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; <span class="keyword">const</span> &amp;                      source_mapping,</div>
 <div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>  dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp;                                          source_dof_handler,</div>
-<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; <span class="keyword">const</span> &amp;                      source_mapping,</div>
-<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>  std::vector&lt;VectorType *&gt; <span class="keyword">const</span> &amp;                                        target_vectors,</div>
-<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  dealii::MatrixFree&lt;dim, Number, dealii::VectorizedArray&lt;Number&gt;&gt; <span class="keyword">const</span> &amp; target_matrix_free,</div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>  std::vector&lt;VectorType *&gt; <span class="keyword">const</span> &amp;                                        source_vectors,</div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>  dealii::MatrixFree&lt;dim, Number, dealii::VectorizedArray&lt;Number&gt;&gt; <span class="keyword">const</span> &amp; target_matrix_free,</div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  std::vector&lt;VectorType *&gt; <span class="keyword">const</span> &amp;                                        target_vectors,</div>
 <div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                                       dof_index,</div>
 <div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                                       quad_index,</div>
 <div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  <a class="code hl_struct" href="structExaDG_1_1GridToGridProjection_1_1GridToGridProjectionData.html">GridToGridProjectionData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;                                    data)</div>
@@ -366,13 +366,13 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number, <span class="keyword">typename</span> VectorType&gt;</div>
 <div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span><span class="keywordtype">void</span></div>
 <div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span>do_grid_to_grid_projection(</div>
-<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>  std::vector&lt;std::vector&lt;VectorType *&gt;&gt; <span class="keyword">const</span> &amp;       source_vectors_per_dof_handler,</div>
+<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; <span class="keyword">const</span> &amp;  source_mapping,</div>
 <div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>  std::vector&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> *&gt; <span class="keyword">const</span> &amp; source_dof_handlers,</div>
-<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; <span class="keyword">const</span> &amp;  source_mapping,</div>
-<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>  std::vector&lt;std::vector&lt;VectorType *&gt;&gt; &amp;             target_vectors_per_dof_handler,</div>
-<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>  std::vector&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> *&gt; <span class="keyword">const</span> &amp; target_dof_handlers,</div>
-<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>  dealii::MatrixFree&lt;dim, Number, dealii::VectorizedArray&lt;Number&gt;&gt; <span class="keyword">const</span> &amp; target_matrix_free,</div>
-<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>  <a class="code hl_struct" href="structExaDG_1_1GridToGridProjection_1_1GridToGridProjectionData.html">GridToGridProjectionData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;                                    data)</div>
+<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>  std::vector&lt;std::vector&lt;VectorType *&gt;&gt; <span class="keyword">const</span> &amp;       source_vectors_per_dof_handler,</div>
+<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>  std::vector&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> *&gt; <span class="keyword">const</span> &amp; target_dof_handlers,</div>
+<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>  dealii::MatrixFree&lt;dim, Number, dealii::VectorizedArray&lt;Number&gt;&gt; <span class="keyword">const</span> &amp; target_matrix_free,</div>
+<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>  std::vector&lt;std::vector&lt;VectorType *&gt;&gt; &amp; target_vectors_per_dof_handler,</div>
+<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>  <a class="code hl_struct" href="structExaDG_1_1GridToGridProjection_1_1GridToGridProjectionData.html">GridToGridProjectionData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;    data)</div>
 <div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>{</div>
 <div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>  <span class="comment">// Check input dimensions.</span></div>
 <div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>  AssertThrow(source_vectors_per_dof_handler.size() == source_dof_handlers.size(),</div>
@@ -399,11 +399,11 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>    <span class="keywordflow">if</span>(n_components == 1)</div>
 <div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>    {</div>
 <div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span>      project_vectors&lt;dim, Number, 1 <span class="comment">/* n_components */</span>, VectorType&gt;(</div>
-<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>        source_vectors_per_dof_handler.at(i),</div>
+<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>        source_mapping,</div>
 <div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>        *source_dof_handlers.at(i),</div>
-<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>        source_mapping,</div>
-<div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>        target_vectors_per_dof_handler.at(i),</div>
-<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>        target_matrix_free,</div>
+<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>        source_vectors_per_dof_handler.at(i),</div>
+<div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>        target_matrix_free,</div>
+<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>        target_vectors_per_dof_handler.at(i),</div>
 <div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>        i <span class="comment">/* dof_index */</span>,</div>
 <div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span>        i <span class="comment">/* quad_index */</span>,</div>
 <div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>        data);</div>
@@ -411,11 +411,11 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(n_components == dim)</div>
 <div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span>    {</div>
 <div class="line"><a id="l00335" name="l00335"></a><span class="lineno">  335</span>      project_vectors&lt;dim, Number, dim <span class="comment">/* n_components */</span>, VectorType&gt;(</div>
-<div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span>        source_vectors_per_dof_handler.at(i),</div>
+<div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span>        source_mapping,</div>
 <div class="line"><a id="l00337" name="l00337"></a><span class="lineno">  337</span>        *source_dof_handlers.at(i),</div>
-<div class="line"><a id="l00338" name="l00338"></a><span class="lineno">  338</span>        source_mapping,</div>
-<div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span>        target_vectors_per_dof_handler.at(i),</div>
-<div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span>        target_matrix_free,</div>
+<div class="line"><a id="l00338" name="l00338"></a><span class="lineno">  338</span>        source_vectors_per_dof_handler.at(i),</div>
+<div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span>        target_matrix_free,</div>
+<div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span>        target_vectors_per_dof_handler.at(i),</div>
 <div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span>        i <span class="comment">/* dof_index */</span>,</div>
 <div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span>        i <span class="comment">/* quad_index */</span>,</div>
 <div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>        data);</div>
@@ -423,11 +423,11 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(n_components == dim + 2)</div>
 <div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span>    {</div>
 <div class="line"><a id="l00347" name="l00347"></a><span class="lineno">  347</span>      project_vectors&lt;dim, Number, dim + 2 <span class="comment">/* n_components */</span>, VectorType&gt;(</div>
-<div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span>        source_vectors_per_dof_handler.at(i),</div>
+<div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span>        source_mapping,</div>
 <div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span>        *source_dof_handlers.at(i),</div>
-<div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span>        source_mapping,</div>
-<div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span>        target_vectors_per_dof_handler.at(i),</div>
-<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>        target_matrix_free,</div>
+<div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span>        source_vectors_per_dof_handler.at(i),</div>
+<div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span>        target_matrix_free,</div>
+<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>        target_vectors_per_dof_handler.at(i),</div>
 <div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span>        i <span class="comment">/* dof_index */</span>,</div>
 <div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span>        i <span class="comment">/* quad_index */</span>,</div>
 <div class="line"><a id="l00355" name="l00355"></a><span class="lineno">  355</span>        data);</div>
@@ -444,12 +444,12 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00369" name="l00369"></a><span class="lineno">  369</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number, <span class="keyword">typename</span> VectorType&gt;</div>
 <div class="line"><a id="l00370" name="l00370"></a><span class="lineno">  370</span><span class="keywordtype">void</span></div>
 <div class="line"><a id="l00371" name="l00371"></a><span class="lineno">  371</span>grid_to_grid_projection(</div>
-<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span>  std::vector&lt;std::vector&lt;VectorType *&gt;&gt; <span class="keyword">const</span> &amp;       source_vectors_per_dof_handler,</div>
+<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span>  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; <span class="keyword">const</span> &amp;  source_mapping,</div>
 <div class="line"><a id="l00373" name="l00373"></a><span class="lineno">  373</span>  std::vector&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> *&gt; <span class="keyword">const</span> &amp; source_dof_handlers,</div>
-<div class="line"><a id="l00374" name="l00374"></a><span class="lineno">  374</span>  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; <span class="keyword">const</span> &amp;  source_mapping,</div>
-<div class="line"><a id="l00375" name="l00375"></a><span class="lineno">  375</span>  std::vector&lt;std::vector&lt;VectorType *&gt;&gt; &amp;             target_vectors_per_dof_handler,</div>
+<div class="line"><a id="l00374" name="l00374"></a><span class="lineno">  374</span>  std::vector&lt;std::vector&lt;VectorType *&gt;&gt; <span class="keyword">const</span> &amp;       source_vectors_per_dof_handler,</div>
+<div class="line"><a id="l00375" name="l00375"></a><span class="lineno">  375</span>  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; <span class="keyword">const</span> &amp;  target_mapping,</div>
 <div class="line"><a id="l00376" name="l00376"></a><span class="lineno">  376</span>  std::vector&lt;dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> *&gt; <span class="keyword">const</span> &amp; target_dof_handlers,</div>
-<div class="line"><a id="l00377" name="l00377"></a><span class="lineno">  377</span>  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; <span class="keyword">const</span> &amp;  target_mapping,</div>
+<div class="line"><a id="l00377" name="l00377"></a><span class="lineno">  377</span>  std::vector&lt;std::vector&lt;VectorType *&gt;&gt; &amp;             target_vectors_per_dof_handler,</div>
 <div class="line"><a id="l00378" name="l00378"></a><span class="lineno">  378</span>  <a class="code hl_struct" href="structExaDG_1_1GridToGridProjection_1_1GridToGridProjectionData.html">GridToGridProjectionData&lt;dim&gt;</a> <span class="keyword">const</span> &amp;                data)</div>
 <div class="line"><a id="l00379" name="l00379"></a><span class="lineno">  379</span>{</div>
 <div class="line"><a id="l00380" name="l00380"></a><span class="lineno">  380</span>  <span class="comment">// Setup a single `dealii::MatrixFree` object with multiple `dealii::DoFHandler`s.</span></div>
@@ -484,12 +484,12 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00409" name="l00409"></a><span class="lineno">  409</span>                            target_matrix_free_data.get_quadrature_vector(),</div>
 <div class="line"><a id="l00410" name="l00410"></a><span class="lineno">  410</span>                            target_matrix_free_data.data);</div>
 <div class="line"><a id="l00411" name="l00411"></a><span class="lineno">  411</span> </div>
-<div class="line"><a id="l00412" name="l00412"></a><span class="lineno">  412</span>  do_grid_to_grid_projection&lt;dim, Number, VectorType&gt;(source_vectors_per_dof_handler,</div>
+<div class="line"><a id="l00412" name="l00412"></a><span class="lineno">  412</span>  do_grid_to_grid_projection&lt;dim, Number, VectorType&gt;(source_mapping,</div>
 <div class="line"><a id="l00413" name="l00413"></a><span class="lineno">  413</span>                                                      source_dof_handlers,</div>
-<div class="line"><a id="l00414" name="l00414"></a><span class="lineno">  414</span>                                                      source_mapping,</div>
-<div class="line"><a id="l00415" name="l00415"></a><span class="lineno">  415</span>                                                      target_vectors_per_dof_handler,</div>
-<div class="line"><a id="l00416" name="l00416"></a><span class="lineno">  416</span>                                                      target_dof_handlers,</div>
-<div class="line"><a id="l00417" name="l00417"></a><span class="lineno">  417</span>                                                      target_matrix_free,</div>
+<div class="line"><a id="l00414" name="l00414"></a><span class="lineno">  414</span>                                                      source_vectors_per_dof_handler,</div>
+<div class="line"><a id="l00415" name="l00415"></a><span class="lineno">  415</span>                                                      target_dof_handlers,</div>
+<div class="line"><a id="l00416" name="l00416"></a><span class="lineno">  416</span>                                                      target_matrix_free,</div>
+<div class="line"><a id="l00417" name="l00417"></a><span class="lineno">  417</span>                                                      target_vectors_per_dof_handler,</div>
 <div class="line"><a id="l00418" name="l00418"></a><span class="lineno">  418</span>                                                      data);</div>
 <div class="line"><a id="l00419" name="l00419"></a><span class="lineno">  419</span>}</div>
 <div class="line"><a id="l00420" name="l00420"></a><span class="lineno">  420</span> </div>
