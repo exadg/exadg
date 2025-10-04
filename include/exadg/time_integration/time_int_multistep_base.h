@@ -215,9 +215,6 @@ private:
   void
   do_read_restart(std::ifstream & in) final;
 
-  void
-  read_restart_preamble(BoostInputArchiveType & ia);
-
   virtual void
   read_restart_vectors() = 0;
 
@@ -227,9 +224,6 @@ private:
    */
   void
   do_write_restart(std::string const & filename) const final;
-
-  void
-  write_restart_preamble(BoostOutputArchiveType & oa) const;
 
   virtual void
   write_restart_vectors() const = 0;

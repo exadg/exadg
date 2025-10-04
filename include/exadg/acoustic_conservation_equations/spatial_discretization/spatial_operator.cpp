@@ -247,6 +247,20 @@ void
 SpatialOperator<dim, Number>::serialize_vectors(
   std::vector<BlockVectorType const *> const & block_vectors) const
 {
+  // Write deserialization parameters. These do not change during the simulation, but the data are
+  // small and we want to make sure to overwrite them.
+  DeserializationParameters deserialization_parameters;
+  deserialization_parameters.degree_u               = param.degree_u;
+  deserialization_parameters.degree_p               = param.degree_p;
+  deserialization_parameters.mapping_degree         = param.mapping_degree;
+  deserialization_parameters.consider_mapping_write = param.restart_data.consider_mapping_write;
+  deserialization_parameters.triangulation_type     = param.grid.triangulation_type;
+  write_deserialization_parameters(mpi_comm,
+                                   param.restart_data.directory,
+                                   param.restart_data.filename,
+                                   deserialization_parameters);
+
+  // Attach vectors to triangulation and serialize.
   std::vector<dealii::DoFHandler<dim> const *> dof_handlers(2);
   dof_handlers.at(block_index_velocity) = &this->get_dof_handler_u();
   dof_handlers.at(block_index_pressure) = &this->get_dof_handler_p();
@@ -254,7 +268,7 @@ SpatialOperator<dim, Number>::serialize_vectors(
   std::vector<std::vector<VectorType const *>> vectors_per_dof_handler =
     get_vectors_per_block<VectorType const, BlockVectorType const>(block_vectors);
 
-  if(param.restart_data.consider_mapping)
+  if(param.restart_data.consider_mapping_write)
   {
     store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
                                                  param.restart_data.filename,
@@ -281,11 +295,17 @@ SpatialOperator<dim, Number>::deserialize_vectors(
   // Store ghost state to recover after deserialization.
   std::vector<bool> const has_ghost_elements = get_ghost_state(block_vectors);
 
+  // Load the deserialization parameters.
+  DeserializationParameters const deserialization_parameters =
+    read_deserialization_parameters(mpi_comm,
+                                    param.restart_data.directory,
+                                    param.restart_data.filename);
+
   // Load potentially unfitting checkpoint triangulation of TriangulationType.
   std::shared_ptr<dealii::Triangulation<dim>> checkpoint_triangulation =
     deserialize_triangulation<dim>(param.restart_data.directory,
                                    param.restart_data.filename,
-                                   param.restart_data.triangulation_type,
+                                   deserialization_parameters.triangulation_type,
                                    mpi_comm);
 
   // Set up DoFHandlers *as checkpointed*, sequence matches `this->serialize_vectors()`.
@@ -294,10 +314,10 @@ SpatialOperator<dim, Number>::deserialize_vectors(
 
   ElementType const checkpoint_element_type = get_element_type(*checkpoint_triangulation);
 
-  std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_u =
-    create_finite_element<dim>(checkpoint_element_type, true, dim, param.restart_data.degree_u);
-  std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_p =
-    create_finite_element<dim>(checkpoint_element_type, true, 1, param.restart_data.degree_p);
+  std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_u = create_finite_element<dim>(
+    checkpoint_element_type, true, dim, deserialization_parameters.degree_u);
+  std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_p = create_finite_element<dim>(
+    checkpoint_element_type, true, 1, deserialization_parameters.degree_p);
 
   checkpoint_dof_handler_u.distribute_dofs(*checkpoint_fe_u);
   checkpoint_dof_handler_p.distribute_dofs(*checkpoint_fe_p);
@@ -341,23 +361,25 @@ SpatialOperator<dim, Number>::deserialize_vectors(
       get_vectors_per_block<VectorType, BlockVectorType>(block_vectors);
 
     // Deserialize mapping from vector or project on reference triangulations.
+    check_mapping_deserialization(param.restart_data.consider_mapping_read_source,
+                                  deserialization_parameters.consider_mapping_write);
     std::shared_ptr<dealii::Mapping<dim> const> checkpoint_mapping;
     std::shared_ptr<MappingDoFVector<dim, typename VectorType::value_type>>
       checkpoint_mapping_dof_vector;
-    if(param.restart_data.consider_mapping)
+    if(param.restart_data.consider_mapping_read_source)
     {
       dealii::DoFHandler<dim> checkpoint_dof_handler_mapping(*checkpoint_triangulation);
       std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_mapping =
         create_finite_element<dim>(checkpoint_element_type,
                                    true,
                                    dim,
-                                   param.restart_data.mapping_degree);
+                                   deserialization_parameters.mapping_degree);
       checkpoint_dof_handler_mapping.distribute_dofs(*checkpoint_fe_mapping);
 
       checkpoint_mapping_dof_vector = load_vectors(checkpoint_vectors,
                                                    checkpoint_dof_handlers,
                                                    &checkpoint_dof_handler_mapping,
-                                                   param.restart_data.mapping_degree);
+                                                   deserialization_parameters.mapping_degree);
 
       checkpoint_mapping = checkpoint_mapping_dof_vector->get_mapping();
     }
@@ -374,6 +396,7 @@ SpatialOperator<dim, Number>::deserialize_vectors(
     }
 
     ExaDG::GridToGridProjection::GridToGridProjectionData<dim> data;
+    data.rpe_data.rtree_level            = param.restart_data.rpe_rtree_level;
     data.rpe_data.tolerance              = param.restart_data.rpe_tolerance_unit_cell;
     data.rpe_data.enforce_unique_mapping = param.restart_data.rpe_enforce_unique_mapping;
 
@@ -538,8 +561,8 @@ SpatialOperator<dim, Number>::initialize_dof_handler_and_constraints()
   dof_handler_u.distribute_dofs(*fe_u);
 
   // de-/serialization of mapping requires DoFHandler
-  if(param.restart_data.consider_mapping and
-     (param.restarted_simulation or param.restart_data.write_restart))
+  if((param.restart_data.consider_mapping_write and param.restart_data.write_restart) or
+     (param.restart_data.consider_mapping_read_source and param.restarted_simulation))
   {
     fe_mapping =
       create_finite_element<dim>(param.grid.element_type, true, dim, param.mapping_degree);

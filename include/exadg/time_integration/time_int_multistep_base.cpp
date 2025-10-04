@@ -238,68 +238,74 @@ TimeIntMultistepBase::do_timestep_post_solve()
   }
 }
 
+void
+TimeIntMultistepBase::do_write_restart(std::string const & filename) const
+{
+  // The restart header archive file is wrtten using a single thread only.
+  if(dealii::Utilities::MPI::this_mpi_process(this->mpi_comm) == 0)
+  {
+    std::ostringstream oss;
+
+    BoostOutputArchiveType oa(oss);
+
+    // 1. time
+    oa & time;
+
+    // 2. order
+    oa & order;
+
+    // 3. time step sizes
+    for(unsigned int i = 0; i < order; i++)
+      oa & time_steps[i];
+
+    write_restart_file(oss, filename);
+  }
+
+  // Write solution vectors, independent of the restart header file.
+  write_restart_vectors();
+}
 
 void
 TimeIntMultistepBase::do_read_restart(std::ifstream & in)
 {
-  BoostInputArchiveType ia(in);
-  read_restart_preamble(ia);
-  read_restart_vectors();
+  // The restart header archive file is read using a single thread only.
+  if(dealii::Utilities::MPI::this_mpi_process(this->mpi_comm) == 0)
+  {
+    BoostInputArchiveType ia(in);
+
+    // Note that the operations done here must be in sync with `do_write_restart()`.
+
+    // 1. time
+    ia & time;
+
+    // 2. order
+    unsigned int old_order;
+    ia &         old_order;
+
+    AssertThrow(old_order == order, dealii::ExcMessage("Order of time integrator may not change."));
+
+    // 3. time step sizes
+    for(unsigned int i = 0; i < order; i++)
+      ia & time_steps[i];
+  }
+
+  // Synchronize read data.
+  time = dealii::Utilities::MPI::broadcast(mpi_comm, time, 0);
+  for(unsigned int i = 0; i < order; i++)
+    time_steps[i] = dealii::Utilities::MPI::broadcast(mpi_comm, time_steps[i], 0);
+
+  // Note that start_time has to be set to the new start_time (since param.start_time might still be
+  // the original start time).
+  this->start_time = time;
 
   // In order to change the CFL number (or the time step calculation criterion in general),
   // start_with_low_order = true has to be used. Otherwise, the old solutions would not fit the
   // time step increments.
   if(start_with_low_order == true)
     time_steps[0] = calculate_time_step_size();
-}
 
-void
-TimeIntMultistepBase::read_restart_preamble(BoostInputArchiveType & ia)
-{
-  // Note that the operations done here must be in sync with the output.
-
-  // 1. time
-  ia & time;
-
-  // Note that start_time has to be set to the new start_time (since param.start_time might still be
-  // the original start time).
-  this->start_time = time;
-
-  // 2. order
-  unsigned int old_order = 1;
-  ia &         old_order;
-
-  AssertThrow(old_order == order, dealii::ExcMessage("Order of time integrator may not change."));
-
-  // 3. time step sizes
-  for(unsigned int i = 0; i < order; i++)
-    ia & time_steps[i];
-}
-
-void
-TimeIntMultistepBase::do_write_restart(std::string const & filename) const
-{
-  std::ostringstream oss;
-
-  BoostOutputArchiveType oa(oss);
-
-  write_restart_preamble(oa);
-  write_restart_vectors();
-  write_restart_file(oss, filename);
-}
-
-void
-TimeIntMultistepBase::write_restart_preamble(BoostOutputArchiveType & oa) const
-{
-  // 1. time
-  oa & time;
-
-  // 2. order
-  oa & order;
-
-  // 3. time step sizes
-  for(unsigned int i = 0; i < order; i++)
-    oa & time_steps[i];
+  // Read solution vectors, independent of the restart header file.
+  read_restart_vectors();
 }
 
 void

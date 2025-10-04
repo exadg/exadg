@@ -459,7 +459,7 @@ private:
     this->param.solver_type                   = SolverType::Unsteady;
     this->param.temporal_discretization       = temporal_discretization;
     this->param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
-    this->param.time_step_size                = std::abs(end_time - start_time);
+    this->param.time_step_size                = std::abs(end_time - start_time) / 100;
     this->param.order_time_integrator         = 2;     // 1; // 2; // 3;
     this->param.start_with_low_order          = false; // true;
 
@@ -539,13 +539,11 @@ private:
     this->param.restart_data.interval_wall_time  = 1.e6;
     this->param.restart_data.interval_time_steps = 1e8;
 
-    this->param.restart_data.degree_u                   = 5;
-    this->param.restart_data.degree_p                   = 4;
-    this->param.restart_data.triangulation_type         = TriangulationType::Distributed;
-    this->param.restart_data.spatial_discretization     = SpatialDiscretization::L2;
-    this->param.restart_data.discretization_identical   = false;
-    this->param.restart_data.consider_mapping           = false;
-    this->param.restart_data.mapping_degree             = 5;
+    this->param.restart_data.discretization_identical     = false;
+    this->param.restart_data.consider_mapping_write       = false;
+    this->param.restart_data.consider_mapping_read_source = false;
+
+    this->param.restart_data.rpe_rtree_level            = 0;
     this->param.restart_data.rpe_tolerance_unit_cell    = 1e-2;
     this->param.restart_data.rpe_enforce_unique_mapping = false;
 
@@ -769,7 +767,7 @@ private:
     // write output for visualization of results
     pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
     pp_data.output_data.time_control_data.start_time       = start_time;
-    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time);
+    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 100.0;
     pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = this->output_parameters.filename;
     pp_data.output_data.write_divergence   = true;

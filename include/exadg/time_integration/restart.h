@@ -40,17 +40,16 @@
 // ExaDG
 #include <exadg/grid/grid_utilities.h>
 #include <exadg/grid/mapping_dof_vector.h>
+#include <exadg/time_integration/restart_data.h>
 #include <exadg/utilities/create_directories.h>
 
 namespace ExaDG
 {
 inline std::string
-restart_filename(std::string const & name, MPI_Comm const & mpi_comm)
+generate_restart_filename(std::string const & name)
 {
-  std::string const rank =
-    dealii::Utilities::int_to_string(dealii::Utilities::MPI::this_mpi_process(mpi_comm));
-
-  std::string const filename = name + "." + rank + ".restart";
+  // Filename does not incorporate rank information, files in-/output with single rank only.
+  std::string const filename = name + ".restart";
 
   return filename;
 }
@@ -179,6 +178,120 @@ set_ghost_state(std::vector<VectorType *> const & vectors,
     else
     {
       vectors[i]->zero_out_ghost_values();
+    }
+  }
+}
+
+/**
+ * Utility function to write the parameters a discretization is serialized with. This is to recover
+ * the parameters when deserializing.
+ */
+inline void
+write_deserialization_parameters(MPI_Comm const &                  mpi_comm,
+                                 std::string const &               directory,
+                                 std::string const &               filename_base,
+                                 DeserializationParameters const & parameters)
+{
+  // Create folder if not existent.
+  create_directories(directory, mpi_comm);
+
+  // Filename for deserialization parameters has to match `read_deserialization_parameters()`.
+  std::string const filename = directory + filename_base + ".deserialization_parameters";
+
+  // Write the parameters with a single processor.
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  {
+    // Serialization only creates a single file, move with one process only.
+    rename_restart_files(filename);
+
+    // Write deserialization parameters.
+    std::ofstream stream(filename);
+    AssertThrow(stream, dealii::ExcMessage("Could not write deserialization parameters to file."));
+
+    // Text archive type for debugging purposes.
+    // boost::archive::text_oarchive output_archive(stream);
+    boost::archive::binary_oarchive output_archive(stream);
+
+    // Sequence has to match `read_deserialization_parameters()`.
+    output_archive & parameters.degree;
+    output_archive & parameters.degree_u;
+    output_archive & parameters.degree_p;
+    output_archive & parameters.mapping_degree;
+    output_archive & parameters.consider_mapping_write;
+    output_archive & parameters.triangulation_type;
+    output_archive & parameters.spatial_discretization;
+  }
+}
+
+/**
+ * Utility function to read the parameters a discretization is serialized with. This is to recover
+ * the parameters when deserializing.
+ */
+inline DeserializationParameters
+read_deserialization_parameters(MPI_Comm const &    mpi_comm,
+                                std::string const & directory,
+                                std::string const & filename_base)
+{
+  DeserializationParameters parameters;
+
+  // Filename for deserialization parameters has to match `write_deserialization_parameters()`.
+  std::string const filename = directory + filename_base + ".deserialization_parameters";
+
+  // Read the parameters with a single processor.
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  {
+    // Read deserialization parameters.
+    std::ifstream stream(filename);
+    AssertThrow(stream, dealii::ExcMessage("Could not read deserialization parameters from file."));
+
+    // Text archive type for debugging purposes.
+    // boost::archive::text_iarchive input_archive(stream);
+    boost::archive::binary_iarchive input_archive(stream);
+
+    // Sequence has to match `write_deserialization_parameters()`.
+    input_archive & parameters.degree;
+    input_archive & parameters.degree_u;
+    input_archive & parameters.degree_p;
+    input_archive & parameters.mapping_degree;
+    input_archive & parameters.consider_mapping_write;
+    input_archive & parameters.triangulation_type;
+    input_archive & parameters.spatial_discretization;
+  }
+
+  // Broadcast parameters to all processes.
+  parameters = dealii::Utilities::MPI::broadcast(mpi_comm, parameters, 0);
+
+  return parameters;
+}
+
+/*
+ * Utility function to check if mapping is correctly treated in de-/serialization. This is to
+ * provide easier to interpret error messages on ExaDG level in case the number of DoF vectors
+ * mismatches. This might be due to the mapping being described as a displacement vector, which
+ * might also be de-/serialized, while we have to deserialize exactly what we serialized.
+ */
+inline void
+check_mapping_deserialization(bool const consider_mapping_read_source,
+                              bool const consider_mapping_write_as_serialized)
+{
+  if(consider_mapping_read_source)
+  {
+    if(consider_mapping_write_as_serialized == false)
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage(
+                    "Mapping was not considered when writing the restart data, but shall "
+                    "be considered when reading the restart data. This is not supported."));
+    }
+  }
+  else
+  {
+    if(consider_mapping_write_as_serialized == true)
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage(
+                    "Mapping was considered when writing the restart data, but shall "
+                    "not be considered when reading the restart data. This is not supported."));
     }
   }
 }
