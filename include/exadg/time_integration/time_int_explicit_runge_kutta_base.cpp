@@ -134,40 +134,54 @@ TimeIntExplRKBase<Number>::do_write_restart(std::string const & filename) const
 {
   std::ostringstream oss;
 
-  BoostOutputArchiveType oa(oss);
+  // The restart header file is wrtten using a single thread only.
+  if(dealii::Utilities::MPI::this_mpi_process(this->mpi_comm) == 0)
+  {
+    BoostOutputArchiveType oa(oss);
 
-  // 1. time
-  oa & time;
+    // Note that the operations done here must be in sync with `do_read_restart()`.
 
-  // 2. time step size
-  oa & time_step;
+    // 1. time
+    oa & time;
 
-  // 3. solution vectors
+    // 2. time step size
+    oa & time_step;
+
+    write_restart_file(oss, filename);
+  }
+
+  // Write solution vectors, independent of the restart header file.
   std::vector<VectorType const *> vectors{&solution_n};
   this->write_restart_vectors(vectors);
-
-  write_restart_file(oss, filename);
 }
 
 template<typename Number>
 void
 TimeIntExplRKBase<Number>::do_read_restart(std::ifstream & in)
 {
-  BoostInputArchiveType ia(in);
+  // The restart header file is read using a single thread only.
+  if(dealii::Utilities::MPI::this_mpi_process(this->mpi_comm) == 0)
+  {
+    BoostInputArchiveType ia(in);
 
-  // Note that the operations done here must be in sync with the output.
+    // Note that the operations done here must be in sync with `do_write_restart()`.
 
-  // 1. time
-  ia & time;
+    // 1. time
+    ia & time;
 
-  // Note that start_time has to be set to the new start_time (since param.start_time might still be
-  // the original start time).
+    // 2. time step size
+    ia & time_step;
+  }
+
+  // Broadcast data.
+  time      = dealii::Utilities::MPI::broadcast(mpi_comm, time, 0);
+  time_step = dealii::Utilities::MPI::broadcast(mpi_comm, time_step, 0);
+
+  // Note that `start_time` has to be set to the new start_time, since param.start_time might still
+  // be the original start time.
   this->start_time = time;
 
-  // 2. time step size
-  ia & time_step;
-
-  // 3. solution vectors
+  // Read solution vectors, independent of restart header file.
   std::vector<VectorType *> vectors{&solution_n};
   this->read_restart_vectors(vectors);
 }
