@@ -93,6 +93,7 @@ struct RestartData
       discretization_identical(false),
       consider_mapping_write(false),
       consider_mapping_read_source(false),
+      consider_restart_time_in_mesh_movement_function(true),
       rpe_rtree_level(0),
       rpe_tolerance_unit_cell(1e-12),
       rpe_enforce_unique_mapping(false)
@@ -177,6 +178,10 @@ struct RestartData
   // Reconstruct the mapping for the serialized grid (`source`) in the grid-to-grid projection at
   // restart. Note that the grid use at restart is always considered as defined in the applciation.
   bool consider_mapping_read_source;
+
+  // When creating a mapping function via `create_mesh_movement_function()`, use the `start_time` or
+  // the `time` serialized to evaluate the mapping at restart.
+  bool consider_restart_time_in_mesh_movement_function;
 
   // Parameters for `dealii::Utilities::MPI::RemotePointEvaluation<dim>::RemotePointEvaluation`
   // used for grid-to-grid projection.
