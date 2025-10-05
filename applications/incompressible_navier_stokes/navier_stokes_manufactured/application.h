@@ -539,9 +539,10 @@ private:
     this->param.restart_data.interval_wall_time  = 1.e6;
     this->param.restart_data.interval_time_steps = 1e8;
 
-    this->param.restart_data.discretization_identical     = false;
-    this->param.restart_data.consider_mapping_write       = false;
-    this->param.restart_data.consider_mapping_read_source = false;
+    this->param.restart_data.discretization_identical                        = false;
+    this->param.restart_data.consider_mapping_write                          = true;
+    this->param.restart_data.consider_mapping_read_source                    = true;
+    this->param.restart_data.consider_restart_time_in_mesh_movement_function = true;
 
     this->param.restart_data.rpe_rtree_level            = 0;
     this->param.restart_data.rpe_tolerance_unit_cell    = 1e-2;

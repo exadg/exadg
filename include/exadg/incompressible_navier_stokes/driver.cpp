@@ -24,11 +24,16 @@
 #  include <likwid.h>
 #endif
 
+// C/C++
+#include <iostream>
+
 // ExaDG
 #include <exadg/incompressible_navier_stokes/driver.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
 #include <exadg/incompressible_navier_stokes/time_integration/create_time_integrator.h>
 #include <exadg/operators/throughput_parameters.h>
+#include <exadg/time_integration/restart_data.h>
+#include <exadg/time_integration/time_int_base.h>
 #include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
@@ -67,6 +72,35 @@ Driver<dim, Number>::setup()
   {
     if(application->get_parameters().mesh_movement_type == MeshMovementType::Function)
     {
+      // determine correct starting time for restarted run.
+      double start_time_mesh_movement_function = application->get_parameters().start_time;
+      {
+        RestartData const & restart_data = application->get_parameters().restart_data;
+        if(application->get_parameters().restarted_simulation and
+           restart_data.consider_restart_time_in_mesh_movement_function)
+        {
+          if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+          {
+            std::string const filename =
+              restart_data.directory + generate_restart_filename(restart_data.filename);
+
+            std::ifstream in(filename);
+            AssertThrow(in, dealii::ExcMessage("File " + filename + " does not exist."));
+
+            TimeIntBase::BoostInputArchiveType ia(in);
+
+            // Note that the operations done here must be in sync with `do_write_restart()`.
+
+            // 1. time
+            ia & start_time_mesh_movement_function;
+          }
+
+          // Synchronize read data.
+          start_time_mesh_movement_function =
+            dealii::Utilities::MPI::broadcast(mpi_comm, start_time_mesh_movement_function, 0);
+        }
+      }
+
       std::shared_ptr<dealii::Function<dim>> mesh_motion =
         application->create_mesh_movement_function();
 
@@ -75,7 +109,7 @@ Driver<dim, Number>::setup()
         application->get_parameters().mapping_degree,
         *grid->triangulation,
         mesh_motion,
-        application->get_parameters().start_time);
+        start_time_mesh_movement_function);
     }
     else if(application->get_parameters().mesh_movement_type == MeshMovementType::Poisson)
     {
@@ -115,6 +149,8 @@ Driver<dim, Number>::setup()
                                                     dealii::DoFHandler<dim> const & dof_handler) {
       ale_mapping->fill_grid_coordinates_vector(grid_coordinates, dof_handler);
     };
+
+    // Move the grid to the initial position?
   }
 
   if(application->get_parameters().solver_type == SolverType::Unsteady)
