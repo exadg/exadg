@@ -65,13 +65,16 @@ struct GridToGridProjectionData
     print_parameter(pcout, "RPE tolerance", rpe_data.tolerance);
     print_parameter(pcout, "RPE enforce unique mapping", rpe_data.enforce_unique_mapping);
     print_parameter(pcout, "RPE rtree level", rpe_data.rtree_level);
+
+    // These parameters play only a role if an iterative scheme is used for projection.
+    // That is for `InverseMassType != InverseMassType::MatrixfreeOperator` determined at runtime.
+    solver_data.print(pcout);
+    print_parameter(pcout, "Preconditioner", preconditioner);
   }
 
-  typename dealii::Utilities::MPI::RemotePointEvaluation<dim>::AdditionalData::AdditionalData
-                     rpe_data;
-  SolverData         solver_data;
-  PreconditionerMass preconditioner;
-  InverseMassType    inverse_mass_type;
+  typename dealii::Utilities::MPI::RemotePointEvaluation<dim>::AdditionalData rpe_data;
+  SolverData                                                                  solver_data;
+  PreconditionerMass                                                          preconditioner;
 
   // Number of additional integration points used for sampling the source grid.
   // The default `additional_quadrature_points = 1` considers `fe_degree + 1` quadrature points in
@@ -189,11 +192,11 @@ assemble_projection_rhs(
 template<int dim, typename Number, int n_components, typename VectorType>
 void
 project_vectors(
-  std::vector<VectorType *> const &                                        source_vectors,
-  dealii::DoFHandler<dim> const &                                          source_dof_handler,
   std::shared_ptr<dealii::Mapping<dim> const> const &                      source_mapping,
-  std::vector<VectorType *> const &                                        target_vectors,
+  dealii::DoFHandler<dim> const &                                          source_dof_handler,
+  std::vector<VectorType *> const &                                        source_vectors,
   dealii::MatrixFree<dim, Number, dealii::VectorizedArray<Number>> const & target_matrix_free,
+  std::vector<VectorType *> const &                                        target_vectors,
   unsigned int const                                                       dof_index,
   unsigned int const                                                       quad_index,
   GridToGridProjectionData<dim> const &                                    data)
@@ -202,7 +205,7 @@ project_vectors(
   InverseMassOperatorData<Number> inverse_mass_operator_data;
   inverse_mass_operator_data.dof_index                 = dof_index;
   inverse_mass_operator_data.quad_index                = quad_index;
-  inverse_mass_operator_data.parameters.preconditioner = PreconditionerMass::PointJacobi;
+  inverse_mass_operator_data.parameters.preconditioner = data.preconditioner;
   inverse_mass_operator_data.parameters.solver_data    = data.solver_data;
   inverse_mass_operator_data.parameters.implementation_type =
     InverseMassOperatorData<Number>::template get_optimal_inverse_mass_type<dim>(
@@ -228,7 +231,7 @@ project_vectors(
   if(not rpe_source.all_points_found())
   {
     write_points_in_dummy_triangulation(
-      integration_points_target, "./", "all_points", 0, source_dof_handler.get_mpi_communicator());
+      integration_points_target, "./", "points_all", 0, source_dof_handler.get_mpi_communicator());
 
     std::vector<dealii::Point<dim>> points_not_found;
     points_not_found.reserve(integration_points_target.size());
@@ -243,10 +246,11 @@ project_vectors(
     write_points_in_dummy_triangulation(
       points_not_found, "./", "points_not_found", 0, source_dof_handler.get_mpi_communicator());
 
-    AssertThrow(rpe_source.all_points_found(),
-                dealii::ExcMessage(
-                  "Could not interpolate source grid vector in target grid. "
-                  "Points exported to `./all_points.pvtu` and `./points_not_found.pvtu`"));
+    AssertThrow(
+      rpe_source.all_points_found(),
+      dealii::ExcMessage(
+        "Could not interpolate source grid vector in target grid. "
+        "Points exported to `./points_all_points.pvtu` and `./points_not_found_points.pvtu`"));
   }
 
   // Loop over vectors and project.
@@ -284,13 +288,13 @@ project_vectors(
 template<int dim, typename Number, typename VectorType>
 void
 do_grid_to_grid_projection(
-  std::vector<std::vector<VectorType *>> const &       source_vectors_per_dof_handler,
-  std::vector<dealii::DoFHandler<dim> const *> const & source_dof_handlers,
   std::shared_ptr<dealii::Mapping<dim> const> const &  source_mapping,
-  std::vector<std::vector<VectorType *>> &             target_vectors_per_dof_handler,
+  std::vector<dealii::DoFHandler<dim> const *> const & source_dof_handlers,
+  std::vector<std::vector<VectorType *>> const &       source_vectors_per_dof_handler,
   std::vector<dealii::DoFHandler<dim> const *> const & target_dof_handlers,
-  dealii::MatrixFree<dim, Number, dealii::VectorizedArray<Number>> const & matrix_free,
-  GridToGridProjectionData<dim> const &                                    data)
+  dealii::MatrixFree<dim, Number, dealii::VectorizedArray<Number>> const & target_matrix_free,
+  std::vector<std::vector<VectorType *>> & target_vectors_per_dof_handler,
+  GridToGridProjectionData<dim> const &    data)
 {
   // Check input dimensions.
   AssertThrow(source_vectors_per_dof_handler.size() == source_dof_handlers.size(),
@@ -317,11 +321,11 @@ do_grid_to_grid_projection(
     if(n_components == 1)
     {
       project_vectors<dim, Number, 1 /* n_components */, VectorType>(
-        source_vectors_per_dof_handler.at(i),
-        *source_dof_handlers.at(i),
         source_mapping,
+        *source_dof_handlers.at(i),
+        source_vectors_per_dof_handler.at(i),
+        target_matrix_free,
         target_vectors_per_dof_handler.at(i),
-        matrix_free,
         i /* dof_index */,
         i /* quad_index */,
         data);
@@ -329,11 +333,11 @@ do_grid_to_grid_projection(
     else if(n_components == dim)
     {
       project_vectors<dim, Number, dim /* n_components */, VectorType>(
-        source_vectors_per_dof_handler.at(i),
-        *source_dof_handlers.at(i),
         source_mapping,
+        *source_dof_handlers.at(i),
+        source_vectors_per_dof_handler.at(i),
+        target_matrix_free,
         target_vectors_per_dof_handler.at(i),
-        matrix_free,
         i /* dof_index */,
         i /* quad_index */,
         data);
@@ -341,11 +345,11 @@ do_grid_to_grid_projection(
     else if(n_components == dim + 2)
     {
       project_vectors<dim, Number, dim + 2 /* n_components */, VectorType>(
-        source_vectors_per_dof_handler.at(i),
-        *source_dof_handlers.at(i),
         source_mapping,
+        *source_dof_handlers.at(i),
+        source_vectors_per_dof_handler.at(i),
+        target_matrix_free,
         target_vectors_per_dof_handler.at(i),
-        matrix_free,
         i /* dof_index */,
         i /* quad_index */,
         data);
@@ -365,51 +369,52 @@ do_grid_to_grid_projection(
 template<int dim, typename Number, typename VectorType>
 void
 grid_to_grid_projection(
-  std::vector<std::vector<VectorType *>> const &       source_vectors_per_dof_handler,
-  std::vector<dealii::DoFHandler<dim> const *> const & source_dof_handlers,
   std::shared_ptr<dealii::Mapping<dim> const> const &  source_mapping,
-  std::vector<std::vector<VectorType *>> &             target_vectors_per_dof_handler,
-  std::vector<dealii::DoFHandler<dim> const *> const & target_dof_handlers,
+  std::vector<dealii::DoFHandler<dim> const *> const & source_dof_handlers,
+  std::vector<std::vector<VectorType *>> const &       source_vectors_per_dof_handler,
   std::shared_ptr<dealii::Mapping<dim> const> const &  target_mapping,
+  std::vector<dealii::DoFHandler<dim> const *> const & target_dof_handlers,
+  std::vector<std::vector<VectorType *>> &             target_vectors_per_dof_handler,
   GridToGridProjectionData<dim> const &                data)
 {
   // Setup a single `dealii::MatrixFree` object with multiple `dealii::DoFHandler`s.
-  MatrixFreeData<dim, Number> matrix_free_data;
+  MatrixFreeData<dim, Number> target_matrix_free_data;
 
   MappingFlags mapping_flags;
   mapping_flags.cells =
     dealii::update_quadrature_points | dealii::update_values | dealii::update_JxW_values;
-  matrix_free_data.append_mapping_flags(mapping_flags);
+  target_matrix_free_data.append_mapping_flags(mapping_flags);
 
   dealii::AffineConstraints<Number> empty_constraints;
   empty_constraints.clear();
   empty_constraints.close();
   for(unsigned int i = 0; i < target_dof_handlers.size(); ++i)
   {
-    matrix_free_data.insert_dof_handler(target_dof_handlers[i], std::to_string(i));
-    matrix_free_data.insert_constraint(&empty_constraints, std::to_string(i));
+    target_matrix_free_data.insert_dof_handler(target_dof_handlers[i], std::to_string(i));
+    target_matrix_free_data.insert_constraint(&empty_constraints, std::to_string(i));
 
     ElementType element_type = get_element_type(target_dof_handlers[i]->get_triangulation());
 
     std::shared_ptr<dealii::Quadrature<dim>> quadrature = create_quadrature<dim>(
       element_type, target_dof_handlers[i]->get_fe().degree + data.additional_quadrature_points);
 
-    matrix_free_data.insert_quadrature(*quadrature, std::to_string(i));
+    target_matrix_free_data.insert_quadrature(*quadrature, std::to_string(i));
   }
 
-  dealii::MatrixFree<dim, Number, dealii::VectorizedArray<Number>> matrix_free;
-  matrix_free.reinit(*target_mapping,
-                     matrix_free_data.get_dof_handler_vector(),
-                     matrix_free_data.get_constraint_vector(),
-                     matrix_free_data.get_quadrature_vector(),
-                     matrix_free_data.data);
+  dealii::MatrixFree<dim, Number, dealii::VectorizedArray<Number>> target_matrix_free;
 
-  do_grid_to_grid_projection<dim, Number, VectorType>(source_vectors_per_dof_handler,
+  target_matrix_free.reinit(*target_mapping,
+                            target_matrix_free_data.get_dof_handler_vector(),
+                            target_matrix_free_data.get_constraint_vector(),
+                            target_matrix_free_data.get_quadrature_vector(),
+                            target_matrix_free_data.data);
+
+  do_grid_to_grid_projection<dim, Number, VectorType>(source_mapping,
                                                       source_dof_handlers,
-                                                      source_mapping,
-                                                      target_vectors_per_dof_handler,
+                                                      source_vectors_per_dof_handler,
                                                       target_dof_handlers,
-                                                      matrix_free,
+                                                      target_matrix_free,
+                                                      target_vectors_per_dof_handler,
                                                       data);
 }
 

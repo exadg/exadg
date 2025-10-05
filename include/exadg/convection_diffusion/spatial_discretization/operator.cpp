@@ -589,14 +589,27 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::serialize_vectors(std::vector<VectorType const *> const & vectors) const
 {
+  // Write deserialization parameters. These do not change during the simulation, but the data are
+  // small and we want to make sure to overwrite them.
+  DeserializationParameters deserialization_parameters;
+  deserialization_parameters.degree                 = param.degree;
+  deserialization_parameters.mapping_degree         = param.mapping_degree;
+  deserialization_parameters.consider_mapping_write = param.restart_data.consider_mapping_write;
+  deserialization_parameters.triangulation_type     = param.grid.triangulation_type;
+  write_deserialization_parameters(mpi_comm,
+                                   param.restart_data.directory,
+                                   param.restart_data.filename,
+                                   deserialization_parameters);
+
+  // Attach vectors to triangulation and serialize.
   std::vector<dealii::DoFHandler<dim> const *> dof_handlers{&dof_handler};
   std::vector<std::vector<VectorType const *>> vectors_per_dof_handler{vectors};
-  if(param.restart_data.consider_mapping)
+  if(param.restart_data.consider_mapping_write)
   {
     store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
                                                  param.restart_data.filename,
-                                                 vectors_per_dof_handler,
                                                  dof_handlers,
+                                                 vectors_per_dof_handler,
                                                  *this->get_mapping(),
                                                  dof_handler_mapping.get(),
                                                  param.mapping_degree);
@@ -605,8 +618,8 @@ Operator<dim, Number>::serialize_vectors(std::vector<VectorType const *> const &
   {
     store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
                                                  param.restart_data.filename,
-                                                 vectors_per_dof_handler,
-                                                 dof_handlers);
+                                                 dof_handlers,
+                                                 vectors_per_dof_handler);
   }
 }
 
@@ -617,25 +630,33 @@ Operator<dim, Number>::deserialize_vectors(std::vector<VectorType *> const & vec
   // Store ghost state to recover after deserialization.
   std::vector<bool> const has_ghost_elements = get_ghost_state(vectors);
 
+  // Load the deserialization parameters.
+  DeserializationParameters const deserialization_parameters =
+    read_deserialization_parameters(mpi_comm,
+                                    param.restart_data.directory,
+                                    param.restart_data.filename);
+
   // Load potentially unfitting checkpoint triangulation of TriangulationType.
   std::shared_ptr<dealii::Triangulation<dim>> checkpoint_triangulation =
     deserialize_triangulation<dim>(param.restart_data.directory,
                                    param.restart_data.filename,
-                                   param.restart_data.triangulation_type,
+                                   deserialization_parameters.triangulation_type,
                                    mpi_comm);
 
-  // Setup DoFHandlers *as checkpointed*, sequence matches `this->serialize_vectors()`.
+  // Set up DoFHandlers *as checkpointed*, sequence matches `this->serialize_vectors()`.
   dealii::DoFHandler<dim> checkpoint_dof_handler(*checkpoint_triangulation);
 
   ElementType const checkpoint_element_type = get_element_type(*checkpoint_triangulation);
 
   std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe =
-    create_finite_element<dim>(checkpoint_element_type, true, 1, param.restart_data.degree_p);
+    create_finite_element<dim>(checkpoint_element_type, true, 1, deserialization_parameters.degree);
 
   checkpoint_dof_handler.distribute_dofs(*checkpoint_fe);
 
   std::vector<dealii::DoFHandler<dim> const *> checkpoint_dof_handlers{&checkpoint_dof_handler};
 
+  // Deserialize the stored vectors associated with the previous triangulation / dof handlers,
+  // in the sequence of blocks (velocity/pressure) matching the one in `this->serialize_vectors()`.
   std::vector<VectorType>                checkpoint_vectors(vectors.size());
   std::vector<std::vector<VectorType *>> checkpoint_vectors_ptr(1);
   checkpoint_vectors_ptr[0].resize(vectors.size());
@@ -652,7 +673,7 @@ Operator<dim, Number>::deserialize_vectors(std::vector<VectorType *> const & vec
     load_vectors(checkpoint_vectors_ptr, checkpoint_dof_handlers);
     for(unsigned int i = 0; i < vectors.size(); ++i)
     {
-      *vectors[i] = checkpoint_vectors[i];
+      vectors[i]->copy_locally_owned_data_from(checkpoint_vectors[i]);
     }
   }
   else
@@ -662,23 +683,25 @@ Operator<dim, Number>::deserialize_vectors(std::vector<VectorType *> const & vec
     std::vector<std::vector<VectorType *>>       vectors_per_dof_handler{vectors};
 
     // Deserialize mapping from vector or project on reference triangulations.
+    check_mapping_deserialization(param.restart_data.consider_mapping_read_source,
+                                  deserialization_parameters.consider_mapping_write);
     std::shared_ptr<dealii::Mapping<dim> const> checkpoint_mapping;
     std::shared_ptr<MappingDoFVector<dim, typename VectorType::value_type>>
       checkpoint_mapping_dof_vector;
-    if(param.restart_data.consider_mapping)
+    if(param.restart_data.consider_mapping_read_source)
     {
       dealii::DoFHandler<dim> checkpoint_dof_handler_mapping(*checkpoint_triangulation);
       std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_mapping =
         create_finite_element<dim>(checkpoint_element_type,
                                    true,
                                    dim,
-                                   param.restart_data.mapping_degree);
+                                   deserialization_parameters.mapping_degree);
       checkpoint_dof_handler_mapping.distribute_dofs(*checkpoint_fe_mapping);
 
       checkpoint_mapping_dof_vector = load_vectors(checkpoint_vectors_ptr,
                                                    checkpoint_dof_handlers,
                                                    &checkpoint_dof_handler_mapping,
-                                                   param.restart_data.mapping_degree);
+                                                   deserialization_parameters.mapping_degree);
 
       checkpoint_mapping = checkpoint_mapping_dof_vector->get_mapping();
     }
@@ -695,16 +718,17 @@ Operator<dim, Number>::deserialize_vectors(std::vector<VectorType *> const & vec
     }
 
     ExaDG::GridToGridProjection::GridToGridProjectionData<dim> data;
+    data.rpe_data.rtree_level            = param.restart_data.rpe_rtree_level;
     data.rpe_data.tolerance              = param.restart_data.rpe_tolerance_unit_cell;
     data.rpe_data.enforce_unique_mapping = param.restart_data.rpe_enforce_unique_mapping;
 
     ExaDG::GridToGridProjection::do_grid_to_grid_projection<dim, Number, VectorType>(
-      checkpoint_vectors_ptr,
-      checkpoint_dof_handlers,
       checkpoint_mapping,
-      vectors_per_dof_handler,
+      checkpoint_dof_handlers,
+      checkpoint_vectors_ptr,
       dof_handlers,
       *matrix_free,
+      vectors_per_dof_handler,
       data);
   }
 
@@ -1123,8 +1147,8 @@ template<int dim, typename Number>
 bool
 Operator<dim, Number>::needs_dof_handler_mapping() const
 {
-  return param.restart_data.consider_mapping and
-         (param.restart_data.write_restart or param.restarted_simulation);
+  return ((param.restart_data.consider_mapping_write and param.restart_data.write_restart) or
+          (param.restart_data.consider_mapping_read_source and param.restarted_simulation));
 }
 
 template<int dim, typename Number>

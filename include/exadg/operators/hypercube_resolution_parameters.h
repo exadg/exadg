@@ -82,8 +82,9 @@ fill_resolutions_vector(
   }
 
   dealii::types::global_dof_index const n_cells_min =
-    (n_dofs_min + dofs_per_cube - 1) / dofs_per_cube;
-  dealii::types::global_dof_index const n_cells_max = n_dofs_max / dofs_per_cube;
+    static_cast<dealii::types::global_dof_index>((n_dofs_min + dofs_per_cube - 1) / dofs_per_cube);
+  dealii::types::global_dof_index const n_cells_max =
+    static_cast<dealii::types::global_dof_index>(n_dofs_max / dofs_per_cube);
 
   // From the maximum number of cells, we derive a maximum refinement level for a uniformly refined
   // mesh with one coarse-grid cells

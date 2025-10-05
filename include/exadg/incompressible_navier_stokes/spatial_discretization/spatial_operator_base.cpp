@@ -21,15 +21,18 @@
 
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/interpolate.h>
+#include <exadg/grid/grid_utilities.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_projection.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 #include <exadg/operators/finite_element.h>
 #include <exadg/operators/grid_related_time_step_restrictions.h>
 #include <exadg/operators/quadrature.h>
+#include <exadg/operators/solution_projection_between_triangulations.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
+#include <exadg/time_integration/restart.h>
 #include <exadg/utilities/exceptions.h>
 
 namespace ExaDG
@@ -90,26 +93,15 @@ SpatialOperatorBase<dim, Number>::initialize_dof_handler_and_constraints()
 
   fe_u_scalar = create_finite_element<dim>(param.grid.element_type, true, 1, param.degree_u);
 
-  if(param.spatial_discretization == SpatialDiscretization::L2)
-  {
-    fe_u = create_finite_element<dim>(param.grid.element_type, true, dim, param.degree_u);
-  }
-  else if(param.spatial_discretization == SpatialDiscretization::HDIV)
-  {
-    AssertThrow(
-      param.grid.element_type == ElementType::Hypercube,
-      dealii::ExcMessage(
-        "SpatialDiscretization::HDIV is currently only implemented for hypercube elements. "
-        "You might want to change the element type of the grid, or the function space, "
-        "or implement HDIV for element types other than hypercube."));
+  fe_u = setup_fe_u(param.spatial_discretization, param.grid.element_type, param.degree_u);
 
-    // The constructor of FE_RaviartThomas takes the degree in tangential direction as an
-    // argument.
-    fe_u = std::make_shared<dealii::FE_RaviartThomasNodal<dim>>(param.degree_u - 1);
-  }
-  else
+  if((param.restart_data.consider_mapping_write and param.restart_data.write_restart) or
+     (param.restart_data.consider_mapping_read_source and param.restarted_simulation))
   {
-    AssertThrow(false, dealii::ExcMessage("FE not implemented."));
+    fe_mapping =
+      create_finite_element<dim>(param.grid.element_type, true, dim, param.mapping_degree);
+    dof_handler_mapping = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
+    dof_handler_mapping->distribute_dofs(*fe_mapping);
   }
 
   // enumerate degrees of freedom
@@ -999,6 +991,191 @@ SpatialOperatorBase<dim, Number>::prescribe_initial_conditions(VectorType & velo
 
 template<int dim, typename Number>
 void
+SpatialOperatorBase<dim, Number>::serialize_vectors(
+  std::vector<VectorType const *> & vectors_velocity,
+  std::vector<VectorType const *> & vectors_pressure) const
+{
+  // Write deserialization parameters. These do not change during the simulation, but the data are
+  // small and we want to make sure to overwrite them.
+  DeserializationParameters deserialization_parameters;
+  deserialization_parameters.degree_u               = param.degree_u;
+  deserialization_parameters.degree_p               = param.get_degree_p(param.degree_u);
+  deserialization_parameters.mapping_degree         = param.mapping_degree;
+  deserialization_parameters.consider_mapping_write = param.restart_data.consider_mapping_write;
+  deserialization_parameters.triangulation_type     = param.grid.triangulation_type;
+  write_deserialization_parameters(mpi_comm,
+                                   param.restart_data.directory,
+                                   param.restart_data.filename,
+                                   deserialization_parameters);
+
+  // Attach vectors to triangulation and serialize.
+  std::vector<dealii::DoFHandler<dim> const *> dof_handlers{&dof_handler_u, &dof_handler_p};
+  std::vector<std::vector<VectorType const *>> vectors_per_dof_handler{vectors_velocity,
+                                                                       vectors_pressure};
+  if(param.restart_data.consider_mapping_write)
+  {
+    store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
+                                                 param.restart_data.filename,
+                                                 dof_handlers,
+                                                 vectors_per_dof_handler,
+                                                 *this->get_mapping(),
+                                                 dof_handler_mapping.get(),
+                                                 param.mapping_degree);
+  }
+  else
+  {
+    store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
+                                                 param.restart_data.filename,
+                                                 dof_handlers,
+                                                 vectors_per_dof_handler);
+  }
+}
+
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::deserialize_vectors(std::vector<VectorType *> & vectors_velocity,
+                                                      std::vector<VectorType *> & vectors_pressure)
+{
+  // Store ghost state to recover after deserialization.
+  std::vector<bool> const has_ghost_elements_velocity = get_ghost_state(vectors_velocity);
+  std::vector<bool> const has_ghost_elements_pressure = get_ghost_state(vectors_pressure);
+
+  // Load the deserialization parameters.
+  DeserializationParameters const deserialization_parameters =
+    read_deserialization_parameters(mpi_comm,
+                                    param.restart_data.directory,
+                                    param.restart_data.filename);
+
+  // Load potentially unfitting checkpoint triangulation of TriangulationType.
+  std::shared_ptr<dealii::Triangulation<dim>> checkpoint_triangulation =
+    deserialize_triangulation<dim>(param.restart_data.directory,
+                                   param.restart_data.filename,
+                                   deserialization_parameters.triangulation_type,
+                                   mpi_comm);
+
+  // Set up DoFHandlers *as checkpointed*, sequence matches `this->serialize_vectors()`.
+  dealii::DoFHandler<dim> checkpoint_dof_handler_u(*checkpoint_triangulation);
+  dealii::DoFHandler<dim> checkpoint_dof_handler_p(*checkpoint_triangulation);
+
+  ElementType const checkpoint_element_type = get_element_type(*checkpoint_triangulation);
+
+  std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_u =
+    setup_fe_u(deserialization_parameters.spatial_discretization,
+               checkpoint_element_type,
+               deserialization_parameters.degree_u);
+
+  std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_p = create_finite_element<dim>(
+    checkpoint_element_type, true, 1, deserialization_parameters.degree_p);
+
+  checkpoint_dof_handler_u.distribute_dofs(*checkpoint_fe_u);
+  checkpoint_dof_handler_p.distribute_dofs(*checkpoint_fe_p);
+
+  std::vector<dealii::DoFHandler<dim> const *> checkpoint_dof_handlers{&checkpoint_dof_handler_u,
+                                                                       &checkpoint_dof_handler_p};
+
+  // Deserialize vectors stored in triangulation, sequence matches `this->serialize_vectors()`.
+  std::vector<VectorType>                checkpoint_vectors_velocity(vectors_velocity.size());
+  std::vector<VectorType>                checkpoint_vectors_pressure(vectors_pressure.size());
+  std::vector<std::vector<VectorType *>> checkpoint_vectors(2);
+
+  for(unsigned int i = 0; i < vectors_velocity.size(); ++i)
+  {
+    checkpoint_vectors_velocity[i].reinit(checkpoint_dof_handler_u.locally_owned_dofs(), mpi_comm);
+    checkpoint_vectors[0 /* velocity */].push_back(&checkpoint_vectors_velocity[i]);
+  }
+  for(unsigned int i = 0; i < vectors_pressure.size(); ++i)
+  {
+    checkpoint_vectors_pressure[i].reinit(checkpoint_dof_handler_p.locally_owned_dofs(), mpi_comm);
+    checkpoint_vectors[1 /* pressure */].push_back(&checkpoint_vectors_pressure[i]);
+  }
+
+  if(param.restart_data.discretization_identical)
+  {
+    // DoFHandlers need to be setup with `checkpoint_triangulation`, otherwise
+    // they are identical. We can simply copy the vector contents.
+    load_vectors(checkpoint_vectors, checkpoint_dof_handlers);
+    for(unsigned int i = 0; i < vectors_velocity.size(); ++i)
+    {
+      vectors_velocity[i]->copy_locally_owned_data_from(checkpoint_vectors_velocity[i]);
+    }
+    for(unsigned int i = 0; i < vectors_pressure.size(); ++i)
+    {
+      vectors_pressure[i]->copy_locally_owned_data_from(checkpoint_vectors_pressure[i]);
+    }
+  }
+  else
+  {
+    // Perform global projection in case of a non-matching discretization.
+    std::vector<dealii::DoFHandler<dim> const *> dof_handlers{&this->get_dof_handler_u(),
+                                                              &this->get_dof_handler_p()};
+
+    std::vector<std::vector<VectorType *>> vectors_per_dof_handler(2);
+    for(unsigned int i = 0; i < vectors_velocity.size(); ++i)
+    {
+      vectors_per_dof_handler[0 /* velocity */].push_back(vectors_velocity[i]);
+    }
+    for(unsigned int i = 0; i < vectors_pressure.size(); ++i)
+    {
+      vectors_per_dof_handler[1 /* pressure */].push_back(vectors_pressure[i]);
+    }
+
+    // Deserialize mapping from vector or project on reference triangulations.
+    check_mapping_deserialization(param.restart_data.consider_mapping_read_source,
+                                  deserialization_parameters.consider_mapping_write);
+    std::shared_ptr<dealii::Mapping<dim> const> checkpoint_mapping;
+    std::shared_ptr<MappingDoFVector<dim, typename VectorType::value_type>>
+      checkpoint_mapping_dof_vector;
+    if(param.restart_data.consider_mapping_read_source)
+    {
+      dealii::DoFHandler<dim> checkpoint_dof_handler_mapping(*checkpoint_triangulation);
+      std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_mapping =
+        create_finite_element<dim>(checkpoint_element_type,
+                                   true,
+                                   dim,
+                                   deserialization_parameters.mapping_degree);
+      checkpoint_dof_handler_mapping.distribute_dofs(*checkpoint_fe_mapping);
+
+      checkpoint_mapping_dof_vector = load_vectors(checkpoint_vectors,
+                                                   checkpoint_dof_handlers,
+                                                   &checkpoint_dof_handler_mapping,
+                                                   deserialization_parameters.mapping_degree);
+
+      checkpoint_mapping = checkpoint_mapping_dof_vector->get_mapping();
+    }
+    else
+    {
+      load_vectors(checkpoint_vectors, checkpoint_dof_handlers);
+
+      // Create dummy linear mapping since we have no mapping serialized to restore.
+      std::shared_ptr<dealii::Mapping<dim>> tmp;
+      GridUtilities::create_mapping(tmp,
+                                    get_element_type(*checkpoint_triangulation),
+                                    1 /* mapping_degree */);
+      checkpoint_mapping = std::const_pointer_cast<dealii::Mapping<dim> const>(tmp);
+    }
+
+    ExaDG::GridToGridProjection::GridToGridProjectionData<dim> data;
+    data.rpe_data.rtree_level            = param.restart_data.rpe_rtree_level;
+    data.rpe_data.tolerance              = param.restart_data.rpe_tolerance_unit_cell;
+    data.rpe_data.enforce_unique_mapping = param.restart_data.rpe_enforce_unique_mapping;
+
+    ExaDG::GridToGridProjection::do_grid_to_grid_projection<dim, Number, VectorType>(
+      checkpoint_mapping,
+      checkpoint_dof_handlers,
+      checkpoint_vectors,
+      dof_handlers,
+      *matrix_free,
+      vectors_per_dof_handler,
+      data);
+  }
+
+  // Recover ghost vector state.
+  set_ghost_state(vectors_velocity, has_ghost_elements_velocity);
+  set_ghost_state(vectors_pressure, has_ghost_elements_pressure);
+}
+
+template<int dim, typename Number>
+void
 SpatialOperatorBase<dim, Number>::interpolate_analytical_solution(VectorType & velocity,
                                                                   VectorType & pressure,
                                                                   double const time) const
@@ -1039,6 +1216,38 @@ SpatialOperatorBase<dim, Number>::set_robin_parameter_traction_output(
   double const robin_parameter_in) const
 {
   this->robin_parameter_traction_output = robin_parameter_in;
+}
+
+template<int dim, typename Number>
+std::shared_ptr<dealii::FiniteElement<dim>>
+SpatialOperatorBase<dim, Number>::setup_fe_u(SpatialDiscretization const spatial_discretization,
+                                             ElementType const           element_type,
+                                             unsigned int const          degree) const
+{
+  std::shared_ptr<dealii::FiniteElement<dim>> fe;
+  if(spatial_discretization == SpatialDiscretization::L2)
+  {
+    fe = create_finite_element<dim>(element_type, true, dim, degree);
+  }
+  else if(spatial_discretization == SpatialDiscretization::HDIV)
+  {
+    AssertThrow(
+      element_type == ElementType::Hypercube,
+      dealii::ExcMessage(
+        "SpatialDiscretization::HDIV is currently only implemented for hypercube elements. "
+        "You might want to change the element type of the grid, or the function space, "
+        "or implement HDIV for element types other than hypercube."));
+
+    // The constructor of FE_RaviartThomas takes the degree in tangential direction as an
+    // argument.
+    fe = std::make_shared<dealii::FE_RaviartThomasNodal<dim>>(degree - 1);
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("FE not implemented."));
+  }
+
+  return fe;
 }
 
 template<int dim, typename Number>

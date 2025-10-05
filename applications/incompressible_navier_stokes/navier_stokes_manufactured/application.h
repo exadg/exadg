@@ -23,7 +23,7 @@
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_NAVIER_STOKES_MANUFACTURED_H_
 
 // ExaDG
-#include <exadg/incompressible_navier_stokes/user_interface/enum_types.h>
+#include <exadg/grid/mesh_movement_functions.h>
 
 namespace ExaDG
 {
@@ -350,6 +350,9 @@ public:
 
     prm.enter_subsection("Application");
     {
+      prm.add_parameter("MoveGrid", move_grid, "Should the grid be deformed over time?");
+      prm.add_parameter("WriteRestart", write_restart, "Should restart files be written?");
+      prm.add_parameter("ReadRestart", read_restart, "Is this a restarted simulation?");
       prm.add_parameter("IncludeConvectiveTerm",
                         include_convective_term,
                         "Include the nonlinear convective term.",
@@ -440,6 +443,10 @@ private:
                                              FormulationViscousTerm::DivergenceFormulation;
     this->param.right_hand_side          = true;
 
+    // ALE
+    this->param.ale_formulation                     = move_grid;
+    this->param.mesh_movement_type                  = MeshMovementType::Function;
+    this->param.neumann_with_variable_normal_vector = true;
 
     // PHYSICAL QUANTITIES
     this->param.start_time = start_time;
@@ -452,7 +459,7 @@ private:
     this->param.solver_type                   = SolverType::Unsteady;
     this->param.temporal_discretization       = temporal_discretization;
     this->param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
-    this->param.time_step_size                = this->param.end_time;
+    this->param.time_step_size                = std::abs(end_time - start_time) / 100;
     this->param.order_time_integrator         = 2;     // 1; // 2; // 3;
     this->param.start_with_low_order          = false; // true;
 
@@ -462,6 +469,7 @@ private:
 
 
     // SPATIAL DISCRETIZATION
+    this->param.spatial_discretization      = SpatialDiscretization::L2;
     this->param.grid.triangulation_type     = TriangulationType::Distributed;
     this->param.mapping_degree              = this->param.degree_u;
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
@@ -520,6 +528,25 @@ private:
       this->param.use_cell_based_face_loops = false;
       this->param.quad_rule_linearization   = QuadratureRuleLinearization::Standard;
     }
+
+    // RESTART
+    this->param.restarted_simulation       = read_restart;
+    this->param.restart_data.write_restart = write_restart;
+    // write restart every 40% of the simulation time
+    this->param.restart_data.interval_time = (this->param.end_time - this->param.start_time) * 0.4;
+    this->param.restart_data.directory     = this->output_parameters.directory;
+    this->param.restart_data.filename      = this->output_parameters.filename + "_restart";
+    this->param.restart_data.interval_wall_time  = 1.e6;
+    this->param.restart_data.interval_time_steps = 1e8;
+
+    this->param.restart_data.discretization_identical                        = false;
+    this->param.restart_data.consider_mapping_write                          = true;
+    this->param.restart_data.consider_mapping_read_source                    = true;
+    this->param.restart_data.consider_restart_time_in_mesh_movement_function = true;
+
+    this->param.restart_data.rpe_rtree_level            = 0;
+    this->param.restart_data.rpe_tolerance_unit_cell    = 1e-2;
+    this->param.restart_data.rpe_enforce_unique_mapping = false;
 
     // PROJECTION METHODS
 
@@ -622,6 +649,14 @@ private:
 
         dealii::GridGenerator::hyper_cube(tria, interval_start, interval_end, true);
 
+        // Save the *coarse* triangulation for later deserialization.
+        if(write_restart and this->param.grid.triangulation_type == TriangulationType::Serial)
+        {
+          save_coarse_triangulation<dim>(this->param.restart_data.directory,
+                                         this->param.restart_data.filename,
+                                         tria);
+        }
+
         if(vector_local_refinements.size() > 0)
           refine_local(tria, vector_local_refinements);
 
@@ -643,6 +678,26 @@ private:
                                                  this->param.mapping_degree,
                                                  this->param.mapping_degree_coarse_grids,
                                                  this->param.involves_h_multigrid());
+  }
+
+  std::shared_ptr<dealii::Function<dim>>
+  create_mesh_movement_function() final
+  {
+    std::shared_ptr<dealii::Function<dim>> mesh_motion;
+
+    MeshMovementData<dim> data;
+    data.temporal                       = MeshMovementAdvanceInTime::Sin;
+    data.shape                          = MeshMovementShape::Sin;
+    data.dimensions[0]                  = std::abs(interval_end - interval_start);
+    data.dimensions[1]                  = std::abs(interval_end - interval_start);
+    data.amplitude                      = std::abs(interval_end - interval_start) / 15.0;
+    data.period                         = std::abs(end_time - start_time);
+    data.t_start                        = start_time;
+    data.t_end                          = end_time;
+    data.spatial_number_of_oscillations = 1.0;
+    mesh_motion.reset(new CubeMeshMovementFunctions<dim>(data));
+
+    return mesh_motion;
   }
 
   void
@@ -713,7 +768,7 @@ private:
     // write output for visualization of results
     pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
     pp_data.output_data.time_control_data.start_time       = start_time;
-    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 1.0;
+    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 100.0;
     pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename           = this->output_parameters.filename;
     pp_data.output_data.write_divergence   = true;
@@ -745,6 +800,10 @@ private:
 
     return pp;
   }
+
+  bool read_restart  = false;
+  bool write_restart = false;
+  bool move_grid     = false;
 
   bool                   include_convective_term                      = true;
   bool                   pure_dirichlet_problem                       = true;

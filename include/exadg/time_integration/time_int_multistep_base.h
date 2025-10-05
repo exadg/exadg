@@ -215,11 +215,8 @@ private:
   void
   do_read_restart(std::ifstream & in) final;
 
-  void
-  read_restart_preamble(BoostInputArchiveType & ia);
-
   virtual void
-  read_restart_vectors(BoostInputArchiveType & ia) = 0;
+  read_restart_vectors() = 0;
 
   /*
    * Write solution vectors to files so that the simulation can be restart from an intermediate
@@ -228,11 +225,8 @@ private:
   void
   do_write_restart(std::string const & filename) const final;
 
-  void
-  write_restart_preamble(BoostOutputArchiveType & oa) const;
-
   virtual void
-  write_restart_vectors(BoostOutputArchiveType & oa) const = 0;
+  write_restart_vectors() const = 0;
 
   /*
    * Recalculate the time step size after each time step in case of adaptive time stepping.

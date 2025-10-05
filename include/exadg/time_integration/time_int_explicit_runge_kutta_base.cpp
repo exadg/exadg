@@ -134,56 +134,54 @@ TimeIntExplRKBase<Number>::do_write_restart(std::string const & filename) const
 {
   std::ostringstream oss;
 
-  BoostOutputArchiveType oa(oss);
+  // The restart header file is wrtten using a single thread only.
+  if(dealii::Utilities::MPI::this_mpi_process(this->mpi_comm) == 0)
+  {
+    BoostOutputArchiveType oa(oss);
 
-  unsigned int n_ranks = dealii::Utilities::MPI::n_mpi_processes(this->mpi_comm);
+    // Note that the operations done here must be in sync with `do_read_restart()`.
 
-  // 1. ranks
-  oa & n_ranks;
+    // 1. time
+    oa & time;
 
-  // 2. time
-  oa & time;
+    // 2. time step size
+    oa & time_step;
 
-  // 3. time step size
-  oa & time_step;
+    write_restart_file(oss, filename);
+  }
 
-  // 4. solution vectors
+  // Write solution vectors, independent of the restart header file.
   std::vector<VectorType const *> vectors{&solution_n};
   this->write_restart_vectors(vectors);
-
-  write_restart_file(oss, filename);
 }
 
 template<typename Number>
 void
 TimeIntExplRKBase<Number>::do_read_restart(std::ifstream & in)
 {
-  BoostInputArchiveType ia(in);
+  // The restart header file is read using a single thread only.
+  if(dealii::Utilities::MPI::this_mpi_process(this->mpi_comm) == 0)
+  {
+    BoostInputArchiveType ia(in);
 
-  // Note that the operations done here must be in sync with the output.
+    // Note that the operations done here must be in sync with `do_write_restart()`.
 
-  // 1. ranks
-  unsigned int n_old_ranks = 1;
-  ia &         n_old_ranks;
+    // 1. time
+    ia & time;
 
-  unsigned int n_ranks = dealii::Utilities::MPI::n_mpi_processes(this->mpi_comm);
-  AssertThrow(n_old_ranks == n_ranks,
-              dealii::ExcMessage("Tried to restart with " + dealii::Utilities::to_string(n_ranks) +
-                                 " processes, "
-                                 "but restart was written on " +
-                                 dealii::Utilities::to_string(n_old_ranks) + " processes."));
+    // 2. time step size
+    ia & time_step;
+  }
 
-  // 2. time
-  ia & time;
+  // Broadcast data.
+  time      = dealii::Utilities::MPI::broadcast(mpi_comm, time, 0);
+  time_step = dealii::Utilities::MPI::broadcast(mpi_comm, time_step, 0);
 
-  // Note that start_time has to be set to the new start_time (since param.start_time might still be
-  // the original start time).
+  // Note that `start_time` has to be set to the new start_time, since param.start_time might still
+  // be the original start time.
   this->start_time = time;
 
-  // 3. time step size
-  ia & time_step;
-
-  // 4. solution vectors
+  // Read solution vectors, independent of restart header file.
   std::vector<VectorType *> vectors{&solution_n};
   this->read_restart_vectors(vectors);
 }

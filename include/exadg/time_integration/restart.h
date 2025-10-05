@@ -40,17 +40,16 @@
 // ExaDG
 #include <exadg/grid/grid_utilities.h>
 #include <exadg/grid/mapping_dof_vector.h>
+#include <exadg/time_integration/restart_data.h>
 #include <exadg/utilities/create_directories.h>
 
 namespace ExaDG
 {
 inline std::string
-restart_filename(std::string const & name, MPI_Comm const & mpi_comm)
+generate_restart_filename(std::string const & name)
 {
-  std::string const rank =
-    dealii::Utilities::int_to_string(dealii::Utilities::MPI::this_mpi_process(mpi_comm));
-
-  std::string const filename = name + "." + rank + ".restart";
+  // Filename does not incorporate rank information, files in-/output with single rank only.
+  std::string const filename = name + ".restart";
 
   return filename;
 }
@@ -89,59 +88,6 @@ print_vector_l2_norm(VectorType const & vector)
   {
     std::cout << "    vector global l2 norm: " << std::scientific << std::setprecision(8)
               << std::setw(20) << l2_norm << "\n";
-  }
-}
-
-/**
- * Utility function to read or write the local entries of a
- * dealii::LinearAlgebra::distributed::(Block)Vector
- * from/to a boost archive per block and entry.
- * Using the `&` operator, loading from or writing to the
- * archive is determined from the type.
- */
-template<typename VectorType, typename BoostArchiveType>
-inline void
-read_write_distributed_vector(VectorType & vector, BoostArchiveType & archive)
-{
-  // Print vector norm here only *before* writing.
-  if(std::is_same<BoostArchiveType, boost::archive::text_oarchive>::value or
-     std::is_same<BoostArchiveType, boost::archive::binary_oarchive>::value)
-  {
-    print_vector_l2_norm(vector);
-  }
-
-  // Depending on VectorType, we have to loop over the blocks to
-  // access the local entries via vector.local_element(i).
-  using Number = typename VectorType::value_type;
-  if constexpr(std::is_same<std::remove_cv_t<VectorType>,
-                            dealii::LinearAlgebra::distributed::Vector<Number>>::value)
-  {
-    for(unsigned int i = 0; i < vector.locally_owned_size(); ++i)
-    {
-      archive & vector.local_element(i);
-    }
-  }
-  else if constexpr(std::is_same<std::remove_cv_t<VectorType>,
-                                 dealii::LinearAlgebra::distributed::BlockVector<Number>>::value)
-  {
-    for(unsigned int i = 0; i < vector.n_blocks(); ++i)
-    {
-      for(unsigned int j = 0; j < vector.block(i).locally_owned_size(); ++j)
-      {
-        archive & vector.block(i).local_element(j);
-      }
-    }
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("Reading into this VectorType not supported."));
-  }
-
-  // Print vector norm here only *after* reading.
-  if(std::is_same<BoostArchiveType, boost::archive::text_iarchive>::value or
-     std::is_same<BoostArchiveType, boost::archive::binary_iarchive>::value)
-  {
-    print_vector_l2_norm(vector);
   }
 }
 
@@ -237,6 +183,120 @@ set_ghost_state(std::vector<VectorType *> const & vectors,
 }
 
 /**
+ * Utility function to write the parameters a discretization is serialized with. This is to recover
+ * the parameters when deserializing.
+ */
+inline void
+write_deserialization_parameters(MPI_Comm const &                  mpi_comm,
+                                 std::string const &               directory,
+                                 std::string const &               filename_base,
+                                 DeserializationParameters const & parameters)
+{
+  // Create folder if not existent.
+  create_directories(directory, mpi_comm);
+
+  // Filename for deserialization parameters has to match `read_deserialization_parameters()`.
+  std::string const filename = directory + filename_base + ".deserialization_parameters";
+
+  // Write the parameters with a single processor.
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  {
+    // Serialization only creates a single file, move with one process only.
+    rename_restart_files(filename);
+
+    // Write deserialization parameters.
+    std::ofstream stream(filename);
+    AssertThrow(stream, dealii::ExcMessage("Could not write deserialization parameters to file."));
+
+    // Text archive type for debugging purposes.
+    // boost::archive::text_oarchive output_archive(stream);
+    boost::archive::binary_oarchive output_archive(stream);
+
+    // Sequence has to match `read_deserialization_parameters()`.
+    output_archive & parameters.degree;
+    output_archive & parameters.degree_u;
+    output_archive & parameters.degree_p;
+    output_archive & parameters.mapping_degree;
+    output_archive & parameters.consider_mapping_write;
+    output_archive & parameters.triangulation_type;
+    output_archive & parameters.spatial_discretization;
+  }
+}
+
+/**
+ * Utility function to read the parameters a discretization is serialized with. This is to recover
+ * the parameters when deserializing.
+ */
+inline DeserializationParameters
+read_deserialization_parameters(MPI_Comm const &    mpi_comm,
+                                std::string const & directory,
+                                std::string const & filename_base)
+{
+  DeserializationParameters parameters;
+
+  // Filename for deserialization parameters has to match `write_deserialization_parameters()`.
+  std::string const filename = directory + filename_base + ".deserialization_parameters";
+
+  // Read the parameters with a single processor.
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  {
+    // Read deserialization parameters.
+    std::ifstream stream(filename);
+    AssertThrow(stream, dealii::ExcMessage("Could not read deserialization parameters from file."));
+
+    // Text archive type for debugging purposes.
+    // boost::archive::text_iarchive input_archive(stream);
+    boost::archive::binary_iarchive input_archive(stream);
+
+    // Sequence has to match `write_deserialization_parameters()`.
+    input_archive & parameters.degree;
+    input_archive & parameters.degree_u;
+    input_archive & parameters.degree_p;
+    input_archive & parameters.mapping_degree;
+    input_archive & parameters.consider_mapping_write;
+    input_archive & parameters.triangulation_type;
+    input_archive & parameters.spatial_discretization;
+  }
+
+  // Broadcast parameters to all processes.
+  parameters = dealii::Utilities::MPI::broadcast(mpi_comm, parameters, 0);
+
+  return parameters;
+}
+
+/*
+ * Utility function to check if mapping is correctly treated in de-/serialization. This is to
+ * provide easier to interpret error messages on ExaDG level in case the number of DoF vectors
+ * mismatches. This might be due to the mapping being described as a displacement vector, which
+ * might also be de-/serialized, while we have to deserialize exactly what we serialized.
+ */
+inline void
+check_mapping_deserialization(bool const consider_mapping_read_source,
+                              bool const consider_mapping_write_as_serialized)
+{
+  if(consider_mapping_read_source)
+  {
+    if(consider_mapping_write_as_serialized == false)
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage(
+                    "Mapping was not considered when writing the restart data, but shall "
+                    "be considered when reading the restart data. This is not supported."));
+    }
+  }
+  else
+  {
+    if(consider_mapping_write_as_serialized == true)
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage(
+                    "Mapping was considered when writing the restart data, but shall "
+                    "not be considered when reading the restart data. This is not supported."));
+    }
+  }
+}
+
+/**
  * Utility function to serialize a `dealii::Triangulation`. This is only implemented for the
  * serial case since we only require the coarsest triangulation to be read from file when
  * deserializing into a `dealii::parallel::distributed::Triangulation`.
@@ -288,8 +348,8 @@ inline void
 store_vectors_in_triangulation_and_serialize(
   std::string const &                                       directory,
   std::string const &                                       filename_base,
-  std::vector<std::vector<VectorType const *>> const &      vectors_per_dof_handler,
-  std::vector<dealii::DoFHandler<dim, dim> const *> const & dof_handlers)
+  std::vector<dealii::DoFHandler<dim, dim> const *> const & dof_handlers,
+  std::vector<std::vector<VectorType const *>> const &      vectors_per_dof_handler)
 {
   AssertThrow(vectors_per_dof_handler.size() > 0,
               dealii::ExcMessage("No vectors to store in triangulation."));
@@ -355,8 +415,8 @@ inline void
 store_vectors_in_triangulation_and_serialize(
   std::string const &                                       directory,
   std::string const &                                       filename_base,
-  std::vector<std::vector<VectorType const *>> const &      vectors_per_dof_handler,
   std::vector<dealii::DoFHandler<dim, dim> const *> const & dof_handlers,
+  std::vector<std::vector<VectorType const *>> const &      vectors_per_dof_handler,
   dealii::Mapping<dim> const &                              mapping,
   dealii::DoFHandler<dim> const *                           dof_handler_mapping,
   unsigned int const                                        mapping_degree)
@@ -423,8 +483,8 @@ store_vectors_in_triangulation_and_serialize(
   // Use utility function that ignores the mapping.
   store_vectors_in_triangulation_and_serialize(directory,
                                                filename_base,
-                                               vectors_per_dof_handler_extended,
-                                               dof_handlers_extended);
+                                               dof_handlers_extended,
+                                               vectors_per_dof_handler_extended);
 }
 
 /**

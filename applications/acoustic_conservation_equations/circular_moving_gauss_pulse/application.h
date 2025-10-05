@@ -191,18 +191,18 @@ private:
     // restart
     this->param.restarted_simulation       = read_restart;
     this->param.restart_data.write_restart = write_restart;
+    // write restart every 40% of the simulation time
     this->param.restart_data.interval_time = (this->param.end_time - this->param.start_time) * 0.4;
     this->param.restart_data.interval_wall_time  = 1.e6;
     this->param.restart_data.interval_time_steps = 1e8;
     this->param.restart_data.directory           = this->output_parameters.directory;
     this->param.restart_data.filename            = this->output_parameters.filename + "_restart";
 
-    this->param.restart_data.degree_u                   = 5;
-    this->param.restart_data.degree_p                   = 5;
-    this->param.restart_data.triangulation_type         = TriangulationType::Distributed;
-    this->param.restart_data.discretization_identical   = false;
-    this->param.restart_data.consider_mapping           = true;
-    this->param.restart_data.mapping_degree             = 2;
+    this->param.restart_data.discretization_identical     = false;
+    this->param.restart_data.consider_mapping_write       = true;
+    this->param.restart_data.consider_mapping_read_source = true;
+
+    this->param.restart_data.rpe_rtree_level            = 0;
     this->param.restart_data.rpe_tolerance_unit_cell    = 1e-6;
     this->param.restart_data.rpe_enforce_unique_mapping = false;
   }
