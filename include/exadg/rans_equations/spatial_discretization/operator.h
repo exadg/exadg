@@ -40,6 +40,8 @@
 #include <exadg/operators/solution_transfer.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 
+#include <exadg/rans_equations/spatial_discretization/turbulence_model.h>
+
 namespace ExaDG
 {
 namespace RANS
@@ -291,6 +293,15 @@ public:
   dealii::AffineConstraints<Number> const &
   get_constraints() const;
 
+  void
+  set_turbulent_kinetic_energy(VectorType const & tke_in);
+
+  void
+  set_tke_dissipation_rate(VectorType const & epsilon_in);
+
+  void
+  get_eddy_viscosity(VectorType & dst) const;
+
 private:
   void
   do_setup();
@@ -450,6 +461,11 @@ private:
    * Output to screen.
    */
   dealii::ConditionalOStream pcout;
+
+  /*
+   * Variable viscosity models.
+   */
+  std::shared_ptr<TurbulenceModel<dim, Number>>  turbulence_model_ptr = std::make_shared<TurbulenceModel<dim, Number>>();
 };
 
 } // namespace RANS

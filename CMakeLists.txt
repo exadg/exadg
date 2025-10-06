@@ -126,6 +126,8 @@ SET(TARGET_SRC
      include/exadg/rans_equations/spatial_discretization/operators/combined_operator.cpp
      include/exadg/rans_equations/spatial_discretization/operator.cpp
      include/exadg/rans_equations/spatial_discretization/interface.cpp
+     include/exadg/rans_equations/spatial_discretization/turbulence_model.cpp
+     include/exadg/rans_equations/spatial_discretization/viscosity_model_base.cpp
      include/exadg/rans_equations/preconditioners/multigrid_preconditioner.cpp
      include/exadg/rans_equations/time_integration/time_int_bdf.cpp
      include/exadg/rans_equations/time_integration/time_int_explicit_runge_kutta.cpp

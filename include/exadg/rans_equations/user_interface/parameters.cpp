@@ -71,6 +71,7 @@ Parameters::Parameters()
     degree(1),
     enable_adaptivity(false),
     numerical_flux_convective_operator(NumericalFluxConvectiveOperator::Undefined),
+    transport_variable_type(TransportVariableType::Scalar),
     IP_factor(1.0),
 
     // SOLVER

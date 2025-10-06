@@ -100,6 +100,9 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
+  //description: see enum declaration
+  ScalarType scalar_type;
+
   // description: see enum declaration
   ProblemType problem_type;
 
@@ -243,6 +246,8 @@ public:
 
   // description: see enum declaration
   NumericalFluxConvectiveOperator numerical_flux_convective_operator;
+
+  TransportVariableType transport_variable_type;
 
   // diffusive term: Symmetric interior penalty discretization Galerkin (SIPG)
   // interior penalty parameter scaling factor: default value is 1.0

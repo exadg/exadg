@@ -1205,6 +1205,20 @@ SpatialOperatorBase<dim, Number>::set_temperature(VectorType const & temperature
 
 template<int dim, typename Number>
 void
+SpatialOperatorBase<dim, Number>::set_turbulent_kinetic_energy(VectorType const & tke)
+{
+  AssertThrow(param.turbulence_model_data.rans_model, dealii::ExcMessage("Invalid parameters detected for rans model."));
+}
+
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::set_tke_dissipation_rate(VectorType const & epsilon)
+{
+  AssertThrow(param.turbulence_model_data.rans_model, dealii::ExcMessage("Invalid parameters detected for rans model."));
+}
+
+template<int dim, typename Number>
+void
 SpatialOperatorBase<dim, Number>::compute_vorticity(VectorType & dst, VectorType const & src) const
 {
   vorticity_calculator.compute_vorticity(dst, src);

@@ -316,6 +316,18 @@ public:
   set_temperature(VectorType const & temperature);
 
   /*
+   * Turbulent Kinetic energy
+   */
+  void
+  set_turbulent_kinetic_energy(VectorType const & tke);
+
+  /*
+   * Turbulent Kinetic Energy Dissipation Rate
+   */
+  void
+  set_tke_dissipation_rate(VectorType const & epsilon);
+
+  /*
    * Computation of derived quantities which is needed for postprocessing but some of them are also
    * needed, e.g., for special splitting-type time integration schemes.
    */

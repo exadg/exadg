@@ -44,7 +44,9 @@ enum class TurbulenceEddyViscosityModel
   Smagorinsky,
   Vreman,
   WALE,
-  Sigma
+  Sigma,
+  PrandtlMixingLength,
+  StandardKEpsilon
 };
 
 struct TurbulenceModelData
@@ -55,13 +57,20 @@ struct TurbulenceModelData
 
   TurbulenceEddyViscosityModel turbulence_model{TurbulenceEddyViscosityModel::Undefined};
   bool                         is_active{false};
+  bool                        rans_model{false};
   double                       constant{0.0}; // model constant
 
   void
   check() const
   {
     AssertThrow(is_active, dealii::ExcMessage("Turbulence model is inactive."));
-    AssertThrow(constant > 1e-20, dealii::ExcMessage("Parameter must be greater than zero."));
+    if (turbulence_model == TurbulenceEddyViscosityModel::WALE ||
+        turbulence_model == TurbulenceEddyViscosityModel::Smagorinsky ||
+        turbulence_model == TurbulenceEddyViscosityModel::Vreman ||
+        turbulence_model == TurbulenceEddyViscosityModel::Sigma)
+    {
+      AssertThrow(constant > 1e-20, dealii::ExcMessage("Parameter must be greater than zero."));
+    }
   }
 
   void
@@ -74,7 +83,13 @@ struct TurbulenceModelData
     if(is_active)
     {
       print_parameter(pcout, "Turbulence model", turbulence_model);
+    if (turbulence_model == TurbulenceEddyViscosityModel::WALE ||
+        turbulence_model == TurbulenceEddyViscosityModel::Smagorinsky ||
+        turbulence_model == TurbulenceEddyViscosityModel::Vreman ||
+        turbulence_model == TurbulenceEddyViscosityModel::Sigma)
+    {
       print_parameter(pcout, "Turbulence model constant", constant);
+    }
     }
   }
 };

@@ -78,6 +78,9 @@ private:
   communicate_scalar_to_fluid() const;
 
   void
+  communicate_scalar_to_scalar() const;
+
+  void
   communicate_fluid_to_all_scalars() const;
 
   void
@@ -143,6 +146,9 @@ private:
 
   mutable dealii::LinearAlgebra::distributed::Vector<Number> temperature;
 
+  mutable dealii::LinearAlgebra::distributed::Vector<Number> turbulent_kinetic_energy;
+
+  mutable dealii::LinearAlgebra::distributed::Vector<Number> turbulent_dissipation_rate;
   /*
    * Computation time (wall clock time).
    */

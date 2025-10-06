@@ -35,6 +35,16 @@ namespace RANS
 /**************************************************************************************/
 
 /*
+ *  Scalar Type describes the type of scalar transport equation
+ */
+enum class ScalarType
+{
+  Scalar,
+  TurbulentKineticEnergy,
+  TKEDissipationRate
+};
+
+/*
  *  ProblemType describes whether a steady or an unsteady problem has to be solved
  */
 enum class ProblemType
@@ -164,6 +174,14 @@ enum class NumericalFluxConvectiveOperator
   Undefined,
   CentralFlux,
   LaxFriedrichsFlux
+};
+
+enum class TransportVariableType
+{
+  Undefined,
+  Scalar,
+  Temperature,
+  TurbulentKineticEnergy
 };
 
 /**************************************************************************************/

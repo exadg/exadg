@@ -1037,6 +1037,27 @@ Operator<dim, Number>::get_constraints() const
   return affine_constraints;
 }
 
+template<int dim, typename Number>
+void
+Operator<dim, Number>::set_turbulent_kinetic_energy(VectorType const & tke_in)
+{
+  turbulence_model_ptr->set_turbulent_kinetic_energy(tke_in);
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::set_tke_dissipation_rate(VectorType const & epsilon_in)
+{
+  turbulence_model_ptr->set_tke_dissipation_rate(epsilon_in);
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::get_eddy_viscosity(VectorType & dst) const
+{
+  turbulence_model_ptr->get_eddy_viscosity(dst);
+}
+
 template class Operator<2, float>;
 template class Operator<2, double>;
 
