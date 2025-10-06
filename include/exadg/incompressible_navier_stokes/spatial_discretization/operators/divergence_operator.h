@@ -252,9 +252,6 @@ private:
   mutable double time;
 
   Operators::DivergenceKernel<dim, Number> kernel;
-
-  // needed if Dirichlet boundary condition is evaluated from dof vector
-  mutable VectorType const * velocity_bc;
 };
 
 } // namespace IncNS

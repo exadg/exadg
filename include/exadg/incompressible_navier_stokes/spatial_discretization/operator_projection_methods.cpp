@@ -19,6 +19,7 @@
  *  ______________________________________________________________________
  */
 
+#include <exadg/incompressible_navier_stokes/preconditioners/block_preconditioner_momentum.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_projection_methods.h>
 #include <exadg/poisson/preconditioners/multigrid_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
@@ -284,6 +285,12 @@ OperatorProjectionMethods<dim, Number>::setup_momentum_preconditioner()
     momentum_preconditioner =
       std::make_shared<BlockJacobiPreconditioner<MomentumOperator<dim, Number>>>(
         this->momentum_operator, false);
+  }
+  else if(this->param.preconditioner_momentum == MomentumPreconditioner::BlockPreconditioner)
+  {
+    momentum_preconditioner =
+      std::make_shared<BlockPreconditionerMomentum<dim, Number>>(this->get_matrix_free(),
+                                                                 this->momentum_operator);
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::Multigrid)
   {
@@ -568,6 +575,14 @@ OperatorProjectionMethods<dim, Number>::apply_projection_operator(VectorType &  
               dealii::ExcMessage("Projection operator is not initialized correctly."));
 
   this->projection_operator->vmult(dst, src);
+}
+
+template<int dim, typename Number>
+void
+OperatorProjectionMethods<dim, Number>::apply_momentum_operator(VectorType &       dst,
+                                                                VectorType const & src) const
+{
+  this->momentum_operator.vmult(dst, src);
 }
 
 template class OperatorProjectionMethods<2, float>;

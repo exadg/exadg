@@ -25,7 +25,10 @@
 // deal.II
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/distributed/tria_base.h>
-#include <deal.II/fe/fe_values.h>
+#include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/fe_system.h>
+#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/fe_point_evaluation.h>
 
 // ExaDG
 #include <exadg/grid/grid_data.h>
@@ -110,15 +113,11 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
 
     unsigned int const n_points_y_glob = n_cells_y_dir * (n_points_y_per_cell - 1) + 1;
 
-    // velocity vector with 3-components
-    vel_glob.resize(3);
-    for(unsigned int i = 0; i < 3; i++)
-      vel_glob[i].resize(n_points_y_glob); // vector for all y-coordinates
+    // velocity vector for all y-coordinates
+    vel_glob.resize(n_points_y_glob);
 
-    // velocity vector with 3-components
-    velsq_glob.resize(3);
-    for(unsigned int i = 0; i < 3; i++)
-      velsq_glob[i].resize(n_points_y_glob); // vector for all y-coordinates
+    // velocity vector for all y-coordinates
+    velsq_glob.resize(n_points_y_glob);
 
     // u*v (scalar quantity)
     veluv_glob.resize(n_points_y_glob); // vector for all y-coordinates
@@ -173,52 +172,37 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
       // 'fe_degree' which leads to slightly different values as compared to the exact mapping.
       // -> overwrite values in y_glob with values resulting from polynomial mapping
 
-      // use 2d quadrature to integrate over x-z-planes
-      unsigned int const      fe_degree = dof_handler.get_fe().degree;
-      dealii::QGauss<dim - 1> gauss_2d(fe_degree + 1);
-
       std::vector<double> y_processor;
       y_processor.resize(n_points_y_glob, std::numeric_limits<double>::lowest());
 
-      // vector of dealii::FEValues for all x-z-planes of a cell
-      std::vector<std::shared_ptr<dealii::FEValues<dim, dim>>> fe_values(n_points_y_per_cell);
+      std::vector<dealii::Point<dim>> points(n_points_y_per_cell);
 
       for(unsigned int i = 0; i < n_points_y_per_cell; ++i)
       {
-        std::vector<dealii::Point<dim>> points(gauss_2d.size());
-        std::vector<double>             weights(gauss_2d.size());
-        for(unsigned int j = 0; j < gauss_2d.size(); ++j)
-        {
-          points[j][0] = gauss_2d.point(j)[0];
-          if(dim == 3)
-            points[j][2] = gauss_2d.point(j)[1];
-          points[j][1] = (double)i / (n_points_y_per_cell - 1);
-          weights[j]   = gauss_2d.weight(j);
-        }
-        fe_values[i].reset(new dealii::FEValues<dim>(mapping,
-                                                     dof_handler.get_fe().base_element(0),
-                                                     dealii::Quadrature<dim>(points, weights),
-                                                     dealii::update_values |
-                                                       dealii::update_jacobians |
-                                                       dealii::update_quadrature_points));
+        points[i][1] = (double)i / (n_points_y_per_cell - 1);
       }
+
+      dealii::FE_DGQ<dim>                            fe_dummy(0);
+      dealii::FEPointEvaluation<1, dim, dim, Number> evaluator(mapping,
+                                                               fe_dummy,
+                                                               dealii::update_quadrature_points);
 
       // loop over all cells
       for(auto const & cell : dof_handler.active_cell_iterators())
       {
         if(cell->is_locally_owned())
         {
-          // loop over all y-coordinates of current cell
+          evaluator.reinit(cell, points);
           unsigned int idx = 0;
+
+          // loop over all y-coordinates of current cell
           for(unsigned int i = 0; i < n_points_y_per_cell; ++i)
           {
-            fe_values[i]->reinit(typename dealii::Triangulation<dim>::active_cell_iterator(cell));
-
             // Transform cell index 'i' to global index 'idx' of y_glob-vector
 
             // find index within the y-values: first do a binary search to find
             // the next larger value of y in the list...
-            double const y = fe_values[i]->quadrature_point(0)[1];
+            double const y = evaluator.quadrature_point(i)[1];
 
             // identify index for first point located on the boundary of the cell because for this
             // point the mapping can not cause any trouble. For interior points, the deviations
@@ -318,11 +302,9 @@ template<int dim, typename Number>
 void
 StatisticsManager<dim, Number>::reset()
 {
-  for(unsigned int i = 0; i < dim; i++)
-    std::fill(vel_glob[i].begin(), vel_glob[i].end(), 0.);
+  std::fill(vel_glob.begin(), vel_glob.end(), dealii::Tensor<1, dim>());
 
-  for(unsigned int i = 0; i < dim; i++)
-    std::fill(velsq_glob[i].begin(), velsq_glob[i].end(), 0.);
+  std::fill(velsq_glob.begin(), velsq_glob.end(), dealii::Tensor<1, dim>());
 
   std::fill(veluv_glob.begin(), veluv_glob.end(), 0.);
 
@@ -372,116 +354,93 @@ StatisticsManager<dim, Number>::do_evaluate(const std::vector<VectorType const *
 {
   // Use local vectors xxx_loc in order to average/integrate over all
   // locally owned cells of current processor.
-  std::vector<double> area_loc(vel_glob[0].size());
-
-  std::vector<std::vector<double>> vel_loc(dim);
-  for(unsigned int i = 0; i < dim; i++)
-    vel_loc[i].resize(vel_glob[0].size());
-
-  std::vector<std::vector<double>> velsq_loc(dim);
-  for(unsigned int i = 0; i < dim; i++)
-    velsq_loc[i].resize(vel_glob[0].size());
-
-  std::vector<double> veluv_loc(vel_glob[0].size());
+  std::vector<double>                 area_loc(vel_glob.size());
+  std::vector<dealii::Tensor<1, dim>> vel_loc(vel_glob.size());
+  std::vector<dealii::Tensor<1, dim>> velsq_loc(vel_glob.size());
+  std::vector<double>                 veluv_loc(vel_glob.size());
 
   // use 2d quadrature to integrate over x-z-planes
   unsigned int const      fe_degree = dof_handler.get_fe().degree;
   dealii::QGauss<dim - 1> gauss_2d(fe_degree + 1);
 
-  // vector of dealii::FEValues for all x-z-planes of a cell
-  std::vector<std::shared_ptr<dealii::FEValues<dim, dim>>> fe_values(n_points_y_per_cell);
-
-  for(unsigned int i = 0; i < n_points_y_per_cell; ++i)
+  std::vector<dealii::Point<dim>> points(gauss_2d.size() * n_points_y_per_cell);
+  for(unsigned int i = 0, count = 0; i < n_points_y_per_cell; ++i)
   {
-    std::vector<dealii::Point<dim>> points(gauss_2d.size());
-    std::vector<double>             weights(gauss_2d.size());
-    for(unsigned int j = 0; j < gauss_2d.size(); ++j)
+    for(unsigned int j = 0; j < gauss_2d.size(); ++j, ++count)
     {
-      points[j][0] = gauss_2d.point(j)[0];
+      points[count][0] = gauss_2d.point(j)[0];
       if(dim == 3)
-        points[j][2] = gauss_2d.point(j)[1];
-      points[j][1] = (double)i / (n_points_y_per_cell - 1);
-      weights[j]   = gauss_2d.weight(j);
+        points[count][2] = gauss_2d.point(j)[1];
+      points[count][1] = (double)i / (n_points_y_per_cell - 1);
     }
-
-    fe_values[i].reset(new dealii::FEValues<dim>(mapping,
-                                                 dof_handler.get_fe().base_element(0),
-                                                 dealii::Quadrature<dim>(points, weights),
-                                                 dealii::update_values | dealii::update_jacobians |
-                                                   dealii::update_quadrature_points));
   }
 
-  unsigned int const scalar_dofs_per_cell = dof_handler.get_fe().base_element(0).dofs_per_cell;
-  std::vector<dealii::Tensor<1, dim>>          velocity_vector(scalar_dofs_per_cell);
-  std::vector<dealii::types::global_dof_index> dof_indices(dof_handler.get_fe().dofs_per_cell);
+  dealii::FEEvaluation<dim, -1, 0, dim, Number, dealii::VectorizedArray<Number, 1>>
+    evaluator_tensor_product(mapping,
+                             dof_handler.get_fe(),
+                             dealii::QGaussLobatto<1>(fe_degree + 1),
+                             dealii::update_values);
+
+  dealii::FESystem<dim>                            fe_dg(dealii::FE_DGQ<dim>(fe_degree), dim);
+  std::vector<Number>                              local_velocity_values(fe_dg.dofs_per_cell);
+  dealii::FEPointEvaluation<dim, dim, dim, Number> evaluator(mapping,
+                                                             fe_dg,
+                                                             dealii::update_values |
+                                                               dealii::update_jacobians |
+                                                               dealii::update_quadrature_points);
+
+  velocity[0]->update_ghost_values();
 
   // loop over all cells and perform averaging/integration for all locally owned cells
   for(auto const & cell : dof_handler.active_cell_iterators())
   {
     if(cell->is_locally_owned())
     {
-      cell->get_dof_indices(dof_indices);
+      evaluator_tensor_product.reinit(cell);
+      evaluator_tensor_product.read_dof_values(*velocity[0]);
+      evaluator_tensor_product.evaluate(dealii::EvaluationFlags::values);
+      for(unsigned int q : evaluator_tensor_product.quadrature_point_indices())
+      {
+        auto const vel = evaluator_tensor_product.get_value(q);
+        for(unsigned int d = 0; d < dim; ++d)
+          local_velocity_values[q + d * fe_dg.dofs_per_cell / dim] = vel[d][0];
+      }
 
-      // vector-valued FE where all components are explicitly listed in the dealii::DoFHandler
-      if(dof_handler.get_fe().element_multiplicity(0) >= dim)
-      {
-        for(unsigned int j = 0; j < dof_indices.size(); ++j)
-        {
-          const std::pair<unsigned int, unsigned int> comp =
-            dof_handler.get_fe().system_to_component_index(j);
-          if(comp.first < dim)
-            velocity_vector[comp.second][comp.first] = (*velocity[0])(dof_indices[j]);
-        }
-      }
-      else // scalar FE where we have several vectors referring to the same dealii::DoFHandler
-      {
-        AssertDimension(dof_handler.get_fe().element_multiplicity(0), 1);
-        for(unsigned int j = 0; j < scalar_dofs_per_cell; ++j)
-          for(unsigned int d = 0; d < dim; ++d)
-            velocity_vector[j][d] = (*velocity[d])(dof_indices[j]);
-      }
+      evaluator.reinit(cell, points);
+      evaluator.evaluate(local_velocity_values, dealii::EvaluationFlags::values);
 
       // loop over all x-z-planes of current cell
-      for(unsigned int i = 0; i < n_points_y_per_cell; ++i)
+      for(unsigned int i = 0, count = 0; i < n_points_y_per_cell; ++i)
       {
-        fe_values[i]->reinit(typename dealii::Triangulation<dim>::active_cell_iterator(cell));
-
-        std::vector<double> vel(dim, 0.);
-        std::vector<double> velsq(dim, 0.);
-        double              area = 0, veluv = 0;
+        dealii::Tensor<1, dim> vel, velsq;
+        double                 area = 0, veluv = 0;
 
         // perform integral over current x-z-plane of current cell
-        for(unsigned int q = 0; q < fe_values[i]->n_quadrature_points; ++q)
+        for(unsigned int q = 0; q < gauss_2d.size(); ++q, ++count)
         {
           // interpolate velocity to the quadrature point
-          dealii::Tensor<1, dim> velocity;
-          for(unsigned int j = 0; j < velocity_vector.size(); ++j)
-            velocity += fe_values[i]->shape_value(j, q) * velocity_vector[j];
+          dealii::Tensor<1, dim> velocity = evaluator.get_value(count);
 
           double det = 0.;
           if(dim == 3)
           {
             dealii::Tensor<2, 2> reduced_jacobian;
-            reduced_jacobian[0][0] = fe_values[i]->jacobian(q)[0][0];
-            reduced_jacobian[0][1] = fe_values[i]->jacobian(q)[0][2];
-            reduced_jacobian[1][0] = fe_values[i]->jacobian(q)[2][0];
-            reduced_jacobian[1][1] = fe_values[i]->jacobian(q)[2][2];
+            reduced_jacobian[0][0] = evaluator.jacobian(count)[0][0];
+            reduced_jacobian[0][1] = evaluator.jacobian(count)[0][2];
+            reduced_jacobian[1][0] = evaluator.jacobian(count)[2][0];
+            reduced_jacobian[1][1] = evaluator.jacobian(count)[2][2];
             det                    = determinant(reduced_jacobian);
           }
           else
           {
-            det = std::abs(fe_values[i]->jacobian(q)[0][0]);
+            det = std::abs(evaluator.jacobian(count)[0][0]);
           }
 
-          double area_ele = det * fe_values[i]->get_quadrature().weight(q);
+          double area_ele = det * gauss_2d.weight(q);
+
           area += area_ele;
-
-          for(unsigned int i = 0; i < dim; i++)
-            vel[i] += velocity[i] * area_ele;
-
-          for(unsigned int i = 0; i < dim; i++)
-            velsq[i] += velocity[i] * velocity[i] * area_ele;
-
+          vel += velocity * area_ele;
+          velsq += dealii::schur_product(velocity, velocity) * area_ele;
           veluv += velocity[0] * velocity[1] * area_ele;
         }
 
@@ -489,7 +448,7 @@ StatisticsManager<dim, Number>::do_evaluate(const std::vector<VectorType const *
 
         // find index within the y-values: first do a binary search to find
         // the next larger value of y in the list...
-        double const y = fe_values[i]->quadrature_point(0)[1];
+        double const y = evaluator.quadrature_point(i * gauss_2d.size())[1];
         // std::lower_bound: returns iterator to first element that is >= y.
         // Note that the vector y_glob has to be sorted. As a result, the
         // index might be too large.
@@ -514,27 +473,26 @@ StatisticsManager<dim, Number>::do_evaluate(const std::vector<VectorType const *
 
         // Add results of cellwise integral to xxx_loc vectors since we want
         // to average/integrate over all locally owned cells.
-        for(unsigned int i = 0; i < dim; i++)
-          vel_loc[i].at(idx) += vel[i];
-
-        for(unsigned int i = 0; i < dim; i++)
-          velsq_loc[i].at(idx) += velsq[i];
-
+        vel_loc.at(idx) += vel;
+        velsq_loc.at(idx) += velsq;
         veluv_loc.at(idx) += veluv;
         area_loc.at(idx) += area;
       }
     }
   }
 
+  velocity[0]->zero_out_ghost_values();
+
   // accumulate data over all processors overwriting
   // the processor-local data in xxx_loc since we want
   // to average/integrate over the global x-z-plane.
-  for(unsigned int i = 0; i < dim; i++)
-    dealii::Utilities::MPI::sum(vel_loc[i], mpi_comm, vel_loc[i]);
-
-  for(unsigned int i = 0; i < dim; i++)
-    dealii::Utilities::MPI::sum(velsq_loc[i], mpi_comm, velsq_loc[i]);
-
+  dealii::Utilities::MPI::sum(dealii::ArrayView<const double>(&vel_loc[0][0], vel_loc.size() * dim),
+                              mpi_comm,
+                              dealii::ArrayView<double>(&vel_loc[0][0], vel_loc.size() * dim));
+  dealii::Utilities::MPI::sum(dealii::ArrayView<const double>(&velsq_loc[0][0],
+                                                              vel_loc.size() * dim),
+                              mpi_comm,
+                              dealii::ArrayView<double>(&velsq_loc[0][0], vel_loc.size() * dim));
   dealii::Utilities::MPI::sum(veluv_loc, mpi_comm, veluv_loc);
   dealii::Utilities::MPI::sum(area_loc, mpi_comm, area_loc);
 
@@ -543,12 +501,8 @@ StatisticsManager<dim, Number>::do_evaluate(const std::vector<VectorType const *
   // Averaging over time-samples is performed when writing the output.
   for(unsigned int idx = 0; idx < y_glob.size(); idx++)
   {
-    for(unsigned int i = 0; i < dim; i++)
-      vel_glob[i].at(idx) += vel_loc[i][idx] / area_loc[idx];
-
-    for(unsigned int i = 0; i < dim; i++)
-      velsq_glob[i].at(idx) += velsq_loc[i][idx] / area_loc[idx];
-
+    vel_glob.at(idx) += vel_loc[idx] / area_loc[idx];
+    velsq_glob.at(idx) += velsq_loc[idx] / area_loc[idx];
     veluv_glob.at(idx) += veluv_loc[idx] / area_loc[idx];
   }
 
@@ -565,7 +519,7 @@ StatisticsManager<dim, Number>::do_write_output(std::string const filename,
   if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     // tau_w = mu * d<u>/dy = mu * (<u>(y2)-<u>(y1))/(y2-y1), where mu = rho * nu
-    double tau_w = dynamic_viscosity * ((vel_glob[0].at(1) - vel_glob[0].at(0)) /
+    double tau_w = dynamic_viscosity * ((vel_glob.at(1)[0] - vel_glob.at(0)[0]) /
                                         (double)number_of_samples / (y_glob.at(1) - y_glob.at(0)));
 
     // Re_tau = u_tau * delta / nu = sqrt(tau_w/rho) * delta / (mu/rho), where delta = 1
@@ -593,15 +547,15 @@ StatisticsManager<dim, Number>::do_write_output(std::string const filename,
       f << std::scientific << std::setprecision(7) << std::setw(15) << y_glob.at(idx);
 
       // mean velocity <u_i>, i=1,...,d
-      f << std::setw(15) << vel_glob[0].at(idx) / (double)number_of_samples  /* <u_1> */
-        << std::setw(15) << vel_glob[1].at(idx) / (double)number_of_samples  /* <u_2> */
-        << std::setw(15) << vel_glob[2].at(idx) / (double)number_of_samples; /* <u_3> */
+      f << std::setw(15) << vel_glob.at(idx)[0] / (double)number_of_samples  /* <u_1> */
+        << std::setw(15) << vel_glob.at(idx)[1] / (double)number_of_samples  /* <u_2> */
+        << std::setw(15) << vel_glob.at(idx)[2] / (double)number_of_samples; /* <u_3> */
 
       // rms values: sqrt( <u_i'²> ) = sqrt( <u_i²> - <u_i>² ) where <u_i> = 0 for i=2,3
-      double mean_u1 = vel_glob[0].at(idx) / (double)number_of_samples;
-      f << std::setw(15) << std::sqrt(std::abs((velsq_glob[0].at(idx) / (double)(number_of_samples)-mean_u1 * mean_u1))) /* rms(u_1) */
-        << std::setw(15) << sqrt(velsq_glob[1].at(idx) / (double)(number_of_samples))                                    /* rms(u_2) */
-        << std::setw(15) << sqrt(velsq_glob[2].at(idx) / (double)(number_of_samples));                                   /* rms(u_3) */
+      double mean_u1 = vel_glob.at(idx)[0] / (double)number_of_samples;
+      f << std::setw(15) << std::sqrt(std::abs((velsq_glob.at(idx)[0] / (double)(number_of_samples)-mean_u1 * mean_u1))) /* rms(u_1) */
+        << std::setw(15) << sqrt(velsq_glob.at(idx)[1] / (double)(number_of_samples))                                    /* rms(u_2) */
+        << std::setw(15) << sqrt(velsq_glob.at(idx)[2] / (double)(number_of_samples));                                   /* rms(u_3) */
 
       // <u'v'> = <u*v>
       f << std::setw(15) << (veluv_glob.at(idx)) / (double)(number_of_samples) << std::endl;

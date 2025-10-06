@@ -151,8 +151,6 @@ public:
 
     IntegratorCell integrator(*matrix_free, dof_index, quad_index);
 
-    dealii::AlignedVector<scalar> JxW_values(integrator.n_q_points);
-
     ElementType const element_type =
       get_element_type(matrix_free->get_dof_handler(dof_index).get_triangulation());
 

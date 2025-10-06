@@ -21,6 +21,8 @@
 
 // deal.II
 #include <deal.II/fe/fe_values.h>
+#include <deal.II/grid/grid_tools.h>
+#include <deal.II/matrix_free/fe_point_evaluation.h>
 
 // ExaDG
 #include <exadg/grid/grid_data.h>
@@ -48,6 +50,35 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::LinePlotCalculatorStatisti
 {
   AssertThrow(get_element_type(dof_handler_velocity.get_triangulation()) == ElementType::Hypercube,
               dealii::ExcMessage("Only implemented for hypercube elements."));
+}
+
+template<int dim>
+dealii::Point<dim>
+find_unit_point(dealii::Mapping<dim, dim> const &                               mapping,
+                typename dealii::Triangulation<dim, dim>::cell_iterator const & cell,
+                dealii::Point<dim> const &                                      point)
+{
+  // coarse search first that identifies candidates by affine approximation
+  auto const vertices = mapping.get_vertices(cell);
+  auto const A_b      = dealii::GridTools::affine_cell_approximation<dim, dim>(vertices);
+  dealii::DerivativeForm<1, dim, dim> const A_inv = A_b.first.covariant_form().transpose();
+  dealii::Point<dim>                        p_unit(apply_transformation(A_inv, point - A_b.second));
+
+  // if point is far away in affine approximation of unit cell, do not try
+  // more accurate search to limit computational costs
+  if(dealii::GeometryInfo<dim>::is_inside_unit_cell(p_unit, 1.0))
+  {
+    try
+    {
+      p_unit = mapping.transform_real_to_unit_cell(cell, point);
+    }
+    catch(...)
+    {
+      // A point that does not lie on the reference cell.
+      p_unit[0] = 2.0;
+    }
+  }
+  return p_unit;
 }
 
 template<int dim, typename Number>
@@ -166,34 +197,13 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
 
               // If the new point lies in the current cell, we have to take the current cell into
               // account
-              dealii::Point<dim> const p_unit =
-                cell->real_to_unit_cell_affine_approximation(translated_point);
-
+              dealii::Point<dim> const p_unit = find_unit_point(mapping, cell, translated_point);
               if(dealii::GeometryInfo<dim>::is_inside_unit_cell(p_unit, tolerance))
               {
                 cells_and_ref_points_velocity[line_iterator][p].push_back(
                   std::pair<typename dealii::DoFHandler<dim>::active_cell_iterator,
                             dealii::Point<dim>>(cell, p_unit));
               }
-
-              //              dealii::Point<dim> p_unit = Point<dim>();
-              //              try
-              //              {
-              //                p_unit = mapping.transform_real_to_unit_cell(cell,
-              //                translated_point);
-              //              }
-              //              catch(...)
-              //              {
-              //                // A point that does not lie on the reference cell.
-              //                p_unit[0] = 2.0;
-              //              }
-              //              if(dealii::GeometryInfo<dim>::is_inside_unit_cell(p_unit,1.e-12))
-              //              {
-              //                cells_and_ref_points_velocity[line_iterator][p].push_back(
-              //                    std::pair<typename
-              //                    dealii::DoFHandler<dim>::active_cell_iterator,
-              //                    dealii::Point<dim> >(cell,p_unit));
-              //              }
             }
           }
         }
@@ -233,33 +243,13 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
 
                 // If the new point lies in the current cell, we have to take the current cell into
                 // account
-                dealii::Point<dim> const p_unit =
-                  cell->real_to_unit_cell_affine_approximation(translated_point);
+                dealii::Point<dim> const p_unit = find_unit_point(mapping, cell, translated_point);
                 if(dealii::GeometryInfo<dim>::is_inside_unit_cell(p_unit, tolerance))
                 {
                   cells_and_ref_points_pressure[line_iterator][p].push_back(
                     std::pair<typename dealii::DoFHandler<dim>::active_cell_iterator,
                               dealii::Point<dim>>(cell, p_unit));
                 }
-
-                //                dealii::Point<dim> p_unit = Point<dim>();
-                //                try
-                //                {
-                //                  p_unit = mapping.transform_real_to_unit_cell(cell,
-                //                  translated_point);
-                //                }
-                //                catch(...)
-                //                {
-                //                  // A point that does not lie on the reference cell.
-                //                  p_unit[0] = 2.0;
-                //                }
-                //                if(dealii::GeometryInfo<dim>::is_inside_unit_cell(p_unit,1.e-12))
-                //                {
-                //                  cells_and_ref_points_pressure[line_iterator][p].push_back(
-                //                    std::pair<typename
-                //                    dealii::DoFHandler<dim>::active_cell_iterator,
-                //                    dealii::Point<dim> >(cell,p_unit));
-                //                }
               }
             }
           }
@@ -286,33 +276,13 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
 
               // If the new point lies in the current cell, we have to take the current cell into
               // account
-              dealii::Point<dim> const p_unit =
-                cell->real_to_unit_cell_affine_approximation(translated_point);
+              dealii::Point<dim> const p_unit = find_unit_point(mapping, cell, translated_point);
               if(dealii::GeometryInfo<dim>::is_inside_unit_cell(p_unit, tolerance))
               {
                 cells_and_ref_points_ref_pressure[line_iterator].push_back(
                   std::pair<typename dealii::DoFHandler<dim>::active_cell_iterator,
                             dealii::Point<dim>>(cell, p_unit));
               }
-
-              //              dealii::Point<dim> p_unit = Point<dim>();
-              //              try
-              //              {
-              //                p_unit = mapping.transform_real_to_unit_cell(cell,
-              //                translated_point);
-              //              }
-              //              catch(...)
-              //              {
-              //                // A point that does not lie on the reference cell.
-              //                p_unit[0] = 2.0;
-              //              }
-              //              if(dealii::GeometryInfo<dim>::is_inside_unit_cell(p_unit,1.e-12))
-              //              {
-              //                ref_pressure_cells_and_ref_points[line_iterator].push_back(
-              //                    std::pair<typename
-              //                    dealii::DoFHandler<dim>::active_cell_iterator,
-              //                    dealii::Point<dim> >(cell,p_unit));
-              //              }
             }
           }
         }
@@ -409,13 +379,19 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
   std::vector<double>                         wall_shear_local(line.n_points);
   std::vector<dealii::Tensor<2, dim, double>> reynolds_local(line.n_points);
 
-  unsigned int const scalar_dofs_per_cell =
-    dof_handler_velocity.get_fe().base_element(0).dofs_per_cell;
+  dealii::FiniteElement<dim> const &           fe = dof_handler_velocity.get_fe();
+  std::vector<dealii::types::global_dof_index> dof_indices(fe.dofs_per_cell);
+  std::vector<double>                          velocity_on_cell(fe.dofs_per_cell);
 
-  std::vector<dealii::Tensor<1, dim>> velocity_vector(scalar_dofs_per_cell);
-
-  std::vector<dealii::types::global_dof_index> dof_indices(
-    dof_handler_velocity.get_fe().dofs_per_cell);
+  // use quadrature for averaging in homogeneous direction
+  dealii::QGauss<1>                   gauss_1d(fe.degree + 1);
+  std::vector<dealii::Point<dim>>     points(gauss_1d.size());  // 1D points
+  std::vector<double>                 weights(gauss_1d.size()); // 1D weights
+  dealii::FEPointEvaluation<dim, dim> evaluator(mapping,
+                                                fe,
+                                                dealii::update_values | dealii::update_jacobians |
+                                                  dealii::update_quadrature_points |
+                                                  dealii::update_gradients);
 
   for(unsigned int p = 0; p < line.n_points; ++p)
   {
@@ -424,44 +400,27 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
         cell_and_ref_point != cells_and_ref_points_velocity[line_iterator][p].end();
         ++cell_and_ref_point)
     {
-      unsigned int const fe_degree_velocity = dof_handler_velocity.get_fe().degree;
-
-      // use quadrature for averaging in homogeneous direction
-      dealii::QGauss<1>               gauss_1d(fe_degree_velocity + 1);
-      std::vector<dealii::Point<dim>> points(gauss_1d.size());  // 1D points
-      std::vector<double>             weights(gauss_1d.size()); // 1D weights
-
       dealii::Point<dim> const p_unit = cell_and_ref_point->second;
 
       // Find points and weights for Gauss quadrature
       find_points_and_weights(p_unit, points, weights, averaging_direction, gauss_1d);
-
-      dealii::FEValues<dim, dim> fe_values(mapping,
-                                           dof_handler_velocity.get_fe().base_element(0),
-                                           dealii::Quadrature<dim>(points, weights),
-                                           dealii::update_values | dealii::update_jacobians |
-                                             dealii::update_quadrature_points |
-                                             dealii::update_gradients);
-
       typename dealii::DoFHandler<dim>::active_cell_iterator const cell = cell_and_ref_point->first;
-      fe_values.reinit(typename dealii::Triangulation<dim>::active_cell_iterator(cell));
+      evaluator.reinit(cell, points);
 
       cell->get_dof_indices(dof_indices);
 
-      // resort velocity dofs
       for(unsigned int j = 0; j < dof_indices.size(); ++j)
       {
-        const std::pair<unsigned int, unsigned int> comp =
-          dof_handler_velocity.get_fe().system_to_component_index(j);
-        if(comp.first < dim)
-          velocity_vector[comp.second][comp.first] = velocity(dof_indices[j]);
+        velocity_on_cell[j] = velocity(dof_indices[j]);
       }
+      evaluator.evaluate(velocity_on_cell,
+                         dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
 
       // perform averaging in homogeneous direction
-      for(unsigned int q = 0; q < fe_values.n_quadrature_points; ++q)
+      for(unsigned int q = 0; q < points.size(); ++q)
       {
-        double det = std::abs(fe_values.jacobian(q)[averaging_direction][averaging_direction]);
-        double JxW = det * fe_values.get_quadrature().weight(q);
+        double det = std::abs(evaluator.jacobian(q)[averaging_direction][averaging_direction]);
+        double JxW = det * weights[q];
 
         // calculate integrals in homogeneous direction
         length_local[p] += JxW;
@@ -471,15 +430,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
             quantity != line.quantities.end();
             ++quantity)
         {
-          dealii::Tensor<1, dim> velocity;
-
-          if((*quantity)->type == QuantityType::Velocity or
-             (*quantity)->type == QuantityType::ReynoldsStresses)
-          {
-            // evaluate velocity solution in current quadrature points
-            for(unsigned int j = 0; j < velocity_vector.size(); ++j)
-              velocity += fe_values.shape_value(j, q) * velocity_vector[j];
-          }
+          dealii::Tensor<1, dim> const velocity = evaluator.get_value(q);
 
           if((*quantity)->type == QuantityType::Velocity)
           {
@@ -498,9 +449,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
           }
           else if((*quantity)->type == QuantityType::SkinFriction)
           {
-            dealii::Tensor<2, dim> velocity_gradient;
-            for(unsigned int j = 0; j < velocity_vector.size(); ++j)
-              velocity_gradient += outer_product(velocity_vector[j], fe_values.shape_grad(j, q));
+            dealii::Tensor<2, dim> const velocity_gradient = evaluator.get_gradient(q);
 
             std::shared_ptr<QuantitySkinFriction<dim>> quantity_skin_friction =
               std::dynamic_pointer_cast<QuantitySkinFriction<dim>>(*quantity);
@@ -640,51 +589,44 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::average_pressure_for_given
   double &           length_local,
   double &           pressure_local)
 {
-  unsigned int const scalar_dofs_per_cell =
-    dof_handler_pressure.get_fe().base_element(0).dofs_per_cell;
-  std::vector<double>                          pressure_vector(scalar_dofs_per_cell);
-  std::vector<dealii::types::global_dof_index> dof_indices(
-    dof_handler_pressure.get_fe().dofs_per_cell);
+  dealii::FiniteElement<dim> const &           fe = dof_handler_pressure.get_fe();
+  std::vector<double>                          pressure_on_cell(fe.dofs_per_cell);
+  std::vector<dealii::types::global_dof_index> dof_indices(fe.dofs_per_cell);
+
+  // use quadrature for averaging in homogeneous direction
+  dealii::QGauss<1>                 gauss_1d(fe.degree + 1);
+  std::vector<dealii::Point<dim>>   points(gauss_1d.size());  // 1D points
+  std::vector<double>               weights(gauss_1d.size()); // 1D weights
+  dealii::FEPointEvaluation<1, dim> evaluator(mapping,
+                                              fe,
+                                              dealii::update_values | dealii::update_jacobians |
+                                                dealii::update_quadrature_points |
+                                                dealii::update_gradients);
 
   for(typename TYPE::const_iterator cell_and_ref_point = vector_cells_and_ref_points.begin();
       cell_and_ref_point != vector_cells_and_ref_points.end();
       ++cell_and_ref_point)
   {
-    unsigned int const fe_degree_pressure = dof_handler_pressure.get_fe().degree;
-
-    // use quadrature for averaging in homogeneous direction
-    dealii::QGauss<1>               gauss_1d(fe_degree_pressure + 1);
-    std::vector<dealii::Point<dim>> points(gauss_1d.size());  // 1D points
-    std::vector<double>             weights(gauss_1d.size()); // 1D weights
-
     dealii::Point<dim> const p_unit = cell_and_ref_point->second;
 
     // Find points and weights for Gauss quadrature
     find_points_and_weights(p_unit, points, weights, averaging_direction, gauss_1d);
 
-    dealii::FEValues<dim, dim> fe_values(mapping,
-                                         dof_handler_pressure.get_fe().base_element(0),
-                                         dealii::Quadrature<dim>(points, weights),
-                                         dealii::update_values | dealii::update_jacobians |
-                                           dealii::update_quadrature_points);
-
     typename dealii::DoFHandler<dim>::active_cell_iterator const cell = cell_and_ref_point->first;
-    fe_values.reinit(typename dealii::Triangulation<dim>::active_cell_iterator(cell));
-
+    evaluator.reinit(cell, points);
     cell->get_dof_indices(dof_indices);
 
-    for(unsigned int j = 0; j < scalar_dofs_per_cell; ++j)
-      pressure_vector[j] = pressure(dof_indices[j]);
+    for(unsigned int j = 0; j < dof_indices.size(); ++j)
+      pressure_on_cell[j] = pressure(dof_indices[j]);
+    evaluator.evaluate(pressure_on_cell,
+                       dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
 
-    for(unsigned int q = 0; q < fe_values.n_quadrature_points; ++q)
+    for(unsigned int q = 0; q < points.size(); ++q)
     {
-      double p = 0;
+      double const p = evaluator.get_value(q);
 
-      for(unsigned int j = 0; j < pressure_vector.size(); ++j)
-        p += fe_values.shape_value(j, q) * pressure_vector[j];
-
-      double det = std::abs(fe_values.jacobian(q)[averaging_direction][averaging_direction]);
-      double JxW = det * fe_values.get_quadrature().weight(q);
+      double det = std::abs(evaluator.jacobian(q)[averaging_direction][averaging_direction]);
+      double JxW = det * weights[q];
 
       length_local += JxW;
       pressure_local += p * JxW;

@@ -26,8 +26,7 @@ namespace ExaDG
 namespace IncNS
 {
 template<int dim, typename Number>
-DivergenceOperator<dim, Number>::DivergenceOperator()
-  : matrix_free(nullptr), time(0.0), velocity_bc(nullptr)
+DivergenceOperator<dim, Number>::DivergenceOperator() : matrix_free(nullptr), time(0.0)
 {
 }
 
@@ -86,8 +85,6 @@ void
 DivergenceOperator<dim, Number>::rhs_bc_from_dof_vector(VectorType &       dst,
                                                         VectorType const & velocity) const
 {
-  velocity_bc = &velocity;
-
   dst = 0;
 
   VectorType tmp;
@@ -99,13 +96,11 @@ DivergenceOperator<dim, Number>::rhs_bc_from_dof_vector(VectorType &       dst,
                     &This::boundary_face_loop_inhom_operator_bc_from_dof_vector,
                     this,
                     tmp,
-                    src_dummy,
+                    velocity,
                     false /*zero_dst_vector = false*/);
 
   // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
   dst.add(-1.0, tmp);
-
-  velocity_bc = nullptr;
 }
 
 template<int dim, typename Number>
@@ -488,8 +483,8 @@ void
 DivergenceOperator<dim, Number>::boundary_face_loop_inhom_operator_bc_from_dof_vector(
   dealii::MatrixFree<dim, Number> const & matrix_free,
   VectorType &                            dst,
-  VectorType const &,
-  Range const & face_range) const
+  VectorType const &                      velocity_bc,
+  Range const &                           face_range) const
 {
   if(data.integration_by_parts == true and data.use_boundary_data == true)
   {
@@ -502,7 +497,7 @@ DivergenceOperator<dim, Number>::boundary_face_loop_inhom_operator_bc_from_dof_v
       velocity.reinit(face);
 
       velocity_ext.reinit(face);
-      velocity_ext.gather_evaluate(*velocity_bc, dealii::EvaluationFlags::values);
+      velocity_ext.gather_evaluate(velocity_bc, dealii::EvaluationFlags::values);
 
       pressure.reinit(face);
 

@@ -372,6 +372,9 @@ public:
   apply_mass_operator(VectorType & dst, VectorType const & src) const;
 
   void
+  apply_scaled_mass_operator(VectorType & dst, Number const factor, VectorType const & src) const;
+
+  void
   apply_mass_operator_add(VectorType & dst, VectorType const & src) const;
 
   // body force term
@@ -569,8 +572,7 @@ protected:
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
   std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel;
 
-  std::shared_ptr<Operators::DivergencePenaltyKernel<dim, Number>> div_penalty_kernel;
-  std::shared_ptr<Operators::ContinuityPenaltyKernel<dim, Number>> conti_penalty_kernel;
+  std::shared_ptr<Operators::ProjectionKernel<dim, Number>> projection_kernel;
 
   /*
    * Basic operators.
@@ -582,14 +584,13 @@ protected:
   GradientOperator<dim, Number>   gradient_operator;
   DivergenceOperator<dim, Number> divergence_operator;
 
-  DivergencePenaltyOperator<dim, Number> div_penalty_operator;
-  ContinuityPenaltyOperator<dim, Number> conti_penalty_operator;
-
   /*
    * Linear(ized) momentum operator.
    */
+public:
   mutable MomentumOperator<dim, Number> momentum_operator;
 
+protected:
   /*
    * Inverse mass operator.
    */
@@ -600,8 +601,11 @@ protected:
    * Projection operator.
    */
   typedef ProjectionOperator<dim, Number> ProjOperator;
-  std::shared_ptr<ProjOperator>           projection_operator;
 
+public:
+  std::shared_ptr<ProjOperator> projection_operator;
+
+protected:
   /*
    * Projection solver.
    */

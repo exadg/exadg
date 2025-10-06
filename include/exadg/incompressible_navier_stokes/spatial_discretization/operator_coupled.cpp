@@ -146,14 +146,12 @@ template<int dim, typename Number>
 void
 OperatorCoupled<dim, Number>::update_divergence_penalty_operator(VectorType const & velocity)
 {
-  this->div_penalty_operator.update(velocity);
 }
 
 template<int dim, typename Number>
 void
 OperatorCoupled<dim, Number>::update_continuity_penalty_operator(VectorType const & velocity)
 {
-  this->conti_penalty_operator.update(velocity);
 }
 
 template<int dim, typename Number>
@@ -216,8 +214,8 @@ OperatorCoupled<dim, Number>::rhs_linear_problem(BlockVectorType &  dst,
 
   if(this->param.apply_penalty_terms_in_postprocessing_step == false)
   {
-    if(this->param.use_continuity_penalty == true)
-      this->conti_penalty_operator.rhs_add(dst.block(0), time);
+    this->projection_operator->set_time(time);
+    this->projection_operator->rhs_add(dst.block(0));
   }
 
   if(this->param.right_hand_side == true)
@@ -242,10 +240,7 @@ OperatorCoupled<dim, Number>::apply_linearized_problem(BlockVectorType &       d
   // Divergence and continuity penalty operators
   if(this->param.apply_penalty_terms_in_postprocessing_step == false)
   {
-    if(this->param.use_divergence_penalty == true)
-      this->div_penalty_operator.apply_add(dst.block(0), src.block(0));
-    if(this->param.use_continuity_penalty == true)
-      this->conti_penalty_operator.apply_add(dst.block(0), src.block(0));
+    this->projection_operator->vmult_add(dst.block(0), src.block(0));
   }
 
   // (1,2) block of saddle point matrix
@@ -322,10 +317,7 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &     
   // Divergence and continuity penalty operators
   if(this->param.apply_penalty_terms_in_postprocessing_step == false)
   {
-    if(this->param.use_divergence_penalty == true)
-      this->div_penalty_operator.apply_add(dst.block(0), src.block(0));
-    if(this->param.use_continuity_penalty == true)
-      this->conti_penalty_operator.evaluate_add(dst.block(0), src.block(0), time);
+    this->projection_operator->vmult_add(dst.block(0), src.block(0));
   }
 
   // gradient operator scaled by scaling_factor_continuity
@@ -385,10 +377,7 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVectorType
   // Divergence and continuity penalty operators
   if(this->param.apply_penalty_terms_in_postprocessing_step == false)
   {
-    if(this->param.use_divergence_penalty == true)
-      this->div_penalty_operator.apply_add(dst.block(0), src.block(0));
-    if(this->param.use_continuity_penalty == true)
-      this->conti_penalty_operator.evaluate_add(dst.block(0), src.block(0), time);
+    this->projection_operator->vmult_add(dst.block(0), src.block(0));
   }
 
   // gradient operator scaled by scaling_factor_continuity

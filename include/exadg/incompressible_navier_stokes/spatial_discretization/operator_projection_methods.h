@@ -153,6 +153,12 @@ public:
   apply_projection_operator(VectorType & dst, VectorType const & src) const;
 
   /*
+   * This function applies the momentum operator (used for throughput measurements).
+   */
+  void
+  apply_momentum_operator(VectorType & dst, VectorType const & src) const;
+
+  /*
    * This function applies the Laplace operator (used for throughput measurements).
    */
   void
@@ -209,10 +215,10 @@ public:
                               double const &     time,
                               double const &     scaling_factor_mass) const;
 
-protected:
   // Pressure Poisson equation (operator, preconditioner, solver).
   Poisson::LaplaceOperator<dim, Number, 1> laplace_operator;
 
+protected:
   std::shared_ptr<PreconditionerBase<Number>> preconditioner_pressure_poisson;
 
   std::shared_ptr<Krylov::SolverBase<VectorType>> pressure_poisson_solver;

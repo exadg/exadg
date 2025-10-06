@@ -39,35 +39,23 @@ ProjectionOperator<dim, Number>::initialize(
 
   Base::reinit(matrix_free, affine_constraints, data);
 
-  if(operator_data.use_divergence_penalty)
+  if(operator_data.use_divergence_penalty or operator_data.use_continuity_penalty)
   {
-    this->div_kernel = std::make_shared<Operators::DivergencePenaltyKernel<dim, Number>>();
-    this->div_kernel->reinit(matrix_free,
-                             operator_data.dof_index,
-                             operator_data.quad_index,
-                             div_kernel_data);
-  }
-
-  if(operator_data.use_continuity_penalty)
-  {
-    this->conti_kernel = std::make_shared<Operators::ContinuityPenaltyKernel<dim, Number>>();
-    this->conti_kernel->reinit(matrix_free,
-                               operator_data.dof_index,
-                               operator_data.quad_index,
-                               conti_kernel_data);
+    this->kernel = std::make_shared<Operators::ProjectionKernel<dim, Number>>();
+    this->kernel->reinit(matrix_free,
+                         operator_data.dof_index,
+                         operator_data.quad_index,
+                         div_kernel_data,
+                         conti_kernel_data);
   }
 
   // mass operator
   this->integrator_flags.cell_evaluate  = dealii::EvaluationFlags::values;
   this->integrator_flags.cell_integrate = dealii::EvaluationFlags::values;
 
-  // divergence penalty
-  if(operator_data.use_divergence_penalty)
-    this->integrator_flags = this->integrator_flags | div_kernel->get_integrator_flags();
-
-  // continuity penalty
-  if(operator_data.use_continuity_penalty)
-    this->integrator_flags = this->integrator_flags | conti_kernel->get_integrator_flags();
+  // divergence/continuity penalty
+  if(operator_data.use_divergence_penalty or operator_data.use_continuity_penalty)
+    this->integrator_flags = this->integrator_flags | kernel->get_integrator_flags();
 }
 
 template<int dim, typename Number>
@@ -76,27 +64,24 @@ ProjectionOperator<dim, Number>::initialize(
   dealii::MatrixFree<dim, Number> const &   matrix_free,
   dealii::AffineConstraints<Number> const & affine_constraints,
   ProjectionOperatorData<dim> const &       data,
-  std::shared_ptr<DivKernel>                div_penalty_kernel,
-  std::shared_ptr<ContiKernel>              conti_penalty_kernel)
+  std::shared_ptr<Kernel>                   kernel)
 {
   operator_data = data;
 
   Base::reinit(matrix_free, affine_constraints, data);
 
-  div_kernel   = div_penalty_kernel;
-  conti_kernel = conti_penalty_kernel;
+  this->kernel = kernel;
 
   // mass operator
-  this->integrator_flags.cell_evaluate  = dealii::EvaluationFlags::values;
-  this->integrator_flags.cell_integrate = dealii::EvaluationFlags::values;
+  if(data.apply_penalty_terms_in_postprocessing_step)
+  {
+    this->integrator_flags.cell_evaluate  = dealii::EvaluationFlags::values;
+    this->integrator_flags.cell_integrate = dealii::EvaluationFlags::values;
+  }
 
-  // divergence penalty
-  if(operator_data.use_divergence_penalty)
-    this->integrator_flags = this->integrator_flags | div_kernel->get_integrator_flags();
-
-  // continuity penalty
-  if(operator_data.use_continuity_penalty)
-    this->integrator_flags = this->integrator_flags | conti_kernel->get_integrator_flags();
+  // divergence/continuity penalty
+  if(operator_data.use_divergence_penalty or operator_data.use_continuity_penalty)
+    this->integrator_flags = this->integrator_flags | kernel->get_integrator_flags();
 }
 
 template<int dim, typename Number>
@@ -111,7 +96,7 @@ Operators::DivergencePenaltyKernelData
 ProjectionOperator<dim, Number>::get_divergence_kernel_data() const
 {
   if(operator_data.use_divergence_penalty)
-    return div_kernel->get_data();
+    return kernel->get_divergence_data();
   else
     return Operators::DivergencePenaltyKernelData();
 }
@@ -121,7 +106,7 @@ Operators::ContinuityPenaltyKernelData
 ProjectionOperator<dim, Number>::get_continuity_kernel_data() const
 {
   if(operator_data.use_continuity_penalty)
-    return conti_kernel->get_data();
+    return kernel->get_continuity_data();
   else
     return Operators::ContinuityPenaltyKernelData();
 }
@@ -149,10 +134,8 @@ ProjectionOperator<dim, Number>::update(VectorType const & velocity, double cons
 {
   this->velocity = &velocity;
 
-  if(operator_data.use_divergence_penalty)
-    div_kernel->calculate_penalty_parameter(velocity);
-  if(operator_data.use_continuity_penalty)
-    conti_kernel->calculate_penalty_parameter(velocity);
+  if(operator_data.use_divergence_penalty || operator_data.use_continuity_penalty)
+    kernel->calculate_penalty_parameter(velocity);
 
   time_step_size = dt;
 }
@@ -165,7 +148,7 @@ ProjectionOperator<dim, Number>::reinit_cell_derived(IntegratorCell &   integrat
   (void)cell;
 
   if(operator_data.use_divergence_penalty)
-    div_kernel->reinit_cell(integrator);
+    kernel->reinit_cell(integrator);
 }
 
 template<int dim, typename Number>
@@ -177,7 +160,7 @@ ProjectionOperator<dim, Number>::reinit_face_derived(IntegratorFace &   integrat
   (void)face;
 
   if(operator_data.use_continuity_penalty)
-    conti_kernel->reinit_face(integrator_m, integrator_p);
+    kernel->reinit_face(integrator_m, integrator_p);
 }
 
 template<int dim, typename Number>
@@ -187,7 +170,8 @@ ProjectionOperator<dim, Number>::reinit_boundary_face_derived(IntegratorFace &  
 {
   (void)face;
 
-  conti_kernel->reinit_boundary_face(integrator_m);
+  if(operator_data.use_continuity_penalty)
+    kernel->reinit_boundary_face(integrator_m);
 }
 
 template<int dim, typename Number>
@@ -203,7 +187,7 @@ ProjectionOperator<dim, Number>::reinit_face_cell_based_derived(
   (void)face;
 
   if(operator_data.use_continuity_penalty)
-    conti_kernel->reinit_face_cell_based(boundary_id, integrator_m, integrator_p);
+    kernel->reinit_face_cell_based(boundary_id, integrator_m, integrator_p);
 }
 
 template<int dim, typename Number>
@@ -215,7 +199,7 @@ ProjectionOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) c
     integrator.submit_value(integrator.get_value(q), q);
 
     if(operator_data.use_divergence_penalty)
-      integrator.submit_divergence(time_step_size * div_kernel->get_volume_flux(integrator, q), q);
+      integrator.submit_divergence(time_step_size * kernel->get_volume_flux(integrator, q), q);
   }
 }
 
@@ -230,7 +214,7 @@ ProjectionOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
     vector u_p      = integrator_p.get_value(q);
     vector normal_m = integrator_m.normal_vector(q);
 
-    vector flux = time_step_size * conti_kernel->calculate_flux(u_m, u_p, normal_m);
+    vector flux = time_step_size * kernel->calculate_flux(u_m, u_p, normal_m);
 
     integrator_m.submit_value(flux, q);
     integrator_p.submit_value(-flux, q);
@@ -250,7 +234,7 @@ ProjectionOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrato
     vector u_p; // set u_p to zero
     vector normal_m = integrator_m.normal_vector(q);
 
-    vector flux = time_step_size * conti_kernel->calculate_flux(u_m, u_p, normal_m);
+    vector flux = time_step_size * kernel->calculate_flux(u_m, u_p, normal_m);
 
     integrator_m.submit_value(flux, q);
   }
@@ -269,7 +253,7 @@ ProjectionOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrato
     vector u_p      = integrator_p.get_value(q);
     vector normal_p = -integrator_p.normal_vector(q);
 
-    vector flux = time_step_size * conti_kernel->calculate_flux(u_p, u_m, normal_p);
+    vector flux = time_step_size * kernel->calculate_flux(u_p, u_m, normal_p);
 
     integrator_p.submit_value(flux, q);
   }
@@ -299,7 +283,7 @@ ProjectionOperator<dim, Number>::do_boundary_integral(
                                             this->time);
       vector normal_m = integrator_m.normal_vector(q);
 
-      vector flux = time_step_size * conti_kernel->calculate_flux(u_m, u_p, normal_m);
+      vector flux = time_step_size * kernel->calculate_flux(u_m, u_p, normal_m);
 
       integrator_m.submit_value(flux, q);
     }

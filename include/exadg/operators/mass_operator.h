@@ -67,13 +67,13 @@ public:
              MassOperatorData<dim, Number> const &     data);
 
   void
-  set_scaling_factor(Number const & number);
+  set_scaling_factor(Number const number);
 
   void
-  apply_scale(VectorType & dst, Number const & factor, VectorType const & src) const;
+  apply_scale(VectorType & dst, Number const factor, VectorType const & src) const;
 
   void
-  apply_scale_add(VectorType & dst, Number const & factor, VectorType const & src) const;
+  apply_scale_add(VectorType & dst, Number const factor, VectorType const & src) const;
 
 private:
   void

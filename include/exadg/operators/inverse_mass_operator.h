@@ -315,6 +315,30 @@ public:
     }
   }
 
+  // dst = M^-1 * src
+  void
+  apply(VectorType &                                                        dst,
+        VectorType const &                                                  src,
+        const std::function<void(const unsigned int, const unsigned int)> & before_loop,
+        const std::function<void(const unsigned int, const unsigned int)> & after_loop) const
+  {
+    dst.zero_out_ghost_values();
+
+    if(data.implementation_type == InverseMassType::MatrixfreeOperator)
+    {
+      matrix_free->cell_loop(
+        &This::cell_loop_matrix_free_operator, this, dst, src, before_loop, after_loop);
+    }
+    else // ElementwiseKrylovSolver or BlockMatrices
+    {
+      if(before_loop)
+        before_loop(0, src.locally_owned_size());
+      block_jacobi_preconditioner->vmult(dst, src);
+      if(after_loop)
+        after_loop(0, src.locally_owned_size());
+    }
+  }
+
   // dst = scaling_factor * (M^-1 * src)
   void
   apply_scale(VectorType & dst, double const scaling_factor, VectorType const & src) const
@@ -440,6 +464,117 @@ private:
   // MassOperator as underlying operator for the cell-wise or global iterative solves.
   MassOperator<dim, n_components, Number> mass_operator;
 };
+
+/*
+ * Inverse mass operator for H(div)-conforming space:
+ *
+ * This class applies the inverse mass operator by solving the mass system as a global linear system
+ * of equations for all degrees of freedom. It is used in case the mass operator is not
+ * block-diagonal and can not be inverted element-wise (e.g. H(div)-conforming space).
+ */
+// template<int dim, int n_components, typename Number>
+// class InverseMassOperatorHdiv
+// {
+// private:
+//   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+
+// public:
+//   void
+//   initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
+//              dealii::AffineConstraints<Number> const & constraints,
+//              InverseMassOperatorDataHdiv const         inverse_mass_operator_data)
+//   {
+//     // mass operator
+//     MassOperatorData<dim> mass_operator_data;
+//     mass_operator_data.dof_index  = inverse_mass_operator_data.dof_index;
+//     mass_operator_data.quad_index = inverse_mass_operator_data.quad_index;
+//     mass_operator.initialize(matrix_free, constraints, mass_operator_data);
+
+//     solver_control =
+//       dealii::ReductionControl(inverse_mass_operator_data.parameters.solver_data.max_iter,
+//                                inverse_mass_operator_data.parameters.solver_data.abs_tol,
+//                                inverse_mass_operator_data.parameters.solver_data.rel_tol);
+//     preconditioner_type = inverse_mass_operator_data.parameters.preconditioner;
+
+//     if(preconditioner_type == PreconditionerMass::PointJacobi)
+//     {
+//       preconditioner =
+//         std::make_shared<JacobiPreconditioner<MassOperator<dim, n_components, Number>>>(
+//           mass_operator, true /* initialize_preconditioner */);
+//     }
+//     else if(preconditioner_type == PreconditionerMass::LumpedDiagonal)
+//     {
+//       VectorType tmp;
+//       mass_operator.initialize_dof_vector(tmp);
+//       mass_operator.initialize_dof_vector(lumped_diagonal.get_vector());
+//       tmp = 1.;
+//       mass_operator.vmult(lumped_diagonal.get_vector(), tmp);
+//       for(Number & entry : lumped_diagonal.get_vector())
+//         if(entry > 1e-30)
+//           entry = 1.0 / entry;
+//         else
+//           entry = 1.;
+//     }
+//   }
+
+//   /**
+//    * This function applies the inverse mass operator. Note that this function allows identical dst,
+//    * src vector, i.e. the function can be called like apply(dst, dst).
+//    */
+//   unsigned int
+//   apply(VectorType & dst, VectorType const & src) const
+//   {
+//     VectorType temp;
+
+//     // Note that the inverse mass operator might be called like inverse_mass.apply(dst, dst),
+//     // i.e. with identical destination and source vectors. In this case, we need to make sure
+//     // that the result is still correct.
+//     const VectorType * src_ptr;
+//     if(&dst == &src)
+//     {
+//       temp    = src;
+//       src_ptr = &temp;
+//     }
+//     else
+//     {
+//       src_ptr = &src;
+//     }
+
+//     dealii::SolverCG<VectorType> solver(solver_control);
+//     if(preconditioner_type == PreconditionerMass::None)
+//     {
+//       solver.solve(mass_operator, dst, *src_ptr, dealii::PreconditionIdentity());
+//     }
+//     else if(preconditioner_type == PreconditionerMass::PointJacobi)
+//     {
+//       AssertThrow(preconditioner.get() != nullptr,
+//                   dealii::ExcMessage("Preconditioner not initialized!"));
+//       solver.solve(mass_operator, dst, *src_ptr, *preconditioner);
+//     }
+//     else if(preconditioner_type == PreconditionerMass::LumpedDiagonal)
+//     {
+//       solver.solve(mass_operator, dst, *src_ptr, lumped_diagonal);
+//     }
+//     else
+//       AssertThrow(false,
+//                   dealii::ExcMessage(
+//                     "Preconditioner type for Hdiv inverse mass matrix not recognized"));
+
+//     return solver_control.last_step();
+//   }
+
+// private:
+//   // Solver/preconditioner for mass system solving a global linear system of equations for all
+//   // degrees of freedom.
+//   std::shared_ptr<PreconditionerBase<Number>> preconditioner;
+//   dealii::DiagonalMatrix<VectorType>          lumped_diagonal;
+//   dealii::ReductionControl mutable solver_control;
+
+//   // We need a MassOperator as underlying operator.
+//   MassOperator<dim, n_components, Number> mass_operator;
+
+//   PreconditionerMass preconditioner_type;
+// };
 
 } // namespace ExaDG
 

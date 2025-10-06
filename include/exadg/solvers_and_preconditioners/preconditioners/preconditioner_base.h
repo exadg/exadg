@@ -53,6 +53,22 @@ public:
   virtual void
   vmult(VectorType & dst, VectorType const & src) const = 0;
 
+  /*
+   * This function applies the multigrid preconditioner dst = P^{-1} src and
+   * embedds the work schedule before/after the application (if supported by
+   * the preconditioner).
+   */
+  virtual void
+  vmult(VectorType &                                                        dst,
+        VectorType const &                                                  src,
+        const std::function<void(const unsigned int, const unsigned int)> & before_loop,
+        const std::function<void(const unsigned int, const unsigned int)> & after_loop) const
+  {
+    before_loop(0, dst.locally_owned_size());
+    vmult(dst, src);
+    after_loop(0, dst.locally_owned_size());
+  }
+
   virtual void
   update() = 0;
 

@@ -481,11 +481,18 @@ TimeIntBDF<dim, Number>::recalculate_time_step_size() const
               dealii::ExcMessage(
                 "Adaptive time step is not implemented for this type of time step calculation."));
 
-  VectorType u_relative = get_velocity();
+  double new_time_step_size;
   if(param.ale_formulation == true)
+  {
+    VectorType u_relative = get_velocity();
     u_relative -= grid_velocity;
+    new_time_step_size = operator_base->calculate_time_step_cfl(u_relative);
+  }
+  else
+  {
+    new_time_step_size = operator_base->calculate_time_step_cfl(get_velocity());
+  }
 
-  double new_time_step_size = operator_base->calculate_time_step_cfl(u_relative);
   new_time_step_size *= cfl;
 
   // make sure that time step size does not exceed maximum allowable time step size

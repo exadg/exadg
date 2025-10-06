@@ -53,6 +53,12 @@ MeanVelocityCalculator<dim, Number>::MeanVelocityCalculator(
 }
 
 template<int dim, typename Number>
+MeanVelocityCalculator<dim, Number>::~MeanVelocityCalculator()
+{
+  write_output(-1., -1., "Mean velocity [m/s]", true);
+}
+
+template<int dim, typename Number>
 Number
 MeanVelocityCalculator<dim, Number>::calculate_mean_velocity_area(VectorType const & velocity,
                                                                   double const &     time)
@@ -152,29 +158,37 @@ template<int dim, typename Number>
 void
 MeanVelocityCalculator<dim, Number>::write_output(Number const &      value,
                                                   double const &      time,
-                                                  std::string const & name) const
+                                                  std::string const & name,
+                                                  bool const          force_write) const
 {
   // write output file
   if(data.write_to_file == true and dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
-    std::string filename = data.directory + data.filename;
-
-    std::ofstream f;
-    if(clear_files == true)
+    if(force_write || accumulated_results.size() > 1000)
     {
-      f.open(filename.c_str(), std::ios::trunc);
-      f << std::endl << "  Time                " + name << std::endl;
+      std::string filename = data.directory + data.filename;
 
-      clear_files = false;
-    }
-    else
-    {
-      f.open(filename.c_str(), std::ios::app);
+      std::ofstream f;
+      if(clear_files == true)
+      {
+        f.open(filename.c_str(), std::ios::trunc);
+        f << std::endl << "  Time                " + name << std::endl;
+
+        clear_files = false;
+      }
+      else
+      {
+        f.open(filename.c_str(), std::ios::app);
+      }
+
+      unsigned int precision = 12;
+      for(std::pair<double, double> const & data : accumulated_results)
+        f << std::scientific << std::setprecision(precision) << std::setw(precision + 8)
+          << data.first << std::setw(precision + 8) << data.second << std::endl;
+      accumulated_results.clear();
     }
 
-    unsigned int precision = 12;
-    f << std::scientific << std::setprecision(precision) << std::setw(precision + 8) << time
-      << std::setw(precision + 8) << value << std::endl;
+    accumulated_results.emplace_back(time, value);
   }
 }
 

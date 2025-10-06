@@ -239,6 +239,7 @@ private:
     this->param.preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard;
 
     // Inversion of mass operator in case of H(div)-conforming method
+    this->param.inverse_mass_operator.implementation_type = InverseMassType::GlobalKrylovSolver;
     this->param.inverse_mass_operator.solver_data    = SolverData(1000, ABS_TOL, REL_TOL);
     this->param.inverse_mass_operator.preconditioner = PreconditionerMass::PointJacobi;
   }

@@ -49,7 +49,7 @@ MassOperator<dim, n_components, Number>::initialize(
 
 template<int dim, int n_components, typename Number>
 void
-MassOperator<dim, n_components, Number>::set_scaling_factor(Number const & number)
+MassOperator<dim, n_components, Number>::set_scaling_factor(Number const number)
 {
   scaling_factor = number;
 }
@@ -57,7 +57,7 @@ MassOperator<dim, n_components, Number>::set_scaling_factor(Number const & numbe
 template<int dim, int n_components, typename Number>
 void
 MassOperator<dim, n_components, Number>::apply_scale(VectorType &       dst,
-                                                     Number const &     factor,
+                                                     Number const       factor,
                                                      VectorType const & src) const
 {
   scaling_factor = factor;
@@ -70,7 +70,7 @@ MassOperator<dim, n_components, Number>::apply_scale(VectorType &       dst,
 template<int dim, int n_components, typename Number>
 void
 MassOperator<dim, n_components, Number>::apply_scale_add(VectorType &       dst,
-                                                         Number const &     factor,
+                                                         Number const       factor,
                                                          VectorType const & src) const
 {
   scaling_factor = factor;
@@ -84,6 +84,7 @@ template<int dim, int n_components, typename Number>
 void
 MassOperator<dim, n_components, Number>::do_cell_integral(IntegratorCell & integrator) const
 {
+  Number const scaling = this->scaling_factor;
   if(operator_data.coefficient_is_variable)
   {
     if(operator_data.consider_inverse_coefficient)
@@ -95,7 +96,7 @@ MassOperator<dim, n_components, Number>::do_cell_integral(IntegratorCell & integ
           kernel.get_variable_coefficients_ptr()->get_coefficient_cell(
             integrator.get_current_cell_index(), q);
 
-        integrator.submit_value(kernel.get_volume_flux(scaling_factor, integrator.get_value(q)) /
+        integrator.submit_value(kernel.get_volume_flux(scaling, integrator.get_value(q)) /
                                   coefficient,
                                 q);
       }
@@ -109,7 +110,7 @@ MassOperator<dim, n_components, Number>::do_cell_integral(IntegratorCell & integ
           kernel.get_variable_coefficients_ptr()->get_coefficient_cell(
             integrator.get_current_cell_index(), q);
 
-        integrator.submit_value(kernel.get_volume_flux(scaling_factor, integrator.get_value(q)) *
+        integrator.submit_value(kernel.get_volume_flux(scaling, integrator.get_value(q)) *
                                   coefficient,
                                 q);
       }
@@ -119,7 +120,7 @@ MassOperator<dim, n_components, Number>::do_cell_integral(IntegratorCell & integ
   {
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      integrator.submit_value(kernel.get_volume_flux(scaling_factor, integrator.get_value(q)), q);
+      integrator.submit_value(kernel.get_volume_flux(scaling, integrator.get_value(q)), q);
     }
   }
 }

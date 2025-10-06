@@ -40,6 +40,7 @@ enum class PreconditionerMass
 {
   None,
   PointJacobi,
+  LumpedDiagonal,
   BlockJacobi
 };
 

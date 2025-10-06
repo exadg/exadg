@@ -134,12 +134,9 @@ MultigridPreconditionerProjection<dim, Number>::fill_matrix_free_data(
 
   MappingFlags flags;
   matrix_free_data.append_mapping_flags(MassKernel<dim, Number>::get_mapping_flags());
-  if(data.use_divergence_penalty)
+  if(data.use_divergence_penalty or data.use_continuity_penalty)
     matrix_free_data.append_mapping_flags(
-      Operators::DivergencePenaltyKernel<dim, Number>::get_mapping_flags());
-  if(data.use_continuity_penalty and this->level_info[level].is_dg())
-    matrix_free_data.append_mapping_flags(
-      Operators::ContinuityPenaltyKernel<dim, Number>::get_mapping_flags());
+      Operators::ProjectionKernel<dim, Number>::get_mapping_flags());
 
   if(data.use_cell_based_loops and this->level_info[level].is_dg())
   {
