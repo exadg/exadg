@@ -165,15 +165,15 @@ struct RestartData
   // necessary global projection.
   bool discretization_identical;
 
+  // Attach the mapping as a displacement vector when *writing* the restart data.
+  bool consider_mapping_write;
+
   /**
    * The following options are only effective for the grid-to-grid projection, when
    * `discretization_identical == false`
    * These options toggle storing and reading the mapping via a displacement vector.
    * Mismatching parameters might lead to undesired configurations, use with care.
    */
-
-  // Attache the mapping as a displacement vector when *writing* the restart data.
-  bool consider_mapping_write;
 
   // Reconstruct the mapping for the serialized grid (`source`) in the grid-to-grid projection at
   // restart. Note that the grid use at restart is always considered as defined in the applciation.
