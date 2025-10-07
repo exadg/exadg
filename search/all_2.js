@@ -20,7 +20,7 @@ var searchData=
   ['combinedoperatordata_17',['CombinedOperatorData',['../structExaDG_1_1CompNS_1_1CombinedOperatorData.html',1,'ExaDG::CompNS::CombinedOperatorData&lt; dim &gt;'],['../structExaDG_1_1ConvDiff_1_1CombinedOperatorData.html',1,'ExaDG::ConvDiff::CombinedOperatorData&lt; dim &gt;']]],
   ['compute_5ftime_5ffactor_18',['compute_time_factor',['../classExaDG_1_1Utilities_1_1SpatialAwareFunction.html#aa3157950305b0bb11842fc513119bdab',1,'ExaDG::Utilities::SpatialAwareFunction']]],
   ['configurationparameters_19',['ConfigurationParameters',['../structExaDG_1_1preCICE_1_1ConfigurationParameters.html',1,'ExaDG::preCICE']]],
-  ['consider_5fmapping_5fwrite_20',['consider_mapping_write',['../structExaDG_1_1RestartData.html#a48db20fda28e072e9cd86605750ca5ef',1,'ExaDG::RestartData']]],
+  ['consider_5fmapping_5fread_5fsource_20',['consider_mapping_read_source',['../structExaDG_1_1RestartData.html#a4320eb5756a6e6e812145998aef76143',1,'ExaDG::RestartData']]],
   ['containerinterfacedata_21',['ContainerInterfaceData',['../classExaDG_1_1ContainerInterfaceData.html',1,'ExaDG']]],
   ['continuitypenaltydata_22',['ContinuityPenaltyData',['../structExaDG_1_1IncNS_1_1ContinuityPenaltyData.html',1,'ExaDG::IncNS']]],
   ['continuitypenaltykernel_23',['ContinuityPenaltyKernel',['../classExaDG_1_1IncNS_1_1Operators_1_1ContinuityPenaltyKernel.html',1,'ExaDG::IncNS::Operators']]],
