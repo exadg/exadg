@@ -20,9 +20,11 @@
  */
 
 // C/C++
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <thread>
 
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
@@ -75,8 +77,10 @@ template<int dim>
 void
 ArchiveVector<dim>::write_and_read()
 {
-  std::string filename =
-    "number_proc_" + std::to_string(Utilities::MPI::this_mpi_process(mpi_communicator));
+  // include total number of MPI processes, rendering filename unique for parallel tests.
+  std::string filename = "number_proc_" +
+                         std::to_string(Utilities::MPI::n_mpi_processes(mpi_communicator)) + "_" +
+                         std::to_string(Utilities::MPI::this_mpi_process(mpi_communicator));
 
   pcout << "Storing the number in the archive.\n";
   {
@@ -87,6 +91,8 @@ ArchiveVector<dim>::write_and_read()
 
     output_archive & number_to_archive;
   }
+
+  std::this_thread::sleep_for(std::chrono::seconds(2));
 
   pcout << "Reading the number from the archive.\n";
   {
