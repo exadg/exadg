@@ -179,9 +179,7 @@ private:
         // Save the *coarse* triangulation for later deserialization.
         if(write_restart and this->param.grid.triangulation_type == TriangulationType::Serial)
         {
-          save_coarse_triangulation<dim>(this->param.restart_data.directory,
-                                         this->param.restart_data.filename,
-                                         tria);
+          save_coarse_triangulation<dim>(this->param.restart_data, tria);
         }
 
         tria.refine_global(global_refinements);
