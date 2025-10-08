@@ -55,18 +55,23 @@ generate_restart_filename(std::string const & name)
 }
 
 inline void
-rename_restart_files(std::string const & filename)
+rename_old_restart_files(std::string const & filename, unsigned int const n_snapshots_keep)
 {
-  // backup: rename current restart file into restart.old in case something fails while writing
-  std::string const from = filename;
-  std::string const to   = filename + ".old";
-
-  std::ifstream ifile(from.c_str());
-  if((bool)ifile) // rename only if file already exists
+  // Store `n_snapshots_keep` snapshots and rename existing ones from back to front, automatically
+  // overwriting last one.
+  for(int i = n_snapshots_keep - 2; i >= 0; --i)
   {
-    int const error = rename(from.c_str(), to.c_str());
+    // From most current to first old snapshop, the naming convention changes.
+    std::string const from = i == 0 ? filename : filename + ".old." + std::to_string(i);
+    std::string const to   = filename + ".old." + std::to_string(i + 1);
 
-    AssertThrow(error == 0, dealii::ExcMessage("Can not rename file: " + from + " -> " + to));
+    std::ifstream ifile(from.c_str());
+    if((bool)ifile) // rename only if file already exists
+    {
+      int const error = rename(from.c_str(), to.c_str());
+
+      AssertThrow(error == 0, dealii::ExcMessage("Can not rename file: " + from + " -> " + to));
+    }
   }
 }
 
@@ -188,21 +193,21 @@ set_ghost_state(std::vector<VectorType *> const & vectors,
  */
 inline void
 write_deserialization_parameters(MPI_Comm const &                  mpi_comm,
-                                 std::string const &               directory,
-                                 std::string const &               filename_base,
+                                 RestartData const &               restart_data,
                                  DeserializationParameters const & parameters)
 {
   // Create folder if not existent.
-  create_directories(directory, mpi_comm);
+  create_directories(restart_data.directory, mpi_comm);
 
   // Filename for deserialization parameters has to match `read_deserialization_parameters()`.
-  std::string const filename = directory + filename_base + ".deserialization_parameters";
+  std::string const filename =
+    restart_data.directory + restart_data.filename + ".deserialization_parameters";
 
   // Write the parameters with a single processor.
   if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     // Serialization only creates a single file, move with one process only.
-    rename_restart_files(filename);
+    rename_old_restart_files(filename, restart_data.n_snapshots_keep);
 
     // Write deserialization parameters.
     std::ofstream stream(filename);
@@ -228,14 +233,13 @@ write_deserialization_parameters(MPI_Comm const &                  mpi_comm,
  * the parameters when deserializing.
  */
 inline DeserializationParameters
-read_deserialization_parameters(MPI_Comm const &    mpi_comm,
-                                std::string const & directory,
-                                std::string const & filename_base)
+read_deserialization_parameters(MPI_Comm const & mpi_comm, RestartData const & restart_data)
 {
   DeserializationParameters parameters;
 
   // Filename for deserialization parameters has to match `write_deserialization_parameters()`.
-  std::string const filename = directory + filename_base + ".deserialization_parameters";
+  std::string const filename =
+    restart_data.directory + restart_data.filename + ".deserialization_parameters";
 
   // Read the parameters with a single processor.
   if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
@@ -303,9 +307,7 @@ check_mapping_deserialization(bool const consider_mapping_read_source,
  */
 template<int dim, typename TriangulationType>
 inline void
-save_coarse_triangulation(std::string const &       directory,
-                          std::string const &       filename_base,
-                          TriangulationType const & triangulation)
+save_coarse_triangulation(RestartData const & restart_data, TriangulationType const & triangulation)
 {
   if constexpr(std::is_same<std::remove_cv_t<TriangulationType>,
                             dealii::parallel::distributed::Triangulation<dim, dim>>::value or
@@ -320,14 +322,15 @@ save_coarse_triangulation(std::string const &       directory,
   MPI_Comm const & mpi_comm = triangulation.get_mpi_communicator();
 
   // Create folder if not existent.
-  create_directories(directory, mpi_comm);
+  create_directories(restart_data.directory, mpi_comm);
 
-  std::string const filename = directory + filename_base + ".coarse_triangulation";
+  std::string const filename =
+    restart_data.directory + restart_data.filename + ".coarse_triangulation";
   if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     // Serialization only creates a single file, move with one process only.
-    rename_restart_files(filename + ".info");
-    rename_restart_files(filename + "_triangulation.data");
+    rename_old_restart_files(filename + ".info", restart_data.n_snapshots_keep);
+    rename_old_restart_files(filename + "_triangulation.data", restart_data.n_snapshots_keep);
 
     // For `dealii::Triangulation` the triangulation is the same for all processes.
     triangulation.save(filename);
@@ -346,8 +349,7 @@ save_coarse_triangulation(std::string const &       directory,
 template<int dim, typename VectorType>
 inline void
 store_vectors_in_triangulation_and_serialize(
-  std::string const &                                       directory,
-  std::string const &                                       filename_base,
+  RestartData const &                                       restart_data,
   std::vector<dealii::DoFHandler<dim, dim> const *> const & dof_handlers,
   std::vector<std::vector<VectorType const *>> const &      vectors_per_dof_handler)
 {
@@ -384,15 +386,15 @@ store_vectors_in_triangulation_and_serialize(
   }
 
   // Serialize the triangulation keeping a maximum of two snapshots.
-  std::string const filename = directory + filename_base + ".triangulation";
+  std::string const filename = restart_data.directory + restart_data.filename + ".triangulation";
   MPI_Comm const &  mpi_comm = dof_handlers[0]->get_mpi_communicator();
   if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     // Serialization only creates a single file, move with one process only.
-    rename_restart_files(filename);
-    rename_restart_files(filename + ".info");
-    rename_restart_files(filename + "_fixed.data");
-    rename_restart_files(filename + "_triangulation.data");
+    rename_old_restart_files(filename, restart_data.n_snapshots_keep);
+    rename_old_restart_files(filename + ".info", restart_data.n_snapshots_keep);
+    rename_old_restart_files(filename + "_fixed.data", restart_data.n_snapshots_keep);
+    rename_old_restart_files(filename + "_triangulation.data", restart_data.n_snapshots_keep);
   }
 
   // Collective call for serialization, general case requires ghosted vectors.
@@ -413,8 +415,7 @@ store_vectors_in_triangulation_and_serialize(
 template<int dim, typename VectorType>
 inline void
 store_vectors_in_triangulation_and_serialize(
-  std::string const &                                       directory,
-  std::string const &                                       filename_base,
+  RestartData const &                                       restart_data,
   std::vector<dealii::DoFHandler<dim, dim> const *> const & dof_handlers,
   std::vector<std::vector<VectorType const *>> const &      vectors_per_dof_handler,
   dealii::Mapping<dim> const &                              mapping,
@@ -481,8 +482,7 @@ store_vectors_in_triangulation_and_serialize(
   dof_handlers_extended.push_back(dof_handler_mapping);
 
   // Use utility function that ignores the mapping.
-  store_vectors_in_triangulation_and_serialize(directory,
-                                               filename_base,
+  store_vectors_in_triangulation_and_serialize(restart_data,
                                                dof_handlers_extended,
                                                vectors_per_dof_handler_extended);
 }
@@ -492,14 +492,13 @@ store_vectors_in_triangulation_and_serialize(
  */
 template<int dim>
 inline std::shared_ptr<dealii::Triangulation<dim>>
-deserialize_triangulation(std::string const &     directory,
-                          std::string const &     filename_base,
+deserialize_triangulation(RestartData const &     restart_data,
                           TriangulationType const triangulation_type,
                           MPI_Comm const &        mpi_communicator)
 {
   std::shared_ptr<dealii::Triangulation<dim>> triangulation_old;
 
-  std::string const filename = directory + filename_base;
+  std::string const filename = restart_data.directory + restart_data.filename;
 
   // Deserialize the checkpointed triangulation,
   if(triangulation_type == TriangulationType::Serial)

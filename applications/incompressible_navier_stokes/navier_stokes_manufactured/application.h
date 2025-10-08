@@ -533,9 +533,14 @@ private:
     this->param.restarted_simulation       = read_restart;
     this->param.restart_data.write_restart = write_restart;
     // write restart every 40% of the simulation time
-    this->param.restart_data.interval_time = (this->param.end_time - this->param.start_time) * 0.4;
-    this->param.restart_data.directory     = this->output_parameters.directory;
-    this->param.restart_data.filename      = this->output_parameters.filename + "_restart";
+    this->param.restart_data.n_snapshots_keep = 10;
+    this->param.restart_data.interval_time = (this->param.end_time - this->param.start_time) * 0.01;
+    this->param.restart_data.interval_time_start =
+      (this->param.end_time - this->param.start_time) * 0.8;
+    this->param.restart_data.interval_time_end =
+      (this->param.end_time - this->param.start_time) * 0.9;
+    this->param.restart_data.directory           = this->output_parameters.directory;
+    this->param.restart_data.filename            = this->output_parameters.filename + "_restart";
     this->param.restart_data.interval_wall_time  = 1.e6;
     this->param.restart_data.interval_time_steps = 1e8;
 
@@ -652,9 +657,7 @@ private:
         // Save the *coarse* triangulation for later deserialization.
         if(write_restart and this->param.grid.triangulation_type == TriangulationType::Serial)
         {
-          save_coarse_triangulation<dim>(this->param.restart_data.directory,
-                                         this->param.restart_data.filename,
-                                         tria);
+          save_coarse_triangulation<dim>(this->param.restart_data, tria);
         }
 
         if(vector_local_refinements.size() > 0)
