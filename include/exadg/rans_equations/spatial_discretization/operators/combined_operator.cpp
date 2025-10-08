@@ -251,7 +251,18 @@ CombinedOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
 
     if(operator_data.diffusive_problem)
     {
-      gradient_flux += diffusive_kernel->get_volume_flux(integrator, q);
+      scalar eddy_viscosity;
+      scalar effective_viscosity;
+      if(operator_data.turbulence_model_enabled)
+      {
+        eddy_viscosity = diffusive_kernel->turbulence_model_ptr->get_viscosity_cell(integrator.get_current_cell_index(), q, VaryingViscosityType::EddyViscosity);
+        effective_viscosity = diffusive_kernel->turbulence_model_ptr->get_viscosity_cell(integrator.get_current_cell_index(), q, VaryingViscosityType::CombinedViscosity);
+        value_flux += diffusive_kernel->get_value_volume_flux(integrator, eddy_viscosity, effective_viscosity, q);
+      }
+      else{
+        effective_viscosity = diffusive_kernel->data.diffusivity;
+      }
+      gradient_flux += diffusive_kernel->get_grad_volume_flux(integrator, effective_viscosity, q);
     }
 
     if(this->integrator_flags.cell_integrate & dealii::EvaluationFlags::values)
@@ -285,6 +296,14 @@ CombinedOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
       value_flux_p += std::get<1>(flux);
     }
 
+    scalar average_viscosity;
+    if(operator_data.turbulence_model_enabled)
+    {
+    average_viscosity = diffusive_kernel->turbulence_model_ptr->get_viscosity_interior_face(integrator_m.get_current_cell_index(), q, VaryingViscosityType::CombinedViscosity);
+    }
+    else{
+      average_viscosity = diffusive_kernel->data.diffusivity;
+    }
     if(operator_data.diffusive_problem)
     {
       scalar normal_gradient_m = integrator_m.get_normal_derivative(q);
@@ -293,7 +312,8 @@ CombinedOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
       scalar value_flux = diffusive_kernel->calculate_value_flux(normal_gradient_m,
                                                                  normal_gradient_p,
                                                                  value_m,
-                                                                 value_p);
+                                                                 value_p,
+                                                                 average_viscosity);
 
       value_flux_m += -value_flux;
       value_flux_p += value_flux; // + sign since n⁺ = -n⁻
@@ -304,7 +324,7 @@ CombinedOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
 
     if(operator_data.diffusive_problem)
     {
-      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m, value_p);
+      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m, value_p, average_viscosity);
       integrator_m.submit_normal_derivative(gradient_flux, q);
       integrator_p.submit_normal_derivative(gradient_flux, q);
     }
@@ -334,6 +354,14 @@ CombinedOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_
         q, integrator_m, value_m, value_p, normal_m, this->time, true);
     }
 
+    scalar average_viscosity;
+    if(operator_data.turbulence_model_enabled)
+    {
+    average_viscosity = diffusive_kernel->turbulence_model_ptr->get_viscosity_interior_face(integrator_m.get_current_cell_index(), q, VaryingViscosityType::CombinedViscosity);
+    }
+    else{
+      average_viscosity = diffusive_kernel->data.diffusivity;
+    }
     if(operator_data.diffusive_problem)
     {
       // set exterior value to zero
@@ -343,14 +371,15 @@ CombinedOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_
       value_flux += -diffusive_kernel->calculate_value_flux(normal_gradient_m,
                                                             normal_gradient_p,
                                                             value_m,
-                                                            value_p);
+                                                            value_p,
+                                                            average_viscosity);
     }
 
     integrator_m.submit_value(value_flux, q);
 
     if(operator_data.diffusive_problem)
     {
-      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m, value_p);
+      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m, value_p, average_viscosity);
       integrator_m.submit_normal_derivative(gradient_flux, q);
     }
   }
@@ -389,6 +418,14 @@ CombinedOperator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & 
         q, integrator_m, value_m, value_p, normal_m, this->time, exterior_velocity_available);
     }
 
+    scalar average_viscosity;
+    if(operator_data.turbulence_model_enabled)
+    {
+      average_viscosity = diffusive_kernel->turbulence_model_ptr->get_viscosity_interior_face(integrator_m.get_current_cell_index(), q, VaryingViscosityType::CombinedViscosity);
+    }
+    else{
+      average_viscosity = diffusive_kernel->data.diffusivity;
+    }
     if(operator_data.diffusive_problem)
     {
       // set exterior value to zero
@@ -398,14 +435,15 @@ CombinedOperator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & 
       value_flux += -diffusive_kernel->calculate_value_flux(normal_gradient_m,
                                                             normal_gradient_p,
                                                             value_m,
-                                                            value_p);
+                                                            value_p,
+                                                            average_viscosity);
     }
 
     integrator_m.submit_value(value_flux, q);
 
     if(operator_data.diffusive_problem)
     {
-      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m, value_p);
+      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m, value_p, average_viscosity);
       integrator_m.submit_normal_derivative(gradient_flux, q);
     }
   }
@@ -435,6 +473,14 @@ CombinedOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_
         q, integrator_p, value_p, value_m, normal_p, this->time, true);
     }
 
+    scalar average_viscosity;
+    if(operator_data.turbulence_model_enabled)
+    {
+      average_viscosity = diffusive_kernel->turbulence_model_ptr->get_viscosity_interior_face(integrator_p.get_current_cell_index(), q, VaryingViscosityType::CombinedViscosity);
+    }
+    else {
+      average_viscosity = diffusive_kernel->data.diffusivity;
+    }
     if(operator_data.diffusive_problem)
     {
       // set gradient_m to zero
@@ -445,14 +491,15 @@ CombinedOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_
       value_flux += -diffusive_kernel->calculate_value_flux(normal_gradient_p,
                                                             normal_gradient_m,
                                                             value_p,
-                                                            value_m);
+                                                            value_m,
+                                                            average_viscosity);
     }
 
     integrator_p.submit_value(value_flux, q);
 
     if(operator_data.diffusive_problem)
     {
-      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_p, value_m);
+      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_p, value_m, average_viscosity);
       // opposite sign since n⁺ = -n⁻
       integrator_p.submit_normal_derivative(-gradient_flux, q);
     }
@@ -493,6 +540,14 @@ CombinedOperator<dim, Number>::do_boundary_integral(
         q, integrator_m, value_m, value_p, normal_m, this->time, false);
     }
 
+    scalar viscosity;
+    if(operator_data.turbulence_model_enabled)
+    {
+    viscosity = diffusive_kernel->turbulence_model_ptr->get_viscosity_boundary_face(integrator_m.get_current_cell_index(), q, VaryingViscosityType::CombinedViscosity);
+    }
+    else {
+    viscosity = diffusive_kernel->data.diffusivity;
+    }
     if(operator_data.diffusive_problem)
     {
       scalar normal_gradient_m = calculate_interior_normal_gradient(q, integrator_m, operator_type);
@@ -508,14 +563,15 @@ CombinedOperator<dim, Number>::do_boundary_integral(
       value_flux += -diffusive_kernel->calculate_value_flux(normal_gradient_m,
                                                             normal_gradient_p,
                                                             value_m,
-                                                            value_p);
+                                                            value_p,
+                                                            viscosity);
     }
 
     integrator_m.submit_value(value_flux, q);
 
     if(operator_data.diffusive_problem)
     {
-      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m, value_p);
+      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m, value_p, viscosity);
       integrator_m.submit_normal_derivative(gradient_flux, q);
     }
   }

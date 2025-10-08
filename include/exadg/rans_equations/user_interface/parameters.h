@@ -38,6 +38,8 @@
 #include <exadg/time_integration/restart_data.h>
 #include <exadg/time_integration/solver_info_data.h>
 
+#include <exadg/rans_equations/user_interface/viscosity_model_data.h>
+
 namespace ExaDG
 {
 namespace RANS
@@ -361,6 +363,15 @@ public:
 
   // use 3/2 overintegration rule for convective term
   bool use_overintegration;
+
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                            Variable viscosity models                               */
+  /*                                                                                    */
+  /**************************************************************************************/
+
+  TreatmentOfVariableViscosity  treatment_of_variable_viscosity;
+  TurbulenceModelData           turbulence_model_data;
 };
 
 } // namespace RANS

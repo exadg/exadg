@@ -526,9 +526,22 @@ TimeIntBDF<dim, Number>::do_timestep_solve()
       AssertThrow(param.ale_formulation == false, dealii::ExcMessage("not implemented."));
     }
   }
+  // update viscosity with variable viscosity
+  if(this->param.turbulence_model_data.is_active)
+  {
+    dealii::Timer timer_viscosity_update;
+    timer_viscosity_update.restart();
+
+    pde_operator->update_viscosity(solution_np);
+    if(this->print_solver_info() and not(this->is_test))
+    {
+      this->pcout << std::endl << "Update of variable viscosity : ";
+      print_wall_time(this->pcout, timer_viscosity_update.wall_time());
+    }
+  }
 
   // calculate rhs (rhs-vector f and inhomogeneous boundary face integrals)
-  pde_operator->rhs(rhs_vector, this->get_next_time(), &velocity_np);
+  pde_operator->rhs(rhs_vector, solution_np, this->get_next_time(), &velocity_np);
 
   // if the convective term is involved in the equations:
   // add the convective term to the right-hand side of the equations

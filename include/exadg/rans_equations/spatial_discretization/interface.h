@@ -58,6 +58,7 @@ public:
   // implicit time integration: calculate right-hand side of linear system of equations
   virtual void
   rhs(VectorType &       dst,
+      VectorType const & src,
       double const       evaluation_time = 0.0,
       VectorType const * velocity        = nullptr) const = 0;
 
@@ -102,6 +103,9 @@ public:
   // needed for time step calculation
   virtual double
   calculate_time_step_diffusion() const = 0;
+
+  virtual void
+  update_viscosity(VectorType const & sol) const = 0;
 };
 } // namespace Interface
 

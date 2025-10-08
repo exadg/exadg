@@ -112,7 +112,7 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   if(param.right_hand_side)
   {
     matrix_free_data.append_mapping_flags(
-      ExaDG::Operators::RHSKernel<dim, Number>::get_mapping_flags());
+      Operators::RHSKernel<dim, Number>::get_mapping_flags());
   }
 
   if(param.convective_problem())
@@ -219,9 +219,17 @@ Operator<dim, Number>::setup_operators()
   {
     diffusive_kernel_data.IP_factor   = param.IP_factor;
     diffusive_kernel_data.diffusivity = param.diffusivity;
+    diffusive_kernel_data.turbulence_model_enabled = param.turbulence_model_data.is_active;
+    diffusive_kernel_data.positivity_preserving_limiter = param.turbulence_model_data.positivity_preserving_limiter;
+    diffusive_kernel_data.turbulence_model_data = param.turbulence_model_data;
+    diffusive_kernel_data.scalar_type = param.scalar_type;
 
     diffusive_kernel = std::make_shared<Operators::DiffusiveKernel<dim, Number>>();
     diffusive_kernel->reinit(*matrix_free, diffusive_kernel_data, get_dof_index());
+    if(param.turbulence_model_data.is_active)
+    {
+      diffusive_kernel->turbulence_model_ptr = turbulence_model_ptr;
+    }
 
     DiffusiveOperatorData<dim> diffusive_operator_data;
     diffusive_operator_data.dof_index            = get_dof_index();
@@ -242,8 +250,24 @@ Operator<dim, Number>::setup_operators()
   RHSOperatorData<dim> rhs_operator_data;
   rhs_operator_data.dof_index     = get_dof_index();
   rhs_operator_data.quad_index    = get_quad_index();
-  rhs_operator_data.kernel_data.f = field_functions->right_hand_side;
-  rhs_operator.initialize(*matrix_free, rhs_operator_data);
+
+  Operators::RHSKernelData<dim> rhs_kernel_data;
+  rhs_kernel_data.scalar_type        = param.scalar_type;
+  rhs_kernel_data.production_term    = param.turbulence_model_data.production_term;
+  rhs_kernel_data.dissipation_term   = param.turbulence_model_data.dissipation_term;
+  rhs_kernel_data.positivity_preserving_limiter = param.turbulence_model_data.positivity_preserving_limiter;
+  rhs_kernel_data.dof_index_velocity = get_dof_index_velocity();
+  rhs_kernel_data.dof_index          = get_dof_index();
+  rhs_kernel_data.f                  = field_functions->right_hand_side;
+  rhs_kernel_data.turbulence_model_data = param.turbulence_model_data;
+
+  rhs_kernel = std::make_shared<Operators::RHSKernel<dim, Number>>();
+  rhs_kernel->reinit(*matrix_free, rhs_kernel_data, quad_index_convective);
+  rhs_operator.initialize(*matrix_free, rhs_operator_data, rhs_kernel);
+  if(param.turbulence_model_data.is_active)
+  {
+    rhs_kernel->turbulence_model_ptr = turbulence_model_ptr;
+  }
 
   // merged operator
   if(param.temporal_discretization == TemporalDiscretization::BDF or
@@ -617,6 +641,11 @@ Operator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
 
     if(param.right_hand_side == true)
     {
+      rhs_operator.set_velocity_ptr(*velocity);
+      rhs_operator.set_solution(src);
+      if (param.scalar_type==ScalarType::TKEDissipationRate) {
+        rhs_operator.set_rans_secondary_variable_ptr(*turbulence_model_ptr->turbulent_kinetic_energy);
+      }
       rhs_operator.evaluate_add(dst, time);
     }
   }
@@ -644,6 +673,11 @@ Operator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
 
     if(param.right_hand_side == true)
     {
+      rhs_operator.set_velocity_ptr(*velocity);
+      rhs_operator.set_solution(src);
+      if (param.scalar_type==ScalarType::TKEDissipationRate) {
+        rhs_operator.set_rans_secondary_variable_ptr(*turbulence_model_ptr->turbulent_kinetic_energy);
+      }
       rhs_operator.evaluate_add(dst, time);
     }
   }
@@ -672,7 +706,10 @@ Operator<dim, Number>::evaluate_convective_term(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::rhs(VectorType & dst, double const time, VectorType const * velocity) const
+Operator<dim, Number>::rhs(VectorType & dst, 
+                           VectorType const & src,
+                           double const time,
+                           VectorType const * velocity) const
 {
   // no need to set scaling_factor_mass because the mass operator does not contribute to rhs
 
@@ -692,6 +729,11 @@ Operator<dim, Number>::rhs(VectorType & dst, double const time, VectorType const
   // rhs operator f(t)
   if(param.right_hand_side == true)
   {
+    rhs_operator.set_velocity_ptr(*velocity);
+    rhs_operator.set_solution(src);
+    if (param.scalar_type==ScalarType::TKEDissipationRate) {
+      rhs_operator.set_rans_secondary_variable_ptr(*turbulence_model_ptr->turbulent_kinetic_energy);
+    }
     rhs_operator.evaluate_add(dst, time);
   }
 }
@@ -1056,6 +1098,24 @@ void
 Operator<dim, Number>::get_eddy_viscosity(VectorType & dst) const
 {
   turbulence_model_ptr->get_eddy_viscosity(dst);
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::update_viscosity(VectorType const & sol) const
+{
+  AssertThrow(param.diffusive_problem(), dealii::ExcMessage("Updating viscosity reasonable for diffusive problem"));  
+
+  // reset the viscosity stored with constant diffusivity value
+  turbulence_model_ptr->set_constant_coefficient(diffusive_kernel->data.diffusivity);
+
+
+  // add contribution from turbulence model
+  // viscosity += turbulent_viscosity(viscosity)
+  if(param.turbulence_model_data.is_active)
+  {
+    turbulence_model_ptr->add_viscosity(sol);
+  }
 }
 
 template class Operator<2, float>;

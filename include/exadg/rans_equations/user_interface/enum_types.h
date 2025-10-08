@@ -128,6 +128,16 @@ enum class TreatmentOfConvectiveTerm
 };
 
 /*
+ *  The possibly variable viscosity can be treated explicitly (Explicit) or implicitly (Implicit).
+ */
+enum class TreatmentOfVariableViscosity
+{
+  Undefined,
+  Explicit,
+  Implicit
+};
+
+/*
  *  Temporal discretization method for OIF splitting:
  *
  *    Explicit Runge-Kutta methods

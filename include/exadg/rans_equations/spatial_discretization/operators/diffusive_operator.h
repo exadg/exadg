@@ -27,6 +27,9 @@
 #include <exadg/operators/interior_penalty_parameter.h>
 #include <exadg/operators/operator_base.h>
 
+#include <exadg/rans_equations/spatial_discretization/turbulence_model.h>
+#include <exadg/rans_equations/user_interface/viscosity_model_data.h>
+
 
 namespace ExaDG
 {
@@ -36,12 +39,20 @@ namespace Operators
 {
 struct DiffusiveKernelData
 {
-  DiffusiveKernelData() : IP_factor(1.0), diffusivity(1.0)
+  DiffusiveKernelData() : IP_factor(1.0),
+    diffusivity(1.0),
+    turbulence_model_enabled(false),
+    scalar_type(ScalarType::Scalar),
+    positivity_preserving_limiter(PositivityPreservingLimiter::Undefined)
   {
   }
 
   double IP_factor;
   double diffusivity;
+  bool turbulence_model_enabled;
+  ScalarType scalar_type;
+  TurbulenceModelData turbulence_model_data;
+  PositivityPreservingLimiter positivity_preserving_limiter;
 };
 
 template<int dim, typename Number>
@@ -170,9 +181,11 @@ public:
 
   inline DEAL_II_ALWAYS_INLINE //
     scalar
-    calculate_gradient_flux(scalar const & value_m, scalar const & value_p) const
+    calculate_gradient_flux(scalar const & value_m,
+                            scalar const & value_p,
+                            scalar const & viscosity) const
   {
-    return -0.5 * data.diffusivity * (value_m - value_p);
+    return -0.5 * viscosity * (value_m - value_p);
   }
 
   /*
@@ -185,10 +198,124 @@ public:
     calculate_value_flux(scalar const & normal_gradient_m,
                          scalar const & normal_gradient_p,
                          scalar const & value_m,
-                         scalar const & value_p) const
+                         scalar const & value_p,
+                         scalar const & viscosity) const
   {
-    return data.diffusivity *
+    return viscosity *
            (0.5 * (normal_gradient_m + normal_gradient_p) - tau * (value_m - value_p));
+  }
+
+  /*
+   * Volume flux, i.e., the term occurring in the volume integral along with grad of shape function
+   */
+  inline DEAL_II_ALWAYS_INLINE //
+  vector
+  get_grad_volume_flux(IntegratorCell & integrator,
+                       scalar const & viscosity,
+                       unsigned int const q) const
+  {
+    vector result;
+    if(data.turbulence_model_enabled)
+    {
+      result = sipg_cell_integral(integrator.get_gradient(q), viscosity);
+    }
+    else {
+      result = integrator.get_gradient(q) * data.diffusivity;
+    }
+    return result;
+  }
+
+  /*
+   * \left( \nu + \frac{\nu_{T}}{\sigma_k} * grad(k) \right)
+  */
+  vector
+  sipg_cell_integral(vector const & sol_grad,
+                     scalar const & viscosity) const
+  {
+    return sol_grad * viscosity;
+  }
+
+  /*
+   * Volume flux, i.e., the term occurring in the volume integral along with value of shape function
+   */
+  inline DEAL_II_ALWAYS_INLINE //
+  scalar
+  get_value_volume_flux(IntegratorCell & integrator,
+                        scalar const & eddy_viscosity,
+                        scalar const & effective_viscosity,
+                        unsigned int const q) const
+  {
+    scalar result = dealii::make_vectorized_array<Number>(0.);
+    vector sol_grad = integrator.get_gradient(q);
+    scalar sol = integrator.get_value(q);
+    result = sipg_varying_viscosity_integral(sol, sol_grad, eddy_viscosity);
+    if(data.positivity_preserving_limiter==PositivityPreservingLimiter::LogarithmicTransportVariable)
+    {
+      result += limiter_term(sol_grad, effective_viscosity);
+    }
+    return result;
+  }
+
+  /*
+   * \frac{1}{\sigma_{k}} \frac{1}{2 k^{1/2} \ell} e^{\kappa} \frac{\partial \kappa}{\partial x_j}\frac{\partial \kappa}{\partial x_j}
+   */
+  inline DEAL_II_ALWAYS_INLINE
+  scalar
+  sipg_varying_viscosity_integral(scalar const & sol,
+                                  vector const & sol_grad,
+                                  scalar const & viscosity) const
+  {
+    scalar value = dealii::make_vectorized_array<Number>(0.0);
+
+    if (data.positivity_preserving_limiter==PositivityPreservingLimiter::LogarithmicTransportVariable) {
+      if(turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLengthModel)
+      {
+        value = dealii::make_vectorized_array<Number>(1/(2.0*turbulence_model_ptr->prandtl_mixing_length_data_base->sigma_k)) * viscosity * sol_grad.norm_square();
+      }
+      else if (turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::StandardKEpsilon) {
+        if (turbulence_model_ptr->scalar_type==ScalarType::TurbulentKineticEnergy) {
+          value = dealii::make_vectorized_array<Number>(2.0 / turbulence_model_ptr->k_epsilon_data_base->sigma_k) * sol_grad.norm_square() * viscosity;
+        }
+        else if (turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::StandardKEpsilon) {
+          value = dealii::make_vectorized_array<Number>(-1.0/turbulence_model_ptr->k_epsilon_data_base->sigma_epsilon) * sol_grad.norm_square() * viscosity;
+        }
+      }
+      else {
+        AssertThrow(false, dealii::ExcMessage(" Positivity Limiter only available for TurbulenceEddyViscosityModel::PrandtlMixingLengthModel and TurbulenceEddyViscosityModel::StandardKEpsilon"));
+      }
+    }
+    else if (data.positivity_preserving_limiter==PositivityPreservingLimiter::Clipper) {
+      if(turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLengthModel)
+      {
+        value = dealii::make_vectorized_array<Number>(1/(2.0*turbulence_model_ptr->prandtl_mixing_length_data_base->sigma_k)) * viscosity * sol_grad.norm_square();
+      }
+      else if (turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::StandardKEpsilon) {
+        if (turbulence_model_ptr->scalar_type==ScalarType::TurbulentKineticEnergy) {
+          value = dealii::make_vectorized_array<Number>(2.0 / turbulence_model_ptr->k_epsilon_data_base->sigma_k) * sol_grad.norm_square() * viscosity / sol;
+        }
+        else if (turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::StandardKEpsilon) {
+          value = dealii::make_vectorized_array<Number>(-1.0/turbulence_model_ptr->k_epsilon_data_base->sigma_epsilon) * sol_grad.norm_square() * viscosity / sol;
+        }
+      }
+      else {
+        AssertThrow(false, dealii::ExcMessage(" Positivity Limiter only available for TurbulenceEddyViscosityModel::PrandtlMixingLengthModel and TurbulenceEddyViscosityModel::StandardKEpsilon"));
+      }
+    }
+
+    return value;
+  }
+
+  /*
+   *\left( \nu + \frac{\nu_{T}}{\sigma_k} grad(k) grad(k) \right)
+  */
+  scalar
+  limiter_term(vector const & sol_grad,
+               scalar const & viscosity) const
+  {
+    scalar value = dealii::make_vectorized_array<Number>(0.0);
+    value = viscosity * sol_grad.norm_square();
+    /*std::cout << "Positivity limiter term : " << value << std::endl;*/
+    return value;
   }
 
   /*
@@ -201,8 +328,10 @@ public:
     return integrator.get_gradient(q) * data.diffusivity;
   }
 
-private:
   DiffusiveKernelData data;
+
+  mutable std::shared_ptr<TurbulenceModel<dim, Number>> turbulence_model_ptr;
+private:
 
   unsigned int degree;
 

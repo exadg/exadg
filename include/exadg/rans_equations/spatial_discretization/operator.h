@@ -29,6 +29,7 @@
 // ExaDG
 #include <exadg/rans_equations/spatial_discretization/interface.h>
 #include <exadg/rans_equations/spatial_discretization/operators/combined_operator.h>
+#include <exadg/rans_equations/spatial_discretization/operators/rhs_operator.h>
 #include <exadg/rans_equations/user_interface/boundary_descriptor.h>
 #include <exadg/rans_equations/user_interface/field_functions.h>
 #include <exadg/rans_equations/user_interface/parameters.h>
@@ -36,7 +37,6 @@
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
 #include <exadg/operators/mass_operator.h>
-#include <exadg/operators/rhs_operator.h>
 #include <exadg/operators/solution_transfer.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 
@@ -159,6 +159,7 @@ public:
    */
   void
   rhs(VectorType &       dst,
+      VectorType const & src,
       double const       evaluation_time = 0.0,
       VectorType const * velocity        = nullptr) const final;
 
@@ -302,6 +303,12 @@ public:
   void
   get_eddy_viscosity(VectorType & dst) const;
 
+  /*
+   * Updates variable viscosity
+   */
+  void
+  update_viscosity(VectorType const & sol) const final;
+
 private:
   void
   do_setup();
@@ -434,6 +441,7 @@ private:
    */
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
   std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel;
+  std::shared_ptr<Operators::RHSKernel<dim, Number, 1>> rhs_kernel;
 
   MassOperator<dim, 1, Number>        mass_operator;
   InverseMassOperator<dim, 1, Number> inverse_mass_operator;

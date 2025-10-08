@@ -130,8 +130,21 @@ DriverSteadyProblems<Number>::do_solve()
     }
   }
 
+  // update varible viscosity
+  if(this->param.turbulence_model_data.is_active)
+  {
+    dealii::Timer timer_viscosity_update;
+    timer_viscosity_update.restart();
+
+    pde_operator->update_viscosity(solution);
+    if(not(is_test))
+    {
+      pcout << std::endl << "Update of variable viscosity : ";
+      print_wall_time(pcout, timer_viscosity_update.wall_time());
+    }
+  }
   // calculate rhs vector
-  pde_operator->rhs(rhs_vector, 0.0 /* time */, velocity_ptr);
+  pde_operator->rhs(rhs_vector, solution, 0.0 /* time */, velocity_ptr);
 
   // solve linear system of equations
   unsigned int iterations = pde_operator->solve(solution,

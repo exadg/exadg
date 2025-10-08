@@ -37,13 +37,15 @@ struct CombinedOperatorData : public OperatorBaseData
     : OperatorBaseData(),
       unsteady_problem(false),
       convective_problem(false),
-      diffusive_problem(false)
+      diffusive_problem(false),
+      turbulence_model_enabled(false)
   {
   }
 
   bool unsteady_problem;
   bool convective_problem;
   bool diffusive_problem;
+  bool turbulence_model_enabled;
 
   Operators::ConvectiveKernelData<dim> convective_kernel_data;
   Operators::DiffusiveKernelData       diffusive_kernel_data;
@@ -154,9 +156,10 @@ private:
 
   std::shared_ptr<MassKernel<dim, Number>>                  mass_kernel;
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
-  std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel;
 
   double scaling_factor_mass;
+public:
+  std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel;
 };
 
 } // namespace RANS
