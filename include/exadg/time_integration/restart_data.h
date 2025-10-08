@@ -84,7 +84,10 @@ struct RestartData
 {
   RestartData()
     : write_restart(false),
+      n_snapshots_keep(2),
       interval_time(std::numeric_limits<double>::max()),
+      interval_time_start(std::numeric_limits<double>::lowest()),
+      interval_time_end(std::numeric_limits<double>::max()),
       interval_wall_time(std::numeric_limits<double>::max()),
       interval_time_steps(std::numeric_limits<unsigned int>::max()),
       directory("./output/"),
@@ -109,6 +112,8 @@ struct RestartData
     if(write_restart == true)
     {
       print_parameter(pcout, "Interval physical time", interval_time);
+      print_parameter(pcout, "Interval physical time window start", interval_time_start);
+      print_parameter(pcout, "Interval physical time window end", interval_time_end);
       print_parameter(pcout, "Interval wall time", interval_wall_time);
       print_parameter(pcout, "Interval time steps", interval_time_steps);
       print_parameter(pcout, "Directory", directory);
@@ -129,19 +134,31 @@ struct RestartData
     if(reset_counter)
       counter += int((time + 1.e-10) / interval_time);
 
-    bool do_restart = wall_time > interval_wall_time * counter or time > interval_time * counter or
-                      time_step_number > interval_time_steps * counter;
+    bool const trigger_restart_base = wall_time > interval_wall_time * counter or
+                                      time > interval_time * counter or
+                                      time_step_number > interval_time_steps * counter;
 
-    if(do_restart)
+    // Additionally use the physical time window.
+    bool const trigger_restart =
+      trigger_restart_base and time >= interval_time_start and time <= interval_time_end;
+
+    if(trigger_restart)
       ++counter;
 
-    return do_restart;
+    return trigger_restart;
   }
 
   bool write_restart;
 
-  // physical time
+  // Number of snapshots to keep
+  unsigned int n_snapshots_keep;
+
+  // physical time interval between serializations
   double interval_time;
+
+  // physical time interval in which serialization is enabled
+  double interval_time_start;
+  double interval_time_end;
 
   // wall time in seconds (= hours * 3600)
   double interval_wall_time;
@@ -165,15 +182,15 @@ struct RestartData
   // necessary global projection.
   bool discretization_identical;
 
+  // Attach the mapping as a displacement vector when *writing* the restart data.
+  bool consider_mapping_write;
+
   /**
    * The following options are only effective for the grid-to-grid projection, when
    * `discretization_identical == false`
    * These options toggle storing and reading the mapping via a displacement vector.
    * Mismatching parameters might lead to undesired configurations, use with care.
    */
-
-  // Attache the mapping as a displacement vector when *writing* the restart data.
-  bool consider_mapping_write;
 
   // Reconstruct the mapping for the serialized grid (`source`) in the grid-to-grid projection at
   // restart. Note that the grid use at restart is always considered as defined in the applciation.

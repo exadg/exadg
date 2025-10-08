@@ -255,10 +255,7 @@ SpatialOperator<dim, Number>::serialize_vectors(
   deserialization_parameters.mapping_degree         = param.mapping_degree;
   deserialization_parameters.consider_mapping_write = param.restart_data.consider_mapping_write;
   deserialization_parameters.triangulation_type     = param.grid.triangulation_type;
-  write_deserialization_parameters(mpi_comm,
-                                   param.restart_data.directory,
-                                   param.restart_data.filename,
-                                   deserialization_parameters);
+  write_deserialization_parameters(mpi_comm, param.restart_data, deserialization_parameters);
 
   // Attach vectors to triangulation and serialize.
   std::vector<dealii::DoFHandler<dim> const *> dof_handlers(2);
@@ -270,8 +267,7 @@ SpatialOperator<dim, Number>::serialize_vectors(
 
   if(param.restart_data.consider_mapping_write)
   {
-    store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
-                                                 param.restart_data.filename,
+    store_vectors_in_triangulation_and_serialize(param.restart_data,
                                                  dof_handlers,
                                                  vectors_per_dof_handler,
                                                  *this->get_mapping(),
@@ -280,8 +276,7 @@ SpatialOperator<dim, Number>::serialize_vectors(
   }
   else
   {
-    store_vectors_in_triangulation_and_serialize(param.restart_data.directory,
-                                                 param.restart_data.filename,
+    store_vectors_in_triangulation_and_serialize(param.restart_data,
                                                  dof_handlers,
                                                  vectors_per_dof_handler);
   }
@@ -297,14 +292,11 @@ SpatialOperator<dim, Number>::deserialize_vectors(
 
   // Load the deserialization parameters.
   DeserializationParameters const deserialization_parameters =
-    read_deserialization_parameters(mpi_comm,
-                                    param.restart_data.directory,
-                                    param.restart_data.filename);
+    read_deserialization_parameters(mpi_comm, param.restart_data);
 
   // Load potentially unfitting checkpoint triangulation of TriangulationType.
   std::shared_ptr<dealii::Triangulation<dim>> checkpoint_triangulation =
-    deserialize_triangulation<dim>(param.restart_data.directory,
-                                   param.restart_data.filename,
+    deserialize_triangulation<dim>(param.restart_data,
                                    deserialization_parameters.triangulation_type,
                                    mpi_comm);
 

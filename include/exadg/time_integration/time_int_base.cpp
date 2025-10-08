@@ -213,7 +213,7 @@ TimeIntBase::write_restart() const
       restart_data.directory + generate_restart_filename(restart_data.filename);
 
     if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      rename_restart_files(filename);
+      rename_old_restart_files(filename, restart_data.n_snapshots_keep);
 
     do_write_restart(filename);
 
