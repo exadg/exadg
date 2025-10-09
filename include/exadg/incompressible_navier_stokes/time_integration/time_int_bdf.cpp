@@ -62,7 +62,8 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
   needs_vector_convective_term =
     this->param.convective_problem() and
     (this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit or
-     this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme);
+     this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme or
+     this->param.temporal_discretization == TemporalDiscretization::BDFConsistentSplittingScheme);
 }
 
 template<int dim, typename Number>

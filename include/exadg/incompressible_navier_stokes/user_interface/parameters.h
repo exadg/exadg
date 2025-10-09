@@ -110,6 +110,9 @@ private:
   print_parameters_dual_splitting(dealii::ConditionalOStream const & pcout) const;
 
   void
+  print_parameters_consistent_splitting(dealii::ConditionalOStream const & pcout) const;
+
+  void
   print_parameters_pressure_correction(dealii::ConditionalOStream const & pcout) const;
 
   void
