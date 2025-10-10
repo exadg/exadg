@@ -328,6 +328,12 @@ public:
   set_tke_dissipation_rate(VectorType const & epsilon);
 
   /*
+   * Eddy viscosity (for RANS models)
+   */
+  void
+  set_eddy_viscosity(VectorType const & eddy_viscosity_in);
+
+  /*
    * Computation of derived quantities which is needed for postprocessing but some of them are also
    * needed, e.g., for special splitting-type time integration schemes.
    */

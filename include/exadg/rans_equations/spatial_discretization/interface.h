@@ -106,6 +106,9 @@ public:
 
   virtual void
   update_viscosity(VectorType const & sol) const = 0;
+
+  virtual void
+  get_eddy_viscosity(VectorType & dst) const = 0;
 };
 } // namespace Interface
 

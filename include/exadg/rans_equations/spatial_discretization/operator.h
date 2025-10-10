@@ -301,7 +301,7 @@ public:
   set_tke_dissipation_rate(VectorType const & epsilon_in);
 
   void
-  get_eddy_viscosity(VectorType & dst) const;
+  get_eddy_viscosity(VectorType & dst) const final;
 
   /*
    * Updates variable viscosity

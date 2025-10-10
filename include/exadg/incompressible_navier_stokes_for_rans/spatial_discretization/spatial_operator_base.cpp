@@ -1208,6 +1208,8 @@ void
 SpatialOperatorBase<dim, Number>::set_turbulent_kinetic_energy(VectorType const & tke)
 {
   AssertThrow(param.turbulence_model_data.rans_model, dealii::ExcMessage("Invalid parameters detected for rans model."));
+
+  /*turbulence_model.set_turbulent_kinetic_energy(tke);*/
 }
 
 template<int dim, typename Number>
@@ -1215,6 +1217,16 @@ void
 SpatialOperatorBase<dim, Number>::set_tke_dissipation_rate(VectorType const & epsilon)
 {
   AssertThrow(param.turbulence_model_data.rans_model, dealii::ExcMessage("Invalid parameters detected for rans model."));
+
+  /*turbulence_model.set_tke_dissipation_rate(epsilon);*/
+}
+
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::set_eddy_viscosity(VectorType const & eddy_viscosity_in)
+{
+  AssertThrow(param.turbulence_model_data.rans_model, dealii::ExcMessage("Invalid parameters detected for rans model."));
+  turbulence_model.set_eddy_viscosity(eddy_viscosity_in);
 }
 
 template<int dim, typename Number>

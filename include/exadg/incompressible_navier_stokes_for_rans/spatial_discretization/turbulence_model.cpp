@@ -19,6 +19,7 @@
  *  ______________________________________________________________________
  */
 
+#include "turbulence_model.h"
 #include <exadg/incompressible_navier_stokes_for_rans/spatial_discretization/turbulence_model.h>
 #include <exadg/operators/quadrature.h>
 
@@ -65,16 +66,34 @@ TurbulenceModel<dim, Number>::set_viscosity(VectorType const & velocity) const
 
 template<int dim, typename Number>
 void
+TurbulenceModel<dim, Number>::set_eddy_viscosity(VectorType const & eddy_viscosity_in)
+{
+  this->eddy_viscosity = &eddy_viscosity_in;
+  eddy_viscosity->update_ghost_values();
+}
+
+template<int dim, typename Number>
+void
 TurbulenceModel<dim, Number>::add_viscosity(VectorType const & velocity) const
 {
   VectorType dummy;
 
-  this->matrix_free->loop(&This::cell_loop_set_coefficients,
-                          &This::face_loop_set_coefficients,
-                          &This::boundary_face_loop_set_coefficients,
-                          this,
-                          dummy,
-                          velocity);
+  if (turbulence_model_data.rans_model) {
+    this->matrix_free->loop(&This::cell_loop_set_coefficients_rans,
+                            &This::face_loop_set_coefficients_rans,
+                            &This::boundary_face_loop_set_coefficients_rans,
+                            this,
+                            dummy,
+                            dummy);
+  } else {
+    this->matrix_free->loop(&This::cell_loop_set_coefficients,
+                            &This::face_loop_set_coefficients,
+                            &This::boundary_face_loop_set_coefficients,
+                            this,
+                            dummy,
+                            velocity);
+  }
+
 }
 
 template<int dim, typename Number>
@@ -230,6 +249,130 @@ TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients(
 
 template<int dim, typename Number>
 void
+TurbulenceModel<dim, Number>::cell_loop_set_coefficients_rans(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &,
+  VectorType const & src,
+  Range const &      cell_range) const
+{
+  CellIntegratorScalar integrator(matrix_free,
+                                   this->dof_index_scalar,
+                                   this->viscous_kernel->get_quad_index());
+  // loop over all cells
+  for (unsigned int cell = cell_range.first; cell < cell_range.second; ++cell) {
+    integrator.reinit(cell);
+    integrator.read_dof_values(*this->eddy_viscosity);
+
+    integrator.evaluate(dealii::EvaluationFlags::values);
+
+    // loop over all quadrature points
+    for (unsigned int q = 0; q < integrator.n_q_points; ++q) {
+      scalar viscosity = this->viscous_kernel->get_viscosity_cell(cell, q);
+      scalar eddy_viscosity = integrator.get_value(q);
+
+      add_eddy_viscosity(viscosity, eddy_viscosity);
+
+      this->viscous_kernel->set_coefficient_cell(cell, q, viscosity);
+    }
+  }
+}
+
+template<int dim, typename Number>
+void
+TurbulenceModel<dim, Number>::face_loop_set_coefficients_rans(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &,
+  VectorType const & src,
+  Range const &      face_range) const
+{
+  FaceIntegratorScalar integrator_m(matrix_free,
+                               true,
+                               this->dof_index_velocity,
+                               this->viscous_kernel->get_quad_index());
+  FaceIntegratorScalar integrator_p(matrix_free,
+                               false,
+                               this->dof_index_velocity,
+                               this->viscous_kernel->get_quad_index());
+
+  // loop over all interior faces
+  for(unsigned int face = face_range.first; face < face_range.second; face++)
+  {
+    integrator_m.reinit(face);
+    integrator_p.reinit(face);
+
+    integrator_m.read_dof_values(*this->eddy_viscosity);
+    integrator_p.read_dof_values(*this->eddy_viscosity);
+
+    // we only need the gradient
+    integrator_m.evaluate(dealii::EvaluationFlags::values);
+    integrator_p.evaluate(dealii::EvaluationFlags::values);
+
+    // loop over all quadrature points
+    for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+    {
+      // get the coefficients
+      scalar viscosity          = this->viscous_kernel->get_coefficient_face(face, q);
+      scalar viscosity_neighbor = this->viscous_kernel->get_coefficient_face_neighbor(face, q);
+
+      // get eddy viscosity
+      scalar eddy_viscosity          = integrator_m.get_value(q);
+      scalar eddy_viscosity_neighbor = integrator_p.get_value(q);
+
+      add_eddy_viscosity(viscosity,
+                         eddy_viscosity);
+
+      add_eddy_viscosity(viscosity_neighbor,
+                         eddy_viscosity_neighbor);
+
+      // set the coefficients
+      this->viscous_kernel->set_coefficient_face(face, q, viscosity);
+      this->viscous_kernel->set_coefficient_face_neighbor(face, q, viscosity_neighbor);
+    }
+  }
+}
+
+template<int dim, typename Number>
+void
+TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients_rans(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &,
+  VectorType const & src,
+  Range const &      face_range) const
+{
+  FaceIntegratorScalar integrator(matrix_free,
+                             true,
+                             this->dof_index_velocity,
+                             this->viscous_kernel->get_quad_index());
+
+  // loop over all boundary faces
+  for(unsigned int face = face_range.first; face < face_range.second; face++)
+  {
+    integrator.reinit(face);
+    integrator.read_dof_values(*this->eddy_viscosity);
+
+    // we only need the gradient
+    integrator.evaluate(dealii::EvaluationFlags::values);
+
+    // loop over all quadrature points
+    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+    {
+      // get the coefficients
+      scalar viscosity = this->viscous_kernel->get_coefficient_face(face, q);
+
+      // get eddy viscosity
+      scalar eddy_viscosity = integrator.get_value(q);
+
+      add_eddy_viscosity(viscosity,
+                         eddy_viscosity);
+
+      // set the coefficients
+      this->viscous_kernel->set_coefficient_face(face, q, viscosity);
+    }
+  }
+}
+
+template<int dim, typename Number>
+void
 TurbulenceModel<dim, Number>::calculate_filter_width(dealii::Mapping<dim> const & mapping)
 {
   unsigned int n_cells =
@@ -300,6 +443,28 @@ TurbulenceModel<dim, Number>::add_turbulent_viscosity(scalar &       viscosity,
       break;
     case TurbulenceEddyViscosityModel::Sigma:
       sigma_model(filter_width, velocity_gradient, model_constant, viscosity);
+      break;
+    default:
+      AssertThrow(false,
+                  dealii::ExcMessage("This TurbulenceEddyViscosityModel is not implemented."));
+  }
+}
+
+template<int dim, typename Number>
+void
+TurbulenceModel<dim, Number>::add_eddy_viscosity(scalar & viscosity,
+                                                 scalar const & eddy_viscosity) const
+{
+  switch(turbulence_model_data.turbulence_model)
+  {
+    case TurbulenceEddyViscosityModel::Undefined:
+      AssertThrow(false, dealii::ExcMessage("TurbulenceEddyViscosityModel is undefined."));
+      break;
+    case TurbulenceEddyViscosityModel::PrandtlMixingLength:
+      prandtl_mixing_length_model(viscosity, eddy_viscosity);
+      break;
+    case TurbulenceEddyViscosityModel::StandardKEpsilon:
+      standard_k_epsilon_model(viscosity, eddy_viscosity);
       break;
     default:
       AssertThrow(false,
@@ -581,6 +746,38 @@ TurbulenceModel<dim, Number>::sigma_model(scalar const & filter_width,
   // add turbulent eddy-viscosity to laminar viscosity
   scalar factor = C * filter_width;
   viscosity += factor * factor * D;
+}
+
+template<int dim, typename Number>
+void
+TurbulenceModel<dim, Number>::prandtl_mixing_length_model(scalar & viscosity,
+                                                          scalar const & eddy_viscosity) const
+{
+  double sigma_k = turbulence_data_base->sigma_k;
+  viscosity += eddy_viscosity / sigma_k;
+}
+
+template<int dim, typename Number>
+void
+TurbulenceModel<dim, Number>::standard_k_epsilon_model(scalar & viscosity,
+                                                          scalar const & eddy_viscosity) const
+{
+  double sigma_k = turbulence_data_base->sigma_k;
+  viscosity += eddy_viscosity / sigma_k;
+}
+
+template<int dim, typename Number>
+std::shared_ptr<TurbulenceDataBase>
+TurbulenceModel<dim, Number>::create_turbulence_data()
+{
+  switch(turbulence_model_data.turbulence_model){
+    case TurbulenceEddyViscosityModel::PrandtlMixingLength:
+      return std::make_shared<PrandtlMixingLengthData>();
+      break;
+    case TurbulenceEddyViscosityModel::StandardKEpsilon:
+      return std::make_shared<StandardKEpsilonData>();
+      break;
+  }
 }
 
 template class TurbulenceModel<2, float>;

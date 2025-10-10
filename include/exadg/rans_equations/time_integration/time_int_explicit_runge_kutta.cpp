@@ -74,6 +74,13 @@ TimeIntExplRK<Number>::extrapolate_solution(VectorType & vector)
 
 template<typename Number>
 void
+TimeIntExplRK<Number>::get_eddy_viscosity(VectorType & dst) const
+{
+  pde_operator->get_eddy_viscosity(dst);
+}
+
+template<typename Number>
+void
 TimeIntExplRK<Number>::initialize_vectors()
 {
   pde_operator->initialize_dof_vector(this->solution_n);

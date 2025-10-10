@@ -68,6 +68,9 @@ public:
   void
   extrapolate_solution(VectorType & vector);
 
+  void
+  get_eddy_viscosity(VectorType & dst) const;
+
 private:
   void
   initialize_vectors() final;

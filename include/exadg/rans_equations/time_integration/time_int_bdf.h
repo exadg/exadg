@@ -82,6 +82,9 @@ public:
   void
   interpolate_after_coarsening_and_refinement() final;
 
+  void
+  get_eddy_viscosity(VectorType & dst) const;
+
 private:
   void
   allocate_vectors() final;

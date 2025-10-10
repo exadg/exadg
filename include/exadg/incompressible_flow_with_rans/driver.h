@@ -149,6 +149,8 @@ private:
   mutable dealii::LinearAlgebra::distributed::Vector<Number> turbulent_kinetic_energy;
 
   mutable dealii::LinearAlgebra::distributed::Vector<Number> turbulent_dissipation_rate;
+
+  mutable dealii::LinearAlgebra::distributed::Vector<Number> eddy_viscosity;
   /*
    * Computation time (wall clock time).
    */

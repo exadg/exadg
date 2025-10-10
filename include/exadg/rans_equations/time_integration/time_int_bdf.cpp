@@ -690,6 +690,13 @@ TimeIntBDF<dim, Number>::extrapolate_solution(VectorType & vector)
     vector.add(this->extra.get_beta(i), this->solution[i]);
 }
 
+template<int dim, typename Number>
+void
+TimeIntBDF<dim, Number>::get_eddy_viscosity(VectorType & dst) const
+{
+  pde_operator->get_eddy_viscosity(dst);
+}
+
 // instantiations
 
 template class TimeIntBDF<2, float>;
