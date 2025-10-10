@@ -126,8 +126,8 @@ private:
 
     // TEMPORAL DISCRETIZATION
     this->param.solver_type                     = SolverType::Unsteady;
-    this->param.temporal_discretization         = TemporalDiscretization::BDFCoupledSolution;
-    this->param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
+    this->param.temporal_discretization         = TemporalDiscretization::BDFConsistentSplittingScheme; //;BDFDualSplittingScheme
+    this->param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::LinearlyImplicit;
     this->param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     this->param.max_velocity                    = 1.0;
     this->param.cfl                             = 0.4;
@@ -135,17 +135,17 @@ private:
     this->param.cfl_exponent_fe_degree_velocity = 1.5;
     // this->param.time_step_size                  = 1.0e-7;
     this->param.adaptive_time_stepping_limiting_factor = 1.5;
-    this->param.order_time_integrator                  = 3;
+    this->param.order_time_integrator                  = 1;
     this->param.start_with_low_order                   = false;
 
     // output of solver information
     this->param.solver_info_data.interval_time =
-      (this->param.end_time - this->param.start_time) / 20;
+      (this->param.end_time - this->param.start_time) / 1000000000000000.0;
 
     // SPATIAL DISCRETIZATION
     this->param.degree_p                    = DegreePressure::MixedOrder;
     this->param.grid.triangulation_type     = TriangulationType::Distributed;
-    this->param.spatial_discretization      = SpatialDiscretization::HDIV;
+    this->param.spatial_discretization      = SpatialDiscretization::L2;
     this->param.mapping_degree              = this->param.degree_u;
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
 
@@ -166,7 +166,7 @@ private:
     this->param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
     // pressure level is undefined
-    this->param.adjust_pressure_level = AdjustPressureLevel::ApplyAnalyticalMeanValue;
+    this->param.adjust_pressure_level = AdjustPressureLevel::ApplyZeroMeanValue;
 
     // PROJECTION METHODS
 
@@ -186,9 +186,9 @@ private:
     this->param.order_extrapolation_pressure_nbc =
       this->param.order_time_integrator <= 2 ? this->param.order_time_integrator : 2;
 
-    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    //if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
-      this->param.solver_momentum         = SolverMomentum::CG;
+      this->param.solver_momentum         = SolverMomentum::GMRES;
       this->param.solver_data_momentum    = SolverData(1000, ABS_TOL, REL_TOL);
       this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
     }
@@ -210,7 +210,7 @@ private:
     }
 
     // formulation
-    this->param.order_pressure_extrapolation = 1;
+    this->param.order_pressure_extrapolation = 2;
     this->param.rotational_formulation       = true;
 
     // COUPLED NAVIER-STOKES SOLVER
@@ -328,7 +328,7 @@ private:
     // write output for visualization of results
     pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
     pp_data.output_data.time_control_data.start_time       = start_time;
-    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
+    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 10000000000000000.0;
     pp_data.output_data.directory        = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename         = this->output_parameters.filename;
     pp_data.output_data.write_divergence = true;
@@ -337,14 +337,14 @@ private:
     // calculation of velocity error
     pp_data.error_data_u.time_control_data.is_active        = true;
     pp_data.error_data_u.time_control_data.start_time       = start_time;
-    pp_data.error_data_u.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
+    pp_data.error_data_u.time_control_data.trigger_interval = (end_time - start_time) / 1000000000000000.0;
     pp_data.error_data_u.analytical_solution.reset(new AnalyticalSolutionVelocity<dim>(viscosity));
     pp_data.error_data_u.name = "velocity";
 
     // ... pressure error
     pp_data.error_data_p.time_control_data.is_active        = true;
     pp_data.error_data_p.time_control_data.start_time       = start_time;
-    pp_data.error_data_p.time_control_data.trigger_interval = (end_time - start_time);
+    pp_data.error_data_p.time_control_data.trigger_interval = (end_time - start_time)/1000000000000000.0;
     pp_data.error_data_p.analytical_solution.reset(new AnalyticalSolutionPressure<dim>(viscosity));
     pp_data.error_data_p.name = "pressure";
 

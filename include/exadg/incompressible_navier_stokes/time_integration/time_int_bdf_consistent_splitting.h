@@ -83,19 +83,10 @@ private:
   setup_derived() final;
 
   void
-  read_restart_vectors(BoostInputArchiveType & ia) final;
-
-  void
-  write_restart_vectors(BoostOutputArchiveType & oa) const final;
-
-  void
   do_timestep_solve() final;
 
   void
   prepare_vectors_for_next_timestep() final;
-
-  void
-  convective_step();
 
   void
   evaluate_convective_term();
@@ -119,21 +110,13 @@ private:
   rhs_pressure(VectorType & rhs) const;
 
   void
-  projection_step();
+  momentum_step();
 
   void
-  rhs_projection(VectorType & rhs) const;
+  rhs_momentum(VectorType & rhs, VectorType const & transport_velocity) const;
 
   void
   penalty_step();
-
-  void
-  viscous_step();
-
-  void
-  rhs_viscous(VectorType &       rhs,
-              VectorType const & velocity_mass_operator,
-              VectorType const & transport_velocity) const;
 
   void
   solve_steady_problem() final;
@@ -162,6 +145,10 @@ private:
   std::vector<VectorType> pressure;
 
   VectorType pressure_np;
+
+  std::vector<VectorType> velocity_divergence;
+
+  std::vector<VectorType> vec_convective_term_div;
 
   std::vector<VectorType> velocity_dbc;
   VectorType              velocity_dbc_np;

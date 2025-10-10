@@ -75,6 +75,10 @@ public:
   void
   apply_velocity_divergence_term(VectorType & dst, VectorType const & src) const;
 
+  // rhs pressure: divergence of convective term
+  void
+  apply_convective_divergence_term(VectorType & dst, VectorType const & src, double const & time) const;
+
   void
   rhs_velocity_divergence_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
                                                             VectorType const & velocity) const;
@@ -161,12 +165,46 @@ private:
 
   // body force term
   void
+  local_rhs_ppe_div_term_body_forces_cell(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           cell_range) const;
+  void
+  local_rhs_ppe_div_term_body_forces_inner_face(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           face_range) const;
+  void
   local_rhs_ppe_div_term_body_forces_boundary_face(
     dealii::MatrixFree<dim, Number> const & matrix_free,
     VectorType &                            dst,
     VectorType const &                      src,
     Range const &                           face_range) const;
 
+    void
+    local_rhs_ppe_div_term_convective_cell(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           cell_range) const;
+    
+    void
+    local_rhs_ppe_div_term_convective_inner_face(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           face_range) const;
+
+    void
+    local_rhs_ppe_div_term_convective_boundary_face(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           face_range) const;
+  
+  
   // Neumann boundary condition term
 
   // dg_u/dt with numerical time derivative

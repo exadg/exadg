@@ -158,8 +158,8 @@ private:
 
     // TEMPORAL DISCRETIZATION
     this->param.solver_type                   = SolverType::Unsteady;
-    this->param.temporal_discretization       = TemporalDiscretization::BDFDualSplittingScheme;
-    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
+    this->param.temporal_discretization       = TemporalDiscretization::BDFConsistentSplittingScheme; //
+    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::LinearlyImplicit;
     this->param.order_time_integrator         = 2;
     this->param.start_with_low_order          = not read_restart;
     this->param.adaptive_time_stepping        = true;
@@ -180,7 +180,8 @@ private:
       this->output_parameters.directory + this->output_parameters.filename + "restart";
 
     // output of solver information
-    this->param.solver_info_data.interval_time = characteristic_time;
+    this->param.solver_info_data.interval_time = 1e-5;
+    this->param.solver_info_data.do_output_in_this_time_step = true;
 
     // NUMERICAL PARAMETERS
     this->param.implement_block_diagonal_preconditioner_matrix_free = false;
@@ -251,7 +252,7 @@ private:
 
     if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
-      this->param.solver_momentum         = SolverMomentum::CG;
+      this->param.solver_momentum         = SolverMomentum::GMRES;
       this->param.solver_data_momentum    = SolverData(1000, ABS_TOL, REL_TOL);
       this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
     }

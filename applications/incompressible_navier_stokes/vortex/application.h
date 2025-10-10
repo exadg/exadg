@@ -258,8 +258,8 @@ private:
 
     // TEMPORAL DISCRETIZATION
     this->param.solver_type                  = SolverType::Unsteady;
-    this->param.temporal_discretization      = TemporalDiscretization::BDFDualSplittingScheme;
-    this->param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+    this->param.temporal_discretization      = TemporalDiscretization::BDFConsistentSplittingScheme;
+    this->param.treatment_of_convective_term = TreatmentOfConvectiveTerm::LinearlyImplicit;
     this->param.order_time_integrator        = 2;
     this->param.start_with_low_order         = false;
     this->param.adaptive_time_stepping       = false;
@@ -272,7 +272,7 @@ private:
     this->param.c_eff                           = 8.0;
 
     // output of solver information
-    this->param.solver_info_data.interval_time = this->param.end_time - this->param.start_time;
+    this->param.solver_info_data.interval_time = (this->param.end_time - this->param.start_time)/10000000.0;
 
     // restart
     this->param.restarted_simulation             = false;
@@ -629,7 +629,7 @@ private:
     // write output for visualization of results
     pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
     pp_data.output_data.time_control_data.start_time       = start_time;
-    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
+    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 1000000000000000000000000000.0;
     pp_data.output_data.directory                 = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename                  = this->output_parameters.filename;
     pp_data.output_data.write_vorticity           = true;
@@ -647,7 +647,7 @@ private:
     // calculation of velocity error
     pp_data.error_data_u.time_control_data.is_active        = true;
     pp_data.error_data_u.time_control_data.start_time       = start_time;
-    pp_data.error_data_u.time_control_data.trigger_interval = (end_time - start_time);
+    pp_data.error_data_u.time_control_data.trigger_interval = (end_time - start_time)/10000000000000000000000000.0;
     pp_data.error_data_u.analytical_solution.reset(
       new AnalyticalSolutionVelocity<dim>(u_x_max, viscosity));
     pp_data.error_data_u.calculate_relative_errors = true;
@@ -656,7 +656,7 @@ private:
     // ... pressure error
     pp_data.error_data_p.time_control_data.is_active        = true;
     pp_data.error_data_p.time_control_data.start_time       = start_time;
-    pp_data.error_data_p.time_control_data.trigger_interval = (end_time - start_time);
+    pp_data.error_data_p.time_control_data.trigger_interval = (end_time - start_time)/1000000000000000000000000000000000000000.0;
     pp_data.error_data_p.analytical_solution.reset(
       new AnalyticalSolutionPressure<dim>(u_x_max, viscosity));
     pp_data.error_data_p.calculate_relative_errors = true;
@@ -682,7 +682,7 @@ private:
 
   MeshType const mesh_type = MeshType::Cartesian;
 
-  bool const ALE = true;
+  bool const ALE = false;
 };
 
 } // namespace IncNS

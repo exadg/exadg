@@ -11,14 +11,14 @@
         "RefineSpaceMax": "2"
     },
     "TemporalResolution": {
-        "RefineTimeMin": "2",
+        "RefineTimeMin": "5",
         "RefineTimeMax": "12"
     },
     "Application": {
     },
     "Output": {
         "OutputDirectory": "output/vortex/",
-        "OutputName": "ale",
-        "WriteOutput": "false"
+        "OutputName": "sol",
+        "WriteOutput": "true"
     }
 }
