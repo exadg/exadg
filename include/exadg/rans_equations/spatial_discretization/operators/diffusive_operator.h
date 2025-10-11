@@ -270,14 +270,14 @@ public:
     if (data.positivity_preserving_limiter==PositivityPreservingLimiter::LogarithmicTransportVariable) {
       if(turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLengthModel)
       {
-        value = dealii::make_vectorized_array<Number>(1/(2.0*turbulence_model_ptr->prandtl_mixing_length_data_base->sigma_k)) * viscosity * sol_grad.norm_square();
+        value = dealii::make_vectorized_array<Number>(1/(2.0*turbulence_model_ptr->model_coefficients[0])) * viscosity * sol_grad.norm_square();
       }
       else if (turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::StandardKEpsilon) {
         if (turbulence_model_ptr->scalar_type==ScalarType::TurbulentKineticEnergy) {
-          value = dealii::make_vectorized_array<Number>(2.0 / turbulence_model_ptr->k_epsilon_data_base->sigma_k) * sol_grad.norm_square() * viscosity;
+          value = dealii::make_vectorized_array<Number>(2.0 / turbulence_model_ptr->model_coefficients[0]) * sol_grad.norm_square() * viscosity;
         }
         else if (turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::StandardKEpsilon) {
-          value = dealii::make_vectorized_array<Number>(-1.0/turbulence_model_ptr->k_epsilon_data_base->sigma_epsilon) * sol_grad.norm_square() * viscosity;
+          value = dealii::make_vectorized_array<Number>(-1.0/turbulence_model_ptr->model_coefficients[4]) * sol_grad.norm_square() * viscosity;
         }
       }
       else {
@@ -287,14 +287,14 @@ public:
     else if (data.positivity_preserving_limiter==PositivityPreservingLimiter::Clipper) {
       if(turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLengthModel)
       {
-        value = dealii::make_vectorized_array<Number>(1/(2.0*turbulence_model_ptr->prandtl_mixing_length_data_base->sigma_k)) * viscosity * sol_grad.norm_square();
+        value = dealii::make_vectorized_array<Number>(1/(2.0*turbulence_model_ptr->model_coefficients[0])) * viscosity * sol_grad.norm_square();
       }
       else if (turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::StandardKEpsilon) {
         if (turbulence_model_ptr->scalar_type==ScalarType::TurbulentKineticEnergy) {
-          value = dealii::make_vectorized_array<Number>(2.0 / turbulence_model_ptr->k_epsilon_data_base->sigma_k) * sol_grad.norm_square() * viscosity / sol;
+          value = dealii::make_vectorized_array<Number>(2.0 / turbulence_model_ptr->model_coefficients[0]) * sol_grad.norm_square() * viscosity / sol;
         }
         else if (turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::StandardKEpsilon) {
-          value = dealii::make_vectorized_array<Number>(-1.0/turbulence_model_ptr->k_epsilon_data_base->sigma_epsilon) * sol_grad.norm_square() * viscosity / sol;
+          value = dealii::make_vectorized_array<Number>(-1.0/turbulence_model_ptr->model_coefficients[4]) * sol_grad.norm_square() * viscosity / sol;
         }
       }
       else {

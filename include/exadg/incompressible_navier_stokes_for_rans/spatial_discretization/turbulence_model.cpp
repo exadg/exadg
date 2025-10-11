@@ -19,7 +19,6 @@
  *  ______________________________________________________________________
  */
 
-#include "turbulence_model.h"
 #include <exadg/incompressible_navier_stokes_for_rans/spatial_discretization/turbulence_model.h>
 #include <exadg/operators/quadrature.h>
 

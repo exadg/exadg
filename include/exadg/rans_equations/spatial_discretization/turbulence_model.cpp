@@ -64,6 +64,8 @@ TurbulenceModel<dim, Number>::initialize(
   eddy_viscosity_coefficients.set_coefficients(1.0);
 
   this->matrix_free->initialize_dof_vector(eddy_viscosity, dof_index_in);
+
+  model_coefficients = this->turbulence_data_base->get_all_coefficients();
 }
 
 template<int dim, typename Number>
@@ -169,10 +171,10 @@ TurbulenceModel<dim, Number>::cell_loop_set_coefficients(
 
       eddy_viscosity_coefficients.set_coefficient_cell(cell, q, viscosity);
       if (scalar_type==ScalarType::TurbulentKineticEnergy) {
-        viscosity = current_viscosity + (viscosity / turbulence_data_base->sigma_k);
+        viscosity = current_viscosity + (viscosity / model_coefficients[0]);
       }
       else if (scalar_type==ScalarType::TKEDissipationRate) {
-        viscosity = current_viscosity + (viscosity /k_epsilon_data_base->sigma_epsilon);
+        viscosity = current_viscosity + (viscosity / model_coefficients[4]);
       }
       // set the coefficients
       viscosity_coefficients.set_coefficient_cell(cell, q, viscosity);
@@ -293,12 +295,12 @@ TurbulenceModel<dim, Number>::face_loop_set_coefficients(
       eddy_viscosity_coefficients.set_coefficient_face_neighbor(face, q, viscosity_neighbor);
 
       if (scalar_type==ScalarType::TurbulentKineticEnergy) {
-        viscosity = current_viscosity + (viscosity / turbulence_data_base->sigma_k);
-        viscosity_neighbor = current_viscosity_neighbor + (viscosity_neighbor / turbulence_data_base->sigma_k);
+        viscosity = current_viscosity + (viscosity / model_coefficients[0]);
+        viscosity_neighbor = current_viscosity_neighbor + (viscosity_neighbor / model_coefficients[0]);
       }
       else if (scalar_type==ScalarType::TKEDissipationRate) {
-        viscosity = current_viscosity + (viscosity / k_epsilon_data_base->sigma_epsilon);
-        viscosity_neighbor = current_viscosity_neighbor + (viscosity_neighbor / k_epsilon_data_base->sigma_epsilon);
+        viscosity = current_viscosity + (viscosity / model_coefficients[4]);
+        viscosity_neighbor = current_viscosity_neighbor + (viscosity_neighbor / model_coefficients[4]);
       }
       // set the coefficients
       viscosity_coefficients.set_coefficient_face(face, q, viscosity);
@@ -445,7 +447,7 @@ void
 TurbulenceModel<dim, Number>::prandtl_mixing_length_model(scalar const & sol,
                                                 scalar &       viscosity) const
 {
-  scalar length_scale = dealii::make_vectorized_array<Number>(prandtl_mixing_length_data_base->turbulent_length_scale);
+  double length_scale = model_coefficients[2];
   if (turbulence_model_data.positivity_preserving_limiter==PositivityPreservingLimiter::LogarithmicTransportVariable) {
     viscosity = std::exp(sol / 2.0) * length_scale;
   }
@@ -463,7 +465,7 @@ TurbulenceModel<dim, Number>::k_epsilon_model(scalar const & tke,
                                               scalar const & epsilon,
                                               scalar & viscosity) const
 {
-  scalar C_mu = dealii::make_vectorized_array<Number>(k_epsilon_data_base->C_mu);
+  double C_mu = model_coefficients[3];
 
   if (turbulence_model_data.positivity_preserving_limiter==PositivityPreservingLimiter::LogarithmicTransportVariable) {
     viscosity = C_mu * std::exp((dealii::make_vectorized_array<Number>(2.0) *tke) - epsilon);
@@ -480,24 +482,17 @@ TurbulenceModel<dim, Number>::k_epsilon_model(scalar const & tke,
 }
 
 template<int dim, typename Number>
-void 
+std::shared_ptr<TurbulenceDataBase> 
 TurbulenceModel<dim, Number>::create_turbulence_data()
 {
-  if (turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::Undefined) {
-    AssertThrow(turbulence_model_data.turbulence_model != TurbulenceEddyViscosityModel::Undefined,
-                dealii::ExcMessage("Parameter must be defined."));
-  }
-  else if (turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLengthModel) {
-    turbulence_data_base = std::make_shared<PrandtlMixingLengthData>();
-    prandtl_mixing_length_data_base = std::dynamic_pointer_cast<PrandtlMixingLengthData>(turbulence_data_base);
-  }
-  else if (turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::StandardKEpsilon) {
-    turbulence_data_base = std::make_shared<kEpsilonData>();
-    k_epsilon_data_base = std::dynamic_pointer_cast<kEpsilonData>(turbulence_data_base);
-  }
-  else {
-    AssertThrow(false,
-                dealii::ExcMessage("This TurbulenceEddyViscosityModel is not implemented."));
+  switch(turbulence_model_data.turbulence_model)
+  {
+    case TurbulenceEddyViscosityModel::PrandtlMixingLengthModel:
+      return std::make_shared<PrandtlMixingLengthData>();
+      break;
+    case TurbulenceEddyViscosityModel::StandardKEpsilon:
+      return std::make_shared<StandardKEpsilonData>();
+      break;
   }
 }
 

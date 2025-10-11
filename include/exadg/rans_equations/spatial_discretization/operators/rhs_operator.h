@@ -273,10 +273,10 @@ public:
 
 
     if (data.positivity_preserving_limiter==PositivityPreservingLimiter::LogarithmicTransportVariable) {
-      result = dealii::make_vectorized_array<Number>(2.0 * turbulence_model_ptr->k_epsilon_data_base->C_epsilon_1) * viscosity * forb_norm_sqr / std::exp(sol);
+      result = dealii::make_vectorized_array<Number>(2.0 * turbulence_model_ptr->model_coefficients[1]) * viscosity * forb_norm_sqr / std::exp(sol);
     }
     else if(data.positivity_preserving_limiter==PositivityPreservingLimiter::Clipper) {
-      result = dealii::make_vectorized_array<Number>(2.0 * turbulence_model_ptr->k_epsilon_data_base->C_epsilon_1) * viscosity * forb_norm_sqr;
+      result = dealii::make_vectorized_array<Number>(2.0 * turbulence_model_ptr->model_coefficients[1]) * viscosity * forb_norm_sqr;
     }
     else {
       AssertThrow(false, dealii::ExcMessage("PositivityPreservingLimiter needs to be specified for implementing epsilon production term"));
@@ -298,8 +298,8 @@ public:
     scalar sol = integrator_solution->get_value(q);
     if(turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLengthModel)
     {
-    double coefficient  = turbulence_model_ptr->prandtl_mixing_length_data_base->C_D;
-    double length_scale = turbulence_model_ptr->prandtl_mixing_length_data_base->turbulent_length_scale;
+    double coefficient  = turbulence_model_ptr->model_coefficients[1]; // C_D
+    double length_scale = turbulence_model_ptr->model_coefficients[2]; // turbulence length scale
       if (data.positivity_preserving_limiter==PositivityPreservingLimiter::LogarithmicTransportVariable) {
         result = dealii::make_vectorized_array<Number>(coefficient/length_scale) * std::exp(sol/2.0);
       }
@@ -313,7 +313,7 @@ public:
       }
     }
     else if (turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::StandardKEpsilon) {
-      double C_mu = turbulence_model_ptr->k_epsilon_data_base->C_mu;
+      double C_mu = turbulence_model_ptr->model_coefficients[3]; // C_mu
       if (data.positivity_preserving_limiter==PositivityPreservingLimiter::LogarithmicTransportVariable) {
         result = dealii::make_vectorized_array<Number>(C_mu) * std::exp(sol) / viscosity;
       }
@@ -342,7 +342,7 @@ public:
     scalar sol = integrator_solution->get_value(q);
     scalar tke = integrator_rans_secondary_variable->get_value(q);
     if (turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::StandardKEpsilon) {
-      double C_epsilon_2 = turbulence_model_ptr->k_epsilon_data_base->C_epsilon_2;
+      double C_epsilon_2 = turbulence_model_ptr->model_coefficients[4]; // C_epsilon_2
       if (data.positivity_preserving_limiter==PositivityPreservingLimiter::LogarithmicTransportVariable) {
         result = dealii::make_vectorized_array<Number>(C_epsilon_2) * std::exp(sol - tke);
       }
