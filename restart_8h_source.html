@@ -401,10 +401,10 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>  MPI_Comm <span class="keyword">const</span> &amp; mpi_comm = triangulation.get_mpi_communicator();</div>
 <div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span> </div>
 <div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>  <span class="comment">// Create folder if not existent.</span></div>
-<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>  <a class="code hl_function" href="namespaceExaDG.html#ae37213007b3d71515b9d35a598e17e22">create_directories</a>(restart_data.directory, mpi_comm);</div>
+<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>  <a class="code hl_function" href="namespaceExaDG.html#ae37213007b3d71515b9d35a598e17e22">create_directories</a>(restart_data.directory_coarse_triangulation, mpi_comm);</div>
 <div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span> </div>
 <div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>  std::string <span class="keyword">const</span> filename =</div>
-<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>    restart_data.directory + restart_data.filename + <span class="stringliteral">&quot;.coarse_triangulation&quot;</span>;</div>
+<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>    restart_data.directory_coarse_triangulation + restart_data.filename + <span class="stringliteral">&quot;.coarse_triangulation&quot;</span>;</div>
 <div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>  <span class="keywordflow">if</span>(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)</div>
 <div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span>  {</div>
 <div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>    <span class="comment">// Serialization only creates a single file, move with one process only.</span></div>
@@ -579,144 +579,147 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00511" name="l00511"></a><span class="lineno">  511</span>    <span class="comment">// Deserialize the coarse triangulation to be stored by the user</span></div>
 <div class="line"><a id="l00512" name="l00512"></a><span class="lineno">  512</span>    <span class="comment">// during `create_grid` in the respective application.</span></div>
 <div class="line"><a id="l00513" name="l00513"></a><span class="lineno">  513</span>    dealii::Triangulation&lt;dim, dim&gt; coarse_triangulation;</div>
-<div class="line"><a id="l00514" name="l00514"></a><span class="lineno">  514</span>    <span class="keywordflow">try</span></div>
-<div class="line"><a id="l00515" name="l00515"></a><span class="lineno">  515</span>    {</div>
-<div class="line"><a id="l00516" name="l00516"></a><span class="lineno">  516</span>      coarse_triangulation.load(filename + <span class="stringliteral">&quot;.coarse_triangulation&quot;</span>);</div>
-<div class="line"><a id="l00517" name="l00517"></a><span class="lineno">  517</span>    }</div>
-<div class="line"><a id="l00518" name="l00518"></a><span class="lineno">  518</span>    <span class="keywordflow">catch</span>(...)</div>
-<div class="line"><a id="l00519" name="l00519"></a><span class="lineno">  519</span>    {</div>
-<div class="line"><a id="l00520" name="l00520"></a><span class="lineno">  520</span>      AssertThrow(<span class="keyword">false</span>,</div>
-<div class="line"><a id="l00521" name="l00521"></a><span class="lineno">  521</span>                  dealii::ExcMessage(</div>
-<div class="line"><a id="l00522" name="l00522"></a><span class="lineno">  522</span>                    <span class="stringliteral">&quot;Deserializing coarse triangulation expected in\n&quot;</span> + filename +</div>
-<div class="line"><a id="l00523" name="l00523"></a><span class="lineno">  523</span>                    <span class="stringliteral">&quot;.coarse_triangulation\n&quot;</span></div>
-<div class="line"><a id="l00524" name="l00524"></a><span class="lineno">  524</span>                    <span class="stringliteral">&quot;make sure to store the coarse grid during `create_grid`\n&quot;</span></div>
-<div class="line"><a id="l00525" name="l00525"></a><span class="lineno">  525</span>                    <span class="stringliteral">&quot;in the respective application.h using TriangulationType::Serial.&quot;</span>));</div>
-<div class="line"><a id="l00526" name="l00526"></a><span class="lineno">  526</span>    }</div>
-<div class="line"><a id="l00527" name="l00527"></a><span class="lineno">  527</span> </div>
-<div class="line"><a id="l00528" name="l00528"></a><span class="lineno">  528</span>    std::shared_ptr&lt;dealii::parallel::distributed::Triangulation&lt;dim&gt;&gt; tmp =</div>
-<div class="line"><a id="l00529" name="l00529"></a><span class="lineno">  529</span>      std::make_shared&lt;dealii::parallel::distributed::Triangulation&lt;dim&gt;&gt;(mpi_communicator);</div>
+<div class="line"><a id="l00514" name="l00514"></a><span class="lineno">  514</span>    std::string <span class="keyword">const</span>               filename_coarse_triangulation =</div>
+<div class="line"><a id="l00515" name="l00515"></a><span class="lineno">  515</span>      restart_data.directory_coarse_triangulation + restart_data.filename;</div>
+<div class="line"><a id="l00516" name="l00516"></a><span class="lineno">  516</span>    <span class="keywordflow">try</span></div>
+<div class="line"><a id="l00517" name="l00517"></a><span class="lineno">  517</span>    {</div>
+<div class="line"><a id="l00518" name="l00518"></a><span class="lineno">  518</span>      coarse_triangulation.load(filename_coarse_triangulation + <span class="stringliteral">&quot;.coarse_triangulation&quot;</span>);</div>
+<div class="line"><a id="l00519" name="l00519"></a><span class="lineno">  519</span>    }</div>
+<div class="line"><a id="l00520" name="l00520"></a><span class="lineno">  520</span>    <span class="keywordflow">catch</span>(...)</div>
+<div class="line"><a id="l00521" name="l00521"></a><span class="lineno">  521</span>    {</div>
+<div class="line"><a id="l00522" name="l00522"></a><span class="lineno">  522</span>      AssertThrow(<span class="keyword">false</span>,</div>
+<div class="line"><a id="l00523" name="l00523"></a><span class="lineno">  523</span>                  dealii::ExcMessage(</div>
+<div class="line"><a id="l00524" name="l00524"></a><span class="lineno">  524</span>                    <span class="stringliteral">&quot;Deserializing coarse triangulation expected in\n&quot;</span> +</div>
+<div class="line"><a id="l00525" name="l00525"></a><span class="lineno">  525</span>                    filename_coarse_triangulation +</div>
+<div class="line"><a id="l00526" name="l00526"></a><span class="lineno">  526</span>                    <span class="stringliteral">&quot;.coarse_triangulation\n&quot;</span></div>
+<div class="line"><a id="l00527" name="l00527"></a><span class="lineno">  527</span>                    <span class="stringliteral">&quot;make sure to store the coarse grid during `create_grid`\n&quot;</span></div>
+<div class="line"><a id="l00528" name="l00528"></a><span class="lineno">  528</span>                    <span class="stringliteral">&quot;in the respective application.h using TriangulationType::Serial.&quot;</span>));</div>
+<div class="line"><a id="l00529" name="l00529"></a><span class="lineno">  529</span>    }</div>
 <div class="line"><a id="l00530" name="l00530"></a><span class="lineno">  530</span> </div>
-<div class="line"><a id="l00531" name="l00531"></a><span class="lineno">  531</span>    tmp-&gt;copy_triangulation(coarse_triangulation);</div>
-<div class="line"><a id="l00532" name="l00532"></a><span class="lineno">  532</span>    coarse_triangulation.clear();</div>
+<div class="line"><a id="l00531" name="l00531"></a><span class="lineno">  531</span>    std::shared_ptr&lt;dealii::parallel::distributed::Triangulation&lt;dim&gt;&gt; tmp =</div>
+<div class="line"><a id="l00532" name="l00532"></a><span class="lineno">  532</span>      std::make_shared&lt;dealii::parallel::distributed::Triangulation&lt;dim&gt;&gt;(mpi_communicator);</div>
 <div class="line"><a id="l00533" name="l00533"></a><span class="lineno">  533</span> </div>
-<div class="line"><a id="l00534" name="l00534"></a><span class="lineno">  534</span>    <span class="comment">// We do not need manifolds when applying the refinements, since we recover the mapping</span></div>
-<div class="line"><a id="l00535" name="l00535"></a><span class="lineno">  535</span>    <span class="comment">// separately.</span></div>
-<div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span>    tmp-&gt;reset_all_manifolds();</div>
-<div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span>    tmp-&gt;set_all_manifold_ids(dealii::numbers::flat_manifold_id);</div>
-<div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span>    tmp-&gt;load(filename + <span class="stringliteral">&quot;.triangulation&quot;</span>);</div>
-<div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span> </div>
-<div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>    triangulation_old = std::dynamic_pointer_cast&lt;dealii::Triangulation&lt;dim&gt;&gt;(tmp);</div>
-<div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span>  }</div>
-<div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span>  <span class="keywordflow">else</span> <span class="keywordflow">if</span>(triangulation_type == TriangulationType::FullyDistributed)</div>
-<div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span>  {</div>
-<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span>    <span class="comment">// Note that the number of MPI processes the triangulation was</span></div>
-<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>    <span class="comment">// saved with cannot change and hence autopartitioning is disabled.</span></div>
-<div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>    std::shared_ptr&lt;dealii::parallel::fullydistributed::Triangulation&lt;dim&gt;&gt; tmp =</div>
-<div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>      std::make_shared&lt;dealii::parallel::fullydistributed::Triangulation&lt;dim&gt;&gt;(mpi_communicator);</div>
-<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span>    tmp-&gt;load(filename + <span class="stringliteral">&quot;.triangulation&quot;</span>);</div>
-<div class="line"><a id="l00549" name="l00549"></a><span class="lineno">  549</span> </div>
-<div class="line"><a id="l00550" name="l00550"></a><span class="lineno">  550</span>    triangulation_old = std::dynamic_pointer_cast&lt;dealii::Triangulation&lt;dim&gt;&gt;(tmp);</div>
-<div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span>  }</div>
-<div class="line"><a id="l00552" name="l00552"></a><span class="lineno">  552</span>  <span class="keywordflow">else</span></div>
-<div class="line"><a id="l00553" name="l00553"></a><span class="lineno">  553</span>  {</div>
-<div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span>    AssertThrow(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;TriangulationType not supported.&quot;</span>));</div>
-<div class="line"><a id="l00555" name="l00555"></a><span class="lineno">  555</span>  }</div>
-<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span> </div>
-<div class="line"><a id="l00557" name="l00557"></a><span class="lineno">  557</span>  <span class="keywordflow">return</span> triangulation_old;</div>
-<div class="line"><a id="l00558" name="l00558"></a><span class="lineno">  558</span>}</div>
+<div class="line"><a id="l00534" name="l00534"></a><span class="lineno">  534</span>    tmp-&gt;copy_triangulation(coarse_triangulation);</div>
+<div class="line"><a id="l00535" name="l00535"></a><span class="lineno">  535</span>    coarse_triangulation.clear();</div>
+<div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span> </div>
+<div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span>    <span class="comment">// We do not need manifolds when applying the refinements, since we recover the mapping</span></div>
+<div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span>    <span class="comment">// separately.</span></div>
+<div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span>    tmp-&gt;reset_all_manifolds();</div>
+<div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>    tmp-&gt;set_all_manifold_ids(dealii::numbers::flat_manifold_id);</div>
+<div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span>    tmp-&gt;load(filename + <span class="stringliteral">&quot;.triangulation&quot;</span>);</div>
+<div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span> </div>
+<div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span>    triangulation_old = std::dynamic_pointer_cast&lt;dealii::Triangulation&lt;dim&gt;&gt;(tmp);</div>
+<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span>  }</div>
+<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>  <span class="keywordflow">else</span> <span class="keywordflow">if</span>(triangulation_type == TriangulationType::FullyDistributed)</div>
+<div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>  {</div>
+<div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>    <span class="comment">// Note that the number of MPI processes the triangulation was</span></div>
+<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span>    <span class="comment">// saved with cannot change and hence autopartitioning is disabled.</span></div>
+<div class="line"><a id="l00549" name="l00549"></a><span class="lineno">  549</span>    std::shared_ptr&lt;dealii::parallel::fullydistributed::Triangulation&lt;dim&gt;&gt; tmp =</div>
+<div class="line"><a id="l00550" name="l00550"></a><span class="lineno">  550</span>      std::make_shared&lt;dealii::parallel::fullydistributed::Triangulation&lt;dim&gt;&gt;(mpi_communicator);</div>
+<div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span>    tmp-&gt;load(filename + <span class="stringliteral">&quot;.triangulation&quot;</span>);</div>
+<div class="line"><a id="l00552" name="l00552"></a><span class="lineno">  552</span> </div>
+<div class="line"><a id="l00553" name="l00553"></a><span class="lineno">  553</span>    triangulation_old = std::dynamic_pointer_cast&lt;dealii::Triangulation&lt;dim&gt;&gt;(tmp);</div>
+<div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span>  }</div>
+<div class="line"><a id="l00555" name="l00555"></a><span class="lineno">  555</span>  <span class="keywordflow">else</span></div>
+<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span>  {</div>
+<div class="line"><a id="l00557" name="l00557"></a><span class="lineno">  557</span>    AssertThrow(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;TriangulationType not supported.&quot;</span>));</div>
+<div class="line"><a id="l00558" name="l00558"></a><span class="lineno">  558</span>  }</div>
+<div class="line"><a id="l00559" name="l00559"></a><span class="lineno">  559</span> </div>
+<div class="line"><a id="l00560" name="l00560"></a><span class="lineno">  560</span>  <span class="keywordflow">return</span> triangulation_old;</div>
+<div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>}</div>
 </div>
-<div class="line"><a id="l00559" name="l00559"></a><span class="lineno">  559</span></div>
-<div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> VectorType&gt;</div>
-<div class="line"><a id="l00566" name="l00566"></a><span class="lineno">  566</span><span class="keyword">inline</span> <span class="keywordtype">void</span></div>
-<div class="foldopen" id="foldopen00567" data-start="{" data-end="}">
-<div class="line"><a id="l00567" name="l00567"></a><span class="lineno"><a class="line" href="namespaceExaDG.html#aca69f1a8971e73e273eed50e05557ab3">  567</a></span><a class="code hl_function" href="namespaceExaDG.html#aca69f1a8971e73e273eed50e05557ab3">load_vectors</a>(std::vector&lt;std::vector&lt;VectorType *&gt;&gt; &amp;                  vectors_per_dof_handler,</div>
-<div class="line"><a id="l00568" name="l00568"></a><span class="lineno">  568</span>             std::vector&lt;dealii::DoFHandler&lt;dim, dim&gt; <span class="keyword">const</span> *&gt; <span class="keyword">const</span> &amp; dof_handlers)</div>
-<div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>{</div>
-<div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span>  <span class="comment">// The `dof_handlers` and `vectors_per_dof_handler` are already initialized and</span></div>
-<div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span>  <span class="comment">// `vectors_per_dof_handler` contain only owned DoFs.</span></div>
-<div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>  AssertThrow(vectors_per_dof_handler.size() &gt; 0,</div>
-<div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>              dealii::ExcMessage(<span class="stringliteral">&quot;No vectors to load into from triangulation.&quot;</span>));</div>
-<div class="line"><a id="l00574" name="l00574"></a><span class="lineno">  574</span>  AssertThrow(vectors_per_dof_handler.size() == dof_handlers.size(),</div>
-<div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span>              dealii::ExcMessage(<span class="stringliteral">&quot;Number of vectors of vectors and DoFHandlers do not match.&quot;</span>));</div>
-<div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span> </div>
-<div class="line"><a id="l00577" name="l00577"></a><span class="lineno">  577</span>  <span class="comment">// Loop over the DoFHandlers and load the vectors stored in</span></div>
-<div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span>  <span class="comment">// the triangulation the DoFHandlers were initialized with.</span></div>
-<div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span>  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; dof_handlers.size(); ++i)</div>
-<div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span>  {</div>
-<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span>    dealii::SolutionTransfer&lt;dim, VectorType&gt; solution_transfer(*dof_handlers[i]);</div>
-<div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span> </div>
-<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span>    <span class="comment">// Reinit vectors that do not already have ghost entries.</span></div>
-<div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span>    <span class="keywordtype">bool</span> all_ghosted = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> j = 0; j &lt; vectors_per_dof_handler[i].size(); ++j)</div>
-<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>    {</div>
-<div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span>      <span class="keywordflow">if</span>(not vectors_per_dof_handler[i][j]-&gt;has_ghost_elements())</div>
-<div class="line"><a id="l00588" name="l00588"></a><span class="lineno">  588</span>      {</div>
-<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span>        all_ghosted = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span>        <span class="keywordflow">break</span>;</div>
-<div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>      }</div>
-<div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>    }</div>
-<div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>    <span class="keywordflow">if</span>(not all_ghosted)</div>
-<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>    {</div>
-<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>      dealii::IndexSet <span class="keyword">const</span> &amp; locally_owned_dofs = dof_handlers[i]-&gt;locally_owned_dofs();</div>
-<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>      dealii::IndexSet <span class="keyword">const</span>   locally_relevant_dofs =</div>
-<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>        dealii::DoFTools::extract_locally_relevant_dofs(*dof_handlers[i]);</div>
-<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>      <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> j = 0; j &lt; vectors_per_dof_handler[i].size(); ++j)</div>
-<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>      {</div>
-<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>        <span class="keywordflow">if</span>(not vectors_per_dof_handler[i][j]-&gt;has_ghost_elements())</div>
-<div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>        {</div>
-<div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>          vectors_per_dof_handler[i][j]-&gt;reinit(locally_owned_dofs,</div>
-<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>                                                locally_relevant_dofs,</div>
-<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span>                                                dof_handlers[i]-&gt;get_mpi_communicator());</div>
-<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span>        }</div>
-<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>      }</div>
-<div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span>    }</div>
-<div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span> </div>
-<div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span>    solution_transfer.deserialize(vectors_per_dof_handler[i]);</div>
-<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span> </div>
-<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> j = 0; j &lt; vectors_per_dof_handler[i].size(); ++j)</div>
-<div class="line"><a id="l00612" name="l00612"></a><span class="lineno">  612</span>    {</div>
-<div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span>      print_vector_l2_norm(*vectors_per_dof_handler[i][j]);</div>
-<div class="line"><a id="l00614" name="l00614"></a><span class="lineno">  614</span>    }</div>
-<div class="line"><a id="l00615" name="l00615"></a><span class="lineno">  615</span>  }</div>
-<div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span>}</div>
+<div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span></div>
+<div class="line"><a id="l00568" name="l00568"></a><span class="lineno">  568</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> VectorType&gt;</div>
+<div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span><span class="keyword">inline</span> <span class="keywordtype">void</span></div>
+<div class="foldopen" id="foldopen00570" data-start="{" data-end="}">
+<div class="line"><a id="l00570" name="l00570"></a><span class="lineno"><a class="line" href="namespaceExaDG.html#aca69f1a8971e73e273eed50e05557ab3">  570</a></span><a class="code hl_function" href="namespaceExaDG.html#aca69f1a8971e73e273eed50e05557ab3">load_vectors</a>(std::vector&lt;std::vector&lt;VectorType *&gt;&gt; &amp;                  vectors_per_dof_handler,</div>
+<div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span>             std::vector&lt;dealii::DoFHandler&lt;dim, dim&gt; <span class="keyword">const</span> *&gt; <span class="keyword">const</span> &amp; dof_handlers)</div>
+<div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>{</div>
+<div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>  <span class="comment">// The `dof_handlers` and `vectors_per_dof_handler` are already initialized and</span></div>
+<div class="line"><a id="l00574" name="l00574"></a><span class="lineno">  574</span>  <span class="comment">// `vectors_per_dof_handler` contain only owned DoFs.</span></div>
+<div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span>  AssertThrow(vectors_per_dof_handler.size() &gt; 0,</div>
+<div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span>              dealii::ExcMessage(<span class="stringliteral">&quot;No vectors to load into from triangulation.&quot;</span>));</div>
+<div class="line"><a id="l00577" name="l00577"></a><span class="lineno">  577</span>  AssertThrow(vectors_per_dof_handler.size() == dof_handlers.size(),</div>
+<div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span>              dealii::ExcMessage(<span class="stringliteral">&quot;Number of vectors of vectors and DoFHandlers do not match.&quot;</span>));</div>
+<div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span> </div>
+<div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span>  <span class="comment">// Loop over the DoFHandlers and load the vectors stored in</span></div>
+<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span>  <span class="comment">// the triangulation the DoFHandlers were initialized with.</span></div>
+<div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span>  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; dof_handlers.size(); ++i)</div>
+<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span>  {</div>
+<div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span>    dealii::SolutionTransfer&lt;dim, VectorType&gt; solution_transfer(*dof_handlers[i]);</div>
+<div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span> </div>
+<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>    <span class="comment">// Reinit vectors that do not already have ghost entries.</span></div>
+<div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span>    <span class="keywordtype">bool</span> all_ghosted = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00588" name="l00588"></a><span class="lineno">  588</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> j = 0; j &lt; vectors_per_dof_handler[i].size(); ++j)</div>
+<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span>    {</div>
+<div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span>      <span class="keywordflow">if</span>(not vectors_per_dof_handler[i][j]-&gt;has_ghost_elements())</div>
+<div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>      {</div>
+<div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>        all_ghosted = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>        <span class="keywordflow">break</span>;</div>
+<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>      }</div>
+<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>    }</div>
+<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>    <span class="keywordflow">if</span>(not all_ghosted)</div>
+<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>    {</div>
+<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>      dealii::IndexSet <span class="keyword">const</span> &amp; locally_owned_dofs = dof_handlers[i]-&gt;locally_owned_dofs();</div>
+<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>      dealii::IndexSet <span class="keyword">const</span>   locally_relevant_dofs =</div>
+<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>        dealii::DoFTools::extract_locally_relevant_dofs(*dof_handlers[i]);</div>
+<div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>      <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> j = 0; j &lt; vectors_per_dof_handler[i].size(); ++j)</div>
+<div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>      {</div>
+<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>        <span class="keywordflow">if</span>(not vectors_per_dof_handler[i][j]-&gt;has_ghost_elements())</div>
+<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span>        {</div>
+<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span>          vectors_per_dof_handler[i][j]-&gt;reinit(locally_owned_dofs,</div>
+<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>                                                locally_relevant_dofs,</div>
+<div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span>                                                dof_handlers[i]-&gt;get_mpi_communicator());</div>
+<div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span>        }</div>
+<div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span>      }</div>
+<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span>    }</div>
+<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span> </div>
+<div class="line"><a id="l00612" name="l00612"></a><span class="lineno">  612</span>    solution_transfer.deserialize(vectors_per_dof_handler[i]);</div>
+<div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span> </div>
+<div class="line"><a id="l00614" name="l00614"></a><span class="lineno">  614</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> j = 0; j &lt; vectors_per_dof_handler[i].size(); ++j)</div>
+<div class="line"><a id="l00615" name="l00615"></a><span class="lineno">  615</span>    {</div>
+<div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span>      print_vector_l2_norm(*vectors_per_dof_handler[i][j]);</div>
+<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span>    }</div>
+<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>  }</div>
+<div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>}</div>
 </div>
-<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span></div>
-<div class="line"><a id="l00622" name="l00622"></a><span class="lineno">  622</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> VectorType&gt;</div>
-<div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span><span class="keyword">inline</span> std::shared_ptr&lt;MappingDoFVector&lt;dim, typename VectorType::value_type&gt;&gt;</div>
-<div class="foldopen" id="foldopen00624" data-start="{" data-end="}">
-<div class="line"><a id="l00624" name="l00624"></a><span class="lineno"><a class="line" href="namespaceExaDG.html#a40be486066fffd6ff8837076802b63ee">  624</a></span><a class="code hl_function" href="namespaceExaDG.html#aca69f1a8971e73e273eed50e05557ab3">load_vectors</a>(std::vector&lt;std::vector&lt;VectorType *&gt;&gt; &amp;                  vectors_per_dof_handler,</div>
-<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>             std::vector&lt;dealii::DoFHandler&lt;dim, dim&gt; <span class="keyword">const</span> *&gt; <span class="keyword">const</span> &amp; dof_handlers,</div>
-<div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span>             dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> *                           dof_handler_mapping,</div>
-<div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>             <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                        mapping_degree)</div>
-<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>{</div>
-<div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>  <span class="comment">// We need a collective call to `SolutionTransfer::deserialize()` with all vectors in a</span></div>
-<div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>  <span class="comment">// single container. Hence, create a mapping vector and add a pointer to the input argument.</span></div>
-<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>  dealii::IndexSet <span class="keyword">const</span> &amp; locally_owned_dofs = dof_handler_mapping-&gt;locally_owned_dofs();</div>
-<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>  <a class="code hl_class" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>               vector_grid_coordinates(locally_owned_dofs,</div>
-<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>                                     dof_handler_mapping-&gt;get_mpi_communicator());</div>
-<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span> </div>
-<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>  <span class="comment">// Standard utility function, sequence as in `store_vectors_in_triangulation_and_serialize()`.</span></div>
-<div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>  std::vector&lt;std::vector&lt;VectorType *&gt;&gt; vectors_per_dof_handler_extended = vectors_per_dof_handler;</div>
-<div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span>  std::vector&lt;VectorType *&gt;              tmp = {&amp;vector_grid_coordinates};</div>
-<div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span>  vectors_per_dof_handler_extended.push_back(tmp);</div>
-<div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span>  std::vector&lt;dealii::DoFHandler&lt;dim, dim&gt; <span class="keyword">const</span> *&gt; dof_handlers_extended = dof_handlers;</div>
-<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span>  dof_handlers_extended.push_back(dof_handler_mapping);</div>
-<div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span> </div>
-<div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>  <a class="code hl_function" href="namespaceExaDG.html#aca69f1a8971e73e273eed50e05557ab3">load_vectors</a>(vectors_per_dof_handler_extended, dof_handlers_extended);</div>
-<div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span> </div>
-<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span>  <span class="comment">// Reconstruct the mapping given the deserialized grid coordinate vector.</span></div>
-<div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span>  std::shared_ptr&lt;MappingDoFVector&lt;dim, typename VectorType::value_type&gt;&gt; mapping_dof_vector =</div>
-<div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span>    std::make_shared&lt;MappingDoFVector&lt;dim, typename VectorType::value_type&gt;&gt;(mapping_degree);</div>
-<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>  mapping_dof_vector-&gt;initialize_mapping_from_dof_vector(<span class="keyword">nullptr</span> <span class="comment">/* mapping */</span>,</div>
-<div class="line"><a id="l00648" name="l00648"></a><span class="lineno">  648</span>                                                         vector_grid_coordinates,</div>
-<div class="line"><a id="l00649" name="l00649"></a><span class="lineno">  649</span>                                                         *dof_handler_mapping);</div>
-<div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span>  <span class="keywordflow">return</span> mapping_dof_vector;</div>
-<div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span>}</div>
+<div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span></div>
+<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> VectorType&gt;</div>
+<div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span><span class="keyword">inline</span> std::shared_ptr&lt;MappingDoFVector&lt;dim, typename VectorType::value_type&gt;&gt;</div>
+<div class="foldopen" id="foldopen00627" data-start="{" data-end="}">
+<div class="line"><a id="l00627" name="l00627"></a><span class="lineno"><a class="line" href="namespaceExaDG.html#a40be486066fffd6ff8837076802b63ee">  627</a></span><a class="code hl_function" href="namespaceExaDG.html#aca69f1a8971e73e273eed50e05557ab3">load_vectors</a>(std::vector&lt;std::vector&lt;VectorType *&gt;&gt; &amp;                  vectors_per_dof_handler,</div>
+<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>             std::vector&lt;dealii::DoFHandler&lt;dim, dim&gt; <span class="keyword">const</span> *&gt; <span class="keyword">const</span> &amp; dof_handlers,</div>
+<div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>             dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> *                           dof_handler_mapping,</div>
+<div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>             <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                        mapping_degree)</div>
+<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>{</div>
+<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>  <span class="comment">// We need a collective call to `SolutionTransfer::deserialize()` with all vectors in a</span></div>
+<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>  <span class="comment">// single container. Hence, create a mapping vector and add a pointer to the input argument.</span></div>
+<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>  dealii::IndexSet <span class="keyword">const</span> &amp; locally_owned_dofs = dof_handler_mapping-&gt;locally_owned_dofs();</div>
+<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>  <a class="code hl_class" href="classExaDG_1_1PreconditionerBase.html">VectorType</a>               vector_grid_coordinates(locally_owned_dofs,</div>
+<div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>                                     dof_handler_mapping-&gt;get_mpi_communicator());</div>
+<div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span> </div>
+<div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span>  <span class="comment">// Standard utility function, sequence as in `store_vectors_in_triangulation_and_serialize()`.</span></div>
+<div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span>  std::vector&lt;std::vector&lt;VectorType *&gt;&gt; vectors_per_dof_handler_extended = vectors_per_dof_handler;</div>
+<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span>  std::vector&lt;VectorType *&gt;              tmp = {&amp;vector_grid_coordinates};</div>
+<div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span>  vectors_per_dof_handler_extended.push_back(tmp);</div>
+<div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>  std::vector&lt;dealii::DoFHandler&lt;dim, dim&gt; <span class="keyword">const</span> *&gt; dof_handlers_extended = dof_handlers;</div>
+<div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span>  dof_handlers_extended.push_back(dof_handler_mapping);</div>
+<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span> </div>
+<div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span>  <a class="code hl_function" href="namespaceExaDG.html#aca69f1a8971e73e273eed50e05557ab3">load_vectors</a>(vectors_per_dof_handler_extended, dof_handlers_extended);</div>
+<div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span> </div>
+<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>  <span class="comment">// Reconstruct the mapping given the deserialized grid coordinate vector.</span></div>
+<div class="line"><a id="l00648" name="l00648"></a><span class="lineno">  648</span>  std::shared_ptr&lt;MappingDoFVector&lt;dim, typename VectorType::value_type&gt;&gt; mapping_dof_vector =</div>
+<div class="line"><a id="l00649" name="l00649"></a><span class="lineno">  649</span>    std::make_shared&lt;MappingDoFVector&lt;dim, typename VectorType::value_type&gt;&gt;(mapping_degree);</div>
+<div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span>  mapping_dof_vector-&gt;initialize_mapping_from_dof_vector(<span class="keyword">nullptr</span> <span class="comment">/* mapping */</span>,</div>
+<div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span>                                                         vector_grid_coordinates,</div>
+<div class="line"><a id="l00652" name="l00652"></a><span class="lineno">  652</span>                                                         *dof_handler_mapping);</div>
+<div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>  <span class="keywordflow">return</span> mapping_dof_vector;</div>
+<div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>}</div>
 </div>
-<div class="line"><a id="l00652" name="l00652"></a><span class="lineno">  652</span> </div>
-<div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span> </div>
-<div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_TIME_INTEGRATION_RESTART_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span> </div>
+<div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00657" name="l00657"></a><span class="lineno">  657</span> </div>
+<div class="line"><a id="l00658" name="l00658"></a><span class="lineno">  658</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_TIME_INTEGRATION_RESTART_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1MappingDoFVector_html"><div class="ttname"><a href="classExaDG_1_1MappingDoFVector.html">ExaDG::MappingDoFVector</a></div><div class="ttdef"><b>Definition</b> mapping_dof_vector.h:54</div></div>
 <div class="ttc" id="aclassExaDG_1_1MappingDoFVector_html_ad9051ff904544c09e570d54f8aba453d"><div class="ttname"><a href="classExaDG_1_1MappingDoFVector.html#ad9051ff904544c09e570d54f8aba453d">ExaDG::MappingDoFVector::fill_grid_coordinates_vector</a></div><div class="ttdeci">void fill_grid_coordinates_vector(VectorType &amp;grid_coordinates, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler) const</div><div class="ttdef"><b>Definition</b> mapping_dof_vector.h:105</div></div>
 <div class="ttc" id="aclassExaDG_1_1PreconditionerBase_html"><div class="ttname"><a href="classExaDG_1_1PreconditionerBase.html">ExaDG::VectorType</a></div></div>
@@ -727,7 +730,7 @@ $(function(){ initResizable(false); });
 <div class="ttc" id="anamespaceExaDG_html_a561153226fd49ac3426d0115377c553c"><div class="ttname"><a href="namespaceExaDG.html#a561153226fd49ac3426d0115377c553c">ExaDG::get_block_vectors_from_dof_handlers</a></div><div class="ttdeci">std::vector&lt; BlockVectorType &gt; get_block_vectors_from_dof_handlers(unsigned int const n_vectors, std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;dof_handlers)</div><div class="ttdef"><b>Definition</b> restart.h:137</div></div>
 <div class="ttc" id="anamespaceExaDG_html_a95e3012032faab25e1436fcea7e5fd2f"><div class="ttname"><a href="namespaceExaDG.html#a95e3012032faab25e1436fcea7e5fd2f">ExaDG::get_vectors_per_block</a></div><div class="ttdeci">std::vector&lt; std::vector&lt; VectorType * &gt; &gt; get_vectors_per_block(std::vector&lt; BlockVectorType * &gt; const &amp;block_vectors)</div><div class="ttdef"><b>Definition</b> restart.h:106</div></div>
 <div class="ttc" id="anamespaceExaDG_html_aaa4d05011be3eaa2b7649157865456ed"><div class="ttname"><a href="namespaceExaDG.html#aaa4d05011be3eaa2b7649157865456ed">ExaDG::store_vectors_in_triangulation_and_serialize</a></div><div class="ttdeci">void store_vectors_in_triangulation_and_serialize(RestartData const &amp;restart_data, std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;dof_handlers, std::vector&lt; std::vector&lt; VectorType const * &gt; &gt; const &amp;vectors_per_dof_handler)</div><div class="ttdef"><b>Definition</b> restart.h:351</div></div>
-<div class="ttc" id="anamespaceExaDG_html_aca69f1a8971e73e273eed50e05557ab3"><div class="ttname"><a href="namespaceExaDG.html#aca69f1a8971e73e273eed50e05557ab3">ExaDG::load_vectors</a></div><div class="ttdeci">void load_vectors(std::vector&lt; std::vector&lt; VectorType * &gt; &gt; &amp;vectors_per_dof_handler, std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;dof_handlers)</div><div class="ttdef"><b>Definition</b> restart.h:567</div></div>
+<div class="ttc" id="anamespaceExaDG_html_aca69f1a8971e73e273eed50e05557ab3"><div class="ttname"><a href="namespaceExaDG.html#aca69f1a8971e73e273eed50e05557ab3">ExaDG::load_vectors</a></div><div class="ttdeci">void load_vectors(std::vector&lt; std::vector&lt; VectorType * &gt; &gt; &amp;vectors_per_dof_handler, std::vector&lt; dealii::DoFHandler&lt; dim, dim &gt; const * &gt; const &amp;dof_handlers)</div><div class="ttdef"><b>Definition</b> restart.h:570</div></div>
 <div class="ttc" id="anamespaceExaDG_html_adc9694388f70817f0fc10e7427ca3264"><div class="ttname"><a href="namespaceExaDG.html#adc9694388f70817f0fc10e7427ca3264">ExaDG::save_coarse_triangulation</a></div><div class="ttdeci">void save_coarse_triangulation(RestartData const &amp;restart_data, TriangulationType const &amp;triangulation)</div><div class="ttdef"><b>Definition</b> restart.h:310</div></div>
 <div class="ttc" id="anamespaceExaDG_html_ae37213007b3d71515b9d35a598e17e22"><div class="ttname"><a href="namespaceExaDG.html#ae37213007b3d71515b9d35a598e17e22">ExaDG::create_directories</a></div><div class="ttdeci">void create_directories(std::string const &amp;directory, MPI_Comm const &amp;mpi_comm)</div><div class="ttdef"><b>Definition</b> create_directories.h:35</div></div>
 <div class="ttc" id="astructExaDG_1_1DeserializationParameters_html"><div class="ttname"><a href="structExaDG_1_1DeserializationParameters.html">ExaDG::DeserializationParameters</a></div><div class="ttdef"><b>Definition</b> restart_data.h:40</div></div>
