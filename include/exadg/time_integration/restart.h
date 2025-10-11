@@ -322,10 +322,10 @@ save_coarse_triangulation(RestartData const & restart_data, TriangulationType co
   MPI_Comm const & mpi_comm = triangulation.get_mpi_communicator();
 
   // Create folder if not existent.
-  create_directories(restart_data.directory, mpi_comm);
+  create_directories(restart_data.directory_coarse_triangulation, mpi_comm);
 
   std::string const filename =
-    restart_data.directory + restart_data.filename + ".coarse_triangulation";
+    restart_data.directory_coarse_triangulation + restart_data.filename + ".coarse_triangulation";
   if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     // Serialization only creates a single file, move with one process only.
@@ -511,15 +511,18 @@ deserialize_triangulation(RestartData const &     restart_data,
     // Deserialize the coarse triangulation to be stored by the user
     // during `create_grid` in the respective application.
     dealii::Triangulation<dim, dim> coarse_triangulation;
+    std::string const               filename_coarse_triangulation =
+      restart_data.directory_coarse_triangulation + restart_data.filename;
     try
     {
-      coarse_triangulation.load(filename + ".coarse_triangulation");
+      coarse_triangulation.load(filename_coarse_triangulation + ".coarse_triangulation");
     }
     catch(...)
     {
       AssertThrow(false,
                   dealii::ExcMessage(
-                    "Deserializing coarse triangulation expected in\n" + filename +
+                    "Deserializing coarse triangulation expected in\n" +
+                    filename_coarse_triangulation +
                     ".coarse_triangulation\n"
                     "make sure to store the coarse grid during `create_grid`\n"
                     "in the respective application.h using TriangulationType::Serial."));
