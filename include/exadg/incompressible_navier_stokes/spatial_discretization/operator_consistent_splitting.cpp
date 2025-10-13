@@ -210,11 +210,10 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_div_term_convective_boun
 
           for (const unsigned int q : eval_p_minus.quadrature_point_indices())
             {
-              
+              unsigned int const index =
+                matrix_free.get_shape_info(dof_index_velocity, quad_index_pressure)
+                  .face_to_cell_index_nodal[local_face_number][q];
 
-              unsigned int const index = matrix_free.get_shape_info(dof_index_velocity, quad_index_pressure)
-                                            .face_to_cell_index_nodal[local_face_number][q];
-        
               vector g = vector();
         
               if(boundary_type == BoundaryTypeU::Dirichlet)
@@ -247,8 +246,6 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_div_term_convective_boun
                                           // EvaluationFlags::gradients,
                                           dst);
 
-
-    
     }
     else
         {
@@ -428,118 +425,6 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_bou
   }
 }
 
-template<int dim, typename Number>
-void
-OperatorConsistentSplitting<dim, Number>::rhs_velocity_divergence_term_dirichlet_bc_from_dof_vector(
-  VectorType &       dst,
-  VectorType const & velocity) const
-{
-  this->divergence_operator.rhs_bc_from_dof_vector(dst, velocity);
-}
-
-template<int dim, typename Number>
-void
-OperatorConsistentSplitting<dim, Number>::rhs_ppe_div_term_convective_term_add(
-  VectorType &       dst,
-  VectorType const & src) const
-{
-  this->get_matrix_free().loop(&This::cell_loop_empty,
-                               &This::face_loop_empty,
-                               &This::local_rhs_ppe_div_term_convective_term_boundary_face,
-                               this,
-                               dst,
-                               src);
-}
-
-template<int dim, typename Number>
-void
-OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_boundary_face(
-  dealii::MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                            dst,
-  VectorType const &                      src,
-  Range const &                           face_range) const
-{
-  unsigned int const dof_index_velocity = this->get_dof_index_velocity();
-  unsigned int const dof_index_pressure = this->get_dof_index_pressure();
-  unsigned int const quad_index         = this->get_quad_index_velocity_overintegration();
-
-  FaceIntegratorU velocity(matrix_free, true, dof_index_velocity, quad_index);
-  FaceIntegratorP pressure(matrix_free, true, dof_index_pressure, quad_index);
-
-  FaceIntegratorU grid_velocity(matrix_free, true, dof_index_velocity, quad_index);
-
-  for(unsigned int face = face_range.first; face < face_range.second; face++)
-  {
-    velocity.reinit(face);
-    velocity.gather_evaluate(src,
-                             dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
-
-    if(this->param.ale_formulation)
-    {
-      grid_velocity.reinit(face);
-      grid_velocity.gather_evaluate(this->convective_kernel->get_grid_velocity(),
-                                    dealii::EvaluationFlags::values);
-    }
-
-    pressure.reinit(face);
-
-    BoundaryTypeU boundary_type =
-      this->boundary_descriptor->velocity->get_boundary_type(matrix_free.get_boundary_id(face));
-
-    for(unsigned int q = 0; q < pressure.n_q_points; ++q)
-    {
-      if(boundary_type == BoundaryTypeU::Dirichlet or
-         boundary_type == BoundaryTypeU::DirichletCached)
-      {
-        vector normal = pressure.normal_vector(q);
-
-        vector u      = velocity.get_value(q);
-        tensor grad_u = velocity.get_gradient(q);
-
-        vector flux;
-        if(this->param.formulation_convective_term_bc ==
-           FormulationConvectiveTerm::DivergenceFormulation)
-        {
-          scalar div_u = velocity.get_divergence(q);
-          flux         = grad_u * u + div_u * u;
-        }
-        else if(this->param.formulation_convective_term_bc ==
-                FormulationConvectiveTerm::ConvectiveFormulation)
-        {
-          flux = grad_u * u;
-        }
-        else
-        {
-          AssertThrow(false, dealii::ExcMessage("Not implemented."));
-        }
-
-        if(this->param.ale_formulation)
-        {
-          flux -= grad_u * grid_velocity.get_value(q);
-        }
-
-        scalar flux_times_normal = flux * normal;
-
-        pressure.submit_value(flux_times_normal, q);
-      }
-      else if(boundary_type == BoundaryTypeU::Neumann or boundary_type == BoundaryTypeU::Symmetry)
-      {
-        // Do nothing on Neumann and symmetry boundaries.
-        // Remark: On symmetry boundaries it follows from g_u * n = 0 that also g_{u_hat} * n = 0.
-        // Hence, a symmetry boundary for u is also a symmetry boundary for u_hat. Hence, there
-        // are no inhomogeneous contributions on symmetry boundaries.
-        scalar zero = dealii::make_vectorized_array<Number>(0.0);
-        pressure.submit_value(zero, q);
-      }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
-    }
-    pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
-  }
-}
 
 template<int dim, typename Number>
 void

@@ -389,9 +389,7 @@ TimeIntBDFConsistentSplitting<dim, Number>::pressure_step()
        this->param.update_preconditioner_pressure_poisson_every_time_steps ==
      0);
 
-     std::cout << "start solving PPE" << std::endl;
   unsigned int const n_iter = pde_operator->solve_pressure(pressure_np, rhs, update_preconditioner);
-  std::cout << "start solving PPE ... done!" << std::endl;
 
   iterations_pressure.first += 1;
   iterations_pressure.second += n_iter;

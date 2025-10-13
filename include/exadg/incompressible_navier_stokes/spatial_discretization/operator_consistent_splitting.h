@@ -79,17 +79,9 @@ public:
   void
   apply_convective_divergence_term(VectorType & dst, VectorType const & src, double const & time) const;
 
-  void
-  rhs_velocity_divergence_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
-                                                            VectorType const & velocity) const;
-
   // rhs pressure Poisson equation: velocity divergence term: body force term
   void
   rhs_ppe_div_term_body_forces_add(VectorType & dst, double const & time) const;
-
-  // rhs pressure Poisson equation: velocity divergence term: convective term
-  void
-  rhs_ppe_div_term_convective_term_add(VectorType & dst, VectorType const & src) const;
 
   // rhs pressure Poisson equation: Neumann BC body force term
   void
@@ -153,16 +145,7 @@ private:
   {
   }
 
-  // rhs PPE: velocity divergence term
-
-  // convective term
-  void
-  local_rhs_ppe_div_term_convective_term_boundary_face(
-    dealii::MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                            dst,
-    VectorType const &                      src,
-    Range const &                           face_range) const;
-
+  // rhs PPE
   // body force term
   void
   local_rhs_ppe_div_term_body_forces_cell(
