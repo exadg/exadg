@@ -140,7 +140,7 @@ private:
     else
       this->param.equation_type = EquationType::NavierStokes;
     this->param.formulation_viscous_term    = FormulationViscousTerm::LaplaceFormulation;
-    this->param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
+    this->param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
     if(ALE)
       this->param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
     this->param.right_hand_side = false;

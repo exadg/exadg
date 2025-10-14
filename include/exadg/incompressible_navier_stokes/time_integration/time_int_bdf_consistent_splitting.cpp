@@ -461,6 +461,51 @@ TimeIntBDFConsistentSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
     acceleration, velocity_dbc_np, velocity_dbc, this->bdf, this->get_time_step_size());
   pde_operator->rhs_ppe_nbc_numerical_time_derivative_add(rhs, acceleration);    
 
+// Compute ananlog vector
+  VectorType vec_p_rhs(rhs);
+  vec_p_rhs = 0.0;
+
+  for (unsigned int i = 0; i < this->bdf.get_order(); ++i)
+  {
+    VectorType vec_div_u(vec_p_rhs);
+    vec_div_u = 0.;
+    pde_operator->compute_divergence(vec_div_u, velocity[i], this->get_previous_time(i));
+    vec_p_rhs.add(-this->bdf.get_alpha(i) / this->get_time_step_size(), vec_div_u);
+  }
+
+  for (unsigned int i = 0; i < this->extra.get_order(); ++i)
+  {
+    VectorType vec_p_rhs_n(vec_p_rhs); 
+    vec_p_rhs_n = 0.;
+    pde_operator->compute_convective_rhs(vec_p_rhs_n, velocity[i], this->get_previous_time(i));
+    vec_p_rhs.add(this->extra.get_beta(i), vec_p_rhs_n);
+  }
+  VectorType speed_extrapolated(velocity[0]);
+  speed_extrapolated = 0.;
+  for (unsigned int i = 0; i < this->extra.get_order(); ++i)
+      speed_extrapolated.add(this->extra.get_beta(i), velocity[i]);
+
+  VectorType vec_vorticity(velocity[0]);
+  vec_vorticity = 0.0;
+  pde_operator->evaluate_vorticity(vec_vorticity, speed_extrapolated);
+
+  VectorType vec_p_rhs_n(vec_p_rhs); 
+  vec_p_rhs_n = 0.;
+
+  std::vector<double> previous_times{};
+  for(unsigned int i = 0; i < this->bdf.get_order(); ++i)
+  {
+    previous_times.emplace_back(this->get_previous_time(i));
+  }
+  pde_operator->compute_rhs(vec_p_rhs_n, vec_vorticity, this->get_next_time(), &this->bdf, previous_times);
+  vec_p_rhs.add(1, vec_p_rhs_n);
+
+  pde_operator->rhs_ppe_laplace_add(vec_p_rhs, this->get_next_time());
+  rhs = vec_p_rhs;
+  // const auto l2_norm = vec_p_rhs.l2_norm();
+  // vec_p_rhs.add(-1.0, rhs);
+  // const auto l2_error = vec_p_rhs.l2_norm();
+  // std::cout << "Difference between rhs is: " << l2_error/l2_norm << std::endl;
 
   // special case: pressure level is undefined
   // Set mean value of rhs to zero in order to obtain a consistent linear system of equations.
@@ -857,40 +902,34 @@ TimeIntBDFConsistentSplitting<dim, Number>::print_iterations() const
 
   if(this->param.nonlinear_problem_has_to_be_solved())
   {
-    names = {"Convective step",
+    names = {
              "Pressure step",
-             "Projection step",
-             "Viscous step (nonlinear)",
-             "Viscous step (accumulated)",
-             "Viscous step (linear per nonlinear)"};
+             
+             "Momentum step (nonlinear)",
+             "Momentum step (accumulated)",
+             "Momentum step (linear per nonlinear)"};
 
-    iterations_avg.resize(6);
-    iterations_avg[0] = 0.0; // explicit convective step
+    iterations_avg.resize(4);
     iterations_avg[1] =
       (double)iterations_pressure.second / std::max(1., (double)iterations_pressure.first);
-    iterations_avg[2] =
-      (double)iterations_projection.second / std::max(1., (double)iterations_projection.first);
-    iterations_avg[3] = (double)std::get<0>(iterations_viscous.second) /
+    iterations_avg[2] = (double)std::get<0>(iterations_viscous.second) /
                         std::max(1., (double)iterations_viscous.first);
-    iterations_avg[4] = (double)std::get<1>(iterations_viscous.second) /
+    iterations_avg[3] = (double)std::get<1>(iterations_viscous.second) /
                         std::max(1., (double)iterations_viscous.first);
 
-    if(iterations_avg[3] > std::numeric_limits<double>::min())
-      iterations_avg[5] = iterations_avg[4] / iterations_avg[3];
+    if(iterations_avg[2] > std::numeric_limits<double>::min())
+      iterations_avg[4] = iterations_avg[3] / iterations_avg[2];
     else
-      iterations_avg[5] = iterations_avg[4];
+      iterations_avg[4] = iterations_avg[3];
   }
   else
   {
-    names = {"Convective step", "Pressure step", "Projection step", "Viscous step"};
+    names = {"Pressure step", "Momentum step"};
 
-    iterations_avg.resize(4);
-    iterations_avg[0] = 0.0; // explicit convective step
-    iterations_avg[1] =
+    iterations_avg.resize(2);
+    iterations_avg[0] =
       (double)iterations_pressure.second / std::max(1., (double)iterations_pressure.first);
-    iterations_avg[2] =
-      (double)iterations_projection.second / std::max(1., (double)iterations_projection.first);
-    iterations_avg[3] = (double)std::get<1>(iterations_viscous.second) /
+    iterations_avg[1] = (double)std::get<1>(iterations_viscous.second) /
                         std::max(1., (double)iterations_viscous.first);
   }
 

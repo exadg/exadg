@@ -26,6 +26,10 @@
 #include <exadg/incompressible_navier_stokes/spatial_discretization/curl_compute.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_projection_methods.h>
 
+#include <exadg/time_integration/bdf_constants.h>
+#include <exadg/time_integration/extrapolation_constants.h>
+#include <exadg/time_integration/time_int_multistep_base.h>
+
 namespace ExaDG
 {
 namespace IncNS
@@ -70,6 +74,68 @@ public:
   /*
    * Pressure Poisson equation.
    */
+
+  // extra functions
+
+  mutable BDFTimeIntegratorConstants const * bdf;
+  mutable std::vector<double>  previous_time_steps;
+
+
+  void
+  compute_divergence(VectorType & dst, VectorType const & src, double const & time) const;
+    void
+  compute_divergence_cell(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           cell_range) const;
+      void
+  compute_divergence_face(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           cell_range) const;
+      void
+  compute_divergence_boundary(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           cell_range) const;
+
+  void
+  compute_convective_rhs(VectorType & dst, VectorType const & src, double const & time) const;
+
+
+  void
+  evaluate_vorticity(VectorType & dst, VectorType const & src) const;
+  void
+  evaluate_vorticity_cell(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           cell_range) const;
+
+  
+  void
+  compute_rhs(VectorType & dst, VectorType const & src, double const & time, const BDFTimeIntegratorConstants * bdf_in, std::vector<double>  & previous_time_steps_in) const;
+  void
+  compute_rhs_cell(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           cell_range) const;
+    void
+  compute_rhs_face(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           cell_range) const;
+    void
+  compute_rhs_boundary(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           cell_range) const;
 
   // rhs pressure: velocity divergence
   void
