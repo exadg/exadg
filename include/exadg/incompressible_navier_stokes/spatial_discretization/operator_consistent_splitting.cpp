@@ -29,12 +29,6 @@
 #include <exadg/time_integration/extrapolation_constants.h>
 #include <exadg/time_integration/time_int_multistep_base.h>
 
-#include <deal.II/matrix_free/matrix_free.h>
-#include <deal.II/matrix_free/operators.h>
-#include <deal.II/matrix_free/tools.h>
-#include <deal.II/matrix_free/fe_evaluation.h>
-
-
 namespace ExaDG
 {
 namespace IncNS

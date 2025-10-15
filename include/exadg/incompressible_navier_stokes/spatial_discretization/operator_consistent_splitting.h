@@ -26,10 +26,6 @@
 #include <exadg/incompressible_navier_stokes/spatial_discretization/curl_compute.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_projection_methods.h>
 
-#include <exadg/time_integration/bdf_constants.h>
-#include <exadg/time_integration/extrapolation_constants.h>
-#include <exadg/time_integration/time_int_multistep_base.h>
-
 namespace ExaDG
 {
 namespace IncNS
