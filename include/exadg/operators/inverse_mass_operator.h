@@ -35,6 +35,7 @@
 #include <exadg/operators/variable_coefficients.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_amg.h>
 
 namespace ExaDG
 {
@@ -110,6 +111,12 @@ private:
 public:
   InverseMassOperator() : matrix_free(nullptr), dof_index(0), quad_index(0)
   {
+  }
+
+  unsigned int
+  get_n_iter_global_last() const
+  {
+    return this->n_iter_global_last;
   }
 
   void
@@ -237,6 +244,14 @@ public:
             std::make_shared<BlockJacobiPreconditioner<MassOperator<dim, n_components, Number>>>(
               mass_operator, true /* initialize_preconditioner */);
         }
+        else if(inverse_mass_operator_data.parameters.preconditioner ==
+                PreconditionerMass::AMG)
+        {
+          global_preconditioner =
+            std::make_shared<PreconditionerAMG<MassOperator<dim, n_components, Number>, Number>>(mass_operator,
+                                                              true /* initialize_preconditioner */,
+                                                              inverse_mass_operator_data.parameters.amg_data);
+        }
         else
         {
           AssertThrow(false, dealii::ExcMessage("This `PreconditionerMass` is not implemented."));
@@ -295,7 +310,7 @@ public:
     {
       AssertThrow(global_solver.get() != 0,
                   dealii::ExcMessage("Global mass solver has not been initialized."));
-      global_solver->solve(dst, src);
+      this->n_iter_global_last = global_solver->solve(dst, src);
     }
     else
     {
@@ -429,6 +444,9 @@ private:
   // freedom.
   std::shared_ptr<PreconditionerBase<Number>>     global_preconditioner;
   std::shared_ptr<Krylov::SolverBase<VectorType>> global_solver;
+
+  // Iterations needed in global Krylov solver at last inverse application.
+  mutable unsigned int n_iter_global_last = dealii::numbers::invalid_unsigned_int;
 
   // Block-Jacobi preconditioner used as cell-wise inverse for L2-conforming spaces. In this case,
   // the mass matrix is block-diagonal and a block-Jacobi preconditioner inverts the mass operator
