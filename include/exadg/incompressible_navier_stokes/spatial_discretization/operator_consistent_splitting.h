@@ -74,72 +74,11 @@ public:
   /*
    * Pressure Poisson equation.
    */
-
-  // extra functions
-
-  mutable BDFTimeIntegratorConstants const * bdf;
-  mutable std::vector<double>  previous_time_steps;
-
-
+  // Leray projection
   void
-  compute_divergence(VectorType & dst, VectorType const & src, double const & time) const;
-    void
-  compute_divergence_cell(
-    dealii::MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                            dst,
-    VectorType const &                      src,
-    Range const &                           cell_range) const;
-      void
-  compute_divergence_face(
-    dealii::MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                            dst,
-    VectorType const &                      src,
-    Range const &                           cell_range) const;
-      void
-  compute_divergence_boundary(
-    dealii::MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                            dst,
-    VectorType const &                      src,
-    Range const &                           cell_range) const;
-
-  void
-  compute_convective_rhs(VectorType & dst, VectorType const & src, double const & time) const;
-
-
-  void
-  evaluate_vorticity(VectorType & dst, VectorType const & src) const;
-  void
-  evaluate_vorticity_cell(
-    dealii::MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                            dst,
-    VectorType const &                      src,
-    Range const &                           cell_range) const;
-
-  
-  void
-  compute_rhs(VectorType & dst, VectorType const & src, double const & time, const BDFTimeIntegratorConstants * bdf_in, std::vector<double>  & previous_time_steps_in) const;
-  void
-  compute_rhs_cell(
-    dealii::MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                            dst,
-    VectorType const &                      src,
-    Range const &                           cell_range) const;
-    void
-  compute_rhs_face(
-    dealii::MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                            dst,
-    VectorType const &                      src,
-    Range const &                           cell_range) const;
-    void
-  compute_rhs_boundary(
-    dealii::MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                            dst,
-    VectorType const &                      src,
-    Range const &                           cell_range) const;
-
-  // rhs pressure: velocity divergence
-  void
-  apply_velocity_divergence_term(VectorType & dst, VectorType const & src) const;
+  compute_Leray_projection_term(VectorType &       dst,
+                                VectorType const & src,
+                                double const &     time) const;
 
   // rhs pressure: divergence of convective term
   void
@@ -149,17 +88,9 @@ public:
   void
   rhs_ppe_div_term_body_forces_add(VectorType & dst, double const & time) const;
 
-  // rhs pressure Poisson equation: Neumann BC body force term
-  void
-  rhs_ppe_nbc_body_force_term_add(VectorType & dst, double const & time) const;
-
   // rhs pressure Poisson equation: Neumann BC numerical time derivative term
   void
   rhs_ppe_nbc_numerical_time_derivative_add(VectorType & dst, VectorType const & src) const;
-
-  // rhs pressure Poisson equation: Neumann BC convective term
-  void
-  rhs_ppe_nbc_convective_add(VectorType & dst, VectorType const & src) const;
 
   // rhs pressure Poisson equation: Neumann BC viscous term
   void
@@ -212,6 +143,25 @@ private:
   }
 
   // rhs PPE
+  // Leray projection
+  void
+  compute_Leray_projection_cell(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                VectorType &                            dst,
+                                VectorType const &                      src,
+                                Range const &                           cell_range) const;
+
+  void
+  compute_Leray_projection_face(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                VectorType &                            dst,
+                                VectorType const &                      src,
+                                Range const &                           cell_range) const;
+
+  void
+  compute_Leray_projection_boundary(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                    VectorType &                            dst,
+                                    VectorType const &                      src,
+                                    Range const &                           cell_range) const;
+
   // body force term
   void
   local_rhs_ppe_div_term_body_forces_cell(
@@ -257,42 +207,26 @@ private:
   // Neumann boundary condition term
 
   // dg_u/dt with numerical time derivative
-  void
-  local_rhs_ppe_nbc_numerical_time_derivative_add_boundary_face(
-    dealii::MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                            dst,
-    VectorType const &                      src,
-    Range const &                           face_range) const;
+    void
+    local_rhs_ppe_nbc_numerical_time_derivative_add_boundary_face(
+      dealii::MatrixFree<dim, Number> const & matrix_free,
+      VectorType &                            dst,
+      VectorType const &                      src,
+      Range const &                           face_range) const;
 
-  // body force term
-  void
-  local_rhs_ppe_nbc_body_force_term_add_boundary_face(
-    dealii::MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                            dst,
-    VectorType const &                      src,
-    Range const &                           face_range) const;
+    // viscous term
+    void
+    local_rhs_ppe_nbc_viscous_add_boundary_face(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                                VectorType &                            dst,
+                                                VectorType const &                      src,
+                                                Range const & face_range) const;
 
-  // convective term
-  void
-  local_rhs_ppe_nbc_convective_add_boundary_face(
-    dealii::MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                            dst,
-    VectorType const &                      src,
-    Range const &                           face_range) const;
-
-  // viscous term
-  void
-  local_rhs_ppe_nbc_viscous_add_boundary_face(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                              VectorType &                            dst,
-                                              VectorType const &                      src,
-                                              Range const & face_range) const;
-
-  void
-  local_interpolate_velocity_dirichlet_bc_boundary_face(
-    dealii::MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                            dst,
-    VectorType const &                      src,
-    Range const &                           face_range) const;
+    void
+    local_interpolate_velocity_dirichlet_bc_boundary_face(
+      dealii::MatrixFree<dim, Number> const & matrix_free,
+      VectorType &                            dst,
+      VectorType const &                      src,
+      Range const &                           face_range) const;
 };
 
 } // namespace IncNS

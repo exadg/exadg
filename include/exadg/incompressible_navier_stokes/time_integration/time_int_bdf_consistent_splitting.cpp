@@ -329,7 +329,7 @@ TimeIntBDFConsistentSplitting<dim, Number>::do_timestep_solve()
 
   momentum_step();
 
-  // if(this->param.apply_penalty_terms_in_postprocessing_step)
+  if(this->param.apply_penalty_terms_in_postprocessing_step)
     penalty_step();
 
   // evaluate convective term once the final solution at time
@@ -418,44 +418,30 @@ TimeIntBDFConsistentSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
 {
   rhs = 0.0;
   /*
-   *  I. calculate Leray projection  <---- this is not working!!!!
+   *  I. calculate Leray projection
    */
   for(unsigned int i = 0; i < velocity_divergence.size(); ++i)
     rhs.add(-this->bdf.get_alpha(i) / this->get_time_step_size(), velocity_divergence[i]);
 
-
-  // Compute ananlog vector
-  VectorType vec_p_rhs(rhs);
-  vec_p_rhs = 0.0;
-
-  for (unsigned int i = 0; i < this->bdf.get_order(); ++i)
-  {
-    VectorType vec_div_u(vec_p_rhs);
-    vec_div_u = 0.;
-    pde_operator->compute_divergence(vec_div_u, velocity[i], this->get_previous_time(i));
-    vec_p_rhs.add(-this->bdf.get_alpha(i) / this->get_time_step_size(), vec_div_u);
-  }
-
-  
-
    /*
    *  II. convective extrapolation
    */
-  for(unsigned int i = 0; i < this->bdf.get_order(); ++i)
-    rhs.add(this->extra.get_beta(i), this->vec_convective_term_div[i]);
+  for(unsigned int i = 0; i < extra_pressure_nbc.get_order();
+      ++i) // TODO: get the right extrapolation order here
+    rhs.add(extra_pressure_nbc.get_beta(i), this->vec_convective_term_div[i]);
 
-  for (unsigned int i = 0; i < this->extra.get_order(); ++i)
-    {
-      VectorType vec_p_rhs_n(vec_p_rhs); 
-      vec_p_rhs_n = 0.;
-      pde_operator->compute_convective_rhs(vec_p_rhs_n, velocity[i], this->get_previous_time(i));
-      vec_p_rhs.add(this->extra.get_beta(i), vec_p_rhs_n);
-    }
-
-  
   /*
-  *  III. extrapolate speed for the boundary condition curl curl term
-  */
+   *  III. forcing term
+   */
+  if(this->param.right_hand_side)
+    pde_operator->rhs_ppe_div_term_body_forces_add(rhs, this->get_next_time());
+
+  /*
+   *  IV. handle boudnary condition
+   */
+  /*
+   *  IV.1 extrapolate speed and compute curl curl term
+   */
   VectorType velocity_extra(velocity[0]);
   velocity_extra = 0.0;
   for(unsigned int i = 0; i < extra_pressure_nbc.get_order(); ++i)
@@ -468,59 +454,14 @@ TimeIntBDFConsistentSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
   pde_operator->rhs_ppe_nbc_viscous_add(rhs, vorticity);
 
 
-  /*
-  *  IV. forcing term
-  */
-  if(this->param.right_hand_side)
-    pde_operator->rhs_ppe_div_term_body_forces_add(rhs, this->get_next_time());
-
-
-  // II.1. pressure Dirichlet boundary conditions
+  // IV.2. pressure Dirichlet boundary conditions
   pde_operator->rhs_ppe_laplace_add(rhs, this->get_next_time());
 
-  // II.3. pressure Neumann boundary condition: temporal derivative of velocity
+  // IV.3. pressure Neumann boundary condition: temporal derivative of velocity
   VectorType acceleration(velocity_dbc_np);
   compute_bdf_time_derivative(
     acceleration, velocity_dbc_np, velocity_dbc, this->bdf, this->get_time_step_size());
-  pde_operator->rhs_ppe_nbc_numerical_time_derivative_add(rhs, acceleration);    
-
-
-
- 
-  VectorType speed_extrapolated(velocity[0]);
-  speed_extrapolated = 0.;
-  for (unsigned int i = 0; i < this->extra.get_order(); ++i)
-      speed_extrapolated.add(this->extra.get_beta(i), velocity[i]);
-
-  VectorType vec_vorticity(velocity[0]);
-  vec_vorticity = 0.0;
-  pde_operator->evaluate_vorticity(vec_vorticity, speed_extrapolated);
-
-  VectorType vec_p_rhs_n(vec_p_rhs); 
-  vec_p_rhs_n = 0.;
-
-  std::vector<double> previous_times{};
-  for(unsigned int i = 0; i < this->bdf.get_order(); ++i)
-  {
-    previous_times.emplace_back(this->get_previous_time(i));
-  }
-  pde_operator->compute_rhs(vec_p_rhs_n, vec_vorticity, this->get_next_time(), &this->bdf, previous_times);
-  vec_p_rhs.add(1, vec_p_rhs_n);
-
-  pde_operator->rhs_ppe_laplace_add(vec_p_rhs, this->get_next_time());
-
-  const auto l2_norm = vec_p_rhs.l2_norm();
-  vec_p_rhs.add(-1.0, rhs);
-  const auto l2_error = vec_p_rhs.l2_norm();
-  std::cout << "Difference between rhs is: " << l2_error/l2_norm << std::endl;
-
-
-
-  rhs = vec_p_rhs;
-  // const auto l2_norm = vec_p_rhs.l2_norm();
-  // vec_p_rhs.add(-1.0, rhs);
-  // const auto l2_error = vec_p_rhs.l2_norm();
-  // std::cout << "Difference between rhs is: " << l2_error/l2_norm << std::endl;
+  pde_operator->rhs_ppe_nbc_numerical_time_derivative_add(rhs, acceleration);
 
   // special case: pressure level is undefined
   // Set mean value of rhs to zero in order to obtain a consistent linear system of equations.
@@ -806,15 +747,18 @@ TimeIntBDFConsistentSplitting<dim, Number>::prepare_vectors_for_next_timestep()
   // Compute the divergence of the velocity for the next timestep
   VectorType velocity_divergence_np(pressure_np);
   velocity_divergence_np = 0.;
-  //pde_operator->apply_velocity_divergence_term(velocity_divergence_np, velocity[0]);
-  pde_operator->compute_divergence(velocity_divergence_np, velocity[0], this->get_next_time());
+  pde_operator->compute_Leray_projection_term(velocity_divergence_np,
+                                              velocity[0],
+                                              this->get_next_time());
   push_back(velocity_divergence);
   velocity_divergence[0].swap(velocity_divergence_np);
 
   // Compute divergence of convective term
   VectorType vec_convective_term_div_np(pressure_np);
   vec_convective_term_div_np = 0.;
-  pde_operator->apply_convective_divergence_term(vec_convective_term_div_np, velocity[0], this->get_next_time()); //TODO: which time shoud be used here: get_time
+  pde_operator->apply_convective_divergence_term(vec_convective_term_div_np,
+                                                 velocity[0],
+                                                 this->get_next_time());
   push_back(vec_convective_term_div);
   vec_convective_term_div[0].swap(vec_convective_term_div_np);
 
@@ -918,9 +862,7 @@ TimeIntBDFConsistentSplitting<dim, Number>::print_iterations() const
 
   if(this->param.nonlinear_problem_has_to_be_solved())
   {
-    names = {
-             "Pressure step",
-             
+    names = {"Pressure step",
              "Momentum step (nonlinear)",
              "Momentum step (accumulated)",
              "Momentum step (linear per nonlinear)"};
