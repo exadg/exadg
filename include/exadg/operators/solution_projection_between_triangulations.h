@@ -55,6 +55,7 @@ struct GridToGridProjectionData
     : rpe_data(),
       solver_data(),
       preconditioner(PreconditionerMass::PointJacobi),
+      amg_data(AMGData()),
       additional_quadrature_points(1)
   {
   }
@@ -70,11 +71,13 @@ struct GridToGridProjectionData
     // That is for `InverseMassType != InverseMassType::MatrixfreeOperator` determined at runtime.
     solver_data.print(pcout);
     print_parameter(pcout, "Preconditioner", preconditioner);
+    amg_data.print(pcout);
   }
 
   typename dealii::Utilities::MPI::RemotePointEvaluation<dim>::AdditionalData rpe_data;
   SolverData                                                                  solver_data;
   PreconditionerMass                                                          preconditioner;
+  AMGData                                                                     amg_data;
 
   // Number of additional integration points used for sampling the source grid.
   // The default `additional_quadrature_points = 1` considers `fe_degree + 1` quadrature points in
@@ -207,6 +210,7 @@ project_vectors(
   inverse_mass_operator_data.quad_index                = quad_index;
   inverse_mass_operator_data.parameters.preconditioner = data.preconditioner;
   inverse_mass_operator_data.parameters.solver_data    = data.solver_data;
+  inverse_mass_operator_data.parameters.amg_data       = data.amg_data;
   inverse_mass_operator_data.parameters.implementation_type =
     InverseMassOperatorData<Number>::template get_optimal_inverse_mass_type<dim>(
       target_matrix_free.get_dof_handler(dof_index).get_fe(),
