@@ -379,7 +379,7 @@ TimeIntBDFConsistentSplitting<dim, Number>::pressure_step()
   }
   else
   {
-    pressure_np = pressure_last_iter;
+    pressure_np = 0;
   }
 
   // solve linear system of equations
@@ -398,9 +398,6 @@ TimeIntBDFConsistentSplitting<dim, Number>::pressure_step()
   // Adjust the pressure level in order to allow a calculation of the pressure error.
   // This is necessary because otherwise the pressure solution moves away from the exact solution.
   pde_operator->adjust_pressure_level_if_undefined(pressure_np, this->get_next_time());
-
-  if(this->store_solution)
-    pressure_last_iter = pressure_np;
 
   // write output
   if(this->print_solver_info() and not(this->is_test))
@@ -704,16 +701,13 @@ TimeIntBDFConsistentSplitting<dim, Number>::penalty_step()
        0);
 
     if(this->use_extrapolation == false)
-      velocity_np = velocity_projection_last_iter;
+      velocity_np = 0;
 
     unsigned int const n_iter =
       pde_operator->solve_projection(velocity_np, rhs, update_preconditioner);
 
     iterations_penalty.first += 1;
     iterations_penalty.second += n_iter;
-
-    if(this->store_solution)
-      velocity_projection_last_iter = velocity_np;
 
     // write output
     if(this->print_solver_info() and not(this->is_test))
