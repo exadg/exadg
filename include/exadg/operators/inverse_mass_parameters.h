@@ -23,8 +23,8 @@
 #define EXADG_OPERATORS_INVERSE_MASS_PARAMETERS_H_
 
 // ExaDG
-#include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
+#include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
 
 namespace ExaDG
 {
