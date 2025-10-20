@@ -186,7 +186,7 @@ public:
 
     scalar f = FunctionEvaluator<rank, dim, Number>::value(*(data.f), q_points, time);
 
-    if((data.turbulence_model_data.turbulence_model == TurbulenceEddyViscosityModel::PrandtlMixingLengthModel) || data.turbulence_model_data.turbulence_model == TurbulenceEddyViscosityModel::StandardKEpsilon)
+    if((data.turbulence_model_data.turbulence_model == TurbulenceEddyViscosityModel::PrandtlMixingLength) || data.turbulence_model_data.turbulence_model == TurbulenceEddyViscosityModel::StandardKEpsilon)
     {
         scalar viscosity = turbulence_model_ptr->get_viscosity_cell(integrator.get_current_cell_index(), q, VaryingViscosityType::EddyViscosity);
         scalar dissipation;
@@ -296,7 +296,7 @@ public:
   {
     scalar result;
     scalar sol = integrator_solution->get_value(q);
-    if(turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLengthModel)
+    if(turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLength)
     {
     double coefficient  = turbulence_model_ptr->model_coefficients[1]; // C_D
     double length_scale = turbulence_model_ptr->model_coefficients[2]; // turbulence length scale
@@ -325,7 +325,7 @@ public:
       }
     }
     else {
-    AssertThrow(false, dealii::ExcMessage("Dissipation term is only implemented for TurbulenceEddyViscosityModel::PrandtlMixingLengthModel"));
+    AssertThrow(false, dealii::ExcMessage("Dissipation term is only implemented for TurbulenceEddyViscosityModel::PrandtlMixingLength"));
     }
     /*std::cout << "TKE Dissipation : " << result << std::endl;*/
     return result;

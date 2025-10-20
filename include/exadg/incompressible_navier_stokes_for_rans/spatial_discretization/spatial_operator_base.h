@@ -119,8 +119,8 @@ public:
   void
   setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
         std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
-        std::string const &                                    dof_index_temperature = "");
-
+        std::string const &                                    dof_index_scalar_one = "",
+        std::string const &                                    dof_index_scalar_two = "");
 protected:
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -542,12 +542,14 @@ private:
   std::string const dof_index_u        = "velocity";
   std::string const dof_index_p        = "pressure";
   std::string const dof_index_u_scalar = "velocity_scalar";
+  std::string const dof_index_nu_t     = "eddy_viscosity";
 
   std::string const quad_index_u                 = "velocity";
   std::string const quad_index_p                 = "pressure";
   std::string const quad_index_u_overintegration = "velocity_overintegration";
   std::string const quad_index_u_nodal_points    = "velocity_nodal_points";
   std::string const quad_index_p_nodal_points    = "pressure_nodal_points";
+  std::string const quad_index_nu_t              = "eddy_viscosity";
 
   std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data;
   std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free;
@@ -661,7 +663,8 @@ private:
   initialize_dirichlet_cached_bc();
 
   void
-  initialize_operators(std::string const & dof_index_temperature);
+  initialize_operators(std::string const & dof_index_scalar_one = "",
+                       std::string const & dof_index_scalar_two = "");
 
   void
   initialize_calculators_for_derived_quantities();

@@ -212,6 +212,17 @@ Operator<dim, Number>::setup_operators()
                                    convective_kernel);
   }
 
+  if (param.turbulence_model_data.is_active)
+  {
+    turbulence_model_ptr->diffusivity = param.diffusivity;
+
+    turbulence_model_ptr->initialize(*matrix_free,
+                                      param.turbulence_model_data,
+                                      get_dof_index(),
+                                      get_quad_index());
+    turbulence_model_ptr->scalar_type = param.scalar_type;
+  }
+
   // diffusive operator
   Operators::DiffusiveKernelData diffusive_kernel_data;
 

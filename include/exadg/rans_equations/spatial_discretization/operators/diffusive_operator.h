@@ -268,7 +268,7 @@ public:
     scalar value = dealii::make_vectorized_array<Number>(0.0);
 
     if (data.positivity_preserving_limiter==PositivityPreservingLimiter::LogarithmicTransportVariable) {
-      if(turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLengthModel)
+      if(turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLength)
       {
         value = dealii::make_vectorized_array<Number>(1/(2.0*turbulence_model_ptr->model_coefficients[0])) * viscosity * sol_grad.norm_square();
       }
@@ -281,11 +281,11 @@ public:
         }
       }
       else {
-        AssertThrow(false, dealii::ExcMessage(" Positivity Limiter only available for TurbulenceEddyViscosityModel::PrandtlMixingLengthModel and TurbulenceEddyViscosityModel::StandardKEpsilon"));
+        AssertThrow(false, dealii::ExcMessage(" Positivity Limiter only available for TurbulenceEddyViscosityModel::PrandtlMixingLength and TurbulenceEddyViscosityModel::StandardKEpsilon"));
       }
     }
     else if (data.positivity_preserving_limiter==PositivityPreservingLimiter::Clipper) {
-      if(turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLengthModel)
+      if(turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLength)
       {
         value = dealii::make_vectorized_array<Number>(1/(2.0*turbulence_model_ptr->model_coefficients[0])) * viscosity * sol_grad.norm_square();
       }
@@ -298,7 +298,7 @@ public:
         }
       }
       else {
-        AssertThrow(false, dealii::ExcMessage(" Positivity Limiter only available for TurbulenceEddyViscosityModel::PrandtlMixingLengthModel and TurbulenceEddyViscosityModel::StandardKEpsilon"));
+        AssertThrow(false, dealii::ExcMessage(" Positivity Limiter only available for TurbulenceEddyViscosityModel::PrandtlMixingLength and TurbulenceEddyViscosityModel::StandardKEpsilon"));
       }
     }
 

@@ -67,9 +67,7 @@ struct TurbulenceModelData
     if (turbulence_model == TurbulenceEddyViscosityModel::WALE ||
         turbulence_model == TurbulenceEddyViscosityModel::Smagorinsky ||
         turbulence_model == TurbulenceEddyViscosityModel::Vreman ||
-        turbulence_model == TurbulenceEddyViscosityModel::Sigma || 
-        turbulence_model == TurbulenceEddyViscosityModel::PrandtlMixingLength ||
-        turbulence_model == TurbulenceEddyViscosityModel::StandardKEpsilon)
+        turbulence_model == TurbulenceEddyViscosityModel::Sigma)
     {
       AssertThrow(constant > 1e-20, dealii::ExcMessage("Parameter must be greater than zero."));
     }

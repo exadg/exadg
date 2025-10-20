@@ -112,7 +112,8 @@ public:
              dealii::Mapping<dim> const &                           mapping_in,
              std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
              TurbulenceModelData const &                            turbulence_model_data_in,
-             unsigned int const                                     dof_index_velocity_in);
+             unsigned int const                                     dof_index_velocity_in,
+             unsigned int const                                     dof_index_scalar_in);
 
   /**
    * Function for *setting* the viscosity taking the viscosity stored in the viscous_kernel's data
@@ -189,7 +190,7 @@ private:
 
   void
   add_eddy_viscosity(scalar & viscosity,
-                     scalar const & eddy_viscosity) const;
+                     scalar const & eddy_viscosity_local) const;
 
   /**
    *  Smagorinsky model (1963):
@@ -297,11 +298,11 @@ private:
 
   void
   prandtl_mixing_length_model(scalar & viscosity,
-                              scalar const & eddy_viscosity) const;
+                              scalar const & eddy_viscosity_local) const;
 
   void
   standard_k_epsilon_model(scalar & viscosity,
-                           scalar const & eddy_viscosity) const;
+                           scalar const & eddy_viscosity_local) const;
 
   std::shared_ptr<TurbulenceDataBase>
   create_turbulence_data();
@@ -309,9 +310,10 @@ private:
   TurbulenceModelData           turbulence_model_data;
   dealii::AlignedVector<scalar> filter_width_vector;
 
-  VectorType const * eddy_viscosity;
 public:
-  std::shared_ptr<TurbulenceDataBase> turbulence_data_base = create_turbulence_data();
+  std::shared_ptr<TurbulenceDataBase> turbulence_data_base;
+
+  VectorType const * eddy_viscosity;
 };
 
 } // namespace IncRANS

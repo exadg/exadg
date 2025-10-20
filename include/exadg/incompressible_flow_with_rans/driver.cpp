@@ -189,10 +189,18 @@ Driver<dim, Number>::setup()
   }
 
   // setup Navier-Stokes operator
-  if(application->fluid->get_parameters().boussinesq_term)
+  if(application->fluid->get_parameters().boussinesq_term && application->fluid->get_parameters().turbulence_model_data.rans_model)
   {
     // assume that the first scalar field with index 0 is the active scalar that
     // couples to the incompressible Navier-Stokes equations
+    fluid_operator->setup(matrix_free, matrix_free_data, scalar_operator[0]->get_dof_name(), scalar_operator[1]->get_dof_name());
+  }
+  else if(application->fluid->get_parameters().boussinesq_term)
+  {
+    fluid_operator->setup(matrix_free, matrix_free_data, scalar_operator[0]->get_dof_name());
+  }
+  else if(application->fluid->get_parameters().turbulence_model_data.rans_model)
+  {
     fluid_operator->setup(matrix_free, matrix_free_data, scalar_operator[0]->get_dof_name());
   }
   else
@@ -215,19 +223,25 @@ Driver<dim, Number>::setup()
     // incompressible Navier-Stokes equations via the Boussinesq term
     scalar_operator[0]->initialize_dof_vector(temperature);
     // now the second scalar quantity with index 1 can be assumed to turbulent kinetic energy that is coupled to the incompressible Navier-Stokes equations via eddy viscosity
-    scalar_operator[1]->initialize_dof_vector(turbulent_kinetic_energy);
-    if (application->fluid->get_parameters().turbulence_model_data.turbulence_model==IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon) {
-      // the third scalar quantity with index 2 can be assumed to be the dissipation rate that is coupled to both the incompressible Navier-Stokes and the turbulent kinetic energy transport equations via eddy viscosity
+    if (application->fluid->get_parameters().turbulence_model_data.turbulence_model == IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength) {
+      scalar_operator[1]->initialize_dof_vector(turbulent_kinetic_energy);
+      scalar_operator[1]->initialize_dof_vector(eddy_viscosity);
+    } else if (application->fluid->get_parameters().turbulence_model_data.turbulence_model == IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon) {
+      scalar_operator[1]->initialize_dof_vector(turbulent_kinetic_energy);
       scalar_operator[2]->initialize_dof_vector(turbulent_dissipation_rate);
+      scalar_operator[1]->initialize_dof_vector(eddy_viscosity);
     }
   } else if (application->fluid->get_parameters().boussinesq_term) {
     // only the boussinesq coupling is active
     scalar_operator[0]->initialize_dof_vector(temperature);
   } else if(application->fluid->get_parameters().turbulence_model_data.rans_model) {
-    // only the eddy viscosity coupling is active
-    scalar_operator[0]->initialize_dof_vector(turbulent_kinetic_energy);
-    if (application->fluid->get_parameters().turbulence_model_data.turbulence_model==IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon) {
+    if (application->fluid->get_parameters().turbulence_model_data.turbulence_model == IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength) {
+      scalar_operator[0]->initialize_dof_vector(turbulent_kinetic_energy);
+      scalar_operator[0]->initialize_dof_vector(eddy_viscosity);
+    } else if (application->fluid->get_parameters().turbulence_model_data.turbulence_model == IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon) {
+      scalar_operator[0]->initialize_dof_vector(turbulent_kinetic_energy);
       scalar_operator[1]->initialize_dof_vector(turbulent_dissipation_rate);
+      scalar_operator[0]->initialize_dof_vector(eddy_viscosity);
     }
   }
 
@@ -504,10 +518,10 @@ Driver<dim ,Number>::communicate_scalar_to_scalar() const
     if (application->scalars[0]->get_parameters().temporal_discretization == RANS::TemporalDiscretization::ExplRK) {
       AssertThrow(application->scalars[1]->get_parameters().temporal_discretization==RANS::TemporalDiscretization::ExplRK, dealii::ExcMessage("The temporal discretization of temperature and turbulent kinetic energy has to be the same"));
 
-      std::shared_ptr<RANS::TimeIntExplRK<Number>> time_int_scalar_tke = std::dynamic_pointer_cast<RANS::TimeIntExplRK<Number>>(scalar_time_integrator[1]);
-      time_int_scalar_tke->extrapolate_solution(turbulent_kinetic_energy);
-
       if (application->fluid->get_parameters().turbulence_model_data.turbulence_model==IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon) {
+        std::shared_ptr<RANS::TimeIntExplRK<Number>> time_int_scalar_tke = std::dynamic_pointer_cast<RANS::TimeIntExplRK<Number>>(scalar_time_integrator[1]);
+        time_int_scalar_tke->extrapolate_solution(turbulent_kinetic_energy);
+
         AssertThrow(application->scalars[2]->get_parameters().temporal_discretization==RANS::TemporalDiscretization::ExplRK, dealii::ExcMessage("The temporal discretization of temperature, turbulent kinetic energy and dissipation rate has to be the same"));
         std::shared_ptr<RANS::TimeIntExplRK<Number>> time_int_scalar_epsilon = std::dynamic_pointer_cast<RANS::TimeIntExplRK<Number>>(scalar_time_integrator[2]);
         time_int_scalar_epsilon->extrapolate_solution(turbulent_dissipation_rate);
@@ -515,10 +529,10 @@ Driver<dim ,Number>::communicate_scalar_to_scalar() const
     } else if (application->scalars[0]->get_parameters().temporal_discretization == RANS::TemporalDiscretization::BDF) {
       AssertThrow(application->scalars[1]->get_parameters().temporal_discretization==RANS::TemporalDiscretization::BDF, dealii::ExcMessage("The temporal discretization of temperature and turbulent kinetic energy has to be the same"));
 
-      std::shared_ptr<RANS::TimeIntBDF<dim, Number>> time_int_scalar_tke = std::dynamic_pointer_cast<RANS::TimeIntBDF<dim, Number>>(scalar_time_integrator[1]);
-      time_int_scalar_tke->extrapolate_solution(turbulent_kinetic_energy);
-
       if (application->fluid->get_parameters().turbulence_model_data.turbulence_model==IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon) {
+        std::shared_ptr<RANS::TimeIntBDF<dim, Number>> time_int_scalar_tke = std::dynamic_pointer_cast<RANS::TimeIntBDF<dim, Number>>(scalar_time_integrator[1]);
+        time_int_scalar_tke->extrapolate_solution(turbulent_kinetic_energy);
+
         AssertThrow(application->scalars[2]->get_parameters().temporal_discretization==RANS::TemporalDiscretization::BDF, dealii::ExcMessage("The temporal discretization of temperature, turbulent kinetic energy and dissipation rate has to be the same"));
         std::shared_ptr<RANS::TimeIntBDF<dim, Number>> time_int_scalar_epsilon = std::dynamic_pointer_cast<RANS::TimeIntBDF<dim, Number>>(scalar_time_integrator[2]);
         time_int_scalar_epsilon->extrapolate_solution(turbulent_dissipation_rate);
@@ -527,26 +541,26 @@ Driver<dim ,Number>::communicate_scalar_to_scalar() const
       AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
     if (application->fluid->get_parameters().turbulence_model_data.rans_model) {
-      scalar_operator[1]->set_turbulent_kinetic_energy(turbulent_kinetic_energy);
       if (application->fluid->get_parameters().turbulence_model_data.turbulence_model==IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon) {
-        scalar_operator[2]->set_tke_dissipation_rate(turbulent_dissipation_rate);
+        scalar_operator[1]->set_tke_dissipation_rate(turbulent_dissipation_rate);
+        scalar_operator[2]->set_turbulent_kinetic_energy(turbulent_kinetic_energy);
       }
     }
   } else if (application->fluid->get_parameters().turbulence_model_data.rans_model) {
     if (application->scalars[0]->get_parameters().temporal_discretization == RANS::TemporalDiscretization::ExplRK) {
-      std::shared_ptr<RANS::TimeIntExplRK<Number>> time_int_scalar_tke = std::dynamic_pointer_cast<RANS::TimeIntExplRK<Number>>(scalar_time_integrator[0]);
-      time_int_scalar_tke->extrapolate_solution(turbulent_kinetic_energy);
-
       if (application->fluid->get_parameters().turbulence_model_data.turbulence_model==IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon) {
+        std::shared_ptr<RANS::TimeIntExplRK<Number>> time_int_scalar_tke = std::dynamic_pointer_cast<RANS::TimeIntExplRK<Number>>(scalar_time_integrator[0]);
+        time_int_scalar_tke->extrapolate_solution(turbulent_kinetic_energy);
+
         AssertThrow(application->scalars[1]->get_parameters().temporal_discretization==RANS::TemporalDiscretization::ExplRK, dealii::ExcMessage("The temporal discretization of turbulent kinetic energy and dissipation rate has to be the same"));
         std::shared_ptr<RANS::TimeIntExplRK<Number>> time_int_scalar_epsilon = std::dynamic_pointer_cast<RANS::TimeIntExplRK<Number>>(scalar_time_integrator[1]);
         time_int_scalar_epsilon->extrapolate_solution(turbulent_dissipation_rate);
       }
     } else if (application->scalars[0]->get_parameters().temporal_discretization == RANS::TemporalDiscretization::BDF) {
-      std::shared_ptr<RANS::TimeIntBDF<dim, Number>> time_int_scalar_tke = std::dynamic_pointer_cast<RANS::TimeIntBDF<dim, Number>>(scalar_time_integrator[0]);
-      time_int_scalar_tke->extrapolate_solution(turbulent_kinetic_energy);
-
       if (application->fluid->get_parameters().turbulence_model_data.turbulence_model==IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon) {
+        std::shared_ptr<RANS::TimeIntBDF<dim, Number>> time_int_scalar_tke = std::dynamic_pointer_cast<RANS::TimeIntBDF<dim, Number>>(scalar_time_integrator[0]);
+        time_int_scalar_tke->extrapolate_solution(turbulent_kinetic_energy);
+
         AssertThrow(application->scalars[1]->get_parameters().temporal_discretization==RANS::TemporalDiscretization::BDF, dealii::ExcMessage("The temporal discretization of turbulent kinetic energy and dissipation rate has to be the same"));
         std::shared_ptr<RANS::TimeIntBDF<dim, Number>> time_int_scalar_epsilon = std::dynamic_pointer_cast<RANS::TimeIntBDF<dim, Number>>(scalar_time_integrator[1]);
         time_int_scalar_epsilon->extrapolate_solution(turbulent_dissipation_rate);
@@ -555,9 +569,9 @@ Driver<dim ,Number>::communicate_scalar_to_scalar() const
       AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
     if (application->fluid->get_parameters().turbulence_model_data.rans_model) {
-      scalar_operator[0]->set_turbulent_kinetic_energy(turbulent_kinetic_energy);
       if (application->fluid->get_parameters().turbulence_model_data.turbulence_model==IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon) {
-        scalar_operator[1]->set_tke_dissipation_rate(turbulent_dissipation_rate);
+        scalar_operator[0]->set_tke_dissipation_rate(turbulent_dissipation_rate);
+        scalar_operator[1]->set_turbulent_kinetic_energy(turbulent_kinetic_energy);
       }
     }
   }

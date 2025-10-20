@@ -401,7 +401,8 @@ SpatialOperatorBase<dim, Number>::initialize_dirichlet_cached_bc()
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_index_temperature)
+SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_index_scalar_one,
+                                                       std::string const & dof_index_scalar_two)
 {
   // mass operator
   MassOperatorData<dim> mass_operator_data;
@@ -436,7 +437,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   RHSOperatorData<dim> rhs_data;
   rhs_data.dof_index = get_dof_index_velocity();
   if(param.boussinesq_term)
-    rhs_data.dof_index_scalar = matrix_free_data->get_dof_index(dof_index_temperature);
+    rhs_data.dof_index_scalar = matrix_free_data->get_dof_index(dof_index_scalar_one);
   rhs_data.quad_index                                = get_quad_index_velocity_standard();
   rhs_data.kernel_data.f                             = field_functions->right_hand_side;
   rhs_data.kernel_data.boussinesq_term               = param.boussinesq_term;
@@ -513,13 +514,23 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
                          get_quad_index_velocity_standard());
 
   // initialize and check turbulence model data
-  if(param.turbulence_model_data.is_active)
+  if(param.boussinesq_term && param.turbulence_model_data.is_active)
   {
     turbulence_model.initialize(*matrix_free,
                                 *get_mapping(),
                                 viscous_kernel,
                                 param.turbulence_model_data,
-                                get_dof_index_velocity());
+                                get_dof_index_velocity(),
+                                matrix_free_data->get_dof_index(dof_index_scalar_two));
+  }
+  else if(param.turbulence_model_data.is_active)
+  {
+    turbulence_model.initialize(*matrix_free,
+                                *get_mapping(),
+                                viscous_kernel,
+                                param.turbulence_model_data,
+                                get_dof_index_velocity(),
+                                matrix_free_data->get_dof_index(dof_index_scalar_one));
   }
 
   // initialize and check generalized Newtonian model data
@@ -713,7 +724,8 @@ void
 SpatialOperatorBase<dim, Number>::setup(
   std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
   std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data_in,
-  std::string const &                                    dof_index_temperature)
+  std::string const &                                    dof_index_scalar_one,
+  std::string const &                                    dof_index_scalar_two)
 {
   pcout << std::endl
         << "Setup incompressible Navier-Stokes operator ..." << std::endl
@@ -727,7 +739,13 @@ SpatialOperatorBase<dim, Number>::setup(
 
   initialize_dirichlet_cached_bc();
 
-  initialize_operators(dof_index_temperature);
+  if(param.boussinesq_term && param.turbulence_model_data.rans_model){
+    initialize_operators(dof_index_scalar_one, dof_index_scalar_two);
+  } else if(param.boussinesq_term){
+    initialize_operators(dof_index_scalar_one);
+  } else if(param.turbulence_model_data.rans_model){
+    initialize_operators(dof_index_scalar_one);
+  }
 
   initialize_calculators_for_derived_quantities();
 

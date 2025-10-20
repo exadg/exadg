@@ -41,7 +41,7 @@ namespace RANS
 enum class TurbulenceEddyViscosityModel
 {
   Undefined,
-  PrandtlMixingLengthModel,
+  PrandtlMixingLength,
   StandardKEpsilon
 };
 

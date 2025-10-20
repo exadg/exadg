@@ -153,7 +153,7 @@ TurbulenceModel<dim, Number>::cell_loop_set_coefficients(
 
         /*dealii::Point<dim, scalar> pnt = integrator.quadrature_point(q);*/
 
-      if (turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLengthModel) {
+      if (turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLength) {
         add_one_equation_turbulent_viscosity(viscosity,
                                              solution_value);
       }
@@ -186,7 +186,7 @@ TurbulenceModel<dim, Number>::cell_loop_set_coefficients(
 
       scalar viscosity = 0.0;
 
-      if (turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLengthModel) {
+      if (turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLength) {
         add_one_equation_turbulent_viscosity(viscosity,
                                              solution_value);
       }
@@ -272,7 +272,7 @@ TurbulenceModel<dim, Number>::face_loop_set_coefficients(
       scalar viscosity = 1.0;
       scalar viscosity_neighbor = 1.0;
 
-      if (turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLengthModel) {
+      if (turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLength) {
         add_one_equation_turbulent_viscosity(viscosity,
                                              solution_value);
         add_one_equation_turbulent_viscosity(viscosity_neighbor,
@@ -356,7 +356,7 @@ TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients(
       scalar current_viscosity = this->diffusivity;
       scalar viscosity = 1.0;
 
-      if (turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLengthModel) {
+      if (turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLength) {
         add_one_equation_turbulent_viscosity(viscosity,
                                              solution_value);
       }
@@ -391,7 +391,7 @@ TurbulenceModel<dim, Number>::add_one_equation_turbulent_viscosity(scalar &     
       AssertThrow(turbulence_model_data.turbulence_model != TurbulenceEddyViscosityModel::Undefined,
                   dealii::ExcMessage("Parameter must be defined."));
       break;
-    case TurbulenceEddyViscosityModel::PrandtlMixingLengthModel:
+    case TurbulenceEddyViscosityModel::PrandtlMixingLength:
       prandtl_mixing_length_model(solution, viscosity);
       break;
     default:
@@ -439,7 +439,7 @@ template<int dim, typename Number>
 void
 TurbulenceModel<dim, Number>::get_eddy_viscosity(VectorType & dst)
 {
-  dst = this->eddy_viscosity;
+  dst.equ(1.0, this->eddy_viscosity);
 }
 
 template<int dim, typename Number>
@@ -487,7 +487,7 @@ TurbulenceModel<dim, Number>::create_turbulence_data()
 {
   switch(turbulence_model_data.turbulence_model)
   {
-    case TurbulenceEddyViscosityModel::PrandtlMixingLengthModel:
+    case TurbulenceEddyViscosityModel::PrandtlMixingLength:
       return std::make_shared<PrandtlMixingLengthData>();
       break;
     case TurbulenceEddyViscosityModel::StandardKEpsilon:

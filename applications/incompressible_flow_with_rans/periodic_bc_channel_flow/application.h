@@ -34,6 +34,10 @@ double kinematic_viscosity = 1e-5;
 double start_time = 0.0;
 double end_time = 10.0;
 
+double turbulence_length_scale = 1.0;
+double turbulent_intensity = 0.05;
+double tke = 1.5 * std::pow(bulk_velocity * turbulent_intensity, 2);
+
 bool const write_restart =false;
 double const restart_interval_time = 10.0;
 
@@ -63,6 +67,13 @@ public:
   {
   }
 
+  void
+  add_parameters(dealii::ParameterHandler & prm,
+                 std::vector<std::string> const & subsection_names) final
+  {
+    FluidBase<dim, Number>::add_parameters(prm, subsection_names);
+  }
+
 private:
   void
   set_parameters() final
@@ -81,14 +92,14 @@ private:
 
 
     // PHYSICAL QUANTITIES
-    this->param.start_time                    = start_time;
-    this->param.end_time                      = end_time;
-    this->param.viscosity                     = kinematic_viscosity;
+    this->param.start_time = start_time;
+    this->param.end_time   = end_time;
+    this->param.viscosity  = kinematic_viscosity;
 
 
     // TEMPORAL DISCRETIZATION
     this->param.solver_type                     = SolverType::Unsteady;
-    this->param.temporal_discretization         = TemporalDiscretization::BDFCoupledSolution;
+    this->param.temporal_discretization         = TemporalDiscretization::BDFPressureCorrection;
     this->param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     this->param.adaptive_time_stepping          = adaptive_time_stepping;
     this->param.order_time_integrator           = 2;
@@ -100,7 +111,7 @@ private:
     this->param.time_step_size                  = 1.0e-1;
 
     // output of solver information
-    this->param.solver_info_data.interval_time = (end_time - start_time) / 10.;
+    this->param.solver_info_data.interval_time = (end_time - start_time) * 20 / 10.0;
 
     // restart
     this->param.restart_data.write_restart = write_restart;
@@ -113,6 +124,13 @@ private:
     this->param.mapping_degree              = 1;
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
     this->param.degree_p                    = DegreePressure::MixedOrder;
+    this->param.quad_rule_linearization = QuadratureRuleLinearization::Standard;
+
+    //TURBULENCE
+    this->param.turbulence_model_data.is_active        = true;
+    this->param.turbulence_model_data.turbulence_model = IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength;
+    this->param.treatment_of_variable_viscosity = TreatmentOfVariableViscosity::Explicit;
+    this->param.turbulence_model_data.rans_model = true;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -165,10 +183,9 @@ private:
     if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
       this->param.solver_momentum         = SolverMomentum::CG;
-      this->param.solver_data_momentum    = SolverData(1000, ABS_TOL, REL_TOL);
+      this->param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-6);
       this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
     }
-
 
     // PRESSURE-CORRECTION SCHEME
 
@@ -177,20 +194,18 @@ private:
     this->param.rotational_formulation       = true;
 
     // momentum step
-    if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-    {
-      // Newton solver
-      this->param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
-      // linear solver
-      this->param.solver_momentum = SolverMomentum::GMRES;
-      if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-        this->param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
-      else
-        this->param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+    // Newton solver
+    this->param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
-      this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
-    }
+    // linear solver
+    this->param.solver_momentum = SolverMomentum::GMRES;
+    if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+      this->param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
+    else
+      this->param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+
+    this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
 
 
     // COUPLED NAVIER-STOKES SOLVER
@@ -360,6 +375,73 @@ private:
   set_parameters() final
   {
     using namespace RANS;
+    // MATHEMATICAL MODEL
+    this->param.problem_type                = ProblemType::Unsteady;
+    this->param.equation_type               = EquationType::ConvectionDiffusion;
+    this->param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
+    this->param.analytical_velocity_field   = false;
+    this->param.right_hand_side             = false;
+    
+    this->param.scalar_type = ScalarType::TurbulentKineticEnergy;
+
+    // PHYSICAL QUANTITIES
+    this->param.start_time  = start_time;
+    this->param.end_time    = end_time;
+    this->param.diffusivity = kinematic_viscosity;
+
+    // TEMPORAL DISCRETIZATION
+    this->param.temporal_discretization       = TemporalDiscretization::BDF;
+    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
+    this->param.adaptive_time_stepping        = adaptive_time_stepping;
+    this->param.order_time_integrator         = 2;
+    this->param.start_with_low_order          = true;
+    this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+    this->param.time_step_size                = 1.0e-2;
+    this->param.cfl                           = CFL;
+    this->param.max_velocity                  = max_velocity;
+    this->param.exponent_fe_degree_convection = 1.5;
+    this->param.exponent_fe_degree_diffusion  = 3.0;
+    this->param.diffusion_number              = 0.01;
+
+    // output of solver information
+    this->param.solver_info_data.interval_time = (end_time - start_time) / 10.;
+
+    // SPATIAL DISCRETIZATION
+    this->param.grid.triangulation_type     = TriangulationType::Distributed;
+    this->param.mapping_degree              = 1;
+    this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
+
+    // TURBULENCE
+    this->param.turbulence_model_data.is_active = true;
+    this->param.turbulence_model_data.turbulence_model = TurbulenceEddyViscosityModel::PrandtlMixingLength;
+    this->param.treatment_of_variable_viscosity = TreatmentOfVariableViscosity::Explicit;
+    this->param.turbulence_model_data.positivity_preserving_limiter = RANS::PositivityPreservingLimiter::LogarithmicTransportVariable;
+
+    // convective term
+    this->param.numerical_flux_convective_operator =
+      NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
+
+    // viscous term
+    this->param.IP_factor = 1.0;
+
+    // NUMERICAL PARAMETERS
+    this->param.implement_block_diagonal_preconditioner_matrix_free = false;
+    this->param.use_cell_based_face_loops                           = false;
+
+    // SOLVER
+    this->param.solver                    = RANS::Solver::CG;
+    this->param.solver_data               = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    this->param.preconditioner            = Preconditioner::InverseMassMatrix;
+    this->param.multigrid_data.type       = MultigridType::pMG;
+    this->param.multigrid_data.p_sequence = PSequenceType::Bisect;
+    this->param.mg_operator_type          = MultigridOperatorType::ReactionDiffusion;
+    this->param.update_preconditioner     = false;
+
+    // output of solver information
+    this->param.solver_info_data.interval_time = (end_time - start_time) / 10.;
+
+    // NUMERICAL PARAMETERS
+    this->param.use_combined_operator = true;
   }
 
   void
@@ -369,16 +451,14 @@ private:
       pair;
 
     this->boundary_descriptor->dirichlet_bc.insert(
-      pair(0, new dealii::Functions::ZeroFunction<dim>(1)));
-    this->boundary_descriptor->neumann_bc.insert(
-      pair(1, new dealii::Functions::ZeroFunction<dim>(1)));
+      pair(3, new dealii::Functions::ConstantFunction<dim>(tke)));
   }
 
 
   void
   set_field_functions() final
   {
-    this->field_functions->initial_solution.reset(new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution.reset(new dealii::Functions::ConstantFunction<dim>(tke));
     this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(1));
     this->field_functions->velocity.reset(new dealii::Functions::ZeroFunction<dim>(1));
   }
@@ -387,6 +467,13 @@ private:
   create_postprocessor() final
   {
     RANS::PostProcessorData<dim> pp_data;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = start_time;
+    pp_data.output_data.time_control_data.trigger_interval = output_interval_time;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename;
+    pp_data.output_data.degree             = this->param.degree;
+    pp_data.output_data.write_higher_order = true;
 
     std::shared_ptr<RANS::PostProcessorBase<dim, Number>> pp;
     pp.reset(new RANS::PostProcessor<dim, Number>(pp_data, this->mpi_comm));
@@ -405,8 +492,8 @@ public:
     this->fluid = std::make_shared<Fluid<dim, Number>>(input_file, comm);
 
     // create one (or even more) scalar fields
-    this->scalars.resize(0);
-    /*this->scalars[0] = std::make_shared<Scalar<dim, Number>>(input_file, comm);*/
+    this->scalars.resize(1);
+    this->scalars[0] = std::make_shared<Scalar<dim, Number>>(input_file, comm);
   }
 };
 

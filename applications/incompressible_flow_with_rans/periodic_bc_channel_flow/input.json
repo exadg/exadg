@@ -17,7 +17,7 @@
     },
     "Scalar0": {
         "SpatialResolution": {
-            "Degree": "1"
+            "Degree": "2"
         },
         "Output": {
             "OutputDirectory": "output/",
