@@ -30,9 +30,11 @@ double channel_height = 1.0;
 double channel_length = 4.0;
 double bulk_velocity = 1.0;
 double kinematic_viscosity = 1e-5;
+double Re = 100.0;
 
 double start_time = 0.0;
 double end_time = 10.0;
+double number_of_outputs = 10.0;
 
 double turbulence_length_scale = 1.0;
 double turbulent_intensity = 0.05;
@@ -41,12 +43,12 @@ double tke = 1.5 * std::pow(bulk_velocity * turbulent_intensity, 2);
 bool const write_restart =false;
 double const restart_interval_time = 10.0;
 
-double const CFL                    = 0.3;
-double const max_velocity           = 2.0 * bulk_velocity;
+double CFL                    = 0.3;
+double max_velocity           = 2.0 * bulk_velocity;
 bool const   adaptive_time_stepping = true;
 
 // vtu output
-double const output_interval_time = (end_time - start_time) / 10.0;
+double output_interval_time = (end_time - start_time) / number_of_outputs;
 
 // moving mesh (ALE)
 bool const ALE = false;
@@ -72,9 +74,39 @@ public:
                  std::vector<std::string> const & subsection_names) final
   {
     FluidBase<dim, Number>::add_parameters(prm, subsection_names);
+
+    prm.enter_subsection("Application");
+    {
+      prm.add_parameter("KinematicViscosity", kinematic_viscosity, "Kinematic viscosity of the fluid");
+      prm.add_parameter("TimeSampleCount", number_of_outputs, "Number of output time steps");
+      prm.add_parameter("EndTime", end_time, "End time of the simulation");
+      prm.add_parameter("CFL", CFL, "Courant Number");
+      prm.add_parameter("ReynoldsNumber", Re, "Reynolds number based on bulk velocity" );
+    }
+    prm.leave_subsection();
+
+    prm.enter_subsection("Geometry");
+    {
+      prm.add_parameter("ChannelHeight", channel_height, "Height of the channel");
+      prm.add_parameter("ChannelLength", channel_length, "Length of the channel");
+    }
+    prm.leave_subsection();
   }
 
 private:
+  void
+  parse_parameters(std::vector<std::string> const & subsection_names) final
+  {
+    FluidBase<dim, Number>::parse_parameters(subsection_names);
+
+    bulk_velocity      = Re * kinematic_viscosity / channel_height;
+    max_velocity       = 2.0 * bulk_velocity;
+    end_time           = (channel_length / bulk_velocity) * 5.0;;
+
+    output_interval_time = (end_time - start_time) / number_of_outputs;
+    tke = 1.5 * std::pow(bulk_velocity * turbulent_intensity, 2);
+  }
+
   void
   set_parameters() final
   {
@@ -111,7 +143,7 @@ private:
     this->param.time_step_size                  = 1.0e-1;
 
     // output of solver information
-    this->param.solver_info_data.interval_time = (end_time - start_time) * 20 / 10.0;
+    this->param.solver_info_data.interval_time = output_interval_time * 5;
 
     // restart
     this->param.restart_data.write_restart = write_restart;
@@ -127,10 +159,10 @@ private:
     this->param.quad_rule_linearization = QuadratureRuleLinearization::Standard;
 
     //TURBULENCE
-    this->param.turbulence_model_data.is_active        = true;
-    this->param.turbulence_model_data.turbulence_model = IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength;
-    this->param.treatment_of_variable_viscosity = TreatmentOfVariableViscosity::Explicit;
-    this->param.turbulence_model_data.rans_model = true;
+    /*this->param.turbulence_model_data.is_active        = true;*/
+    /*this->param.turbulence_model_data.turbulence_model = IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength;*/
+    /*this->param.treatment_of_variable_viscosity = TreatmentOfVariableViscosity::Explicit;*/
+    /*this->param.turbulence_model_data.rans_model = true;*/
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -369,8 +401,44 @@ public:
     : ScalarBase<dim, Number>(parameter_file, comm)
   {
   }
+  void
+  add_parameters(dealii::ParameterHandler & prm,
+                 std::vector<std::string> const & subsection_names) final
+  {
+    ScalarBase<dim, Number>::add_parameters(prm, subsection_names);
+
+    prm.enter_subsection("Application");
+    {
+      prm.add_parameter("KinematicViscosity", kinematic_viscosity, "Kinematic viscosity of the fluid");
+      prm.add_parameter("TimeSampleCount", number_of_outputs, "Number of output time steps");
+      prm.add_parameter("EndTime", end_time, "End time of the simulation");
+      prm.add_parameter("CFL", CFL, "Courant Number");
+      prm.add_parameter("ReynoldsNumber", Re, "Reynolds number based on bulk velocity" );
+    }
+    prm.leave_subsection();
+
+    prm.enter_subsection("Geometry");
+    {
+      prm.add_parameter("ChannelHeight", channel_height, "Height of the channel");
+      prm.add_parameter("ChannelLength", channel_length, "Length of the channel");
+    }
+    prm.leave_subsection();
+  }
 
 private:
+  void
+  parse_parameters(std::vector<std::string> const & subsection_names) final
+  {
+    ScalarBase<dim, Number>::parse_parameters(subsection_names);
+
+    bulk_velocity      = Re * kinematic_viscosity / channel_height;
+    max_velocity       = 2.0 * bulk_velocity;
+    end_time           = (channel_length / bulk_velocity) * 5.0;;
+
+    output_interval_time = (end_time - start_time) / number_of_outputs;
+    tke = 1.5 * std::pow(bulk_velocity * turbulent_intensity, 2);
+  }
+
   void
   set_parameters() final
   {
@@ -438,7 +506,7 @@ private:
     this->param.update_preconditioner     = false;
 
     // output of solver information
-    this->param.solver_info_data.interval_time = (end_time - start_time) / 10.;
+    this->param.solver_info_data.interval_time = output_interval_time * 5;
 
     // NUMERICAL PARAMETERS
     this->param.use_combined_operator = true;
@@ -451,7 +519,7 @@ private:
       pair;
 
     this->boundary_descriptor->dirichlet_bc.insert(
-      pair(3, new dealii::Functions::ConstantFunction<dim>(tke)));
+      pair(3, new dealii::Functions::ConstantFunction<dim>(1.0)));
   }
 
 

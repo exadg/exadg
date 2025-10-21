@@ -745,6 +745,8 @@ SpatialOperatorBase<dim, Number>::setup(
     initialize_operators(dof_index_scalar_one);
   } else if(param.turbulence_model_data.rans_model){
     initialize_operators(dof_index_scalar_one);
+  } else {
+    initialize_operators();
   }
 
   initialize_calculators_for_derived_quantities();

@@ -4,6 +4,17 @@
         "Dim": "2",
         "IsTest": "false"
     },
+    "Application": {
+        "ReynoldsNumber": "100.0",
+        "KinematicViscosity": "1.e-2",
+        "TimeSampleCount": "50",
+        "EndTime": "10.0",
+        "CFL": "0.3"
+    },
+    "Geometry": {
+        "ChannelHeight": "1.0",
+        "ChennelLength": "4.0"
+    },
     "Fluid": {
         "SpatialResolution": {
             "Degree": "2",
