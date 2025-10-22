@@ -423,18 +423,18 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_div_term_convective_boun
           eval_p_minus.reinit(face);
           eval_u_minus.reinit(face);
 
-          eval_u_minus.gather_evaluate(src, dealii::EvaluationFlags::values);
+          eval_u_minus.gather_evaluate(src, dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
 
           for (const unsigned int q : eval_p_minus.quadrature_point_indices())
             {
               const auto normal = eval_p_minus.normal_vector(q);
 
-              auto bc = this->boundary_descriptor->velocity->neumann_bc.find(boundary_id)->second;
-                auto q_points = eval_p_minus.quadrature_point(q);
-        
-              const auto  grad_u = FunctionEvaluator<2, dim, Number>::value(*bc, q_points, this->evaluation_time);
+              // auto bc = this->boundary_descriptor->velocity->neumann_bc.find(boundary_id)->second;
+              // auto q_points = eval_p_minus.quadrature_point(q);
+              // This should be the boundary condition but we get only grad_u * n which we cannot use, so use the gradient instead
+              const auto  grad_u = eval_u_minus.get_gradient(q); //FunctionEvaluator<1, dim, Number>::value(*bc, q_points, this->evaluation_time);
               const auto u_plus          = eval_u_minus.get_value(q);
-              const auto convective_flux = (grad_u * u_plus) * normal;
+              const auto convective_flux = (grad_u * u_plus) * normal; //grad_u * u_plus
 
               eval_p_minus.submit_value(convective_flux, q);
             }
