@@ -173,7 +173,7 @@ private:
 
     // TEMPORAL DISCRETIZATION
     this->param.solver_type                     = SolverType::Unsteady;
-    this->param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
+    this->param.temporal_discretization         = TemporalDiscretization::BDFConsistentSplittingScheme;
     this->param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     this->param.order_time_integrator           = 3;
     this->param.start_with_low_order            = true;
@@ -187,7 +187,7 @@ private:
 
     // output of solver information
     this->param.solver_info_data.interval_time =
-      (this->param.end_time - this->param.start_time) / 8.0;
+      (this->param.end_time - this->param.start_time) / 1000000000.0;
 
     // pseudo-timestepping for steady-state problems
     this->param.convergence_criterion_steady_problem =
