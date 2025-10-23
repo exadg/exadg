@@ -18,7 +18,7 @@
     },
     "Output": {
         "OutputDirectory": "output/vortex/",
-        "OutputName": "sol",
-        "WriteOutput": "true"
+        "OutputName": "vortex",
+        "WriteOutput": "false"
     }
 }

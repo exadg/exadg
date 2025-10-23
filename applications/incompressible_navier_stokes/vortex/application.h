@@ -369,6 +369,8 @@ private:
       this->param.update_preconditioner_momentum                 = false;
     }
 
+    // CONSISTENT SPLITTING SCHEME  
+    this->param.order_extrapolation_pressure_rhs = 2;
 
     // PRESSURE-CORRECTION SCHEME
 
@@ -629,7 +631,7 @@ private:
     // write output for visualization of results
     pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
     pp_data.output_data.time_control_data.start_time       = start_time;
-    pp_data.output_data.time_control_data.trigger_interval = end_time - start_time;
+    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
     pp_data.output_data.directory                 = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename                  = this->output_parameters.filename;
     pp_data.output_data.write_vorticity           = true;
