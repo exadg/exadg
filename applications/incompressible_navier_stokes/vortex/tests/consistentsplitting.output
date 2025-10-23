@@ -96,8 +96,7 @@ Numerical parameters:
   Quadrature rule linearization:             Overintegration32k
 
 Consistent splitting scheme:
-  Order of extrapolation pressure NBC:       2
-  Formulation convective term in BC:         ConvectiveFormulation
+  Order of extrapolation pressure rhs:       2
 
   Pressure Poisson equation (PPE):
   interior penalty factor:                   1.0000e+00

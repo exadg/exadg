@@ -1180,12 +1180,7 @@ Parameters::print_parameters_consistent_splitting(dealii::ConditionalOStream con
   pcout << std::endl << "Consistent splitting scheme:" << std::endl;
 
   // formulations
-  print_parameter(pcout, "Order of extrapolation pressure righthandside", order_extrapolation_pressure_rhs);
-
-  if(this->convective_problem())
-  {
-    print_parameter(pcout, "Formulation convective term in BC", formulation_convective_term_bc);
-  }
+  print_parameter(pcout, "Order of extrapolation pressure rhs", order_extrapolation_pressure_rhs);
 
   // projection method
 
