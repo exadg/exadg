@@ -96,6 +96,7 @@ Numerical parameters:
   Quadrature rule linearization:             Overintegration32k
 
 Consistent splitting scheme:
+Apply Leray projection in the PPE
   Order of extrapolation pressure rhs:       2
 
   Pressure Poisson equation (PPE):

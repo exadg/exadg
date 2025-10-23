@@ -420,8 +420,9 @@ TimeIntBDFConsistentSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
   /*
    *  I. calculate Leray projection
    */
-  for(unsigned int i = 0; i < velocity_divergence.size(); ++i)
-    rhs.add(-this->bdf.get_alpha(i) / this->get_time_step_size(), velocity_divergence[i]);
+  if(this->param.apply_leray_projection)
+    for(unsigned int i = 0; i < velocity_divergence.size(); ++i)
+      rhs.add(-this->bdf.get_alpha(i) / this->get_time_step_size(), velocity_divergence[i]);
 
    /*
    *  II. convective extrapolation
@@ -732,13 +733,17 @@ TimeIntBDFConsistentSplitting<dim, Number>::prepare_vectors_for_next_timestep()
 
 
   // Compute the divergence of the velocity for the next timestep
-  VectorType velocity_divergence_np(pressure_np);
-  velocity_divergence_np = 0.;
-  pde_operator->compute_Leray_projection_term(velocity_divergence_np,
-                                              velocity[0],
-                                              this->get_next_time());
-  push_back(velocity_divergence);
-  velocity_divergence[0].swap(velocity_divergence_np);
+  if(this->param.apply_leray_projection)
+  {
+    VectorType velocity_divergence_np(pressure_np);
+    velocity_divergence_np = 0.;
+    pde_operator->compute_Leray_projection_term(velocity_divergence_np,
+                                                velocity[0],
+                                                this->get_next_time());
+    push_back(velocity_divergence);
+    velocity_divergence[0].swap(velocity_divergence_np);
+  }
+  
 
   // Compute divergence of convective term
   VectorType vec_convective_term_div_np(pressure_np);

@@ -182,7 +182,7 @@ Parameters::Parameters()
 
     // CONSISTENT SPLITTING SCHEME  
     order_extrapolation_pressure_rhs((order_time_integrator > 1) ? order_time_integrator - 1 : 1),
-
+    apply_leray_projection(true),
 
     // PRESSURE-CORRECTION SCHEME
 
@@ -1178,6 +1178,10 @@ Parameters::print_parameters_consistent_splitting(dealii::ConditionalOStream con
     return;
 
   pcout << std::endl << "Consistent splitting scheme:" << std::endl;
+
+  // Leray projection
+  if(apply_leray_projection)
+    pcout << "  Apply Leray projection in the PPE" << std::endl;
 
   // formulations
   print_parameter(pcout, "Order of extrapolation pressure rhs", order_extrapolation_pressure_rhs);
