@@ -180,6 +180,10 @@ Parameters::Parameters()
     order_extrapolation_pressure_nbc((order_time_integrator <= 2) ? order_time_integrator : 2),
     formulation_convective_term_bc(FormulationConvectiveTerm::ConvectiveFormulation),
 
+    // CONSISTENT SPLITTING SCHEME  
+    order_extrapolation_pressure_rhs((order_time_integrator > 1) ? order_time_integrator - 1 : 1),
+
+
     // PRESSURE-CORRECTION SCHEME
 
     // formulations
@@ -484,6 +488,22 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
                     FormulationConvectiveTerm::ConvectiveFormulation,
                 dealii::ExcMessage("Not implemented."));
   }
+
+  // CONSISTENT SPLITTING SCHEME
+  if(temporal_discretization == TemporalDiscretization::BDFConsistentSplittingScheme)
+  {
+    AssertThrow(spatial_discretization != SpatialDiscretization::HDIV,
+                dealii::ExcMessage("Not implemented."));
+
+    AssertThrow(order_extrapolation_pressure_rhs <= order_time_integrator,
+      dealii::ExcMessage("Invalid parameter order_extrapolation_pressure_rhs!"));
+
+    AssertThrow(!ale_formulation,
+      dealii::ExcMessage("Not implemented."));
+        
+    AssertThrow(!viscosity_is_variable(),
+      dealii::ExcMessage("Not implemented."));
+    }
 
   // PRESSURE-CORRECTION SCHEME
   if(temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
@@ -1160,7 +1180,7 @@ Parameters::print_parameters_consistent_splitting(dealii::ConditionalOStream con
   pcout << std::endl << "Consistent splitting scheme:" << std::endl;
 
   // formulations
-  print_parameter(pcout, "Order of extrapolation pressure NBC", order_extrapolation_pressure_nbc);
+  print_parameter(pcout, "Order of extrapolation pressure righthandside", order_extrapolation_pressure_rhs);
 
   if(this->convective_problem())
   {
@@ -1173,8 +1193,11 @@ Parameters::print_parameters_consistent_splitting(dealii::ConditionalOStream con
   print_parameters_pressure_poisson(pcout);
 
   // projection step
-  pcout << std::endl << "  Projection step:" << std::endl;
-  print_parameters_projection_step(pcout);
+  if(apply_penalty_terms_in_postprocessing_step)
+  {
+    pcout << std::endl << "  Projection step:" << std::endl;
+    print_parameters_projection_step(pcout);
+  }
 
   // momentum step
   if(viscous_problem() or non_explicit_convective_problem())

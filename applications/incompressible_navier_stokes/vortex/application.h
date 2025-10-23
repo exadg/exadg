@@ -258,7 +258,7 @@ private:
 
     // TEMPORAL DISCRETIZATION
     this->param.solver_type                  = SolverType::Unsteady;
-    this->param.temporal_discretization      = TemporalDiscretization::BDFConsistentSplittingScheme; //BDFConsistentSplittingScheme
+    this->param.temporal_discretization      = TemporalDiscretization::BDFConsistentSplittingScheme;
     this->param.treatment_of_convective_term = TreatmentOfConvectiveTerm::LinearlyImplicit;
     this->param.order_time_integrator        = 2;
     this->param.start_with_low_order         = false;
@@ -272,7 +272,7 @@ private:
     this->param.c_eff                           = 8.0;
 
     // output of solver information
-    this->param.solver_info_data.interval_time = (this->param.end_time - this->param.start_time);
+    this->param.solver_info_data.interval_time = this->param.end_time - this->param.start_time;
 
     // restart
     this->param.restarted_simulation             = false;
@@ -352,7 +352,7 @@ private:
     {
       if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
       {
-        this->param.solver_momentum      = SolverMomentum::GMRES;
+        this->param.solver_momentum      = SolverMomentum::CG;
         this->param.solver_data_momentum = SolverData(1000, 1.e-12, 1.e-6);
       }
       else
@@ -627,9 +627,9 @@ private:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.time_control_data.is_active        = false; //this->output_parameters.write;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
     pp_data.output_data.time_control_data.start_time       = start_time;
-    pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time);
+    pp_data.output_data.time_control_data.trigger_interval = end_time - start_time;
     pp_data.output_data.directory                 = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename                  = this->output_parameters.filename;
     pp_data.output_data.write_vorticity           = true;

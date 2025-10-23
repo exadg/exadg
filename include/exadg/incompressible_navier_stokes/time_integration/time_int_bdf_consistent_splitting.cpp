@@ -53,7 +53,7 @@ TimeIntBDFConsistentSplitting<dim, Number>::TimeIntBDFConsistentSplitting(
     iterations_viscous({0, {0, 0}}),
     iterations_penalty({0, 0}),
     iterations_mass({0, 0}),
-    extra_pressure_nbc(this->param.order_extrapolation_pressure_nbc,
+    extra_pressure_rhs(this->param.order_extrapolation_pressure_rhs,
                        this->param.start_with_low_order)
 {
 }
@@ -66,13 +66,13 @@ TimeIntBDFConsistentSplitting<dim, Number>::update_time_integrator_constants()
   Base::update_time_integrator_constants();
 
   // update time integrator constants for extrapolation scheme of pressure Neumann bc
-  extra_pressure_nbc.update(this->get_time_step_number(),
+  extra_pressure_rhs.update(this->get_time_step_number(),
                             this->adaptive_time_stepping,
                             this->get_time_step_vector());
 
   // use this function to check the correctness of the time integrator constants
   //    std::cout << "Coefficients extrapolation scheme pressure NBC:" << std::endl;
-  //    extra_pressure_nbc.print(this->pcout);
+  //    extra_pressure_rhs.print(this->pcout);
 }
 
 template<int dim, typename Number>
@@ -128,7 +128,8 @@ void
 TimeIntBDFConsistentSplitting<dim, Number>::initialize_current_solution()
 {
   if(this->param.ale_formulation)
-    this->helpers_ale->move_grid(this->get_time());
+    AssertThrow(false, dealii::ExcMessage("not implemented."));
+  //  this->helpers_ale->move_grid(this->get_time());
 
   pde_operator->prescribe_initial_conditions(velocity[0], pressure[0], this->get_time());
 
@@ -333,8 +334,10 @@ TimeIntBDFConsistentSplitting<dim, Number>::do_timestep_solve()
     penalty_step();
 
   // evaluate convective term once the final solution at time
-  // t_{n+1} is known
-  evaluate_convective_term();
+  // t_{n+1} is known in the explicit case
+  if(this->param.convective_problem() and
+         this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+    evaluate_convective_term();
 }
 
 template<int dim, typename Number>
@@ -423,9 +426,9 @@ TimeIntBDFConsistentSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
    /*
    *  II. convective extrapolation
    */
-  for(unsigned int i = 0; i < extra_pressure_nbc.get_order();
+  for(unsigned int i = 0; i < extra_pressure_rhs.get_order();
       ++i) // TODO: get the right extrapolation order here
-    rhs.add(extra_pressure_nbc.get_beta(i), this->vec_convective_term_div[i]);
+    rhs.add(extra_pressure_rhs.get_beta(i), this->vec_convective_term_div[i]);
 
   /*
    *  III. forcing term
@@ -441,9 +444,9 @@ TimeIntBDFConsistentSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
    */
   VectorType velocity_extra(velocity[0]);
   velocity_extra = 0.0;
-  for(unsigned int i = 0; i < extra_pressure_nbc.get_order(); ++i)
+  for(unsigned int i = 0; i < extra_pressure_rhs.get_order(); ++i)
   {
-    velocity_extra.add(this->extra_pressure_nbc.get_beta(i), velocity[i]);
+    velocity_extra.add(this->extra_pressure_rhs.get_beta(i), velocity[i]);
   }
 
   VectorType vorticity(velocity_extra);
@@ -490,19 +493,9 @@ TimeIntBDFConsistentSplitting<dim, Number>::momentum_step()
     /*
      *  update variable viscosity
      */
-    if(this->param.viscous_problem() and this->param.viscosity_is_variable() and
-       this->param.treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit)
+    if(this->param.viscous_problem() and this->param.viscosity_is_variable())
     {
-      dealii::Timer timer_viscosity_update;
-      timer_viscosity_update.restart();
-
-      pde_operator->update_viscosity(velocity_np);
-
-      if(this->print_solver_info() and not(this->is_test))
-      {
-        this->pcout << std::endl << "Update of variable viscosity:";
-        print_wall_time(this->pcout, timer_viscosity_update.wall_time());
-      }
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
     }
 
     bool const update_preconditioner =

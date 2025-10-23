@@ -619,6 +619,17 @@ public:
 
   /**************************************************************************************/
   /*                                                                                    */
+  /*                        CONSISTENT SPLITTING SCHEME                                 */
+  /*                                                                                    */
+  /**************************************************************************************/
+
+  // FORMULATIONS
+
+  // order of extrapolation of viscous term and convective term in the pressure righthandside
+  unsigned int order_extrapolation_pressure_rhs;
+
+  /**************************************************************************************/
+  /*                                                                                    */
   /*                            PRESSURE-CORRECTION SCHEME                              */
   /*                                                                                    */
   /**************************************************************************************/

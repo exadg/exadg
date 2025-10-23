@@ -122,7 +122,7 @@ OperatorProjectionMethods<dim, Number>::initialize_laplace_operator()
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFConsistentSplittingScheme)
   {
-    // the Krylov subspace projection is needed for the dual splitting scheme since the linear
+    // the Krylov subspace projection is needed for the consistent splitting scheme since the linear
     // system of equations is not consistent for this splitting method (due to the boundary
     // conditions).
     laplace_operator_data.operator_is_singular = this->is_pressure_level_undefined();
