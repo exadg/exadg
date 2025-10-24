@@ -221,6 +221,7 @@ Operator<dim, Number>::setup_operators()
                                       get_dof_index(),
                                       get_quad_index());
     turbulence_model_ptr->scalar_type = param.scalar_type;
+    turbulence_model_ptr->model_coefficients = param.turbulence_model_data.turbulence_data_base->get_all_coefficients();
   }
 
   // diffusive operator
@@ -293,6 +294,7 @@ Operator<dim, Number>::setup_operators()
     combined_operator_data.solver_block_diagonal         = param.solver_block_diagonal;
     combined_operator_data.preconditioner_block_diagonal = param.preconditioner_block_diagonal;
     combined_operator_data.solver_data_block_diagonal    = param.solver_data_block_diagonal;
+    combined_operator_data.turbulence_model_enabled      = param.turbulence_model_data.is_active;
 
     // linear system of equations has to be solved: the problem is either steady or
     // an unsteady problem is solved with BDF time integration (semi-implicit or fully implicit
@@ -342,6 +344,9 @@ Operator<dim, Number>::setup_operators()
                                  combined_operator_data,
                                  convective_kernel,
                                  diffusive_kernel);
+    if (param.turbulence_model_data.is_active) {
+    AssertThrow(combined_operator.diffusive_kernel->turbulence_model_ptr!=nullptr, dealii::ExcMessage("turbulence poniter not initialised from combined operator"));
+    }
   }
 }
 

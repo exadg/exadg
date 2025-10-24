@@ -65,7 +65,7 @@ TurbulenceModel<dim, Number>::initialize(
 
   this->matrix_free->initialize_dof_vector(eddy_viscosity, dof_index_in);
 
-  model_coefficients = this->turbulence_data_base->get_all_coefficients();
+  /*model_coefficients = this->turbulence_data_base->get_all_coefficients();*/
 }
 
 template<int dim, typename Number>
@@ -372,7 +372,7 @@ TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients(
 
       eddy_viscosity_coefficients.set_coefficient_face(face, q, viscosity);
 
-      viscosity = current_viscosity + (viscosity / turbulence_data_base->sigma_k);
+      viscosity = current_viscosity + (viscosity / model_coefficients[0]);
 
       // set the coefficients
       viscosity_coefficients.set_coefficient_face(face, q, viscosity);
@@ -479,21 +479,6 @@ TurbulenceModel<dim, Number>::k_epsilon_model(scalar const & tke,
   /*std::cout << "tke : " << tke << std::endl;*/
   /*std::cout << "epsilon : " << epsilon << std::endl;*/
   /*std::cout << "eddy viscosity : " << viscosity << std::endl;*/
-}
-
-template<int dim, typename Number>
-std::shared_ptr<TurbulenceDataBase> 
-TurbulenceModel<dim, Number>::create_turbulence_data()
-{
-  switch(turbulence_model_data.turbulence_model)
-  {
-    case TurbulenceEddyViscosityModel::PrandtlMixingLength:
-      return std::make_shared<PrandtlMixingLengthData>();
-      break;
-    case TurbulenceEddyViscosityModel::StandardKEpsilon:
-      return std::make_shared<StandardKEpsilonData>();
-      break;
-  }
 }
 
 template class TurbulenceModel<2, float>;

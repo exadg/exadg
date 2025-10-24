@@ -78,6 +78,13 @@ TurbulenceModel<dim, Number>::set_eddy_viscosity(VectorType const & eddy_viscosi
 
 template<int dim, typename Number>
 void
+TurbulenceModel<dim, Number>::get_eddy_viscosity(VectorType & dst) const
+{
+  dst = *this->eddy_viscosity;
+}
+
+template<int dim, typename Number>
+void
 TurbulenceModel<dim, Number>::add_viscosity(VectorType const & velocity) const
 {
   VectorType dummy;

@@ -333,6 +333,9 @@ public:
   void
   set_eddy_viscosity(VectorType const & eddy_viscosity_in);
 
+  void
+  get_eddy_viscosity(VectorType & dst) const;
+
   /*
    * Computation of derived quantities which is needed for postprocessing but some of them are also
    * needed, e.g., for special splitting-type time integration schemes.

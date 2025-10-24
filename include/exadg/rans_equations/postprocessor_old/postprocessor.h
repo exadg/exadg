@@ -26,14 +26,11 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
+#include <exadg/rans_equations/postprocessor/postprocessor_base.h>
+#include <exadg/rans_equations/user_interface/analytical_solution.h>
 #include <exadg/postprocessor/error_calculation.h>
 #include <exadg/postprocessor/output_data_base.h>
 #include <exadg/rans_equations/postprocessor/output_generator.h>
-#include <exadg/rans_equations/postprocessor/postprocessor_base.h>
-#include <exadg/rans_equations/user_interface/analytical_solution.h>
-
-#include <exadg/rans_equations/spatial_discretization/turbulence_model.h>
-#include <exadg/rans_equations/spatial_discretization/operator.h>
 
 namespace ExaDG
 {
@@ -58,8 +55,6 @@ protected:
 
   typedef typename Base::VectorType VectorType;
 
-  typedef Operator<dim, Number> RANSOperator;
-
 public:
   PostProcessor(PostProcessorData<dim> const & pp_data, MPI_Comm const & mpi_comm);
 
@@ -78,22 +73,10 @@ protected:
   MPI_Comm const mpi_comm;
 
 private:
-  void
-  initialize_additional_fields();
-
-  void
-  invalidate_additional_fields();
-
   PostProcessorData<dim> pp_data;
 
   OutputGenerator<dim, Number> output_generator;
   ErrorCalculator<dim, Number> error_calculator;
-
-  SolutionField<dim, Number> eddy_viscosity;
-
-  dealii::SmartPointer<RANSOperator const> rans_operator;
-
-  VectorType nu_t;
 };
 
 } // namespace RANS

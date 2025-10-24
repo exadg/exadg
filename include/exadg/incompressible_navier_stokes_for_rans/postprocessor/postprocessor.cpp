@@ -185,6 +185,11 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
       cfl_vector.evaluate(velocity);
       additional_fields_vtu.push_back(&cfl_vector);
     }
+    if(pp_data.output_data.write_eddy_viscosity)
+    {
+      eddy_viscosity.evaluate(velocity);
+      additional_fields_vtu.push_back(&eddy_viscosity);
+    }
 
     output_generator.evaluate(velocity,
                               pressure,
@@ -435,6 +440,22 @@ PostProcessor<dim, Number>::initialize_derived_fields()
 
     cfl_vector.reinit();
   }
+
+  // velocity magnitude
+  if(pp_data.output_data.write_eddy_viscosity)
+  {
+    eddy_viscosity.type              = SolutionFieldType::scalar;
+    eddy_viscosity.name              = "eddy_viscosity";
+    eddy_viscosity.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
+    eddy_viscosity.initialize_vector = [&](VectorType & dst) {
+      navier_stokes_operator->initialize_vector_velocity_scalar(dst);
+    };
+    eddy_viscosity.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
+      navier_stokes_operator->get_eddy_viscosity(dst);
+    };
+
+    eddy_viscosity.reinit();
+  }
 }
 
 template<int dim, typename Number>
@@ -451,6 +472,7 @@ PostProcessor<dim, Number>::invalidate_derived_fields()
   q_criterion.invalidate();
   cfl_vector.invalidate();
   mean_velocity.invalidate();
+  eddy_viscosity.invalidate();
 }
 
 template class PostProcessor<2, float>;

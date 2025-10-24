@@ -43,7 +43,8 @@ struct OutputData : public OutputDataBase
       write_q_criterion(false),
       mean_velocity(TimeControlData()),
       write_cfl(false),
-      write_aspect_ratio(false)
+      write_aspect_ratio(false),
+      write_eddy_viscosity(false)
   {
   }
 
@@ -60,6 +61,7 @@ struct OutputData : public OutputDataBase
     print_parameter(pcout, "Write vorticity magnitude", write_vorticity_magnitude);
     print_parameter(pcout, "Write streamfunction", write_streamfunction);
     print_parameter(pcout, "Write Q criterion", write_q_criterion);
+    print_parameter(pcout, "Write eddy viscosity", write_eddy_viscosity);
 
     mean_velocity.print(pcout, unsteady);
   }
@@ -81,6 +83,9 @@ struct OutputData : public OutputDataBase
 
   // write vorticity magnitude
   bool write_vorticity_magnitude;
+
+  // write eddy viscosity
+  bool write_eddy_viscosity;
 
   // Calculate streamfunction in order to visualize streamlines!
   // Note that this option is only available in 2D!

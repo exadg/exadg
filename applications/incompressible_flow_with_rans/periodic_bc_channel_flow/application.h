@@ -37,8 +37,14 @@ double end_time = 10.0;
 double number_of_outputs = 10.0;
 
 double turbulence_length_scale = 1.0;
+double sigma_k = 1.0;
+double C_D = 0.07;
 double turbulent_intensity = 0.05;
 double tke = 1.5 * std::pow(bulk_velocity * turbulent_intensity, 2);
+bool production_term = false;
+bool dissipation_term = false;
+double tke_wall = 0.0;
+std::vector<double> turbulence_model_coefficients = {sigma_k, C_D, turbulence_length_scale};
 
 bool const write_restart =false;
 double const restart_interval_time = 10.0;
@@ -159,10 +165,10 @@ private:
     this->param.quad_rule_linearization = QuadratureRuleLinearization::Standard;
 
     //TURBULENCE
-    /*this->param.turbulence_model_data.is_active        = true;*/
-    /*this->param.turbulence_model_data.turbulence_model = IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength;*/
-    /*this->param.treatment_of_variable_viscosity = TreatmentOfVariableViscosity::Explicit;*/
-    /*this->param.turbulence_model_data.rans_model = true;*/
+    this->param.turbulence_model_data.is_active        = true;
+    this->param.turbulence_model_data.turbulence_model = IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength;
+    this->param.treatment_of_variable_viscosity = TreatmentOfVariableViscosity::Explicit;
+    this->param.turbulence_model_data.rans_model = true;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -414,6 +420,8 @@ public:
       prm.add_parameter("EndTime", end_time, "End time of the simulation");
       prm.add_parameter("CFL", CFL, "Courant Number");
       prm.add_parameter("ReynoldsNumber", Re, "Reynolds number based on bulk velocity" );
+      prm.add_parameter("ProductionTerm", production_term, "Include production term in transport equation");
+      prm.add_parameter("DissipationTerm", dissipation_term, "Include dissipation term in transport equation");
     }
     prm.leave_subsection();
 
@@ -421,6 +429,15 @@ public:
     {
       prm.add_parameter("ChannelHeight", channel_height, "Height of the channel");
       prm.add_parameter("ChannelLength", channel_length, "Length of the channel");
+      prm.add_parameter("TKEWall", tke_wall, "Turbulent kinetic energy at the wall");
+      prm.add_parameter("TurbulentIntensity", turbulent_intensity, "Turbulent intensity");
+    }
+    prm.leave_subsection();
+    prm.enter_subsection("PrandtlMixingLengthModelCoefficients");
+    {
+      prm.add_parameter("SigmaK", sigma_k, "Turbulent Prandtl number for turbulent kinetic energy");
+      prm.add_parameter("CD", C_D, "Dissipation coefficient");
+      prm.add_parameter("TurbulenceLengthScale", turbulence_length_scale, "Turbulence length scale");
     }
     prm.leave_subsection();
   }
@@ -437,6 +454,8 @@ private:
 
     output_interval_time = (end_time - start_time) / number_of_outputs;
     tke = 1.5 * std::pow(bulk_velocity * turbulent_intensity, 2);
+
+    turbulence_model_coefficients = {sigma_k, C_D, turbulence_length_scale};
   }
 
   void
@@ -448,7 +467,7 @@ private:
     this->param.equation_type               = EquationType::ConvectionDiffusion;
     this->param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
     this->param.analytical_velocity_field   = false;
-    this->param.right_hand_side             = false;
+    this->param.right_hand_side             = true;
     
     this->param.scalar_type = ScalarType::TurbulentKineticEnergy;
 
@@ -484,6 +503,9 @@ private:
     this->param.turbulence_model_data.turbulence_model = TurbulenceEddyViscosityModel::PrandtlMixingLength;
     this->param.treatment_of_variable_viscosity = TreatmentOfVariableViscosity::Explicit;
     this->param.turbulence_model_data.positivity_preserving_limiter = RANS::PositivityPreservingLimiter::LogarithmicTransportVariable;
+    this->param.turbulence_model_data.production_term = production_term;
+    this->param.turbulence_model_data.dissipation_term = dissipation_term;
+    this->param.turbulence_model_data.initialize_and_set_turbulence_coefficients(turbulence_model_coefficients);
 
     // convective term
     this->param.numerical_flux_convective_operator =
@@ -497,7 +519,7 @@ private:
     this->param.use_cell_based_face_loops                           = false;
 
     // SOLVER
-    this->param.solver                    = RANS::Solver::CG;
+    this->param.solver                    = RANS::Solver::GMRES;
     this->param.solver_data               = SolverData(1e4, 1.e-12, 1.e-6, 100);
     this->param.preconditioner            = Preconditioner::InverseMassMatrix;
     this->param.multigrid_data.type       = MultigridType::pMG;
@@ -519,7 +541,7 @@ private:
       pair;
 
     this->boundary_descriptor->dirichlet_bc.insert(
-      pair(3, new dealii::Functions::ConstantFunction<dim>(1.0)));
+      pair(3, new dealii::Functions::ConstantFunction<dim>(tke_wall)));
   }
 
 
@@ -542,6 +564,8 @@ private:
     pp_data.output_data.filename           = this->output_parameters.filename;
     pp_data.output_data.degree             = this->param.degree;
     pp_data.output_data.write_higher_order = true;
+    if (this->param.turbulence_model_data.is_active)
+      pp_data.output_data.write_eddy_viscosity = true;
 
     std::shared_ptr<RANS::PostProcessorBase<dim, Number>> pp;
     pp.reset(new RANS::PostProcessor<dim, Number>(pp_data, this->mpi_comm));

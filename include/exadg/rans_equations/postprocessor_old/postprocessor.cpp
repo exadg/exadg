@@ -19,11 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#include <deal.II/base/exceptions.h>
-#include <deal.II/base/smartpointer.h>
 #include <exadg/rans_equations/postprocessor/postprocessor.h>
 #include <exadg/rans_equations/spatial_discretization/operator.h>
-#include "exadg/postprocessor/solution_field.h"
 
 namespace ExaDG
 {
@@ -43,7 +40,6 @@ template<int dim, typename Number>
 void
 PostProcessor<dim, Number>::setup(Operator<dim, Number> const & pde_operator)
 {
-  rans_operator = &pde_operator;
   error_calculator.setup(pde_operator.get_dof_handler(),
                          *pde_operator.get_mapping(),
                          pp_data.error_data);
@@ -51,8 +47,6 @@ PostProcessor<dim, Number>::setup(Operator<dim, Number> const & pde_operator)
   output_generator.setup(pde_operator.get_dof_handler(),
                          *pde_operator.get_mapping(),
                          pp_data.output_data);
-
-  initialize_additional_fields();
 }
 
 template<int dim, typename Number>
@@ -69,51 +63,11 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     solution,
                                               double const           time,
                                               types::time_step const time_step_number)
 {
-  invalidate_additional_fields();
-  std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> additional_fields_vtu;
-  if (pp_data.output_data.write_eddy_viscosity) {
-    eddy_viscosity.evaluate(nu_t);
-    additional_fields_vtu.push_back(&eddy_viscosity);
-  }
-
-
   if(error_calculator.time_control.needs_evaluation(time, time_step_number))
     error_calculator.evaluate(solution, time, Utilities::is_unsteady_timestep(time_step_number));
 
   if(output_generator.time_control.needs_evaluation(time, time_step_number))
-    output_generator.evaluate(solution,
-                              additional_fields_vtu,
-                              time,
-                              Utilities::is_unsteady_timestep(time_step_number));
-}
-
-
-template<int dim, typename Number>
-void
-PostProcessor<dim, Number>::initialize_additional_fields()
-{
-  // eddy_viscosity
-  if(pp_data.output_data.write_eddy_viscosity )
-  {
-    eddy_viscosity.type              = SolutionFieldType::scalar;
-    eddy_viscosity.name              = "eddy_viscosity";
-    eddy_viscosity.dof_handler       = &rans_operator->get_dof_handler();
-    eddy_viscosity.initialize_vector = [&](VectorType & dst) {
-      rans_operator->initialize_dof_vector(dst);
-    };
-    eddy_viscosity.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
-      rans_operator->get_eddy_viscosity(dst);
-    };
-
-    eddy_viscosity.reinit();
-  }
-}
-
-template<int dim, typename Number>
-void
-PostProcessor<dim, Number>::invalidate_additional_fields()
-{
-  eddy_viscosity.invalidate();
+    output_generator.evaluate(solution, time, Utilities::is_unsteady_timestep(time_step_number));
 }
 
 template class PostProcessor<2, float>;

@@ -248,11 +248,11 @@ public:
     scalar result = dealii::make_vectorized_array<Number>(0.);
     vector sol_grad = integrator.get_gradient(q);
     scalar sol = integrator.get_value(q);
-    result = sipg_varying_viscosity_integral(sol, sol_grad, eddy_viscosity);
-    if(data.positivity_preserving_limiter==PositivityPreservingLimiter::LogarithmicTransportVariable)
-    {
-      result += limiter_term(sol_grad, effective_viscosity);
-    }
+    /*result = sipg_varying_viscosity_integral(sol, sol_grad, eddy_viscosity);*/
+    /*if(data.positivity_preserving_limiter==PositivityPreservingLimiter::LogarithmicTransportVariable)*/
+    /*{*/
+    /*  result += limiter_term(sol_grad, effective_viscosity);*/
+    /*}*/
     return result;
   }
 

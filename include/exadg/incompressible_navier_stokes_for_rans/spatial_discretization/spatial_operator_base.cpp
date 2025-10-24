@@ -20,6 +20,7 @@
  */
 
 // ExaDG
+#include "spatial_operator_base.h"
 #include <exadg/functions_and_boundary_conditions/interpolate.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/incompressible_navier_stokes_for_rans/preconditioners/multigrid_preconditioner_projection.h>
@@ -1247,6 +1248,13 @@ SpatialOperatorBase<dim, Number>::set_eddy_viscosity(VectorType const & eddy_vis
 {
   AssertThrow(param.turbulence_model_data.rans_model, dealii::ExcMessage("Invalid parameters detected for rans model."));
   turbulence_model.set_eddy_viscosity(eddy_viscosity_in);
+}
+
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::get_eddy_viscosity(VectorType & dst) const
+{
+  turbulence_model.get_eddy_viscosity(dst);
 }
 
 template<int dim, typename Number>

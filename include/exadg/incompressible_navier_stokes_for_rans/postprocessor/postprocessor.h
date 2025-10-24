@@ -106,6 +106,7 @@ private:
   SolutionField<dim, Number> streamfunction;
   SolutionField<dim, Number> q_criterion;
   SolutionField<dim, Number> cfl_vector;
+  SolutionField<dim, Number> eddy_viscosity;
 
   TimeControl                time_control_mean_velocity;
   SolutionField<dim, Number> mean_velocity; // velocity field averaged over time

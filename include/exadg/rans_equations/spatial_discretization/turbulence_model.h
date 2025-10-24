@@ -34,49 +34,6 @@ namespace ExaDG
 {
 namespace RANS
 {
-struct TurbulenceDataBase
-{
-  TurbulenceDataBase() : sigma_k(1.0)
-  {}
-  virtual ~TurbulenceDataBase() {}
-  double sigma_k;
-
-  virtual std::vector<double> get_all_coefficients() const = 0;
-};
-struct PrandtlMixingLengthData : public TurbulenceDataBase
-{
-  PrandtlMixingLengthData() : C_D(0.07),
-    turbulent_length_scale(1.0)
-  {}
-
-  double C_D;
-  double turbulent_length_scale;
-
-  virtual std::vector<double> get_all_coefficients() const override
-  {
-    return {sigma_k, C_D, turbulent_length_scale};
-  }
-};
-struct StandardKEpsilonData : public TurbulenceDataBase
-{
-  StandardKEpsilonData() : C_epsilon_1(1.44),
-                  C_epsilon_2(1.92),
-                  C_mu(0.09),
-                  sigma_epsilon(1.3)
-  {}
-
-  double C_epsilon_1;
-  double C_epsilon_2;
-  double C_mu;
-  double sigma_epsilon;
-
-  virtual std::vector<double> get_all_coefficients() const override
-  {
-    return {sigma_k, C_epsilon_1, C_epsilon_2, C_mu, sigma_epsilon};
-  }
-
-};
-
 /*
  *  Turbulence model.
  */
@@ -323,9 +280,6 @@ public:
     return average_viscosity;
   }
 
-  std::shared_ptr<TurbulenceDataBase>
-  create_turbulence_data();
-
   TurbulenceModelData           turbulence_model_data;
   VariableCoefficients<dealii::VectorizedArray<Number>> viscosity_coefficients;
   VariableCoefficients<dealii::VectorizedArray<Number>> eddy_viscosity_coefficients;
@@ -338,7 +292,6 @@ public:
   double diffusivity;
   ScalarType scalar_type;
 
-  std::shared_ptr<TurbulenceDataBase> turbulence_data_base = create_turbulence_data();
   std::vector<double> model_coefficients;
 };
 

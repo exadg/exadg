@@ -134,6 +134,7 @@ SET(TARGET_SRC
      include/exadg/rans_equations/time_integration/time_int_explicit_runge_kutta.cpp
      include/exadg/rans_equations/time_integration/driver_steady_problems.cpp
      include/exadg/rans_equations/postprocessor/postprocessor.cpp
+     include/exadg/rans_equations/postprocessor/output_generator.cpp
      include/exadg/rans_equations/driver.cpp
      # incompressible Navier-Stokes equations
      include/exadg/incompressible_navier_stokes/user_interface/parameters.cpp

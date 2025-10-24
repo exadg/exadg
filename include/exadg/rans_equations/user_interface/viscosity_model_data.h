@@ -58,6 +58,83 @@ enum class PositivityPreservingLimiter
   LogarithmicTransportVariable
 };
 
+struct TurbulenceDataBase
+{
+  TurbulenceDataBase() : sigma_k(1.0)
+  {}
+  virtual ~TurbulenceDataBase() {}
+  double sigma_k;
+
+  virtual void set_all_coefficients(std::vector<double> const & coefficients) = 0;
+  virtual std::vector<double> get_all_coefficients() const = 0;
+
+  virtual void print_coefficients(dealii::ConditionalOStream const & pcout) const = 0;
+};
+struct PrandtlMixingLengthData : public TurbulenceDataBase
+{
+  PrandtlMixingLengthData() : C_D(0.07),
+    turbulent_length_scale(1.0)
+  {}
+
+  double C_D;
+  double turbulent_length_scale;
+
+  virtual void set_all_coefficients(std::vector<double> const & coefficients) override
+  {
+    sigma_k = coefficients[0];
+    C_D = coefficients[1];
+    turbulent_length_scale = coefficients[2];
+  }
+
+  virtual std::vector<double> get_all_coefficients() const override
+  {
+    return {sigma_k, C_D, turbulent_length_scale};
+  }
+
+  virtual void print_coefficients(dealii::ConditionalOStream const & pcout) const override
+  {
+    print_parameter(pcout, "sigma_k", sigma_k);
+    print_parameter(pcout, "C_D", C_D);
+    print_parameter(pcout, "turbulent_length_scale", turbulent_length_scale);
+  }
+};
+struct StandardKEpsilonData : public TurbulenceDataBase
+{
+  StandardKEpsilonData() : C_epsilon_1(1.44),
+                  C_epsilon_2(1.92),
+                  C_mu(0.09),
+                  sigma_epsilon(1.3)
+  {}
+
+  double C_epsilon_1;
+  double C_epsilon_2;
+  double C_mu;
+  double sigma_epsilon;
+
+  virtual void set_all_coefficients(std::vector<double> const & coefficients) override
+  {
+    sigma_k = coefficients[0];
+    C_epsilon_1 = coefficients[1];
+    C_epsilon_2 = coefficients[2];
+    C_mu = coefficients[3];
+    sigma_epsilon = coefficients[4];
+  }
+
+  virtual std::vector<double> get_all_coefficients() const override
+  {
+    return {sigma_k, C_epsilon_1, C_epsilon_2, C_mu, sigma_epsilon};
+  }
+
+  virtual void print_coefficients(dealii::ConditionalOStream const & pcout) const override
+  {
+    print_parameter(pcout, "sigma_k", sigma_k);
+    print_parameter(pcout, "C_epsilon_1", C_epsilon_1);
+    print_parameter(pcout, "C_epsilon_2", C_epsilon_2);
+    print_parameter(pcout, "C_mu", C_mu);
+    print_parameter(pcout, "sigma_epsilon", sigma_epsilon);
+  }
+};
+
 struct TurbulenceModelData
 {
   TurbulenceModelData()
@@ -68,11 +145,21 @@ struct TurbulenceModelData
   bool                         is_active{false};
   bool                         production_term{false};
   bool                         dissipation_term{false};
-  double                       turbulent_length_scale{1.0};
   PositivityPreservingLimiter  positivity_preserving_limiter{PositivityPreservingLimiter::Undefined}; 
+  std::shared_ptr<TurbulenceDataBase> turbulence_data_base;
 
   void
-  check() const
+  initialize_and_set_turbulence_coefficients(std::vector<double> const & coefficients)
+  {
+    if(is_active)
+    {
+      turbulence_data_base = create_turbulence_data();
+      turbulence_data_base->set_all_coefficients(coefficients);
+    }
+  }
+
+  void
+  check()
   {
     AssertThrow(is_active, dealii::ExcMessage("Turbulence model is inactive."));
   }
@@ -83,14 +170,29 @@ struct TurbulenceModelData
     pcout << std::endl << "Turbulence:" << std::endl;
 
     print_parameter(pcout, "Use turbulence model", is_active);
-    print_parameter(pcout, "Use production term", production_term);
-    print_parameter(pcout, "Use dissipation term", dissipation_term);
 
     if(is_active)
     {
+      AssertThrow(turbulence_data_base != nullptr, dealii::ExcMessage("Turbulence data base not initialized."));
       print_parameter(pcout, "Turbulence model", turbulence_model);
-      print_parameter(pcout, "Turbulent length scale", turbulent_length_scale);
       print_parameter(pcout, "Positivity preserving limiter", positivity_preserving_limiter);
+      print_parameter(pcout, "Use production term", production_term);
+      print_parameter(pcout, "Use dissipation term", dissipation_term);
+      turbulence_data_base->print_coefficients(pcout);
+    }
+  }
+
+  std::shared_ptr<TurbulenceDataBase> 
+  create_turbulence_data()
+  {
+    switch(turbulence_model)
+    {
+      case TurbulenceEddyViscosityModel::PrandtlMixingLength:
+        return std::make_shared<PrandtlMixingLengthData>();
+        break;
+      case TurbulenceEddyViscosityModel::StandardKEpsilon:
+        return std::make_shared<StandardKEpsilonData>();
+        break;
     }
   }
 };
