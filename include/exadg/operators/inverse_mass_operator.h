@@ -59,8 +59,7 @@ struct InverseMassOperatorData
   {
     if(fe.conforms(dealii::FiniteElementData<dim>::L2))
     {
-      dealii::ReferenceCell const reference_cell = fe.reference_cell();
-      if(reference_cell.is_hyper_cube())
+      if(fe.reference_cell().is_hyper_cube())
       {
         return InverseMassType::MatrixfreeOperator;
       }
