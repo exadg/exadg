@@ -614,6 +614,9 @@ public:
   // used (exploiting that div(u)=0 holds in the continuous case).
   FormulationConvectiveTerm formulation_convective_term_bc;
 
+  // add divergence of the viscous term to the right hand side of the PPE
+  bool add_viscous_term_in_ppe;
+
   /**************************************************************************************/
   /*                                                                                    */
   /*                            PRESSURE-CORRECTION SCHEME                              */

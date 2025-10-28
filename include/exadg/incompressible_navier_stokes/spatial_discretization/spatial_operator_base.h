@@ -78,6 +78,9 @@ protected:
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
+  typedef CellIntegrator<dim, dim, Number> CellIntegratorU;
+  typedef CellIntegrator<dim, 1, Number>   CellIntegratorP;
+
   typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
   typedef FaceIntegrator<dim, 1, Number>   FaceIntegratorP;
 
@@ -361,7 +364,7 @@ public:
 
   // get the current visosity field as vector
   void
-  access_viscosity(VectorType & dst, VectorType const & src) const;
+  access_viscosity(VectorType & dst) const;
 
   /*
    * Operators.

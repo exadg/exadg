@@ -70,6 +70,12 @@ TimeIntBDFCoupled<dim, Number>::initialize_current_solution()
   pde_operator->prescribe_initial_conditions(solution[0].block(0),
                                              solution[0].block(1),
                                              this->get_time());
+
+  // Update the variable viscosity.
+  if(this->param.viscous_problem() and this->param.viscosity_is_variable())
+  {
+    pde_operator->update_viscosity(solution[0].block(0));
+  }
 }
 
 template<int dim, typename Number>
