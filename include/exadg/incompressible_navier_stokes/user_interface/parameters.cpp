@@ -179,7 +179,6 @@ Parameters::Parameters()
     // formulations
     order_extrapolation_pressure_nbc((order_time_integrator <= 2) ? order_time_integrator : 2),
     formulation_convective_term_bc(FormulationConvectiveTerm::ConvectiveFormulation),
-    add_viscous_term_in_ppe(false),
 
     // PRESSURE-CORRECTION SCHEME
 
@@ -1120,11 +1119,6 @@ Parameters::print_parameters_dual_splitting(dealii::ConditionalOStream const & p
 
   // formulations
   print_parameter(pcout, "Order of extrapolation pressure NBC", order_extrapolation_pressure_nbc);
-
-  if(this->viscous_problem())
-  {
-    print_parameter(pcout, "Viscous term considered in PPE", add_viscous_term_in_ppe);
-  }
 
   if(this->convective_problem())
   {

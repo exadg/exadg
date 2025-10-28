@@ -378,7 +378,6 @@ private:
 
     this->param.formulation_viscous_term = formulation_viscous_term;
     this->param.right_hand_side          = true;
-    this->param.add_viscous_term_in_ppe  = true;
 
     // ALE
     this->param.ale_formulation                     = move_grid;

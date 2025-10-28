@@ -78,9 +78,6 @@ protected:
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
-  typedef CellIntegrator<dim, dim, Number> CellIntegratorU;
-  typedef CellIntegrator<dim, 1, Number>   CellIntegratorP;
-
   typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
   typedef FaceIntegrator<dim, 1, Number>   FaceIntegratorP;
 
