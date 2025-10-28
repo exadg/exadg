@@ -55,12 +55,12 @@ struct InverseMassOperatorData
   // operator depending on the approximation space.
   template<int dim>
   static InverseMassType
-  get_optimal_inverse_mass_type(dealii::FiniteElement<dim> const & fe,
-                                ElementType const                  element_type)
+  get_optimal_inverse_mass_type(dealii::FiniteElement<dim> const & fe)
   {
     if(fe.conforms(dealii::FiniteElementData<dim>::L2))
     {
-      if(element_type == ElementType::Hypercube)
+      dealii::ReferenceCell const reference_cell = fe.reference_cell();
+      if(reference_cell.is_hyper_cube())
       {
         return InverseMassType::MatrixfreeOperator;
       }
