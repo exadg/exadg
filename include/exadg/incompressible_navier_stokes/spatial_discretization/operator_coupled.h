@@ -292,6 +292,23 @@ public:
                               double const &          scaling_factor_mass) const;
 
   /*
+   * This function computes the rhs of the linearized problem residual
+   */
+  void
+  rhs_residual_linearized_problem(BlockVectorType & dst, double const & time) const;
+
+  /*
+   * This function evaluates the linearized residual.
+   */
+  void
+  evaluate_linearized_residual(BlockVectorType &       dst,
+                               BlockVectorType const & src,
+                               VectorType const &      transport_velocity,
+                               BlockVectorType const & rhs_vector,
+                               double const &          time,
+                               double const &          scaling_factor_mass);
+
+  /*
    * This function evaluates the nonlinear residual of the steady Navier-Stokes equations.
    * This function has to be implemented separately (for example, the convective term will be
    * evaluated in case of the Navier-Stokes equations and the time-derivative term is never
