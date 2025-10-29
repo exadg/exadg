@@ -181,7 +181,7 @@ Parameters::Parameters()
     formulation_convective_term_bc(FormulationConvectiveTerm::ConvectiveFormulation),
 
     // CONSISTENT SPLITTING SCHEME  
-    order_extrapolation_pressure_rhs((order_time_integrator > 1) ? order_time_integrator - 1 : 1),
+    order_extrapolation_pressure_rhs(order_time_integrator),
     apply_leray_projection(true),
 
     // PRESSURE-CORRECTION SCHEME
@@ -497,6 +497,9 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
 
     AssertThrow(order_extrapolation_pressure_rhs <= order_time_integrator,
       dealii::ExcMessage("Invalid parameter order_extrapolation_pressure_rhs!"));
+
+    AssertThrow(order_extrapolation_pressure_nbc <= order_time_integrator,
+        dealii::ExcMessage("Invalid parameter order_extrapolation_pressure_nbc!"));
 
     AssertThrow(!ale_formulation,
       dealii::ExcMessage("Not implemented."));
@@ -1184,7 +1187,9 @@ Parameters::print_parameters_consistent_splitting(dealii::ConditionalOStream con
     pcout << "  Apply Leray projection in the PPE" << std::endl;
 
   // formulations
-  print_parameter(pcout, "Order of extrapolation pressure rhs", order_extrapolation_pressure_rhs);
+  print_parameter(pcout, "Order of extrapolation convective pressure rhs", order_extrapolation_pressure_rhs);
+  print_parameter(pcout, "Order of extrapolation pressure viscous NBC", order_extrapolation_pressure_nbc);
+
 
   // projection method
 

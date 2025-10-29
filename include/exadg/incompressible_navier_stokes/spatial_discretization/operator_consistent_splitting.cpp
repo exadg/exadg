@@ -96,17 +96,17 @@ OperatorConsistentSplitting<dim, Number>::compute_Leray_projection_cell(
         pressure.reinit(cell);
         velocity.reinit(cell);
 
-        velocity.gather_evaluate(src, dealii::EvaluationFlags::gradients);
+        velocity.gather_evaluate(src, dealii::EvaluationFlags::values);
 
         // loop over quadrature points and compute the local volume flux
         for (const unsigned int q : pressure.quadrature_point_indices())
           {
-            const auto div_u = velocity.get_divergence(q);
-            pressure.submit_value(div_u, q);
+            const auto u = velocity.get_value(q);
+            pressure.submit_gradient(u, q);
           }
 
         // multiply by nabla v^h(x) and sum
-        pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
+        pressure.integrate_scatter(dealii::EvaluationFlags::gradients, dst);
       }
 }
 
@@ -141,10 +141,10 @@ OperatorConsistentSplitting<dim, Number>::compute_Leray_projection_face(
       {
         const auto normal = pressure_minus.normal_vector(q);
         const auto div_factor =
-          -0.5 * (velocity_minus.get_value(q) - velocity_plus.get_value(q)) * normal;
+          - 0.5 * (velocity_minus.get_value(q) + velocity_plus.get_value(q)) * normal;
 
         pressure_minus.submit_value(div_factor, q);
-        pressure_plus.submit_value(div_factor, q);
+        pressure_plus.submit_value(-div_factor, q);
       }
 
     pressure_minus.integrate_scatter(dealii::EvaluationFlags::values, dst);
@@ -175,10 +175,20 @@ OperatorConsistentSplitting<dim, Number>::compute_Leray_projection_boundary(
       BoundaryTypeU const boundary_type =
         this->boundary_descriptor->velocity->get_boundary_type(boundary_id);
 
-      unsigned int const local_face_number = matrix_free.get_face_info(face).interior_face_no;
-
   if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
-  {
+      {
+          pressure_minus.reinit(face);
+
+          for (const unsigned int q : pressure_minus.quadrature_point_indices())
+          {
+            // This term cancels with the boundary condition
+            pressure_minus.submit_value({}, q);
+          }
+
+        pressure_minus.integrate_scatter(dealii::EvaluationFlags::values, dst);
+      }
+    else
+     {
           pressure_minus.reinit(face);
           velocity_minus.reinit(face);
 
@@ -187,48 +197,16 @@ OperatorConsistentSplitting<dim, Number>::compute_Leray_projection_boundary(
 
           for (const unsigned int q : pressure_minus.quadrature_point_indices())
             {
-              unsigned int const index =
-                matrix_free.get_shape_info(dof_index_velocity, quad_index_pressure)
-                  .face_to_cell_index_nodal[local_face_number][q];
-
-              vector g = vector();
-        
-              if(boundary_type == BoundaryTypeU::Dirichlet)
-              {
-                auto bc = this->boundary_descriptor->velocity->dirichlet_bc.find(boundary_id)->second;
-                auto q_points = pressure_minus.quadrature_point(q);
-        
-                g = FunctionEvaluator<1, dim, Number>::value(*bc, q_points, this->evaluation_time);
-              }
-              else if(boundary_type == BoundaryTypeU::DirichletCached)
-              {
-                auto bc = this->boundary_descriptor->velocity->get_dirichlet_cached_data();
-        
-                g = FunctionEvaluator<1, dim, Number>::value(*bc, face, q, index);
-              }
-
               const auto normal = pressure_minus.normal_vector(q);
                 
               const auto u      = velocity_minus.get_value(q);
-              const auto div_u = -(u - g) * normal;
+              const auto div_u = - u * normal;
 
               pressure_minus.submit_value(div_u, q);                
             }
 
           pressure_minus.integrate_scatter(dealii::EvaluationFlags::values, dst);
-
       } 
-    else
-        {
-          pressure_minus.reinit(face);
-
-          for (const unsigned int q : pressure_minus.quadrature_point_indices())
-          {
-            pressure_minus.submit_value({}, q);
-          }
-
-        pressure_minus.integrate_scatter(dealii::EvaluationFlags::values, dst);
-        }
     }
 }
 
@@ -360,51 +338,18 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_div_term_convective_boun
       BoundaryTypeU const boundary_type =
         this->boundary_descriptor->velocity->get_boundary_type(boundary_id);
 
-      unsigned int const local_face_number = matrix_free.get_face_info(face).interior_face_no;
+ 
 
   if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
   {
           pressure_minus.reinit(face);
-          velocity_minus.reinit(face);
-
-          velocity_minus.gather_evaluate(src,
-            dealii::EvaluationFlags::values |
-            dealii::EvaluationFlags::gradients);
-
           for (const unsigned int q : pressure_minus.quadrature_point_indices())
             {
-              vector g = vector();
-        
-              if(boundary_type == BoundaryTypeU::Dirichlet)
-              {
-                auto bc = this->boundary_descriptor->velocity->dirichlet_bc.find(boundary_id)->second;
-                auto q_points = pressure_minus.quadrature_point(q);
-        
-                g = FunctionEvaluator<1, dim, Number>::value(*bc, q_points, this->evaluation_time);
-              }
-              else if(boundary_type == BoundaryTypeU::DirichletCached)
-              {
-                unsigned int const index =
-                matrix_free.get_shape_info(dof_index_velocity, quad_index_pressure)
-                  .face_to_cell_index_nodal[local_face_number][q];
-
-                auto bc = this->boundary_descriptor->velocity->get_dirichlet_cached_data();
-        
-                g = FunctionEvaluator<1, dim, Number>::value(*bc, face, q, index);
-              }
-
-              const auto normal = pressure_minus.normal_vector(q);
-                
-              const auto u      = velocity_minus.get_value(q);
-              const auto grad_u = velocity_minus.get_gradient(q);
-
-              const auto convective_value_flux = (grad_u * (g - u)) * normal;
-
-              pressure_minus.submit_value(convective_value_flux, q);                
+              // Cancels with consistent boundary condition
+              pressure_minus.submit_value({}, q);                
             }
 
           pressure_minus.integrate_scatter(dealii::EvaluationFlags::values, dst);
-
     }
     else
         {
@@ -548,7 +493,13 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_bou
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      if(boundary_type == BoundaryTypeU::Neumann)
+        if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
+      {
+        // Do nothing on Dirichlet boudary as the boundary face term cancels with the boundary condition.
+        scalar zero = dealii::make_vectorized_array<Number>(0.0);
+        integrator.submit_value(zero, q);
+      }
+      else if (boundary_type == BoundaryTypeU::Neumann)
       {
         dealii::Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
@@ -561,21 +512,13 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_bou
         scalar flux_times_normal = rhs * integrator.normal_vector(q);
         integrator.submit_value(-flux_times_normal, q);
       }
-      else if(boundary_type == BoundaryTypeU::Dirichlet or
-        boundary_type == BoundaryTypeU::DirichletCached  or boundary_type == BoundaryTypeU::Symmetry)
-      {
-        // Do nothing on Dirichlet boudary as the boundary face term cancels with the boundary condition.
-        scalar zero = dealii::make_vectorized_array<Number>(0.0);
-        integrator.submit_value(zero, q);
-      }
       else
       {
         AssertThrow(false,
                     dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
       }
     }
-    integrator.integrate(dealii::EvaluationFlags::values);
-    integrator.distribute_local_to_global(dst);
+    integrator.integrate_scatter(dealii::EvaluationFlags::values, dst);
   }
 }
 
@@ -616,13 +559,12 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_nbc_numerical_time_deriv
 
     integrator_pressure.reinit(face);
 
-    dealii::types::boundary_id boundary_id = data.get_boundary_id(face);
-    BoundaryTypeP              boundary_type =
-      this->boundary_descriptor->pressure->get_boundary_type(boundary_id);
+    BoundaryTypeU boundary_type =
+      this->boundary_descriptor->velocity->get_boundary_type(data.get_boundary_id(face));
 
     for(unsigned int q = 0; q < integrator_pressure.n_q_points; ++q)
     {
-      if(boundary_type == BoundaryTypeP::Neumann)
+      if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
       {
         vector normal = integrator_velocity.normal_vector(q);
         vector dudt   = integrator_velocity.get_value(q);
@@ -630,7 +572,7 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_nbc_numerical_time_deriv
 
         integrator_pressure.submit_value(h, q);
       }
-      else if(boundary_type == BoundaryTypeP::Dirichlet)
+      else if(boundary_type == BoundaryTypeU::Neumann)
       {
         scalar zero = dealii::make_vectorized_array<Number>(0.0);
         integrator_pressure.submit_value(zero, q);
@@ -642,8 +584,7 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_nbc_numerical_time_deriv
       }
     }
 
-    integrator_pressure.integrate(dealii::EvaluationFlags::values);
-    integrator_pressure.distribute_local_to_global(dst);
+    integrator_pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
   }
 }
 

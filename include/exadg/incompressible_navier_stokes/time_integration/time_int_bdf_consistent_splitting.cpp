@@ -53,8 +53,10 @@ TimeIntBDFConsistentSplitting<dim, Number>::TimeIntBDFConsistentSplitting(
     iterations_viscous({0, {0, 0}}),
     iterations_penalty({0, 0}),
     iterations_mass({0, 0}),
+    extra_pressure_nbc(this->param.order_extrapolation_pressure_nbc,
+                       this->param.start_with_low_order),
     extra_pressure_rhs(this->param.order_extrapolation_pressure_rhs,
-                       this->param.start_with_low_order)
+                        this->param.start_with_low_order)
 {
 }
 
@@ -66,13 +68,17 @@ TimeIntBDFConsistentSplitting<dim, Number>::update_time_integrator_constants()
   Base::update_time_integrator_constants();
 
   // update time integrator constants for extrapolation scheme of pressure Neumann bc
+  extra_pressure_nbc.update(this->get_time_step_number(),
+                            this->adaptive_time_stepping,
+                            this->get_time_step_vector());
+
   extra_pressure_rhs.update(this->get_time_step_number(),
                             this->adaptive_time_stepping,
                             this->get_time_step_vector());
 
   // use this function to check the correctness of the time integrator constants
   //    std::cout << "Coefficients extrapolation scheme pressure NBC:" << std::endl;
-  //    extra_pressure_rhs.print(this->pcout);
+  //    extra_pressure_nbc.print(this->pcout);
 }
 
 template<int dim, typename Number>
@@ -134,9 +140,9 @@ TimeIntBDFConsistentSplitting<dim, Number>::initialize_current_solution()
   pde_operator->prescribe_initial_conditions(velocity[0], pressure[0], this->get_time());
 
   // Now compute divergence of velocity and convective term
-  // We assume this to be zero
   VectorType velocity_divergence_np(pressure[0]);
-  velocity_divergence_np = 0.0;
+  velocity_divergence_np = 0.;
+  pde_operator->compute_Leray_projection_term(velocity_divergence_np, velocity[0], this->get_time());
   velocity_divergence[0].swap(velocity_divergence_np);
 
   VectorType vec_convective_term_div_np(pressure[0]);
@@ -161,6 +167,7 @@ TimeIntBDFConsistentSplitting<dim, Number>::initialize_former_multistep_dof_vect
 
     VectorType velocity_divergence_np(pressure[0]);
     velocity_divergence_np = 0.;
+    pde_operator->compute_Leray_projection_term(velocity_divergence_np, velocity[i], this->get_previous_time(i));
     velocity_divergence[i].swap(velocity_divergence_np);
   
     // We need to compute this
@@ -422,11 +429,11 @@ TimeIntBDFConsistentSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
    */
   if(this->param.apply_leray_projection)
     for(unsigned int i = 0; i < velocity_divergence.size(); ++i)
-      rhs.add(-this->bdf.get_alpha(i) / this->get_time_step_size(), velocity_divergence[i]);
+      rhs.add(this->bdf.get_alpha(i) / this->get_time_step_size(), velocity_divergence[i]);
 
-   /*
-   *  II. convective extrapolation
-   */
+  /*
+  *  II. convective extrapolation
+  */
   for(unsigned int i = 0; i < extra_pressure_rhs.get_order();
       ++i) // TODO: get the right extrapolation order here
     rhs.add(extra_pressure_rhs.get_beta(i), this->vec_convective_term_div[i]);
@@ -438,16 +445,16 @@ TimeIntBDFConsistentSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
     pde_operator->rhs_ppe_div_term_body_forces_add(rhs, this->get_next_time());
 
   /*
-   *  IV. handle boudnary condition
+   *  IV. handle consistent boundary condition
    */
   /*
    *  IV.1 extrapolate speed and compute curl curl term
    */
   VectorType velocity_extra(velocity[0]);
   velocity_extra = 0.0;
-  for(unsigned int i = 0; i < extra_pressure_rhs.get_order(); ++i)
+  for(unsigned int i = 0; i < extra_pressure_nbc.get_order(); ++i)
   {
-    velocity_extra.add(this->extra_pressure_rhs.get_beta(i), velocity[i]);
+    velocity_extra.add(this->extra_pressure_nbc.get_beta(i), velocity[i]);
   }
 
   VectorType vorticity(velocity_extra);
@@ -460,8 +467,11 @@ TimeIntBDFConsistentSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
 
   // IV.3. pressure Neumann boundary condition: temporal derivative of velocity
   VectorType acceleration(velocity_dbc_np);
-  compute_bdf_time_derivative(
-    acceleration, velocity_dbc_np, velocity_dbc, this->bdf, this->get_time_step_size());
+  if(this->param.apply_leray_projection)
+    acceleration.equ(this->bdf.get_gamma0() / this->get_time_step_size(), velocity_dbc_np);
+  else
+    compute_bdf_time_derivative(
+      acceleration, velocity_dbc_np, velocity_dbc, this->bdf, this->get_time_step_size());
   pde_operator->rhs_ppe_nbc_numerical_time_derivative_add(rhs, acceleration);
 
   // special case: pressure level is undefined
@@ -825,7 +835,7 @@ TimeIntBDFConsistentSplitting<dim, Number>::solve_steady_problem()
     AssertThrow(this->param.convergence_criterion_steady_problem !=
                   ConvergenceCriterionSteadyProblem::ResidualSteadyNavierStokes,
                 dealii::ExcMessage(
-                  "This option is not available for the dual splitting scheme. "
+                  "This option is not available for the consistent splitting scheme. "
                   "Due to splitting errors the solution does not fulfill the "
                   "residual of the steady, incompressible Navier-Stokes equations."));
   }

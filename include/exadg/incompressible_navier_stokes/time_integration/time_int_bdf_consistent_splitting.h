@@ -167,6 +167,7 @@ private:
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations_mass;
 
   // time integrator constants: extrapolation scheme
+  ExtrapolationConstants extra_pressure_nbc;
   ExtrapolationConstants extra_pressure_rhs;
 };
 
