@@ -153,6 +153,12 @@ TimeIntBDFPressureCorrection<dim, Number>::initialize_current_solution()
     this->helpers_ale->move_grid(this->get_time());
 
   pde_operator->prescribe_initial_conditions(velocity[0], pressure[0], this->get_time());
+
+  // Update the variable viscosity.
+  if(this->param.viscous_problem() and this->param.viscosity_is_variable())
+  {
+    pde_operator->update_viscosity(velocity[0]);
+  }
 }
 
 template<int dim, typename Number>

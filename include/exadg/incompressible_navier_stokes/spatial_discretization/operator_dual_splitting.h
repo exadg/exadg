@@ -103,6 +103,12 @@ public:
   void
   rhs_ppe_nbc_viscous_add(VectorType & dst, VectorType const & src) const;
 
+  // rhs pressure Poisson equation: Neumann BC variable viscosity term
+  void
+  rhs_ppe_nbc_variable_viscosity_add(VectorType &       rhs_ppe,
+                                     VectorType const & velocity,
+                                     VectorType const & viscosity);
+
   void
   rhs_ppe_laplace_add(VectorType & dst, double const & time) const;
 
@@ -200,12 +206,23 @@ private:
                                               VectorType const &                      src,
                                               Range const & face_range) const;
 
+  // viscous term from variable viscosity
+  void
+  local_rhs_ppe_nbc_variable_viscosity_add_boundary_face(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           face_range) const;
+
   void
   local_interpolate_velocity_dirichlet_bc_boundary_face(
     dealii::MatrixFree<dim, Number> const & matrix_free,
     VectorType &                            dst,
     VectorType const &                      src,
     Range const &                           face_range) const;
+
+  // Pointer to vector holding the viscosity in the velocity scalar field.
+  VectorType const * viscosity = nullptr;
 };
 
 } // namespace IncNS

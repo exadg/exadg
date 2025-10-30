@@ -146,6 +146,12 @@ TimeIntBDFDualSplitting<dim, Number>::initialize_current_solution()
     this->helpers_ale->move_grid(this->get_time());
 
   pde_operator->prescribe_initial_conditions(velocity[0], pressure[0], this->get_time());
+
+  // Update the variable viscosity.
+  if(this->param.viscous_problem() and this->param.viscosity_is_variable())
+  {
+    pde_operator->update_viscosity(velocity[0]);
+  }
 }
 
 template<int dim, typename Number>
@@ -524,8 +530,7 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
   }
 
   /*
-   *  II. calculate terms originating from inhomogeneous parts of boundary face integrals of Laplace
-   * operator
+   *  II. calculate terms originating from inhomogeneous parts of boundary face integrals
    */
 
   // II.1. pressure Dirichlet boundary conditions
@@ -543,28 +548,7 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
     acceleration, velocity_dbc_np, velocity_dbc, this->bdf, this->get_time_step_size());
   pde_operator->rhs_ppe_nbc_numerical_time_derivative_add(rhs, acceleration);
 
-  // II.4. viscous term of pressure Neumann boundary condition on Gamma_D:
-  //       extrapolate velocity, evaluate vorticity, and subsequently evaluate boundary
-  //       face integral (this is possible since pressure Neumann BC is linear in vorticity)
-  if(this->param.viscous_problem())
-  {
-    if(this->param.order_extrapolation_pressure_nbc > 0)
-    {
-      VectorType velocity_extra(velocity[0]);
-      velocity_extra = 0.0;
-      for(unsigned int i = 0; i < extra_pressure_nbc.get_order(); ++i)
-      {
-        velocity_extra.add(this->extra_pressure_nbc.get_beta(i), velocity[i]);
-      }
-
-      VectorType vorticity(velocity_extra);
-      pde_operator->compute_vorticity(vorticity, velocity_extra);
-
-      pde_operator->rhs_ppe_nbc_viscous_add(rhs, vorticity);
-    }
-  }
-
-  // II.5. convective term of pressure Neumann boundary condition on Gamma_D:
+  // II.4. convective term of pressure Neumann boundary condition on Gamma_D:
   //       evaluate convective term and subsequently extrapolate rhs vectors
   //       (the convective term is nonlinear!)
   if(this->param.convective_problem())
@@ -579,6 +563,43 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
         rhs.add(this->extra_pressure_nbc.get_beta(i), temp);
       }
     }
+  }
+
+  if(this->param.order_extrapolation_pressure_nbc > 0 and this->param.viscous_problem())
+  {
+    // II.5. viscous term of pressure Neumann boundary condition on Gamma_D:
+    //       extrapolate velocity, evaluate vorticity, and subsequently evaluate boundary
+    //       face integral (this is possible since pressure Neumann BC is linear in vorticity)
+
+    // Prepare velocity extrapolation of lower (stable) order
+    VectorType velocity_extrapolated_ppe;
+    pde_operator->initialize_vector_velocity(velocity_extrapolated_ppe);
+    for(unsigned int i = 0; i < extra_pressure_nbc.get_order(); ++i)
+    {
+      velocity_extrapolated_ppe.add(this->extra_pressure_nbc.get_beta(i), velocity[i]);
+    }
+
+    // Add curl-curl term
+    VectorType vorticity_extrapolated_ppe;
+    pde_operator->initialize_vector_velocity(vorticity_extrapolated_ppe);
+    pde_operator->compute_vorticity(vorticity_extrapolated_ppe, velocity_extrapolated_ppe);
+
+    pde_operator->rhs_ppe_nbc_viscous_add(rhs, vorticity_extrapolated_ppe);
+
+    // Add viscosity gradient term
+    if(this->param.viscosity_is_variable())
+    {
+      VectorType viscosity_extrapolated_ppe;
+      pde_operator->update_viscosity(velocity_extrapolated_ppe);
+      pde_operator->initialize_vector_velocity_scalar(viscosity_extrapolated_ppe);
+      pde_operator->access_viscosity(viscosity_extrapolated_ppe);
+
+      pde_operator->rhs_ppe_nbc_variable_viscosity_add(rhs,
+                                                       velocity_extrapolated_ppe,
+                                                       viscosity_extrapolated_ppe);
+    }
+
+    // Note: the divergence of the convective, viscous and body force terms are neglected.
   }
 
   // special case: pressure level is undefined

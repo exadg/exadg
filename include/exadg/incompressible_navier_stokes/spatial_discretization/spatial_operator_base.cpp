@@ -1436,11 +1436,11 @@ SpatialOperatorBase<dim, Number>::compute_shear_rate(VectorType & dst, VectorTyp
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::access_viscosity(VectorType & dst, VectorType const & src) const
+SpatialOperatorBase<dim, Number>::access_viscosity(VectorType & dst) const
 {
   if(param.viscosity_is_variable())
   {
-    viscosity_calculator.access_viscosity(dst, src);
+    viscosity_calculator.access_viscosity(dst);
     inverse_mass_velocity_scalar.apply(dst, dst);
   }
   else

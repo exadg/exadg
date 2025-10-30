@@ -552,6 +552,82 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary_face(
 
 template<int dim, typename Number>
 void
+OperatorDualSplitting<dim, Number>::rhs_ppe_nbc_variable_viscosity_add(VectorType &       rhs_ppe,
+                                                                       VectorType const & velocity,
+                                                                       VectorType const & viscosity)
+{
+  this->viscosity = &viscosity;
+
+  this->get_matrix_free().loop(&This::cell_loop_empty,
+                               &This::face_loop_empty,
+                               &This::local_rhs_ppe_nbc_variable_viscosity_add_boundary_face,
+                               this,
+                               rhs_ppe,
+                               velocity);
+
+  this->viscosity = nullptr;
+}
+
+template<int dim, typename Number>
+void
+OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_variable_viscosity_add_boundary_face(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            rhs_ppe,
+  VectorType const &                      velocity,
+  Range const &                           face_range) const
+{
+  unsigned int const dof_index_velocity        = this->get_dof_index_velocity();
+  unsigned int const dof_index_velocity_scalar = this->get_dof_index_velocity_scalar();
+  unsigned int const dof_index_pressure        = this->get_dof_index_pressure();
+  unsigned int const quad_index                = this->get_quad_index_velocity_standard();
+
+  FaceIntegratorU integrator_velocity(matrix_free, true, dof_index_velocity, quad_index);
+  FaceIntegratorP integrator_viscosity(matrix_free, true, dof_index_velocity_scalar, quad_index);
+  FaceIntegratorP integrator_pressure(matrix_free, true, dof_index_pressure, quad_index);
+
+  for(unsigned int face = face_range.first; face < face_range.second; face++)
+  {
+    integrator_pressure.reinit(face);
+
+    integrator_viscosity.reinit(face);
+    integrator_viscosity.gather_evaluate(*this->viscosity, dealii::EvaluationFlags::gradients);
+
+    integrator_velocity.reinit(face);
+    integrator_velocity.gather_evaluate(velocity, dealii::EvaluationFlags::gradients);
+
+    BoundaryTypeP boundary_type =
+      this->boundary_descriptor->pressure->get_boundary_type(matrix_free.get_boundary_id(face));
+
+    if(boundary_type == BoundaryTypeP::Neumann)
+    {
+      for(unsigned int q = 0; q < integrator_pressure.n_q_points; ++q)
+      {
+        vector normal = integrator_pressure.normal_vector(q);
+
+        dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> sym_grad_u =
+          integrator_velocity.get_symmetric_gradient(q);
+
+        vector grad_nu = integrator_viscosity.get_gradient(q);
+
+        scalar h = dealii::make_vectorized_array<Number>(2.0) * (normal * (sym_grad_u * grad_nu));
+
+        integrator_pressure.submit_value(h, q);
+      }
+      integrator_pressure.integrate_scatter(dealii::EvaluationFlags::values, rhs_ppe);
+    }
+    else if(boundary_type == BoundaryTypeP::Dirichlet)
+    {
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
+  }
+}
+
+template<int dim, typename Number>
+void
 OperatorDualSplitting<dim, Number>::rhs_ppe_laplace_add(VectorType &   dst,
                                                         double const & evaluation_time) const
 {
