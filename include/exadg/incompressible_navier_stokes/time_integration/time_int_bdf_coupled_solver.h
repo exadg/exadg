@@ -97,6 +97,13 @@ private:
   evaluate_residual();
 
   void
+  evaluate_right_hand_side(BlockVectorType &       rhs,
+                           bool const              residual_evaluation,
+                           BlockVectorType const & solution_np,
+                           VectorType const &      transport_velocity,
+                           VectorType const &      sum_alphai_ui);
+
+  void
   penalty_step();
 
   void

@@ -139,6 +139,9 @@ private:
               VectorType const & transport_velocity) const;
 
   void
+  residual_rhs_viscous(VectorType & rhs, VectorType const & velocity_mass_operator) const;
+
+  void
   solve_steady_problem() final;
 
   double
