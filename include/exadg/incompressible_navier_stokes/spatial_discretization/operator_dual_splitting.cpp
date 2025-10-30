@@ -598,9 +598,9 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_variable_viscosity_add_bou
     BoundaryTypeP boundary_type =
       this->boundary_descriptor->pressure->get_boundary_type(matrix_free.get_boundary_id(face));
 
-    for(unsigned int q = 0; q < integrator_pressure.n_q_points; ++q)
+    if(boundary_type == BoundaryTypeP::Neumann)
     {
-      if(boundary_type == BoundaryTypeP::Neumann)
+      for(unsigned int q = 0; q < integrator_pressure.n_q_points; ++q)
       {
         vector normal = integrator_pressure.normal_vector(q);
 
@@ -613,17 +613,16 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_variable_viscosity_add_bou
 
         integrator_pressure.submit_value(h, q);
       }
-      else if(boundary_type == BoundaryTypeP::Dirichlet)
-      {
-        integrator_pressure.submit_value(dealii::make_vectorized_array<Number>(0.0), q);
-      }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
+      integrator_pressure.integrate_scatter(dealii::EvaluationFlags::values, rhs_ppe);
     }
-    integrator_pressure.integrate_scatter(dealii::EvaluationFlags::values, rhs_ppe);
+    else if(boundary_type == BoundaryTypeP::Dirichlet)
+    {
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
   }
 }
 
