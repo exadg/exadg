@@ -362,9 +362,8 @@ PostProcessor<dim, Number>::initialize_derived_fields()
     viscosity.initialize_vector = [&](VectorType & dst) {
       navier_stokes_operator->initialize_vector_velocity_scalar(dst);
     };
-    viscosity.recompute_solution_field = [&](VectorType & dst, VectorType const & src) {
+    viscosity.recompute_solution_field = [&](VectorType & dst, VectorType const &) {
       // this only *accesses* the currently stored viscosity field
-      (void)src;
       navier_stokes_operator->access_viscosity(dst);
     };
 
