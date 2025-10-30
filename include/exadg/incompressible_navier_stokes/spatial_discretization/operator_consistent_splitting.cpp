@@ -238,10 +238,10 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_div_term_convective_cell
 {
   unsigned int dof_index_pressure  = this->get_dof_index_pressure();
   unsigned int dof_index_velocity  = this->get_dof_index_velocity();
-  unsigned int quad_index_pressure = this->get_quad_index_pressure();
+  unsigned int quad_index_overintegration = this->get_quad_index_velocity_overintegration();
 
-  CellIntegrator<dim, 1, Number> pressure(matrix_free, dof_index_pressure, quad_index_pressure);
-  CellIntegrator<dim, dim, Number> velocity(matrix_free, dof_index_velocity, quad_index_pressure);
+  CellIntegrator<dim, 1, Number> pressure(matrix_free, dof_index_pressure, quad_index_overintegration);
+  CellIntegrator<dim, dim, Number> velocity(matrix_free, dof_index_velocity, quad_index_overintegration);
 
   for (unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
       {
@@ -275,12 +275,12 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_div_term_convective_inne
 {
   unsigned int dof_index_pressure  = this->get_dof_index_pressure();
   unsigned int dof_index_velocity  = this->get_dof_index_velocity();
-  unsigned int quad_index_pressure = this->get_quad_index_pressure();
+  unsigned int quad_index_overintegration = this->get_quad_index_velocity_overintegration();
 
-  FaceIntegratorP pressure_minus(matrix_free, true, dof_index_pressure, quad_index_pressure);
-  FaceIntegratorP pressure_plus(matrix_free, false, dof_index_pressure, quad_index_pressure);
-  FaceIntegratorU velocity_minus(matrix_free, true, dof_index_velocity, quad_index_pressure);
-  FaceIntegratorU velocity_plus(matrix_free, false, dof_index_velocity, quad_index_pressure);
+  FaceIntegratorP pressure_minus(matrix_free, true, dof_index_pressure, quad_index_overintegration);
+  FaceIntegratorP pressure_plus(matrix_free, false, dof_index_pressure, quad_index_overintegration);
+  FaceIntegratorU velocity_minus(matrix_free, true, dof_index_velocity, quad_index_overintegration);
+  FaceIntegratorU velocity_plus(matrix_free, false, dof_index_velocity, quad_index_overintegration);
 
   for (unsigned int face = face_range.first; face < face_range.second; face++)
       {
@@ -326,10 +326,10 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_div_term_convective_boun
 {
   unsigned int dof_index_velocity  = this->get_dof_index_velocity();
   unsigned int dof_index_pressure  = this->get_dof_index_pressure();
-  unsigned int quad_index_pressure = this->get_quad_index_pressure();
+  unsigned int quad_index_overintegration = this->get_quad_index_velocity_overintegration();
 
-  FaceIntegratorP pressure_minus(matrix_free, true, dof_index_pressure, quad_index_pressure);
-  FaceIntegratorU velocity_minus(matrix_free, true, dof_index_velocity, quad_index_pressure);
+  FaceIntegratorP pressure_minus(matrix_free, true, dof_index_pressure, quad_index_overintegration);
+  FaceIntegratorU velocity_minus(matrix_free, true, dof_index_velocity, quad_index_overintegration);
 
   for (unsigned int face = face_range.first; face < face_range.second; face++)
     {
