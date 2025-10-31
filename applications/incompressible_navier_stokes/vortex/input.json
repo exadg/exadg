@@ -11,7 +11,7 @@
         "RefineSpaceMax": "2"
     },
     "TemporalResolution": {
-        "RefineTimeMin": "5",
+        "RefineTimeMin": "2",
         "RefineTimeMax": "12"
     },
     "Application": {

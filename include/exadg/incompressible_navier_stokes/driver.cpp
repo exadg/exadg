@@ -392,14 +392,14 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
                 dealii::ExcMessage("Invalid operator specified for dual splitting scheme."));
   }
   else if(application->get_parameters().temporal_discretization ==
-  TemporalDiscretization::BDFConsistentSplittingScheme)
+          TemporalDiscretization::BDFConsistentSplittingScheme)
   {
-  AssertThrow(operator_type == OperatorType::ConvectiveOperator or
-            operator_type == OperatorType::PressurePoissonOperator or
-            operator_type == OperatorType::HelmholtzOperator or
-            operator_type == OperatorType::ProjectionOperator or
-            operator_type == OperatorType::InverseMassOperator,
-          dealii::ExcMessage("Invalid operator specified for consistent splitting scheme."));
+    AssertThrow(operator_type == OperatorType::ConvectiveOperator or
+                  operator_type == OperatorType::PressurePoissonOperator or
+                  operator_type == OperatorType::HelmholtzOperator or
+                  operator_type == OperatorType::ProjectionOperator or
+                  operator_type == OperatorType::InverseMassOperator,
+                dealii::ExcMessage("Invalid operator specified for consistent splitting scheme."));
   }
   else if(application->get_parameters().temporal_discretization ==
           TemporalDiscretization::BDFPressureCorrection)

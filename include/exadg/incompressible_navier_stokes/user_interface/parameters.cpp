@@ -180,7 +180,7 @@ Parameters::Parameters()
     order_extrapolation_pressure_nbc((order_time_integrator <= 2) ? order_time_integrator : 2),
     formulation_convective_term_bc(FormulationConvectiveTerm::ConvectiveFormulation),
 
-    // CONSISTENT SPLITTING SCHEME  
+    // CONSISTENT SPLITTING SCHEME
     order_extrapolation_pressure_rhs(order_time_integrator),
     apply_leray_projection(true),
 
@@ -496,17 +496,15 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
                 dealii::ExcMessage("Not implemented."));
 
     AssertThrow(order_extrapolation_pressure_rhs <= order_time_integrator,
-      dealii::ExcMessage("Invalid parameter order_extrapolation_pressure_rhs!"));
+                dealii::ExcMessage("Invalid parameter order_extrapolation_pressure_rhs!"));
 
     AssertThrow(order_extrapolation_pressure_nbc <= order_time_integrator,
-        dealii::ExcMessage("Invalid parameter order_extrapolation_pressure_nbc!"));
+                dealii::ExcMessage("Invalid parameter order_extrapolation_pressure_nbc!"));
 
-    AssertThrow(!ale_formulation,
-      dealii::ExcMessage("Not implemented."));
-        
-    AssertThrow(!viscosity_is_variable(),
-      dealii::ExcMessage("Not implemented."));
-    }
+    AssertThrow(!ale_formulation, dealii::ExcMessage("Not implemented."));
+
+    AssertThrow(!viscosity_is_variable(), dealii::ExcMessage("Not implemented."));
+  }
 
   // PRESSURE-CORRECTION SCHEME
   if(temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
@@ -780,7 +778,7 @@ Parameters::print(dealii::ConditionalOStream const & pcout, std::string const & 
   // HIGH-ORDER DUAL SPLITTING SCHEME
   if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     print_parameters_dual_splitting(pcout);
-  
+
   // CONSISTENT SPLITTING SCHEME
   if(temporal_discretization == TemporalDiscretization::BDFConsistentSplittingScheme)
     print_parameters_consistent_splitting(pcout);
@@ -1187,8 +1185,12 @@ Parameters::print_parameters_consistent_splitting(dealii::ConditionalOStream con
     pcout << "  Apply Leray projection in the PPE" << std::endl;
 
   // formulations
-  print_parameter(pcout, "Order of extrapolation convective pressure rhs", order_extrapolation_pressure_rhs);
-  print_parameter(pcout, "Order of extrapolation pressure viscous NBC", order_extrapolation_pressure_nbc);
+  print_parameter(pcout,
+                  "Order of extrapolation of convective terms in pressure rhs",
+                  order_extrapolation_pressure_rhs);
+  print_parameter(pcout,
+                  "Order of extrapolation of viscous term in pressure Neumann BC",
+                  order_extrapolation_pressure_nbc);
 
 
   // projection method

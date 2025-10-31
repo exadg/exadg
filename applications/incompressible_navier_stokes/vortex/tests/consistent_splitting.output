@@ -43,7 +43,7 @@ Temporal discretization:
   Calculation of time step size:             UserSpecified
   Adaptive time stepping:                    false
   Maximum number of time steps:              4294967295
-  Temporal refinements:                      3
+  Temporal refinements:                      10
   Order of time integration scheme:          2
   Start with low order method:               false
   Treatment of convective term:              LinearlyImplicit
@@ -58,12 +58,12 @@ Temporal discretization:
 Spatial discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
-  Number of global refinements:              1
+  Number of global refinements:              2
   Create coarse triangulations:              false
-  Mapping degree:                            3
-  Mapping degree coarse grids:               3
+  Mapping degree:                            5
+  Mapping degree coarse grids:               5
   FE space:                                  L2
-  Polynomial degree velocity:                3
+  Polynomial degree velocity:                5
   Polynomial degree pressure:                MixedOrder
   Convective term - Upwind factor:           1.0000e+00
   Convective term - Type of Dirichlet BC's:  Mirror
@@ -96,8 +96,9 @@ Numerical parameters:
   Quadrature rule linearization:             Overintegration32k
 
 Consistent splitting scheme:
-Apply Leray projection in the PPE
-  Order of extrapolation pressure rhs:       2
+  Apply Leray projection in the PPE
+  Order of extrapolation of convective terms in pressure rhs:2
+  Order of extrapolation of viscous term in pressure Neumann BC:2
 
   Pressure Poisson equation (PPE):
   interior penalty factor:                   1.0000e+00
@@ -143,21 +144,21 @@ Apply Leray projection in the PPE
 
 Generating grid for 2-dimensional problem:
 
-  Max. number of refinements:                1
-  Number of cells:                           16
+  Max. number of refinements:                2
+  Number of cells:                           64
 
 Construct incompressible Navier-Stokes operator ...
 Velocity:
-  degree of 1D polynomials:                  3
-  number of dofs per cell:                   32
-  number of dofs (total):                    512
+  degree of 1D polynomials:                  5
+  number of dofs per cell:                   72
+  number of dofs (total):                    4608
 Pressure:
-  degree of 1D polynomials:                  2
-  number of dofs per cell:                   9
-  number of dofs (total):                    144
+  degree of 1D polynomials:                  4
+  number of dofs per cell:                   25
+  number of dofs (total):                    1600
 Velocity and pressure:
-  number of dofs per cell:                   41
-  number of dofs (total):                    656
+  number of dofs per cell:                   97
+  number of dofs (total):                    6208
 
 ... done!
 
@@ -169,25 +170,25 @@ Setup Multistep time integrator ...
 
 User specified time step size:
 
-  time step size:                            1.2500e-01
+  time step size:                            9.7656e-04
 
 ... done!
 
 Starting time loop ...
 
 Calculate error for velocity at time t = 0.0000e+00:
-  Relative error (L2-norm): 1.96754e-03
+  Relative error (L2-norm): 1.52240e-07
 
 Calculate error for pressure at time t = 0.0000e+00:
-  Relative error (L2-norm): 3.14134e-02
+  Relative error (L2-norm): 6.71926e-06
 
 ________________________________________________________________________________
 
- Time step number = 1       t = 0.00000e+00 -> t + dt = 1.25000e-01
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 9.76562e-04
 ________________________________________________________________________________
 
 Calculate error for velocity at time t = 1.0000e+00:
-  Relative error (L2-norm): 2.39544e-02
+  Relative error (L2-norm): 5.25444e-07
 
 Calculate error for pressure at time t = 1.0000e+00:
-  Relative error (L2-norm): 9.17966e-02
+  Relative error (L2-norm): 5.19769e-06

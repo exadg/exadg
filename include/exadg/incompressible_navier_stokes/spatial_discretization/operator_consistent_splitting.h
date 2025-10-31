@@ -2,7 +2,7 @@
  *
  *  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
  *
- *  Copyright (C) 2021 by the ExaDG authors
+ *  Copyright (C) 2025 by the ExaDG authors
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,9 +34,9 @@ template<int dim, typename Number = double>
 class OperatorConsistentSplitting : public OperatorProjectionMethods<dim, Number>
 {
 private:
-  typedef SpatialOperatorBase<dim, Number>       Base;
-  typedef OperatorProjectionMethods<dim, Number> ProjectionBase;
-  typedef OperatorConsistentSplitting<dim, Number>     This;
+  typedef SpatialOperatorBase<dim, Number>         Base;
+  typedef OperatorProjectionMethods<dim, Number>   ProjectionBase;
+  typedef OperatorConsistentSplitting<dim, Number> This;
 
   typedef typename Base::VectorType VectorType;
 
@@ -53,14 +53,15 @@ public:
   /*
    * Constructor.
    */
-  OperatorConsistentSplitting(std::shared_ptr<Grid<dim> const>                      grid,
-                        std::shared_ptr<dealii::Mapping<dim> const>           mapping,
-                        std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
-                        std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor,
-                        std::shared_ptr<FieldFunctions<dim> const>            field_functions,
-                        Parameters const &                                    parameters,
-                        std::string const &                                   field,
-                        MPI_Comm const &                                      mpi_comm);
+  OperatorConsistentSplitting(
+    std::shared_ptr<Grid<dim> const>                      grid,
+    std::shared_ptr<dealii::Mapping<dim> const>           mapping,
+    std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
+    std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor,
+    std::shared_ptr<FieldFunctions<dim> const>            field_functions,
+    Parameters const &                                    parameters,
+    std::string const &                                   field,
+    MPI_Comm const &                                      mpi_comm);
 
   /*
    * Destructor.
@@ -78,7 +79,9 @@ public:
 
   // rhs pressure: divergence of convective term
   void
-  apply_convective_divergence_term(VectorType & dst, VectorType const & src, double const & time) const;
+  apply_convective_divergence_term(VectorType &       dst,
+                                   VectorType const & src,
+                                   double const &     time) const;
 
   // rhs pressure Poisson equation: velocity divergence term: body force term
   void
@@ -92,19 +95,11 @@ public:
   void
   rhs_ppe_nbc_viscous_add(VectorType & dst, VectorType const & src) const;
 
-  void
-  rhs_ppe_laplace_add(VectorType & dst, double const & time) const;
-
-  unsigned int
-  solve_pressure(VectorType & dst, VectorType const & src, bool const update_preconditioner) const;
-
   /*
    * Viscous step.
    */
-
   void
   apply_helmholtz_operator(VectorType & dst, VectorType const & src) const;
-
 
   /*
    * Fill a DoF vector with velocity Dirichlet values on Dirichlet boundaries.
@@ -138,9 +133,9 @@ private:
   {
   }
 
-   /*
-    * Right hand side of the PPE
-    */
+  /*
+   * Right hand side of the PPE
+   */
   // Leray projection
   void
   compute_Leray_projection_cell(dealii::MatrixFree<dim, Number> const & matrix_free,
@@ -162,17 +157,17 @@ private:
 
   // body force term
   void
-  local_rhs_ppe_div_term_body_forces_cell(
-    dealii::MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                            dst,
-    VectorType const &                      src,
-    Range const &                           cell_range) const;
+  local_rhs_ppe_div_term_body_forces_cell(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                          VectorType &                            dst,
+                                          VectorType const &                      src,
+                                          Range const &                           cell_range) const;
+
   void
-  local_rhs_ppe_div_term_body_forces_inner_face(
-    dealii::MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                            dst,
-    VectorType const &                      src,
-    Range const &                           face_range) const;
+  local_rhs_ppe_div_term_body_forces_inner_face(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                                VectorType &                            dst,
+                                                VectorType const &                      src,
+                                                Range const & face_range) const;
+
   void
   local_rhs_ppe_div_term_body_forces_boundary_face(
     dealii::MatrixFree<dim, Number> const & matrix_free,
@@ -180,51 +175,51 @@ private:
     VectorType const &                      src,
     Range const &                           face_range) const;
 
-    void
-    local_rhs_ppe_div_term_convective_cell(
-    dealii::MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                            dst,
-    VectorType const &                      src,
-    Range const &                           cell_range) const;
-    
-    void
-    local_rhs_ppe_div_term_convective_inner_face(
+  void
+  local_rhs_ppe_div_term_convective_cell(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                         VectorType &                            dst,
+                                         VectorType const &                      src,
+                                         Range const &                           cell_range) const;
+
+  void
+  local_rhs_ppe_div_term_convective_inner_face(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                               VectorType &                            dst,
+                                               VectorType const &                      src,
+                                               Range const & face_range) const;
+
+  void
+  local_rhs_ppe_div_term_convective_boundary_face(
     dealii::MatrixFree<dim, Number> const & matrix_free,
     VectorType &                            dst,
     VectorType const &                      src,
     Range const &                           face_range) const;
 
-    void
-    local_rhs_ppe_div_term_convective_boundary_face(
+
+  /*
+   * Neumann boundary condition term
+   */
+
+  // Numerical time derivative of the Dirichlet data dg_u/dt using suitable BDF
+  void
+  local_rhs_ppe_nbc_numerical_time_derivative_add_boundary_face(
     dealii::MatrixFree<dim, Number> const & matrix_free,
     VectorType &                            dst,
     VectorType const &                      src,
     Range const &                           face_range) const;
-  
-  
-  // Neumann boundary condition term
 
-  // dg_u/dt with numerical time derivative
-    void
-    local_rhs_ppe_nbc_numerical_time_derivative_add_boundary_face(
-      dealii::MatrixFree<dim, Number> const & matrix_free,
-      VectorType &                            dst,
-      VectorType const &                      src,
-      Range const &                           face_range) const;
+  // viscous term
+  void
+  local_rhs_ppe_nbc_viscous_add_boundary_face(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                              VectorType &                            dst,
+                                              VectorType const &                      src,
+                                              Range const & face_range) const;
 
-    // viscous term
-    void
-    local_rhs_ppe_nbc_viscous_add_boundary_face(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                                VectorType &                            dst,
-                                                VectorType const &                      src,
-                                                Range const & face_range) const;
-
-    void
-    local_interpolate_velocity_dirichlet_bc_boundary_face(
-      dealii::MatrixFree<dim, Number> const & matrix_free,
-      VectorType &                            dst,
-      VectorType const &                      src,
-      Range const &                           face_range) const;
+  void
+  local_interpolate_velocity_dirichlet_bc_boundary_face(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           face_range) const;
 };
 
 } // namespace IncNS

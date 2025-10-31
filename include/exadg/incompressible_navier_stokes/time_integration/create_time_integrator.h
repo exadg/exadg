@@ -24,9 +24,9 @@
 
 // ExaDG
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf.h>
+#include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_consistent_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
-#include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_consistent_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_interpolate_analytical_solution.h>
 
@@ -64,7 +64,8 @@ create_time_integrator(std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_ope
     time_integrator = std::make_shared<IncNS::TimeIntBDFDualSplitting<dim, Number>>(
       operator_dual_splitting, helpers_ale, postprocessor, parameters, mpi_comm, is_test);
   }
-  else if(parameters.temporal_discretization == TemporalDiscretization::BDFConsistentSplittingScheme)
+  else if(parameters.temporal_discretization ==
+          TemporalDiscretization::BDFConsistentSplittingScheme)
   {
     std::shared_ptr<OperatorConsistentSplitting<dim, Number>> operator_consistent_splitting =
       std::dynamic_pointer_cast<OperatorConsistentSplitting<dim, Number>>(pde_operator);

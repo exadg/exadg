@@ -67,7 +67,6 @@ OperatorConsistentSplitting<dim, Number>::compute_Leray_projection_term(VectorTy
 {
   this->evaluation_time = time;
 
-
   this->get_matrix_free().loop(&This::compute_Leray_projection_cell,
                                &This::compute_Leray_projection_face,
                                &This::compute_Leray_projection_boundary,
@@ -88,26 +87,24 @@ OperatorConsistentSplitting<dim, Number>::compute_Leray_projection_cell(
   unsigned int dof_index_velocity  = this->get_dof_index_velocity();
   unsigned int quad_index_pressure = this->get_quad_index_pressure();
 
-  CellIntegrator<dim, 1, Number> pressure(matrix_free, dof_index_pressure, quad_index_pressure);
+  CellIntegrator<dim, 1, Number>   pressure(matrix_free, dof_index_pressure, quad_index_pressure);
   CellIntegrator<dim, dim, Number> velocity(matrix_free, dof_index_velocity, quad_index_pressure);
 
-  for (unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
-      {
-        pressure.reinit(cell);
-        velocity.reinit(cell);
+  for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
+  {
+    pressure.reinit(cell);
+    velocity.reinit(cell);
 
-        velocity.gather_evaluate(src, dealii::EvaluationFlags::values);
+    velocity.gather_evaluate(src, dealii::EvaluationFlags::values);
 
-        // loop over quadrature points and compute the local volume flux
-        for (const unsigned int q : pressure.quadrature_point_indices())
-          {
-            const auto u = velocity.get_value(q);
-            pressure.submit_gradient(u, q);
-          }
+    for(const unsigned int q : pressure.quadrature_point_indices())
+    {
+      vector const u = velocity.get_value(q);
+      pressure.submit_gradient(u, q);
+    }
 
-        // multiply by nabla v^h(x) and sum
-        pressure.integrate_scatter(dealii::EvaluationFlags::gradients, dst);
-      }
+    pressure.integrate_scatter(dealii::EvaluationFlags::gradients, dst);
+  }
 }
 
 template<int dim, typename Number>
@@ -127,7 +124,7 @@ OperatorConsistentSplitting<dim, Number>::compute_Leray_projection_face(
   FaceIntegratorU velocity_minus(matrix_free, true, dof_index_velocity, quad_index_pressure);
   FaceIntegratorU velocity_plus(matrix_free, false, dof_index_velocity, quad_index_pressure);
 
-  for (unsigned int face = face_range.first; face < face_range.second; face++)
+  for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
     pressure_minus.reinit(face);
     pressure_plus.reinit(face);
@@ -137,15 +134,15 @@ OperatorConsistentSplitting<dim, Number>::compute_Leray_projection_face(
     velocity_minus.gather_evaluate(src, dealii::EvaluationFlags::values);
     velocity_plus.gather_evaluate(src, dealii::EvaluationFlags::values);
 
-    for (const unsigned int q : pressure_minus.quadrature_point_indices())
-      {
-        const auto normal = pressure_minus.normal_vector(q);
-        const auto div_factor =
-          - 0.5 * (velocity_minus.get_value(q) + velocity_plus.get_value(q)) * normal;
+    for(const unsigned int q : pressure_minus.quadrature_point_indices())
+    {
+      vector const normal = pressure_minus.normal_vector(q);
+      scalar const average =
+        -0.5 * (velocity_minus.get_value(q) + velocity_plus.get_value(q)) * normal;
 
-        pressure_minus.submit_value(div_factor, q);
-        pressure_plus.submit_value(-div_factor, q);
-      }
+      pressure_minus.submit_value(average, q);
+      pressure_plus.submit_value(-average, q);
+    }
 
     pressure_minus.integrate_scatter(dealii::EvaluationFlags::values, dst);
     pressure_plus.integrate_scatter(dealii::EvaluationFlags::values, dst);
@@ -168,62 +165,53 @@ OperatorConsistentSplitting<dim, Number>::compute_Leray_projection_boundary(
   FaceIntegratorP pressure_minus(matrix_free, true, dof_index_pressure, quad_index_pressure);
   FaceIntegratorU velocity_minus(matrix_free, true, dof_index_velocity, quad_index_pressure);
 
-  for (unsigned int face = face_range.first; face < face_range.second; face++)
+  for(unsigned int face = face_range.first; face < face_range.second; face++)
+  {
+    dealii::types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
+
+    BoundaryTypeU const boundary_type =
+      this->boundary_descriptor->velocity->get_boundary_type(boundary_id);
+
+    if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
     {
-      dealii::types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
-
-      BoundaryTypeU const boundary_type =
-        this->boundary_descriptor->velocity->get_boundary_type(boundary_id);
-
-  if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
-      {
-          pressure_minus.reinit(face);
-
-          for (const unsigned int q : pressure_minus.quadrature_point_indices())
-          {
-            // This term cancels with the boundary condition
-            pressure_minus.submit_value({}, q);
-          }
-
-        pressure_minus.integrate_scatter(dealii::EvaluationFlags::values, dst);
-      }
-    else
-     {
-          pressure_minus.reinit(face);
-          velocity_minus.reinit(face);
-
-          velocity_minus.gather_evaluate(src,
-            dealii::EvaluationFlags::values);
-
-          for (const unsigned int q : pressure_minus.quadrature_point_indices())
-            {
-              const auto normal = pressure_minus.normal_vector(q);
-                
-              const auto u      = velocity_minus.get_value(q);
-              const auto div_u = - u * normal;
-
-              pressure_minus.submit_value(div_u, q);                
-            }
-
-          pressure_minus.integrate_scatter(dealii::EvaluationFlags::values, dst);
-      } 
+      // This term cancels with the boundary condition
     }
+    else
+    {
+      pressure_minus.reinit(face);
+      velocity_minus.reinit(face);
+
+      velocity_minus.gather_evaluate(src, dealii::EvaluationFlags::values);
+
+      for(const unsigned int q : pressure_minus.quadrature_point_indices())
+      {
+        vector const normal = pressure_minus.normal_vector(q);
+        vector const u      = velocity_minus.get_value(q);
+        scalar const u_n    = -u * normal;
+
+        pressure_minus.submit_value(u_n, q);
+      }
+
+      pressure_minus.integrate_scatter(dealii::EvaluationFlags::values, dst);
+    }
+  }
 }
 
 template<int dim, typename Number>
 void
-OperatorConsistentSplitting<dim, Number>::apply_convective_divergence_term(VectorType &       dst,
-                                                                   VectorType const & src, double const & time) const
+OperatorConsistentSplitting<dim, Number>::apply_convective_divergence_term(
+  VectorType &       dst,
+  VectorType const & src,
+  double const &     time) const
 {
   this->evaluation_time = time;
 
-  
   this->get_matrix_free().loop(&This::local_rhs_ppe_div_term_convective_cell,
-    &This::local_rhs_ppe_div_term_convective_inner_face,
-    &This::local_rhs_ppe_div_term_convective_boundary_face,
-    this,
-    dst,
-    src);
+                               &This::local_rhs_ppe_div_term_convective_inner_face,
+                               &This::local_rhs_ppe_div_term_convective_boundary_face,
+                               this,
+                               dst,
+                               src);
 }
 
 
@@ -233,35 +221,37 @@ void
 OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_div_term_convective_cell(
   dealii::MatrixFree<dim, Number> const & matrix_free,
   VectorType &                            dst,
-  VectorType const &src,
-  Range const & cell_range) const
+  VectorType const &                      src,
+  Range const &                           cell_range) const
 {
-  unsigned int dof_index_pressure  = this->get_dof_index_pressure();
-  unsigned int dof_index_velocity  = this->get_dof_index_velocity();
+  unsigned int dof_index_pressure         = this->get_dof_index_pressure();
+  unsigned int dof_index_velocity         = this->get_dof_index_velocity();
   unsigned int quad_index_overintegration = this->get_quad_index_velocity_overintegration();
 
-  CellIntegrator<dim, 1, Number> pressure(matrix_free, dof_index_pressure, quad_index_overintegration);
-  CellIntegrator<dim, dim, Number> velocity(matrix_free, dof_index_velocity, quad_index_overintegration);
+  CellIntegrator<dim, 1, Number>   pressure(matrix_free,
+                                          dof_index_pressure,
+                                          quad_index_overintegration);
+  CellIntegrator<dim, dim, Number> velocity(matrix_free,
+                                            dof_index_velocity,
+                                            quad_index_overintegration);
 
-  for (unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
-      {
-        pressure.reinit(cell);
-        velocity.reinit(cell);
+  for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
+  {
+    pressure.reinit(cell);
+    velocity.reinit(cell);
 
-        velocity.gather_evaluate(src, dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
+    velocity.gather_evaluate(src,
+                             dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
 
-        // loop over quadrature points and compute the local volume flux
-        for (const unsigned int q : pressure.quadrature_point_indices())
-          {
-            const auto convective_flux = -velocity.get_gradient(q) * velocity.get_value(q);
-            pressure.submit_gradient(convective_flux, q);
-          }
+    for(const unsigned int q : pressure.quadrature_point_indices())
+    {
+      vector const convective_flux = -velocity.get_gradient(q) * velocity.get_value(q);
+      pressure.submit_gradient(convective_flux, q);
+    }
 
-        // multiply by nabla v^h(x) and sum
-        pressure.integrate_scatter(dealii::EvaluationFlags::gradients, dst);
-      }
+    pressure.integrate_scatter(dealii::EvaluationFlags::gradients, dst);
+  }
 }
-
 
 
 
@@ -270,11 +260,11 @@ void
 OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_div_term_convective_inner_face(
   dealii::MatrixFree<dim, Number> const & matrix_free,
   VectorType &                            dst,
-  VectorType const &src,
-  Range const & face_range) const
+  VectorType const &                      src,
+  Range const &                           face_range) const
 {
-  unsigned int dof_index_pressure  = this->get_dof_index_pressure();
-  unsigned int dof_index_velocity  = this->get_dof_index_velocity();
+  unsigned int dof_index_pressure         = this->get_dof_index_pressure();
+  unsigned int dof_index_velocity         = this->get_dof_index_velocity();
   unsigned int quad_index_overintegration = this->get_quad_index_velocity_overintegration();
 
   FaceIntegratorP pressure_minus(matrix_free, true, dof_index_pressure, quad_index_overintegration);
@@ -282,37 +272,35 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_div_term_convective_inne
   FaceIntegratorU velocity_minus(matrix_free, true, dof_index_velocity, quad_index_overintegration);
   FaceIntegratorU velocity_plus(matrix_free, false, dof_index_velocity, quad_index_overintegration);
 
-  for (unsigned int face = face_range.first; face < face_range.second; face++)
-      {
-        pressure_minus.reinit(face);
-        pressure_plus.reinit(face);
-        velocity_minus.reinit(face);
-        velocity_plus.reinit(face);
+  for(unsigned int face = face_range.first; face < face_range.second; face++)
+  {
+    pressure_minus.reinit(face);
+    pressure_plus.reinit(face);
+    velocity_minus.reinit(face);
+    velocity_plus.reinit(face);
 
-        velocity_minus.gather_evaluate(src,
-                                     dealii::EvaluationFlags::values |
+    velocity_minus.gather_evaluate(src,
+                                   dealii::EvaluationFlags::values |
                                      dealii::EvaluationFlags::gradients);
-        velocity_plus.gather_evaluate(src,
-          dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
+    velocity_plus.gather_evaluate(src,
+                                  dealii::EvaluationFlags::values |
+                                    dealii::EvaluationFlags::gradients);
 
-        for (const unsigned int q : pressure_minus.quadrature_point_indices())
-          {
-            const auto normal = pressure_minus.normal_vector(q);
-              
-            const auto gradu_u_minus =
-              velocity_minus.get_gradient(q) * velocity_minus.get_value(q);
-            const auto gradu_u_plus =
-              velocity_plus.get_gradient(q) * velocity_plus.get_value(q);
-            const auto convective_flux =
-              Number(0.5) * (gradu_u_minus + gradu_u_plus) * normal;
+    for(const unsigned int q : pressure_minus.quadrature_point_indices())
+    {
+      vector const normal = pressure_minus.normal_vector(q);
 
-            pressure_minus.submit_value(convective_flux, q);
-            pressure_plus.submit_value(-convective_flux, q);
-          }
+      vector const gradu_u_minus   = velocity_minus.get_gradient(q) * velocity_minus.get_value(q);
+      vector const gradu_u_plus    = velocity_plus.get_gradient(q) * velocity_plus.get_value(q);
+      scalar const convective_flux = Number(0.5) * (gradu_u_minus + gradu_u_plus) * normal;
 
-        pressure_minus.integrate_scatter(dealii::EvaluationFlags::values, dst);
-        pressure_plus.integrate_scatter(dealii::EvaluationFlags::values, dst);
-      }
+      pressure_minus.submit_value(convective_flux, q);
+      pressure_plus.submit_value(-convective_flux, q);
+    }
+
+    pressure_minus.integrate_scatter(dealii::EvaluationFlags::values, dst);
+    pressure_plus.integrate_scatter(dealii::EvaluationFlags::values, dst);
+  }
 }
 
 
@@ -321,66 +309,61 @@ void
 OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_div_term_convective_boundary_face(
   dealii::MatrixFree<dim, Number> const & matrix_free,
   VectorType &                            dst,
-  VectorType const &src,
-  Range const & face_range) const
+  VectorType const &                      src,
+  Range const &                           face_range) const
 {
-  unsigned int dof_index_velocity  = this->get_dof_index_velocity();
-  unsigned int dof_index_pressure  = this->get_dof_index_pressure();
+  unsigned int dof_index_velocity         = this->get_dof_index_velocity();
+  unsigned int dof_index_pressure         = this->get_dof_index_pressure();
   unsigned int quad_index_overintegration = this->get_quad_index_velocity_overintegration();
 
   FaceIntegratorP pressure_minus(matrix_free, true, dof_index_pressure, quad_index_overintegration);
   FaceIntegratorU velocity_minus(matrix_free, true, dof_index_velocity, quad_index_overintegration);
 
-  for (unsigned int face = face_range.first; face < face_range.second; face++)
-    {
-      dealii::types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
-
-      BoundaryTypeU const boundary_type =
-        this->boundary_descriptor->velocity->get_boundary_type(boundary_id);
-
- 
-
-  if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
+  for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-          pressure_minus.reinit(face);
-          for (const unsigned int q : pressure_minus.quadrature_point_indices())
-            {
-              // Cancels with consistent boundary condition
-              pressure_minus.submit_value({}, q);                
-            }
+    dealii::types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
 
-          pressure_minus.integrate_scatter(dealii::EvaluationFlags::values, dst);
+    BoundaryTypeU const boundary_type =
+      this->boundary_descriptor->velocity->get_boundary_type(boundary_id);
+
+
+
+    if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
+    {
+      // Cancels with consistent boundary condition
     }
     else
-        {
-          pressure_minus.reinit(face);
-          velocity_minus.reinit(face);
+    {
+      pressure_minus.reinit(face);
+      velocity_minus.reinit(face);
 
-          velocity_minus.gather_evaluate(src, dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
+      velocity_minus.gather_evaluate(src,
+                                     dealii::EvaluationFlags::values |
+                                       dealii::EvaluationFlags::gradients);
 
-          for (const unsigned int q : pressure_minus.quadrature_point_indices())
-            {
-              const auto normal = pressure_minus.normal_vector(q);
+      for(const unsigned int q : pressure_minus.quadrature_point_indices())
+      {
+        const auto normal = pressure_minus.normal_vector(q);
 
-              // auto bc = this->boundary_descriptor->velocity->neumann_bc.find(boundary_id)->second;
-              // auto q_points = pressure_minus.quadrature_point(q);
-              // This should be the boundary condition but we get only grad_u * n which we cannot use, so use the gradient instead
-              const auto  grad_u = velocity_minus.get_gradient(q); //FunctionEvaluator<1, dim, Number>::value(*bc, q_points, this->evaluation_time);
-              const auto u_plus          = velocity_minus.get_value(q);
-              const auto convective_flux = (grad_u * u_plus) * normal; //grad_u * u_plus
+        // On here we do not know the gradient of the velocity so use the value of the gradient from
+        // the inside instead
+        tensor const grad_u          = velocity_minus.get_gradient(q);
+        vector const u_minus         = velocity_minus.get_value(q);
+        scalar const convective_flux = (grad_u * u_minus) * normal;
 
-              pressure_minus.submit_value(convective_flux, q);
-            }
+        pressure_minus.submit_value(convective_flux, q);
+      }
 
-          pressure_minus.integrate_scatter(dealii::EvaluationFlags::values, dst);
-        }
+      pressure_minus.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
+  }
 }
 
 template<int dim, typename Number>
 void
-OperatorConsistentSplitting<dim, Number>::rhs_ppe_div_term_body_forces_add(VectorType &   dst,
-                                                                     double const & time) const
+OperatorConsistentSplitting<dim, Number>::rhs_ppe_div_term_body_forces_add(
+  VectorType &   dst,
+  double const & time) const
 {
   this->evaluation_time = time;
 
@@ -413,21 +396,20 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_cel
     integrator.reinit(cell);
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-    {      
+    {
       dealii::Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
       // evaluate right-hand side
-      vector rhs =
+      vector const rhs =
         FunctionEvaluator<1, dim, Number>::value(*(this->field_functions->right_hand_side),
-                                                  q_points,
-                                                  this->evaluation_time);
+                                                 q_points,
+                                                 this->evaluation_time);
 
       integrator.submit_gradient(rhs, q);
     }
     integrator.integrate_scatter(dealii::EvaluationFlags::gradients, dst);
   }
 }
-
 
 
 
@@ -451,16 +433,16 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_inn
     pressure_plus.reinit(face);
 
     for(unsigned int q = 0; q < pressure_minus.n_q_points; ++q)
-    {      
+    {
       dealii::Point<dim, scalar> q_points = pressure_minus.quadrature_point(q);
 
       // evaluate right-hand side
-      vector rhs =
+      vector const rhs =
         FunctionEvaluator<1, dim, Number>::value(*(this->field_functions->right_hand_side),
-                                                  q_points,
-                                                  this->evaluation_time);
-      const auto normal = pressure_minus.normal_vector(q);
-      const auto flux   = rhs * normal;
+                                                 q_points,
+                                                 this->evaluation_time);
+      vector const normal = pressure_minus.normal_vector(q);
+      scalar const flux   = rhs * normal;
 
       pressure_minus.submit_value(-flux, q);
       pressure_plus.submit_value(flux, q);
@@ -486,20 +468,18 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_bou
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    integrator.reinit(face);
-
     BoundaryTypeU boundary_type =
       this->boundary_descriptor->velocity->get_boundary_type(matrix_free.get_boundary_id(face));
 
-    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+    if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
     {
-        if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
-      {
-        // Do nothing on Dirichlet boudary as the boundary face term cancels with the boundary condition.
-        scalar zero = dealii::make_vectorized_array<Number>(0.0);
-        integrator.submit_value(zero, q);
-      }
-      else if (boundary_type == BoundaryTypeU::Neumann)
+      // Do nothing on Dirichlet boudary as the boundary face term cancels with the boundary
+      // condition.
+    }
+    else if(boundary_type == BoundaryTypeU::Neumann)
+    {
+      integrator.reinit(face);
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         dealii::Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
@@ -512,13 +492,13 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_bou
         scalar flux_times_normal = rhs * integrator.normal_vector(q);
         integrator.submit_value(-flux_times_normal, q);
       }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
+      integrator.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
-    integrator.integrate_scatter(dealii::EvaluationFlags::values, dst);
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
   }
 }
 
@@ -539,11 +519,12 @@ OperatorConsistentSplitting<dim, Number>::rhs_ppe_nbc_numerical_time_derivative_
 
 template<int dim, typename Number>
 void
-OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_nbc_numerical_time_derivative_add_boundary_face(
-  dealii::MatrixFree<dim, Number> const & data,
-  VectorType &                            dst,
-  VectorType const &                      acceleration,
-  Range const &                           face_range) const
+OperatorConsistentSplitting<dim, Number>::
+  local_rhs_ppe_nbc_numerical_time_derivative_add_boundary_face(
+    dealii::MatrixFree<dim, Number> const & data,
+    VectorType &                            dst,
+    VectorType const &                      acceleration,
+    Range const &                           face_range) const
 {
   unsigned int dof_index_velocity  = this->get_dof_index_velocity();
   unsigned int dof_index_pressure  = this->get_dof_index_pressure();
@@ -554,44 +535,42 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_nbc_numerical_time_deriv
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    integrator_velocity.reinit(face);
-    integrator_velocity.gather_evaluate(acceleration, dealii::EvaluationFlags::values);
-
-    integrator_pressure.reinit(face);
-
     BoundaryTypeU boundary_type =
       this->boundary_descriptor->velocity->get_boundary_type(data.get_boundary_id(face));
 
-    for(unsigned int q = 0; q < integrator_pressure.n_q_points; ++q)
+    if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
     {
-      if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
+      integrator_velocity.reinit(face);
+      integrator_velocity.gather_evaluate(acceleration, dealii::EvaluationFlags::values);
+
+      integrator_pressure.reinit(face);
+      for(unsigned int q = 0; q < integrator_pressure.n_q_points; ++q)
       {
-        vector normal = integrator_velocity.normal_vector(q);
-        vector dudt   = integrator_velocity.get_value(q);
-        scalar h      = -normal * dudt;
+        vector const normal = integrator_velocity.normal_vector(q);
+        vector const dudt   = integrator_velocity.get_value(q);
+        scalar const h      = -normal * dudt;
 
         integrator_pressure.submit_value(h, q);
       }
-      else if(boundary_type == BoundaryTypeU::Neumann)
-      {
-        scalar zero = dealii::make_vectorized_array<Number>(0.0);
-        integrator_pressure.submit_value(zero, q);
-      }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
+      integrator_pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
 
-    integrator_pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
+    else if(boundary_type == BoundaryTypeU::Neumann)
+    {
+      // Nothing to do
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
   }
 }
 
 template<int dim, typename Number>
 void
 OperatorConsistentSplitting<dim, Number>::rhs_ppe_nbc_viscous_add(VectorType &       dst,
-                                                            VectorType const & src) const
+                                                                  VectorType const & src) const
 {
   this->get_matrix_free().loop(&This::cell_loop_empty,
                                &This::face_loop_empty,
@@ -619,65 +598,46 @@ OperatorConsistentSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    pressure.reinit(face);
-
-    omega.reinit(face);
-    omega.gather_evaluate(src, dealii::EvaluationFlags::gradients);
-
     BoundaryTypeP boundary_type =
       this->boundary_descriptor->pressure->get_boundary_type(matrix_free.get_boundary_id(face));
 
-    for(unsigned int q = 0; q < pressure.n_q_points; ++q)
+    if(boundary_type == BoundaryTypeP::Neumann)
     {
-      scalar viscosity = this->get_viscosity_boundary_face(face, q);
+      pressure.reinit(face);
 
-      if(boundary_type == BoundaryTypeP::Neumann)
+      omega.reinit(face);
+      omega.gather_evaluate(src, dealii::EvaluationFlags::gradients);
+
+      for(unsigned int q = 0; q < pressure.n_q_points; ++q)
       {
-        scalar h = dealii::make_vectorized_array<Number>(0.0);
+        scalar const viscosity  = this->get_viscosity_boundary_face(face, q);
+        vector const normal     = pressure.normal_vector(q);
+        vector const curl_omega = CurlCompute<dim, FaceIntegratorU>::compute(omega, q);
 
-        vector normal = pressure.normal_vector(q);
-
-        vector curl_omega = CurlCompute<dim, FaceIntegratorU>::compute(omega, q);
-
-        h = -normal * (viscosity * curl_omega);
+        scalar const h = -normal * (viscosity * curl_omega);
 
         pressure.submit_value(h, q);
       }
-      else if(boundary_type == BoundaryTypeP::Dirichlet)
-      {
-        pressure.submit_value(dealii::make_vectorized_array<Number>(0.0), q);
-      }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
+      pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
-    pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
+
+    else if(boundary_type == BoundaryTypeP::Dirichlet)
+    {
+      // Nothing to do
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
   }
 }
 
 template<int dim, typename Number>
 void
-OperatorConsistentSplitting<dim, Number>::rhs_ppe_laplace_add(VectorType &   dst,
-                                                        double const & evaluation_time) const
-{
-  ProjectionBase::do_rhs_ppe_laplace_add(dst, evaluation_time);
-}
-
-template<int dim, typename Number>
-unsigned int
-OperatorConsistentSplitting<dim, Number>::solve_pressure(VectorType &       dst,
-                                                   VectorType const & src,
-                                                   bool const         update_preconditioner) const
-{
-  return ProjectionBase::do_solve_pressure(dst, src, update_preconditioner);
-}
-
-template<int dim, typename Number>
-void
-OperatorConsistentSplitting<dim, Number>::interpolate_velocity_dirichlet_bc(VectorType &   dst,
-                                                                      double const & time) const
+OperatorConsistentSplitting<dim, Number>::interpolate_velocity_dirichlet_bc(
+  VectorType &   dst,
+  double const & time) const
 {
   this->evaluation_time = time;
 
@@ -761,7 +721,7 @@ OperatorConsistentSplitting<dim, Number>::local_interpolate_velocity_dirichlet_b
 template<int dim, typename Number>
 void
 OperatorConsistentSplitting<dim, Number>::apply_helmholtz_operator(VectorType &       dst,
-                                                             VectorType const & src) const
+                                                                   VectorType const & src) const
 {
   this->momentum_operator.vmult(dst, src);
 }
