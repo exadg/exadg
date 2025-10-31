@@ -138,7 +138,9 @@ private:
   {
   }
 
-  // rhs PPE
+   /*
+    * Right hand side of the PPE
+    */
   // Leray projection
   void
   compute_Leray_projection_cell(dealii::MatrixFree<dim, Number> const & matrix_free,
