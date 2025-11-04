@@ -770,7 +770,8 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
 
     // Set initial acceleration for the Dirichlet degrees of freedom so that the initial
     // acceleration is also correct on the Dirichlet boundary
-    mass_operator.set_inhomogeneous_boundary_values(initial_acceleration);
+    mass_operator.set_inhomogeneous_constrained_values(
+      initial_acceleration, false /* periodicity_and_hanging_node_constraints_only */);
   }
 }
 
@@ -909,9 +910,11 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
 
   linearized_operator.update(scaling_factor_mass, time);
 
-  // set inhomogeneous Dirichlet values in order to evaluate the nonlinear residual correctly
+  // set inhomogeneous Dirichlet values, hanging node and periodicity constraints in order to
+  // evaluate the nonlinear residual correctly
   elasticity_operator_nonlinear.set_time(time);
-  elasticity_operator_nonlinear.set_inhomogeneous_boundary_values(sol);
+  elasticity_operator_nonlinear.set_inhomogeneous_constrained_values(
+    sol, false /* periodicity_and_hanging_node_constraints_only */);
 
   // call Newton solver
   Newton::UpdateData update;
@@ -931,7 +934,8 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   // solver is also zero, and the linearized operator contains values of 1 on the
   // diagonal for constrained degrees of freedom).
 
-  //  elasticity_operator_nonlinear.set_inhomogeneous_boundary_values(sol);
+  // elasticity_operator_nonlinear.set_inhomogeneous_constrained_values(
+  //   sol, true /* periodicity_and_hanging_node_constraints_only */);
 
   return iter;
 }
@@ -979,7 +983,8 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
 
   // Set Dirichlet degrees of freedom according to Dirichlet boundary condition.
   elasticity_operator_linear.set_time(time);
-  elasticity_operator_linear.set_inhomogeneous_boundary_values(sol);
+  elasticity_operator_linear.set_inhomogeneous_constrained_values(
+    sol, false /* periodicity_and_hanging_node_constraints_only */);
 
   return iterations;
 }

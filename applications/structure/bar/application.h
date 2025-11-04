@@ -265,6 +265,12 @@ public:
       prm.add_parameter("Traction",
                         area_force,
                         "Traction acting on right boundary in case of Neumann BC.");
+      prm.add_parameter("AdaptiveRefinement",
+                        adaptive_refinement,
+                        "Static adaptive refinement of the mesh.");
+      prm.add_parameter("UseMatrixBasedImplementation",
+                        use_matrix_based_implementation,
+                        "Use matrix-based implementation of the elasticity operator.");
     }
     prm.leave_subsection();
   }
@@ -305,11 +311,15 @@ private:
     }
     else if(this->param.grid.element_type == ElementType::Hypercube)
     {
-      this->param.grid.triangulation_type           = TriangulationType::Distributed;
-      this->param.grid.create_coarse_triangulations = false; // can also be set to true if desired
+      this->param.grid.triangulation_type = TriangulationType::Distributed;
+      this->param.grid.create_coarse_triangulations =
+        adaptive_refinement ? true : false; // required for adaptive refinement
     }
 
     this->param.load_increment = 0.5;
+
+    this->param.use_matrix_based_implementation = use_matrix_based_implementation;
+    this->param.sparse_matrix_type              = SparseMatrixType::Trilinos;
 
     this->param.newton_solver_data  = Newton::SolverData(1e2, 1.e-9, 1.e-9);
     this->param.solver              = Solver::FGMRES;
@@ -363,12 +373,14 @@ private:
 
         if(this->param.grid.element_type == ElementType::Hypercube)
         {
-          dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, p1, p2);
+          dealii::GridGenerator::subdivided_hyper_rectangle(
+            tria, repetitions, p1, p2, false /* colorize */);
         }
         else if(this->param.grid.element_type == ElementType::Simplex)
         {
           dealii::Triangulation<dim, dim> tria_hypercube;
-          dealii::GridGenerator::subdivided_hyper_rectangle(tria_hypercube, repetitions, p1, p2);
+          dealii::GridGenerator::subdivided_hyper_rectangle(
+            tria_hypercube, repetitions, p1, p2, false /* colorize */);
 
           dealii::GridGenerator::convert_hypercube_to_simplex_mesh(tria_hypercube, tria);
         }
@@ -446,6 +458,60 @@ private:
                                                  this->param.mapping_degree,
                                                  this->param.mapping_degree_coarse_grids,
                                                  this->param.involves_h_multigrid());
+
+    if(adaptive_refinement && this->param.grid.element_type == ElementType::Hypercube)
+    {
+      // Flag all cells touching one of the boundaries with a face.
+      std::vector<dealii::types::boundary_id> refine_bdry_id = {1, 3};
+      bool constexpr n_adaptive_refinements                  = 2;
+      for(unsigned int i = 0; i < n_adaptive_refinements; ++i)
+      {
+        for(auto const & cell : grid.triangulation->active_cell_iterators())
+        {
+          for(auto const face : cell->face_indices())
+          {
+            if(cell->at_boundary(face))
+            {
+              if(std::find(refine_bdry_id.begin(),
+                           refine_bdry_id.end(),
+                           cell->face(face)->boundary_id()) != refine_bdry_id.end())
+              {
+                if(not cell->refine_flag_set())
+                {
+                  cell->clear_coarsen_flag();
+                  cell->set_refine_flag();
+                }
+              }
+            }
+          }
+        }
+        grid.triangulation->prepare_coarsening_and_refinement();
+        grid.triangulation->execute_coarsening_and_refinement();
+      }
+
+      // Update coarse_triangulations after adaptive refinement.
+      if(this->param.involves_h_multigrid())
+      {
+        GridUtilities::create_coarse_triangulations_after_coarsening_and_refinement(
+          *grid.triangulation,
+          grid.periodic_face_pairs,
+          grid.coarse_triangulations,
+          grid.coarse_periodic_face_pairs,
+          this->param.grid,
+          false /* preserve_boundary_cells */);
+      }
+
+      // Fill coarse mappings based on fine mapping.
+      std::shared_ptr<dealii::Mapping<dim>> coarse_mapping;
+      if(this->param.involves_h_multigrid())
+      {
+        GridUtilities::create_mapping(coarse_mapping,
+                                      this->param.grid.element_type,
+                                      this->param.mapping_degree_coarse_grids);
+      }
+      multigrid_mappings =
+        std::make_shared<MultigridMappings<dim, Number>>(mapping, coarse_mapping);
+    }
   }
 
   void
@@ -649,7 +715,10 @@ private:
   double displacement = 1.0; // "Dirichlet"
   double area_force   = 1.0; // "Neumann"
 
+  bool use_matrix_based_implementation = false;
+
   // mesh parameters
+  bool               adaptive_refinement = false;
   unsigned int const repetitions0 = 4, repetitions1 = 1, repetitions2 = 1;
 
   double const E_modul = 200.0;

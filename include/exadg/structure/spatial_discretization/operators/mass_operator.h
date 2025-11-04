@@ -57,30 +57,45 @@ public:
   }
 
   void
-  set_inhomogeneous_boundary_values(VectorType & dst) const final
+  set_inhomogeneous_constrained_values(
+    VectorType & dst,
+    bool const   periodicity_and_hanging_node_constraints_only) const final
   {
-    std::map<dealii::types::global_dof_index, double> boundary_values;
-    for(auto dbc : operator_data.bc->dirichlet_bc_initial_acceleration)
+    // periodicity and hanging node constraints are enforced strongly for continuous spaces
+    if(not this->is_dg)
     {
-      dbc.second->set_time(this->get_time());
-      dealii::ComponentMask mask =
-        operator_data.bc->dirichlet_bc_component_mask.find(dbc.first)->second;
-
-      dealii::VectorTools::interpolate_boundary_values(
-        *this->matrix_free->get_mapping_info().mapping,
-        this->matrix_free->get_dof_handler(operator_data.dof_index),
-        dbc.first,
-        *dbc.second,
-        boundary_values,
-        mask);
+      unsigned int const dof_index_inhomogeneous = this->get_dof_index_inhomogeneous();
+      dealii::AffineConstraints<Number> const & constraints =
+        this->matrix_free->get_affine_constraints(dof_index_inhomogeneous);
+      constraints.distribute(dst);
     }
 
-    // set Dirichlet values in solution vector
-    for(auto m : boundary_values)
-      if(dst.get_partitioner()->in_local_range(m.first))
-        dst[m.first] = m.second;
+    if(not periodicity_and_hanging_node_constraints_only)
+    {
+      // standard Dirichlet boundary conditions
+      std::map<dealii::types::global_dof_index, double> boundary_values;
+      for(auto dbc : operator_data.bc->dirichlet_bc_initial_acceleration)
+      {
+        dbc.second->set_time(this->get_time());
+        dealii::ComponentMask mask =
+          operator_data.bc->dirichlet_bc_component_mask.find(dbc.first)->second;
 
-    dst.update_ghost_values();
+        dealii::VectorTools::interpolate_boundary_values(
+          *this->matrix_free->get_mapping_info().mapping,
+          this->matrix_free->get_dof_handler(operator_data.dof_index),
+          dbc.first,
+          *dbc.second,
+          boundary_values,
+          mask);
+      }
+
+      // set Dirichlet values in solution vector
+      for(auto m : boundary_values)
+        if(dst.get_partitioner()->in_local_range(m.first))
+          dst[m.first] = m.second;
+
+      dst.update_ghost_values();
+    }
   }
 
 private:
