@@ -264,10 +264,6 @@ Parameters::check() const
                 dealii::ExcMessage("Combination of adaptive mesh refinement "
                                    "and ALE formulation not implemented."));
 
-    AssertThrow(temporal_discretization == TemporalDiscretization::BDF,
-                dealii::ExcMessage("Adaptive mesh refinement only implemented"
-                                   "for implicit time integration."));
-
     AssertThrow(grid.element_type == ElementType::Hypercube,
                 dealii::ExcMessage("Adaptive mesh refinement is currently "
                                    "only supported for hypercube elements."));

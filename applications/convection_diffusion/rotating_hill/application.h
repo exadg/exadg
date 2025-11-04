@@ -99,6 +99,10 @@ public:
       prm.add_parameter("WriteRestart", write_restart, "Should restart files be written?");
       prm.add_parameter("ReadRestart", read_restart, "Is this a restarted simulation?");
       prm.add_parameter("ApplyManifold", apply_manifold, "Apply the `DeformedCubeManifold`?");
+      prm.add_parameter("UseExplicitTimeIntegration",
+                        use_explicit_time_integration,
+                        "Use explicit or implicit time integration.",
+                        dealii::Patterns::Bool());
     }
     prm.leave_subsection();
   }
@@ -119,13 +123,18 @@ private:
     this->param.diffusivity = 0.0;
 
     // TEMPORAL DISCRETIZATION
-    this->param.temporal_discretization      = TemporalDiscretization::BDF;
-    this->param.order_time_integrator        = 2; // instabilities for BDF 3 and 4
-    this->param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
-    this->param.start_with_low_order         = false;
-
-    // this->param.temporal_discretization      = TemporalDiscretization::ExplRK;
-    // this->param.time_integrator_rk           = TimeIntegratorRK::ExplRK3Stage7Reg2;
+    this->param.start_with_low_order = false;
+    if(use_explicit_time_integration)
+    {
+      this->param.temporal_discretization = TemporalDiscretization::ExplRK;
+      this->param.time_integrator_rk      = TimeIntegratorRK::ExplRK3Stage7Reg2;
+    }
+    else
+    {
+      this->param.temporal_discretization      = TemporalDiscretization::BDF;
+      this->param.order_time_integrator        = 2; // instabilities for BDF 3 and 4
+      this->param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+    }
 
     this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
     this->param.adaptive_time_stepping        = false;
@@ -310,10 +319,11 @@ private:
   double const left  = -1.0;
   double const right = +1.0;
 
-  bool enable_adaptivity = false;
-  bool write_restart     = false;
-  bool read_restart      = false;
-  bool apply_manifold    = false;
+  bool use_explicit_time_integration = false;
+  bool enable_adaptivity             = false;
+  bool write_restart                 = false;
+  bool read_restart                  = false;
+  bool apply_manifold                = false;
 };
 
 } // namespace ConvDiff

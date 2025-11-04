@@ -2,7 +2,7 @@
     "General": {
         "Precision": "double",
         "Dim": "2",
-        "IsTest": "false"
+        "IsTest": "true"
     },
     "SpatialResolution": {
         "DegreeMin": "5",
@@ -15,11 +15,11 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-        "UseExplicitTimeIntegration": "false",
         "EnableAdaptivity": "true",
         "ReadRestart": "false",
         "WriteRestart": "false",
-        "ApplyManifold": "true"
+        "ApplyManifold": "true",
+        "UseExplicitTimeIntegration": "true"
     },
     "Output": {
         "OutputDirectory": "output/rotating_hill/",
