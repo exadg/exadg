@@ -306,10 +306,10 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span><span class="comment">   * Prepare and interpolation in adaptive mesh refinement.</span></div>
 <div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>  prepare_coarsening_and_refinement(std::vector&lt;VectorType *&gt; &amp; vectors);</div>
+<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>  prepare_coarsening_and_refinement(std::vector&lt;VectorType *&gt; &amp; vectors) <span class="keyword">override</span>;</div>
 <div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span> </div>
 <div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>  interpolate_after_coarsening_and_refinement(std::vector&lt;VectorType *&gt; &amp; vectors);</div>
+<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>  interpolate_after_coarsening_and_refinement(std::vector&lt;VectorType *&gt; &amp; vectors) <span class="keyword">override</span>;</div>
 <div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span> </div>
 <div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span><span class="comment">   * This function solves the linear system of equations in case of implicit time integration or</span></div>

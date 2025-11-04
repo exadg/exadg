@@ -165,12 +165,10 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>update_conv_diff_oper
 <tr class="memitem:a9fee265e80e91c5d94fe078edf054e7c" id="r_a9fee265e80e91c5d94fe078edf054e7c"><td class="memItemLeft" align="right" valign="top"><a id="a9fee265e80e91c5d94fe078edf054e7c" name="a9fee265e80e91c5d94fe078edf054e7c"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update_after_grid_motion</b> (bool const update_matrix_free)</td></tr>
 <tr class="separator:a9fee265e80e91c5d94fe078edf054e7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab54f2f55e639c93c0c410748b5189053" id="r_ab54f2f55e639c93c0c410748b5189053"><td class="memItemLeft" align="right" valign="top"><a id="ab54f2f55e639c93c0c410748b5189053" name="ab54f2f55e639c93c0c410748b5189053"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>prepare_coarsening_and_refinement</b> (std::vector&lt; VectorType * &gt; &amp;vectors)</td></tr>
-<tr class="separator:ab54f2f55e639c93c0c410748b5189053"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2d4f6c374111d6495c4cab38391d37ee" id="r_a2d4f6c374111d6495c4cab38391d37ee"><td class="memItemLeft" align="right" valign="top"><a id="a2d4f6c374111d6495c4cab38391d37ee" name="a2d4f6c374111d6495c4cab38391d37ee"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>interpolate_after_coarsening_and_refinement</b> (std::vector&lt; VectorType * &gt; &amp;vectors)</td></tr>
-<tr class="separator:a2d4f6c374111d6495c4cab38391d37ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a314db77d760cd0d13dddb3e536c8143b" id="r_a314db77d760cd0d13dddb3e536c8143b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a314db77d760cd0d13dddb3e536c8143b">prepare_coarsening_and_refinement</a> (std::vector&lt; VectorType * &gt; &amp;vectors) override</td></tr>
+<tr class="separator:a314db77d760cd0d13dddb3e536c8143b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2557a8699c29d95b40a3ea686c23667" id="r_ad2557a8699c29d95b40a3ea686c23667"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad2557a8699c29d95b40a3ea686c23667">interpolate_after_coarsening_and_refinement</a> (std::vector&lt; VectorType * &gt; &amp;vectors) override</td></tr>
+<tr class="separator:ad2557a8699c29d95b40a3ea686c23667"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8a3e92a1eb0446b7e9f1af254113bae" id="r_ab8a3e92a1eb0446b7e9f1af254113bae"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab8a3e92a1eb0446b7e9f1af254113bae">solve</a> (VectorType &amp;sol, VectorType const &amp;rhs, bool const update_preconditioner, double const scaling_factor=-1.0, double const time=-1.0, VectorType const *velocity=nullptr) final</td></tr>
 <tr class="separator:ab8a3e92a1eb0446b7e9f1af254113bae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a358adb942d4b4ee6e94c0c52614102c3" id="r_a358adb942d4b4ee6e94c0c52614102c3"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a358adb942d4b4ee6e94c0c52614102c3">calculate_time_step_max_efficiency</a> (unsigned int const order_time_integrator) const final</td></tr>
@@ -486,6 +484,64 @@ template&lt;int dim, typename Number&gt; </div>
   </td>
   <td class="mlabels-right">
 <span class="mlabels"><span class="mlabel final">final</span><span class="mlabel virtual">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1ConvDiff_1_1Interface_1_1Operator.html">ExaDG::ConvDiff::Interface::Operator&lt; Number &gt;</a>.</p>
+
+</div>
+</div>
+<a id="ad2557a8699c29d95b40a3ea686c23667" name="ad2557a8699c29d95b40a3ea686c23667"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad2557a8699c29d95b40a3ea686c23667">&#9670;&#160;</a></span>interpolate_after_coarsening_and_refinement()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::interpolate_after_coarsening_and_refinement </td>
+          <td>(</td>
+          <td class="paramtype">std::vector&lt; VectorType * &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>vectors</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel override">override</span><span class="mlabel virtual">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1ConvDiff_1_1Interface_1_1Operator.html">ExaDG::ConvDiff::Interface::Operator&lt; Number &gt;</a>.</p>
+
+</div>
+</div>
+<a id="a314db77d760cd0d13dddb3e536c8143b" name="a314db77d760cd0d13dddb3e536c8143b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a314db77d760cd0d13dddb3e536c8143b">&#9670;&#160;</a></span>prepare_coarsening_and_refinement()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::prepare_coarsening_and_refinement </td>
+          <td>(</td>
+          <td class="paramtype">std::vector&lt; VectorType * &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>vectors</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel override">override</span><span class="mlabel virtual">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
