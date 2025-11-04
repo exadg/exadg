@@ -265,144 +265,146 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>        coupling_structure_to_fluid();</div>
 <div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span> </div>
 <div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>        <span class="comment">// solve fluid problem</span></div>
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>        fluid-&gt;time_integrator-&gt;advance_one_timestep_partitioned_solve(is_new_time_window);</div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span> </div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>        <span class="comment">// compute and send stress to solid</span></div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>        coupling_fluid_to_structure();</div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span> </div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>        <span class="comment">// TODO: Add synchronization for the time-step size here. For now, we only allow a constant</span></div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>        <span class="comment">// time-step size</span></div>
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>        dealii::Timer precice_timer;</div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>        this-&gt;precice-&gt;advance(fluid-&gt;time_integrator-&gt;get_time_step_size());</div>
-<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>        is_new_time_window = this-&gt;precice-&gt;is_time_window_complete();</div>
-<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>        this-&gt;timer_tree.insert({<span class="stringliteral">&quot;FSI&quot;</span>, <span class="stringliteral">&quot;preCICE&quot;</span>}, precice_timer.wall_time());</div>
-<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>      }</div>
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span> </div>
-<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>      <span class="comment">// Needs to be called before the swaps in post_solve</span></div>
-<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>      this-&gt;precice-&gt;reload_old_state_if_required([&amp;]() {});</div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span> </div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>      <span class="comment">// post-solve</span></div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>      <span class="keywordflow">if</span>(is_new_time_window)</div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>        fluid-&gt;time_integrator-&gt;advance_one_timestep_post_solve();</div>
-<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>    }</div>
-<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>  }</div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span> </div>
-<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>  print_performance_results(<span class="keywordtype">double</span> <span class="keyword">const</span> total_time)<span class="keyword"> const override</span></div>
-<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>    this-&gt;pcout</div>
-<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>      &lt;&lt; std::endl</div>
-<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>      &lt;&lt; <span class="stringliteral">&quot;_________________________________________________________________________________&quot;</span></div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>        fluid-&gt;time_integrator-&gt;advance_one_timestep_partitioned_solve(is_new_time_window,</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>                                                                       <span class="keyword">true</span> <span class="comment">/* update_velocity */</span>,</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>                                                                       <span class="keyword">true</span> <span class="comment">/* update_pressure */</span>);</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span> </div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>        <span class="comment">// compute and send stress to solid</span></div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>        coupling_fluid_to_structure();</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span> </div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>        <span class="comment">// TODO: Add synchronization for the time-step size here. For now, we only allow a constant</span></div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>        <span class="comment">// time-step size</span></div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>        dealii::Timer precice_timer;</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>        this-&gt;precice-&gt;advance(fluid-&gt;time_integrator-&gt;get_time_step_size());</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>        is_new_time_window = this-&gt;precice-&gt;is_time_window_complete();</div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>        this-&gt;timer_tree.insert({<span class="stringliteral">&quot;FSI&quot;</span>, <span class="stringliteral">&quot;preCICE&quot;</span>}, precice_timer.wall_time());</div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>      }</div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span> </div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>      <span class="comment">// Needs to be called before the swaps in post_solve</span></div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>      this-&gt;precice-&gt;reload_old_state_if_required([&amp;]() {});</div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span> </div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>      <span class="comment">// post-solve</span></div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>      <span class="keywordflow">if</span>(is_new_time_window)</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>        fluid-&gt;time_integrator-&gt;advance_one_timestep_post_solve();</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>    }</div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>  }</div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span> </div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  print_performance_results(<span class="keywordtype">double</span> <span class="keyword">const</span> total_time)<span class="keyword"> const override</span></div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>    this-&gt;pcout</div>
 <div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>      &lt;&lt; std::endl</div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>      &lt;&lt; std::endl;</div>
-<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span> </div>
-<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>    this-&gt;pcout &lt;&lt; <span class="stringliteral">&quot;Performance results for fluid-structure interaction solver:&quot;</span> &lt;&lt; std::endl;</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>      &lt;&lt; <span class="stringliteral">&quot;_________________________________________________________________________________&quot;</span></div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>      &lt;&lt; std::endl</div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>      &lt;&lt; std::endl;</div>
 <div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span> </div>
-<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>    this-&gt;pcout &lt;&lt; std::endl &lt;&lt; <span class="stringliteral">&quot;Fluid:&quot;</span> &lt;&lt; std::endl;</div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>    fluid-&gt;time_integrator-&gt;print_iterations();</div>
-<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span> </div>
-<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>    this-&gt;pcout &lt;&lt; std::endl &lt;&lt; <span class="stringliteral">&quot;ALE:&quot;</span> &lt;&lt; std::endl;</div>
-<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>    fluid-&gt;ale_mapping-&gt;print_iterations();</div>
-<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span> </div>
-<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>    <span class="comment">// wall times</span></div>
-<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>    this-&gt;pcout &lt;&lt; std::endl &lt;&lt; <span class="stringliteral">&quot;Wall times:&quot;</span> &lt;&lt; std::endl;</div>
-<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span> </div>
-<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>    this-&gt;timer_tree.insert({<span class="stringliteral">&quot;FSI&quot;</span>}, total_time);</div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>    this-&gt;pcout &lt;&lt; <span class="stringliteral">&quot;Performance results for fluid-structure interaction solver:&quot;</span> &lt;&lt; std::endl;</div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span> </div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>    this-&gt;pcout &lt;&lt; std::endl &lt;&lt; <span class="stringliteral">&quot;Fluid:&quot;</span> &lt;&lt; std::endl;</div>
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>    fluid-&gt;time_integrator-&gt;print_iterations();</div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span> </div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>    this-&gt;pcout &lt;&lt; std::endl &lt;&lt; <span class="stringliteral">&quot;ALE:&quot;</span> &lt;&lt; std::endl;</div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>    fluid-&gt;ale_mapping-&gt;print_iterations();</div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span> </div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>    <span class="comment">// wall times</span></div>
+<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>    this-&gt;pcout &lt;&lt; std::endl &lt;&lt; <span class="stringliteral">&quot;Wall times:&quot;</span> &lt;&lt; std::endl;</div>
 <div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span> </div>
-<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>    this-&gt;timer_tree.insert({<span class="stringliteral">&quot;FSI&quot;</span>}, fluid-&gt;time_integrator-&gt;get_timings(), <span class="stringliteral">&quot;Fluid&quot;</span>);</div>
+<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>    this-&gt;timer_tree.insert({<span class="stringliteral">&quot;FSI&quot;</span>}, total_time);</div>
 <div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span> </div>
-<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>    this-&gt;pcout &lt;&lt; std::endl &lt;&lt; <span class="stringliteral">&quot;Timings for level 1:&quot;</span> &lt;&lt; std::endl;</div>
-<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>    this-&gt;timer_tree.print_level(this-&gt;pcout, 1);</div>
-<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span> </div>
-<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>    this-&gt;pcout &lt;&lt; std::endl &lt;&lt; <span class="stringliteral">&quot;Timings for level 2:&quot;</span> &lt;&lt; std::endl;</div>
-<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>    this-&gt;timer_tree.print_level(this-&gt;pcout, 2);</div>
-<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span> </div>
-<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>    <span class="comment">// Throughput in DoFs/s per time step per core</span></div>
-<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>    dealii::types::global_dof_index DoFs = fluid-&gt;pde_operator-&gt;get_number_of_dofs();</div>
-<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span> </div>
-<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>    <span class="keywordflow">if</span>(this-&gt;application-&gt;fluid-&gt;get_parameters().mesh_movement_type ==</div>
-<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>       IncNS::MeshMovementType::Poisson)</div>
-<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>    {</div>
-<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>      std::shared_ptr&lt;Poisson::DeformedMapping&lt;dim, Number&gt;&gt; poisson_ale_mapping =</div>
-<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>        std::dynamic_pointer_cast&lt;Poisson::DeformedMapping&lt;dim, Number&gt;&gt;(fluid-&gt;ale_mapping);</div>
-<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span> </div>
-<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>      DoFs += poisson_ale_mapping-&gt;get_pde_operator()-&gt;get_number_of_dofs();</div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>    }</div>
-<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(this-&gt;application-&gt;fluid-&gt;get_parameters().mesh_movement_type ==</div>
-<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>            IncNS::MeshMovementType::Elasticity)</div>
-<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>    {</div>
-<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>      std::shared_ptr&lt;Structure::DeformedMapping&lt;dim, Number&gt;&gt; elasticity_ale_mapping =</div>
-<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>        std::dynamic_pointer_cast&lt;Structure::DeformedMapping&lt;dim, Number&gt;&gt;(fluid-&gt;ale_mapping);</div>
-<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span> </div>
-<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>      DoFs += elasticity_ale_mapping-&gt;get_pde_operator()-&gt;get_number_of_dofs();</div>
-<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>    }</div>
-<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>    <span class="keywordflow">else</span></div>
-<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>    {</div>
-<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>      AssertThrow(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;not implemented.&quot;</span>));</div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>    }</div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span> </div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> N_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(this-&gt;mpi_comm);</div>
+<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>    this-&gt;timer_tree.insert({<span class="stringliteral">&quot;FSI&quot;</span>}, fluid-&gt;time_integrator-&gt;get_timings(), <span class="stringliteral">&quot;Fluid&quot;</span>);</div>
+<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span> </div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>    this-&gt;pcout &lt;&lt; std::endl &lt;&lt; <span class="stringliteral">&quot;Timings for level 1:&quot;</span> &lt;&lt; std::endl;</div>
+<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>    this-&gt;timer_tree.print_level(this-&gt;pcout, 1);</div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span> </div>
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>    this-&gt;pcout &lt;&lt; std::endl &lt;&lt; <span class="stringliteral">&quot;Timings for level 2:&quot;</span> &lt;&lt; std::endl;</div>
+<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>    this-&gt;timer_tree.print_level(this-&gt;pcout, 2);</div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span> </div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>    <span class="comment">// Throughput in DoFs/s per time step per core</span></div>
+<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>    dealii::types::global_dof_index DoFs = fluid-&gt;pde_operator-&gt;get_number_of_dofs();</div>
+<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span> </div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>    <span class="keywordflow">if</span>(this-&gt;application-&gt;fluid-&gt;get_parameters().mesh_movement_type ==</div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>       IncNS::MeshMovementType::Poisson)</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>    {</div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>      std::shared_ptr&lt;Poisson::DeformedMapping&lt;dim, Number&gt;&gt; poisson_ale_mapping =</div>
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>        std::dynamic_pointer_cast&lt;Poisson::DeformedMapping&lt;dim, Number&gt;&gt;(fluid-&gt;ale_mapping);</div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span> </div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>      DoFs += poisson_ale_mapping-&gt;get_pde_operator()-&gt;get_number_of_dofs();</div>
+<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>    }</div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(this-&gt;application-&gt;fluid-&gt;get_parameters().mesh_movement_type ==</div>
+<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>            IncNS::MeshMovementType::Elasticity)</div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>    {</div>
+<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>      std::shared_ptr&lt;Structure::DeformedMapping&lt;dim, Number&gt;&gt; elasticity_ale_mapping =</div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>        std::dynamic_pointer_cast&lt;Structure::DeformedMapping&lt;dim, Number&gt;&gt;(fluid-&gt;ale_mapping);</div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span> </div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>      DoFs += elasticity_ale_mapping-&gt;get_pde_operator()-&gt;get_number_of_dofs();</div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>    }</div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>    <span class="keywordflow">else</span></div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>    {</div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>      AssertThrow(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;not implemented.&quot;</span>));</div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>    }</div>
 <div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span> </div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>    dealii::Utilities::MPI::MinMaxAvg total_time_data =</div>
-<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>      dealii::Utilities::MPI::min_max_avg(total_time, this-&gt;mpi_comm);</div>
-<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>    <span class="keywordtype">double</span> <span class="keyword">const</span> total_time_avg = total_time_data.avg;</div>
-<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span> </div>
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> N_time_steps = fluid-&gt;time_integrator-&gt;get_number_of_time_steps();</div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> N_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(this-&gt;mpi_comm);</div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span> </div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>    dealii::Utilities::MPI::MinMaxAvg total_time_data =</div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>      dealii::Utilities::MPI::min_max_avg(total_time, this-&gt;mpi_comm);</div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>    <span class="keywordtype">double</span> <span class="keyword">const</span> total_time_avg = total_time_data.avg;</div>
 <div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span> </div>
-<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>    print_throughput_unsteady(this-&gt;pcout, DoFs, total_time_avg, N_time_steps, N_mpi_processes);</div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> N_time_steps = fluid-&gt;time_integrator-&gt;get_number_of_time_steps();</div>
 <div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span> </div>
-<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>    <span class="comment">// computational costs in CPUh</span></div>
-<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>    print_costs(this-&gt;pcout, total_time_avg, N_mpi_processes);</div>
-<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span> </div>
-<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>    this-&gt;pcout</div>
-<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>      &lt;&lt; <span class="stringliteral">&quot;_________________________________________________________________________________&quot;</span></div>
-<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>      &lt;&lt; std::endl</div>
-<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>      &lt;&lt; std::endl;</div>
-<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>  }</div>
-<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span> </div>
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>  coupling_structure_to_ale()<span class="keyword"> const</span></div>
-<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>    <span class="comment">// TODO: parametrize names</span></div>
-<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>    this-&gt;precice-&gt;read_block_data(this-&gt;precice_parameters.ale_mesh_name,</div>
-<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>                                   this-&gt;precice_parameters.displacement_data_name);</div>
-<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>  }</div>
-<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span> </div>
-<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>  coupling_structure_to_fluid()<span class="keyword"> const</span></div>
-<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>    <span class="comment">// TODO: parametrize names</span></div>
-<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>    this-&gt;precice-&gt;read_block_data(this-&gt;precice_parameters.read_mesh_name,</div>
-<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>                                   this-&gt;precice_parameters.velocity_data_name);</div>
-<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>  }</div>
-<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span> </div>
-<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>  coupling_fluid_to_structure()<span class="keyword"> const</span></div>
-<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>    VectorType stress_fluid;</div>
-<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span>    fluid-&gt;pde_operator-&gt;initialize_vector_velocity(stress_fluid);</div>
-<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>    <span class="comment">// calculate fluid stress at fluid-structure interface</span></div>
-<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>    fluid-&gt;pde_operator-&gt;interpolate_stress_bc(stress_fluid,</div>
-<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>                                               fluid-&gt;time_integrator-&gt;get_velocity_np(),</div>
-<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>                                               fluid-&gt;time_integrator-&gt;get_pressure_np());</div>
-<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>    stress_fluid *= -1.0;</div>
-<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>    this-&gt;precice-&gt;write_data(this-&gt;precice_parameters.write_mesh_name,</div>
-<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>                              this-&gt;precice_parameters.stress_data_name,</div>
-<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>                              stress_fluid,</div>
-<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>                              fluid-&gt;time_integrator-&gt;get_time_step_size());</div>
-<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>  }</div>
-<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span> </div>
-<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span>  <span class="comment">// solver</span></div>
-<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>  std::shared_ptr&lt;SolverFluid&lt;dim, Number&gt;&gt; fluid;</div>
-<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>};</div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>    print_throughput_unsteady(this-&gt;pcout, DoFs, total_time_avg, N_time_steps, N_mpi_processes);</div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span> </div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>    <span class="comment">// computational costs in CPUh</span></div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>    print_costs(this-&gt;pcout, total_time_avg, N_mpi_processes);</div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span> </div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>    this-&gt;pcout</div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>      &lt;&lt; <span class="stringliteral">&quot;_________________________________________________________________________________&quot;</span></div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>      &lt;&lt; std::endl</div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>      &lt;&lt; std::endl;</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>  }</div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span> </div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>  coupling_structure_to_ale()<span class="keyword"> const</span></div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>    <span class="comment">// TODO: parametrize names</span></div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>    this-&gt;precice-&gt;read_block_data(this-&gt;precice_parameters.ale_mesh_name,</div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>                                   this-&gt;precice_parameters.displacement_data_name);</div>
+<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>  }</div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span> </div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>  coupling_structure_to_fluid()<span class="keyword"> const</span></div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>    <span class="comment">// TODO: parametrize names</span></div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>    this-&gt;precice-&gt;read_block_data(this-&gt;precice_parameters.read_mesh_name,</div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>                                   this-&gt;precice_parameters.velocity_data_name);</div>
+<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>  }</div>
+<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span> </div>
+<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>  coupling_fluid_to_structure()<span class="keyword"> const</span></div>
+<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>    VectorType stress_fluid;</div>
+<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>    fluid-&gt;pde_operator-&gt;initialize_vector_velocity(stress_fluid);</div>
+<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>    <span class="comment">// calculate fluid stress at fluid-structure interface</span></div>
+<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>    fluid-&gt;pde_operator-&gt;interpolate_stress_bc(stress_fluid,</div>
+<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>                                               fluid-&gt;time_integrator-&gt;get_velocity_np(),</div>
+<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>                                               fluid-&gt;time_integrator-&gt;get_pressure_np());</div>
+<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>    stress_fluid *= -1.0;</div>
+<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>    this-&gt;precice-&gt;write_data(this-&gt;precice_parameters.write_mesh_name,</div>
+<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>                              this-&gt;precice_parameters.stress_data_name,</div>
+<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>                              stress_fluid,</div>
+<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>                              fluid-&gt;time_integrator-&gt;get_time_step_size());</div>
+<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span>  }</div>
+<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span> </div>
+<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>  <span class="comment">// solver</span></div>
+<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>  std::shared_ptr&lt;SolverFluid&lt;dim, Number&gt;&gt; fluid;</div>
+<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>};</div>
 </div>
-<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span> </div>
-<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>} <span class="comment">// namespace preCICE</span></div>
-<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>} <span class="comment">// namespace FSI</span></div>
-<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span> </div>
-<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_SOLID_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span> </div>
+<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>} <span class="comment">// namespace preCICE</span></div>
+<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>} <span class="comment">// namespace FSI</span></div>
+<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span> </div>
+<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_SOLID_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1FSI_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1FSI_1_1ApplicationBase.html">ExaDG::FSI::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:466</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 </div><!-- fragment --></div><!-- contents -->

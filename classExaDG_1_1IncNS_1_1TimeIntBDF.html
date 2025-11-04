@@ -177,9 +177,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>get_pressures_and_tim
 <tr class="memitem:ab2e20f4d2f5c8cc544e16867fb20098d" id="r_ab2e20f4d2f5c8cc544e16867fb20098d"><td class="memItemLeft" align="right" valign="top"><a id="ab2e20f4d2f5c8cc544e16867fb20098d" name="ab2e20f4d2f5c8cc544e16867fb20098d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ale_update</b> ()</td></tr>
 <tr class="separator:ab2e20f4d2f5c8cc544e16867fb20098d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acad5bec2a654ed15ec7def1ec58b8487" id="r_acad5bec2a654ed15ec7def1ec58b8487"><td class="memItemLeft" align="right" valign="top"><a id="acad5bec2a654ed15ec7def1ec58b8487" name="acad5bec2a654ed15ec7def1ec58b8487"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>advance_one_timestep_partitioned_solve</b> (bool const use_extrapolation)</td></tr>
-<tr class="separator:acad5bec2a654ed15ec7def1ec58b8487"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a751026f35d9c04068b46afc0f31246a8" id="r_a751026f35d9c04068b46afc0f31246a8"><td class="memItemLeft" align="right" valign="top"><a id="a751026f35d9c04068b46afc0f31246a8" name="a751026f35d9c04068b46afc0f31246a8"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>advance_one_timestep_partitioned_solve</b> (bool const use_extrapolation, bool const update_velocity, bool const update_pressure)</td></tr>
+<tr class="separator:a751026f35d9c04068b46afc0f31246a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad20d9cdcbf8985b0ece2b99f60368178" id="r_ad20d9cdcbf8985b0ece2b99f60368178"><td class="memItemLeft" align="right" valign="top"><a id="ad20d9cdcbf8985b0ece2b99f60368178" name="ad20d9cdcbf8985b0ece2b99f60368178"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>print_iterations</b> () const =0</td></tr>
 <tr class="separator:ad20d9cdcbf8985b0ece2b99f60368178"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -345,6 +345,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>use_extrapolation</b>
 <tr class="memitem:aceb6740988d6ee51662586499dc05750" id="r_aceb6740988d6ee51662586499dc05750"><td class="memItemLeft" align="right" valign="top"><a id="aceb6740988d6ee51662586499dc05750" name="aceb6740988d6ee51662586499dc05750"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>store_solution</b></td></tr>
 <tr class="separator:aceb6740988d6ee51662586499dc05750"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aec755c734f37b0582930bc4aa9067fd3" id="r_aec755c734f37b0582930bc4aa9067fd3"><td class="memItemLeft" align="right" valign="top"><a id="aec755c734f37b0582930bc4aa9067fd3" name="aec755c734f37b0582930bc4aa9067fd3"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>update_velocity</b></td></tr>
+<tr class="separator:aec755c734f37b0582930bc4aa9067fd3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a88ef27d53d3d80ec87a180f7657e2d00" id="r_a88ef27d53d3d80ec87a180f7657e2d00"><td class="memItemLeft" align="right" valign="top"><a id="a88ef27d53d3d80ec87a180f7657e2d00" name="a88ef27d53d3d80ec87a180f7657e2d00"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>update_pressure</b></td></tr>
+<tr class="separator:a88ef27d53d3d80ec87a180f7657e2d00"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adb6104fcd6b1c8a5b12bb491bf7280ae" id="r_adb6104fcd6b1c8a5b12bb491bf7280ae"><td class="memItemLeft" align="right" valign="top"><a id="adb6104fcd6b1c8a5b12bb491bf7280ae" name="adb6104fcd6b1c8a5b12bb491bf7280ae"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1HelpersALE.html">HelpersALE</a>&lt; dim, Number &gt; const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>helpers_ale</b></td></tr>
 <tr class="separator:adb6104fcd6b1c8a5b12bb491bf7280ae"><td class="memSeparator" colspan="2">&#160;</td></tr>

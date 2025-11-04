@@ -144,9 +144,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>get_pressures_and_tim
 <tr class="memitem:ab2e20f4d2f5c8cc544e16867fb20098d inherit pub_methods_classExaDG_1_1IncNS_1_1TimeIntBDF" id="r_ab2e20f4d2f5c8cc544e16867fb20098d"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ale_update</b> ()</td></tr>
 <tr class="separator:ab2e20f4d2f5c8cc544e16867fb20098d inherit pub_methods_classExaDG_1_1IncNS_1_1TimeIntBDF"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acad5bec2a654ed15ec7def1ec58b8487 inherit pub_methods_classExaDG_1_1IncNS_1_1TimeIntBDF" id="r_acad5bec2a654ed15ec7def1ec58b8487"><td class="memItemLeft" align="right" valign="top">
-void&#160;</td><td class="memItemRight" valign="bottom"><b>advance_one_timestep_partitioned_solve</b> (bool const use_extrapolation)</td></tr>
-<tr class="separator:acad5bec2a654ed15ec7def1ec58b8487 inherit pub_methods_classExaDG_1_1IncNS_1_1TimeIntBDF"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a751026f35d9c04068b46afc0f31246a8 inherit pub_methods_classExaDG_1_1IncNS_1_1TimeIntBDF" id="r_a751026f35d9c04068b46afc0f31246a8"><td class="memItemLeft" align="right" valign="top">
+void&#160;</td><td class="memItemRight" valign="bottom"><b>advance_one_timestep_partitioned_solve</b> (bool const use_extrapolation, bool const update_velocity, bool const update_pressure)</td></tr>
+<tr class="separator:a751026f35d9c04068b46afc0f31246a8 inherit pub_methods_classExaDG_1_1IncNS_1_1TimeIntBDF"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7c3a162c891dea5d6e1366495cb4dc93 inherit pub_methods_classExaDG_1_1IncNS_1_1TimeIntBDF" id="r_a7c3a162c891dea5d6e1366495cb4dc93"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1IncNS_1_1TimeIntBDF.html#a7c3a162c891dea5d6e1366495cb4dc93">print_solver_info</a> () const final</td></tr>
 <tr class="separator:a7c3a162c891dea5d6e1366495cb4dc93 inherit pub_methods_classExaDG_1_1IncNS_1_1TimeIntBDF"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1TimeIntBDFBase"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_methods_classExaDG_1_1TimeIntBDFBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1TimeIntBDFBase.html">ExaDG::TimeIntBDFBase</a></td></tr>
@@ -329,6 +329,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>use_extrapolation</b>
 <tr class="memitem:aceb6740988d6ee51662586499dc05750 inherit pro_attribs_classExaDG_1_1IncNS_1_1TimeIntBDF" id="r_aceb6740988d6ee51662586499dc05750"><td class="memItemLeft" align="right" valign="top">
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>store_solution</b></td></tr>
 <tr class="separator:aceb6740988d6ee51662586499dc05750 inherit pro_attribs_classExaDG_1_1IncNS_1_1TimeIntBDF"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aec755c734f37b0582930bc4aa9067fd3 inherit pro_attribs_classExaDG_1_1IncNS_1_1TimeIntBDF" id="r_aec755c734f37b0582930bc4aa9067fd3"><td class="memItemLeft" align="right" valign="top">
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>update_velocity</b></td></tr>
+<tr class="separator:aec755c734f37b0582930bc4aa9067fd3 inherit pro_attribs_classExaDG_1_1IncNS_1_1TimeIntBDF"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a88ef27d53d3d80ec87a180f7657e2d00 inherit pro_attribs_classExaDG_1_1IncNS_1_1TimeIntBDF" id="r_a88ef27d53d3d80ec87a180f7657e2d00"><td class="memItemLeft" align="right" valign="top">
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>update_pressure</b></td></tr>
+<tr class="separator:a88ef27d53d3d80ec87a180f7657e2d00 inherit pro_attribs_classExaDG_1_1IncNS_1_1TimeIntBDF"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adb6104fcd6b1c8a5b12bb491bf7280ae inherit pro_attribs_classExaDG_1_1IncNS_1_1TimeIntBDF" id="r_adb6104fcd6b1c8a5b12bb491bf7280ae"><td class="memItemLeft" align="right" valign="top">
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1HelpersALE.html">HelpersALE</a>&lt; dim, Number &gt; const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>helpers_ale</b></td></tr>
 <tr class="separator:adb6104fcd6b1c8a5b12bb491bf7280ae inherit pro_attribs_classExaDG_1_1IncNS_1_1TimeIntBDF"><td class="memSeparator" colspan="2">&#160;</td></tr>
