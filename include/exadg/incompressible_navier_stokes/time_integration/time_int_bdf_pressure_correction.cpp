@@ -327,19 +327,35 @@ void
 TimeIntBDFPressureCorrection<dim, Number>::do_timestep_solve()
 {
   // perform the sub-steps of the pressure-correction scheme
-
-  momentum_step();
+  if(this->update_velocity)
+  {
+    momentum_step();
+  }
 
   VectorType pressure_increment;
-  pressure_increment.reinit(pressure_np, false /* init with zero */);
+  if(this->update_pressure)
+  {
+    pressure_increment.reinit(pressure_np, false /* omit_zeroing_entries */);
+    pressure_step(pressure_increment);
+  }
+  else
+  {
+    AssertThrow(this->store_solution and pressure_increment_last_iter.size() > 0,
+                dealii::ExcMessage("Previous pressure step required to "
+                                   "use `pressure_increment_last_iter`."));
+    pressure_increment = pressure_increment_last_iter;
+  }
 
-  pressure_step(pressure_increment);
+  if(this->update_velocity)
+  {
+    projection_step(pressure_increment);
+  }
 
-  projection_step(pressure_increment);
-
-  // evaluate convective term once the final solution at time
-  // t_{n+1} is known
-  evaluate_convective_term();
+  // evaluate convective term once the final solution at time t_{n+1} is known
+  if(this->update_velocity)
+  {
+    evaluate_convective_term();
+  }
 }
 
 template<int dim, typename Number>
