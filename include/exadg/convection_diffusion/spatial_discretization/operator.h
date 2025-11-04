@@ -223,10 +223,10 @@ public:
    * Prepare and interpolation in adaptive mesh refinement.
    */
   void
-  prepare_coarsening_and_refinement(std::vector<VectorType *> & vectors);
+  prepare_coarsening_and_refinement(std::vector<VectorType *> & vectors) override;
 
   void
-  interpolate_after_coarsening_and_refinement(std::vector<VectorType *> & vectors);
+  interpolate_after_coarsening_and_refinement(std::vector<VectorType *> & vectors) override;
 
   /*
    * This function solves the linear system of equations in case of implicit time integration or
