@@ -561,6 +561,51 @@ OperatorProjectionMethods<dim, Number>::evaluate_nonlinear_residual(
 
 template<int dim, typename Number>
 void
+OperatorProjectionMethods<dim, Number>::evaluate_linearized_residual(
+  VectorType &       dst,
+  VectorType const & src,
+  VectorType const & transport_velocity,
+  VectorType const * rhs_vector,
+  double const &     time,
+  double const &     scaling_factor_mass)
+{
+  // update implicitly coupled viscosity
+  if(this->param.viscous_problem() and this->param.viscosity_is_variable())
+  {
+    this->update_viscosity(src);
+  }
+
+  this->mass_operator.apply_scale(dst, scaling_factor_mass, src);
+
+  // convective term
+  if(this->param.convective_problem())
+  {
+    if(this->param.solver_type == SolverType::Steady or
+       (this->param.solver_type == SolverType::Unsteady and
+        (this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)))
+    {
+      AssertThrow(false, dealii::ExcMessage("This should never be called."));
+      this->convective_operator.evaluate_nonlinear_operator_add(dst, src, time);
+    }
+    else if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+    {
+      this->convective_operator.set_velocity_ptr(transport_velocity);
+      this->convective_operator.apply_add(dst, src);
+      this->convective_operator.rhs_add(dst);
+    }
+    // The explicit convective term is contained in rhs_vector.
+  }
+
+  // viscous term
+  this->viscous_operator.set_time(time);
+  this->viscous_operator.evaluate_add(dst, src);
+
+  // rhs vector
+  dst.add(-1.0, *rhs_vector);
+}
+
+template<int dim, typename Number>
+void
 OperatorProjectionMethods<dim, Number>::apply_projection_operator(VectorType &       dst,
                                                                   VectorType const & src) const
 {

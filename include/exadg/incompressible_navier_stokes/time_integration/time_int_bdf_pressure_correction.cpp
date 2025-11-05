@@ -382,11 +382,8 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
       velocity_np = velocity_momentum_last_iter;
     }
 
-    /*
-     *  update variable viscosity
-     */
-    if(this->param.viscous_problem() and this->param.viscosity_is_variable() and
-       this->param.treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit)
+    // explicit viscosity update or initial guess for viscosity
+    if(this->param.viscous_problem() and this->param.viscosity_is_variable())
     {
       dealii::Timer timer_viscosity_update;
       timer_viscosity_update.restart();
