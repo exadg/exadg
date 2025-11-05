@@ -770,8 +770,7 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
 
     // Set initial acceleration for the Dirichlet degrees of freedom so that the initial
     // acceleration is also correct on the Dirichlet boundary
-    mass_operator.set_inhomogeneous_constrained_values(
-      initial_acceleration, false /* periodicity_and_hanging_node_constraints_only */);
+    mass_operator.set_inhomogeneous_constrained_values(initial_acceleration);
   }
 }
 
@@ -913,8 +912,7 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   // set inhomogeneous Dirichlet values, hanging node and periodicity constraints in order to
   // evaluate the nonlinear residual correctly
   elasticity_operator_nonlinear.set_time(time);
-  elasticity_operator_nonlinear.set_inhomogeneous_constrained_values(
-    sol, false /* periodicity_and_hanging_node_constraints_only */);
+  elasticity_operator_nonlinear.set_inhomogeneous_constrained_values(sol);
 
   // call Newton solver
   Newton::UpdateData update;
@@ -924,18 +922,6 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
 
   // solve nonlinear problem
   auto const iter = newton_solver->solve(sol, update);
-
-  // TODO
-  // This call should not be necessary: The constraints have already been set
-  // before the nonlinear solver is called and no contributions to the constrained
-  // degrees of freedom should be added in the Newton solver by the linearized solver
-  // (because the residual vector forming the rhs of the linearized problem is zero
-  // for constrained degrees of freedom, the initial solution of the linearized
-  // solver is also zero, and the linearized operator contains values of 1 on the
-  // diagonal for constrained degrees of freedom).
-
-  // elasticity_operator_nonlinear.set_inhomogeneous_constrained_values(
-  //   sol, true /* periodicity_and_hanging_node_constraints_only */);
 
   return iter;
 }
@@ -983,8 +969,7 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
 
   // Set Dirichlet degrees of freedom according to Dirichlet boundary condition.
   elasticity_operator_linear.set_time(time);
-  elasticity_operator_linear.set_inhomogeneous_constrained_values(
-    sol, false /* periodicity_and_hanging_node_constraints_only */);
+  elasticity_operator_linear.set_inhomogeneous_constrained_values(sol);
 
   return iterations;
 }

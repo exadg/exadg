@@ -268,9 +268,7 @@ public:
   // continuous FE: This function sets the inhomogeneous Dirichlet boundary values for Dirichlet
   // degrees of freedom and optionally enforces hanging node and periodicity constraints.
   void
-  set_inhomogeneous_constrained_values(
-    VectorType & solution,
-    bool const   periodicity_and_hanging_node_constraints_only) const final;
+  set_inhomogeneous_constrained_values(VectorType & solution) const final;
 
   // only relevant for discontinuous Galerkin discretization (DG):
   // Some more functionality on top of what is provided by the base class.

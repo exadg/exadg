@@ -395,8 +395,8 @@ private:
 
   MeshType mesh_type = MeshType::Cartesian;
 
-  bool global_coarsening   = false;
-  bool adaptive_refinement = false;
+  bool global_coarsening               = false;
+  bool adaptive_refinement             = false;
   bool use_matrix_based_implementation = false;
 };
 

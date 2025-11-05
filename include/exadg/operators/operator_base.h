@@ -204,9 +204,7 @@ public:
    * function.
    */
   virtual void
-  set_inhomogeneous_constrained_values(
-    VectorType & solution,
-    bool const   periodicity_and_hanging_node_constraints_only) const;
+  set_inhomogeneous_constrained_values(VectorType & solution) const;
 
   void
   set_constrained_dofs_to_zero(VectorType & vector) const;

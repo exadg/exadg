@@ -400,8 +400,7 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
 template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::set_inhomogeneous_constrained_values(
-  VectorType & dst,
-  bool const   periodicity_and_hanging_node_constraints_only) const
+  VectorType & dst) const
 {
   // periodicity and hanging node constraints are enforced strongly for continuous spaces
   if(not this->is_dg)
@@ -412,89 +411,86 @@ LaplaceOperator<dim, Number, n_components>::set_inhomogeneous_constrained_values
     constraints.distribute(dst);
   }
 
-  if(not periodicity_and_hanging_node_constraints_only)
+  // standard Dirichlet boundary conditions
+  std::map<dealii::types::global_dof_index, double> boundary_values;
+  for(auto dbc : operator_data.bc->dirichlet_bc)
   {
-    // standard Dirichlet boundary conditions
-    std::map<dealii::types::global_dof_index, double> boundary_values;
-    for(auto dbc : operator_data.bc->dirichlet_bc)
+    dbc.second->set_time(this->get_time());
+
+    dealii::ComponentMask mask     = dealii::ComponentMask();
+    auto                  dbc_mask = operator_data.bc->dirichlet_bc_component_mask.find(dbc.first);
+    if(dbc_mask != operator_data.bc->dirichlet_bc_component_mask.end())
+      mask = dbc_mask->second;
+
+    dealii::VectorTools::interpolate_boundary_values(*this->matrix_free->get_mapping_info().mapping,
+                                                     this->matrix_free->get_dof_handler(
+                                                       operator_data.dof_index),
+                                                     dbc.first,
+                                                     *dbc.second,
+                                                     boundary_values,
+                                                     mask);
+  }
+
+  // set Dirichlet values in solution vector
+  for(auto m : boundary_values)
+    if(dst.get_partitioner()->in_local_range(m.first))
+      dst[m.first] = m.second;
+
+  dst.update_ghost_values();
+
+  // DirichletCached type boundary conditions
+  if(not(operator_data.bc->dirichlet_cached_bc.empty()))
+  {
+    unsigned int const dof_index  = operator_data.dof_index;
+    unsigned int const quad_index = operator_data.quad_index_gauss_lobatto;
+
+    IntegratorFace integrator(*this->matrix_free, true, dof_index, quad_index);
+
+    for(unsigned int face = this->matrix_free->n_inner_face_batches();
+        face <
+        this->matrix_free->n_inner_face_batches() + this->matrix_free->n_boundary_face_batches();
+        ++face)
     {
-      dbc.second->set_time(this->get_time());
+      dealii::types::boundary_id const boundary_id = this->matrix_free->get_boundary_id(face);
 
-      dealii::ComponentMask mask = dealii::ComponentMask();
-      auto dbc_mask              = operator_data.bc->dirichlet_bc_component_mask.find(dbc.first);
-      if(dbc_mask != operator_data.bc->dirichlet_bc_component_mask.end())
-        mask = dbc_mask->second;
+      BoundaryType const boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
-      dealii::VectorTools::interpolate_boundary_values(
-        *this->matrix_free->get_mapping_info().mapping,
-        this->matrix_free->get_dof_handler(operator_data.dof_index),
-        dbc.first,
-        *dbc.second,
-        boundary_values,
-        mask);
-    }
-
-    // set Dirichlet values in solution vector
-    for(auto m : boundary_values)
-      if(dst.get_partitioner()->in_local_range(m.first))
-        dst[m.first] = m.second;
-
-    dst.update_ghost_values();
-
-    // DirichletCached type boundary conditions
-    if(not(operator_data.bc->dirichlet_cached_bc.empty()))
-    {
-      unsigned int const dof_index  = operator_data.dof_index;
-      unsigned int const quad_index = operator_data.quad_index_gauss_lobatto;
-
-      IntegratorFace integrator(*this->matrix_free, true, dof_index, quad_index);
-
-      for(unsigned int face = this->matrix_free->n_inner_face_batches();
-          face <
-          this->matrix_free->n_inner_face_batches() + this->matrix_free->n_boundary_face_batches();
-          ++face)
+      if(boundary_type == BoundaryType::DirichletCached)
       {
-        dealii::types::boundary_id const boundary_id = this->matrix_free->get_boundary_id(face);
+        integrator.reinit(face);
+        integrator.read_dof_values(dst);
 
-        BoundaryType const boundary_type = operator_data.bc->get_boundary_type(boundary_id);
-
-        if(boundary_type == BoundaryType::DirichletCached)
+        for(unsigned int q = 0; q < integrator.n_q_points; ++q)
         {
-          integrator.reinit(face);
-          integrator.read_dof_values(dst);
+          unsigned int const local_face_number =
+            this->matrix_free->get_face_info(face).interior_face_no;
 
-          for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+          unsigned int const index = this->matrix_free->get_shape_info(dof_index, quad_index)
+                                       .face_to_cell_index_nodal[local_face_number][q];
+
+          dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>> g;
+
+          if(boundary_type == BoundaryType::DirichletCached)
           {
-            unsigned int const local_face_number =
-              this->matrix_free->get_face_info(face).interior_face_no;
+            auto bc = operator_data.bc->get_dirichlet_cached_data();
 
-            unsigned int const index = this->matrix_free->get_shape_info(dof_index, quad_index)
-                                         .face_to_cell_index_nodal[local_face_number][q];
-
-            dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>> g;
-
-            if(boundary_type == BoundaryType::DirichletCached)
-            {
-              auto bc = operator_data.bc->get_dirichlet_cached_data();
-
-              g = FunctionEvaluator<rank, dim, Number>::value(*bc, face, q, quad_index);
-            }
-            else
-            {
-              AssertThrow(false, dealii::ExcMessage("Not implemented."));
-            }
-
-            integrator.submit_dof_value(g, index);
+            g = FunctionEvaluator<rank, dim, Number>::value(*bc, face, q, quad_index);
+          }
+          else
+          {
+            AssertThrow(false, dealii::ExcMessage("Not implemented."));
           }
 
-          integrator.set_dof_values_plain(dst);
+          integrator.submit_dof_value(g, index);
         }
-        else
-        {
-          AssertThrow(boundary_type == BoundaryType::Dirichlet or
-                        boundary_type == BoundaryType::Neumann,
-                      dealii::ExcMessage("BoundaryType not implemented."));
-        }
+
+        integrator.set_dof_values_plain(dst);
+      }
+      else
+      {
+        AssertThrow(boundary_type == BoundaryType::Dirichlet or
+                      boundary_type == BoundaryType::Neumann,
+                    dealii::ExcMessage("BoundaryType not implemented."));
       }
     }
   }

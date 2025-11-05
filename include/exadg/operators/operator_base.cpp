@@ -513,8 +513,7 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
 
     // Set constrained degrees of freedom according to inhomogeneous Dirichlet boundary conditions,
     // hanging node and periodicity constraints. The rest of the vector remains unchanged.
-    set_inhomogeneous_constrained_values(src_tmp,
-                                         false /* periodicity_and_hanging_node_constraints_only */);
+    set_inhomogeneous_constrained_values(src_tmp);
 
     // Since src_tmp = 0 apart from inhomogeneous boundary data, the function evaluate_add() only
     // computes the inhomogeneous part of the operator.
@@ -1168,11 +1167,9 @@ OperatorBase<dim, Number, n_components>::do_boundary_integral_continuous(
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::set_inhomogeneous_constrained_values(
-  VectorType & solution,
-  bool const   periodicity_and_hanging_node_constraints_only) const
+  VectorType & solution) const
 {
   (void)solution;
-  (void)periodicity_and_hanging_node_constraints_only;
 
   AssertThrow(
     false,
