@@ -57,8 +57,18 @@ public:
   }
 
   void
-  set_inhomogeneous_boundary_values(VectorType & dst) const final
+  set_inhomogeneous_constrained_values(VectorType & dst) const final
   {
+    // periodicity and hanging node constraints are enforced strongly for continuous spaces
+    if(not this->is_dg)
+    {
+      unsigned int const dof_index_inhomogeneous = this->get_dof_index_inhomogeneous();
+      dealii::AffineConstraints<Number> const & constraints =
+        this->matrix_free->get_affine_constraints(dof_index_inhomogeneous);
+      constraints.distribute(dst);
+    }
+
+    // standard Dirichlet boundary conditions
     std::map<dealii::types::global_dof_index, double> boundary_values;
     for(auto dbc : operator_data.bc->dirichlet_bc_initial_acceleration)
     {

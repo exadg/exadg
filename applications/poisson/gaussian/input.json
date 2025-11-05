@@ -12,7 +12,9 @@
     },
     "Application": {
         "MeshType": "Cartesian",
-        "GlobalCoarsening": "false"
+        "GlobalCoarsening": "false",
+        "AdaptiveRefinement": "false",
+        "UseMatrixBasedImplementation": "false"
     },
     "Output": {
         "OutputDirectory": "output/poisson/gaussian/",

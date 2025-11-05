@@ -136,7 +136,7 @@ public:
   get_scaling_factor_mass_operator() const;
 
   void
-  set_inhomogeneous_boundary_values(VectorType & dst) const final;
+  set_inhomogeneous_constrained_values(VectorType & dst) const final;
 
 protected:
   void
