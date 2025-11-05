@@ -170,8 +170,8 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>set_scaling_factor_ma
 <tr class="memitem:a143941f23ce901e07d8acb626858c1a2 inherit pub_methods_classExaDG_1_1Structure_1_1ElasticityOperatorBase" id="r_a143941f23ce901e07d8acb626858c1a2"><td class="memItemLeft" align="right" valign="top">
 double&#160;</td><td class="memItemRight" valign="bottom"><b>get_scaling_factor_mass_operator</b> () const</td></tr>
 <tr class="separator:a143941f23ce901e07d8acb626858c1a2 inherit pub_methods_classExaDG_1_1Structure_1_1ElasticityOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7b59839b676d3629424b596998793cb8 inherit pub_methods_classExaDG_1_1Structure_1_1ElasticityOperatorBase" id="r_a7b59839b676d3629424b596998793cb8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1ElasticityOperatorBase.html#a7b59839b676d3629424b596998793cb8">set_inhomogeneous_boundary_values</a> (VectorType &amp;dst) const final</td></tr>
-<tr class="separator:a7b59839b676d3629424b596998793cb8 inherit pub_methods_classExaDG_1_1Structure_1_1ElasticityOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2f101cbe804cb298dd8b2695ae1f0aca inherit pub_methods_classExaDG_1_1Structure_1_1ElasticityOperatorBase" id="r_a2f101cbe804cb298dd8b2695ae1f0aca"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1ElasticityOperatorBase.html#a2f101cbe804cb298dd8b2695ae1f0aca">set_inhomogeneous_constrained_values</a> (VectorType &amp;dst) const final</td></tr>
+<tr class="separator:a2f101cbe804cb298dd8b2695ae1f0aca inherit pub_methods_classExaDG_1_1Structure_1_1ElasticityOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1OperatorBase"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_methods_classExaDG_1_1OperatorBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1OperatorBase.html">ExaDG::OperatorBase&lt; dim, Number, dim &gt;</a></td></tr>
 <tr class="memitem:aef38caf14450d223fa05ce43c6af2b12 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_aef38caf14450d223fa05ce43c6af2b12"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_time</b> (double const time) const</td></tr>
@@ -191,6 +191,9 @@ dealii::MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItem
 <tr class="memitem:afeb1c722b62b52c953e48a3e3a0ade7e inherit pub_methods_classExaDG_1_1OperatorBase" id="r_afeb1c722b62b52c953e48a3e3a0ade7e"><td class="memItemLeft" align="right" valign="top">
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index</b> () const</td></tr>
 <tr class="separator:afeb1c722b62b52c953e48a3e3a0ade7e inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34e1e26afd6090baa7981da95a96abfe inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a34e1e26afd6090baa7981da95a96abfe"><td class="memItemLeft" align="right" valign="top">
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index_inhomogeneous</b> () const</td></tr>
+<tr class="separator:a34e1e26afd6090baa7981da95a96abfe inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6359a4923ba3e91277a41c0d1121d859 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a6359a4923ba3e91277a41c0d1121d859"><td class="memItemLeft" align="right" valign="top">
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index</b> () const</td></tr>
 <tr class="separator:a6359a4923ba3e91277a41c0d1121d859 inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -316,6 +319,9 @@ dealii::MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItem
 <tr class="memitem:afeb1c722b62b52c953e48a3e3a0ade7e inherit pub_methods_classExaDG_1_1OperatorBase" id="r_afeb1c722b62b52c953e48a3e3a0ade7e"><td class="memItemLeft" align="right" valign="top">
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index</b> () const</td></tr>
 <tr class="separator:afeb1c722b62b52c953e48a3e3a0ade7e inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34e1e26afd6090baa7981da95a96abfe inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a34e1e26afd6090baa7981da95a96abfe"><td class="memItemLeft" align="right" valign="top">
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index_inhomogeneous</b> () const</td></tr>
+<tr class="separator:a34e1e26afd6090baa7981da95a96abfe inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6359a4923ba3e91277a41c0d1121d859 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a6359a4923ba3e91277a41c0d1121d859"><td class="memItemLeft" align="right" valign="top">
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index</b> () const</td></tr>
 <tr class="separator:a6359a4923ba3e91277a41c0d1121d859 inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>

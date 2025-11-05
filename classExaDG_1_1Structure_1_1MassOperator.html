@@ -176,9 +176,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ab3ca43f0584717e921185cc18a8fc274" id="r_ab3ca43f0584717e921185cc18a8fc274"><td class="memItemLeft" align="right" valign="top"><a id="ab3ca43f0584717e921185cc18a8fc274" name="ab3ca43f0584717e921185cc18a8fc274"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;affine_constraints, <a class="el" href="structExaDG_1_1Structure_1_1MassOperatorData.html">MassOperatorData</a>&lt; dim, Number &gt; const &amp;data)</td></tr>
 <tr class="separator:ab3ca43f0584717e921185cc18a8fc274"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6b94254353d7c06da74aa89899c04d83" id="r_a6b94254353d7c06da74aa89899c04d83"><td class="memItemLeft" align="right" valign="top"><a id="a6b94254353d7c06da74aa89899c04d83" name="a6b94254353d7c06da74aa89899c04d83"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_inhomogeneous_boundary_values</b> (VectorType &amp;dst) const final</td></tr>
-<tr class="separator:a6b94254353d7c06da74aa89899c04d83"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa027be0c0946a4a298f64848d3ed1fa3" id="r_aa027be0c0946a4a298f64848d3ed1fa3"><td class="memItemLeft" align="right" valign="top"><a id="aa027be0c0946a4a298f64848d3ed1fa3" name="aa027be0c0946a4a298f64848d3ed1fa3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_inhomogeneous_constrained_values</b> (VectorType &amp;dst) const final</td></tr>
+<tr class="separator:aa027be0c0946a4a298f64848d3ed1fa3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1MassOperator"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_methods_classExaDG_1_1MassOperator')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1MassOperator.html">ExaDG::MassOperator&lt; dim, dim, Number &gt;</a></td></tr>
 <tr class="memitem:ac1d05a7aac69cc46af43d793d62a3ba9 inherit pub_methods_classExaDG_1_1MassOperator" id="r_ac1d05a7aac69cc46af43d793d62a3ba9"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;affine_constraints, <a class="el" href="structExaDG_1_1MassOperatorData.html">MassOperatorData</a>&lt; dim, Number &gt; const &amp;data)</td></tr>
@@ -223,6 +223,9 @@ dealii::MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItem
 <tr class="memitem:afeb1c722b62b52c953e48a3e3a0ade7e inherit pub_methods_classExaDG_1_1OperatorBase" id="r_afeb1c722b62b52c953e48a3e3a0ade7e"><td class="memItemLeft" align="right" valign="top">
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index</b> () const</td></tr>
 <tr class="separator:afeb1c722b62b52c953e48a3e3a0ade7e inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34e1e26afd6090baa7981da95a96abfe inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a34e1e26afd6090baa7981da95a96abfe"><td class="memItemLeft" align="right" valign="top">
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index_inhomogeneous</b> () const</td></tr>
+<tr class="separator:a34e1e26afd6090baa7981da95a96abfe inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6359a4923ba3e91277a41c0d1121d859 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a6359a4923ba3e91277a41c0d1121d859"><td class="memItemLeft" align="right" valign="top">
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index</b> () const</td></tr>
 <tr class="separator:a6359a4923ba3e91277a41c0d1121d859 inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -256,9 +259,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>is_empty_locally</b> 
 <tr class="memitem:ab97688b91fc1a26ad9f2b7448e6cabd2 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_ab97688b91fc1a26ad9f2b7448e6cabd2"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_dof_vector</b> (VectorType &amp;vector) const</td></tr>
 <tr class="separator:ab97688b91fc1a26ad9f2b7448e6cabd2 inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a954d2f073aec99158a07c38243c70188 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a954d2f073aec99158a07c38243c70188"><td class="memItemLeft" align="right" valign="top">
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_inhomogeneous_boundary_values</b> (VectorType &amp;solution) const</td></tr>
-<tr class="separator:a954d2f073aec99158a07c38243c70188 inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a741a3037fa09d374420a95e4b7f3c9bd inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a741a3037fa09d374420a95e4b7f3c9bd"><td class="memItemLeft" align="right" valign="top">
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_inhomogeneous_constrained_values</b> (VectorType &amp;solution) const</td></tr>
+<tr class="separator:a741a3037fa09d374420a95e4b7f3c9bd inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa33cd09a9dbf2d9ed668ba3f2918d7b7 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_aa33cd09a9dbf2d9ed668ba3f2918d7b7"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_constrained_dofs_to_zero</b> (VectorType &amp;vector) const</td></tr>
 <tr class="separator:aa33cd09a9dbf2d9ed668ba3f2918d7b7 inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -354,6 +357,9 @@ dealii::MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItem
 <tr class="memitem:afeb1c722b62b52c953e48a3e3a0ade7e inherit pub_methods_classExaDG_1_1OperatorBase" id="r_afeb1c722b62b52c953e48a3e3a0ade7e"><td class="memItemLeft" align="right" valign="top">
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index</b> () const</td></tr>
 <tr class="separator:afeb1c722b62b52c953e48a3e3a0ade7e inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34e1e26afd6090baa7981da95a96abfe inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a34e1e26afd6090baa7981da95a96abfe"><td class="memItemLeft" align="right" valign="top">
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index_inhomogeneous</b> () const</td></tr>
+<tr class="separator:a34e1e26afd6090baa7981da95a96abfe inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6359a4923ba3e91277a41c0d1121d859 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a6359a4923ba3e91277a41c0d1121d859"><td class="memItemLeft" align="right" valign="top">
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index</b> () const</td></tr>
 <tr class="separator:a6359a4923ba3e91277a41c0d1121d859 inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -387,9 +393,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>is_empty_locally</b> 
 <tr class="memitem:ab97688b91fc1a26ad9f2b7448e6cabd2 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_ab97688b91fc1a26ad9f2b7448e6cabd2"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_dof_vector</b> (VectorType &amp;vector) const</td></tr>
 <tr class="separator:ab97688b91fc1a26ad9f2b7448e6cabd2 inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a954d2f073aec99158a07c38243c70188 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a954d2f073aec99158a07c38243c70188"><td class="memItemLeft" align="right" valign="top">
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_inhomogeneous_boundary_values</b> (VectorType &amp;solution) const</td></tr>
-<tr class="separator:a954d2f073aec99158a07c38243c70188 inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a741a3037fa09d374420a95e4b7f3c9bd inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a741a3037fa09d374420a95e4b7f3c9bd"><td class="memItemLeft" align="right" valign="top">
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_inhomogeneous_constrained_values</b> (VectorType &amp;solution) const</td></tr>
+<tr class="separator:a741a3037fa09d374420a95e4b7f3c9bd inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa33cd09a9dbf2d9ed668ba3f2918d7b7 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_aa33cd09a9dbf2d9ed668ba3f2918d7b7"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_constrained_dofs_to_zero</b> (VectorType &amp;vector) const</td></tr>
 <tr class="separator:aa33cd09a9dbf2d9ed668ba3f2918d7b7 inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>

@@ -168,8 +168,8 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_penalty_par
 <tr class="memitem:a677ca9bc5f6470ff835b011ad265b31b" id="r_a677ca9bc5f6470ff835b011ad265b31b"><td class="memItemLeft" align="right" valign="top"><a id="a677ca9bc5f6470ff835b011ad265b31b" name="a677ca9bc5f6470ff835b011ad265b31b"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update_penalty_parameter</b> ()</td></tr>
 <tr class="separator:a677ca9bc5f6470ff835b011ad265b31b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acc349559583763ceb4b8acda1a04d9bc" id="r_acc349559583763ceb4b8acda1a04d9bc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acc349559583763ceb4b8acda1a04d9bc">set_inhomogeneous_boundary_values</a> (VectorType &amp;solution) const final</td></tr>
-<tr class="separator:acc349559583763ceb4b8acda1a04d9bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adbfffdf97710fdbbda823437ff2d57f9" id="r_adbfffdf97710fdbbda823437ff2d57f9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#adbfffdf97710fdbbda823437ff2d57f9">set_inhomogeneous_constrained_values</a> (VectorType &amp;solution) const final</td></tr>
+<tr class="separator:adbfffdf97710fdbbda823437ff2d57f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa0e9dc3bbe10bc547e8d8c3378e495e1" id="r_aa0e9dc3bbe10bc547e8d8c3378e495e1"><td class="memItemLeft" align="right" valign="top"><a id="aa0e9dc3bbe10bc547e8d8c3378e495e1" name="aa0e9dc3bbe10bc547e8d8c3378e495e1"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>rhs_add_dirichlet_bc_from_dof_vector</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:aa0e9dc3bbe10bc547e8d8c3378e495e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -192,6 +192,9 @@ dealii::MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItem
 <tr class="memitem:afeb1c722b62b52c953e48a3e3a0ade7e inherit pub_methods_classExaDG_1_1OperatorBase" id="r_afeb1c722b62b52c953e48a3e3a0ade7e"><td class="memItemLeft" align="right" valign="top">
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index</b> () const</td></tr>
 <tr class="separator:afeb1c722b62b52c953e48a3e3a0ade7e inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34e1e26afd6090baa7981da95a96abfe inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a34e1e26afd6090baa7981da95a96abfe"><td class="memItemLeft" align="right" valign="top">
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index_inhomogeneous</b> () const</td></tr>
+<tr class="separator:a34e1e26afd6090baa7981da95a96abfe inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6359a4923ba3e91277a41c0d1121d859 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a6359a4923ba3e91277a41c0d1121d859"><td class="memItemLeft" align="right" valign="top">
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index</b> () const</td></tr>
 <tr class="separator:a6359a4923ba3e91277a41c0d1121d859 inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -320,6 +323,9 @@ dealii::MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItem
 <tr class="memitem:afeb1c722b62b52c953e48a3e3a0ade7e inherit pub_methods_classExaDG_1_1OperatorBase" id="r_afeb1c722b62b52c953e48a3e3a0ade7e"><td class="memItemLeft" align="right" valign="top">
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index</b> () const</td></tr>
 <tr class="separator:afeb1c722b62b52c953e48a3e3a0ade7e inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34e1e26afd6090baa7981da95a96abfe inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a34e1e26afd6090baa7981da95a96abfe"><td class="memItemLeft" align="right" valign="top">
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index_inhomogeneous</b> () const</td></tr>
+<tr class="separator:a34e1e26afd6090baa7981da95a96abfe inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6359a4923ba3e91277a41c0d1121d859 inherit pub_methods_classExaDG_1_1OperatorBase" id="r_a6359a4923ba3e91277a41c0d1121d859"><td class="memItemLeft" align="right" valign="top">
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index</b> () const</td></tr>
 <tr class="separator:a6359a4923ba3e91277a41c0d1121d859 inherit pub_methods_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -565,8 +571,8 @@ std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Elementwise_1_1IterativeSo
 <tr class="separator:a9d1247c9effb51c667229781b25e53a2 inherit pro_attribs_classExaDG_1_1OperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="acc349559583763ceb4b8acda1a04d9bc" name="acc349559583763ceb4b8acda1a04d9bc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acc349559583763ceb4b8acda1a04d9bc">&#9670;&#160;</a></span>set_inhomogeneous_boundary_values()</h2>
+<a id="adbfffdf97710fdbbda823437ff2d57f9" name="adbfffdf97710fdbbda823437ff2d57f9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adbfffdf97710fdbbda823437ff2d57f9">&#9670;&#160;</a></span>set_inhomogeneous_constrained_values()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -577,7 +583,7 @@ template&lt;int dim, typename Number, int n_components&gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Poisson_1_1LaplaceOperator.html">ExaDG::Poisson::LaplaceOperator</a>&lt; dim, Number, n_components &gt;::set_inhomogeneous_boundary_values </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1Poisson_1_1LaplaceOperator.html">ExaDG::Poisson::LaplaceOperator</a>&lt; dim, Number, n_components &gt;::set_inhomogeneous_constrained_values </td>
           <td>(</td>
           <td class="paramtype">VectorType &amp;</td>          <td class="paramname"><span class="paramname"><em>solution</em></span></td><td>)</td>
           <td> const</td>
