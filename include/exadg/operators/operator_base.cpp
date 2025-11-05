@@ -417,6 +417,9 @@ void
 OperatorBase<dim, Number, n_components>::apply_matrix_based(VectorType &       dst,
                                                             VectorType const & src) const
 {
+  // Initialize and assemble matrix if necessary
+  assemble_matrix_if_necessary();
+
   if(this->data.sparse_matrix_type == SparseMatrixType::Trilinos)
   {
 #ifdef DEAL_II_WITH_TRILINOS
