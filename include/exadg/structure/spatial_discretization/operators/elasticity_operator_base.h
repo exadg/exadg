@@ -114,14 +114,16 @@ public:
 
     if(dof_handler.has_level_dofs())
     {
+      // Extract coarse level constant modes.
       constant_modes_values = dealii::DoFTools::extract_level_rigid_body_modes(
-        0,
+        this->matrix_free->get_mg_level(),
         *this->matrix_free->get_mapping_info().mapping,
         dof_handler,
         dealii::ComponentMask(dim, true));
     }
     else
     {
+      // Extract finest level constant modes.
       constant_modes_values =
         dealii::DoFTools::extract_rigid_body_modes(*this->matrix_free->get_mapping_info().mapping,
                                                    dof_handler,

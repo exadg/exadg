@@ -1039,13 +1039,15 @@ OperatorBase<dim, Number, n_components>::get_constant_modes(
 
   if(dof_handler.has_level_dofs())
   {
+    // Extract coarse level constant modes.
     constant_modes =
-      dealii::DoFTools::extract_level_constant_modes(0,
+      dealii::DoFTools::extract_level_constant_modes(this->matrix_free->get_mg_level(),
                                                      dof_handler,
                                                      dealii::ComponentMask(n_components, true));
   }
   else
   {
+    // Extract finest level constant modes.
     constant_modes =
       dealii::DoFTools::extract_constant_modes(dof_handler,
                                                dealii::ComponentMask(n_components, true));
