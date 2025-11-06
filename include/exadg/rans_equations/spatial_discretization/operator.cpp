@@ -347,6 +347,13 @@ Operator<dim, Number>::setup_operators()
     if (param.turbulence_model_data.is_active) {
     AssertThrow(combined_operator.diffusive_kernel->turbulence_model_ptr!=nullptr, dealii::ExcMessage("turbulence poniter not initialised from combined operator"));
     }
+
+    if (param.modal_filter) {
+      modal_filter_operator.initialize(matrix_free,
+                                       mapping,
+                                       get_dof_index(),
+                                       get_quad_index());
+    }
   }
 }
 
@@ -1132,6 +1139,14 @@ Operator<dim, Number>::update_viscosity(VectorType const & sol) const
   {
     turbulence_model_ptr->add_viscosity(sol);
   }
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::apply_modal_filter(VectorType const & src,
+                                          VectorType & dst)
+{
+  modal_filter_operator.apply_modal_filter(src, dst);
 }
 
 template class Operator<2, float>;

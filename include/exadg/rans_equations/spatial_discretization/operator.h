@@ -41,6 +41,7 @@
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 
 #include <exadg/rans_equations/spatial_discretization/turbulence_model.h>
+#include <exadg/rans_equations/spatial_discretization/stability_filter/modal_filter.h>
 
 namespace ExaDG
 {
@@ -309,6 +310,13 @@ public:
   void
   update_viscosity(VectorType const & sol) const final;
 
+  /*
+   * Access to modal filter operator for stabilization.
+   */
+  void
+  apply_modal_filter(VectorType const & src,
+                     VectorType & dst);
+
 private:
   void
   do_setup();
@@ -474,6 +482,8 @@ private:
    * Variable viscosity models.
    */
   std::shared_ptr<TurbulenceModel<dim, Number>>  turbulence_model_ptr = std::make_shared<TurbulenceModel<dim, Number>>();
+
+  ModalFilterOperator<dim, Number> modal_filter_operator;
 };
 
 } // namespace RANS

@@ -46,6 +46,8 @@ bool dissipation_term = false;
 double tke_wall = 0.0;
 std::vector<double> turbulence_model_coefficients = {sigma_k, C_D, turbulence_length_scale};
 
+bool tke_modal_filter = false;
+
 bool const write_restart =false;
 double const restart_interval_time = 10.0;
 
@@ -440,6 +442,11 @@ public:
       prm.add_parameter("TurbulenceLengthScale", turbulence_length_scale, "Turbulence length scale");
     }
     prm.leave_subsection();
+    prm.enter_subsection("Scalar0");
+    {
+      prm.add_parameter("ModalFilter", tke_modal_filter, "Apply modal filter to turbulent kinetic energy field");
+    }
+    prm.leave_subsection();
   }
 
 private:
@@ -468,7 +475,7 @@ private:
     this->param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
     this->param.analytical_velocity_field   = false;
     this->param.right_hand_side             = true;
-    
+    this->param.modal_filter               = tke_modal_filter;
     this->param.scalar_type = ScalarType::TurbulentKineticEnergy;
 
     // PHYSICAL QUANTITIES
@@ -487,8 +494,8 @@ private:
     this->param.cfl                           = CFL;
     this->param.max_velocity                  = max_velocity;
     this->param.exponent_fe_degree_convection = 1.5;
-    this->param.exponent_fe_degree_diffusion  = 3.0;
-    this->param.diffusion_number              = 0.01;
+    this->param.exponent_fe_degree_diffusion  = 4.0;
+    this->param.diffusion_number              = 0.0001;
 
     // output of solver information
     this->param.solver_info_data.interval_time = (end_time - start_time) / 10.;
@@ -517,6 +524,7 @@ private:
     // NUMERICAL PARAMETERS
     this->param.implement_block_diagonal_preconditioner_matrix_free = false;
     this->param.use_cell_based_face_loops                           = false;
+    /*this->param.solver_block_diagonal                               = Elementwise::Solver::GMRES;*/
 
     // SOLVER
     this->param.solver                    = RANS::Solver::GMRES;
@@ -528,7 +536,7 @@ private:
     this->param.update_preconditioner     = false;
 
     // output of solver information
-    this->param.solver_info_data.interval_time = output_interval_time * 5;
+    this->param.solver_info_data.interval_time = output_interval_time;
 
     // NUMERICAL PARAMETERS
     this->param.use_combined_operator = true;

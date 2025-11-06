@@ -34,6 +34,7 @@ Parameters::Parameters()
     analytical_velocity_field(true),
     ale_formulation(false),
     right_hand_side(false),
+    modal_filter(false),
     formulation_convective_term(FormulationConvectiveTerm::DivergenceFormulation),
 
     // PHYSICAL QUANTITIES
@@ -453,6 +454,7 @@ Parameters::print_parameters_mathematical_model(dealii::ConditionalOStream const
   print_parameter(pcout, "Problem type", problem_type);
   print_parameter(pcout, "Equation type", equation_type);
   print_parameter(pcout, "Right-hand side", right_hand_side);
+  print_parameter(pcout, "Modal filter", modal_filter);
 
   if(equation_type == EquationType::Convection or
      equation_type == EquationType::ConvectionDiffusion)

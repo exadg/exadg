@@ -6,28 +6,28 @@
     },
     "Application": {
         "ReynoldsNumber": "1000.0",
-        "KinematicViscosity": "1.e-2",
+        "KinematicViscosity": "1.e-3",
         "TimeSampleCount": "50",
         "EndTime": "10.0",
         "CFL": "0.3",
-        "ProductionTerm": "false",
-        "DissipationTerm": "false"
+        "ProductionTerm": "true",
+        "DissipationTerm": "true"
     },
     "Geometry": {
         "ChannelHeight": "1.0",
-        "ChennelLength": "4.0",
+        "ChannelLength": "4.0",
         "TKEWall": "1e-5",
         "TurbulentIntensity": "0.05"
     },
     "PrandtlMixingLengthModelCoefficients": {
         "SigmaK": "1.0",
         "CD": "0.07",
-        "TurbulenceLengthScale": "1e-2"
+        "TurbulenceLengthScale": "1e-3"
     },
     "Fluid": {
         "SpatialResolution": {
-            "Degree": "2",
-            "RefineSpace": "3"
+            "Degree": "3",
+            "RefineSpace": "4"
         },
         "Output": {
             "OutputDirectory": "output/",
@@ -39,6 +39,7 @@
         "SpatialResolution": {
             "Degree": "2"
         },
+        "ModalFilter": "true",
         "Output": {
             "OutputDirectory": "output/",
             "OutputName": "scalar0",

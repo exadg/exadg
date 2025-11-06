@@ -120,6 +120,9 @@ public:
   // set right_hand_side = true if the right-hand side f is unequal zero
   bool right_hand_side;
 
+  // set modal_filter = true to enable modal filtering for stabilization
+  bool modal_filter;
+
   // type of formulation of convective term
   FormulationConvectiveTerm formulation_convective_term;
 
