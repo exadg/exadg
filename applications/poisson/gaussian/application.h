@@ -197,6 +197,9 @@ public:
       prm.add_parameter("UseMatrixBasedImplementation",
                         use_matrix_based_implementation,
                         "Use matrix-based implementation of the Laplace operator.");
+      prm.add_parameter("Preconditioner",
+                        preconditioner,
+                        "None, PointJacobi, AMG, AdditiveSchwarz or Multigrid");
     }
     prm.leave_subsection();
   }
@@ -225,7 +228,7 @@ private:
     this->param.solver_data.rel_tol         = 1.e-10;
     this->param.solver_data.max_iter        = 1e4;
     this->param.compute_performance_metrics = true;
-    this->param.preconditioner              = Preconditioner::Multigrid;
+    this->param.preconditioner              = preconditioner;
     this->param.multigrid_data.type         = MultigridType::cphMG;
     this->param.multigrid_data.p_sequence   = PSequenceType::Bisect;
     // MG smoother
@@ -234,7 +237,7 @@ private:
     // MG coarse grid solver
     this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
     this->param.multigrid_data.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::PointJacobi;
+      MultigridCoarseGridPreconditioner::AMG;
     this->param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-6;
 
     this->param.use_matrix_based_implementation = use_matrix_based_implementation;
@@ -395,9 +398,10 @@ private:
 
   MeshType mesh_type = MeshType::Cartesian;
 
-  bool global_coarsening               = false;
-  bool adaptive_refinement             = false;
-  bool use_matrix_based_implementation = false;
+  bool           global_coarsening               = false;
+  bool           adaptive_refinement             = false;
+  bool           use_matrix_based_implementation = false;
+  Preconditioner preconditioner                  = Preconditioner::Multigrid;
 };
 
 } // namespace Poisson
