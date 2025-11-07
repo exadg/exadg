@@ -107,8 +107,6 @@ Inheritance diagram for ExaDG::Structure::NonLinearOperator&lt; dim, Number &gt;
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a7df1165c408ae5b81612dcd3f3d54284" id="r_a7df1165c408ae5b81612dcd3f3d54284"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7df1165c408ae5b81612dcd3f3d54284">initialize</a> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;affine_constraints, <a class="el" href="structExaDG_1_1Structure_1_1OperatorData.html">OperatorData</a>&lt; dim &gt; const &amp;data) override</td></tr>
-<tr class="separator:a7df1165c408ae5b81612dcd3f3d54284"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab6c68f1440d8fe0d51db1c10721b0243" id="r_ab6c68f1440d8fe0d51db1c10721b0243"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab6c68f1440d8fe0d51db1c10721b0243">evaluate_nonlinear</a> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:ab6c68f1440d8fe0d51db1c10721b0243"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5b6c5ca383e783c22da2f2eb03fb8266" id="r_a5b6c5ca383e783c22da2f2eb03fb8266"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5b6c5ca383e783c22da2f2eb03fb8266">valid_deformation</a> (VectorType const &amp;displacement) const</td></tr>
@@ -121,6 +119,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a9de741f4ab82d2384dab7767fc1b641b inherit pub_methods_classExaDG_1_1Structure_1_1ElasticityOperatorBase" id="r_a9de741f4ab82d2384dab7767fc1b641b"><td class="memItemLeft" align="right" valign="top">
 <a class="el" href="structExaDG_1_1IntegratorFlags.html">IntegratorFlags</a>&#160;</td><td class="memItemRight" valign="bottom"><b>get_integrator_flags</b> (bool const unsteady) const</td></tr>
 <tr class="separator:a9de741f4ab82d2384dab7767fc1b641b inherit pub_methods_classExaDG_1_1Structure_1_1ElasticityOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a609ce5cddbebdb396d0c22302adf01c7 inherit pub_methods_classExaDG_1_1Structure_1_1ElasticityOperatorBase" id="r_a609ce5cddbebdb396d0c22302adf01c7"><td class="memItemLeft" align="right" valign="top">
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, dealii::AffineConstraints&lt; Number &gt; const &amp;affine_constraints, <a class="el" href="structExaDG_1_1Structure_1_1OperatorData.html">OperatorData</a>&lt; dim &gt; const &amp;data, bool const assemble_matrix)</td></tr>
+<tr class="separator:a609ce5cddbebdb396d0c22302adf01c7 inherit pub_methods_classExaDG_1_1Structure_1_1ElasticityOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af4e00472e0cc046ea81d6afe18d6abaf inherit pub_methods_classExaDG_1_1Structure_1_1ElasticityOperatorBase" id="r_af4e00472e0cc046ea81d6afe18d6abaf"><td class="memItemLeft" align="right" valign="top">
 <a class="el" href="structExaDG_1_1Structure_1_1OperatorData.html">OperatorData</a>&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_data</b> () const</td></tr>
 <tr class="separator:af4e00472e0cc046ea81d6afe18d6abaf inherit pub_methods_classExaDG_1_1Structure_1_1ElasticityOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -675,45 +676,6 @@ template&lt;int dim, typename Number&gt; </div>
       </table>
 </div><div class="memdoc">
 <p>Linearized operator: Returns the linearization vector. </p>
-
-</div>
-</div>
-<a id="a7df1165c408ae5b81612dcd3f3d54284" name="a7df1165c408ae5b81612dcd3f3d54284"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7df1165c408ae5b81612dcd3f3d54284">&#9670;&#160;</a></span>initialize()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1Structure_1_1NonLinearOperator.html">ExaDG::Structure::NonLinearOperator</a>&lt; dim, Number &gt;::initialize </td>
-          <td>(</td>
-          <td class="paramtype">dealii::MatrixFree&lt; dim, Number &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>matrix_free</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">dealii::AffineConstraints&lt; Number &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>affine_constraints</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="structExaDG_1_1Structure_1_1OperatorData.html">OperatorData</a>&lt; dim &gt; const &amp;</td>          <td class="paramname"><span class="paramname"><em>data</em></span>&#160;)</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel override">override</span><span class="mlabel virtual">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Initialize function. </p>
-
-<p>Reimplemented from <a class="el" href="classExaDG_1_1Structure_1_1ElasticityOperatorBase.html">ExaDG::Structure::ElasticityOperatorBase&lt; dim, Number &gt;</a>.</p>
 
 </div>
 </div>
