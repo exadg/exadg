@@ -232,7 +232,7 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
     }
     else
     {
-      pde_operator->assemble_matrix_if_necessary();
+      pde_operator->assemble_matrix_if_matrix_based();
     }
   }
 

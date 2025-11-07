@@ -282,7 +282,7 @@ public:
   apply_add(VectorType & dst, VectorType const & src) const;
 
   void
-  assemble_matrix_if_necessary() const;
+  assemble_matrix_if_matrix_based() const;
 
   /*
    * Matrix-based version of the apply function. This function is used if

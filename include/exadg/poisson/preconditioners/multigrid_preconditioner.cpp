@@ -79,7 +79,7 @@ MultigridPreconditioner<dim, Number, n_components>::update()
     // update operators
     this->for_all_levels([&](unsigned int const level) {
       get_operator(level)->update_penalty_parameter();
-      get_operator(level)->assemble_matrix_if_necessary();
+      get_operator(level)->assemble_matrix_if_matrix_based();
     });
 
     // Once the operators are updated, the update of smoothers and the coarse grid solver is generic

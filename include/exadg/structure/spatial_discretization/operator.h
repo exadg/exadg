@@ -250,7 +250,7 @@ public:
   set_solution_linearization(VectorType const & vector) const;
 
   void
-  assemble_matrix_if_necessary() const;
+  assemble_matrix_if_matrix_based() const;
 
   void
   evaluate_elasticity_operator(VectorType &       dst,

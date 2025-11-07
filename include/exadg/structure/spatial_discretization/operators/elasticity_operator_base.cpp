@@ -89,7 +89,7 @@ ElasticityOperatorBase<dim, Number>::initialize(
   initialize_derived();
 
   if(assemble_matrix)
-    this->assemble_matrix_if_necessary();
+    this->assemble_matrix_if_matrix_based();
 }
 
 template<int dim, typename Number>
