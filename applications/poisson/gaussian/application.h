@@ -194,12 +194,13 @@ public:
       prm.add_parameter("AdaptiveRefinement",
                         adaptive_refinement,
                         "Static adaptive refinement of the mesh.");
-      prm.add_parameter("UseMatrixBasedImplementation",
-                        use_matrix_based_implementation,
-                        "Use matrix-based implementation of the Laplace operator.");
-      prm.add_parameter("Preconditioner",
-                        preconditioner,
-                        "None, PointJacobi, AMG, AdditiveSchwarz or Multigrid");
+      prm.add_parameter("UseMatrixBasedOperator",
+                        use_matrix_based_operator,
+                        "Use matrix-based operators in global Krylov solver and Multigrid.");
+      prm.add_parameter("Preconditioner", preconditioner, "Preconditioner for the linear system.");
+      prm.add_parameter("MinDegreeMatrixFree",
+                        min_degree_matrix_free,
+                        "Minimum polynomial degree for matrix-free operators in multigrid.");
     }
     prm.leave_subsection();
   }
@@ -239,9 +240,10 @@ private:
     this->param.multigrid_data.coarse_problem.preconditioner =
       MultigridCoarseGridPreconditioner::AMG;
     this->param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-6;
+    this->param.multigrid_data.min_degree_matrix_free             = min_degree_matrix_free;
 
-    this->param.use_matrix_based_implementation = use_matrix_based_implementation;
-    this->param.sparse_matrix_type              = SparseMatrixType::Trilinos;
+    this->param.use_matrix_based_operator = use_matrix_based_operator;
+    this->param.sparse_matrix_type        = SparseMatrixType::Trilinos;
   }
 
   void
@@ -398,10 +400,11 @@ private:
 
   MeshType mesh_type = MeshType::Cartesian;
 
-  bool           global_coarsening               = false;
-  bool           adaptive_refinement             = false;
-  bool           use_matrix_based_implementation = false;
-  Preconditioner preconditioner                  = Preconditioner::Multigrid;
+  bool           global_coarsening         = false;
+  bool           adaptive_refinement       = false;
+  bool           use_matrix_based_operator = false;
+  Preconditioner preconditioner            = Preconditioner::Multigrid;
+  unsigned int   min_degree_matrix_free    = 1;
 };
 
 } // namespace Poisson

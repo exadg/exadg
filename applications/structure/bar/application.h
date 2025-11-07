@@ -268,9 +268,12 @@ public:
       prm.add_parameter("AdaptiveRefinement",
                         adaptive_refinement,
                         "Static adaptive refinement of the mesh.");
-      prm.add_parameter("UseMatrixBasedImplementation",
-                        use_matrix_based_implementation,
-                        "Use matrix-based implementation of the elasticity operator.");
+      prm.add_parameter("UseMatrixBasedOperator",
+                        use_matrix_based_operator,
+                        "Use matrix-based operators in global Krylov solver and Multigrid.");
+      prm.add_parameter("MinDegreeMatrixFree",
+                        min_degree_matrix_free,
+                        "Minimum polynomial degree for matrix-free operators in multigrid.");
     }
     prm.leave_subsection();
   }
@@ -318,8 +321,8 @@ private:
 
     this->param.load_increment = 0.5;
 
-    this->param.use_matrix_based_implementation = use_matrix_based_implementation;
-    this->param.sparse_matrix_type              = SparseMatrixType::Trilinos;
+    this->param.use_matrix_based_operator = use_matrix_based_operator;
+    this->param.sparse_matrix_type        = SparseMatrixType::Trilinos;
 
     this->param.newton_solver_data  = Newton::SolverData(1e2, 1.e-9, 1.e-9);
     this->param.solver              = Solver::FGMRES;
@@ -333,6 +336,7 @@ private:
     this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
     this->param.multigrid_data.coarse_problem.preconditioner =
       MultigridCoarseGridPreconditioner::AMG;
+    this->param.multigrid_data.min_degree_matrix_free = min_degree_matrix_free;
 
     this->param.update_preconditioner                  = true;
     this->param.update_preconditioner_every_time_steps = 1;
@@ -710,12 +714,13 @@ private:
 
   double weak_damping_coefficient = 0.0;
 
-  Preconditioner preconditioner = Preconditioner::Multigrid;
+  Preconditioner preconditioner         = Preconditioner::Multigrid;
+  unsigned int   min_degree_matrix_free = 1;
 
   double displacement = 1.0; // "Dirichlet"
   double area_force   = 1.0; // "Neumann"
 
-  bool use_matrix_based_implementation = false;
+  bool use_matrix_based_operator = false;
 
   // mesh parameters
   bool               adaptive_refinement = false;

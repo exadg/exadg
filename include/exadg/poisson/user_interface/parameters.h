@@ -97,10 +97,12 @@ public:
   // interior penalty parameter scaling factor: default value is 1.0
   double IP_factor;
 
-  // use a matrix-based implementation of linear(ized) operators
-  bool use_matrix_based_implementation;
+  // Use a matrix-based implementation of linear(ized) operators. Note that this parameter only
+  // decides about the implementation of the operator in the Krylov solver. This parameter does not
+  // affect matrix-based vs. matrix-free implementations within multigrid.
+  bool use_matrix_based_operator;
 
-  // this parameter is only relevant if use_matrix_based_implementation == true
+  // this parameter is only relevant if use_matrix_based_operator == true
   SparseMatrixType sparse_matrix_type;
 
 

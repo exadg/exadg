@@ -75,6 +75,7 @@ Solver:
   Block Jacobi matrix-free:                  false
   Multigrid operator type:                   ReactionConvection
   Multigrid type:                            hMG
+  Min degree matrix-free:                    1
   Smoother:                                  Jacobi
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5

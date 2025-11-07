@@ -85,7 +85,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
 
   this->initialize_transfer_operators();
 
-  this->initialize_operators();
+  this->initialize_operators(initialize_preconditioners);
 
   this->initialize_smoothers(initialize_preconditioners);
 
@@ -609,12 +609,17 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_matrix_free_ob
 
 template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_operators()
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_operators(
+  bool const assemble_matrix)
 {
   this->operators.resize(0, this->get_number_of_levels() - 1);
 
-  for_all_levels(
-    [&](unsigned int const level) { operators[level] = this->initialize_operator(level); });
+  for_all_levels([&](unsigned int const level) {
+    bool const use_matrix_based_operator_level =
+      level_info[level].degree() < this->data.min_degree_matrix_free;
+    operators[level] =
+      this->initialize_operator(level, use_matrix_based_operator_level, assemble_matrix);
+  });
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -622,9 +627,13 @@ std::shared_ptr<MultigridOperatorBase<
   dim,
   typename MultigridPreconditionerBase<dim, Number, MultigridNumber>::MultigridNumber>>
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_operator(
-  unsigned int const level)
+  unsigned int const level,
+  bool const         use_matrix_based_operator_level,
+  bool const         assemble_matrix)
 {
   (void)level;
+  (void)use_matrix_based_operator_level;
+  (void)assemble_matrix;
 
   AssertThrow(false,
               dealii::ExcMessage("This function needs to be implemented by derived classes."));

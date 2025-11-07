@@ -213,8 +213,8 @@ Operator<dim, Number>::setup_operators()
   operator_data.dof_index               = get_dof_index();
   operator_data.quad_index              = get_quad_index();
   operator_data.dof_index_inhomogeneous = get_dof_index_periodicity_and_hanging_node_constraints();
-  operator_data.use_matrix_based_vmult  = param.use_matrix_based_implementation;
-  operator_data.sparse_matrix_type      = param.sparse_matrix_type;
+  operator_data.use_matrix_based_operator_level = param.use_matrix_based_operator;
+  operator_data.sparse_matrix_type              = param.sparse_matrix_type;
 
   if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
@@ -239,11 +239,17 @@ Operator<dim, Number>::setup_operators()
 
   if(param.large_deformation)
   {
-    elasticity_operator_nonlinear.initialize(*matrix_free, affine_constraints, operator_data);
+    elasticity_operator_nonlinear.initialize(*matrix_free,
+                                             affine_constraints,
+                                             operator_data,
+                                             false /* assemble_matrix */);
   }
   else
   {
-    elasticity_operator_linear.initialize(*matrix_free, affine_constraints, operator_data);
+    elasticity_operator_linear.initialize(*matrix_free,
+                                          affine_constraints,
+                                          operator_data,
+                                          true /* assemble_matrix */);
   }
 
   // mass operator
@@ -839,9 +845,16 @@ Operator<dim, Number>::set_solution_linearization(VectorType const & vector) con
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::assemble_matrix_if_necessary_for_linear_elasticity_operator() const
+Operator<dim, Number>::assemble_matrix_if_necessary() const
 {
-  elasticity_operator_linear.assemble_matrix_if_necessary();
+  if(param.large_deformation)
+  {
+    elasticity_operator_nonlinear.assemble_matrix_if_necessary();
+  }
+  else
+  {
+    elasticity_operator_linear.assemble_matrix_if_necessary();
+  }
 }
 
 template<int dim, typename Number>
@@ -909,6 +922,9 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
 
   linearized_operator.update(scaling_factor_mass, time);
 
+  // Matrix-based implementation: note that the re-assembly of the matrix is done in the function
+  // set_solution_linearization() called by the Newton solver.
+
   // set inhomogeneous Dirichlet values, hanging node and periodicity constraints in order to
   // evaluate the nonlinear residual correctly
   elasticity_operator_nonlinear.set_time(time);
@@ -960,7 +976,9 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
     compute_scaling_factor_mass(scaling_factor_acceleration, scaling_factor_velocity);
 
   update_elasticity_operator(scaling_factor_mass, time);
-  assemble_matrix_if_necessary_for_linear_elasticity_operator();
+
+  // In case of a matrix-based implementation, we assemble the matrix once at initialization, since
+  // it remains constant, and avoid calling `assemble_matrix_if_necessary()` here.
 
   linear_solver->update_preconditioner(update_preconditioner);
 

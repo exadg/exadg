@@ -298,14 +298,21 @@ private:
    * Initializes the multigrid operators for all multigrid levels.
    */
   void
-  initialize_operators();
+  initialize_operators(bool const assemble_matrix);
 
   /*
    * This function initializes an operator for a specified level. It needs to be implemented by
-   * derived classes.
+   * derived classes. The parameter `use_matrix_based_operator_level` describes whether a
+   * matrix-based implementation is used on a given level. The parameter assemble_matrix describes
+   * whether the matrix should be assembled during initialize_operator(). This parameter only has an
+   * effect if `use_matrix_based_operator_level = true`. Note that you have to make sure that the
+   * parameter `use_matrix_based_operator_level` is passed correctly to the underlying PDE operator
+   * when implementing the function initialize_operator() in derived classes.
    */
   virtual std::shared_ptr<Operator>
-  initialize_operator(unsigned int const level);
+  initialize_operator(unsigned int const level,
+                      bool const         use_matrix_based_operator_level,
+                      bool const         assemble_matrix);
 
   /*
    * Smoother.

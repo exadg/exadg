@@ -65,7 +65,7 @@ Parameters::Parameters()
     mapping_degree(1),
     mapping_degree_coarse_grids(1),
     degree(1),
-    use_matrix_based_implementation(false),
+    use_matrix_based_operator(false),
     sparse_matrix_type(SparseMatrixType::Undefined),
 
     // SOLVER
@@ -114,7 +114,7 @@ Parameters::check() const
 
   AssertThrow(degree > 0, dealii::ExcMessage("Polynomial degree must be larger than zero."));
 
-  if(use_matrix_based_implementation)
+  if(use_matrix_based_operator)
   {
     AssertThrow(sparse_matrix_type != SparseMatrixType::Undefined,
                 dealii::ExcMessage("Parameter must be defined."));
@@ -226,9 +226,9 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
 
   print_parameter(pcout, "Polynomial degree", degree);
 
-  print_parameter(pcout, "Use matrix-based implementation", use_matrix_based_implementation);
+  print_parameter(pcout, "Use matrix-based operator", use_matrix_based_operator);
 
-  if(use_matrix_based_implementation)
+  if(use_matrix_based_operator)
   {
     print_parameter(pcout, "Sparse matrix type", sparse_matrix_type);
   }

@@ -157,20 +157,28 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::vmult(VectorType & dst, VectorType const & src) const
 {
-  if(this->data.use_matrix_based_vmult)
+  if(this->data.use_matrix_based_operator_level)
+  {
     this->apply_matrix_based(dst, src);
+  }
   else
+  {
     this->apply(dst, src);
+  }
 }
 
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::vmult_add(VectorType & dst, VectorType const & src) const
 {
-  if(this->data.use_matrix_based_vmult)
+  if(this->data.use_matrix_based_operator_level)
+  {
     this->apply_matrix_based_add(dst, src);
+  }
   else
+  {
     this->apply_add(dst, src);
+  }
 }
 
 template<int dim, typename Number, int n_components>
@@ -327,7 +335,7 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::assemble_matrix_if_necessary() const
 {
-  if(this->data.use_matrix_based_vmult)
+  if(this->data.use_matrix_based_operator_level)
   {
     // initialize matrix
     if(not(system_matrix_based_been_initialized))
@@ -417,9 +425,6 @@ void
 OperatorBase<dim, Number, n_components>::apply_matrix_based(VectorType &       dst,
                                                             VectorType const & src) const
 {
-  // Initialize and assemble matrix if necessary
-  assemble_matrix_if_necessary();
-
   if(this->data.sparse_matrix_type == SparseMatrixType::Trilinos)
   {
 #ifdef DEAL_II_WITH_TRILINOS
