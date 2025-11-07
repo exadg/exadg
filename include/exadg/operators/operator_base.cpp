@@ -333,7 +333,7 @@ OperatorBase<dim, Number, n_components>::apply_add(VectorType & dst, VectorType 
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::assemble_matrix_if_necessary() const
+OperatorBase<dim, Number, n_components>::assemble_matrix_if_matrix_based() const
 {
   if(this->data.use_matrix_based_operator_level)
   {

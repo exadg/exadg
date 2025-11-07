@@ -126,7 +126,7 @@ MultigridPreconditioner<dim, Number>::update()
   else // linear problems
   {
     this->for_all_levels([&](unsigned int const level) {
-      this->get_operator_linear(level)->assemble_matrix_if_necessary();
+      this->get_operator_linear(level)->assemble_matrix_if_matrix_based();
     });
   }
 

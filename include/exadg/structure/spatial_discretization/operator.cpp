@@ -845,15 +845,15 @@ Operator<dim, Number>::set_solution_linearization(VectorType const & vector) con
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::assemble_matrix_if_necessary() const
+Operator<dim, Number>::assemble_matrix_if_matrix_based() const
 {
   if(param.large_deformation)
   {
-    elasticity_operator_nonlinear.assemble_matrix_if_necessary();
+    elasticity_operator_nonlinear.assemble_matrix_if_matrix_based();
   }
   else
   {
-    elasticity_operator_linear.assemble_matrix_if_necessary();
+    elasticity_operator_linear.assemble_matrix_if_matrix_based();
   }
 }
 
@@ -978,7 +978,7 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
   update_elasticity_operator(scaling_factor_mass, time);
 
   // In case of a matrix-based implementation, we assemble the matrix once at initialization, since
-  // it remains constant, and avoid calling `assemble_matrix_if_necessary()` here.
+  // it remains constant, and avoid calling `assemble_matrix_if_matrix_based()` here.
 
   linear_solver->update_preconditioner(update_preconditioner);
 
