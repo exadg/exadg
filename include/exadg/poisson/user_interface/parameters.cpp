@@ -40,7 +40,7 @@ Parameters::Parameters()
     spatial_discretization(SpatialDiscretization::Undefined),
     degree(1),
     IP_factor(1.0),
-    use_matrix_based_implementation(false),
+    use_matrix_based_operator(false),
     sparse_matrix_type(SparseMatrixType::Undefined),
 
     // SOLVER
@@ -66,7 +66,7 @@ Parameters::check() const
 
   AssertThrow(degree > 0, dealii::ExcMessage("Polynomial degree must be larger than zero."));
 
-  if(use_matrix_based_implementation)
+  if(use_matrix_based_operator)
   {
     AssertThrow(sparse_matrix_type != SparseMatrixType::Undefined,
                 dealii::ExcMessage("Parameter must be defined."));
@@ -132,9 +132,9 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
   if(spatial_discretization == SpatialDiscretization::DG)
     print_parameter(pcout, "IP factor", IP_factor);
 
-  print_parameter(pcout, "Use matrix-based implementation", use_matrix_based_implementation);
+  print_parameter(pcout, "Use matrix-based operator", use_matrix_based_operator);
 
-  if(use_matrix_based_implementation)
+  if(use_matrix_based_operator)
   {
     print_parameter(pcout, "Sparse matrix type", sparse_matrix_type);
   }

@@ -375,8 +375,8 @@ private:
       this->param.newton_solver_data.max_iter;
     this->param.update_preconditioner_once_newton_converged = true;
 
-    this->param.use_matrix_based_implementation = false;                   // true;
-    this->param.sparse_matrix_type              = SparseMatrixType::PETSc; // Trilinos;
+    this->param.use_matrix_based_operator = false;                   // true;
+    this->param.sparse_matrix_type        = SparseMatrixType::PETSc; // Trilinos;
   }
 
   void

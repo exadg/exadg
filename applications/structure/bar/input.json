@@ -28,7 +28,8 @@
         "Displacement": "20.0",
         "Traction":	"0.0",
         "AdaptiveRefinement": "true",
-        "UseMatrixBasedImplementation": "false"
+        "UseMatrixBasedOperator": "false",
+        "MinDegreeMatrixFree": "1"
     },
     "Output": {
         "OutputDirectory": "output/bar/",

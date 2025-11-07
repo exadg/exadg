@@ -260,6 +260,7 @@ struct MultigridData
   MultigridData()
     : type(MultigridType::hMG),
       p_sequence(PSequenceType::Bisect),
+      min_degree_matrix_free(1),
       smoother_data(SmootherData()),
       coarse_problem(CoarseGridData())
   {
@@ -274,6 +275,8 @@ struct MultigridData
     {
       print_parameter(pcout, "p-sequence", p_sequence);
     }
+
+    print_parameter(pcout, "Min degree matrix-free", min_degree_matrix_free);
 
     smoother_data.print(pcout);
 
@@ -294,6 +297,13 @@ struct MultigridData
 
   // Sequence of polynomial degrees during p-multigrid
   PSequenceType p_sequence;
+
+  // Use matrix-free implementation for degrees >= min_degree_matrix_free, e.g. if
+  // min_degree_matrix_free = 2, multigrid will use a matrix-based implementation for degree = 1
+  // only. The default case is min_degree_matrix_free = 1, i.e. a matrix-free implementation is used
+  // on all multigrid levels. When AMG is used as coarse-grid solver/preconditioner, a matrix-based
+  // implementation is used for AMG independently of this parameter.
+  unsigned int min_degree_matrix_free;
 
   // Smoother data
   SmootherData smoother_data;

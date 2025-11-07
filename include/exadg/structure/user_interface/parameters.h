@@ -186,9 +186,12 @@ public:
   unsigned int degree;
 
   // use a matrix-based implementation of linear(ized) operators
-  bool use_matrix_based_implementation;
+  // Note that this parameter only decides about the implementation of the operator in the Krylov
+  // solver. The decision whether a matrix-based or a matrix-free implementation within multigrid is
+  // considered is separate.
+  bool use_matrix_based_operator;
 
-  // this parameter is only relevant if use_matrix_based_implementation == true
+  // this parameter is only relevant if use_matrix_based_operator == true
   SparseMatrixType sparse_matrix_type;
 
   /**************************************************************************************/

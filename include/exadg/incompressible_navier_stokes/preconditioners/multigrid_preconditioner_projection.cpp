@@ -159,13 +159,23 @@ MultigridPreconditionerProjection<dim, Number>::fill_matrix_free_data(
 template<int dim, typename Number>
 std::shared_ptr<
   MultigridOperatorBase<dim, typename MultigridPreconditionerBase<dim, Number>::MultigridNumber>>
-MultigridPreconditionerProjection<dim, Number>::initialize_operator(unsigned int const level)
+MultigridPreconditionerProjection<dim, Number>::initialize_operator(
+  unsigned int const level,
+  bool const         use_matrix_based_operator_level,
+  bool const         assemble_matrix)
 {
+  (void)assemble_matrix;
+  AssertThrow(use_matrix_based_operator_level == false,
+              dealii::ExcMessage("Matrix-based implementation not supported."));
+
   // initialize pde_operator in a first step
   std::shared_ptr<PDEOperatorMG> pde_operator_level(new PDEOperatorMG());
 
   data.dof_index  = this->matrix_free_data_objects[level]->get_dof_index("std_dof_handler");
   data.quad_index = this->matrix_free_data_objects[level]->get_quad_index("std_quadrature");
+
+  // the choice matrix-free vs. matrix-based might be different from what we do on the fine level
+  data.use_matrix_based_operator_level = use_matrix_based_operator_level;
 
   // The polynomial degree changes in case of p-multigrid, so we have to adapt the kernel_data
   // objects.

@@ -34,7 +34,7 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         1
   IP factor:                                 1.0000e+00
-  Use matrix-based implementation:           false
+  Use matrix-based operator:                 false
 
 Solver:
   Solver:                                    CG
@@ -45,6 +45,7 @@ Solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -125,7 +126,7 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         2
   IP factor:                                 1.0000e+00
-  Use matrix-based implementation:           false
+  Use matrix-based operator:                 false
 
 Solver:
   Solver:                                    CG
@@ -136,6 +137,7 @@ Solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -216,7 +218,7 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         3
   IP factor:                                 1.0000e+00
-  Use matrix-based implementation:           false
+  Use matrix-based operator:                 false
 
 Solver:
   Solver:                                    CG
@@ -227,6 +229,7 @@ Solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
