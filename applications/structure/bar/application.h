@@ -36,7 +36,7 @@ public:
                   double const end_time)
     : dealii::Function<dim>(dim),
       displacement(displacement),
-      quasistatic(quasistatic_solver),
+      quasistatic_solver(quasistatic_solver),
       unsteady(unsteady),
       end_time(end_time)
   {
@@ -48,11 +48,12 @@ public:
     (void)p;
 
     double factor = 1.0;
-    if(quasistatic)
+    if(quasistatic_solver)
       factor *= this->get_time();
 
     if(unsteady)
-      factor = std::pow(std::sin(this->get_time() * 2.0 * dealii::numbers::PI / end_time), 2.0);
+      factor = dealii::Utilities::fixed_power<2>(
+        std::sin(this->get_time() * 2.0 * dealii::numbers::PI / end_time));
 
     if(c == 0)
       return displacement * factor;
@@ -62,7 +63,7 @@ public:
 
 private:
   double const displacement;
-  bool const   quasistatic;
+  bool const   quasistatic_solver;
   bool const   unsteady;
   double const end_time;
 };
@@ -79,7 +80,7 @@ public:
                   double const end_time)
     : dealii::Function<dim>(dim),
       displacement(displacement),
-      quasistatic(quasistatic_solver),
+      quasistatic_solver(quasistatic_solver),
       unsteady(unsteady),
       end_time(end_time)
   {
@@ -91,15 +92,14 @@ public:
     (void)p;
 
     double factor = 1.0;
-    if(quasistatic)
+    if(quasistatic_solver)
       factor *= this->get_time();
 
     if(unsteady)
     {
-      factor =
-        2 * std::pow(2.0 * dealii::numbers::PI / end_time, 2.0) *
-        (1.0 -
-         2.0 * std::pow(std::sin(this->get_time() * 2.0 * dealii::numbers::PI / end_time), 2.0));
+      factor = 2.0 * dealii::Utilities::fixed_power<2>(2.0 * dealii::numbers::PI / end_time) *
+               (1.0 - 2.0 * dealii::Utilities::fixed_power<2>(
+                              std::sin(this->get_time() * 2.0 * dealii::numbers::PI / end_time)));
     }
 
     if(c == 0)
@@ -110,7 +110,7 @@ public:
 
 private:
   double const displacement;
-  bool const   quasistatic;
+  bool const   quasistatic_solver;
   bool const   unsteady;
   double const end_time;
 };
@@ -120,7 +120,7 @@ class VolumeForce : public dealii::Function<dim>
 {
 public:
   VolumeForce(double volume_force, bool quasistatic_solver)
-    : dealii::Function<dim>(dim), volume_force(volume_force), quasistatic(quasistatic_solver)
+    : dealii::Function<dim>(dim), volume_force(volume_force), quasistatic_solver(quasistatic_solver)
   {
   }
 
@@ -130,7 +130,7 @@ public:
     (void)p;
 
     double factor = 1.0;
-    if(quasistatic)
+    if(quasistatic_solver)
       factor *= this->get_time();
 
     if(c == 0)
@@ -141,15 +141,15 @@ public:
 
 private:
   double const volume_force;
-  bool const   quasistatic;
+  bool const   quasistatic_solver;
 };
 
 template<int dim>
 class AreaForce : public dealii::Function<dim>
 {
 public:
-  AreaForce(double areaforce, bool const quasistatic_solver)
-    : dealii::Function<dim>(dim), areaforce(areaforce), quasistatic(quasistatic_solver)
+  AreaForce(double area_force, bool const quasistatic_solver)
+    : dealii::Function<dim>(dim), area_force(area_force), quasistatic_solver(quasistatic_solver)
   {
   }
 
@@ -159,18 +159,18 @@ public:
     (void)p;
 
     double factor = 1.0;
-    if(quasistatic)
+    if(quasistatic_solver)
       factor *= this->get_time();
 
     if(c == 0)
-      return areaforce * factor; // area force  in x-direction
+      return area_force * factor; // area force  in x-direction
     else
       return 0.0;
   }
 
 private:
-  double const areaforce;
-  bool const   quasistatic;
+  double const area_force;
+  bool const   quasistatic_solver;
 };
 
 // analytical solution (if a Neumann BC is used at the right boundary)
@@ -178,10 +178,10 @@ template<int dim>
 class SolutionNBC : public dealii::Function<dim>
 {
 public:
-  SolutionNBC(double length, double area_force, double volume_force, double E_modul)
+  SolutionNBC(double length, double area_force, double volume_force, double E_youngs_modulus)
     : dealii::Function<dim>(dim),
-      A(-volume_force / 2 / E_modul),
-      B(+area_force / E_modul - length * 2 * this->A)
+      A(-volume_force / (2.0 * E_youngs_modulus)),
+      B(area_force / E_youngs_modulus - length * 2.0 * A)
   {
   }
 
@@ -204,10 +204,10 @@ template<int dim>
 class SolutionDBC : public dealii::Function<dim>
 {
 public:
-  SolutionDBC(double length, double displacement, double volume_force, double E_modul)
+  SolutionDBC(double length, double displacement, double volume_force, double E_youngs_modulus)
     : dealii::Function<dim>(dim),
-      A(-volume_force / 2 / E_modul),
-      B(+displacement / length - this->A * length)
+      A(-volume_force / (2.0 * E_youngs_modulus)),
+      B(displacement / length - A * length)
   {
   }
 
@@ -256,6 +256,9 @@ public:
                         large_deformation,
                         "Consider finite strains or linear elasticity.");
       prm.add_parameter("Preconditioner", preconditioner, "Preconditioner for the linear system.");
+      prm.add_parameter("MaterialType",
+                        material_type,
+                        "StVenantKirchhoff vs. IncompressibleNeoHookean");
       prm.add_parameter("WeakDamping",
                         weak_damping_coefficient,
                         "Weak damping coefficient for unsteady problems.");
@@ -287,6 +290,7 @@ private:
     this->param.large_deformation    = large_deformation;
     this->param.pull_back_body_force = false;
     this->param.pull_back_traction   = false;
+    this->param.material_type        = material_type;
 
     this->param.density = density;
     if(this->param.problem_type == ProblemType::Unsteady and weak_damping_coefficient > 0.0)
@@ -297,11 +301,11 @@ private:
 
     this->param.start_time      = start_time;
     this->param.end_time        = end_time;
-    this->param.time_step_size  = end_time / 2.;
+    this->param.time_step_size  = end_time / 200.;
     this->param.gen_alpha_type  = GenAlphaType::BossakAlpha;
     this->param.spectral_radius = 0.8;
     this->param.solver_info_data.interval_time_steps =
-      problem_type == ProblemType::Unsteady ? 20 : 2;
+      problem_type == ProblemType::Unsteady ? 200 : 2;
 
     this->param.mapping_degree              = 1;
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
@@ -319,30 +323,58 @@ private:
         adaptive_refinement ? true : false; // required for adaptive refinement
     }
 
-    this->param.load_increment = 0.5;
+    this->param.load_increment = 0.1;
 
     this->param.use_matrix_based_operator = use_matrix_based_operator;
     this->param.sparse_matrix_type        = SparseMatrixType::Trilinos;
 
-    this->param.newton_solver_data  = Newton::SolverData(1e2, 1.e-9, 1.e-9);
-    this->param.solver              = Solver::FGMRES;
-    this->param.solver_data         = SolverData(1e3, 1.e-12, 1.e-8, 100);
-    this->param.preconditioner      = preconditioner;
+    this->param.newton_solver_data = Newton::SolverData(1e2, 1.e-9, 1.e-9);
+
+    bool const use_iterative_solver_on_coarse_grid = false;
+    this->param.solver         = use_iterative_solver_on_coarse_grid ? Solver::FGMRES : Solver::CG;
+    this->param.solver_data    = SolverData(1e3, 1.e-12, 1.e-8, 100);
+    this->param.preconditioner = preconditioner;
     this->param.multigrid_data.type = MultigridType::phMG;
 
     this->param.multigrid_data.smoother_data.smoother       = MultigridSmoother::Chebyshev;
     this->param.multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
 
-    this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+    this->param.multigrid_data.p_sequence             = PSequenceType::DecreaseByOne; // Bisect;
+    this->param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
+    this->param.multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
+    this->param.multigrid_data.smoother_data.iterations     = 5;
+    this->param.multigrid_data.smoother_data.relaxation_factor = 0.8; // Jacobi,    default: 0.8
+    this->param.multigrid_data.smoother_data.smoothing_range   = 60;  // Chebyshev, default: 20
+    this->param.multigrid_data.smoother_data.iterations_eigenvalue_estimation =
+      60; // Chebyshev, default: 20
+
+    this->param.multigrid_data.coarse_problem.solver      = use_iterative_solver_on_coarse_grid ?
+                                                              MultigridCoarseGridSolver::GMRES :
+                                                              MultigridCoarseGridSolver::AMG;
+    this->param.multigrid_data.coarse_problem.solver_data = SolverData(1e3, 1.e-12, 1.e-3, 100);
     this->param.multigrid_data.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::AMG;
+      use_iterative_solver_on_coarse_grid ? MultigridCoarseGridPreconditioner::AMG :
+                                            MultigridCoarseGridPreconditioner::None;
     this->param.multigrid_data.min_degree_matrix_free = min_degree_matrix_free;
 
-    this->param.update_preconditioner                  = true;
-    this->param.update_preconditioner_every_time_steps = 1;
-    this->param.update_preconditioner_every_newton_iterations =
-      this->param.newton_solver_data.max_iter;
-    this->param.update_preconditioner_once_newton_converged = true;
+
+#ifdef DEAL_II_WITH_TRILINOS
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.elliptic = true;
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.higher_order_elements =
+      this->param.degree > 1;
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.n_cycles              = 1;
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.w_cycle               = false;
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.aggregation_threshold = 1e-4;
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_sweeps       = 8;
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_overlap      = 2;
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.smoother_type         = "ILU";
+    this->param.multigrid_data.coarse_problem.amg_data.ml_data.coarse_type           = "Amesos-KLU";
+#endif
+
+    this->param.update_preconditioner                         = true;
+    this->param.update_preconditioner_every_time_steps        = 1;
+    this->param.update_preconditioner_every_newton_iterations = 5;
+    this->param.update_preconditioner_once_newton_converged   = true;
   }
 
   void
@@ -559,13 +591,9 @@ private:
 
       bool const unsteady = (this->param.problem_type == ProblemType::Unsteady);
       this->boundary_descriptor->dirichlet_bc.insert(
-        pair(2,
-             new DisplacementDBC<dim>(
-               displacement, quasistatic_solver, unsteady, 200.0 /* end_time */)));
+        pair(2, new DisplacementDBC<dim>(displacement, quasistatic_solver, unsteady, end_time)));
       this->boundary_descriptor->dirichlet_bc_initial_acceleration.insert(
-        pair(2,
-             new AccelerationDBC<dim>(
-               displacement, quasistatic_solver, unsteady, 200.0 /* end_time */)));
+        pair(2, new AccelerationDBC<dim>(displacement, quasistatic_solver, unsteady, end_time)));
 
       this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(2, mask_right));
     }
@@ -629,12 +657,27 @@ private:
   {
     typedef std::pair<dealii::types::material_id, std::shared_ptr<MaterialData>> Pair;
 
-    MaterialType const type = MaterialType::StVenantKirchhoff;
-    double const       E = E_modul, nu = 0.3;
-    Type2D const       two_dim_type = Type2D::PlaneStress;
+    if(this->param.material_type == MaterialType::StVenantKirchhoff)
+    {
+      Type2D const two_dim_type = Type2D::PlaneStress;
+      double const nu           = 0.3;
+      this->material_descriptor->insert(
+        Pair(0,
+             new StVenantKirchhoffData<dim>(
+               this->param.material_type, E_youngs_modulus, nu, two_dim_type)));
+    }
+    else if(this->param.material_type == MaterialType::IncompressibleNeoHookean)
+    {
+      Type2D const two_dim_type  = Type2D::Undefined;
+      double const shear_modulus = 1.0e2;
+      double const nu            = 0.49;
+      double const bulk_modulus  = shear_modulus * 2.0 * (1.0 + nu) / (3.0 * (1.0 - 2.0 * nu));
 
-    this->material_descriptor->insert(
-      Pair(0, new StVenantKirchhoffData<dim>(type, E, nu, two_dim_type)));
+      this->material_descriptor->insert(
+        Pair(0,
+             new IncompressibleNeoHookeanData<dim>(
+               this->param.material_type, shear_modulus, bulk_modulus, two_dim_type)));
+    }
   }
 
   void
@@ -676,12 +719,12 @@ private:
     if(boundary_type == BoundaryType::Dirichlet)
     {
       pp_data.error_data.analytical_solution.reset(
-        new SolutionDBC<dim>(this->length, this->displacement, vol_force, this->E_modul));
+        new SolutionDBC<dim>(this->length, this->displacement, vol_force, this->E_youngs_modulus));
     }
     else if(boundary_type == BoundaryType::Neumann)
     {
       pp_data.error_data.analytical_solution.reset(
-        new SolutionNBC<dim>(this->length, this->area_force, vol_force, this->E_modul));
+        new SolutionNBC<dim>(this->length, this->area_force, vol_force, this->E_youngs_modulus));
     }
     else
     {
@@ -726,10 +769,11 @@ private:
   bool               adaptive_refinement = false;
   unsigned int const repetitions0 = 4, repetitions1 = 1, repetitions2 = 1;
 
-  double const E_modul = 200.0;
+  MaterialType material_type    = MaterialType::Undefined;
+  double const E_youngs_modulus = 200.0;
 
   double const start_time = 0.0;
-  double const end_time   = 1.0;
+  double const end_time   = 100.0;
 
   double const density = 0.001;
 };

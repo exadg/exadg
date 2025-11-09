@@ -21,6 +21,7 @@
         "ProblemType": "Unsteady",
         "LargeDeformation": "false",
         "Preconditioner": "Multigrid",
+        "MaterialType": "StVenantKirchhoff",
         "UseMatrixBasedOperator": "false",
         "MinDegreeMatrixFree": "1",
         "WeakDamping": "0.0",

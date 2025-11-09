@@ -27,11 +27,12 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Material type:                             StVenantKirchhoff
 
 Physical quantities:
 
 Temporal discretization:
-  load_increment:                            5.0000e-01
+  load_increment:                            1.0000e-01
 
 Spatial Discretization:
   Triangulation type:                        Distributed
@@ -51,28 +52,28 @@ Newton:
   Relative solver tolerance:                 1.0000e-09
 
 Linear solver:
-  Solver:                                    FGMRES
+  Solver:                                    CG
   Maximum number of iterations:              1000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-08
   Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
   Multigrid type:                            phMG
-  p-sequence:                                Bisect
+  p-sequence:                                DecreaseByOne
   Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
-  Smoothing range:                           2.0000e+01
-  Iterations eigenvalue estimation:          20
-  Coarse grid solver:                        CG
-  Coarse grid preconditioner:                AMG
-  Maximum number of iterations:              10000
+  Smoothing range:                           6.0000e+01
+  Iterations eigenvalue estimation:          60
+  Coarse grid solver:                        AMG
+  Coarse grid preconditioner:                None
+  Maximum number of iterations:              1000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-03
-  Maximum size of Krylov space:              30
+  Maximum size of Krylov space:              100
       AMG type:                              ML
-      Smoother sweeps:                       1
+      Smoother sweeps:                       8
       Number of cycles:                      1
       Smoother type:                         ILU
 
@@ -102,12 +103,52 @@ Solving quasi-static problem ...
 
 ________________________________________________________________________________
 
- Solve non-linear problem for load factor = 5.0000e-03
+ Solve non-linear problem for load factor = 1.0000e-03
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 1.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 2.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 3.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 4.0000e-01
 ________________________________________________________________________________
 
 ________________________________________________________________________________
 
  Solve non-linear problem for load factor = 5.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 6.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 7.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 8.0000e-01
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Solve non-linear problem for load factor = 9.0000e-01
 ________________________________________________________________________________
 
 ________________________________________________________________________________

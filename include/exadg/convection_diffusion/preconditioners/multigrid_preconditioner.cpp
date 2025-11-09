@@ -232,6 +232,7 @@ MultigridPreconditioner<dim, Number>::initialize_operator(
   bool const         use_matrix_based_operator_level,
   bool const         assemble_matrix)
 {
+  (void)assemble_matrix;
   AssertThrow(use_matrix_based_operator_level == false,
               dealii::ExcMessage("Matrix-based implementation not supported."));
 

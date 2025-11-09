@@ -121,6 +121,9 @@ public:
   // the direction of the traction vector does not change by this pull-back operation.
   bool pull_back_traction;
 
+  // Material model considered
+  MaterialType material_type;
+
   /**************************************************************************************/
   /*                                                                                    */
   /*                                 PHYSICAL QUANTITIES                                */

@@ -37,6 +37,7 @@ Parameters::Parameters()
     large_deformation(false),
     pull_back_body_force(false),
     pull_back_traction(false),
+    material_type(MaterialType::Undefined),
 
     // PHYSICAL QUANTITIES
     density(1.0),
@@ -109,6 +110,16 @@ Parameters::check() const
                 dealii::ExcMessage("Weak damping coefficient defined positive."));
   }
 
+  AssertThrow(material_type != MaterialType::Undefined,
+              dealii::ExcMessage("Parameter must be defined."));
+
+  if(material_type == MaterialType::IncompressibleNeoHookean)
+  {
+    AssertThrow(large_deformation == true,
+                dealii::ExcMessage(
+                  "Large deformation must be considered for hyperelastic materials."));
+  }
+
   // SPATIAL DISCRETIZATION
   grid.check();
 
@@ -170,6 +181,8 @@ Parameters::print_parameters_mathematical_model(dealii::ConditionalOStream const
     print_parameter(pcout, "Pull back body force", pull_back_body_force);
     print_parameter(pcout, "Pull back traction", pull_back_traction);
   }
+
+  print_parameter(pcout, "Material type", material_type);
 }
 
 void
