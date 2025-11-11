@@ -246,14 +246,23 @@ public:
                   dealii::ExcMessage(
                     "Neither `constant_modes` nor `constant_modes_values` were provided. "
                     "AMG setup requires near null space basis vectors."));
-      ml_data.constant_modes_values = constant_modes_values;
+
+      // Attach constant modes only if they have contributions on this processor subdomain.
+      if(constant_modes_values.size() > 0 and constant_modes_values[0].size() > 0)
+      {
+        ml_data.constant_modes_values = constant_modes_values;
+      }
     }
     else
     {
-      ml_data.constant_modes = constant_modes;
+      // Attach constant modes only if they have contributions on this processor subdomain.
+      if(constant_modes.size() > 0 and constant_modes[0].size() > 0)
+      {
+        ml_data.constant_modes = constant_modes;
+      }
     }
 
-    // Add near null space basis vectors to Teuchos::ParameterList.
+    // Add near null space basis vectors to `Teuchos::ParameterList`.
     // `ptr_distributed_modes` must stay alive for amg.initialize()
     std::unique_ptr<Epetra_MultiVector> ptr_operator_modes;
     ml_data.set_operator_null_space(parameter_list,
