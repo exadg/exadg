@@ -27,6 +27,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Material type:                             StVenantKirchhoff
 
 Physical quantities:
   Density:                                   1.0000e+00
@@ -146,6 +147,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Material type:                             StVenantKirchhoff
 
 Physical quantities:
   Density:                                   1.0000e+00
@@ -265,6 +267,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Material type:                             StVenantKirchhoff
 
 Physical quantities:
   Density:                                   1.0000e+00
@@ -384,6 +387,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Material type:                             StVenantKirchhoff
 
 Physical quantities:
   Density:                                   1.0000e+00
@@ -503,6 +507,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Material type:                             StVenantKirchhoff
 
 Physical quantities:
   Density:                                   1.0000e+00
@@ -622,6 +627,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Material type:                             StVenantKirchhoff
 
 Physical quantities:
   Density:                                   1.0000e+00
@@ -741,6 +747,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Material type:                             StVenantKirchhoff
 
 Physical quantities:
   Density:                                   1.0000e+00
@@ -860,6 +867,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Material type:                             StVenantKirchhoff
 
 Physical quantities:
   Density:                                   1.0000e+00
@@ -979,6 +987,7 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
+  Material type:                             StVenantKirchhoff
 
 Physical quantities:
   Density:                                   1.0000e+00
