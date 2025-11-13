@@ -392,6 +392,16 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
                 dealii::ExcMessage("Invalid operator specified for dual splitting scheme."));
   }
   else if(application->get_parameters().temporal_discretization ==
+          TemporalDiscretization::BDFConsistentSplittingScheme)
+  {
+    AssertThrow(operator_type == OperatorType::ConvectiveOperator or
+                  operator_type == OperatorType::PressurePoissonOperator or
+                  operator_type == OperatorType::HelmholtzOperator or
+                  operator_type == OperatorType::ProjectionOperator or
+                  operator_type == OperatorType::InverseMassOperator,
+                dealii::ExcMessage("Invalid operator specified for consistent splitting scheme."));
+  }
+  else if(application->get_parameters().temporal_discretization ==
           TemporalDiscretization::BDFPressureCorrection)
   {
     AssertThrow(operator_type == OperatorType::ConvectiveOperator or
@@ -435,6 +445,29 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
   }
   else if(application->get_parameters().temporal_discretization ==
           TemporalDiscretization::BDFDualSplittingScheme)
+  {
+    if(operator_type == OperatorType::ConvectiveOperator or
+       operator_type == OperatorType::HelmholtzOperator or
+       operator_type == OperatorType::ProjectionOperator or
+       operator_type == OperatorType::InverseMassOperator)
+    {
+      pde_operator->initialize_vector_velocity(src2);
+      pde_operator->initialize_vector_velocity(dst2);
+    }
+    else if(operator_type == OperatorType::PressurePoissonOperator)
+    {
+      pde_operator->initialize_vector_pressure(src2);
+      pde_operator->initialize_vector_pressure(dst2);
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
+    }
+
+    src2 = 1.0;
+  }
+  else if(application->get_parameters().temporal_discretization ==
+          TemporalDiscretization::BDFConsistentSplittingScheme)
   {
     if(operator_type == OperatorType::ConvectiveOperator or
        operator_type == OperatorType::HelmholtzOperator or
@@ -516,6 +549,24 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
         operator_dual_splitting->apply_laplace_operator(dst2,src2);
       else if(operator_type == OperatorType::InverseMassOperator)
         operator_dual_splitting->apply_inverse_mass_operator(dst2,src2);
+      else
+        AssertThrow(false,dealii::ExcMessage("Not implemented."));
+    }
+    else if(application->get_parameters().temporal_discretization == TemporalDiscretization::BDFConsistentSplittingScheme)
+    {
+      std::shared_ptr<OperatorConsistentSplitting<dim, Number>>      operator_consistent_splitting =
+          std::dynamic_pointer_cast<OperatorConsistentSplitting<dim, Number>>(pde_operator);
+
+      if(operator_type == OperatorType::HelmholtzOperator)
+        operator_consistent_splitting->apply_helmholtz_operator(dst2,src2);
+      else if(operator_type == OperatorType::ConvectiveOperator)
+        operator_consistent_splitting->evaluate_convective_term(dst2,src2,0.0);
+      else if(operator_type == OperatorType::ProjectionOperator)
+        operator_consistent_splitting->apply_projection_operator(dst2,src2);
+      else if(operator_type == OperatorType::PressurePoissonOperator)
+        operator_consistent_splitting->apply_laplace_operator(dst2,src2);
+      else if(operator_type == OperatorType::InverseMassOperator)
+        operator_consistent_splitting->apply_inverse_mass_operator(dst2,src2);
       else
         AssertThrow(false,dealii::ExcMessage("Not implemented."));
     }

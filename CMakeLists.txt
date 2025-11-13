@@ -135,6 +135,7 @@ SET(TARGET_SRC
      include/exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/operator_projection_methods.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.cpp
+     include/exadg/incompressible_navier_stokes/spatial_discretization/operator_consistent_splitting.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/calculators/streamfunction_calculator_rhs_operator.cpp
@@ -143,6 +144,7 @@ SET(TARGET_SRC
      include/exadg/incompressible_navier_stokes/time_integration/time_int_bdf.cpp
      include/exadg/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.cpp
      include/exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.cpp
+     include/exadg/incompressible_navier_stokes/time_integration/time_int_bdf_consistent_splitting.cpp
      include/exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.cpp
      include/exadg/incompressible_navier_stokes/time_integration/driver_steady_problems.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/output_generator.cpp

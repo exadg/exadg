@@ -120,6 +120,14 @@ OperatorProjectionMethods<dim, Number>::initialize_laplace_operator()
     // conditions).
     laplace_operator_data.operator_is_singular = this->is_pressure_level_undefined();
   }
+  else if(this->param.temporal_discretization ==
+          TemporalDiscretization::BDFConsistentSplittingScheme)
+  {
+    // the Krylov subspace projection is needed for the consistent splitting scheme since the linear
+    // system of equations is not consistent for this splitting method (due to the boundary
+    // conditions).
+    laplace_operator_data.operator_is_singular = this->is_pressure_level_undefined();
+  }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
     // One can show that the linear system of equations of the pressure Poisson equation is
