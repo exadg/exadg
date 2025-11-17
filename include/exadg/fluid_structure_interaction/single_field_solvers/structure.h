@@ -112,7 +112,6 @@ SolverStructure<dim, Number>::setup(
   time_integrator->setup(application->get_parameters().restarted_simulation);
 
   // Robin parameters need to be set *before* solver setup
-  // ##+ MAYBE REMOVE THIS ENTIRE THING SINCE SOLVER SETUP IS DONE AT SOLVER CALL.
   set_robin_parameters(application->get_boundary_descriptor()->neumann_cached_bc,
                        robin_parameter_in);
 }
