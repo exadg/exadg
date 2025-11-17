@@ -19,37 +19,21 @@
  *  ______________________________________________________________________
  */
 
-// C/C++ ##+ REMOVE UNNEEDED IN THE END
-#include <cstdlib>
-
 // deal.II
-#include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/function.h>
-#include <deal.II/base/index_set.h>
 #include <deal.II/distributed/fully_distributed_tria.h>
-#include <deal.II/dofs/dof_handler.h>
 #include <deal.II/fe/fe_raviart_thomas.h>
 #include <deal.II/fe/mapping_fe.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/manifold_lib.h>
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/matrix_free/fe_point_evaluation.h>
-#include <deal.II/matrix_free/matrix_free.h>
-#include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
-#include <exadg/grid/grid_data.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/finite_element.h>
 #include <exadg/operators/inverse_mass_operator.h>
-#include <exadg/operators/mass_operator.h>
 #include <exadg/operators/quadrature.h>
-#include <exadg/operators/variable_coefficients.h>
-#include <exadg/postprocessor/error_calculation.h>
-#include <exadg/postprocessor/write_output.h>
-#include <exadg/utilities/enum_utilities.h>
-#include <exadg/utilities/numbers.h>
 
 using namespace ExaDG;
 
