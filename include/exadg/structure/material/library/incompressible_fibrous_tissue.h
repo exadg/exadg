@@ -314,7 +314,9 @@ private:
                                  symmetric_tensor const & C_inv,
                                  scalar const &           J_pow,
                                  scalar const &           Jm1,
-                                 scalar const &           shear_modulus) const;
+                                 scalar const &           shear_modulus,
+                                 unsigned int const       cell,
+                                 unsigned int const       q) const;
 
   DEAL_II_ALWAYS_INLINE symmetric_tensor
   compute_S_ground_matrix_unstable(symmetric_tensor const & C_inv,
@@ -331,7 +333,9 @@ private:
                      symmetric_tensor const & e,
                      scalar const &           Jm1,
                      scalar const &           J_pow,
-                     scalar const &           shear_modulus) const;
+                     scalar const &           shear_modulus,
+                     unsigned int const       cell,
+                     unsigned int const       q) const;
 
   DEAL_II_ALWAYS_INLINE symmetric_tensor
   compute_tau_unstable(symmetric_tensor const & S_fiber,
@@ -344,6 +348,7 @@ private:
   unsigned int quad_index;
 
   IncompressibleFibrousTissueData<dim> const & data;
+  Number const                                 shear_modulus;
   Number const                                 bulk_modulus;
   Number const                                 fiber_k_1;
   Number const                                 fiber_k_2;
@@ -359,7 +364,7 @@ private:
 
   // cache coefficients for spatially varying material parameters
   bool                                 shear_modulus_is_variable;
-  mutable VariableCoefficients<scalar> shear_modulus_coefficients;
+  mutable VariableCoefficients<scalar> stiffness_scaling_coefficients;
 
   // cache linearization data depending on cache_level and spatial_integration
   bool spatial_integration;

@@ -55,6 +55,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   : dof_index(dof_index),
     quad_index(quad_index),
     data(data),
+    shear_modulus(data.shear_modulus),
     bulk_modulus(data.bulk_modulus),
     fiber_k_1(data.fiber_k_1),
     fiber_k_2(data.fiber_k_2),
@@ -71,15 +72,14 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     force_material_residual(force_material_residual)
 {
   // initialize (potentially variable) shear modulus
-  Number const shear_modulus = data.shear_modulus;
-  shear_modulus_stored       = dealii::make_vectorized_array<Number>(shear_modulus);
+  shear_modulus_stored = dealii::make_vectorized_array<Number>(shear_modulus);
 
   if(shear_modulus_is_variable)
   {
     // Allocate vectors for variable coefficients and initialize with constant values.
     // This is an approximation only, but is overwritten in `cell_loop_set_coefficients()`.
-    shear_modulus_coefficients.initialize(matrix_free, quad_index, false, false);
-    shear_modulus_coefficients.set_coefficients(shear_modulus);
+    stiffness_scaling_coefficients.initialize(matrix_free, quad_index, false, false);
+    stiffness_scaling_coefficients.set_coefficients(dealii::make_vectorized_array<Number>(1.0));
   }
 
   // Initialize linearization cache and fill with values corresponding to the initial linearization
@@ -457,34 +457,35 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      // set shear modulus coefficients.
+      // set stiffness scaling coefficients.
       if(shear_modulus_is_variable)
       {
-        scalar shear_modulus_vec;
+        scalar stiffness_scaling;
 
         if(data.shear_modulus_function != nullptr)
         {
-          shear_modulus_vec =
+          stiffness_scaling =
             FunctionEvaluator<0, dim, Number>::value(*(data.shear_modulus_function),
                                                      integrator.quadrature_point(q),
-                                                     0.0 /*time*/);
+                                                     0.0 /*time*/) /
+            shear_modulus_stored;
         }
         else if(data.stiffness_scaling != nullptr)
         {
           // Scalar stiffness scaling coefficient is stored in component 0 of the vector-valued DoF
           // vector.
-          vector const stiffness_scaling = integrator_stiffness_scaling.get_value(q);
-          shear_modulus_vec              = stiffness_scaling[0] * shear_modulus_stored;
+          vector const stiffness_scaling_vec = integrator_stiffness_scaling.get_value(q);
+          stiffness_scaling                  = stiffness_scaling_vec[0];
         }
         else
         {
-          shear_modulus_vec = shear_modulus_stored;
+          stiffness_scaling = dealii::make_vectorized_array<Number>(1.0);
           AssertThrow(data.shear_modulus_function == nullptr and data.stiffness_scaling == nullptr,
                       dealii::ExcMessage("Shear modulus function or DoF vector needed "
                                          "to assign spatially varying shear modulus."));
         }
 
-        shear_modulus_coefficients.set_coefficient_cell(cell, q, shear_modulus_vec);
+        stiffness_scaling_coefficients.set_coefficient_cell(cell, q, stiffness_scaling);
       }
 
       // Update the fiber mean directions.
@@ -588,8 +589,17 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
-    return ((0.5 * bulk_modulus) * compute_JJm1<Number, stable_formulation>(Jm1) -
-            shear_modulus * ONE_THIRD * J_pow * compute_I_1<dim, Number, stable_formulation>(E));
+    if(data.stiffness_scaling == nullptr)
+    {
+      return ((0.5 * bulk_modulus) * compute_JJm1<Number, stable_formulation>(Jm1) -
+              shear_modulus * ONE_THIRD * J_pow * compute_I_1<dim, Number, stable_formulation>(E));
+    }
+    else
+    {
+      return ((0.5 * bulk_modulus) * stiffness_scaling_coefficients.get_coefficient_cell(cell, q) *
+                compute_JJm1<Number, stable_formulation>(Jm1) -
+              shear_modulus * ONE_THIRD * J_pow * compute_I_1<dim, Number, stable_formulation>(E));
+    }
   }
   else
   {
@@ -614,8 +624,17 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 {
   if constexpr(cache_level == 0 or force_evaluation)
   {
-    return (bulk_modulus * (compute_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
-            TWO_NINTHS * shear_modulus * J_pow * compute_I_1<dim, Number, stable_formulation>(E));
+    if(data.stiffness_scaling == nullptr)
+    {
+      return (bulk_modulus * (compute_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
+              TWO_NINTHS * shear_modulus * J_pow * compute_I_1<dim, Number, stable_formulation>(E));
+    }
+    else
+    {
+      return (bulk_modulus * stiffness_scaling_coefficients.get_coefficient_cell(cell, q) *
+                (compute_JJm1<Number, stable_formulation>(Jm1) + 1.0) +
+              TWO_NINTHS * shear_modulus * J_pow * compute_I_1<dim, Number, stable_formulation>(E));
+    }
   }
   else
   {
@@ -906,7 +925,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   {
     if(shear_modulus_is_variable)
     {
-      shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+      shear_modulus_stored =
+        stiffness_scaling_coefficients.get_coefficient_cell(cell, q) * shear_modulus;
     }
 
     tensor Grad_d_lin = integrator_lin->get_gradient(q);
@@ -1034,7 +1054,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
           symmetric_tensor const e =
             compute_e_scaled<dim, Number, Number, stable_formulation>(Grad_d_lin, 1.0);
           symmetric_tensor const tau =
-            compute_tau_stable(S_fiber, F, e, Jm1, J_pow, shear_modulus_stored);
+            compute_tau_stable(S_fiber, F, e, Jm1, J_pow, shear_modulus_stored, cell, q);
           kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, tau);
         }
         else
@@ -1049,8 +1069,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       {
         if constexpr(stable_formulation)
         {
-          S_fiber +=
-            compute_S_ground_matrix_stable(Grad_d_lin, C_inv, J_pow, Jm1, shear_modulus_stored);
+          S_fiber += compute_S_ground_matrix_stable(
+            Grad_d_lin, C_inv, J_pow, Jm1, shear_modulus_stored, cell, q);
           second_piola_kirchhoff_stress_coefficients.set_coefficient_cell(cell, q, S_fiber);
         }
         else
@@ -1082,7 +1102,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   {
     if(shear_modulus_is_variable)
     {
-      shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+      shear_modulus_stored =
+        stiffness_scaling_coefficients.get_coefficient_cell(cell, q) * shear_modulus;
     }
 
     tensor const F =
@@ -1095,7 +1116,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     if constexpr(stable_formulation)
     {
       symmetric_tensor S = compute_S_ground_matrix_stable(
-        gradient_displacement, C_inv, J_pow, Jm1, shear_modulus_stored);
+        gradient_displacement, C_inv, J_pow, Jm1, shear_modulus_stored, cell, q);
 
       for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
       {
@@ -1153,7 +1174,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 {
   if(shear_modulus_is_variable)
   {
-    shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+    shear_modulus_stored =
+      stiffness_scaling_coefficients.get_coefficient_cell(cell, q) * shear_modulus;
   }
 
   auto const [F, Jm1] =
@@ -1167,7 +1189,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   if constexpr(stable_formulation)
   {
     symmetric_tensor S = compute_S_ground_matrix_stable(
-      gradient_displacement, C_inv, J_pow, Jm1, shear_modulus_stored);
+      gradient_displacement, C_inv, J_pow, Jm1, shear_modulus_stored, cell, q);
 
     for(unsigned int i = 0; i < N_FIBER_FAMILIES; ++i)
     {
@@ -1237,15 +1259,28 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
                                  symmetric_tensor const & C_inv,
                                  scalar const &           J_pow,
                                  scalar const &           Jm1,
-                                 scalar const &           shear_modulus) const
+                                 scalar const &           shear_modulus,
+                                 unsigned int const       cell,
+                                 unsigned int const       q) const
 {
   symmetric_tensor S =
     compute_E_scaled<dim, Number, scalar, stable_formulation>(gradient_displacement,
                                                               2.0 * shear_modulus * J_pow);
 
-  add_scaled_identity(S,
-                      -ONE_THIRD * trace(S) +
-                        (0.5 * bulk_modulus) * compute_JJm1<Number, stable_formulation>(Jm1));
+  if(data.stiffness_scaling == nullptr)
+  {
+    add_scaled_identity(S,
+                        -ONE_THIRD * trace(S) +
+                          (0.5 * bulk_modulus) * compute_JJm1<Number, stable_formulation>(Jm1));
+  }
+  else
+  {
+    add_scaled_identity(S,
+                        -ONE_THIRD * trace(S) +
+                          (0.5 * bulk_modulus *
+                           stiffness_scaling_coefficients.get_coefficient_cell(cell, q)) *
+                            compute_JJm1<Number, stable_formulation>(Jm1));
+  }
 
   return compute_symmetric_product(C_inv, S);
 }
@@ -1295,9 +1330,9 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 {
   if(shear_modulus_is_variable)
   {
-    shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+    shear_modulus_stored =
+      stiffness_scaling_coefficients.get_coefficient_cell(cell, q) * shear_modulus;
   }
-
 
   if constexpr(cache_level == 0)
   {
@@ -1426,7 +1461,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   {
     if(shear_modulus_is_variable)
     {
-      shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+      shear_modulus_stored =
+        stiffness_scaling_coefficients.get_coefficient_cell(cell, q) * shear_modulus;
     }
 
     symmetric_tensor tau;
@@ -1450,7 +1486,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       symmetric_tensor const e =
         compute_e_scaled<dim, Number, Number, stable_formulation>(gradient_displacement, 1.0);
 
-      tau = compute_tau_stable(tau, F, e, Jm1, J_pow, shear_modulus_stored);
+      tau = compute_tau_stable(tau, F, e, Jm1, J_pow, shear_modulus_stored, cell, q);
     }
     else
     {
@@ -1487,7 +1523,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 {
   if(shear_modulus_is_variable)
   {
-    shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+    shear_modulus_stored =
+      stiffness_scaling_coefficients.get_coefficient_cell(cell, q) * shear_modulus;
   }
 
   symmetric_tensor const E =
@@ -1512,7 +1549,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   {
     symmetric_tensor const e =
       compute_e_scaled<dim, Number, Number, stable_formulation>(gradient_displacement, 1.0);
-    tau = compute_tau_stable(tau, F, e, Jm1, J_pow, shear_modulus_stored);
+    tau = compute_tau_stable(tau, F, e, Jm1, J_pow, shear_modulus_stored, cell, q);
   }
   else
   {
@@ -1560,7 +1597,9 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
                      symmetric_tensor const & e,
                      scalar const &           Jm1,
                      scalar const &           J_pow,
-                     scalar const &           shear_modulus) const
+                     scalar const &           shear_modulus,
+                     unsigned int const       cell,
+                     unsigned int const       q) const
 {
   // Assume that `S_fiber` holds fiber term pull-back, i.e.,
   // sum_(j=4,6) c_3 * E_i * H_i
@@ -1572,9 +1611,20 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   // Add remaining terms.
   tau += (2.0 * shear_modulus * J_pow) * e;
 
-  add_scaled_identity(tau,
-                      -TWO_THIRDS * shear_modulus * J_pow * trace(e) +
-                        (0.5 * bulk_modulus) * compute_JJm1<Number, stable_formulation>(Jm1));
+  if(data.stiffness_scaling == nullptr)
+  {
+    add_scaled_identity(tau,
+                        -TWO_THIRDS * shear_modulus * J_pow * trace(e) +
+                          (0.5 * bulk_modulus) * compute_JJm1<Number, stable_formulation>(Jm1));
+  }
+  else
+  {
+    add_scaled_identity(tau,
+                        -TWO_THIRDS * shear_modulus * J_pow * trace(e) +
+                          (0.5 * bulk_modulus *
+                           stiffness_scaling_coefficients.get_coefficient_cell(cell, q)) *
+                            compute_JJm1<Number, stable_formulation>(Jm1));
+  }
 
   return tau;
 }
@@ -1625,7 +1675,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 {
   if(shear_modulus_is_variable)
   {
-    shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+    shear_modulus_stored =
+      stiffness_scaling_coefficients.get_coefficient_cell(cell, q) * shear_modulus;
   }
 
   if constexpr(cache_level == 0)
@@ -1717,7 +1768,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
 {
   if(shear_modulus_is_variable)
   {
-    shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
+    shear_modulus_stored =
+      stiffness_scaling_coefficients.get_coefficient_cell(cell, q) * shear_modulus;
   }
 
   if constexpr(cache_level < 2)
