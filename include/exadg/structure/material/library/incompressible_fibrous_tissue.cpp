@@ -65,7 +65,8 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     fiber_switch_limit(data.fiber_switch_limit),
     orientation_vectors_provided(data.e1_orientations != nullptr or
                                  data.e2_orientations != nullptr),
-    shear_modulus_is_variable(data.shear_modulus_function != nullptr),
+    shear_modulus_is_variable(data.shear_modulus_function != nullptr or
+                              data.stiffness_scaling != nullptr),
     spatial_integration(spatial_integration),
     force_material_residual(force_material_residual)
 {
@@ -76,13 +77,13 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   if(shear_modulus_is_variable)
   {
     // Allocate vectors for variable coefficients and initialize with constant values.
+    // This is an approximation only, but is overwritten in `cell_loop_set_coefficients()`.
     shear_modulus_coefficients.initialize(matrix_free, quad_index, false, false);
     shear_modulus_coefficients.set_coefficients(shear_modulus);
   }
 
-  // Initialize linearization cache and fill with values corresponding to
-  // the initial linearization vector assumed to be a zero displacement
-  // vector if possible.
+  // Initialize linearization cache and fill with values corresponding to the initial linearization
+  // vector assumed to be a zero displacement vector.
   if constexpr(cache_level > 0)
   {
     Jm1_coefficients.initialize(matrix_free, quad_index, false, false);
@@ -193,12 +194,10 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     AssertThrow(data.e1_orientations->size() == data.degree_per_level.size(),
                 dealii::ExcMessage("Provide degree for all levels for e1 and e2."));
 
-    typedef typename IncompressibleFibrousTissueData<dim>::VectorType VectorTypeOrientation;
-
-    e1_orientation = std::make_shared<VectorType>();
-    e2_orientation = std::make_shared<VectorType>();
-    matrix_free.initialize_dof_vector(*e1_orientation, dof_index);
-    matrix_free.initialize_dof_vector(*e2_orientation, dof_index);
+    e1_orientation_dof_vector = std::make_shared<VectorType>();
+    e2_orientation_dof_vector = std::make_shared<VectorType>();
+    matrix_free.initialize_dof_vector(*e1_orientation_dof_vector, dof_index);
+    matrix_free.initialize_dof_vector(*e2_orientation_dof_vector, dof_index);
 
 #ifdef LINK_TO_EXADGBIO
     // Read the suitable vector from binary format.
@@ -212,40 +211,123 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     bool found_match = false;
     for(unsigned int i = 0; i < data.e1_orientations->size(); ++i)
     {
-      if(e1_orientation->size() == (*data.e1_orientations)[i].size() and
+      if(e1_orientation_dof_vector->size() == (*data.e1_orientations)[i].size() and
          degree == data.degree_per_level[i])
       {
-        pcout << "Filling vector of size " << e1_orientation->size() << " (degree = " << degree
-              << ").\n";
+        pcout << "Filling orientation vectors of size " << e1_orientation_dof_vector->size()
+              << " (degree = " << degree << ").\n";
         found_match = true;
-        e1_orientation->copy_locally_owned_data_from((*data.e1_orientations)[i]);
-        e2_orientation->copy_locally_owned_data_from((*data.e2_orientations)[i]);
+        e1_orientation_dof_vector->copy_locally_owned_data_from((*data.e1_orientations)[i]);
+        e2_orientation_dof_vector->copy_locally_owned_data_from((*data.e2_orientations)[i]);
       }
     }
 
+    e1_orientation_dof_vector->update_ghost_values();
+    e2_orientation_dof_vector->update_ghost_values();
+
     if(not found_match)
     {
-      (*e1_orientation) = 0.0;
-      e1_orientation->add(1.0);
-      (*e1_orientation) = 0.0;
-      e1_orientation->add(1.0);
+      // We cannot set individual components, but we want them non-random and non-zero.
+      (*e1_orientation_dof_vector) = 0.0;
+      e1_orientation_dof_vector->add(1.0);
+      (*e2_orientation_dof_vector) = 0.0;
+      e2_orientation_dof_vector->add(1.0);
 
-      pcout << "Overwritten orientation vector of size " << e1_orientation->size()
+      pcout << "Overwritten orientation vectors of size " << e1_orientation_dof_vector->size()
             << " with dummy data.\n\n\n";
     }
     else
     {
-      pcout << "|E1|_2 = " << e1_orientation->l2_norm() << "\n"
-            << "|E2|_2 = " << e2_orientation->l2_norm() << "\n\n";
+      pcout << "|E1|_2 = " << e1_orientation_dof_vector->l2_norm() << "\n"
+            << "|E2|_2 = " << e2_orientation_dof_vector->l2_norm() << "\n\n";
     }
 #else
     AssertThrow(not orientation_vectors_provided,
                 dealii::ExcMessage(
                   "You must link against ExaDG-Bio to enable user-defined material orientations."));
 #endif
+  }
 
-    e1_orientation->update_ghost_values();
-    e2_orientation->update_ghost_values();
+  if(data.stiffness_scaling != nullptr)
+  {
+    AssertThrow(data.stiffness_scaling->size() > 0,
+                dealii::ExcMessage("Provide stiffness scaling vectors or `nullptr`."));
+
+    AssertThrow(data.stiffness_scaling->size() == data.degree_per_level.size(),
+                dealii::ExcMessage("Provide degree for all levels for stiffness scaling."));
+
+    stiffness_scaling_dof_vector = std::make_shared<VectorType>();
+    matrix_free.initialize_dof_vector(*stiffness_scaling_dof_vector, dof_index);
+
+#ifdef LINK_TO_EXADGBIO
+    // Read the suitable vector from binary format.
+    dealii::DoFHandler<dim> const & dof_handler = matrix_free.get_dof_handler(dof_index);
+    unsigned int const              degree      = dof_handler.get_fe().base_element(0).degree;
+    MPI_Comm const &                mpi_comm    = dof_handler.get_mpi_communicator();
+    dealii::ConditionalOStream      pcout(std::cout,
+                                     dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);
+
+    // Match the initialized vector with the given vectors.
+    bool found_match = false;
+    for(unsigned int i = 0; i < data.stiffness_scaling->size(); ++i)
+    {
+      if(stiffness_scaling_dof_vector->size() == (*data.stiffness_scaling)[i].size() and
+         degree == data.degree_per_level[i])
+      {
+        pcout << "Filling stiffness scaling vector of size " << stiffness_scaling_dof_vector->size()
+              << " (degree = " << degree << ").\n";
+        found_match = true;
+        stiffness_scaling_dof_vector->copy_locally_owned_data_from((*data.stiffness_scaling)[i]);
+      }
+    }
+
+    if(not found_match)
+    {
+      (*stiffness_scaling_dof_vector) = 0.0;
+      stiffness_scaling_dof_vector->add(1.0);
+
+      pcout << "Overwritten stiffness scaling DoF vector of size "
+            << stiffness_scaling_dof_vector->size() << " with dummy data.\n\n\n";
+    }
+    else
+    {
+      // Compute min, max and mean values of shear modulus.
+      Number       min               = 1.0e20;
+      Number       max               = -1.0e20;
+      Number       mean              = 0.0;
+      unsigned int n_nonzero_entries = 0;
+      for(unsigned int i = 0; i < stiffness_scaling_dof_vector->locally_owned_size(); ++i)
+      {
+        Number const & val = stiffness_scaling_dof_vector->local_element(i);
+        if(std::abs(val) > 0.0)
+        {
+          if(val < min)
+          {
+            min = val;
+          }
+          if(val > max)
+          {
+            max = val;
+          }
+          mean += val;
+          n_nonzero_entries += 1;
+        }
+      }
+      min  = dealii::Utilities::MPI::min(min, mpi_comm);
+      max  = dealii::Utilities::MPI::max(max, mpi_comm);
+      mean = dealii::Utilities::MPI::sum(mean, mpi_comm) /
+             dealii::Utilities::MPI::sum(n_nonzero_entries, mpi_comm);
+
+      pcout << "  Stiffness scaling vector read with (ignoring zero entries):\n"
+            << "  min {eta[|eta| > 0.0]} = " << min << "\n"
+            << "  max {eta[|eta| > 0.0]} = " << max << "\n"
+            << "  mean{eta[|eta| > 0.0]} = " << mean << "\n\n";
+    }
+#else
+    AssertThrow(not orientation_vectors_provided,
+                dealii::ExcMessage(
+                  "You must link against ExaDG-Bio to enable user-defined material orientations."));
+#endif
   }
 
   // Set the coefficients on the integration point level.
@@ -260,8 +342,13 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   // Release vectors after initialization, since cell data is stored.
   if(orientation_vectors_provided)
   {
-    e1_orientation.reset();
-    e2_orientation.reset();
+    e1_orientation_dof_vector.reset();
+    e2_orientation_dof_vector.reset();
+  }
+
+  if(data.stiffness_scaling != nullptr)
+  {
+    stiffness_scaling_dof_vector.reset();
   }
 }
 
@@ -280,6 +367,7 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
   IntegratorCell integrator(matrix_free, dof_index, quad_index);
   IntegratorCell integrator_e1(matrix_free, dof_index, quad_index);
   IntegratorCell integrator_e2(matrix_free, dof_index, quad_index);
+  IntegratorCell integrator_stiffness_scaling(matrix_free, dof_index, quad_index);
 
   // The material coordinate system is initialized constant in the entire domain.
   // Phi is the angle from the circumferential vector E_1 towards the longitudinal
@@ -352,11 +440,18 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     if(orientation_vectors_provided)
     {
       integrator_e1.reinit(cell);
-      integrator_e1.read_dof_values(*e1_orientation);
+      integrator_e1.read_dof_values(*e1_orientation_dof_vector);
       integrator_e1.evaluate(dealii::EvaluationFlags::values);
       integrator_e2.reinit(cell);
-      integrator_e2.read_dof_values(*e2_orientation);
+      integrator_e2.read_dof_values(*e2_orientation_dof_vector);
       integrator_e2.evaluate(dealii::EvaluationFlags::values);
+    }
+
+    if(data.stiffness_scaling != nullptr)
+    {
+      integrator_stiffness_scaling.reinit(cell);
+      integrator_stiffness_scaling.read_dof_values(*stiffness_scaling_dof_vector);
+      integrator_stiffness_scaling.evaluate(dealii::EvaluationFlags::values);
     }
 
     // loop over all quadrature points
@@ -365,10 +460,30 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
       // set shear modulus coefficients.
       if(shear_modulus_is_variable)
       {
-        scalar shear_modulus_vec =
-          FunctionEvaluator<0, dim, Number>::value(*(data.shear_modulus_function),
-                                                   integrator.quadrature_point(q),
-                                                   0.0 /*time*/);
+        scalar shear_modulus_vec;
+
+        if(data.shear_modulus_function != nullptr)
+        {
+          shear_modulus_vec =
+            FunctionEvaluator<0, dim, Number>::value(*(data.shear_modulus_function),
+                                                     integrator.quadrature_point(q),
+                                                     0.0 /*time*/);
+        }
+        else if(data.stiffness_scaling != nullptr)
+        {
+          // Scalar stiffness scaling coefficient is stored in component 0 of the vector-valued DoF
+          // vector.
+          vector const stiffness_scaling = integrator_stiffness_scaling.get_value(q);
+          shear_modulus_vec              = stiffness_scaling[0] * shear_modulus_stored;
+        }
+        else
+        {
+          shear_modulus_vec = shear_modulus_stored;
+          AssertThrow(data.shear_modulus_function == nullptr and data.stiffness_scaling == nullptr,
+                      dealii::ExcMessage("Shear modulus function or DoF vector needed "
+                                         "to assign spatially varying shear modulus."));
+        }
+
         shear_modulus_coefficients.set_coefficient_cell(cell, q, shear_modulus_vec);
       }
 

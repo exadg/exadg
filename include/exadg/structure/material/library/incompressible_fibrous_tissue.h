@@ -54,6 +54,7 @@ struct IncompressibleFibrousTissueData : public MaterialData
     double const &                                 fiber_switch_limit,
     std::shared_ptr<std::vector<VectorType> const> e1_orientations,
     std::shared_ptr<std::vector<VectorType> const> e2_orientations,
+    std::shared_ptr<std::vector<VectorType> const> stiffness_scaling,
     std::vector<unsigned int> const                degree_per_level,
     double const &                                 point_tolerance,
     Type2D const &                                 type_two_dim,
@@ -71,6 +72,7 @@ struct IncompressibleFibrousTissueData : public MaterialData
       fiber_switch_limit(fiber_switch_limit),
       e1_orientations(e1_orientations),
       e2_orientations(e2_orientations),
+      stiffness_scaling(stiffness_scaling),
       degree_per_level(degree_per_level),
       point_tolerance(point_tolerance),
       type_two_dim(type_two_dim)
@@ -92,6 +94,7 @@ struct IncompressibleFibrousTissueData : public MaterialData
 
   std::shared_ptr<std::vector<VectorType> const> e1_orientations;
   std::shared_ptr<std::vector<VectorType> const> e2_orientations;
+  std::shared_ptr<std::vector<VectorType> const> stiffness_scaling;
   std::vector<unsigned int> const                degree_per_level;
   double                                         point_tolerance;
 
@@ -369,8 +372,9 @@ private:
   mutable std::vector<VariableCoefficients<vector>> fiber_direction_M_1;
   mutable std::vector<VariableCoefficients<vector>> fiber_direction_M_2;
 
-  std::shared_ptr<VectorType> e1_orientation;
-  std::shared_ptr<VectorType> e2_orientation;
+  std::shared_ptr<VectorType> e1_orientation_dof_vector;
+  std::shared_ptr<VectorType> e2_orientation_dof_vector;
+  std::shared_ptr<VectorType> stiffness_scaling_dof_vector;
 
   // scalar cache level
   mutable VariableCoefficients<scalar> Jm1_coefficients;
