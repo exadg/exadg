@@ -662,8 +662,15 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
     scalar const fiber_switch = compute_fiber_switch(M_1, E);
 
     // Enforce an upper bound for the computed value.
-    return (fiber_switch * (2.0 * fiber_k_1) *
-            exp_limited<Number>(fiber_k_2 * E_i * E_i, compute_numerical_upper_bound(fiber_k_1)));
+    dealii::VectorizedArray<Number> const fiber_k_1_used =
+      data.stiffness_scaling == nullptr ?
+        dealii::make_vectorized_array<Number>(data.fiber_k_1) :
+        fiber_k_1 * stiffness_scaling_coefficients.get_coefficient_cell(cell, q);
+
+    return (fiber_switch * (2.0 * fiber_k_1_used) *
+            exp_limited<Number>(fiber_k_2 * E_i * E_i,
+                                compute_numerical_upper_bound(
+                                  fiber_k_1 /* does not account for varying parameter */)));
   }
   else
   {
@@ -904,7 +911,7 @@ inline Number
 IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_level>::
   compute_numerical_upper_bound(Number const & fiber_k_1) const
 {
-  return (std::max(static_cast<Number>(1e10), fiber_k_1 * fiber_k_1 * fiber_k_1));
+  return (std::max(static_cast<Number>(1e10), dealii::Utilities::fixed_power<3>(fiber_k_1)));
 }
 
 template<int dim,
@@ -1712,7 +1719,9 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
                 F_times_H_i_times_FT;
     }
 
-    bound_tensor(result, compute_numerical_upper_bound(fiber_k_1));
+    bound_tensor(result,
+                 compute_numerical_upper_bound(
+                   fiber_k_1 /* does not account for varying parameter */));
     return result;
   }
   else if constexpr(cache_level == 1)
@@ -1743,7 +1752,9 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
                 F_times_H_i_times_FT;
     }
 
-    bound_tensor(result, compute_numerical_upper_bound(fiber_k_1));
+    bound_tensor(result,
+                 compute_numerical_upper_bound(
+                   fiber_k_1 /* does not account for varying parameter */));
     return result;
   }
   else
@@ -1804,7 +1815,9 @@ IncompressibleFibrousTissue<dim, Number, check_type, stable_formulation, cache_l
                 F_times_H_i_times_FT;
     }
 
-    bound_tensor(result, compute_numerical_upper_bound(fiber_k_1));
+    bound_tensor(result,
+                 compute_numerical_upper_bound(
+                   fiber_k_1 /* does not account for varying parameter */));
     return result;
   }
 }
