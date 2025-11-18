@@ -89,6 +89,7 @@ $(function(){ initResizable(false); });
 <div id="doc-content">
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classExaDG_1_1Structure_1_1Material-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">ExaDG::Structure::Material&lt; dim, Number &gt; Class Template Reference<span class="mlabels"><span class="mlabel abstract">abstract</span></span></div></div>
@@ -105,14 +106,35 @@ Inheritance diagram for ExaDG::Structure::Material&lt; dim, Number &gt;:</div>
   </map>
 </div></div>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a790587fbd960913e51589b67434feda9" id="r_a790587fbd960913e51589b67434feda9"><td class="memItemLeft" align="right" valign="top"><a id="a790587fbd960913e51589b67434feda9" name="a790587fbd960913e51589b67434feda9"></a>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<tr class="separator:a790587fbd960913e51589b67434feda9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae0e04ae783c10a2bbb75ab5429936c27" id="r_ae0e04ae783c10a2bbb75ab5429936c27"><td class="memItemLeft" align="right" valign="top"><a id="ae0e04ae783c10a2bbb75ab5429936c27" name="ae0e04ae783c10a2bbb75ab5429936c27"></a>
+typedef std::pair&lt; unsigned int, unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Range</b></td></tr>
+<tr class="separator:ae0e04ae783c10a2bbb75ab5429936c27"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acfbd7450e1faeeaf325d05dc247b49cb" id="r_acfbd7450e1faeeaf325d05dc247b49cb"><td class="memItemLeft" align="right" valign="top"><a id="acfbd7450e1faeeaf325d05dc247b49cb" name="acfbd7450e1faeeaf325d05dc247b49cb"></a>
+typedef CellIntegrator&lt; dim, dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>IntegratorCell</b></td></tr>
+<tr class="separator:acfbd7450e1faeeaf325d05dc247b49cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2f001b916783e167e924664f94f4deca" id="r_a2f001b916783e167e924664f94f4deca"><td class="memItemLeft" align="right" valign="top"><a id="a2f001b916783e167e924664f94f4deca" name="a2f001b916783e167e924664f94f4deca"></a>
+typedef dealii::VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>scalar</b></td></tr>
+<tr class="separator:a2f001b916783e167e924664f94f4deca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6d39300e3e36179c15b0221eec6f42fe" id="r_a6d39300e3e36179c15b0221eec6f42fe"><td class="memItemLeft" align="right" valign="top"><a id="a6d39300e3e36179c15b0221eec6f42fe" name="a6d39300e3e36179c15b0221eec6f42fe"></a>
+typedef dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>tensor</b></td></tr>
+<tr class="separator:a6d39300e3e36179c15b0221eec6f42fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a05685d82859be1c18591e036fd0f4a03" id="r_a05685d82859be1c18591e036fd0f4a03"><td class="memItemLeft" align="right" valign="top"><a id="a05685d82859be1c18591e036fd0f4a03" name="a05685d82859be1c18591e036fd0f4a03"></a>
+typedef dealii::SymmetricTensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>symmetric_tensor</b></td></tr>
+<tr class="separator:a05685d82859be1c18591e036fd0f4a03"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ab5d74ee299590a3f4344c3f690fc807c" id="r_ab5d74ee299590a3f4344c3f690fc807c"><td class="memItemLeft" align="right" valign="top"><a id="ab5d74ee299590a3f4344c3f690fc807c" name="ab5d74ee299590a3f4344c3f690fc807c"></a>
-virtual dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>second_piola_kirchhoff_stress</b> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;gradient_displacement, unsigned int const cell, unsigned int const q) const =0</td></tr>
-<tr class="separator:ab5d74ee299590a3f4344c3f690fc807c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afbeae9050a333d855a0b3a7c958ff71c" id="r_afbeae9050a333d855a0b3a7c958ff71c"><td class="memItemLeft" align="right" valign="top"><a id="afbeae9050a333d855a0b3a7c958ff71c" name="afbeae9050a333d855a0b3a7c958ff71c"></a>
-virtual dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>second_piola_kirchhoff_stress_displacement_derivative</b> (dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;gradient_increment, dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt; const &amp;deformation_gradient, unsigned int const cell, unsigned int const q) const =0</td></tr>
-<tr class="separator:afbeae9050a333d855a0b3a7c958ff71c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab93adb3ee106383e1efbfe9c5a0892fb" id="r_ab93adb3ee106383e1efbfe9c5a0892fb"><td class="memItemLeft" align="right" valign="top"><a id="ab93adb3ee106383e1efbfe9c5a0892fb" name="ab93adb3ee106383e1efbfe9c5a0892fb"></a>
+virtual symmetric_tensor&#160;</td><td class="memItemRight" valign="bottom"><b>second_piola_kirchhoff_stress</b> (tensor const &amp;gradient_displacement, unsigned int const cell, unsigned int const q) const =0</td></tr>
+<tr class="separator:ab93adb3ee106383e1efbfe9c5a0892fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4ab2894da3ab2fd24b25c22c4c06d3ff" id="r_a4ab2894da3ab2fd24b25c22c4c06d3ff"><td class="memItemLeft" align="right" valign="top"><a id="a4ab2894da3ab2fd24b25c22c4c06d3ff" name="a4ab2894da3ab2fd24b25c22c4c06d3ff"></a>
+virtual symmetric_tensor&#160;</td><td class="memItemRight" valign="bottom"><b>second_piola_kirchhoff_stress_displacement_derivative</b> (tensor const &amp;gradient_increment, tensor const &amp;deformation_gradient, unsigned int const cell, unsigned int const q) const =0</td></tr>
+<tr class="separator:a4ab2894da3ab2fd24b25c22c4c06d3ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/structure/material/<a class="el" href="material_8h_source.html">material.h</a></li>
