@@ -113,7 +113,7 @@ create_grid_and_set_boundary_ids_nozzle(
                                                LENGTH_INFLOW,
                                                tria_inflow);
   dealii::Tensor<1, dim> offset_inflow;
-  offset_inflow[2] = Z1_INFLOW;
+  offset_inflow[dim - 1] = Z1_INFLOW;
   dealii::GridTools::shift(offset_inflow, tria_inflow);
 
   /*
@@ -128,7 +128,7 @@ create_grid_and_set_boundary_ids_nozzle(
                                                LENGTH_CONE,
                                                tria_cone);
   dealii::Tensor<1, dim> offset_cone;
-  offset_cone[2] = Z1_CONE;
+  offset_cone[dim - 1] = Z1_CONE;
   dealii::GridTools::shift(offset_cone, tria_cone);
 
   // apply conical geometry: stretch vertex positions according to z-coordinate
@@ -136,20 +136,20 @@ create_grid_and_set_boundary_ids_nozzle(
   {
     for(auto const & v : cell->vertex_indices())
     {
-      if(cell->vertex(v)[2] > Z1_CONE + 1.e-10)
+      if(cell->vertex(v)[dim - 1] > Z1_CONE + 1.e-10)
       {
         dealii::Point<dim> point_2d;
-        double const       z = cell->vertex(v)[2];
-        point_2d[2]          = z;
+        double const       z = cell->vertex(v)[dim - 1];
+        point_2d[dim - 1]    = z;
 
         // note that this value is only valid for the current dealii implementation of hyper_ball!
         if(std::abs((cell->vertex(v) - point_2d).norm() - 2.485281374239e-03 / 6.0e-3 * R_OUTER) <
              1.e-10 or
            std::abs((cell->vertex(v) - point_2d).norm() - R_OUTER) < 1.e-10)
         {
-          cell->vertex(v)[0] *= 1.0 - (cell->vertex(v)[2] - Z1_CONE) / (Z2_CONE - Z1_CONE) *
+          cell->vertex(v)[0] *= 1.0 - (cell->vertex(v)[dim - 1] - Z1_CONE) / (Z2_CONE - Z1_CONE) *
                                         (R_OUTER - R_INNER) / R_OUTER;
-          cell->vertex(v)[1] *= 1.0 - (cell->vertex(v)[2] - Z1_CONE) / (Z2_CONE - Z1_CONE) *
+          cell->vertex(v)[1] *= 1.0 - (cell->vertex(v)[dim - 1] - Z1_CONE) / (Z2_CONE - Z1_CONE) *
                                         (R_OUTER - R_INNER) / R_OUTER;
         }
       }
@@ -168,7 +168,7 @@ create_grid_and_set_boundary_ids_nozzle(
                                                LENGTH_THROAT,
                                                tria_throat);
   dealii::Tensor<1, dim> offset_throat;
-  offset_throat[2] = Z1_THROAT;
+  offset_throat[dim - 1] = Z1_THROAT;
   dealii::GridTools::shift(offset_throat, tria_throat);
 
   /*
@@ -203,7 +203,7 @@ create_grid_and_set_boundary_ids_nozzle(
                                                LENGTH_OUTFLOW,
                                                tria_outflow);
   dealii::Tensor<1, dim> offset_outflow;
-  offset_outflow[2] = Z1_OUTFLOW;
+  offset_outflow[dim - 1] = Z1_OUTFLOW;
   dealii::GridTools::shift(offset_outflow, tria_outflow);
 
   /*
@@ -232,7 +232,7 @@ create_grid_and_set_boundary_ids_nozzle(
   for(auto cell : current_tria->cell_iterators())
   {
     // INFLOW
-    if(cell->center()[2] < Z2_INFLOW)
+    if(cell->center()[dim - 1] < Z2_INFLOW)
     {
       for(auto const & f : cell->face_indices())
       {
@@ -241,7 +241,7 @@ create_grid_and_set_boundary_ids_nozzle(
           bool face_at_sphere_boundary = true;
           for(auto const & v : cell->face(f)->vertex_indices())
           {
-            dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
+            dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[dim - 1]);
             if(std::abs((cell->face(f)->vertex(v) - point).norm() - R_OUTER) > 1e-12)
             {
               face_at_sphere_boundary = false;
@@ -261,7 +261,7 @@ create_grid_and_set_boundary_ids_nozzle(
       }
     }
     // CONE
-    else if(cell->center()[2] > Z1_CONE and cell->center()[2] < Z2_CONE)
+    else if(cell->center()[dim - 1] > Z1_CONE and cell->center()[dim - 1] < Z2_CONE)
     {
       for(auto const & f : cell->face_indices())
       {
@@ -273,7 +273,7 @@ create_grid_and_set_boundary_ids_nozzle(
 
           for(auto const & v : cell->face(f)->vertex_indices())
           {
-            double const z = cell->face(f)->vertex(v)[2];
+            double const z = cell->face(f)->vertex(v)[dim - 1];
             if(z > max_z)
               max_z = z;
             if(z < min_z)
@@ -301,7 +301,7 @@ create_grid_and_set_boundary_ids_nozzle(
       }
     }
     // THROAT
-    else if(cell->center()[2] > Z1_THROAT and cell->center()[2] < Z2_THROAT)
+    else if(cell->center()[dim - 1] > Z1_THROAT and cell->center()[dim - 1] < Z2_THROAT)
     {
       for(auto const & f : cell->face_indices())
       {
@@ -310,7 +310,7 @@ create_grid_and_set_boundary_ids_nozzle(
           bool face_at_sphere_boundary = true;
           for(auto const & v : cell->face(f)->vertex_indices())
           {
-            dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
+            dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[dim - 1]);
             if(std::abs((cell->face(f)->vertex(v) - point).norm() - R_INNER) > 1e-12)
             {
               face_at_sphere_boundary = false;
@@ -330,9 +330,9 @@ create_grid_and_set_boundary_ids_nozzle(
       }
     }
     // OUTFLOW
-    else if(cell->center()[2] > Z1_OUTFLOW and cell->center()[2] < Z2_OUTFLOW)
+    else if(cell->center()[dim - 1] > Z1_OUTFLOW and cell->center()[dim - 1] < Z2_OUTFLOW)
     {
-      dealii::Point<dim> point2 = dealii::Point<dim>(0, 0, cell->center()[2]);
+      dealii::Point<dim> point2 = dealii::Point<dim>(0, 0, cell->center()[dim - 1]);
 
       // cylindrical manifold for outer cell layers
       if((cell->center() - point2).norm() > R_INNER / std::sqrt(2.0))
@@ -346,7 +346,7 @@ create_grid_and_set_boundary_ids_nozzle(
           bool face_at_sphere_boundary = true;
           for(auto const & v : cell->face(f)->vertex_indices())
           {
-            dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
+            dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[dim - 1]);
             if(std::abs((cell->face(f)->vertex(v) - point).norm() - R_INNER) > 1e-12 or
                (cell->center() - point2).norm() > R_INNER / std::sqrt(2.0))
             {
@@ -425,13 +425,13 @@ create_grid_and_set_boundary_ids_nozzle(
     for(auto const & f : cell->face_indices())
     {
       // inflow boundary on the left has ID = 1
-      if((std::fabs(cell->face(f)->center()[2] - Z1_INFLOW) < 1e-12))
+      if((std::fabs(cell->face(f)->center()[dim - 1] - Z1_INFLOW) < 1e-12))
       {
         cell->face(f)->set_boundary_id(1);
       }
 
       // outflow boundary on the right has ID = 2
-      if((std::fabs(cell->face(f)->center()[2] - Z2_OUTFLOW) < 1e-12))
+      if((std::fabs(cell->face(f)->center()[dim - 1] - Z2_OUTFLOW) < 1e-12))
       {
         cell->face(f)->set_boundary_id(2);
       }
@@ -458,7 +458,7 @@ create_grid_and_set_boundary_ids_precursor(
                                                LENGTH_PRECURSOR,
                                                tria);
   dealii::Tensor<1, dim> offset = dealii::Tensor<1, dim>();
-  offset[2]                     = Z1_PRECURSOR;
+  offset[dim - 1]               = Z1_PRECURSOR;
   dealii::GridTools::shift(offset, tria);
 
   /*
@@ -475,7 +475,7 @@ create_grid_and_set_boundary_ids_precursor(
       bool face_at_sphere_boundary = true;
       for(auto const & v : cell->face(f)->vertex_indices())
       {
-        dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
+        dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[dim - 1]);
 
         if(std::abs((cell->face(f)->vertex(v) - point).norm() - R_OUTER) > 1e-12)
           face_at_sphere_boundary = false;
@@ -516,13 +516,13 @@ create_grid_and_set_boundary_ids_precursor(
     for(auto const & face : cell->face_indices())
     {
       // left boundary
-      if((std::fabs(cell->face(face)->center()[2] - Z1_PRECURSOR) < 1e-12))
+      if((std::fabs(cell->face(face)->center()[dim - 1] - Z1_PRECURSOR) < 1e-12))
       {
         cell->face(face)->set_boundary_id(0 + 10);
       }
 
       // right boundary
-      if((std::fabs(cell->face(face)->center()[2] - Z2_PRECURSOR) < 1e-12))
+      if((std::fabs(cell->face(face)->center()[dim - 1] - Z2_PRECURSOR) < 1e-12))
       {
         cell->face(face)->set_boundary_id(1 + 10);
       }

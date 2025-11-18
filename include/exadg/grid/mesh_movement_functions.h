@@ -106,16 +106,16 @@ private:
           solution =
             std::sin(2.0 * pi * (x(1) - left) * data.spatial_number_of_oscillations / width) *
             data.amplitude *
-            (dim == 3 ?
-               std::sin(2.0 * pi * (x(2) - left) * data.spatial_number_of_oscillations / width) :
-               1.0);
+            (dim == 3 ? std::sin(2.0 * pi * (x(dim - 1) - left) *
+                                 data.spatial_number_of_oscillations / width) :
+                        1.0);
         else if(coordinate_direction == 1)
           solution =
             std::sin(2.0 * pi * (x(0) - left) * data.spatial_number_of_oscillations / width) *
             data.amplitude *
-            (dim == 3 ?
-               std::sin(2.0 * pi * (x(2) - left) * data.spatial_number_of_oscillations / width) :
-               1.0);
+            (dim == 3 ? std::sin(2.0 * pi * (x(dim - 1) - left) *
+                                 data.spatial_number_of_oscillations / width) :
+                        1.0);
         else if(coordinate_direction == 2)
           solution =
             std::sin(2.0 * pi * (x(0) - left) * data.spatial_number_of_oscillations / width) *
@@ -129,20 +129,20 @@ private:
             std::sin(pi * (x(0) - left) * data.spatial_number_of_oscillations / width) *
             std::sin(2.0 * pi * (x(1) - left) * data.spatial_number_of_oscillations / width) *
             data.amplitude *
-            (dim == 3 ?
-               std::sin(2.0 * pi * (x(2) - left) * data.spatial_number_of_oscillations / width) :
-               1.0);
+            (dim == 3 ? std::sin(2.0 * pi * (x(dim - 1) - left) *
+                                 data.spatial_number_of_oscillations / width) :
+                        1.0);
         else if(coordinate_direction == 1)
           solution =
             std::sin(pi * (x(1) - left) * data.spatial_number_of_oscillations / width) *
             std::sin(2.0 * pi * (x(0) - left) * data.spatial_number_of_oscillations / width) *
             data.amplitude *
-            (dim == 3 ?
-               std::sin(2.0 * pi * (x(2) - left) * data.spatial_number_of_oscillations / width) :
-               1.0);
+            (dim == 3 ? std::sin(2.0 * pi * (x(dim - 1) - left) *
+                                 data.spatial_number_of_oscillations / width) :
+                        1.0);
         else if(coordinate_direction == 2)
           solution =
-            std::sin(pi * (x(2) - left) * data.spatial_number_of_oscillations / width) *
+            std::sin(pi * (x(dim - 1) - left) * data.spatial_number_of_oscillations / width) *
             std::sin(2.0 * pi * (x(0) - left) * data.spatial_number_of_oscillations / width) *
             data.amplitude *
             std::sin(2.0 * pi * (x(1) - left) * data.spatial_number_of_oscillations / width);
@@ -247,7 +247,7 @@ private:
                      (dim == 3 ? std::sin(2 * pi * (x(2.0) - (depth / 2)) / depth) : 1.0);
         else if(coordinate_direction == 1)
           solution = std::sin(2.0 * pi * (x(0) - (length / 2.0)) / length) * data.amplitude *
-                     (dim == 3 ? std::sin(2 * pi * (x(2) - (depth / 2.0)) / depth) : 1.0);
+                     (dim == 3 ? std::sin(2 * pi * (x(dim - 1) - (depth / 2.0)) / depth) : 1.0);
         else if(coordinate_direction == 2)
           solution = std::sin(2.0 * pi * (x(1) - (height / 2.0)) / height) * data.amplitude *
                      std::sin(2.0 * pi * (x(0) - (length / 2.0)) / length);
