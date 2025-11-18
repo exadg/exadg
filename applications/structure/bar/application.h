@@ -178,10 +178,10 @@ template<int dim>
 class SolutionNBC : public dealii::Function<dim>
 {
 public:
-  SolutionNBC(double length, double area_force, double volume_force, double E_youngs_modulus)
+  SolutionNBC(double length, double area_force, double volume_force, double youngs_modulus)
     : dealii::Function<dim>(dim),
-      A(-volume_force / (2.0 * E_youngs_modulus)),
-      B(area_force / E_youngs_modulus - length * 2.0 * A)
+      A(-volume_force / (2.0 * youngs_modulus)),
+      B(area_force / youngs_modulus - length * 2.0 * A)
   {
   }
 
@@ -204,9 +204,9 @@ template<int dim>
 class SolutionDBC : public dealii::Function<dim>
 {
 public:
-  SolutionDBC(double length, double displacement, double volume_force, double E_youngs_modulus)
+  SolutionDBC(double length, double displacement, double volume_force, double youngs_modulus)
     : dealii::Function<dim>(dim),
-      A(-volume_force / (2.0 * E_youngs_modulus)),
+      A(-volume_force / (2.0 * youngs_modulus)),
       B(displacement / length - A * length)
   {
   }
@@ -659,12 +659,12 @@ private:
 
     if(this->param.material_type == MaterialType::StVenantKirchhoff)
     {
-      Type2D const two_dim_type = Type2D::PlaneStress;
-      double const nu           = 0.3;
+      Type2D const two_dim_type   = Type2D::PlaneStress;
+      double const poissons_ratio = 0.3;
       this->material_descriptor->insert(
         Pair(0,
              new StVenantKirchhoffData<dim>(
-               this->param.material_type, E_youngs_modulus, nu, two_dim_type)));
+               this->param.material_type, youngs_modulus, poissons_ratio, two_dim_type)));
     }
     else if(this->param.material_type == MaterialType::IncompressibleNeoHookean)
     {
@@ -719,12 +719,12 @@ private:
     if(boundary_type == BoundaryType::Dirichlet)
     {
       pp_data.error_data.analytical_solution.reset(
-        new SolutionDBC<dim>(this->length, this->displacement, vol_force, this->E_youngs_modulus));
+        new SolutionDBC<dim>(this->length, this->displacement, vol_force, this->youngs_modulus));
     }
     else if(boundary_type == BoundaryType::Neumann)
     {
       pp_data.error_data.analytical_solution.reset(
-        new SolutionNBC<dim>(this->length, this->area_force, vol_force, this->E_youngs_modulus));
+        new SolutionNBC<dim>(this->length, this->area_force, vol_force, this->youngs_modulus));
     }
     else
     {
@@ -769,8 +769,8 @@ private:
   bool               adaptive_refinement = false;
   unsigned int const repetitions0 = 4, repetitions1 = 1, repetitions2 = 1;
 
-  MaterialType material_type    = MaterialType::Undefined;
-  double const E_youngs_modulus = 200.0;
+  MaterialType material_type  = MaterialType::Undefined;
+  double const youngs_modulus = 200.0;
 
   double const start_time = 0.0;
   double const end_time   = 100.0;

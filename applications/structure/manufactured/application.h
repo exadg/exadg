@@ -457,7 +457,7 @@ private:
     Type2D const       two_dim_type = Type2D::PlaneStrain;
 
     this->material_descriptor->insert(
-      Pair(0, new StVenantKirchhoffData<dim>(type, E, nu, two_dim_type)));
+      Pair(0, new StVenantKirchhoffData<dim>(type, youngs_modulus, poissons_ratio, two_dim_type)));
   }
 
   void
@@ -504,9 +504,10 @@ private:
 
   double length = 1.0, height = 1.0, width = 1.0;
 
-  double const E  = 1.0;
-  double const nu = 0.3;
-  double const f0 = E * (1.0 - nu) / (1 + nu) / (1.0 - 2.0 * nu); // plane strain
+  double const youngs_modulus = 1.0;
+  double const poissons_ratio = 0.3;
+  double const f0             = youngs_modulus * (1.0 - poissons_ratio) / (1 + poissons_ratio) /
+                    (1.0 - 2.0 * poissons_ratio); // plane strain
 
   double const density = 1.0;
 

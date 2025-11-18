@@ -29,10 +29,10 @@ double const U_MEAN          = 10;
 double const FLUID_VISCOSITY = 1;
 double const FLUID_DENSITY   = 1;
 
-double const DENSITY_STRUCTURE       = 3.0e3;
-double const POISSON_RATIO_STRUCTURE = 0.3;
+double const DENSITY_STRUCTURE        = 3.0e3;
+double const POISSONS_RATIO_STRUCTURE = 0.3;
 // 1538462 being the shear modulus
-double const E_STRUCTURE = 1538462 * 2.0 * (1.0 + POISSON_RATIO_STRUCTURE);
+double const YOUNGS_MODULUS_STRUCTURE = 1538462 * 2.0 * (1.0 + POISSONS_RATIO_STRUCTURE);
 
 // physical dimensions (diameter D and center coordinate Y_C can be varied)
 double const X_0         = -3.0; // origin (x-coordinate)
@@ -607,12 +607,14 @@ private:
     MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlaneStrain;
 
-    double const                           E       = 1.0;
-    double const                           poisson = 0.3;
-    std::shared_ptr<dealii::Function<dim>> E_function;
-    E_function.reset(new SpatiallyVaryingE<dim>());
+    double const                           youngs_modulus = 1.0;
+    double const                           poissons_ratio = 0.3;
+    std::shared_ptr<dealii::Function<dim>> youngs_modulus_function;
+    youngs_modulus_function.reset(new SpatiallyVaryingE<dim>());
     material_descriptor->insert(
-      Pair(0, new StVenantKirchhoffData<dim>(type, E, poisson, two_dim_type, E_function)));
+      Pair(0,
+           new StVenantKirchhoffData<dim>(
+             type, youngs_modulus, poissons_ratio, two_dim_type, youngs_modulus_function)));
   }
 
   void
@@ -810,8 +812,11 @@ public:
     MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlaneStrain;
 
-    material_descriptor->insert(Pair(
-      0, new StVenantKirchhoffData<dim>(type, E_STRUCTURE, POISSON_RATIO_STRUCTURE, two_dim_type)));
+    material_descriptor->insert(Pair(0,
+                                     new StVenantKirchhoffData<dim>(type,
+                                                                    YOUNGS_MODULUS_STRUCTURE,
+                                                                    POISSONS_RATIO_STRUCTURE,
+                                                                    two_dim_type)));
   }
 
   std::shared_ptr<Structure::PostProcessor<dim, Number>>

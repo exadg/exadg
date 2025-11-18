@@ -30,9 +30,9 @@ namespace ExaDG
 double const FLUID_VISCOSITY = 3.0e-6;
 double const FLUID_DENSITY   = 1.0e3;
 
-double const DENSITY_STRUCTURE       = 1.2e3;
-double const POISSON_RATIO_STRUCTURE = 0.3;
-double const E_STRUCTURE             = 3.0e5;
+double const DENSITY_STRUCTURE        = 1.2e3;
+double const POISSONS_RATIO_STRUCTURE = 0.3;
+double const YOUNGS_MODULUS_STRUCTURE = 3.0e5;
 
 double const R_INNER = 0.5e-2;
 double const R_OUTER = 0.6e-2;
@@ -621,10 +621,10 @@ private:
     MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlaneStress;
 
-    double const E       = 1.0;
-    double const poisson = 0.3;
+    double const youngs_modulus = 1.0;
+    double const poissons_ratio = 0.3;
     material_descriptor->insert(
-      Pair(0, new StVenantKirchhoffData<dim>(type, E, poisson, two_dim_type)));
+      Pair(0, new StVenantKirchhoffData<dim>(type, youngs_modulus, poissons_ratio, two_dim_type)));
   }
 
   void
@@ -839,8 +839,11 @@ private:
     MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlaneStress;
 
-    material_descriptor->insert(Pair(
-      0, new StVenantKirchhoffData<dim>(type, E_STRUCTURE, POISSON_RATIO_STRUCTURE, two_dim_type)));
+    material_descriptor->insert(Pair(0,
+                                     new StVenantKirchhoffData<dim>(type,
+                                                                    YOUNGS_MODULUS_STRUCTURE,
+                                                                    POISSONS_RATIO_STRUCTURE,
+                                                                    two_dim_type)));
   }
 
   void
