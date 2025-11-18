@@ -86,7 +86,7 @@ IncompressibleNeoHookean<dim, Number>::cell_loop_set_coefficients(
 }
 
 template<int dim, typename Number>
-dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+typename IncompressibleNeoHookean<dim, Number>::symmetric_tensor
 IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
   tensor const &     gradient_displacement,
   unsigned int const cell,
@@ -97,23 +97,25 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress(
     shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
   }
 
-  tensor const F     = get_F<dim, Number>(gradient_displacement);
-  scalar const J     = determinant(F);
-  tensor const C     = transpose(F) * F;
-  tensor const C_inv = invert(C);
+  tensor const F       = get_F<dim, Number>(gradient_displacement);
+  scalar const J       = determinant(F);
+  scalar const trace_C = trace(compute_HT_times_H(F));
+
+  tensor const           F_inv = invert(F);
+  symmetric_tensor const C_inv = compute_H_times_HT(F_inv);
 
   // S_vol, i.e., penalty term enforcing J = 1.
-  tensor S = (data.bulk_modulus * 0.5 * (J * J - 1.0)) * C_inv;
+  symmetric_tensor S = (data.bulk_modulus * 0.5 * (J * J - 1.0)) * C_inv;
 
   // S_iso, isochoric term.
   S += (shear_modulus_stored * pow(J, static_cast<Number>(-2.0 * one_third))) *
-       add_identity<dim, Number>((-one_third * trace(C)) * C_inv);
+       add_identity<dim, Number>((-one_third * trace_C) * C_inv);
 
   return S;
 }
 
 template<int dim, typename Number>
-dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+typename IncompressibleNeoHookean<dim, Number>::symmetric_tensor
 IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacement_derivative(
   tensor const &     gradient_increment,
   tensor const &     deformation_gradient,
@@ -125,23 +127,21 @@ IncompressibleNeoHookean<dim, Number>::second_piola_kirchhoff_stress_displacemen
     shear_modulus_stored = shear_modulus_coefficients.get_coefficient_cell(cell, q);
   }
 
-  scalar const J   = determinant(deformation_gradient);
-  tensor const C   = transpose(deformation_gradient) * deformation_gradient;
-  scalar const I_1 = trace(C);
+  scalar const           J   = determinant(deformation_gradient);
+  symmetric_tensor const C   = compute_HT_times_H(deformation_gradient);
+  scalar const           I_1 = trace(C);
 
-  tensor const F_inv = invert(deformation_gradient);
-  tensor const C_inv = F_inv * transpose(F_inv);
-
-  scalar const one_over_J_times_Dd_J = trace(F_inv * gradient_increment);
-  scalar const Dd_I_1 = 2.0 * trace(transpose(gradient_increment) * deformation_gradient);
-  tensor const Dd_F_inv_times_transpose_F_inv =
+  tensor const           F_inv                 = invert(deformation_gradient);
+  symmetric_tensor const C_inv                 = compute_H_times_HT(F_inv);
+  scalar const           one_over_J_times_Dd_J = trace(F_inv * gradient_increment);
+  scalar const           Dd_I_1 = 2.0 * trace(transpose(gradient_increment) * deformation_gradient);
+  tensor const           Dd_F_inv_times_transpose_F_inv =
     -F_inv * (gradient_increment * F_inv) * transpose(F_inv);
-  tensor const Dd_C_inv =
-    Dd_F_inv_times_transpose_F_inv + transpose(Dd_F_inv_times_transpose_F_inv);
+  symmetric_tensor const Dd_C_inv = compute_H_plus_HT(Dd_F_inv_times_transpose_F_inv);
 
   // S_vol, i.e., penalty term enforcing J = 1.
-  tensor Dd_S = data.bulk_modulus *
-                ((J * J * one_over_J_times_Dd_J) * C_inv + (0.5 * (J * J - 1.0)) * Dd_C_inv);
+  symmetric_tensor Dd_S = data.bulk_modulus * ((J * J * one_over_J_times_Dd_J) * C_inv +
+                                               (0.5 * (J * J - 1.0)) * Dd_C_inv);
 
   // S_iso, isochoric term.
   Dd_S +=

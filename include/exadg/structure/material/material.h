@@ -37,6 +37,14 @@ template<int dim, typename Number>
 class Material
 {
 public:
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef std::pair<unsigned int, unsigned int>              Range;
+  typedef CellIntegrator<dim, dim, Number>                   IntegratorCell;
+
+  typedef dealii::VectorizedArray<Number>                                  scalar;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>          tensor;
+  typedef dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> symmetric_tensor;
+
   virtual ~Material()
   {
   }
@@ -45,24 +53,22 @@ public:
    * Evaluate 2nd Piola-Kirchhoff stress tensor given the gradient of the displacement field
    * with respect to the reference configuration (not to be confused with the deformation gradient).
    */
-  virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  second_piola_kirchhoff_stress(
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_displacement,
-    unsigned int const                                              cell,
-    unsigned int const                                              q) const = 0;
+  virtual symmetric_tensor
+  second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
+                                unsigned int const cell,
+                                unsigned int const q) const = 0;
 
   /*
    * Evaluate the directional derivative with respect to the displacement of the 2nd Piola-Kirchhoff
    * stress tensor given gradient of the displacment increment with respect to the reference
-   * configuration "gradient_increment" and deformation gradient at the current linearization point
-   * "deformation_gradient".
+   * configuration `gradient_increment` and deformation gradient at the current linearization point
+   * `deformation_gradient`.
    */
-  virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-  second_piola_kirchhoff_stress_displacement_derivative(
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & gradient_increment,
-    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & deformation_gradient,
-    unsigned int const                                              cell,
-    unsigned int const                                              q) const = 0;
+  virtual symmetric_tensor
+  second_piola_kirchhoff_stress_displacement_derivative(tensor const &     gradient_increment,
+                                                        tensor const &     deformation_gradient,
+                                                        unsigned int const cell,
+                                                        unsigned int const q) const = 0;
 };
 
 } // namespace Structure

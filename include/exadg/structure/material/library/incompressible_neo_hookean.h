@@ -64,12 +64,13 @@ template<int dim, typename Number>
 class IncompressibleNeoHookean : public Material<dim, Number>
 {
 public:
-  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
-  typedef std::pair<unsigned int, unsigned int>              Range;
-  typedef CellIntegrator<dim, dim, Number>                   IntegratorCell;
+  typedef typename Material<dim, Number>::VectorType     VectorType;
+  typedef typename Material<dim, Number>::Range          Range;
+  typedef typename Material<dim, Number>::IntegratorCell IntegratorCell;
 
-  typedef dealii::VectorizedArray<Number>                         scalar;
-  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
+  typedef typename Material<dim, Number>::scalar           scalar;
+  typedef typename Material<dim, Number>::tensor           tensor;
+  typedef typename Material<dim, Number>::symmetric_tensor symmetric_tensor;
 
   IncompressibleNeoHookean(dealii::MatrixFree<dim, Number> const &   matrix_free,
                            unsigned int const                        dof_index,
@@ -105,13 +106,12 @@ public:
    * S_iso = J^(-2/3) * ( I - 1/3 * I_1 * C^(-1) )
    *
    */
-
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  symmetric_tensor
   second_piola_kirchhoff_stress(tensor const &     gradient_displacement,
                                 unsigned int const cell,
                                 unsigned int const q) const final;
 
-  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  symmetric_tensor
   second_piola_kirchhoff_stress_displacement_derivative(tensor const &     gradient_increment,
                                                         tensor const &     deformation_gradient,
                                                         unsigned int const cell,
