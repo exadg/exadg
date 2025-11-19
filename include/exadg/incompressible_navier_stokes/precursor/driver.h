@@ -27,10 +27,12 @@
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor_base.h>
 #include <exadg/incompressible_navier_stokes/precursor/user_interface/application_base.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_consistent_splitting.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.h>
 #include <exadg/incompressible_navier_stokes/time_integration/create_time_integrator.h>
+#include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_consistent_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>

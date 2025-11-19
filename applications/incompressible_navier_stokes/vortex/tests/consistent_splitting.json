@@ -2,23 +2,23 @@
     "General": {
         "Precision": "double",
         "Dim": "2",
-        "IsTest": "false"
+        "IsTest": "true"
     },
     "SpatialResolution": {
-        "DegreeMin": "8",
-        "DegreeMax": "8",
+        "DegreeMin": "5",
+        "DegreeMax": "5",
         "RefineSpaceMin": "2",
         "RefineSpaceMax": "2"
     },
     "TemporalResolution": {
-        "RefineTimeMin": "2",
-        "RefineTimeMax": "12"
+        "RefineTimeMin": "10",
+        "RefineTimeMax": "10"
     },
     "Application": {
     },
     "Output": {
         "OutputDirectory": "output/vortex/",
-        "OutputName": "vortex",
+        "OutputName": "sol",
         "WriteOutput": "false"
     }
 }
