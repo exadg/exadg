@@ -563,7 +563,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00483" name="l00483"></a><span class="lineno">  483</span>    displ = x_S - x_lin;</div>
 <div class="line"><a id="l00484" name="l00484"></a><span class="lineno">  484</span> </div>
 <div class="line"><a id="l00485" name="l00485"></a><span class="lineno">  485</span>    <span class="comment">// conical manifold</span></div>
-<div class="line"><a id="l00486" name="l00486"></a><span class="lineno">  486</span>    displ *= (1 - xi[2] * (r_0 - r_1) / r_0);</div>
+<div class="line"><a id="l00486" name="l00486"></a><span class="lineno">  486</span>    displ *= (1 - xi[dim - 1] * (r_0 - r_1) / r_0);</div>
 <div class="line"><a id="l00487" name="l00487"></a><span class="lineno">  487</span> </div>
 <div class="line"><a id="l00488" name="l00488"></a><span class="lineno">  488</span>    <span class="comment">// deformation decreases linearly in the second (other) direction</span></div>
 <div class="line"><a id="l00489" name="l00489"></a><span class="lineno">  489</span>    dealii::Point&lt;1&gt; xi_other_1d = dealii::Point&lt;1&gt;(xi_other);</div>
@@ -708,10 +708,10 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>      <span class="keywordflow">else</span> <span class="keywordflow">if</span>(xi[1] &gt; 1.0)</div>
 <div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>        xi[1] = 1.0;</div>
 <div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span> </div>
-<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>      <span class="keywordflow">if</span>(xi[2] &lt; 0.0)</div>
-<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>        xi[2] = 0.0;</div>
-<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>      <span class="keywordflow">else</span> <span class="keywordflow">if</span>(xi[2] &gt; 1.0)</div>
-<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>        xi[2] = 1.0;</div>
+<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>      <span class="keywordflow">if</span>(xi[dim - 1] &lt; 0.0)</div>
+<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>        xi[dim - 1] = 0.0;</div>
+<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>      <span class="keywordflow">else</span> <span class="keywordflow">if</span>(xi[dim - 1] &gt; 1.0)</div>
+<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>        xi[dim - 1] = 1.0;</div>
 <div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span> </div>
 <div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>      <span class="comment">// evaluate residual</span></div>
 <div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span>      residual = push_forward(xi) - x;</div>
@@ -730,8 +730,8 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span>    Assert(xi[1] &gt;= 0.0 and xi[1] &lt;= 1.0,</div>
 <div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span>           dealii::ExcMessage(<span class="stringliteral">&quot;Pull back operation generated invalid xi[1] values.&quot;</span>));</div>
 <div class="line"><a id="l00652" name="l00652"></a><span class="lineno">  652</span> </div>
-<div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>    Assert(xi[2] &gt;= 0.0 and xi[2] &lt;= 1.0,</div>
-<div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>           dealii::ExcMessage(<span class="stringliteral">&quot;Pull back operation generated invalid xi[2] values.&quot;</span>));</div>
+<div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>    Assert(xi[dim - 1] &gt;= 0.0 and xi[dim - 1] &lt;= 1.0,</div>
+<div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>           dealii::ExcMessage(<span class="stringliteral">&quot;Pull back operation generated invalid xi[dim-1] values.&quot;</span>));</div>
 <div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span> </div>
 <div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span>    <span class="keywordflow">return</span> xi;</div>
 <div class="line"><a id="l00657" name="l00657"></a><span class="lineno">  657</span>  }</div>
@@ -802,7 +802,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00724" name="l00724"></a><span class="lineno">  724</span>      space_point[1] = radius * sin(theta);</div>
 <div class="line"><a id="l00725" name="l00725"></a><span class="lineno">  725</span> </div>
 <div class="line"><a id="l00726" name="l00726"></a><span class="lineno">  726</span>      <span class="keywordflow">if</span>(spacedim == 3)</div>
-<div class="line"><a id="l00727" name="l00727"></a><span class="lineno">  727</span>        space_point[2] = ref_point[2];</div>
+<div class="line"><a id="l00727" name="l00727"></a><span class="lineno">  727</span>        space_point[dim - 1] = ref_point[dim - 1];</div>
 <div class="line"><a id="l00728" name="l00728"></a><span class="lineno">  728</span>    }</div>
 <div class="line"><a id="l00729" name="l00729"></a><span class="lineno">  729</span> </div>
 <div class="line"><a id="l00730" name="l00730"></a><span class="lineno">  730</span>    <span class="keywordflow">return</span> space_point + center;</div>
@@ -814,7 +814,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00736" name="l00736"></a><span class="lineno">  736</span>    dealii::Tensor&lt;1, spacedim&gt; vector;</div>
 <div class="line"><a id="l00737" name="l00737"></a><span class="lineno">  737</span>    vector[0] = space_point[0] - center[0];</div>
 <div class="line"><a id="l00738" name="l00738"></a><span class="lineno">  738</span>    vector[1] = space_point[1] - center[1];</div>
-<div class="line"><a id="l00739" name="l00739"></a><span class="lineno">  739</span>    <span class="comment">// for the 3D case: vector[2] will always be 0.</span></div>
+<div class="line"><a id="l00739" name="l00739"></a><span class="lineno">  739</span>    <span class="comment">// for the 3D case: vector[dim-1] will always be 0.</span></div>
 <div class="line"><a id="l00740" name="l00740"></a><span class="lineno">  740</span> </div>
 <div class="line"><a id="l00741" name="l00741"></a><span class="lineno">  741</span>    <span class="keywordtype">double</span> <span class="keyword">const</span> radius = vector.norm();</div>
 <div class="line"><a id="l00742" name="l00742"></a><span class="lineno">  742</span> </div>
@@ -824,7 +824,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00746" name="l00746"></a><span class="lineno">  746</span>    <span class="keywordflow">if</span>(ref_point[1] &lt; 0)</div>
 <div class="line"><a id="l00747" name="l00747"></a><span class="lineno">  747</span>      ref_point[1] += 2.0 * dealii::numbers::PI;</div>
 <div class="line"><a id="l00748" name="l00748"></a><span class="lineno">  748</span>    <span class="keywordflow">if</span>(spacedim == 3)</div>
-<div class="line"><a id="l00749" name="l00749"></a><span class="lineno">  749</span>      ref_point[2] = space_point[2];</div>
+<div class="line"><a id="l00749" name="l00749"></a><span class="lineno">  749</span>      ref_point[dim - 1] = space_point[dim - 1];</div>
 <div class="line"><a id="l00750" name="l00750"></a><span class="lineno">  750</span> </div>
 <div class="line"><a id="l00751" name="l00751"></a><span class="lineno">  751</span>    <span class="keywordflow">return</span> ref_point;</div>
 <div class="line"><a id="l00752" name="l00752"></a><span class="lineno">  752</span>  }</div>

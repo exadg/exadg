@@ -202,16 +202,16 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>          solution =</div>
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>            std::sin(2.0 * pi * (x(1) - left) * data.spatial_number_of_oscillations / width) *</div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>            data.amplitude *</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>            (dim == 3 ?</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>               std::sin(2.0 * pi * (x(2) - left) * data.spatial_number_of_oscillations / width) :</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>               1.0);</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>            (dim == 3 ? std::sin(2.0 * pi * (x(dim - 1) - left) *</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>                                 data.spatial_number_of_oscillations / width) :</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>                        1.0);</div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>        <span class="keywordflow">else</span> <span class="keywordflow">if</span>(coordinate_direction == 1)</div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>          solution =</div>
 <div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>            std::sin(2.0 * pi * (x(0) - left) * data.spatial_number_of_oscillations / width) *</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>            data.amplitude *</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>            (dim == 3 ?</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>               std::sin(2.0 * pi * (x(2) - left) * data.spatial_number_of_oscillations / width) :</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>               1.0);</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>            (dim == 3 ? std::sin(2.0 * pi * (x(dim - 1) - left) *</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>                                 data.spatial_number_of_oscillations / width) :</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>                        1.0);</div>
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>        <span class="keywordflow">else</span> <span class="keywordflow">if</span>(coordinate_direction == 2)</div>
 <div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>          solution =</div>
 <div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>            std::sin(2.0 * pi * (x(0) - left) * data.spatial_number_of_oscillations / width) *</div>
@@ -225,20 +225,20 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>            std::sin(pi * (x(0) - left) * data.spatial_number_of_oscillations / width) *</div>
 <div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>            std::sin(2.0 * pi * (x(1) - left) * data.spatial_number_of_oscillations / width) *</div>
 <div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>            data.amplitude *</div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>            (dim == 3 ?</div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>               std::sin(2.0 * pi * (x(2) - left) * data.spatial_number_of_oscillations / width) :</div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>               1.0);</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>            (dim == 3 ? std::sin(2.0 * pi * (x(dim - 1) - left) *</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>                                 data.spatial_number_of_oscillations / width) :</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>                        1.0);</div>
 <div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>        <span class="keywordflow">else</span> <span class="keywordflow">if</span>(coordinate_direction == 1)</div>
 <div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>          solution =</div>
 <div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>            std::sin(pi * (x(1) - left) * data.spatial_number_of_oscillations / width) *</div>
 <div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>            std::sin(2.0 * pi * (x(0) - left) * data.spatial_number_of_oscillations / width) *</div>
 <div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>            data.amplitude *</div>
-<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>            (dim == 3 ?</div>
-<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>               std::sin(2.0 * pi * (x(2) - left) * data.spatial_number_of_oscillations / width) :</div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>               1.0);</div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>            (dim == 3 ? std::sin(2.0 * pi * (x(dim - 1) - left) *</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>                                 data.spatial_number_of_oscillations / width) :</div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>                        1.0);</div>
 <div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>        <span class="keywordflow">else</span> <span class="keywordflow">if</span>(coordinate_direction == 2)</div>
 <div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>          solution =</div>
-<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>            std::sin(pi * (x(2) - left) * data.spatial_number_of_oscillations / width) *</div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>            std::sin(pi * (x(dim - 1) - left) * data.spatial_number_of_oscillations / width) *</div>
 <div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>            std::sin(2.0 * pi * (x(0) - left) * data.spatial_number_of_oscillations / width) *</div>
 <div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>            data.amplitude *</div>
 <div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>            std::sin(2.0 * pi * (x(1) - left) * data.spatial_number_of_oscillations / width);</div>
@@ -345,7 +345,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>                     (dim == 3 ? std::sin(2 * pi * (x(2.0) - (depth / 2)) / depth) : 1.0);</div>
 <div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>        <span class="keywordflow">else</span> <span class="keywordflow">if</span>(coordinate_direction == 1)</div>
 <div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>          solution = std::sin(2.0 * pi * (x(0) - (length / 2.0)) / length) * data.amplitude *</div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>                     (dim == 3 ? std::sin(2 * pi * (x(2) - (depth / 2.0)) / depth) : 1.0);</div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>                     (dim == 3 ? std::sin(2 * pi * (x(dim - 1) - (depth / 2.0)) / depth) : 1.0);</div>
 <div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>        <span class="keywordflow">else</span> <span class="keywordflow">if</span>(coordinate_direction == 2)</div>
 <div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>          solution = std::sin(2.0 * pi * (x(1) - (height / 2.0)) / height) * data.amplitude *</div>
 <div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>                     std::sin(2.0 * pi * (x(0) - (length / 2.0)) / length);</div>
