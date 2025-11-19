@@ -23,9 +23,9 @@
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
-#include <exadg/time_integration/push_back_vectors.h>
 #include <exadg/time_integration/restart.h>
 #include <exadg/time_integration/time_step_calculation.h>
+#include <exadg/time_integration/vector_handling.h>
 
 namespace ExaDG
 {
@@ -141,14 +141,14 @@ TimeIntBDF<dim, Number>::prepare_vectors_for_next_timestep()
   {
     if(this->param.ale_formulation == false)
     {
-      push_back(this->vec_convective_term);
+      swap_back_one_step(this->vec_convective_term);
       vec_convective_term[0].swap(convective_term_np);
     }
   }
 
   if(param.ale_formulation)
   {
-    push_back(vec_grid_coordinates);
+    swap_back_one_step(vec_grid_coordinates);
     vec_grid_coordinates[0].swap(grid_coordinates_np);
   }
 }
