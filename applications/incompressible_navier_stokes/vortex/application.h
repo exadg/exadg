@@ -258,8 +258,8 @@ private:
 
     // TEMPORAL DISCRETIZATION
     this->param.solver_type                  = SolverType::Unsteady;
-    this->param.temporal_discretization      = TemporalDiscretization::BDFDualSplittingScheme;
-    this->param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+    this->param.temporal_discretization      = TemporalDiscretization::BDFConsistentSplittingScheme;
+    this->param.treatment_of_convective_term = TreatmentOfConvectiveTerm::LinearlyImplicit;
     this->param.order_time_integrator        = 2;
     this->param.start_with_low_order         = false;
     this->param.adaptive_time_stepping       = false;
@@ -369,6 +369,9 @@ private:
       this->param.update_preconditioner_momentum                 = false;
     }
 
+    // CONSISTENT SPLITTING SCHEME
+    this->param.order_extrapolation_pressure_rhs = 2;
+    this->param.apply_leray_projection           = true;
 
     // PRESSURE-CORRECTION SCHEME
 
@@ -682,7 +685,7 @@ private:
 
   MeshType const mesh_type = MeshType::Cartesian;
 
-  bool const ALE = true;
+  bool const ALE = false;
 };
 
 } // namespace IncNS
