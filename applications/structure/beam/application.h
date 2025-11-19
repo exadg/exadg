@@ -314,11 +314,12 @@ private:
 
     MaterialType const type = MaterialType::StVenantKirchhoff;
     // E-Modulus of Steel in unit = [N/mm^2]
-    double const E = 200e3, nu = 0.3;
-    Type2D const two_dim_type = Type2D::PlaneStress;
+    double const youngs_modulus = 200.0e3;
+    double const poissons_ratio = 0.3;
+    Type2D const two_dim_type   = Type2D::PlaneStress;
 
     this->material_descriptor->insert(
-      Pair(0, new StVenantKirchhoffData<dim>(type, E, nu, two_dim_type)));
+      Pair(0, new StVenantKirchhoffData<dim>(type, youngs_modulus, poissons_ratio, two_dim_type)));
   }
 
   void

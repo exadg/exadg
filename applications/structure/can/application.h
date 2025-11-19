@@ -298,12 +298,13 @@ private:
   {
     typedef std::pair<dealii::types::material_id, std::shared_ptr<MaterialData>> Pair;
 
-    MaterialType const type = MaterialType::StVenantKirchhoff;
-    double const       E = 200.0e9, nu = 0.3;
-    Type2D const       two_dim_type = Type2D::PlaneStress;
+    MaterialType const type           = MaterialType::StVenantKirchhoff;
+    double const       youngs_modulus = 200.0e9;
+    double const       poissons_ratio = 0.3;
+    Type2D const       two_dim_type   = Type2D::PlaneStress;
 
     this->material_descriptor->insert(
-      Pair(0, new StVenantKirchhoffData<dim>(type, E, nu, two_dim_type)));
+      Pair(0, new StVenantKirchhoffData<dim>(type, youngs_modulus, poissons_ratio, two_dim_type)));
   }
 
   void
