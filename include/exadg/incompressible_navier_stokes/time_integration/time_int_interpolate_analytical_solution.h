@@ -24,7 +24,7 @@
 
 // ExaDG
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf.h>
-#include <exadg/time_integration/push_back_vectors.h>
+#include <exadg/time_integration/vector_handling.h>
 #include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
@@ -135,10 +135,10 @@ private:
   {
     Base::prepare_vectors_for_next_timestep();
 
-    push_back(velocity);
+    swap_back_one_step(velocity);
     velocity[0].swap(velocity_np);
 
-    push_back(pressure);
+    swap_back_one_step(pressure);
     pressure[0].swap(pressure_np);
   }
 

@@ -24,9 +24,9 @@
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_consistent_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_consistent_splitting.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
-#include <exadg/time_integration/push_back_vectors.h>
 #include <exadg/time_integration/restart.h>
 #include <exadg/time_integration/time_step_calculation.h>
+#include <exadg/time_integration/vector_handling.h>
 #include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
@@ -668,21 +668,21 @@ TimeIntBDFConsistentSplitting<dim, Number>::prepare_vectors_for_next_timestep()
 {
   Base::prepare_vectors_for_next_timestep();
 
-  push_back(velocity);
+  swap_back_one_step(velocity);
   velocity[0].swap(velocity_np);
 
-  push_back(pressure);
+  swap_back_one_step(pressure);
   pressure[0].swap(pressure_np);
 
   // Compute the divergence of the velocity for the next timestep
   if(this->param.apply_leray_projection)
   {
-    push_back(velocity_divergence);
+    swap_back_one_step(velocity_divergence);
     pde_operator->apply_velocity_divergence_term(velocity_divergence[0], velocity[0]);
   }
 
   // Compute divergence of convective term
-  push_back(vec_convective_term_div);
+  swap_back_one_step(vec_convective_term_div);
   pde_operator->apply_convective_divergence_term(vec_convective_term_div[0], velocity[0]);
 }
 

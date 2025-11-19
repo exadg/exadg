@@ -25,9 +25,9 @@
 // ExaDG
 #include <exadg/time_integration/ab_constants.h>
 #include <exadg/time_integration/am_constants.h>
-#include <exadg/time_integration/push_back_vectors.h>
 #include <exadg/time_integration/restart.h>
 #include <exadg/time_integration/time_int_multistep_base.h>
+#include <exadg/time_integration/vector_handling.h>
 #include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
@@ -215,7 +215,7 @@ private:
   {
     if(vec_evaluated_operators.size() > 0)
     {
-      push_back(vec_evaluated_operators);
+      swap_back_one_step(vec_evaluated_operators);
       std::swap(vec_evaluated_operators[0], evaluated_operator_np);
     }
   }

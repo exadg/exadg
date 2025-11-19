@@ -24,9 +24,9 @@
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
-#include <exadg/time_integration/push_back_vectors.h>
 #include <exadg/time_integration/restart.h>
 #include <exadg/time_integration/time_step_calculation.h>
+#include <exadg/time_integration/vector_handling.h>
 #include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
@@ -905,16 +905,16 @@ TimeIntBDFPressureCorrection<dim, Number>::prepare_vectors_for_next_timestep()
 {
   Base::prepare_vectors_for_next_timestep();
 
-  push_back(velocity);
+  swap_back_one_step(velocity);
   velocity[0].swap(velocity_np);
 
-  push_back(pressure);
+  swap_back_one_step(pressure);
   pressure[0].swap(pressure_np);
 
   // We also have to care about the history of pressure Dirichlet boundary conditions.
   if(extra_pressure_gradient.get_order() > 0)
   {
-    push_back(pressure_dbc);
+    swap_back_one_step(pressure_dbc);
 
     // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
     pde_operator->interpolate_pressure_dirichlet_bc(pressure_dbc[0], this->get_next_time());
