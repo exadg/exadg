@@ -410,7 +410,7 @@ public:
     pp_data_fda.mean_velocity_data.directory = this->output_parameters.directory;
     pp_data_fda.mean_velocity_data.filename  = filename_flowrate;
     dealii::Tensor<1, dim, double> direction;
-    direction[2]                                 = 1.0;
+    direction[dim - 1]                           = 1.0;
     pp_data_fda.mean_velocity_data.direction     = direction;
     pp_data_fda.mean_velocity_data.write_to_file = true;
 
@@ -670,7 +670,7 @@ public:
     radial_profile_z12->n_points_circumferential = n_points_line_circumferential;
 
     dealii::Tensor<1, dim, double> normal;
-    normal[2]                         = 1.0;
+    normal[dim - 1]                   = 1.0;
     radial_profile_z1->normal_vector  = normal;
     radial_profile_z2->normal_vector  = normal;
     radial_profile_z3->normal_vector  = normal;
