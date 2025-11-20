@@ -494,6 +494,7 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
     AssertThrow(order_extrapolation_pressure_nbc <= order_time_integrator,
                 dealii::ExcMessage("Invalid parameter order_extrapolation_pressure_nbc!"));
 
+    // ALE and consequently FSI (including storing of last iterates therein) are disabled.
     AssertThrow(!ale_formulation, dealii::ExcMessage("Not implemented."));
 
     AssertThrow(!viscosity_is_variable(), dealii::ExcMessage("Not implemented."));
