@@ -102,35 +102,11 @@ public:
   get_data() const;
 
   /*
-   * Provide near null space basis vectors, that is, the rigid body modes, used e.g. in AMG setup.
+   * Provide near null space basis vectors, i.e., rigid body modes used in AMG setup.
    */
   void
   get_constant_modes(std::vector<std::vector<bool>> &   constant_modes,
-                     std::vector<std::vector<double>> & constant_modes_values) const override
-  {
-    (void)constant_modes;
-
-    dealii::DoFHandler<dim> const & dof_handler =
-      this->matrix_free->get_dof_handler(this->get_dof_index());
-
-    if(dof_handler.has_level_dofs())
-    {
-      // Extract coarse level constant modes.
-      constant_modes_values = dealii::DoFTools::extract_level_rigid_body_modes(
-        this->matrix_free->get_mg_level(),
-        *this->matrix_free->get_mapping_info().mapping,
-        dof_handler,
-        dealii::ComponentMask(dim, true));
-    }
-    else
-    {
-      // Extract finest level constant modes.
-      constant_modes_values =
-        dealii::DoFTools::extract_rigid_body_modes(*this->matrix_free->get_mapping_info().mapping,
-                                                   dof_handler,
-                                                   dealii::ComponentMask(dim, true));
-    }
-  }
+                     std::vector<std::vector<double>> & constant_modes_values) const override;
 
   void
   set_scaling_factor_mass_operator(double const scaling_factor) const;
