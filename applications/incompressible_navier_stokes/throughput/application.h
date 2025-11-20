@@ -75,8 +75,8 @@ private:
     // TEMPORAL DISCRETIZATION
     this->param.solver_type = SolverType::Unsteady;
     this->param.temporal_discretization =
-      TemporalDiscretization::BDFDualSplittingScheme; // BDFPressureCorrection;
-                                                      // //BDFCoupledSolution;
+      TemporalDiscretization::BDFDualSplitting; // BDFPressureCorrection;
+                                                // //BDFCoupledSolution;
     this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
     this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
     this->param.cfl                           = 1.0;
@@ -129,7 +129,7 @@ private:
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
 
-    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
     {
       this->param.solver_momentum         = SolverMomentum::CG;
       this->param.preconditioner_momentum = MomentumPreconditioner::None;

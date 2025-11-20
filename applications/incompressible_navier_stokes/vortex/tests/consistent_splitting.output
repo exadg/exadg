@@ -39,7 +39,7 @@ Physical quantities:
   Density:                                   1.0000e+00
 
 Temporal discretization:
-  Temporal discretization method:            BDFConsistentSplittingScheme
+  Temporal discretization method:            BDFConsistentSplitting
   Calculation of time step size:             UserSpecified
   Adaptive time stepping:                    false
   Maximum number of time steps:              4294967295

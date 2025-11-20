@@ -154,7 +154,7 @@ private:
     // TEMPORAL DISCRETIZATION
     param.solver_type = SolverType::Unsteady;
     param.temporal_discretization =
-      TemporalDiscretization::BDFPressureCorrection; // BDFDualSplittingScheme;
+      TemporalDiscretization::BDFPressureCorrection; // BDFDualSplitting;
     param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Implicit; // Explicit;
     param.order_time_integrator           = 2;
     param.start_with_low_order            = true;
@@ -234,7 +234,7 @@ private:
       param.order_time_integrator <= 2 ? param.order_time_integrator : 2;
     param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
 
-    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
     {
       this->param.solver_momentum         = SolverMomentum::CG;
       this->param.solver_data_momentum    = SolverData(1000, ABS_TOL, REL_TOL);

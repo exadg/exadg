@@ -382,7 +382,7 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
                 dealii::ExcMessage("Invalid operator specified for coupled solution approach."));
   }
   else if(application->get_parameters().temporal_discretization ==
-          TemporalDiscretization::BDFDualSplittingScheme)
+          TemporalDiscretization::BDFDualSplitting)
   {
     AssertThrow(operator_type == OperatorType::ConvectiveOperator or
                   operator_type == OperatorType::PressurePoissonOperator or
@@ -392,7 +392,7 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
                 dealii::ExcMessage("Invalid operator specified for dual splitting scheme."));
   }
   else if(application->get_parameters().temporal_discretization ==
-          TemporalDiscretization::BDFConsistentSplittingScheme)
+          TemporalDiscretization::BDFConsistentSplitting)
   {
     AssertThrow(operator_type == OperatorType::ConvectiveOperator or
                   operator_type == OperatorType::PressurePoissonOperator or
@@ -444,7 +444,7 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
     }
   }
   else if(application->get_parameters().temporal_discretization ==
-          TemporalDiscretization::BDFDualSplittingScheme)
+          TemporalDiscretization::BDFDualSplitting)
   {
     if(operator_type == OperatorType::ConvectiveOperator or
        operator_type == OperatorType::HelmholtzOperator or
@@ -467,7 +467,7 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
     src2 = 1.0;
   }
   else if(application->get_parameters().temporal_discretization ==
-          TemporalDiscretization::BDFConsistentSplittingScheme)
+          TemporalDiscretization::BDFConsistentSplitting)
   {
     if(operator_type == OperatorType::ConvectiveOperator or
        operator_type == OperatorType::HelmholtzOperator or
@@ -534,7 +534,7 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
       else
         AssertThrow(false,dealii::ExcMessage("Not implemented."));
     }
-    else if(application->get_parameters().temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    else if(application->get_parameters().temporal_discretization == TemporalDiscretization::BDFDualSplitting)
     {
       std::shared_ptr<OperatorDualSplitting<dim, Number>>      operator_dual_splitting =
           std::dynamic_pointer_cast<OperatorDualSplitting<dim, Number>>(pde_operator);
@@ -552,7 +552,7 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
       else
         AssertThrow(false,dealii::ExcMessage("Not implemented."));
     }
-    else if(application->get_parameters().temporal_discretization == TemporalDiscretization::BDFConsistentSplittingScheme)
+    else if(application->get_parameters().temporal_discretization == TemporalDiscretization::BDFConsistentSplitting)
     {
       std::shared_ptr<OperatorConsistentSplitting<dim, Number>>      operator_consistent_splitting =
           std::dynamic_pointer_cast<OperatorConsistentSplitting<dim, Number>>(pde_operator);

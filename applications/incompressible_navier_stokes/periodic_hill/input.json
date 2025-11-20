@@ -17,7 +17,7 @@
     "Application": {
         "ReadRestart": "false",
         "WriteRestart": "false",
-        "TemporalDiscretization": "BDFDualSplittingScheme",
+        "TemporalDiscretization": "BDFDualSplitting",
         "SpatialDiscretization": "L2",
         "Inviscid": "false",
         "ReynoldsNumber": "5600.0",

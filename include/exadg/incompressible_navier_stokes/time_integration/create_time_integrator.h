@@ -56,7 +56,7 @@ create_time_integrator(std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_ope
     time_integrator = std::make_shared<IncNS::TimeIntBDFCoupled<dim, Number>>(
       operator_coupled, helpers_ale, postprocessor, parameters, mpi_comm, is_test);
   }
-  else if(parameters.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  else if(parameters.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
   {
     std::shared_ptr<OperatorDualSplitting<dim, Number>> operator_dual_splitting =
       std::dynamic_pointer_cast<OperatorDualSplitting<dim, Number>>(pde_operator);
@@ -64,8 +64,7 @@ create_time_integrator(std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_ope
     time_integrator = std::make_shared<IncNS::TimeIntBDFDualSplitting<dim, Number>>(
       operator_dual_splitting, helpers_ale, postprocessor, parameters, mpi_comm, is_test);
   }
-  else if(parameters.temporal_discretization ==
-          TemporalDiscretization::BDFConsistentSplittingScheme)
+  else if(parameters.temporal_discretization == TemporalDiscretization::BDFConsistentSplitting)
   {
     std::shared_ptr<OperatorConsistentSplitting<dim, Number>> operator_consistent_splitting =
       std::dynamic_pointer_cast<OperatorConsistentSplitting<dim, Number>>(pde_operator);

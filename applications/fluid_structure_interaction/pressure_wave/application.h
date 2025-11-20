@@ -226,7 +226,7 @@ private:
       param.order_time_integrator <= 2 ? param.order_time_integrator : 2;
     param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
 
-    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
     {
       this->param.solver_momentum         = SolverMomentum::CG;
       this->param.solver_data_momentum    = SolverData(1000, ABS_TOL, REL_TOL);
@@ -639,7 +639,7 @@ private:
   }
 
   IncNS::TemporalDiscretization temporal_discretization =
-    IncNS::TemporalDiscretization::BDFDualSplittingScheme;
+    IncNS::TemporalDiscretization::BDFDualSplitting;
 };
 } // namespace FluidFSI
 

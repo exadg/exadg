@@ -13,7 +13,7 @@
         "RefineSpace": "0"
     },
     "Fluid" : {
-        "TemporalDiscretization": "BDFDualSplittingScheme"
+        "TemporalDiscretization": "BDFDualSplitting"
     },
     "FSI" : {
         "AccelerationMethod": "IQN_ILS",

@@ -620,8 +620,8 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
 
   if(param.use_divergence_penalty or param.use_continuity_penalty)
   {
-    if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme or
-       param.temporal_discretization == TemporalDiscretization::BDFConsistentSplittingScheme or
+    if(param.temporal_discretization == TemporalDiscretization::BDFDualSplitting or
+       param.temporal_discretization == TemporalDiscretization::BDFConsistentSplitting or
        param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection or
        (param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution and
         param.apply_penalty_terms_in_postprocessing_step == true))

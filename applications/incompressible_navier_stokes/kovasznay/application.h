@@ -153,7 +153,7 @@ private:
 
     // TEMPORAL DISCRETIZATION
     this->param.solver_type                   = SolverType::Unsteady;
-    this->param.temporal_discretization       = TemporalDiscretization::BDFDualSplittingScheme;
+    this->param.temporal_discretization       = TemporalDiscretization::BDFDualSplitting;
     this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
     this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
     this->param.max_velocity                  = 3.6;
@@ -195,7 +195,7 @@ private:
     this->param.order_extrapolation_pressure_nbc =
       this->param.order_time_integrator <= 2 ? this->param.order_time_integrator : 2;
 
-    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
     {
       this->param.solver_momentum                  = SolverMomentum::CG;
       this->param.solver_data_momentum             = SolverData(1000, 1.e-20, 1.e-6);

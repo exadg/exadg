@@ -87,11 +87,11 @@ private:
 
 
     // TEMPORAL DISCRETIZATION
-    this->param.solver_type                   = SolverType::Unsteady;
-    this->param.temporal_discretization       = TemporalDiscretization::BDFDualSplittingScheme;
-    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
-    this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
-    this->param.adaptive_time_stepping        = true;
+    this->param.solver_type                            = SolverType::Unsteady;
+    this->param.temporal_discretization                = TemporalDiscretization::BDFDualSplitting;
+    this->param.treatment_of_convective_term           = TreatmentOfConvectiveTerm::Explicit;
+    this->param.calculation_of_time_step_size          = TimeStepCalculation::CFL;
+    this->param.adaptive_time_stepping                 = true;
     this->param.adaptive_time_stepping_limiting_factor = 3.0;
     this->param.max_velocity                           = 1.5;
     this->param.cfl                                    = 0.25;

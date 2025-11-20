@@ -61,7 +61,7 @@ create_operator(std::shared_ptr<Grid<dim> const>                      grid,
                                                                   field,
                                                                   mpi_comm);
   }
-  else if(parameters.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  else if(parameters.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
   {
     pde_operator = std::make_shared<OperatorDualSplitting<dim, Number>>(grid,
                                                                         mapping,
@@ -72,8 +72,7 @@ create_operator(std::shared_ptr<Grid<dim> const>                      grid,
                                                                         field,
                                                                         mpi_comm);
   }
-  else if(parameters.temporal_discretization ==
-          TemporalDiscretization::BDFConsistentSplittingScheme)
+  else if(parameters.temporal_discretization == TemporalDiscretization::BDFConsistentSplitting)
   {
     pde_operator = std::make_shared<OperatorConsistentSplitting<dim, Number>>(grid,
                                                                               mapping,

@@ -458,7 +458,7 @@ public:
     this->param.order_extrapolation_pressure_nbc =
       this->param.order_time_integrator <= 2 ? this->param.order_time_integrator : 2;
 
-    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
     {
       this->param.solver_momentum         = SolverMomentum::CG;
       this->param.solver_data_momentum    = SolverData(1000, ABS_TOL, REL_TOL);
