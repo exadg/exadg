@@ -493,6 +493,25 @@ TimeIntBDF<dim, Number>::do_timestep_solve()
   dealii::Timer timer;
   timer.restart();
 
+  /*
+   * Apply modal filter to the solution at time t_{n+1}
+   */
+  if (param.modal_filter)
+  {
+    dealii::Timer timer_modal_filter;
+    timer_modal_filter.restart();
+
+    VectorType filtered_solution;
+    pde_operator->initialize_dof_vector(filtered_solution);
+    pde_operator->apply_modal_filter(solution_np, filtered_solution);
+    solution_np.swap(filtered_solution);
+
+    if(this->print_solver_info() and not(this->is_test))
+    {
+      this->pcout << std::endl << "Modal filtering : ";
+      print_wall_time(this->pcout, timer_modal_filter.wall_time());
+    }
+  }
 
   // transport velocity
   VectorType velocity_np;
@@ -580,25 +599,6 @@ TimeIntBDF<dim, Number>::do_timestep_solve()
   for(unsigned int i = 1; i < solution.size(); ++i)
     solution_np.add(this->extra.get_beta(i), solution[i]);
   
-  /*
-   * Apply modal filter to the solution at time t_{n+1}
-   */
-  if (param.modal_filter)
-  {
-    dealii::Timer timer_modal_filter;
-    timer_modal_filter.restart();
-
-    VectorType filtered_solution;
-    pde_operator->initialize_dof_vector(filtered_solution);
-    pde_operator->apply_modal_filter(solution_np, filtered_solution);
-    solution_np.swap(filtered_solution);
-
-    if(this->print_solver_info() and not(this->is_test))
-    {
-      this->pcout << std::endl << "Modal filtering : ";
-      print_wall_time(this->pcout, timer_modal_filter.wall_time());
-    }
-  }
 
   // solve the linear system of equations
   bool const update_preconditioner =

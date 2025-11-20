@@ -237,7 +237,7 @@ Operator<dim, Number>::setup_operators()
     diffusive_kernel_data.scalar_type = param.scalar_type;
 
     diffusive_kernel = std::make_shared<Operators::DiffusiveKernel<dim, Number>>();
-    diffusive_kernel->reinit(*matrix_free, diffusive_kernel_data, get_dof_index());
+    diffusive_kernel->reinit(*matrix_free, diffusive_kernel_data, get_dof_index(), get_quad_index());
     if(param.turbulence_model_data.is_active)
     {
       diffusive_kernel->turbulence_model_ptr = turbulence_model_ptr;
@@ -642,6 +642,10 @@ Operator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
     if(param.diffusive_problem())
     {
       diffusive_operator.set_time(time);
+      if (param.turbulence_model_data.is_active)
+      {
+        diffusive_operator.set_eddy_viscosity_ptr(turbulence_model_ptr->eddy_viscosity);
+      }
       diffusive_operator.evaluate_add(dst, src);
     }
 
@@ -666,8 +670,9 @@ Operator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
     {
       rhs_operator.set_velocity_ptr(*velocity);
       rhs_operator.set_solution(src);
-      if (param.scalar_type==ScalarType::TKEDissipationRate) {
-        rhs_operator.set_rans_secondary_variable_ptr(*turbulence_model_ptr->turbulent_kinetic_energy);
+      if (param.turbulence_model_data.is_active)
+      {
+        rhs_operator.set_eddy_viscosity_ptr(turbulence_model_ptr->eddy_viscosity);
       }
       rhs_operator.evaluate_add(dst, time);
     }
@@ -688,6 +693,11 @@ Operator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
       }
     }
 
+    if(param.diffusive_problem())
+    {
+      combined_operator.set_eddy_viscosity_ptr(turbulence_model_ptr->eddy_viscosity);
+    }
+
     combined_operator.set_time(time);
     combined_operator.evaluate(dst, src);
 
@@ -698,8 +708,9 @@ Operator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
     {
       rhs_operator.set_velocity_ptr(*velocity);
       rhs_operator.set_solution(src);
-      if (param.scalar_type==ScalarType::TKEDissipationRate) {
-        rhs_operator.set_rans_secondary_variable_ptr(*turbulence_model_ptr->turbulent_kinetic_energy);
+      if (param.turbulence_model_data.is_active)
+      {
+        rhs_operator.set_eddy_viscosity_ptr(turbulence_model_ptr->eddy_viscosity);
       }
       rhs_operator.evaluate_add(dst, time);
     }
@@ -754,8 +765,9 @@ Operator<dim, Number>::rhs(VectorType & dst,
   {
     rhs_operator.set_velocity_ptr(*velocity);
     rhs_operator.set_solution(src);
-    if (param.scalar_type==ScalarType::TKEDissipationRate) {
-      rhs_operator.set_rans_secondary_variable_ptr(*turbulence_model_ptr->turbulent_kinetic_energy);
+    if (param.turbulence_model_data.is_active)
+    {
+      rhs_operator.set_eddy_viscosity_ptr(turbulence_model_ptr->eddy_viscosity);
     }
     rhs_operator.evaluate_add(dst, time);
   }
@@ -1104,16 +1116,9 @@ Operator<dim, Number>::get_constraints() const
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::set_turbulent_kinetic_energy(VectorType const & tke_in)
+Operator<dim, Number>::update_eddy_viscosity(VectorType const & viscosity_in)
 {
-  turbulence_model_ptr->set_turbulent_kinetic_energy(tke_in);
-}
-
-template<int dim, typename Number>
-void
-Operator<dim, Number>::set_tke_dissipation_rate(VectorType const & epsilon_in)
-{
-  turbulence_model_ptr->set_tke_dissipation_rate(epsilon_in);
+  turbulence_model_ptr->update_eddy_viscosity(viscosity_in);
 }
 
 template<int dim, typename Number>

@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef CONV_DIFF_CONVECTION_OPERATOR
-#define CONV_DIFF_CONVECTION_OPERATOR
+#ifndef RANS_EQUATIONS_CONVECTION_OPERATOR
+#define RANS_EQUATIONS_CONVECTION_OPERATOR
 
 #include <exadg/rans_equations/user_interface/boundary_descriptor.h>
 #include <exadg/rans_equations/user_interface/parameters.h>

@@ -104,9 +104,6 @@ public:
   void
   set_velocity_ptr(VectorType const & velocity) const;
 
-  void
-  set_eddy_viscosity_ptr(VectorType const & eddy_viscosity_in) const;
-
   Number
   get_scaling_factor_mass_operator() const;
 
@@ -161,8 +158,6 @@ private:
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
 
   double scaling_factor_mass;
-  
-  mutable unsigned int current_face_index;
 public:
   std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel;
 };

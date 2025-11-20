@@ -296,10 +296,7 @@ public:
   get_constraints() const;
 
   void
-  set_turbulent_kinetic_energy(VectorType const & tke_in);
-
-  void
-  set_tke_dissipation_rate(VectorType const & epsilon_in);
+  update_eddy_viscosity(VectorType const & viscosity_in);
 
   void
   get_eddy_viscosity(VectorType & dst) const final;

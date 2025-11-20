@@ -53,9 +53,9 @@ RHSOperator<dim, Number, n_components>::set_velocity_ptr(VectorType const & velo
 
 template<int dim, typename Number, int n_components>
 void
-RHSOperator<dim, Number, n_components>::set_rans_secondary_variable_ptr(VectorType const & src) const
+RHSOperator<dim, Number, n_components>::set_eddy_viscosity_ptr(VectorType const & src) const
 {
-  kernel->set_rans_secondary_variable_ptr(src);
+  kernel->set_eddy_viscosity_ptr(src);
 }
 
 template<int dim, typename Number, int n_components>

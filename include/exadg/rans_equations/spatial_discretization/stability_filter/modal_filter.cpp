@@ -175,7 +175,7 @@ void ModalFilterOperator<dim, Number>::cell_loop_apply_weighted_relaxation(deali
 			 */
 			for (uint dof =0; dof < dofs_per_cell; ++dof)
 			{
-				modal[dof] *= weight_function(dof);
+				modal[dof] *= weight_function(dof, dofs_per_cell);
 			}
 
 			/*
@@ -206,7 +206,8 @@ void ModalFilterOperator<dim, Number>::cell_loop_apply_weighted_relaxation(deali
 
 template<int dim, typename Number>
 dealii::VectorizedArray<Number>
-ModalFilterOperator<dim, Number>::weight_function(uint dof)
+ModalFilterOperator<dim, Number>::weight_function(uint dof,
+						  uint dofs_per_cell)
 {
 	scalar weight(0.0);
 	if (dof == 0)

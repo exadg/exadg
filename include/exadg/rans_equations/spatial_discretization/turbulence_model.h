@@ -81,17 +81,13 @@ public:
   void
   set_viscosity(VectorType const & solution) final;
 
+  void
+  update_eddy_viscosity(VectorType const & viscosity_in);
   /**
    * Function for *adding to* the viscosity taking the currently stored viscosity as a basis.
    */
   void
   add_viscosity(VectorType const & solution) final;
-
-  void
-  set_turbulent_kinetic_energy(VectorType const & tke_in);
-
-  void
-  set_tke_dissipation_rate(VectorType const & epsilon_in);
 
   void
   get_eddy_viscosity(VectorType & dst);
@@ -128,15 +124,6 @@ public:
   add_two_equation_turbulent_viscosity(scalar &       viscosity,
                           scalar const & tke,
                           scalar const & epsilon) const;
-
-  void
-  prandtl_mixing_length_model(scalar const & sol,
-                     scalar & viscosity) const;
-
-  void
-  k_epsilon_model(scalar const & tke,
-                  scalar const & epsilon,
-                  scalar & viscosity) const;
 
   void
   set_coefficient(VariableCoefficients<dealii::VectorizedArray<Number>> src)
@@ -211,9 +198,33 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     scalar
-    get_viscosity_interior_face(unsigned int const face, unsigned int const q, VaryingViscosityType viscosity_type) const
+    get_viscosity_average_interior_face(unsigned int const face, unsigned int const q, VaryingViscosityType viscosity_type) const
   {
     scalar viscosity = calculate_average_viscosity(face, q, viscosity_type);
+
+    return viscosity;
+  }
+
+  /*
+   *  This function returns the viscosity for interior faces.
+   */
+  inline DEAL_II_ALWAYS_INLINE //
+    scalar
+    get_viscosity_interior_face(unsigned int const face, unsigned int const q, VaryingViscosityType viscosity_type) const
+  {
+    scalar viscosity = viscosity_coefficients.get_coefficient_face(face, q);
+
+    return viscosity;
+  }
+
+  /*
+   *  This function returns the viscosity for interior faces.
+   */
+  inline DEAL_II_ALWAYS_INLINE //
+    scalar
+    get_viscosity_interior_face_neighbor(unsigned int const face, unsigned int const q, VaryingViscosityType viscosity_type) const
+  {
+    scalar viscosity = viscosity_coefficients.get_coefficient_face_neighbor(face, q);
 
     return viscosity;
   }
@@ -284,8 +295,6 @@ public:
   VariableCoefficients<dealii::VectorizedArray<Number>> viscosity_coefficients;
   VariableCoefficients<dealii::VectorizedArray<Number>> eddy_viscosity_coefficients;
 
-  VectorType const * turbulent_kinetic_energy;
-  VectorType const * tke_dissipation_rate;
   VectorType eddy_viscosity;
 
 public:

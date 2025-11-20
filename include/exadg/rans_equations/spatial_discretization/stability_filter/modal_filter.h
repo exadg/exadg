@@ -78,7 +78,8 @@ private:
 					       Range const &         cell_range);
 
 	dealii::VectorizedArray<Number>
-	weight_function(uint dof);
+	weight_function(uint dof,
+		 uint dofs_per_cell);
 
 	void
 	convert_unit_cell_to_reference_cell(const std::vector<dealii::Point<dim>> & src,

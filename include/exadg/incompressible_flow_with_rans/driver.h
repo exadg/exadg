@@ -24,6 +24,7 @@
 
 // application
 #include <exadg/incompressible_flow_with_rans/user_interface/application_base.h>
+#include <exadg/incompressible_flow_with_rans/calculator/viscosity_calculator.h>
 
 // utilities
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
@@ -46,6 +47,7 @@
 #include <exadg/incompressible_navier_stokes_for_rans/time_integration/time_int_bdf_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes_for_rans/time_integration/time_int_bdf_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes_for_rans/time_integration/time_int_bdf_pressure_correction.h>
+
 
 namespace ExaDG
 {
@@ -75,10 +77,13 @@ private:
   ale_update() const;
 
   void
+  update_scalars() const;
+
+  void
   communicate_scalar_to_fluid() const;
 
   void
-  communicate_scalar_to_scalar() const;
+  communicate_eddy_viscosity_to_all() const;
 
   void
   communicate_fluid_to_all_scalars() const;
@@ -150,7 +155,7 @@ private:
 
   mutable dealii::LinearAlgebra::distributed::Vector<Number> turbulent_dissipation_rate;
 
-  mutable dealii::LinearAlgebra::distributed::Vector<Number> eddy_viscosity;
+  std::shared_ptr<ViscosityCalculator<dim, Number>> viscosity_calculator;
   /*
    * Computation time (wall clock time).
    */
