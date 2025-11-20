@@ -258,7 +258,7 @@ private:
 
     // TEMPORAL DISCRETIZATION
     this->param.solver_type                  = SolverType::Unsteady;
-    this->param.temporal_discretization      = TemporalDiscretization::BDFConsistentSplittingScheme;
+    this->param.temporal_discretization      = TemporalDiscretization::BDFConsistentSplitting;
     this->param.treatment_of_convective_term = TreatmentOfConvectiveTerm::LinearlyImplicit;
     this->param.order_time_integrator        = 2;
     this->param.start_with_low_order         = false;
@@ -348,7 +348,7 @@ private:
       this->param.order_time_integrator <= 2 ? this->param.order_time_integrator : 2;
     this->param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
 
-    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
     {
       if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
       {

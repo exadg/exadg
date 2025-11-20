@@ -378,7 +378,7 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
 
     if(continuity_penalty_use_boundary_data == true)
     {
-      if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+      if(temporal_discretization == TemporalDiscretization::BDFDualSplitting)
       {
         AssertThrow(
           apply_penalty_terms_in_postprocessing_step == true,
@@ -445,7 +445,7 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
   }
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
-  if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  if(temporal_discretization == TemporalDiscretization::BDFDualSplitting)
   {
     if(spatial_discretization == SpatialDiscretization::HDIV)
     {
@@ -483,7 +483,7 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
   }
 
   // CONSISTENT SPLITTING SCHEME
-  if(temporal_discretization == TemporalDiscretization::BDFConsistentSplittingScheme)
+  if(temporal_discretization == TemporalDiscretization::BDFConsistentSplitting)
   {
     AssertThrow(spatial_discretization != SpatialDiscretization::HDIV,
                 dealii::ExcMessage("Not implemented."));
@@ -673,8 +673,8 @@ Parameters::involves_h_multigrid() const
   // scheme in case of InterpolateAnalyticalSolution. This is only a temporary solution and we need
   // to write a separate class SpatialOperatorInterpolateAnalyticalSolution that does not create
   // preconditioners (including multigrid)
-  else if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme or
-          temporal_discretization == TemporalDiscretization::BDFConsistentSplittingScheme or
+  else if(temporal_discretization == TemporalDiscretization::BDFDualSplitting or
+          temporal_discretization == TemporalDiscretization::BDFConsistentSplitting or
           temporal_discretization == TemporalDiscretization::BDFPressureCorrection or
           temporal_discretization == TemporalDiscretization::InterpolateAnalyticalSolution)
   {
@@ -764,11 +764,11 @@ Parameters::print(dealii::ConditionalOStream const & pcout, std::string const & 
   print_parameters_numerical_parameters(pcout);
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
-  if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  if(temporal_discretization == TemporalDiscretization::BDFDualSplitting)
     print_parameters_dual_splitting(pcout);
 
   // CONSISTENT SPLITTING SCHEME
-  if(temporal_discretization == TemporalDiscretization::BDFConsistentSplittingScheme)
+  if(temporal_discretization == TemporalDiscretization::BDFConsistentSplitting)
     print_parameters_consistent_splitting(pcout);
 
   // PRESSURE-CORRECTION  SCHEME
@@ -998,7 +998,7 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
   print_parameter(pcout, "Use continuity penalty term", use_continuity_penalty);
 
   if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution or
-     temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+     temporal_discretization == TemporalDiscretization::BDFDualSplitting)
   {
     if(use_divergence_penalty == true or use_continuity_penalty == true)
     {

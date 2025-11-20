@@ -29,7 +29,7 @@
         "KinematicViscosity": "1e-6",
         "UseGeneralizedNewtonianModel": "true",
         "FormulationViscousTerm" : "DivergenceFormulation",
-        "TemporalDiscretization" : "BDFDualSplittingScheme",
+        "TemporalDiscretization" : "BDFDualSplitting",
         "TreatmentOfConvectiveTerm" : "LinearlyImplicit",
         "TreatmentOfVariableViscosity" : "Explicit",
         "GeneralizedNewtonianViscosityMargin": "49e-6",

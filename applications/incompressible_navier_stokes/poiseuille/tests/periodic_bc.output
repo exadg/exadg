@@ -39,7 +39,7 @@ Physical quantities:
   Density:                                   1.0000e+00
 
 Temporal discretization:
-  Temporal discretization method:            BDFDualSplittingScheme
+  Temporal discretization method:            BDFDualSplitting
   Calculation of time step size:             CFL
   Adaptive time stepping:                    true
   Adaptive time stepping limiting factor:    1.2000e+00

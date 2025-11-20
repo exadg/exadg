@@ -125,7 +125,7 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
 
-  //  param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  //  param.temporal_discretization = TemporalDiscretization::BDFDualSplitting;
   //  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   //  param.calculation_of_time_step_size = TimeStepCalculation::CFL;
   //  param.adaptive_time_stepping = true;
@@ -200,7 +200,7 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
   param.order_extrapolation_pressure_nbc =
     param.order_time_integrator <= 2 ? param.order_time_integrator : 2;
 
-  if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  if(param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
   {
     param.solver_momentum         = SolverMomentum::CG;
     param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-3);
