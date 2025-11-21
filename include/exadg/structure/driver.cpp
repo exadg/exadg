@@ -59,6 +59,14 @@ Driver<dim, Number>::setup()
 
   application->setup(grid, mapping, multigrid_mappings);
 
+  bool setup_scalar_field = false;
+  if(not is_throughput_study)
+  {
+    // initialize postprocessor, i.e., get user parameters
+    postprocessor      = application->create_postprocessor();
+    setup_scalar_field = postprocessor->requires_scalar_field();
+  }
+
   // setup spatial operator
   pde_operator = std::make_shared<Operator<dim, Number>>(grid,
                                                          mapping,
@@ -68,15 +76,15 @@ Driver<dim, Number>::setup()
                                                          application->get_material_descriptor(),
                                                          application->get_parameters(),
                                                          "elasticity",
+                                                         setup_scalar_field,
                                                          mpi_comm);
 
   pde_operator->setup();
 
   if(not is_throughput_study)
   {
-    // initialize postprocessor
-    postprocessor = application->create_postprocessor();
-    postprocessor->setup(pde_operator->get_dof_handler(), pde_operator->get_mapping());
+    // set up postprocessor
+    postprocessor->setup(*pde_operator);
 
     // initialize time integrator/driver
     if(application->get_parameters().problem_type == ProblemType::Unsteady)

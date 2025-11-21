@@ -300,7 +300,12 @@ MagnitudeCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> cons
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     integrator_vector.reinit(cell);
-    integrator_vector.gather_evaluate(src, dealii::EvaluationFlags::values);
+    // Do not enforce constraints on the `src` vector, as constraints are already applied and
+    // `dealii::MatrixFree` object stores constraints relevant in linear systemes, not necessarily
+    // constraints suitable for a DoF vector corresponding to the solution (e.g., in Newton's
+    // method).
+    integrator_vector.read_dof_values_plain(src);
+    integrator_vector.evaluate(dealii::EvaluationFlags::values);
 
     integrator_scalar.reinit(cell);
 

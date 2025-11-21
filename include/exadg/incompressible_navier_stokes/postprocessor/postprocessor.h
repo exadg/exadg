@@ -97,7 +97,7 @@ private:
 
   dealii::ObserverPointer<NavierStokesOperator const> navier_stokes_operator;
 
-  // DoF vectors for derived quantities
+  // Fields for derived quantities
   SolutionField<dim, Number> vorticity;
   SolutionField<dim, Number> divergence;
   SolutionField<dim, Number> shear_rate;
