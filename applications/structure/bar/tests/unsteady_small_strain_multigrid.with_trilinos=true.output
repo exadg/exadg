@@ -93,6 +93,12 @@ Continuous Galerkin finite element discretization:
   number of dofs per cell:                   375
   number of dofs (total):                    8019
 
+Discontinuous Galerkin finite element discretization of scalar field:
+
+  degree of 1D polynomials:                  4
+  number of dofs per cell:                   125
+  number of dofs (total):                    4000
+
 ... done!
 
 Setup elasticity operator ...

@@ -37,7 +37,7 @@ template<int dim, typename Number>
 void
 OutputGenerator<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler_in,
                                     dealii::Mapping<dim> const &    mapping_in,
-                                    OutputDataBase const &          output_data_in)
+                                    OutputData const &              output_data_in)
 {
   dof_handler = &dof_handler_in;
   mapping     = &mapping_in;
@@ -73,6 +73,18 @@ OutputGenerator<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler_
                          mpi_comm);
     }
 
+    // write grid
+    if(output_data.write_grid)
+    {
+      write_grid(dof_handler->get_triangulation(),
+                 *mapping,
+                 output_data.degree,
+                 output_data.directory,
+                 output_data.filename,
+                 0,
+                 mpi_comm);
+    }
+
     // processor_id
     if(output_data.write_processor_id)
     {
@@ -87,9 +99,11 @@ OutputGenerator<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler_
 
 template<int dim, typename Number>
 void
-OutputGenerator<dim, Number>::evaluate(VectorType const & solution,
-                                       double const       time,
-                                       bool const         unsteady)
+OutputGenerator<dim, Number>::evaluate(
+  VectorType const &                                                       solution,
+  std::vector<dealii::ObserverPointer<SolutionField<dim, Number>>> const & additional_fields,
+  double const                                                             time,
+  bool const                                                               unsteady)
 {
   print_write_output_time(time, time_control.get_counter(), unsteady, mpi_comm);
 
@@ -103,6 +117,8 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & solution,
                                 component_is_part_of_vector);
 
   vector_writer.write_aspect_ratio(*dof_handler, *mapping);
+
+  vector_writer.add_fields(additional_fields);
 
   vector_writer.write_pvtu(&(*mapping));
 }
