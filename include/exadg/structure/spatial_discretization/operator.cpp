@@ -343,6 +343,11 @@ Operator<dim, Number>::setup_calculators_for_derived_quantities()
                                            get_dof_index(),
                                            get_dof_index_scalar(),
                                            get_quad_index());
+
+    displacement_jacobian_calculator.initialize(*matrix_free,
+                                                get_dof_index(),
+                                                get_dof_index_scalar(),
+                                                get_quad_index());
   }
 }
 
@@ -708,6 +713,20 @@ Operator<dim, Number>::compute_displacement_magnitude(VectorType &       dst_sca
                                  "Cannot compute displacement magnitude."));
 
   vector_magnitude_calculator.compute(dst_scalar_valued, src_vector_valued);
+
+  inverse_mass_scalar.apply(dst_scalar_valued, dst_scalar_valued);
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::compute_displacement_jacobian(VectorType &       dst_scalar_valued,
+                                                     VectorType const & src_vector_valued) const
+{
+  AssertThrow(setup_scalar_field,
+              dealii::ExcMessage("Scalar field not set up. "
+                                 "Cannot compute Jacobian of the displacement field."));
+
+  displacement_jacobian_calculator.compute_projection_rhs(dst_scalar_valued, src_vector_valued);
 
   inverse_mass_scalar.apply(dst_scalar_valued, dst_scalar_valued);
 }

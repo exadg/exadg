@@ -78,6 +78,7 @@ private:
 
   // Fields for derived quantities
   SolutionField<dim, Number> displacement_magnitude;
+  SolutionField<dim, Number> displacement_jacobian;
 
   // write output for visualization of results (e.g., using paraview)
   OutputGenerator<dim, Number> output_generator;
