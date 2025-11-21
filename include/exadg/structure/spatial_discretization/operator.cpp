@@ -712,7 +712,7 @@ Operator<dim, Number>::compute_displacement_magnitude(VectorType &       dst_sca
               dealii::ExcMessage("Scalar field not set up. "
                                  "Cannot compute displacement magnitude."));
 
-  vector_magnitude_calculator.compute(dst_scalar_valued, src_vector_valued);
+  vector_magnitude_calculator.compute_projection_rhs(dst_scalar_valued, src_vector_valued);
 
   inverse_mass_scalar.apply(dst_scalar_valued, dst_scalar_valued);
 }
