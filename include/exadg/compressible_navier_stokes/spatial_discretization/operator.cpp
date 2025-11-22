@@ -686,7 +686,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::compute_vorticity(VectorType & dst, VectorType const & src) const
 {
-  vorticity_calculator.compute_vorticity(dst, src);
+  vorticity_calculator.compute_projection_rhs(dst, src);
   inverse_mass_vector.apply(dst, dst);
 }
 
@@ -694,7 +694,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::compute_divergence(VectorType & dst, VectorType const & src) const
 {
-  divergence_calculator.compute_divergence(dst, src);
+  divergence_calculator.compute_projection_rhs(dst, src);
   inverse_mass_scalar.apply(dst, dst);
 }
 
@@ -702,7 +702,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::compute_shear_rate(VectorType & dst, VectorType const & src) const
 {
-  shear_rate_calculator.compute_shear_rate(dst, src);
+  shear_rate_calculator.compute_projection_rhs(dst, src);
   inverse_mass_scalar.apply(dst, dst);
 }
 

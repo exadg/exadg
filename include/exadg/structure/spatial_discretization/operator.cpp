@@ -47,6 +47,7 @@ Operator<dim, Number>::Operator(
   std::shared_ptr<MaterialDescriptor const>             material_descriptor_in,
   Parameters const &                                    param_in,
   std::string const &                                   field_in,
+  bool const                                            setup_scalar_field_in,
   MPI_Comm const &                                      mpi_comm_in)
   : dealii::EnableObserverPointer(),
     grid(grid_in),
@@ -58,6 +59,7 @@ Operator<dim, Number>::Operator(
     param(param_in),
     field(field_in),
     dof_handler(*grid_in->triangulation),
+    setup_scalar_field(setup_scalar_field_in),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
 {
@@ -73,10 +75,7 @@ void
 Operator<dim, Number>::initialize_dof_handler_and_constraints()
 {
   // create finite element
-  fe = create_finite_element<dim>(param.grid.element_type,
-                                  false /* continuous Galerkin */,
-                                  dim,
-                                  param.degree);
+  fe = create_finite_element<dim>(param.grid.element_type, false /* is_dg */, dim, param.degree);
 
   // enumerate degrees of freedom
   dof_handler.distribute_dofs(*fe);
@@ -125,6 +124,36 @@ Operator<dim, Number>::initialize_dof_handler_and_constraints()
   print_parameter(pcout, "degree of 1D polynomials", param.degree);
   print_parameter(pcout, "number of dofs per cell", fe->n_dofs_per_cell());
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
+
+  // Set up finite element, DoF handler and constraints of scalar field.
+  if(setup_scalar_field)
+  {
+    bool constexpr scalar_field_is_dg = true;
+    fe_scalar                         = create_finite_element<dim>(param.grid.element_type,
+                                           scalar_field_is_dg /* is_dg */,
+                                           1 /* n_components */,
+                                           param.degree);
+
+    dof_handler_scalar = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
+    dof_handler_scalar->distribute_dofs(*fe_scalar);
+
+    // Set up hanging node and periodicity constraints for scalar field.
+    affine_constraints_periodicity_and_hanging_nodes_scalar.clear();
+    if(not scalar_field_is_dg)
+    {
+      add_hanging_node_and_periodicity_constraints(
+        affine_constraints_periodicity_and_hanging_nodes_scalar, *this->grid, *dof_handler_scalar);
+    }
+    affine_constraints_periodicity_and_hanging_nodes_scalar.close();
+
+    pcout << std::endl
+          << "Discontinuous Galerkin finite element discretization of scalar field:" << std::endl
+          << std::endl;
+
+    print_parameter(pcout, "degree of 1D polynomials", param.degree);
+    print_parameter(pcout, "number of dofs per cell", fe_scalar->n_dofs_per_cell());
+    print_parameter(pcout, "number of dofs (total)", dof_handler_scalar->n_dofs());
+  }
 }
 
 template<int dim, typename Number>
@@ -139,27 +168,38 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   if(param.body_force)
     matrix_free_data.append_mapping_flags(BodyForceOperator<dim, Number>::get_mapping_flags());
 
-  // dealii::DoFHandler, dealii::AffineConstraints
+  // Insert `dealii::DoFHandler` and `dealii::AffineConstraints`, where the constraints include
+  // periodicity and hanging node constraints *as well as* inhomogeneous Dirichlet boundary
+  // conditions.
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
   matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
 
-  // inhomogeneous Dirichlet boundary conditions: use additional AffineConstraints object, but the
-  // same DoFHandler
+  // Insert `dealii::DoFHandler` and `dealii::AffineConstraints`, where the constraints include
+  // periodicity and hanging node constraints *only*. Note that the `dealii::DoFHandler` is
+  // identical to the one used above, but the constraints differ.
   matrix_free_data.insert_dof_handler(&dof_handler,
                                       get_dof_name_periodicity_and_hanging_node_constraints());
   matrix_free_data.insert_constraint(&affine_constraints_periodicity_and_hanging_nodes,
                                      get_dof_name_periodicity_and_hanging_node_constraints());
 
-  // dealii::Quadrature
+  // Insert `dealii::DoFHandler` and `dealii::AffineConstraints` for scalar field.
+  if(setup_scalar_field)
+  {
+    matrix_free_data.insert_dof_handler(dof_handler_scalar.get(), get_dof_name_scalar());
+    matrix_free_data.insert_constraint(&affine_constraints_periodicity_and_hanging_nodes_scalar,
+                                       get_dof_name_scalar());
+  }
+
+  // Set up and insert `dealii::Quadrature` objects.
   std::shared_ptr<dealii::Quadrature<dim>> quadrature =
     create_quadrature<dim>(param.grid.element_type, param.degree + 1);
   matrix_free_data.insert_quadrature(*quadrature, get_quad_name());
 
-  // Create a Gauss-Lobatto quadrature rule for DirichletCached boundary conditions.
+  // Create a Gauss-Lobatto quadrature rule for `DirichletCached` boundary conditions.
   // These quadrature points coincide with the nodes of the discretization, so that
   // the values stored in the DirichletCached boundary condition can be directly
   // injected into the DoF vector. This allows to set constrained degrees of freedom
-  // in case of continuous Galerkin discretizations with DirichletCached boundary
+  // in case of continuous Galerkin discretizations with `DirichletCached` boundary
   // conditions.
   if(not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
@@ -252,9 +292,10 @@ Operator<dim, Number>::setup_operators()
                                           true /* assemble_matrix */);
   }
 
-  // mass operator
+  // Mass operator and inverse mass operator for vector-valued space
   if(param.problem_type == ProblemType::Unsteady)
   {
+    // vector-valued mass operator
     Structure::MassOperatorData<dim, Number> mass_data;
     mass_data.dof_index               = get_dof_index();
     mass_data.dof_index_inhomogeneous = get_dof_index_periodicity_and_hanging_node_constraints();
@@ -264,6 +305,49 @@ Operator<dim, Number>::setup_operators()
     mass_operator.initialize(*matrix_free, affine_constraints, mass_data);
 
     mass_operator.set_scaling_factor(param.density);
+
+    // vector-valued inverse mass operator for initial acceleration
+    InverseMassOperatorData<Number> inverse_mass_operator_data;
+    // Copy the relevant settings from the (non-)linear solvers for to reach the same tolerance as
+    // the outermost solver.
+    SolverData & solver_data = inverse_mass_operator_data.parameters.solver_data;
+    if(param.large_deformation)
+    {
+      solver_data.abs_tol  = param.newton_solver_data.abs_tol;
+      solver_data.rel_tol  = param.newton_solver_data.rel_tol;
+      solver_data.max_iter = param.newton_solver_data.max_iter;
+    }
+    else
+    {
+      solver_data.abs_tol  = param.solver_data.abs_tol;
+      solver_data.rel_tol  = param.solver_data.rel_tol;
+      solver_data.max_iter = param.solver_data.max_iter;
+    }
+    inverse_mass_operator_data.dof_index  = get_dof_index();
+    inverse_mass_operator_data.quad_index = get_quad_index();
+
+    // For a continuous Galerkin discretization a global Krylov solver is needed. The default
+    // `PointJacobi` preconditioner is usually sufficient.
+    inverse_mass_operator_data.parameters.implementation_type =
+      inverse_mass_operator_data.get_optimal_inverse_mass_type(*fe);
+    inverse_mass_operator_data.parameters.preconditioner = PreconditionerMass::PointJacobi;
+
+    inverse_mass.initialize(*matrix_free, inverse_mass_operator_data, &affine_constraints);
+  }
+
+  // scalar inverse mass operator
+  if(setup_scalar_field)
+  {
+    InverseMassOperatorData<Number> inverse_mass_operator_data_scalar;
+    inverse_mass_operator_data_scalar.parameters.solver_data = param.solver_data;
+    inverse_mass_operator_data_scalar.dof_index              = get_dof_index_scalar();
+    inverse_mass_operator_data_scalar.quad_index             = get_quad_index();
+    inverse_mass_operator_data_scalar.parameters.implementation_type =
+      inverse_mass_operator_data_scalar.get_optimal_inverse_mass_type(*fe_scalar);
+
+    inverse_mass_scalar.initialize(*matrix_free,
+                                   inverse_mass_operator_data_scalar,
+                                   &affine_constraints_periodicity_and_hanging_nodes_scalar);
   }
 
   // setup rhs operator
@@ -276,6 +360,24 @@ Operator<dim, Number>::setup_operators()
   else
     body_force_data.pull_back_body_force = false;
   body_force_operator.initialize(*matrix_free, body_force_data);
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::setup_calculators_for_derived_quantities()
+{
+  if(setup_scalar_field)
+  {
+    vector_magnitude_calculator.initialize(*matrix_free,
+                                           get_dof_index(),
+                                           get_dof_index_scalar(),
+                                           get_quad_index());
+
+    displacement_jacobian_calculator.initialize(*matrix_free,
+                                                get_dof_index(),
+                                                get_dof_index_scalar(),
+                                                get_quad_index());
+  }
 }
 
 template<int dim, typename Number>
@@ -315,6 +417,8 @@ Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> con
 
   setup_operators();
 
+  setup_calculators_for_derived_quantities();
+
   setup_preconditioner();
 
   setup_solver();
@@ -326,13 +430,6 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::setup_preconditioner()
 {
-  if(param.problem_type == ProblemType::Unsteady)
-  {
-    mass_preconditioner =
-      std::make_shared<JacobiPreconditioner<Structure::MassOperator<dim, Number>>>(mass_operator,
-                                                                                   true);
-  }
-
   if(param.preconditioner == Preconditioner::None)
   {
     // do nothing
@@ -482,31 +579,6 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::setup_solver()
 {
-  if(param.problem_type == ProblemType::Unsteady)
-  {
-    // initialize solver
-    Krylov::SolverDataCG solver_data;
-    solver_data.use_preconditioner = true;
-    // use the same solver tolerances as for solving the momentum equation
-    if(param.large_deformation)
-    {
-      solver_data.solver_tolerance_abs = param.newton_solver_data.abs_tol;
-      solver_data.solver_tolerance_rel = param.newton_solver_data.rel_tol;
-      solver_data.max_iter             = param.newton_solver_data.max_iter;
-    }
-    else
-    {
-      solver_data.solver_tolerance_abs = param.solver_data.abs_tol;
-      solver_data.solver_tolerance_rel = param.solver_data.rel_tol;
-      solver_data.max_iter             = param.solver_data.max_iter;
-    }
-
-    typedef Krylov::
-      SolverCG<Structure::MassOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
-        CG;
-    mass_solver = std::make_shared<CG>(mass_operator, *mass_preconditioner, solver_data);
-  }
-
   // initialize linear solver
   if(param.solver == Solver::CG)
   {
@@ -595,7 +667,16 @@ template<int dim, typename Number>
 std::string
 Operator<dim, Number>::get_dof_name_periodicity_and_hanging_node_constraints() const
 {
-  return field + "_" + dof_index_periodicity_and_handing_node_constraints;
+  return field + "_" + dof_index_periodicity_and_hanging_node_constraints;
+}
+
+template<int dim, typename Number>
+std::string
+Operator<dim, Number>::get_dof_name_scalar() const
+{
+  AssertThrow(setup_scalar_field, dealii::ExcMessage("Scalar field should not be set up."));
+
+  return field + "_" + dof_index_scalar;
 }
 
 template<int dim, typename Number>
@@ -620,10 +701,47 @@ Operator<dim, Number>::get_dof_index() const
 }
 
 template<int dim, typename Number>
+void
+Operator<dim, Number>::compute_displacement_magnitude(VectorType &       dst_scalar_valued,
+                                                      VectorType const & src_vector_valued) const
+{
+  AssertThrow(setup_scalar_field,
+              dealii::ExcMessage("Scalar field not set up. "
+                                 "Cannot compute displacement magnitude."));
+
+  vector_magnitude_calculator.compute_projection_rhs(dst_scalar_valued, src_vector_valued);
+
+  inverse_mass_scalar.apply(dst_scalar_valued, dst_scalar_valued);
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::compute_displacement_jacobian(VectorType &       dst_scalar_valued,
+                                                     VectorType const & src_vector_valued) const
+{
+  AssertThrow(setup_scalar_field,
+              dealii::ExcMessage("Scalar field not set up. "
+                                 "Cannot compute Jacobian of the displacement field."));
+
+  displacement_jacobian_calculator.compute_projection_rhs(dst_scalar_valued, src_vector_valued);
+
+  inverse_mass_scalar.apply(dst_scalar_valued, dst_scalar_valued);
+}
+
+template<int dim, typename Number>
 unsigned int
 Operator<dim, Number>::get_dof_index_periodicity_and_hanging_node_constraints() const
 {
   return matrix_free_data->get_dof_index(get_dof_name_periodicity_and_hanging_node_constraints());
+}
+
+template<int dim, typename Number>
+unsigned int
+Operator<dim, Number>::get_dof_index_scalar() const
+{
+  AssertThrow(setup_scalar_field, dealii::ExcMessage("Scalar field should not be set up."));
+
+  return matrix_free_data->get_dof_index(get_dof_name_scalar());
 }
 
 template<int dim, typename Number>
@@ -676,6 +794,17 @@ Operator<dim, Number>::initialize_dof_vector(VectorType & src) const
 
 template<int dim, typename Number>
 void
+Operator<dim, Number>::initialize_dof_vector_scalar(VectorType & src) const
+{
+  AssertThrow(setup_scalar_field,
+              dealii::ExcMessage("Scalar field not set up. "
+                                 "Cannot initialize scalar dof vector."));
+
+  matrix_free->initialize_dof_vector(src, get_dof_index_scalar());
+}
+
+template<int dim, typename Number>
+void
 Operator<dim, Number>::prescribe_initial_displacement(VectorType & displacement,
                                                       double const time) const
 {
@@ -711,7 +840,7 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
     {
       // elasticity operator
 
-      // NB: we have to deactivate the mass operator term
+      // deactivate the mass operator term
       double const scaling_factor_mass =
         elasticity_operator_nonlinear.get_scaling_factor_mass_operator();
       elasticity_operator_nonlinear.set_scaling_factor_mass_operator(0.0);
@@ -739,7 +868,8 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
     else // linear case
     {
       // elasticity operator
-      // NB: we have to deactivate the mass operator
+
+      // deactivate the mass operator
       double const scaling_factor_mass =
         elasticity_operator_linear.get_scaling_factor_mass_operator();
       elasticity_operator_linear.set_scaling_factor_mass_operator(0.0);
@@ -761,18 +891,21 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
       // body force
       if(param.body_force)
       {
-        // displacement is irrelevant for linear problem, since
+        // The displacement is irrelevant for linear problem, since
         // pull_back_body_force = false in this case.
         body_force_operator.evaluate_add(rhs, initial_displacement, time);
       }
     }
 
     // Shift inhomogeneous part of mass matrix operator (i.e. mass matrix applied to a dof vector
-    // with the initial acceleration in Dirichlet degrees of freedom) to the right-hand side
+    // with the initial acceleration in Dirichlet degrees of freedom) to the right-hand side.
     mass_operator.rhs_add(rhs);
 
-    // invert mass operator to get acceleration
-    mass_solver->solve(initial_acceleration, rhs);
+    // Apply inverse mass operator to compute the initial acceleration. Note that the mass operator
+    // is scaled with `density`, hence scale the right-hand side as the `InverseMassOperator` has
+    // its own `MassOperator`.
+    rhs /= param.density;
+    inverse_mass.apply(initial_acceleration, rhs);
 
     // Set initial acceleration for the Dirichlet degrees of freedom so that the initial
     // acceleration is also correct on the Dirichlet boundary
@@ -1011,6 +1144,15 @@ dealii::DoFHandler<dim> const &
 Operator<dim, Number>::get_dof_handler() const
 {
   return dof_handler;
+}
+
+template<int dim, typename Number>
+dealii::DoFHandler<dim> const &
+Operator<dim, Number>::get_dof_handler_scalar() const
+{
+  AssertThrow(setup_scalar_field, dealii::ExcMessage("Scalar dof handler has not been set up."));
+
+  return *dof_handler_scalar;
 }
 
 template<int dim, typename Number>
