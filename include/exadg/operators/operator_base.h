@@ -498,16 +498,16 @@ protected:
   /*
    * Block Jacobi preconditioner/smoother: matrix-free version with elementwise iterative solver
    */
-  typedef Elementwise::OperatorBase<dim, Number, This> ELEMENTWISE_OPERATOR;
+  typedef Elementwise::OperatorBase<dim, Number, This> ElementwiseOperator;
   typedef Elementwise::PreconditionerBase<dealii::VectorizedArray<Number>>
-    ELEMENTWISE_PRECONDITIONER;
+    ElementwisePreconditionerBase;
   typedef Elementwise::
-    IterativeSolver<dim, n_components, Number, ELEMENTWISE_OPERATOR, ELEMENTWISE_PRECONDITIONER>
-      ELEMENTWISE_SOLVER;
+    IterativeSolver<dim, n_components, Number, ElementwiseOperator, ElementwisePreconditionerBase>
+      ElementwiseSolver;
 
-  mutable std::shared_ptr<ELEMENTWISE_OPERATOR>       elementwise_operator;
-  mutable std::shared_ptr<ELEMENTWISE_PRECONDITIONER> elementwise_preconditioner;
-  mutable std::shared_ptr<ELEMENTWISE_SOLVER>         elementwise_solver;
+  mutable std::shared_ptr<ElementwiseOperator>           elementwise_operator;
+  mutable std::shared_ptr<ElementwisePreconditionerBase> elementwise_preconditioner;
+  mutable std::shared_ptr<ElementwiseSolver>             elementwise_solver;
 
 private:
   virtual void

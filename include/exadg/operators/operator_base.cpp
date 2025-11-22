@@ -722,30 +722,36 @@ void
 OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditioner_matrix_free(
   bool const initialize) const
 {
-  elementwise_operator = std::make_shared<ELEMENTWISE_OPERATOR>(*this);
+  elementwise_operator = std::make_shared<ElementwiseOperator>(*this);
 
   if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::None)
   {
-    typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<Number>> IDENTITY;
+    typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<Number>>
+      ElementwiseIdentityPreconditioner;
 
     IntegratorCell integrator =
       IntegratorCell(*this->matrix_free, this->data.dof_index, this->data.quad_index);
 
-    elementwise_preconditioner = std::make_shared<IDENTITY>(integrator.dofs_per_cell);
+    elementwise_preconditioner =
+      std::make_shared<ElementwiseIdentityPreconditioner>(integrator.dofs_per_cell);
   }
   else if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::PointJacobi)
   {
-    typedef Elementwise::JacobiPreconditioner<dim, n_components, Number, This> POINT_JACOBI;
+    typedef Elementwise::JacobiPreconditioner<dim, n_components, Number, This>
+      ElementwiseJacobiPreconditioner;
 
-    elementwise_preconditioner = std::make_shared<POINT_JACOBI>(
+    elementwise_preconditioner = std::make_shared<ElementwiseJacobiPreconditioner>(
       get_matrix_free(), get_dof_index(), get_quad_index(), *this, initialize);
   }
   else if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::InverseMassMatrix)
   {
-    typedef Elementwise::InverseMassPreconditioner<dim, n_components, Number> INVERSE_MASS;
+    typedef Elementwise::InverseMassPreconditioner<dim, n_components, Number>
+      ElementwiseInverseMassPreconditioner;
 
     elementwise_preconditioner =
-      std::make_shared<INVERSE_MASS>(get_matrix_free(), get_dof_index(), get_quad_index());
+      std::make_shared<ElementwiseInverseMassPreconditioner>(get_matrix_free(),
+                                                             get_dof_index(),
+                                                             get_quad_index());
   }
   else
   {
@@ -756,9 +762,9 @@ OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditione
   iterative_solver_data.solver_type = data.solver_block_diagonal;
   iterative_solver_data.solver_data = data.solver_data_block_diagonal;
 
-  elementwise_solver = std::make_shared<ELEMENTWISE_SOLVER>(
-    *std::dynamic_pointer_cast<ELEMENTWISE_OPERATOR>(elementwise_operator),
-    *std::dynamic_pointer_cast<ELEMENTWISE_PRECONDITIONER>(elementwise_preconditioner),
+  elementwise_solver = std::make_shared<ElementwiseSolver>(
+    *std::dynamic_pointer_cast<ElementwiseOperator>(elementwise_operator),
+    *std::dynamic_pointer_cast<ElementwisePreconditionerBase>(elementwise_preconditioner),
     iterative_solver_data);
 }
 
