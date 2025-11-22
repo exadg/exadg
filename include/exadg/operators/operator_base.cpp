@@ -508,7 +508,7 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
                         tmp,
                         tmp);
 
-      // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand
+      // multiply by -1.0 since the boundary face integrals have to be shifted to the right-hand
       // side
       rhs.add(-1.0, tmp);
     }

@@ -118,7 +118,7 @@ private:
   }
 
   /*
-   * Right hand side of the PPE
+   * Right-hand side of the PPE
    */
   // The bdf constant for the time derivative divded by the timestep size
   mutable Number gamma0_dt;

@@ -128,7 +128,7 @@ collect_integration_points(
 }
 
 /**
- * Utility function to compute the right hand side of a projection (mass matrix solve)
+ * Utility function to compute the right-hand side of a projection (mass matrix solve)
  * with values given in integration points in the exact sequence they are encountered in.
  */
 template<int dim, int n_components, typename Number, typename VectorType>
@@ -268,7 +268,7 @@ project_vectors(
       values_source_in_q_points_target = dealii::VectorTools::point_values<n_components>(
         rpe_source, source_dof_handler, source_vector, dealii::VectorTools::EvaluationFlags::avg);
 
-    // Assemble right hand side vector for the projection.
+    // Assemble right-hand side vector for the projection.
     VectorType system_rhs = assemble_projection_rhs<dim, n_components, Number, VectorType>(
       target_matrix_free, values_source_in_q_points_target, dof_index, quad_index);
 
