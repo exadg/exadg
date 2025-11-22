@@ -31,7 +31,14 @@ namespace ExaDG
 {
 namespace Structure
 {
-template<typename Number>
+// forward declaration
+template<int dim, typename Number>
+class Operator;
+
+/*
+ * Base class for postprocessor of displacement-based (hyper-)elasticity.
+ */
+template<int dim, typename Number>
 class PostProcessorBase
 {
 protected:
@@ -42,6 +49,15 @@ public:
   {
   }
 
+  /*
+   * Setup function.
+   */
+  virtual void
+  setup(Operator<dim, Number> const & pde_operator) = 0;
+
+  /*
+   * Postprocessing function.
+   */
   virtual void
   do_postprocessing(VectorType const &     solution,
                     double const           time             = 0.0,
