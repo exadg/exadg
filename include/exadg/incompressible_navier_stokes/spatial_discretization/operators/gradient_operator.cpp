@@ -109,7 +109,7 @@ GradientOperator<dim, Number>::rhs_bc_from_dof_vector(VectorType &       dst,
                     src_dummy,
                     false /*zero_dst_vector = false*/);
 
-  // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
+  // multiply by -1.0 since the boundary face integrals have to be shifted to the right-hand side
   dst.add(-1.0, tmp);
 
   pressure_bc = nullptr;
@@ -151,7 +151,7 @@ GradientOperator<dim, Number>::rhs_add(VectorType & dst, Number const evaluation
                     tmp,
                     false /*zero_dst_vector = false*/);
 
-  // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
+  // multiply by -1.0 since the boundary face integrals have to be shifted to the right-hand side
   dst.add(-1.0, tmp);
 }
 
