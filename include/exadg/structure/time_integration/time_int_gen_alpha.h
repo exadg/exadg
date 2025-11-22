@@ -26,6 +26,7 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
+#include <exadg/structure/postprocessor/postprocessor.h>
 #include <exadg/time_integration/time_int_gen_alpha_base.h>
 #include <exadg/utilities/timer_tree.h>
 
@@ -36,8 +37,8 @@ namespace Structure
 // forward declarations
 class Parameters;
 
-template<typename Number>
-class PostProcessorBase;
+template<int dim, typename Number>
+class PostProcessor;
 
 namespace Interface
 {
@@ -54,11 +55,11 @@ private:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  TimeIntGenAlpha(std::shared_ptr<Interface::Operator<Number>> operator_,
-                  std::shared_ptr<PostProcessorBase<Number>>   postprocessor_,
-                  Parameters const &                           param_,
-                  MPI_Comm const &                             mpi_comm_,
-                  bool const                                   is_test_);
+  TimeIntGenAlpha(std::shared_ptr<Interface::Operator<Number>> operator_in,
+                  std::shared_ptr<PostProcessor<dim, Number>>  postprocessor_in,
+                  Parameters const &                           param_in,
+                  MPI_Comm const &                             mpi_comm_in,
+                  bool const                                   is_test_in);
 
   void
   setup(bool const do_restart) final;
@@ -123,7 +124,7 @@ private:
 
   std::shared_ptr<Interface::Operator<Number>> pde_operator;
 
-  std::shared_ptr<PostProcessorBase<Number>> postprocessor;
+  std::shared_ptr<PostProcessor<dim, Number>> postprocessor;
 
   // number of refinement steps, where the time step size is reduced in
   // factors of 2 with each refinement

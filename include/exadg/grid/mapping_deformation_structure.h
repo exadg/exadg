@@ -57,6 +57,7 @@ public:
     std::shared_ptr<MaterialDescriptor const>             material_descriptor,
     Parameters const &                                    param,
     std::string const &                                   field,
+    bool const                                            setup_scalar_field,
     MPI_Comm const &                                      mpi_comm)
     : DeformedMappingBase<dim, Number>(mapping_undeformed, param.degree, *grid->triangulation),
       param(param),
@@ -72,6 +73,7 @@ public:
                                                            material_descriptor,
                                                            param,
                                                            field,
+                                                           setup_scalar_field,
                                                            mpi_comm);
 
     // setup PDE operator and solver
