@@ -1780,35 +1780,39 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
   {
     // elementwise operator
     elementwise_projection_operator =
-      std::make_shared<ELEMENTWISE_PROJ_OPERATOR>(*projection_operator);
+      std::make_shared<ElementwiseProjOperator>(*projection_operator);
 
     // elementwise preconditioner
     if(param.preconditioner_projection == PreconditionerProjection::None)
     {
-      typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<Number>> IDENTITY;
+      typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<Number>>
+        ElementwiseIdentityPreconditioner;
 
-      elementwise_preconditioner_projection =
-        std::make_shared<IDENTITY>(elementwise_projection_operator->get_problem_size());
+      elementwise_preconditioner_projection = std::make_shared<ElementwiseIdentityPreconditioner>(
+        elementwise_projection_operator->get_problem_size());
     }
     else if(param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
     {
-      typedef Elementwise::InverseMassPreconditioner<dim, dim, Number> INVERSE_MASS;
+      typedef Elementwise::InverseMassPreconditioner<dim, dim, Number>
+        ElementwiseInverseMassPreconditioner;
 
       elementwise_preconditioner_projection =
-        std::make_shared<INVERSE_MASS>(projection_operator->get_matrix_free(),
-                                       projection_operator->get_dof_index(),
-                                       projection_operator->get_quad_index());
+        std::make_shared<ElementwiseInverseMassPreconditioner>(
+          projection_operator->get_matrix_free(),
+          projection_operator->get_dof_index(),
+          projection_operator->get_quad_index());
     }
     else if(param.preconditioner_projection == PreconditionerProjection::PointJacobi)
     {
-      typedef Elementwise::JacobiPreconditioner<dim, dim, Number, ProjOperator> JACOBI;
+      typedef Elementwise::JacobiPreconditioner<dim, dim, Number, ProjOperator>
+        ElementwiseJacobiPreconditioner;
 
       elementwise_preconditioner_projection =
-        std::make_shared<JACOBI>(projection_operator->get_matrix_free(),
-                                 projection_operator->get_dof_index(),
-                                 projection_operator->get_quad_index(),
-                                 *projection_operator,
-                                 false);
+        std::make_shared<ElementwiseJacobiPreconditioner>(projection_operator->get_matrix_free(),
+                                                          projection_operator->get_dof_index(),
+                                                          projection_operator->get_quad_index(),
+                                                          *projection_operator,
+                                                          false);
     }
     else
     {
@@ -1823,15 +1827,14 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       projection_solver_data.solver_data.abs_tol = param.solver_data_projection.abs_tol;
       projection_solver_data.solver_data.rel_tol = param.solver_data_projection.rel_tol;
 
-      typedef Elementwise::PreconditionerBase<dealii::VectorizedArray<Number>> PROJ_PRECONDITIONER;
-
       typedef Elementwise::
-        IterativeSolver<dim, dim, Number, ELEMENTWISE_PROJ_OPERATOR, PROJ_PRECONDITIONER>
-          PROJ_SOLVER;
+        IterativeSolver<dim, dim, Number, ElementwiseProjOperator, ElementwisePreconditionerBase>
+          ElementwiseSolver;
 
-      projection_solver = std::make_shared<PROJ_SOLVER>(
-        *std::dynamic_pointer_cast<ELEMENTWISE_PROJ_OPERATOR>(elementwise_projection_operator),
-        *std::dynamic_pointer_cast<PROJ_PRECONDITIONER>(elementwise_preconditioner_projection),
+      projection_solver = std::make_shared<ElementwiseSolver>(
+        *std::dynamic_pointer_cast<ElementwiseProjOperator>(elementwise_projection_operator),
+        *std::dynamic_pointer_cast<ElementwisePreconditionerBase>(
+          elementwise_preconditioner_projection),
         projection_solver_data);
     }
     else

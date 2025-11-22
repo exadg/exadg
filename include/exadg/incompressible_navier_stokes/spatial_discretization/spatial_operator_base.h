@@ -608,12 +608,12 @@ protected:
 
   // Elementwise solver/preconditioner used in case that only the divergence penalty term is used
   // and the system of equations is block-diagonal.
-  typedef Elementwise::OperatorBase<dim, Number, ProjOperator> ELEMENTWISE_PROJ_OPERATOR;
-  std::shared_ptr<ELEMENTWISE_PROJ_OPERATOR>                   elementwise_projection_operator;
+  typedef Elementwise::OperatorBase<dim, Number, ProjOperator> ElementwiseProjOperator;
+  std::shared_ptr<ElementwiseProjOperator>                     elementwise_projection_operator;
 
   typedef Elementwise::PreconditionerBase<dealii::VectorizedArray<Number>>
-                                              ELEMENTWISE_PRECONDITIONER;
-  std::shared_ptr<ELEMENTWISE_PRECONDITIONER> elementwise_preconditioner_projection;
+                                                 ElementwisePreconditionerBase;
+  std::shared_ptr<ElementwisePreconditionerBase> elementwise_preconditioner_projection;
 
   // global solver/preconditioner to be used if the continuity penalty term is applied.
   std::shared_ptr<Krylov::SolverBase<VectorType>> projection_solver;
