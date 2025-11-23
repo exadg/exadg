@@ -129,8 +129,8 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="comment">// forward declarations</span></div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a>;</div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1Structure_1_1PostProcessorBase.html">PostProcessorBase</a>;</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1Structure_1_1PostProcessor.html">PostProcessor</a>;</div>
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="keyword">namespace </span>Interface</div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>{</div>
@@ -145,11 +145,11 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="keyword">public</span>:</div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keyword">typedef</span> dealii::LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  DriverSteady(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Structure_1_1Interface_1_1Operator.html">Interface::Operator&lt;Number&gt;</a>&gt; operator_,</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>               std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Structure_1_1PostProcessorBase.html">PostProcessorBase&lt;Number&gt;</a>&gt;   postprocessor_,</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>               <a class="code hl_class" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;                           param_,</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>               MPI_Comm <span class="keyword">const</span> &amp;                             mpi_comm_,</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>               <span class="keywordtype">bool</span> <span class="keyword">const</span>                                   is_test_);</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  DriverSteady(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Structure_1_1Interface_1_1Operator.html">Interface::Operator&lt;Number&gt;</a>&gt; operator_in,</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>               std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Structure_1_1PostProcessor.html">PostProcessor&lt;dim, Number&gt;</a>&gt;  postprocessor_in,</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>               <a class="code hl_class" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;                           param_in,</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>               MPI_Comm <span class="keyword">const</span> &amp;                             mpi_comm_in,</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>               <span class="keywordtype">bool</span> <span class="keyword">const</span>                                   is_test_in);</div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  setup();</div>
@@ -175,7 +175,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span> </div>
 <div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  std::shared_ptr&lt;Interface::Operator&lt;Number&gt;&gt; pde_operator;</div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span> </div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  std::shared_ptr&lt;PostProcessorBase&lt;Number&gt;&gt; postprocessor;</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  std::shared_ptr&lt;PostProcessor&lt;dim, Number&gt;&gt; postprocessor;</div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp; param;</div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
@@ -199,7 +199,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_STRUCTURE_TIME_INTEGRATION_DRIVER_STEADY_PROBLEMS_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1Interface_1_1Operator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1Interface_1_1Operator.html">ExaDG::Structure::Interface::Operator</a></div><div class="ttdef"><b>Definition</b> interface.h:39</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1Parameters.html">ExaDG::Structure::Parameters</a></div><div class="ttdef"><b>Definition</b> parameters.h:41</div></div>
-<div class="ttc" id="aclassExaDG_1_1Structure_1_1PostProcessorBase_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1PostProcessorBase.html">ExaDG::Structure::PostProcessorBase</a></div><div class="ttdef"><b>Definition</b> postprocessor_base.h:36</div></div>
+<div class="ttc" id="aclassExaDG_1_1Structure_1_1PostProcessor_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1PostProcessor.html">ExaDG::Structure::PostProcessor</a></div><div class="ttdef"><b>Definition</b> postprocessor.h:47</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->

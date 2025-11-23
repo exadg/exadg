@@ -165,46 +165,50 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="comment">// setup application</span></div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  application-&gt;setup(grid, mapping, multigrid_mappings);</div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  <span class="comment">// setup spatial operator</span></div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  pde_operator =</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>    std::make_shared&lt;Structure::Operator&lt;dim, Number&gt;&gt;(grid,</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>                                                       mapping,</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>                                                       multigrid_mappings,</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>                                                       application-&gt;get_boundary_descriptor(),</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>                                                       application-&gt;get_field_functions(),</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>                                                       application-&gt;get_material_descriptor(),</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>                                                       application-&gt;get_parameters(),</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>                                                       <span class="stringliteral">&quot;elasticity&quot;</span>,</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>                                                       mpi_comm);</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span> </div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  <span class="comment">// initialize matrix_free</span></div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  matrix_free_data = std::make_shared&lt;MatrixFreeData&lt;dim, Number&gt;&gt;();</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  matrix_free_data-&gt;append(pde_operator);</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span> </div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  matrix_free = std::make_shared&lt;dealii::MatrixFree&lt;dim, Number&gt;&gt;();</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  matrix_free-&gt;reinit(*mapping,</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>                      matrix_free_data-&gt;get_dof_handler_vector(),</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>                      matrix_free_data-&gt;get_constraint_vector(),</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>                      matrix_free_data-&gt;get_quadrature_vector(),</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>                      matrix_free_data-&gt;data);</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span> </div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  pde_operator-&gt;setup(matrix_free, matrix_free_data);</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  <span class="comment">// initialize postprocessor</span></div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  postprocessor = application-&gt;create_postprocessor();</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  postprocessor-&gt;setup(pde_operator-&gt;get_dof_handler(), *mapping);</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span> </div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  <span class="comment">// initialize time integrator</span></div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  time_integrator = std::make_shared&lt;Structure::TimeIntGenAlpha&lt;dim, Number&gt;&gt;(</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    pde_operator, postprocessor, application-&gt;get_parameters(), mpi_comm, is_test);</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  <span class="comment">// initialize postprocessor, i.e., get user parameters</span></div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  postprocessor                 = application-&gt;create_postprocessor();</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keywordtype">bool</span> <span class="keyword">const</span> setup_scalar_field = postprocessor-&gt;requires_scalar_field();</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span> </div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  <span class="comment">// setup spatial operator</span></div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  pde_operator =</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>    std::make_shared&lt;Structure::Operator&lt;dim, Number&gt;&gt;(grid,</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>                                                       mapping,</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>                                                       multigrid_mappings,</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>                                                       application-&gt;get_boundary_descriptor(),</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>                                                       application-&gt;get_field_functions(),</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>                                                       application-&gt;get_material_descriptor(),</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>                                                       application-&gt;get_parameters(),</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>                                                       <span class="stringliteral">&quot;elasticity&quot;</span>,</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>                                                       setup_scalar_field,</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>                                                       mpi_comm);</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span> </div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  <span class="comment">// initialize matrix_free</span></div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  matrix_free_data = std::make_shared&lt;MatrixFreeData&lt;dim, Number&gt;&gt;();</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  matrix_free_data-&gt;append(pde_operator);</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  matrix_free = std::make_shared&lt;dealii::MatrixFree&lt;dim, Number&gt;&gt;();</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  matrix_free-&gt;reinit(*mapping,</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>                      matrix_free_data-&gt;get_dof_handler_vector(),</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>                      matrix_free_data-&gt;get_constraint_vector(),</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>                      matrix_free_data-&gt;get_quadrature_vector(),</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>                      matrix_free_data-&gt;data);</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span> </div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  pde_operator-&gt;setup(matrix_free, matrix_free_data);</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span> </div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  <span class="comment">// set up postprocessor</span></div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  postprocessor-&gt;setup(*pde_operator);</div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span> </div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  time_integrator-&gt;setup(application-&gt;get_parameters().restarted_simulation);</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>}</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span> </div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>} <span class="comment">// namespace FSI</span></div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span> </div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_STRUCTURE_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  <span class="comment">// initialize time integrator</span></div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  time_integrator = std::make_shared&lt;Structure::TimeIntGenAlpha&lt;dim, Number&gt;&gt;(</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    pde_operator, postprocessor, application-&gt;get_parameters(), mpi_comm, is_test);</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span> </div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  time_integrator-&gt;setup(application-&gt;get_parameters().restarted_simulation);</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>}</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span> </div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>} <span class="comment">// namespace FSI</span></div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_STRUCTURE_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1FSI_1_1SolverStructure_html"><div class="ttname"><a href="classExaDG_1_1FSI_1_1SolverStructure.html">ExaDG::FSI::SolverStructure</a></div><div class="ttdef"><b>Definition</b> structure.h:36</div></div>
 <div class="ttc" id="aclassExaDG_1_1StructureFSI_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1StructureFSI_1_1ApplicationBase.html">ExaDG::StructureFSI::ApplicationBase</a></div><div class="ttdef"><b>Definition</b> application_base.h:58</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.13.2"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::Structure::PostProcessorBase&lt; Number &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::Structure::PostProcessorBase&lt; dim, Number &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -92,30 +92,33 @@ $(function(){ initResizable(false); });
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pro-types">Protected Types</a> &#124;
 <a href="classExaDG_1_1Structure_1_1PostProcessorBase-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">ExaDG::Structure::PostProcessorBase&lt; Number &gt; Class Template Reference<span class="mlabels"><span class="mlabel abstract">abstract</span></span></div></div>
+  <div class="headertitle"><div class="title">ExaDG::Structure::PostProcessorBase&lt; dim, Number &gt; Class Template Reference<span class="mlabels"><span class="mlabel abstract">abstract</span></span></div></div>
 </div><!--header-->
 <div class="contents">
 <div class="dynheader">
-Inheritance diagram for ExaDG::Structure::PostProcessorBase&lt; Number &gt;:</div>
+Inheritance diagram for ExaDG::Structure::PostProcessorBase&lt; dim, Number &gt;:</div>
 <div class="dyncontent">
  <div class="center">
-  <img src="classExaDG_1_1Structure_1_1PostProcessorBase.png" usemap="#ExaDG::Structure::PostProcessorBase_3C_20Number_20_3E_map" alt=""/>
-  <map id="ExaDG::Structure::PostProcessorBase_3C_20Number_20_3E_map" name="ExaDG::Structure::PostProcessorBase_3C_20Number_20_3E_map">
-<area href="classExaDG_1_1Structure_1_1PostProcessor.html" alt="ExaDG::Structure::PostProcessor&lt; dim, Number &gt;" shape="rect" coords="0,56,293,80"/>
+  <img src="classExaDG_1_1Structure_1_1PostProcessorBase.png" usemap="#ExaDG::Structure::PostProcessorBase_3C_20dim_2C_20Number_20_3E_map" alt=""/>
+  <map id="ExaDG::Structure::PostProcessorBase_3C_20dim_2C_20Number_20_3E_map" name="ExaDG::Structure::PostProcessorBase_3C_20dim_2C_20Number_20_3E_map">
+<area href="classExaDG_1_1Structure_1_1PostProcessor.html" alt="ExaDG::Structure::PostProcessor&lt; dim, Number &gt;" shape="rect" coords="0,56,321,80"/>
   </map>
 </div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a04f2b6f5cb6bcf918dd05e4d63316711" id="r_a04f2b6f5cb6bcf918dd05e4d63316711"><td class="memItemLeft" align="right" valign="top"><a id="a04f2b6f5cb6bcf918dd05e4d63316711" name="a04f2b6f5cb6bcf918dd05e4d63316711"></a>
+<tr class="memitem:aabff8a3d596a1dd87614e73c2db0c811" id="r_aabff8a3d596a1dd87614e73c2db0c811"><td class="memItemLeft" align="right" valign="top"><a id="aabff8a3d596a1dd87614e73c2db0c811" name="aabff8a3d596a1dd87614e73c2db0c811"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (<a class="el" href="classExaDG_1_1Structure_1_1Operator.html">Operator</a>&lt; dim, Number &gt; const &amp;pde_operator)=0</td></tr>
+<tr class="separator:aabff8a3d596a1dd87614e73c2db0c811"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acec4268f787707fbff35253e25f75b2c" id="r_acec4268f787707fbff35253e25f75b2c"><td class="memItemLeft" align="right" valign="top"><a id="acec4268f787707fbff35253e25f75b2c" name="acec4268f787707fbff35253e25f75b2c"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_postprocessing</b> (VectorType const &amp;solution, double const time=0.0, types::time_step const time_step_number=numbers::steady_timestep)=0</td></tr>
-<tr class="separator:a04f2b6f5cb6bcf918dd05e4d63316711"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:acec4268f787707fbff35253e25f75b2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-types" name="pro-types"></a>
 Protected Types</h2></td></tr>
-<tr class="memitem:a73a2208193c8761add381f1aec82892d" id="r_a73a2208193c8761add381f1aec82892d"><td class="memItemLeft" align="right" valign="top"><a id="a73a2208193c8761add381f1aec82892d" name="a73a2208193c8761add381f1aec82892d"></a>
+<tr class="memitem:a4fe10d20f9b6a7f0782596814bbd8382" id="r_a4fe10d20f9b6a7f0782596814bbd8382"><td class="memItemLeft" align="right" valign="top"><a id="a4fe10d20f9b6a7f0782596814bbd8382" name="a4fe10d20f9b6a7f0782596814bbd8382"></a>
 typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:a73a2208193c8761add381f1aec82892d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a4fe10d20f9b6a7f0782596814bbd8382"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/structure/postprocessor/<a class="el" href="structure_2postprocessor_2postprocessor__base_8h_source.html">postprocessor_base.h</a></li>
