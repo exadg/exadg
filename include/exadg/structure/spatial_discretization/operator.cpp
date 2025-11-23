@@ -292,9 +292,10 @@ Operator<dim, Number>::setup_operators()
                                           true /* assemble_matrix */);
   }
 
-  // mass operator
+  // Mass operator and inverse mass operator for vector-valued space
   if(param.problem_type == ProblemType::Unsteady)
   {
+    // vector-valued mass operator
     Structure::MassOperatorData<dim, Number> mass_data;
     mass_data.dof_index               = get_dof_index();
     mass_data.dof_index_inhomogeneous = get_dof_index_periodicity_and_hanging_node_constraints();
@@ -304,6 +305,34 @@ Operator<dim, Number>::setup_operators()
     mass_operator.initialize(*matrix_free, affine_constraints, mass_data);
 
     mass_operator.set_scaling_factor(param.density);
+
+    // vector-valued inverse mass operator for initial acceleration
+    InverseMassOperatorData<Number> inverse_mass_operator_data;
+    // Copy the relevant settings from the (non-)linear solvers for to reach the same tolerance as
+    // the outermost solver.
+    SolverData & solver_data = inverse_mass_operator_data.parameters.solver_data;
+    if(param.large_deformation)
+    {
+      solver_data.abs_tol  = param.newton_solver_data.abs_tol;
+      solver_data.rel_tol  = param.newton_solver_data.rel_tol;
+      solver_data.max_iter = param.newton_solver_data.max_iter;
+    }
+    else
+    {
+      solver_data.abs_tol  = param.solver_data.abs_tol;
+      solver_data.rel_tol  = param.solver_data.rel_tol;
+      solver_data.max_iter = param.solver_data.max_iter;
+    }
+    inverse_mass_operator_data.dof_index  = get_dof_index();
+    inverse_mass_operator_data.quad_index = get_quad_index();
+
+    // For a continuous Galerkin discretization a global Krylov solver is needed. The default
+    // `PointJacobi` preconditioner is usually sufficient.
+    inverse_mass_operator_data.parameters.implementation_type =
+      inverse_mass_operator_data.get_optimal_inverse_mass_type(*fe);
+    inverse_mass_operator_data.parameters.preconditioner = PreconditionerMass::PointJacobi;
+
+    inverse_mass.initialize(*matrix_free, inverse_mass_operator_data, &affine_constraints);
   }
 
   // scalar inverse mass operator
@@ -401,13 +430,6 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::setup_preconditioner()
 {
-  if(param.problem_type == ProblemType::Unsteady)
-  {
-    mass_preconditioner =
-      std::make_shared<JacobiPreconditioner<Structure::MassOperator<dim, Number>>>(mass_operator,
-                                                                                   true);
-  }
-
   if(param.preconditioner == Preconditioner::None)
   {
     // do nothing
@@ -557,31 +579,6 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::setup_solver()
 {
-  if(param.problem_type == ProblemType::Unsteady)
-  {
-    // initialize solver
-    Krylov::SolverDataCG solver_data;
-    solver_data.use_preconditioner = true;
-    // use the same solver tolerances as for solving the momentum equation
-    if(param.large_deformation)
-    {
-      solver_data.solver_tolerance_abs = param.newton_solver_data.abs_tol;
-      solver_data.solver_tolerance_rel = param.newton_solver_data.rel_tol;
-      solver_data.max_iter             = param.newton_solver_data.max_iter;
-    }
-    else
-    {
-      solver_data.solver_tolerance_abs = param.solver_data.abs_tol;
-      solver_data.solver_tolerance_rel = param.solver_data.rel_tol;
-      solver_data.max_iter             = param.solver_data.max_iter;
-    }
-
-    typedef Krylov::
-      SolverCG<Structure::MassOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
-        CG;
-    mass_solver = std::make_shared<CG>(mass_operator, *mass_preconditioner, solver_data);
-  }
-
   // initialize linear solver
   if(param.solver == Solver::CG)
   {
@@ -843,7 +840,7 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
     {
       // elasticity operator
 
-      // NB: we have to deactivate the mass operator term
+      // deactivate the mass operator term
       double const scaling_factor_mass =
         elasticity_operator_nonlinear.get_scaling_factor_mass_operator();
       elasticity_operator_nonlinear.set_scaling_factor_mass_operator(0.0);
@@ -871,7 +868,8 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
     else // linear case
     {
       // elasticity operator
-      // NB: we have to deactivate the mass operator
+
+      // deactivate the mass operator
       double const scaling_factor_mass =
         elasticity_operator_linear.get_scaling_factor_mass_operator();
       elasticity_operator_linear.set_scaling_factor_mass_operator(0.0);
@@ -893,18 +891,21 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
       // body force
       if(param.body_force)
       {
-        // displacement is irrelevant for linear problem, since
+        // The displacement is irrelevant for linear problem, since
         // pull_back_body_force = false in this case.
         body_force_operator.evaluate_add(rhs, initial_displacement, time);
       }
     }
 
     // Shift inhomogeneous part of mass matrix operator (i.e. mass matrix applied to a dof vector
-    // with the initial acceleration in Dirichlet degrees of freedom) to the right-hand side
+    // with the initial acceleration in Dirichlet degrees of freedom) to the right-hand side.
     mass_operator.rhs_add(rhs);
 
-    // invert mass operator to get acceleration
-    mass_solver->solve(initial_acceleration, rhs);
+    // Apply inverse mass operator to compute the initial acceleration. Note that the mass operator
+    // is scaled with `density`, hence scale the right-hand side, as the `InverseMassOperator` has
+    // its own `MassOperator`.
+    rhs /= param.density;
+    inverse_mass.apply(initial_acceleration, rhs);
 
     // Set initial acceleration for the Dirichlet degrees of freedom so that the initial
     // acceleration is also correct on the Dirichlet boundary
