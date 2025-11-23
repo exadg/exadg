@@ -36,7 +36,7 @@ var searchData=
   ['is_5fenum_33',['is_enum',['../namespaceExaDG_1_1Utilities.html#a51f3067c518a233b7f58b2b52d7da930',1,'ExaDG::Utilities']]],
   ['is_5ftime_5fwindow_5fcomplete_34',['is_time_window_complete',['../classExaDG_1_1preCICE_1_1Adapter.html#af2409b1817f17d6c7754664d3cd073c6',1,'ExaDG::preCICE::Adapter']]],
   ['iterativesolver_35',['IterativeSolver',['../classExaDG_1_1Elementwise_1_1IterativeSolver.html',1,'ExaDG::Elementwise']]],
-  ['iterativesolver_3c_20dim_2c_20n_5fcomponents_2c_20number_2c_20elementwise_5foperator_2c_20elementwise_5fpreconditioner_20_3e_36',['IterativeSolver&lt; dim, n_components, Number, ELEMENTWISE_OPERATOR, ELEMENTWISE_PRECONDITIONER &gt;',['../classExaDG_1_1Elementwise_1_1IterativeSolver.html',1,'ExaDG::Elementwise']]],
+  ['iterativesolver_3c_20dim_2c_20n_5fcomponents_2c_20number_2c_20elementwiseoperator_2c_20elementwisepreconditionerbase_20_3e_36',['IterativeSolver&lt; dim, n_components, Number, ElementwiseOperator, ElementwisePreconditionerBase &gt;',['../classExaDG_1_1Elementwise_1_1IterativeSolver.html',1,'ExaDG::Elementwise']]],
   ['iterativesolverdata_37',['IterativeSolverData',['../structExaDG_1_1Elementwise_1_1IterativeSolverData.html',1,'ExaDG::Elementwise']]],
   ['iwait_38',['iwait',['../classdealspectrum_1_1Permutator.html#a2d3b0db2ac65d628b201ea9475342685',1,'dealspectrum::Permutator']]]
 ];
