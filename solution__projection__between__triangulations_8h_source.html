@@ -351,7 +351,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>      values_source_in_q_points_target = dealii::VectorTools::point_values&lt;n_components&gt;(</div>
 <div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>        rpe_source, source_dof_handler, source_vector, dealii::VectorTools::EvaluationFlags::avg);</div>
 <div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span> </div>
-<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>    <span class="comment">// Assemble right hand side vector for the projection.</span></div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>    <span class="comment">// Assemble right-hand side vector for the projection.</span></div>
 <div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>    VectorType system_rhs = assemble_projection_rhs&lt;dim, n_components, Number, VectorType&gt;(</div>
 <div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>      target_matrix_free, values_source_in_q_points_target, dof_index, quad_index);</div>
 <div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span> </div>
