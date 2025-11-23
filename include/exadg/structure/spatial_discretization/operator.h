@@ -30,6 +30,7 @@
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
 #include <exadg/operators/mass_operator.h>
+#include <exadg/operators/navier_stokes_calculators.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 #include <exadg/structure/spatial_discretization/interface.h>
@@ -45,9 +46,15 @@ namespace ExaDG
 {
 namespace Structure
 {
-// forward declaration
+// forward declarations
 template<int dim, typename Number>
 class Operator;
+
+namespace Interface
+{
+template<typename Number>
+class Operator;
+}
 
 /*
  * This operator provides the interface required by the non-linear Newton solver.
@@ -175,15 +182,16 @@ public:
   /*
    * Constructor.
    */
-  Operator(std::shared_ptr<Grid<dim> const>                      grid,
-           std::shared_ptr<dealii::Mapping<dim> const>           mapping,
-           std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings,
-           std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor,
-           std::shared_ptr<FieldFunctions<dim> const>            field_functions,
-           std::shared_ptr<MaterialDescriptor const>             material_descriptor,
-           Parameters const &                                    param,
-           std::string const &                                   field,
-           MPI_Comm const &                                      mpi_comm);
+  Operator(std::shared_ptr<Grid<dim> const>                      grid_in,
+           std::shared_ptr<dealii::Mapping<dim> const>           mapping_in,
+           std::shared_ptr<MultigridMappings<dim, Number>> const multigrid_mappings_in,
+           std::shared_ptr<BoundaryDescriptor<dim> const>        boundary_descriptor_in,
+           std::shared_ptr<FieldFunctions<dim> const>            field_functions_in,
+           std::shared_ptr<MaterialDescriptor const>             material_descriptor_in,
+           Parameters const &                                    param_in,
+           std::string const &                                   field_in,
+           bool const                                            setup_scalar_field_in,
+           MPI_Comm const &                                      mpi_comm_in);
 
   void
   fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
@@ -204,10 +212,16 @@ public:
         std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data);
 
   /*
-   * Initialization of dof-vector.
+   * Initialization of DoF vector for vector field.
    */
   void
   initialize_dof_vector(VectorType & src) const final;
+
+  /*
+   * Initialization of DoF vector for scalar field.
+   */
+  void
+  initialize_dof_vector_scalar(VectorType & src) const;
 
   /*
    * Prescribe initial conditions using a specified initial solution function.
@@ -309,6 +323,9 @@ public:
   dealii::DoFHandler<dim> const &
   get_dof_handler() const;
 
+  dealii::DoFHandler<dim> const &
+  get_dof_handler_scalar() const;
+
   dealii::types::global_dof_index
   get_number_of_dofs() const;
 
@@ -322,6 +339,15 @@ public:
   // TODO: we currently need this function public for precice-based FSI
   unsigned int
   get_dof_index() const;
+
+  /*
+   * Computation of derived quantities needed for postprocessing.
+   */
+
+  // displacement magnitude
+  void
+  compute_displacement_magnitude(VectorType &       dst_scalar_valued,
+                                 VectorType const & src_vector_valued) const;
 
 private:
   /*
@@ -337,6 +363,9 @@ private:
   get_dof_name_periodicity_and_hanging_node_constraints() const;
 
   std::string
+  get_dof_name_scalar() const;
+
+  std::string
   get_quad_name() const;
 
   std::string
@@ -344,6 +373,9 @@ private:
 
   unsigned int
   get_dof_index_periodicity_and_hanging_node_constraints() const;
+
+  unsigned int
+  get_dof_index_scalar() const;
 
   unsigned int
   get_quad_index() const;
@@ -370,6 +402,12 @@ private:
    */
   void
   setup_operators();
+
+  /**
+   * Setup of calculators for derived quantities.
+   */
+  void
+  setup_calculators_for_derived_quantities();
 
   /**
    * Initializes preconditioner.
@@ -415,6 +453,10 @@ private:
   std::shared_ptr<dealii::FiniteElement<dim>> fe;
   dealii::DoFHandler<dim>                     dof_handler;
 
+  bool                                        setup_scalar_field;
+  std::shared_ptr<dealii::FiniteElement<dim>> fe_scalar;
+  std::shared_ptr<dealii::DoFHandler<dim>>    dof_handler_scalar;
+
   // AffineConstraints object as needed by iterative solvers and preconditioners for linear systems
   // of equations. This constraint object contains additional constraints from Dirichlet boundary
   // conditions as compared to the constraint object below. Note that the present constraint object
@@ -436,9 +478,14 @@ private:
   // set beforehand in separate routines.
   dealii::AffineConstraints<Number> affine_constraints_periodicity_and_hanging_nodes;
 
+  // Constraints object for the scalar field containing only periodicity and hanging node
+  // constraints as we do not enforce further Dirichlet boundary conditions on the scalar field.
+  dealii::AffineConstraints<Number> affine_constraints_periodicity_and_hanging_nodes_scalar;
+
   std::string const dof_index = "dof";
-  std::string const dof_index_periodicity_and_handing_node_constraints =
+  std::string const dof_index_periodicity_and_hanging_node_constraints =
     "dof_periodicity_hanging_nodes";
+  std::string const dof_index_scalar = "dof_scalar";
 
   std::string const quad_index               = "quad";
   std::string const quad_index_gauss_lobatto = "quad_gauss_lobatto";
@@ -495,9 +542,17 @@ private:
 
   std::shared_ptr<Krylov::SolverBase<VectorType>> linear_solver;
 
-  // mass operator inversion
-  std::shared_ptr<PreconditionerBase<Number>>     mass_preconditioner;
-  std::shared_ptr<Krylov::SolverBase<VectorType>> mass_solver;
+  /*
+   * Mass (inverse) operator(s) and solvers
+   */
+  std::shared_ptr<PreconditionerBase<Number>>            mass_preconditioner;
+  std::shared_ptr<Krylov::SolverBase<VectorType>>        mass_solver;
+  InverseMassOperator<dim, 1 /* n_components */, Number> inverse_mass_scalar;
+
+  /*
+   * Calculators to obtain derived quantities.
+   */
+  MagnitudeCalculator<dim, Number> vector_magnitude_calculator;
 
   /*
    * MPI communicator
