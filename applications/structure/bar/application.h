@@ -708,6 +708,7 @@ private:
     pp_data.output_data.directory                    = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename                     = this->output_parameters.filename;
     pp_data.output_data.write_displacement_magnitude = true;
+    pp_data.output_data.write_displacement_jacobian  = true;
     pp_data.output_data.write_higher_order           = true;
     pp_data.output_data.degree                       = this->param.degree;
 

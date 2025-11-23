@@ -31,6 +31,7 @@
 #include <exadg/operators/inverse_mass_operator.h>
 #include <exadg/operators/mass_operator.h>
 #include <exadg/operators/navier_stokes_calculators.h>
+#include <exadg/operators/structure_calculators.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 #include <exadg/structure/spatial_discretization/interface.h>
@@ -349,6 +350,11 @@ public:
   compute_displacement_magnitude(VectorType &       dst_scalar_valued,
                                  VectorType const & src_vector_valued) const;
 
+  // compute Jacobian of the displacement field
+  void
+  compute_displacement_jacobian(VectorType &       dst_tensor_valued,
+                                VectorType const & src_vector_valued) const;
+
 private:
   /*
    * Initializes dealii::DoFHandler.
@@ -553,6 +559,8 @@ private:
    * Calculators to obtain derived quantities.
    */
   MagnitudeCalculator<dim, Number> vector_magnitude_calculator;
+
+  DisplacementJacobianCalculator<dim, Number> displacement_jacobian_calculator;
 
   /*
    * MPI communicator
