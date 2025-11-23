@@ -45,20 +45,21 @@ DivergenceCalculator<dim, Number>::initialize(
 
 template<int dim, typename Number>
 void
-DivergenceCalculator<dim, Number>::compute_divergence(VectorType &       dst,
-                                                      VectorType const & src) const
+DivergenceCalculator<dim, Number>::compute_projection_rhs(
+  VectorType &       dst_scalar_valued,
+  VectorType const & src_vector_valued) const
 {
-  dst = 0;
+  dst_scalar_valued = 0.0;
 
-  matrix_free->cell_loop(&This::cell_loop, this, dst, src);
+  matrix_free->cell_loop(&This::cell_loop, this, dst_scalar_valued, src_vector_valued);
 }
 
 template<int dim, typename Number>
 void
 DivergenceCalculator<dim, Number>::cell_loop(
   dealii::MatrixFree<dim, Number> const &       matrix_free,
-  VectorType &                                  dst,
-  VectorType const &                            src,
+  VectorType &                                  dst_scalar_valued,
+  VectorType const &                            src_vector_valued,
   std::pair<unsigned int, unsigned int> const & cell_range) const
 {
   CellIntegratorVector integrator_vector(matrix_free, dof_index_vector, quad_index, 0);
@@ -67,7 +68,9 @@ DivergenceCalculator<dim, Number>::cell_loop(
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     integrator_vector.reinit(cell);
-    integrator_vector.read_dof_values(src);
+    // Do not enforce constraints on the source vector, as constraints are already applied and the
+    // `dealii::MatrixFree` object might store different constraints.
+    integrator_vector.read_dof_values_plain(src_vector_valued);
     integrator_vector.evaluate(dealii::EvaluationFlags::gradients);
 
     integrator_scalar.reinit(cell);
@@ -78,75 +81,74 @@ DivergenceCalculator<dim, Number>::cell_loop(
       integrator_scalar.submit_value(divergence, q);
     }
 
-    integrator_scalar.integrate(dealii::EvaluationFlags::values);
-    integrator_scalar.set_dof_values(dst);
+    integrator_scalar.integrate_scatter(dealii::EvaluationFlags::values, dst_scalar_valued);
   }
 }
 
 template<int dim, typename Number>
 ShearRateCalculator<dim, Number>::ShearRateCalculator()
-  : matrix_free(nullptr), dof_index_u(0), dof_index_u_scalar(0), quad_index(0)
+  : matrix_free(nullptr), dof_index_vector(0), dof_index_scalar(0), quad_index(0)
 {
 }
 
 template<int dim, typename Number>
 void
 ShearRateCalculator<dim, Number>::initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
-                                             unsigned int const                      dof_index_u_in,
-                                             unsigned int const dof_index_u_scalar_in,
+                                             unsigned int const dof_index_vector_in,
+                                             unsigned int const dof_index_scalar_in,
                                              unsigned int const quad_index_in)
 {
-  matrix_free        = &matrix_free_in;
-  dof_index_u        = dof_index_u_in;
-  dof_index_u_scalar = dof_index_u_scalar_in;
-  quad_index         = quad_index_in;
+  matrix_free      = &matrix_free_in;
+  dof_index_vector = dof_index_vector_in;
+  dof_index_scalar = dof_index_scalar_in;
+  quad_index       = quad_index_in;
 }
 
 template<int dim, typename Number>
 void
-ShearRateCalculator<dim, Number>::compute_shear_rate(VectorType & dst, VectorType const & src) const
+ShearRateCalculator<dim, Number>::compute_projection_rhs(VectorType &       dst_scalar_valued,
+                                                         VectorType const & src_vector_valued) const
 {
-  dst = 0;
+  dst_scalar_valued = 0.0;
 
-  matrix_free->cell_loop(&This::cell_loop, this, dst, src);
+  matrix_free->cell_loop(&This::cell_loop, this, dst_scalar_valued, src_vector_valued);
 }
 
 template<int dim, typename Number>
 void
 ShearRateCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                            VectorType &                            dst,
-                                            VectorType const &                      src,
-                                            Range const & cell_range) const
+                                            VectorType &       dst_scalar_valued,
+                                            VectorType const & src_vector_valued,
+                                            Range const &      cell_range) const
 {
-  CellIntegratorVector integrator_vector(matrix_free, dof_index_u, quad_index);
-  CellIntegratorScalar integrator_scalar(matrix_free, dof_index_u_scalar, quad_index);
+  CellIntegratorVector integrator_vector(matrix_free, dof_index_vector, quad_index);
+  CellIntegratorScalar integrator_scalar(matrix_free, dof_index_scalar, quad_index);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     integrator_vector.reinit(cell);
-    integrator_vector.gather_evaluate(src, dealii::EvaluationFlags::gradients);
+    // Do not enforce constraints on the source vector, as constraints are already applied and the
+    // `dealii::MatrixFree` object might store different constraints.
+    integrator_vector.read_dof_values_plain(src_vector_valued);
+    integrator_vector.evaluate(dealii::EvaluationFlags::gradients);
 
     integrator_scalar.reinit(cell);
 
     for(unsigned int q = 0; q < integrator_scalar.n_q_points; q++)
     {
-      symmetrictensor sym_grad_u = integrator_vector.get_symmetric_gradient(q);
-
-      // Shear rate definition according to Galdi et al., 2008
-      // ("Hemodynamical Flows: Modeling, Analysis and Simulation").
-      // sqrt(2*trace(sym_grad_u^2)) = sqrt(2*sym_grad_u : sym_grad_u)
-      scalar shear_rate = std::sqrt(2.0 * scalar_product(sym_grad_u, sym_grad_u));
+      symmetric_tensor sym_grad_u = integrator_vector.get_symmetric_gradient(q);
+      scalar           shear_rate = std::sqrt(2.0 * scalar_product(sym_grad_u, sym_grad_u));
 
       integrator_scalar.submit_value(shear_rate, q);
     }
 
-    integrator_scalar.integrate_scatter(dealii::EvaluationFlags::values, dst);
+    integrator_scalar.integrate_scatter(dealii::EvaluationFlags::values, dst_scalar_valued);
   }
 }
 
 template<int dim, typename Number>
 ViscosityCalculator<dim, Number>::ViscosityCalculator()
-  : matrix_free(nullptr), dof_index_u_scalar(0), quad_index(0), viscous_kernel(nullptr)
+  : matrix_free(nullptr), dof_index_scalar(0), quad_index(0), viscous_kernel(nullptr)
 {
 }
 
@@ -154,35 +156,38 @@ template<int dim, typename Number>
 void
 ViscosityCalculator<dim, Number>::initialize(
   dealii::MatrixFree<dim, Number> const &              matrix_free_in,
-  unsigned int const                                   dof_index_u_scalar_in,
+  unsigned int const                                   dof_index_scalar_in,
   unsigned int const                                   quad_index_in,
   IncNS::Operators::ViscousKernel<dim, Number> const & viscous_kernel_in)
 {
-  matrix_free        = &matrix_free_in;
-  dof_index_u_scalar = dof_index_u_scalar_in;
-  quad_index         = quad_index_in;
-  viscous_kernel     = &viscous_kernel_in;
+  matrix_free      = &matrix_free_in;
+  dof_index_scalar = dof_index_scalar_in;
+  quad_index       = quad_index_in;
+  viscous_kernel   = &viscous_kernel_in;
 }
 
 template<int dim, typename Number>
 void
-ViscosityCalculator<dim, Number>::access_viscosity(VectorType & dst) const
+ViscosityCalculator<dim, Number>::compute_projection_rhs(VectorType & dst_scalar_valued) const
 {
-  dst = 0.0;
+  dst_scalar_valued = 0.0;
 
-  matrix_free->cell_loop(&This::cell_loop, this, dst, dst /* not used */);
+  matrix_free->cell_loop(&This::cell_loop,
+                         this,
+                         dst_scalar_valued,
+                         dst_scalar_valued /* not used */);
 }
 
 template<int dim, typename Number>
 void
 ViscosityCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                            VectorType &                            dst,
-                                            VectorType const &                      src,
-                                            Range const & cell_range) const
+                                            VectorType &       dst_scalar_valued,
+                                            VectorType const & src_scalar_valued,
+                                            Range const &      cell_range) const
 {
-  (void)src;
+  (void)src_scalar_valued;
 
-  CellIntegratorScalar integrator_scalar(matrix_free, dof_index_u_scalar, quad_index);
+  CellIntegratorScalar integrator_scalar(matrix_free, dof_index_scalar, quad_index);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
@@ -195,48 +200,51 @@ ViscosityCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> cons
       integrator_scalar.submit_value(viscosity, q);
     }
 
-    integrator_scalar.integrate_scatter(dealii::EvaluationFlags::values, dst);
+    integrator_scalar.integrate_scatter(dealii::EvaluationFlags::values, dst_scalar_valued);
   }
 }
 
 template<int dim, typename Number>
 VorticityCalculator<dim, Number>::VorticityCalculator()
-  : matrix_free(nullptr), dof_index(0), quad_index(0)
+  : matrix_free(nullptr), dof_index_vector(0), quad_index(0)
 {
 }
 
 template<int dim, typename Number>
 void
 VorticityCalculator<dim, Number>::initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
-                                             unsigned int const                      dof_index_in,
-                                             unsigned int const                      quad_index_in)
+                                             unsigned int const dof_index_vector_in,
+                                             unsigned int const quad_index_in)
 {
-  matrix_free = &matrix_free_in;
-  dof_index   = dof_index_in;
-  quad_index  = quad_index_in;
+  matrix_free      = &matrix_free_in;
+  dof_index_vector = dof_index_vector_in;
+  quad_index       = quad_index_in;
 }
 
 template<int dim, typename Number>
 void
-VorticityCalculator<dim, Number>::compute_vorticity(VectorType & dst, VectorType const & src) const
+VorticityCalculator<dim, Number>::compute_projection_rhs(VectorType &       dst_vector_valued,
+                                                         VectorType const & src_vector_valued) const
 {
-  matrix_free->cell_loop(&This::cell_loop, this, dst, src);
+  matrix_free->cell_loop(&This::cell_loop, this, dst_vector_valued, src_vector_valued);
 }
 
 template<int dim, typename Number>
 void
 VorticityCalculator<dim, Number>::cell_loop(
   dealii::MatrixFree<dim, Number> const &       matrix_free,
-  VectorType &                                  dst,
-  VectorType const &                            src,
+  VectorType &                                  dst_vector_valued,
+  VectorType const &                            src_vector_valued,
   std::pair<unsigned int, unsigned int> const & cell_range) const
 {
-  CellIntegratorVector integrator(matrix_free, dof_index, quad_index, 0);
+  CellIntegratorVector integrator(matrix_free, dof_index_vector, quad_index, 0);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     integrator.reinit(cell);
-    integrator.read_dof_values(src);
+    // Do not enforce constraints on the source vector, as constraints are already applied and the
+    // `dealii::MatrixFree` object might store different constraints.
+    integrator.read_dof_values_plain(src_vector_valued);
     integrator.evaluate(dealii::EvaluationFlags::gradients);
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
@@ -251,60 +259,59 @@ VorticityCalculator<dim, Number>::cell_loop(
       vector omega_vector;
       for(unsigned int d = 0; d < number_vorticity_components; ++d)
         omega_vector[d] = omega[d];
+
       integrator.submit_value(omega_vector, q);
     }
 
-    integrator.integrate(dealii::EvaluationFlags::values);
-    integrator.set_dof_values(dst);
+    integrator.integrate_scatter(dealii::EvaluationFlags::values, dst_vector_valued);
   }
 }
 
 template<int dim, typename Number>
 MagnitudeCalculator<dim, Number>::MagnitudeCalculator()
-  : matrix_free(nullptr), dof_index_u(0), dof_index_u_scalar(0), quad_index(0)
+  : matrix_free(nullptr), dof_index_vector(0), dof_index_scalar(0), quad_index(0)
 {
 }
 
 template<int dim, typename Number>
 void
 MagnitudeCalculator<dim, Number>::initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
-                                             unsigned int const                      dof_index_u_in,
-                                             unsigned int const dof_index_u_scalar_in,
+                                             unsigned int const dof_index_vector_in,
+                                             unsigned int const dof_index_scalar_in,
                                              unsigned int const quad_index_in)
 {
-  matrix_free        = &matrix_free_in;
-  dof_index_u        = dof_index_u_in;
-  dof_index_u_scalar = dof_index_u_scalar_in;
-  quad_index         = quad_index_in;
+  matrix_free      = &matrix_free_in;
+  dof_index_vector = dof_index_vector_in;
+  dof_index_scalar = dof_index_scalar_in;
+  quad_index       = quad_index_in;
 }
 
 template<int dim, typename Number>
 void
-MagnitudeCalculator<dim, Number>::compute(VectorType & dst, VectorType const & src) const
+MagnitudeCalculator<dim, Number>::compute_projection_rhs(VectorType &       dst_scalar_valued,
+                                                         VectorType const & src_vector_valued) const
 {
-  dst = 0;
+  dst_scalar_valued = 0.0;
 
-  matrix_free->cell_loop(&This::cell_loop, this, dst, src);
+  matrix_free->cell_loop(&This::cell_loop, this, dst_scalar_valued, src_vector_valued);
 }
 
 template<int dim, typename Number>
 void
 MagnitudeCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                            VectorType &                            dst,
-                                            VectorType const &                      src,
-                                            Range const & cell_range) const
+                                            VectorType &       dst_scalar_valued,
+                                            VectorType const & src_vector_valued,
+                                            Range const &      cell_range) const
 {
-  IntegratorVector integrator_vector(matrix_free, dof_index_u, quad_index);
-  IntegratorScalar integrator_scalar(matrix_free, dof_index_u_scalar, quad_index);
+  IntegratorVector integrator_vector(matrix_free, dof_index_vector, quad_index);
+  IntegratorScalar integrator_scalar(matrix_free, dof_index_scalar, quad_index);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     integrator_vector.reinit(cell);
-    // Do not enforce constraints on the `src` vector, as constraints are already applied and
-    // `dealii::MatrixFree` object stores constraints relevant in linear systemes, not necessarily
-    // constraints suitable for a DoF vector corresponding to the solution (e.g., in Newton's
-    // method).
-    integrator_vector.read_dof_values_plain(src);
+    // Do not enforce constraints on the source vector, as constraints are already applied and
+    // the.`dealii::MatrixFree` object might store different constraints.
+    integrator_vector.read_dof_values_plain(src_vector_valued);
     integrator_vector.evaluate(dealii::EvaluationFlags::values);
 
     integrator_scalar.reinit(cell);
@@ -314,15 +321,16 @@ MagnitudeCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> cons
       scalar magnitude = integrator_vector.get_value(q).norm();
       integrator_scalar.submit_value(magnitude, q);
     }
-    integrator_scalar.integrate_scatter(dealii::EvaluationFlags::values, dst);
+
+    integrator_scalar.integrate_scatter(dealii::EvaluationFlags::values, dst_scalar_valued);
   }
 }
 
 template<int dim, typename Number>
 QCriterionCalculator<dim, Number>::QCriterionCalculator()
   : matrix_free(nullptr),
-    dof_index_u(0),
-    dof_index_u_scalar(0),
+    dof_index_vector(0),
+    dof_index_scalar(0),
     quad_index(0),
     compressible_flow(false)
 {
@@ -332,48 +340,54 @@ template<int dim, typename Number>
 void
 QCriterionCalculator<dim, Number>::initialize(
   dealii::MatrixFree<dim, Number> const & matrix_free_in,
-  unsigned int const                      dof_index_u_in,
-  unsigned int const                      dof_index_u_scalar_in,
+  unsigned int const                      dof_index_vector_in,
+  unsigned int const                      dof_index_scalar_in,
   unsigned int const                      quad_index_in,
   bool const                              compressible_flow_in)
 {
-  matrix_free        = &matrix_free_in;
-  dof_index_u        = dof_index_u_in;
-  dof_index_u_scalar = dof_index_u_scalar_in;
-  quad_index         = quad_index_in;
-  compressible_flow  = compressible_flow_in;
+  matrix_free       = &matrix_free_in;
+  dof_index_vector  = dof_index_vector_in;
+  dof_index_scalar  = dof_index_scalar_in;
+  quad_index        = quad_index_in;
+  compressible_flow = compressible_flow_in;
 }
 
 template<int dim, typename Number>
 void
-QCriterionCalculator<dim, Number>::compute(VectorType & dst, VectorType const & src) const
+QCriterionCalculator<dim, Number>::compute_projection_rhs(
+  VectorType &       dst_scalar_valued,
+  VectorType const & src_vector_valued) const
 {
-  dst = 0;
+  dst_scalar_valued = 0;
 
-  matrix_free->cell_loop(&This::cell_loop, this, dst, src, compressible_flow);
+  matrix_free->cell_loop(
+    &This::cell_loop, this, dst_scalar_valued, src_vector_valued, compressible_flow);
 }
 
 template<int dim, typename Number>
 void
 QCriterionCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                             VectorType &                            dst,
-                                             VectorType const &                      src,
-                                             Range const & cell_range) const
+                                             VectorType &       dst_scalar_valued,
+                                             VectorType const & src_vector_valued,
+                                             Range const &      cell_range) const
 {
-  CellIntegratorVector integrator_vector(matrix_free, dof_index_u, quad_index);
-  CellIntegratorScalar integrator_scalar(matrix_free, dof_index_u_scalar, quad_index);
+  CellIntegratorVector integrator_vector(matrix_free, dof_index_vector, quad_index);
+  CellIntegratorScalar integrator_scalar(matrix_free, dof_index_scalar, quad_index);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     integrator_vector.reinit(cell);
-    integrator_vector.gather_evaluate(src, dealii::EvaluationFlags::gradients);
+    // Do not enforce constraints on the source vector, as constraints are already applied and
+    // `dealii::MatrixFree` object might store different constraints.
+    integrator_vector.read_dof_values_plain(src_vector_valued);
+    integrator_vector.evaluate(dealii::EvaluationFlags::gradients);
 
     integrator_scalar.reinit(cell);
 
     for(unsigned int q = 0; q < integrator_scalar.n_q_points; q++)
     {
-      tensor grad_u = integrator_vector.get_gradient(q);
-      tensor Om, S;
+      tensor const grad_u = integrator_vector.get_gradient(q);
+      tensor       Om, S;
       for(unsigned int i = 0; i < dim; i++)
       {
         for(unsigned int j = 0; j < dim; j++)
@@ -398,7 +412,8 @@ QCriterionCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> con
       scalar const Q = 0.5 * (Om.norm_square() - S.norm_square());
       integrator_scalar.submit_value(Q, q);
     }
-    integrator_scalar.integrate_scatter(dealii::EvaluationFlags::values, dst);
+
+    integrator_scalar.integrate_scatter(dealii::EvaluationFlags::values, dst_scalar_valued);
   }
 }
 
