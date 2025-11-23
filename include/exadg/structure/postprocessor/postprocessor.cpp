@@ -56,7 +56,8 @@ template<int dim, typename Number>
 bool
 PostProcessor<dim, Number>::requires_scalar_field() const
 {
-  return pp_data.output_data.write_displacement_magnitude;
+  return (pp_data.output_data.write_displacement_magnitude or
+          pp_data.output_data.write_displacement_jacobian);
 }
 
 template<int dim, typename Number>
@@ -73,10 +74,17 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     solution,
   if(output_generator.time_control.needs_evaluation(time, time_step_number))
   {
     std::vector<dealii::ObserverPointer<SolutionField<dim, Number>>> additional_fields_vtu;
+
     if(pp_data.output_data.write_displacement_magnitude)
     {
       displacement_magnitude.evaluate(solution);
       additional_fields_vtu.push_back(&displacement_magnitude);
+    }
+
+    if(pp_data.output_data.write_displacement_jacobian)
+    {
+      displacement_jacobian.evaluate(solution);
+      additional_fields_vtu.push_back(&displacement_jacobian);
     }
 
     output_generator.evaluate(solution,
@@ -112,6 +120,23 @@ PostProcessor<dim, Number>::initialize_derived_fields()
 
     displacement_magnitude.reinit();
   }
+
+  // Jacobian of the displacement field
+  if(pp_data.output_data.write_displacement_jacobian)
+  {
+    displacement_jacobian.type              = SolutionFieldType::scalar;
+    displacement_jacobian.name              = "displacement_jacobian";
+    displacement_jacobian.dof_handler       = &pde_operator->get_dof_handler_scalar();
+    displacement_jacobian.initialize_vector = [&](VectorType & dst) {
+      pde_operator->initialize_dof_vector_scalar(dst);
+    };
+    displacement_jacobian.recompute_solution_field = [&](VectorType &       dst_scalar_valued,
+                                                         const VectorType & src_vector_valued) {
+      pde_operator->compute_displacement_jacobian(dst_scalar_valued, src_vector_valued);
+    };
+
+    displacement_jacobian.reinit();
+  }
 }
 
 template<int dim, typename Number>
@@ -119,6 +144,7 @@ void
 PostProcessor<dim, Number>::invalidate_derived_fields()
 {
   displacement_magnitude.invalidate();
+  displacement_jacobian.invalidate();
 }
 
 template class PostProcessor<2, float>;
