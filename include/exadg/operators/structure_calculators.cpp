@@ -70,10 +70,8 @@ DisplacementJacobianCalculator<dim, Number>::cell_loop(
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     integrator_vector.reinit(cell);
-    // Do not enforce constraints on the `src` vector, as constraints are already applied and
-    // `dealii::MatrixFree` object stores constraints relevant in linear systemes, not necessarily
-    // constraints suitable for a DoF vector corresponding to the solution (e.g., in Newton's
-    // method).
+    // Do not enforce constraints on the `src` vector, as constraints are already applied and the
+    // `dealii::MatrixFree` object might store different constraints.
     integrator_vector.read_dof_values_plain(src_vector_valued);
     integrator_vector.evaluate(dealii::EvaluationFlags::gradients);
 

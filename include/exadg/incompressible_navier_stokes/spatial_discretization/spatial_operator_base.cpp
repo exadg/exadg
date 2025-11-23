@@ -1413,7 +1413,7 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::compute_vorticity(VectorType & dst, VectorType const & src) const
 {
-  vorticity_calculator.compute_vorticity(dst, src);
+  vorticity_calculator.compute_projection_rhs(dst, src);
   this->apply_inverse_mass_operator(dst, dst);
 }
 
@@ -1421,8 +1421,7 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::compute_divergence(VectorType & dst, VectorType const & src) const
 {
-  divergence_calculator.compute_divergence(dst, src);
-
+  divergence_calculator.compute_projection_rhs(dst, src);
   inverse_mass_velocity_scalar.apply(dst, dst);
 }
 
@@ -1430,8 +1429,7 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::compute_shear_rate(VectorType & dst, VectorType const & src) const
 {
-  shear_rate_calculator.compute_shear_rate(dst, src);
-
+  shear_rate_calculator.compute_projection_rhs(dst, src);
   inverse_mass_velocity_scalar.apply(dst, dst);
 }
 
@@ -1441,7 +1439,7 @@ SpatialOperatorBase<dim, Number>::access_viscosity(VectorType & dst) const
 {
   if(param.viscosity_is_variable())
   {
-    viscosity_calculator.access_viscosity(dst);
+    viscosity_calculator.compute_projection_rhs(dst);
     inverse_mass_velocity_scalar.apply(dst, dst);
   }
   else
@@ -1455,8 +1453,7 @@ void
 SpatialOperatorBase<dim, Number>::compute_velocity_magnitude(VectorType &       dst,
                                                              VectorType const & src) const
 {
-  magnitude_calculator.compute(dst, src);
-
+  magnitude_calculator.compute_projection_rhs(dst, src);
   inverse_mass_velocity_scalar.apply(dst, dst);
 }
 
@@ -1465,8 +1462,7 @@ void
 SpatialOperatorBase<dim, Number>::compute_vorticity_magnitude(VectorType &       dst,
                                                               VectorType const & src) const
 {
-  magnitude_calculator.compute(dst, src);
-
+  magnitude_calculator.compute_projection_rhs(dst, src);
   inverse_mass_velocity_scalar.apply(dst, dst);
 }
 
@@ -1573,8 +1569,7 @@ void
 SpatialOperatorBase<dim, Number>::compute_q_criterion(VectorType &       dst,
                                                       VectorType const & src) const
 {
-  q_criterion_calculator.compute(dst, src);
-
+  q_criterion_calculator.compute_projection_rhs(dst, src);
   inverse_mass_velocity_scalar.apply(dst, dst);
 }
 

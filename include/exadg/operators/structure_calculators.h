@@ -31,12 +31,11 @@
 namespace ExaDG
 {
 /*
- * Calculator for the Jacobian of the displacement field u(X) in material coordinates X defined as
+ * Calculator for the Jacobian of the vector field u(x) defined as
  *
- * J = det(F) with F = I + Grad(u),
+ * J := det(F) with F := I + grad(u),
  *
- * where F is the deformation gradient tensor and Grad(u) is the gradient with respect to the
- * material coordinates X of the displacement field.
+ * where F is the deformation gradient tensor and grad(u) is the gradient of the vector field.
  *
  */
 template<int dim, typename Number>
@@ -62,7 +61,7 @@ public:
              unsigned int const                      quad_index_in);
 
   /*
-   * Compute the right-hand side of an L2 projection of the Jacobian of the displacement field.
+   * Compute the right-hand side of an L2 projection of the Jacobian of the vector field.
    */
   void
   compute_projection_rhs(VectorType & dst, VectorType const & src) const;
