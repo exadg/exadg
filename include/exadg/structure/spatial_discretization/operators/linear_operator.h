@@ -39,7 +39,7 @@ private:
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
 
-  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
+  typedef dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> symmetric_tensor;
 
   /*
    * Calculates the integral
