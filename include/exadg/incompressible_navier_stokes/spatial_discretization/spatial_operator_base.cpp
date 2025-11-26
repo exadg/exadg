@@ -171,11 +171,6 @@ SpatialOperatorBase<dim, Number>::initialize_dof_handler_and_constraints()
   }
   print_parameter(pcout, "number of dofs per cell", fe_u->n_dofs_per_cell());
   print_parameter(pcout, "number of dofs (total)", dof_handler_u.n_dofs());
-  if(param.spatial_discretization == SpatialDiscretization::HDIV)
-  {
-    pcout << "NOTE. Continuity constraints in case of periodic boundary conditions"
-          << "are not taken into account regarding the number of total DoFs." << std::endl;
-  }
 
   pcout << "Pressure:" << std::endl;
   print_parameter(pcout, "degree of 1D polynomials", param.get_degree_p(param.degree_u));
@@ -405,6 +400,10 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   inverse_mass_operator_data_velocity.dof_index  = get_dof_index_velocity();
   inverse_mass_operator_data_velocity.quad_index = get_quad_index_velocity_standard();
   inverse_mass_operator_data_velocity.parameters = param.inverse_mass_operator;
+  // avoid invalid settings for HDIV, preserving settings if admissible
+  if(param.spatial_discretization == SpatialDiscretization::HDIV)
+    inverse_mass_operator_data_velocity.parameters.implementation_type =
+      InverseMassType::GlobalKrylovSolver;
   inverse_mass_velocity.initialize(*matrix_free,
                                    inverse_mass_operator_data_velocity,
                                    param.spatial_discretization == SpatialDiscretization::L2 ?
@@ -416,6 +415,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   inverse_mass_operator_data_velocity_scalar.dof_index  = get_dof_index_velocity_scalar();
   inverse_mass_operator_data_velocity_scalar.quad_index = get_quad_index_velocity_standard();
   inverse_mass_operator_data_velocity_scalar.parameters = param.inverse_mass_operator;
+  // always use optimal inverse mass type for velocity scalar
   inverse_mass_operator_data_velocity_scalar.parameters.implementation_type =
     inverse_mass_operator_data_velocity_scalar.get_optimal_inverse_mass_type(
       matrix_free->get_dof_handler(get_dof_index_velocity_scalar()).get_fe());

@@ -60,6 +60,7 @@ struct OutputData : public OutputDataBase
     print_parameter(pcout, "Write vorticity magnitude", write_vorticity_magnitude);
     print_parameter(pcout, "Write streamfunction", write_streamfunction);
     print_parameter(pcout, "Write Q criterion", write_q_criterion);
+    print_parameter(pcout, "Write CFL number", write_cfl);
 
     mean_velocity.print(pcout, unsteady);
   }
