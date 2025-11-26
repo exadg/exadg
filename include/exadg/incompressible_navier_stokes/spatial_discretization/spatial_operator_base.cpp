@@ -86,19 +86,24 @@ void
 SpatialOperatorBase<dim, Number>::initialize_dof_handler_and_constraints()
 {
   fe_p = create_finite_element<dim>(param.grid.element_type,
-                                    true,
-                                    1,
+                                    true /* is_dg */,
+                                    1 /* n_components */,
                                     param.get_degree_p(param.degree_u));
 
-  fe_u_scalar = create_finite_element<dim>(param.grid.element_type, true, 1, param.degree_u);
+  fe_u_scalar = create_finite_element<dim>(param.grid.element_type,
+                                           true /* is_dg */,
+                                           1 /* n_components */,
+                                           param.degree_u);
 
   fe_u = setup_fe_u(param.spatial_discretization, param.grid.element_type, param.degree_u);
 
   if((param.restart_data.consider_mapping_write and param.restart_data.write_restart) or
      (param.restart_data.consider_mapping_read_source and param.restarted_simulation))
   {
-    fe_mapping =
-      create_finite_element<dim>(param.grid.element_type, true, dim, param.mapping_degree);
+    fe_mapping          = create_finite_element<dim>(param.grid.element_type,
+                                            true /* is_dg */,
+                                            dim /* n_components */,
+                                            param.mapping_degree);
     dof_handler_mapping = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
     dof_handler_mapping->distribute_dofs(*fe_mapping);
   }
@@ -1006,6 +1011,7 @@ SpatialOperatorBase<dim, Number>::serialize_vectors(
   deserialization_parameters.mapping_degree         = param.mapping_degree;
   deserialization_parameters.consider_mapping_write = param.restart_data.consider_mapping_write;
   deserialization_parameters.triangulation_type     = param.grid.triangulation_type;
+  deserialization_parameters.spatial_discretization = param.spatial_discretization;
   write_deserialization_parameters(mpi_comm, param.restart_data, deserialization_parameters);
 
   // Attach vectors to triangulation and serialize.
@@ -1059,8 +1065,11 @@ SpatialOperatorBase<dim, Number>::deserialize_vectors(std::vector<VectorType *> 
                checkpoint_element_type,
                deserialization_parameters.degree_u);
 
-  std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_p = create_finite_element<dim>(
-    checkpoint_element_type, true, 1, deserialization_parameters.degree_p);
+  std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_p =
+    create_finite_element<dim>(checkpoint_element_type,
+                               true /* is_dg */,
+                               1 /* n_components */,
+                               deserialization_parameters.degree_p);
 
   checkpoint_dof_handler_u.distribute_dofs(*checkpoint_fe_u);
   checkpoint_dof_handler_p.distribute_dofs(*checkpoint_fe_p);
@@ -1125,8 +1134,8 @@ SpatialOperatorBase<dim, Number>::deserialize_vectors(std::vector<VectorType *> 
       dealii::DoFHandler<dim> checkpoint_dof_handler_mapping(*checkpoint_triangulation);
       std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_mapping =
         create_finite_element<dim>(checkpoint_element_type,
-                                   true,
-                                   dim,
+                                   true /* is_dg */,
+                                   dim /* n_components */,
                                    deserialization_parameters.mapping_degree);
       checkpoint_dof_handler_mapping.distribute_dofs(*checkpoint_fe_mapping);
 
@@ -1214,7 +1223,7 @@ SpatialOperatorBase<dim, Number>::setup_fe_u(SpatialDiscretization const spatial
   std::shared_ptr<dealii::FiniteElement<dim>> fe;
   if(spatial_discretization == SpatialDiscretization::L2)
   {
-    fe = create_finite_element<dim>(element_type, true, dim, degree);
+    fe = create_finite_element<dim>(element_type, true /* is_dg */, dim /* n_components */, degree);
   }
   else if(spatial_discretization == SpatialDiscretization::HDIV)
   {

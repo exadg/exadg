@@ -472,11 +472,11 @@ private:
     this->param.restart_data.write_restart = write_restart;
     // write restart every 40% of the simulation time
     this->param.restart_data.n_snapshots_keep = 10;
-    this->param.restart_data.interval_time = (this->param.end_time - this->param.start_time) * 0.01;
+    this->param.restart_data.interval_time = (this->param.end_time - this->param.start_time) * 0.5;
     this->param.restart_data.interval_time_start =
-      (this->param.end_time - this->param.start_time) * 0.8;
+      (this->param.end_time - this->param.start_time) * 0.5;
     this->param.restart_data.interval_time_end =
-      (this->param.end_time - this->param.start_time) * 0.9;
+      (this->param.end_time - this->param.start_time) * 1.0;
     this->param.restart_data.directory_coarse_triangulation = this->output_parameters.directory;
     this->param.restart_data.directory                      = this->output_parameters.directory;
     this->param.restart_data.filename            = this->output_parameters.filename + "_restart";
@@ -484,8 +484,8 @@ private:
     this->param.restart_data.interval_time_steps = 1e8;
 
     this->param.restart_data.discretization_identical                        = false;
-    this->param.restart_data.consider_mapping_write                          = true;
-    this->param.restart_data.consider_mapping_read_source                    = true;
+    this->param.restart_data.consider_mapping_write                          = move_grid;
+    this->param.restart_data.consider_mapping_read_source                    = move_grid;
     this->param.restart_data.consider_restart_time_in_mesh_movement_function = true;
 
     this->param.restart_data.rpe_rtree_level            = 0;
@@ -583,7 +583,10 @@ private:
     this->param.update_preconditioner_coupled = true;
 
     // preconditioner velocity/momentum block
-    this->param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
+    this->param.iterative_solve_of_velocity_block = false;
+    this->param.preconditioner_velocity_block =
+      spatial_discretization == SpatialDiscretization::L2 ? MomentumPreconditioner::Multigrid :
+                                                            MomentumPreconditioner::PointJacobi;
 
     if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit &&
        include_convective_term == true)
@@ -591,6 +594,8 @@ private:
         MultigridOperatorType::ReactionConvectionDiffusion;
     else
       this->param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
+    this->param.multigrid_data_velocity_block.type       = MultigridType::cphMG;
+    this->param.multigrid_data_velocity_block.p_sequence = PSequenceType::DecreaseByOne;
 
     this->param.multigrid_data_velocity_block.smoother_data.smoother =
       MultigridSmoother::Chebyshev; // Jacobi; //Chebyshev; //GMRES;
@@ -607,6 +612,19 @@ private:
     else
       this->param.preconditioner_pressure_block =
         SchurComplementPreconditioner::PressureConvectionDiffusion;
+
+    this->param.iterative_solve_of_pressure_block        = false;
+    this->param.multigrid_data_pressure_block.type       = MultigridType::cphMG;
+    this->param.multigrid_data_pressure_block.p_sequence = PSequenceType::DecreaseByOne;
+
+    this->param.multigrid_data_pressure_block.smoother_data.smoother =
+      MultigridSmoother::Chebyshev; // Jacobi; //Chebyshev; //GMRES;
+    this->param.multigrid_data_pressure_block.smoother_data.preconditioner =
+      PreconditionerSmoother::PointJacobi; ////BlockJacobi;
+    this->param.multigrid_data_pressure_block.smoother_data.iterations        = 5;
+    this->param.multigrid_data_pressure_block.smoother_data.relaxation_factor = 0.7;
+    this->param.multigrid_data_pressure_block.coarse_problem.solver =
+      MultigridCoarseGridSolver::GMRES;
   }
 
   void
