@@ -24,11 +24,23 @@
 
 // ExaDG
 #include <exadg/grid/mesh_movement_functions.h>
+#include <exadg/grid/periodic_box.h>
 
 namespace ExaDG
 {
 namespace IncNS
 {
+/*
+ * Type of boundary conditions enforced.
+ */
+enum class BoundaryCondition
+{
+  MixedDirichletNeumann,
+  PureDirichlet,
+  PureNeumann,
+  Periodic
+};
+
 /*
  * Manufactured solution for incompressible flow of a generalized Newtonian fluid in a hypercube.
  * (Navier-)Stokes equations, where the convective term may be disabled
@@ -123,18 +135,14 @@ public:
 };
 
 template<int dim>
-class NeumannBoundaryVelocity : public dealii::Function<dim>
+class NeumannBoundaryVelocity : public FunctionWithNormal<dim>
 {
 public:
   NeumannBoundaryVelocity(FormulationViscousTerm const &        formulation_viscous_term,
-                          double const &                        normal_x,
-                          double const &                        normal_y,
                           double const &                        nu_oo,
                           GeneralizedNewtonianModelData const & data)
-    : dealii::Function<dim>(dim, 0.0),
+    : FunctionWithNormal<dim>(dim, 0.0),
       formulation_viscous_term(formulation_viscous_term),
-      normal_x(normal_x),
-      normal_y(normal_y),
       nu_oo(nu_oo),
       data(data)
   {
@@ -184,9 +192,7 @@ public:
     grad_u[1][0] = du2_dx;
     grad_u[1][1] = du2_dy;
 
-    dealii::Tensor<1, dim> normal;
-    normal[0] = normal_x;
-    normal[1] = normal_y;
+    dealii::Tensor<1, dim> const normal = this->get_normal_vector();
 
     dealii::Tensor<1, dim> traction = grad_u * normal;
 
@@ -204,8 +210,6 @@ public:
 
 private:
   FormulationViscousTerm const  formulation_viscous_term;
-  double const                  normal_x;
-  double const                  normal_y;
   double const                  nu_oo;
   GeneralizedNewtonianModelData data;
 };
@@ -339,11 +343,13 @@ public:
     prm.enter_subsection("Application");
     {
       // clang-format off
+      prm.add_parameter("TriangulationType",                   triangulation_type,                                "Type of triangulation.");
+      prm.add_parameter("SpatialDiscretization",               spatial_discretization,                            "Spatial discretization: L2 or HDIV.");
       prm.add_parameter("MoveGrid",                            move_grid,                                         "Should the grid be deformed over time?");
       prm.add_parameter("WriteRestart",                        write_restart,                                     "Should restart files be written?");
       prm.add_parameter("ReadRestart",                         read_restart,                                      "Is this a restarted simulation?");
       prm.add_parameter("IncludeConvectiveTerm",               include_convective_term,                           "Include the nonlinear convective term.",          dealii::Patterns::Bool());
-      prm.add_parameter("PureDirichletProblem",                pure_dirichlet_problem,                            "Solve a pure Dirichlet problem.",                 dealii::Patterns::Bool());
+      prm.add_parameter("BoundaryCondition",                   boundary_condition,                                "Boundary conditions enforced.");
       prm.add_parameter("StartTime",                           start_time,                                        "Simulation start time.",                          dealii::Patterns::Double());
       prm.add_parameter("EndTime",                             end_time,                                          "Simulation end time.",                            dealii::Patterns::Double());
       prm.add_parameter("IntervalStart",                       interval_start,                                    "Hypercube domain start.",                         dealii::Patterns::Double());
@@ -405,8 +411,8 @@ private:
 
 
     // SPATIAL DISCRETIZATION
-    this->param.spatial_discretization      = SpatialDiscretization::L2;
-    this->param.grid.triangulation_type     = TriangulationType::Distributed;
+    this->param.spatial_discretization      = spatial_discretization;
+    this->param.grid.triangulation_type     = triangulation_type;
     this->param.mapping_degree              = this->param.degree_u;
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
     this->param.degree_p                    = DegreePressure::MixedOrder;
@@ -430,12 +436,12 @@ private:
     this->param.divu_formulation         = FormulationVelocityDivergenceTerm::Weak;
 
     // pressure level is undefined
-    if(pure_dirichlet_problem)
+    if(boundary_condition == BoundaryCondition::PureDirichlet or boundary_condition == BoundaryCondition::Periodic)
       this->param.adjust_pressure_level = AdjustPressureLevel::ApplyAnalyticalMeanValue;
 
     // div-div and continuity penalty terms
-    this->param.use_divergence_penalty                     = true;
-    this->param.use_continuity_penalty                     = true;
+    this->param.use_divergence_penalty                     = spatial_discretization == SpatialDiscretization::L2;
+    this->param.use_continuity_penalty                     = spatial_discretization == SpatialDiscretization::L2;
     this->param.continuity_penalty_use_boundary_data       = true;
     this->param.apply_penalty_terms_in_postprocessing_step = true;
 
@@ -497,6 +503,7 @@ private:
     this->param.solver_projection         = SolverProjection::CG;
     this->param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-8);
     this->param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
+    this->param.update_preconditioner_projection = true;
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
 
@@ -511,7 +518,9 @@ private:
           SolverMomentum::CG :
           SolverMomentum::FGMRES;
       this->param.solver_data_momentum = SolverData(1000, 1e-12, 1e-8);
-      this->param.preconditioner_momentum = MomentumPreconditioner::Multigrid;
+      this->param.preconditioner_momentum = spatial_discretization == SpatialDiscretization::L2 ?
+                                             MomentumPreconditioner::Multigrid :
+                                             MomentumPreconditioner::PointJacobi;
     }
 
 
@@ -605,28 +614,51 @@ private:
               std::shared_ptr<dealii::Mapping<dim>> &           mapping,
               std::shared_ptr<MultigridMappings<dim, Number>> & multigrid_mappings) final
   {
-    auto const lambda_create_triangulation =
-      [&](dealii::Triangulation<dim, dim> &                        tria,
-          std::vector<dealii::GridTools::PeriodicFacePair<
-            typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
-          unsigned int const                                       global_refinements,
-          std::vector<unsigned int> const &                        vector_local_refinements) {
-        (void)periodic_face_pairs;
+    auto const lambda_create_triangulation = [&](dealii::Triangulation<dim, dim> & tria,
+                                                 std::vector<dealii::GridTools::PeriodicFacePair<
+                                                   typename dealii::Triangulation<
+                                                     dim>::cell_iterator>> & periodic_face_pairs,
+                                                 unsigned int const          global_refinements,
+                                                 std::vector<unsigned int> const &
+                                                   vector_local_refinements) {
+      (void)vector_local_refinements;
 
+      if(boundary_condition == BoundaryCondition::Periodic)
+      {
+        AssertThrow(
+          this->param.grid.triangulation_type != TriangulationType::FullyDistributed,
+          dealii::ExcMessage(
+            "Periodic faces might not be applied correctly for TriangulationType::FullyDistributed. "
+            "Try to use another triangulation type, or try to fix these limitations in ExaDG or deal.II."));
+
+        bool const is_symmetric_around_origin = std::abs(interval_start + interval_end) < 1e-18;
+        bool const half_length_is_pi = std::abs(interval_end - dealii::numbers::PI) < 1e-18;
+
+        AssertThrow(is_symmetric_around_origin && half_length_is_pi,
+                    dealii::ExcMessage(
+                      "Solution is only periodic on [-pi, pi]^2 domain (ignoring multiples)."));
+
+        create_periodic_box(tria,
+                            0 /* n_refine_space */,
+                            periodic_face_pairs,
+                            1 /* repetitions */,
+                            interval_start,
+                            interval_end);
+      }
+      else
+      {
         dealii::GridGenerator::hyper_cube(tria, interval_start, interval_end, true);
+      }
 
-        // Save the *coarse* triangulation for later deserialization.
-        if(write_restart and this->param.grid.triangulation_type == TriangulationType::Serial)
-        {
-          save_coarse_triangulation<dim>(this->param.restart_data, tria);
-        }
+      // Save the *coarse* triangulation for later deserialization.
+      if(write_restart and this->param.grid.triangulation_type == TriangulationType::Serial)
+      {
+        save_coarse_triangulation<dim>(this->param.restart_data, tria);
+      }
 
-        if(vector_local_refinements.size() > 0)
-          refine_local(tria, vector_local_refinements);
-
-        if(global_refinements > 0)
-          tria.refine_global(global_refinements);
-      };
+      if(global_refinements > 0)
+        tria.refine_global(global_refinements);
+    };
 
     GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
@@ -672,34 +704,40 @@ private:
     AssertThrow(dim == 2,
                 dealii::ExcMessage("Manufactured solution for dim == 2 implemented only."));
 
-    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
-      pair;
-
-    double const normal_x = -1.0;
-    double const normal_y = 0.0;
-
-    for(unsigned int i = 0; i < 2 * dim; ++i)
+    if(boundary_condition == BoundaryCondition::Periodic)
     {
-      if(i == 0 && pure_dirichlet_problem == false)
-      {
-        // Neumann boundary condition for boundary with id 0.
-        this->boundary_descriptor->velocity->neumann_bc.insert(
-          pair(i,
-               new NeumannBoundaryVelocity<dim>(this->param.formulation_viscous_term,
-                                                normal_x,
-                                                normal_y,
-                                                kinematic_viscosity,
-                                                generalized_newtonian_model_data)));
+      // periodic boundary conditions are handled in `create_grid()`.
+      AssertThrow(move_grid == false,
+                  dealii::ExcMessage("Mesh movement contradicts periodic boundary conditions."));
+    }
+    else
+    {
+      typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+        pair;
 
-        this->boundary_descriptor->pressure->dirichlet_bc.insert(
-          pair(i, new AnalyticalSolutionPressure<dim>()));
-      }
-      else
+      for(unsigned int i = 0; i < 2 * dim; ++i)
       {
-        // Dirichlet boundary conditions.
-        this->boundary_descriptor->velocity->dirichlet_bc.insert(
-          pair(i, new AnalyticalSolutionVelocity<dim>()));
-        this->boundary_descriptor->pressure->neumann_bc.insert(i);
+        if((i == 0 and (boundary_condition == BoundaryCondition::MixedDirichletNeumann)) or
+           boundary_condition == BoundaryCondition::PureNeumann)
+        {
+          // Neumann boundary condition for pure Neumann problem or on boundary with id 0 for the
+          // mixed problem.
+          this->boundary_descriptor->velocity->neumann_bc.insert(
+            pair(i,
+                 new NeumannBoundaryVelocity<dim>(this->param.formulation_viscous_term,
+                                                  kinematic_viscosity,
+                                                  generalized_newtonian_model_data)));
+
+          this->boundary_descriptor->pressure->dirichlet_bc.insert(
+            pair(i, new AnalyticalSolutionPressure<dim>()));
+        }
+        else
+        {
+          // Dirichlet boundary conditions.
+          this->boundary_descriptor->velocity->dirichlet_bc.insert(
+            pair(i, new AnalyticalSolutionVelocity<dim>()));
+          this->boundary_descriptor->pressure->neumann_bc.insert(i);
+        }
       }
     }
   }
@@ -767,13 +805,16 @@ private:
   bool write_restart = false;
   bool move_grid     = false;
 
-  bool   include_convective_term = true;
-  bool   pure_dirichlet_problem  = true;
-  double start_time              = 0.0;
-  double end_time                = 0.1;
-  double density                 = 1000.0;
-  double kinematic_viscosity     = 5e-6;
-  bool   use_turbulence_model    = false;
+  TriangulationType     triangulation_type     = TriangulationType::Distributed;
+  SpatialDiscretization spatial_discretization = SpatialDiscretization::L2;
+
+  bool              include_convective_term = true;
+  BoundaryCondition boundary_condition      = BoundaryCondition::PureDirichlet;
+  double            start_time              = 0.0;
+  double            end_time                = 0.1;
+  double            density                 = 1000.0;
+  double            kinematic_viscosity     = 5e-6;
+  bool              use_turbulence_model    = false;
 
   FormulationViscousTerm formulation_viscous_term = FormulationViscousTerm::DivergenceFormulation;
   TemporalDiscretization temporal_discretization  = TemporalDiscretization::Undefined;
