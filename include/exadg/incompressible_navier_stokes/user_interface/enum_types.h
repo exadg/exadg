@@ -203,6 +203,7 @@ enum class ConvergenceCriterionSteadyProblem
  */
 enum class SpatialDiscretization
 {
+  Undefined,
   L2,
   HDIV
 };

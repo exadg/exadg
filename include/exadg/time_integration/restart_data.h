@@ -45,7 +45,7 @@ struct DeserializationParameters
       mapping_degree(dealii::numbers::invalid_unsigned_int),
       consider_mapping_write(false),
       triangulation_type(TriangulationType::Serial),
-      spatial_discretization(IncNS::SpatialDiscretization::L2)
+      spatial_discretization(IncNS::SpatialDiscretization::Undefined)
   {
   }
 
