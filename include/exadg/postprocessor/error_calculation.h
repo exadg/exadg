@@ -85,6 +85,7 @@ struct ErrorCalculationData
   bool spatially_weight_error;
   // Weight used to compute spatially weighted error.
   std::shared_ptr<dealii::Function<dim>> weight;
+
   // Number of quadrature points in 1D: fe_degree + additional_quadrature_points
   unsigned int additional_quadrature_points;
 
@@ -114,6 +115,11 @@ public:
 private:
   void
   do_evaluate(VectorType const & solution_vector, double const time);
+
+  std::string
+  filename_from_filename_base(std::string const & directory,
+                              std::string const & filename_base,
+                              bool const          initial_call);
 
   MPI_Comm const mpi_comm;
 
