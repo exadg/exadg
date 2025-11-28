@@ -190,7 +190,11 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
     // write output file
     if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
-      std::string filename = error_data.directory + error_data.name + "_L2";
+      std::string const filename_base =
+        error_data.name + "_L2" + ((relative == true) ? "_relative" : "_absolute");
+
+      std::string const filename =
+        filename_from_filename_base(error_data.directory, filename_base, clear_files_L2);
 
       std::ofstream f;
       if(clear_files_L2 == true)
@@ -238,7 +242,11 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
       // write output file
       if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
       {
-        std::string filename = error_data.directory + error_data.name + "_H1_seminorm";
+        std::string filename_base =
+          error_data.name + "_H1_seminorm" + ((relative == true) ? "_relative" : "_absolute");
+
+        std::string filename =
+          filename_from_filename_base(error_data.directory, filename_base, clear_files_H1_seminorm);
 
         std::ofstream f;
         if(clear_files_H1_seminorm == true)
@@ -260,6 +268,65 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
       }
     }
   }
+}
+
+template<int dim, typename Number>
+std::string
+ErrorCalculator<dim, Number>::filename_from_filename_base(std::string const & directory,
+                                                          std::string const & filename_base,
+                                                          bool const          initial_call)
+{
+  // expected file beginning
+  std::string filename = directory + "run_";
+
+  // get all files matching the filename_base and their `run_id`, then compare path ends
+  std::filesystem::path const fs_directory{directory};
+  std::vector<std::string>    matching_entries;
+  std::vector<unsigned int>   run_ids;
+  for(auto const & fs_dir_entry : std::filesystem::directory_iterator{fs_directory})
+  {
+    std::string const dir_entry = fs_dir_entry.path().string();
+
+    if(dir_entry.size() >= filename_base.size())
+    {
+      bool const base_match = 0 == dir_entry.compare(dir_entry.size() - filename_base.size(),
+                                                     filename_base.size(),
+                                                     filename_base);
+      if(base_match)
+      {
+        std::string run_id_string =
+          dir_entry.substr(filename.size(), dir_entry.size() - filename.size());
+        run_id_string = run_id_string.substr(0, run_id_string.find_first_of("_"));
+
+        run_ids.push_back(dealii::Utilities::string_to_int(run_id_string));
+        matching_entries.push_back(dir_entry);
+      }
+    }
+  }
+
+  unsigned int run_id;
+  if(initial_call)
+  {
+    if(run_ids.size() == 0)
+    {
+      // no existing files matching the filename_base
+      run_id = 0;
+    }
+    else
+    {
+      // get new run_id
+      run_id = 1 + *std::max_element(run_ids.begin(), run_ids.end());
+    }
+  }
+  else
+  {
+    // append to the most recent file
+    AssertThrow(run_ids.size() > 0,
+                dealii::ExcMessage("Could not detect run_ids from files in " + directory));
+    run_id = *std::max_element(run_ids.begin(), run_ids.end());
+  }
+
+  return filename + std::to_string(run_id) + "_" + filename_base;
 }
 
 template class ErrorCalculator<2, float>;
