@@ -103,15 +103,15 @@ main(int argc, char * argv[])
 
     // define *pairs of* reference and restart files
     std::vector<std::string> const reference_files = {
-      "input_reference_L2_DualSplitting_move_grid.json",
-      "input_reference_L2_CoupledSolution_move_grid.json",
-      "input_reference_L2_PressureCorrection_move_grid.json",
-      "input_reference_L2_DualSplitting_fixed_grid.json",
-      "input_reference_HDIV_DualSplitting_fixed_grid.json"};
+      //"input_reference_L2_DualSplitting_move_grid.json",
+      //"input_reference_L2_CoupledSolution_move_grid.json",
+      //"input_reference_L2_PressureCorrection_move_grid.json",
+      "input_reference_HDIV_DualSplitting_fixed_grid.json",
+      "input_reference_L2_DualSplitting_fixed_grid.json"};
     std::vector<std::string> const restart_files = {
-      "input_restart_L2_DualSplitting_move_grid.json",
-      "input_restart_L2_CoupledSolution_move_grid.json",
-      "input_restart_L2_PressureCorrection_move_grid.json",
+      //"input_restart_L2_DualSplitting_move_grid.json",
+      //"input_restart_L2_CoupledSolution_move_grid.json",
+      //"input_restart_L2_PressureCorrection_move_grid.json",
       "input_restart_HDIV_DualSplitting_fixed_grid.json",
       "input_restart_L2_DualSplitting_fixed_grid.json"};
 

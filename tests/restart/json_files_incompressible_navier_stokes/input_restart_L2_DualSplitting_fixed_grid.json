@@ -5,10 +5,10 @@
         "IsTest": "true"
     },
     "SpatialResolution": {
-        "DegreeMin": "15",
-        "DegreeMax": "15",
-        "RefineSpaceMin": "1",
-        "RefineSpaceMax": "1"
+        "DegreeMin": "10",
+        "DegreeMax": "10",
+        "RefineSpaceMin": "2",
+        "RefineSpaceMax": "2"
     },
     "TemporalResolution": {
         "RefineTimeMin": "2",
@@ -16,7 +16,7 @@
     },
     "Application": {
         "TriangulationType": "Distributed",
-        "SpatialDiscretization": "L2",
+        "SpatialDiscretization": "HDIV",
         "MoveGrid": "false",
         "ReadRestart": "true",
         "WriteRestart": "false",
@@ -28,12 +28,12 @@
         "IntervalEnd": "3.14159265358979323846",
         "Density": "1000.0",
         "KinematicViscosity": "1e-6",
-        "UseGeneralizedNewtonianModel": "true",
+        "UseGeneralizedNewtonianModel": "false",
         "FormulationViscousTerm" : "DivergenceFormulation",
         "TemporalDiscretization" : "BDFDualSplitting",
         "TreatmentOfConvectiveTerm" : "Explicit",
         "TreatmentOfVariableViscosity" : "Explicit",
-        "GeneralizedNewtonianViscosityMargin": "49e-6",
+        "GeneralizedNewtonianViscosityMargin": "0.0",
         "GeneralizedNewtonianKappa": "1.0",
         "GeneralizedNewtonianLambda": "1.0",
         "GeneralizedNewtonianA": "2.0",
