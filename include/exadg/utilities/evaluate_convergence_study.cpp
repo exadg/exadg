@@ -29,7 +29,9 @@
 #include <deal.II/base/mpi.h>
 
 // ExaDG
+#include <exadg/operators/resolution_parameters.h>
 #include <exadg/postprocessor/output_parameters.h>
+#include <exadg/time_integration/resolution_parameters.h>
 #include <exadg/utilities/evaluate_convergence_study.h>
 #include <exadg/utilities/general_parameters.h>
 
@@ -42,15 +44,21 @@ evaluate_convergence_study(MPI_Comm const & mpi_comm, std::string const & input_
   ExaDG::GeneralParameters const general(input_parameter_file);
   bool const                     is_test = general.is_test;
 
+  ExaDG::SpatialResolutionParametersMinMax spatial(input_parameter_file);
+  ExaDG::TemporalResolutionParameters      temporal(input_parameter_file);
+  bool const no_refinement = temporal.refine_time_min == temporal.refine_time_max and
+                             spatial.degree_min == spatial.degree_max and
+                             spatial.refine_space_min == spatial.refine_space_max;
+
   dealii::ParameterHandler prm;
   OutputParameters         output_parameters;
   output_parameters.add_parameters(prm);
   prm.parse_input(input_parameter_file, "", true, true);
   std::string const & output_directory = output_parameters.directory;
 
-  if(is_test)
+  if(is_test or no_refinement)
   {
-    // convergence study is not included in tests.
+    // skip convergence study
   }
   else
   {
@@ -107,13 +115,13 @@ evaluate_convergence_study(MPI_Comm const & mpi_comm, std::string const & input_
 
         if(labels.size() == 0)
         {
-          std::cout << "Could not detect any files matching " << output_directory
-                    << "/run_\", no convergence table to display.";
+          std::cout << "Could not detect any files matching \"" << output_directory
+                    << "run_\". No convergence table to display.";
         }
         else if(max_run_id == 0)
         {
-          std::cout << "Only detected files with run_id = 0 matching " << output_directory
-                    << "/run_\", not enough data to display convergence table.";
+          std::cout << "Only detected files with run_id = 0 matching \"" << output_directory
+                    << "run_\". Not enough data to display convergence table.";
         }
         else
         {
