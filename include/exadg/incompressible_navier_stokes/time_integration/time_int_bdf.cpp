@@ -593,13 +593,13 @@ TimeIntBDF<dim, Number>::postprocessing() const
   }
 
   // We need to distribute the dofs before computing the error since
-  // dealii::VectorTools::integrate_difference() does not take constraints into account
-  // like MatrixFree does, hence reading the wrong values. distribute_constraint_u()
-  // updates the constrained values for the velocity.
+  // `dealii::VectorTools::integrate_difference()` does not take constraints into account like
+  // `dealii::MatrixFree` does, hence reading the wrong values. `distribute_constraint_u()` updates
+  // the constrained values for the velocity.
   operator_base->distribute_constraint_u(const_cast<VectorType &>(get_velocity(0)));
 
-  bool const standard = true;
-  if(standard)
+  bool constexpr postprocess_solution_else_error = true;
+  if(postprocess_solution_else_error)
   {
     postprocessor->do_postprocessing(get_velocity(0),
                                      get_pressure(0),

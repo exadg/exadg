@@ -505,7 +505,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary_face(
   Range const &                           face_range) const
 {
   unsigned int const dof_index_velocity = this->get_dof_index_velocity();
-  unsigned int const dof_index_pressure = this->get_quad_index_pressure();
+  unsigned int const dof_index_pressure = this->get_dof_index_pressure();
   unsigned int const quad_index         = this->get_quad_index_velocity_standard();
 
   FaceIntegratorU omega(matrix_free, true, dof_index_velocity, quad_index);
@@ -617,6 +617,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_variable_viscosity_add_bou
     }
     else if(boundary_type == BoundaryTypeP::Dirichlet)
     {
+      // do nothing
     }
     else
     {
