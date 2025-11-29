@@ -79,6 +79,7 @@ private:
   // Fields for derived quantities
   SolutionField<dim, Number> displacement_magnitude;
   SolutionField<dim, Number> displacement_jacobian;
+  SolutionField<dim, Number> max_principal_stress;
 
   // write output for visualization of results (e.g., using paraview)
   OutputGenerator<dim, Number> output_generator;

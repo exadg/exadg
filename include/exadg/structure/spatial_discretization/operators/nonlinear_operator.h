@@ -43,9 +43,10 @@ private:
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
-  typedef dealii::VectorizedArray<Number>                         scalar;
-  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
-  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
+  typedef dealii::VectorizedArray<Number>                                  scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>          vector;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>          tensor;
+  typedef dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> symmetric_tensor;
 
 private:
   /**

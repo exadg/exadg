@@ -377,6 +377,17 @@ Operator<dim, Number>::setup_calculators_for_derived_quantities()
                                                 get_dof_index(),
                                                 get_dof_index_scalar(),
                                                 get_quad_index());
+
+    ElasticityOperatorBase<dim, Number> const & elasticity_operator_base =
+      param.large_deformation ?
+        static_cast<ElasticityOperatorBase<dim, Number> const &>(elasticity_operator_nonlinear) :
+        static_cast<ElasticityOperatorBase<dim, Number> const &>(elasticity_operator_linear);
+
+    max_principal_stress_calculator.initialize(*matrix_free,
+                                               get_dof_index(),
+                                               get_dof_index_scalar(),
+                                               get_quad_index(),
+                                               elasticity_operator_base);
   }
 }
 
@@ -729,6 +740,20 @@ Operator<dim, Number>::compute_displacement_jacobian(VectorType &       dst_scal
 }
 
 template<int dim, typename Number>
+void
+Operator<dim, Number>::compute_max_principal_stress(VectorType &       dst_scalar_valued,
+                                                    VectorType const & src_vector_valued) const
+{
+  AssertThrow(setup_scalar_field,
+              dealii::ExcMessage("Scalar field not set up. "
+                                 "Cannot compute maximum principal stress."));
+
+  max_principal_stress_calculator.compute_projection_rhs(dst_scalar_valued, src_vector_valued);
+
+  inverse_mass_scalar.apply(dst_scalar_valued, dst_scalar_valued);
+}
+
+template<int dim, typename Number>
 unsigned int
 Operator<dim, Number>::get_dof_index_periodicity_and_hanging_node_constraints() const
 {
@@ -845,12 +870,13 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
         elasticity_operator_nonlinear.get_scaling_factor_mass_operator();
       elasticity_operator_nonlinear.set_scaling_factor_mass_operator(0.0);
 
-      // evaluate elasticity operator including inhomogeneous Dirichlet/Neumann boundary conditions:
-      // Note that we do not have to set inhomogeneous Dirichlet degrees of freedom explicitly since
-      // the function prescribe_initial_displacement() sets the initial displacement for all dofs
-      // (including Dirichlet dofs) and since the initial condition for the displacements needs to
-      // be consistent with the Dirichlet boundary data g(t=t0) at initial time, i.e. the vector
-      // initial_displacement already contains the correct Dirichlet data.
+      // evaluate elasticity operator including inhomogeneous Dirichlet/Neumann boundary
+      // conditions: Note that we do not have to set inhomogeneous Dirichlet degrees of freedom
+      // explicitly since the function prescribe_initial_displacement() sets the initial
+      // displacement for all dofs (including Dirichlet dofs) and since the initial condition for
+      // the displacements needs to be consistent with the Dirichlet boundary data g(t=t0) at
+      // initial time, i.e. the vector initial_displacement already contains the correct Dirichlet
+      // data.
       elasticity_operator_nonlinear.set_time(time);
       elasticity_operator_nonlinear.evaluate_nonlinear(rhs, initial_displacement);
       // shift to right-hand side
@@ -874,12 +900,13 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
         elasticity_operator_linear.get_scaling_factor_mass_operator();
       elasticity_operator_linear.set_scaling_factor_mass_operator(0.0);
 
-      // evaluate elasticity operator including inhomogeneous Dirichlet/Neumann boundary conditions:
-      // Note that we do not have to set inhomogeneous Dirichlet degrees of freedom explicitly since
-      // the function prescribe_initial_displacement() sets the initial displacement for all dofs
-      // (including Dirichlet dofs) and since the initial condition for the displacements needs to
-      // be consistent with the Dirichlet boundary data g(t=t0) at initial time, i.e. the vector
-      // initial_displacement already contains the correct Dirichlet data.
+      // evaluate elasticity operator including inhomogeneous Dirichlet/Neumann boundary
+      // conditions: Note that we do not have to set inhomogeneous Dirichlet degrees of freedom
+      // explicitly since the function prescribe_initial_displacement() sets the initial
+      // displacement for all dofs (including Dirichlet dofs) and since the initial condition for
+      // the displacements needs to be consistent with the Dirichlet boundary data g(t=t0) at
+      // initial time, i.e. the vector initial_displacement already contains the correct Dirichlet
+      // data.
       elasticity_operator_linear.set_time(time);
       elasticity_operator_linear.evaluate(rhs, initial_displacement);
       // shift to right-hand side
@@ -901,9 +928,9 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       initial_a
     // with the initial acceleration in Dirichlet degrees of freedom) to the right-hand side.
     mass_operator.rhs_add(rhs);
 
-    // Apply inverse mass operator to compute the initial acceleration. Note that the mass operator
-    // is scaled with `density`, hence scale the right-hand side, as the `InverseMassOperator` has
-    // its own `MassOperator`.
+    // Apply inverse mass operator to compute the initial acceleration. Note that the mass
+    // operator is scaled with `density`, hence scale the right-hand side, as the
+    // `InverseMassOperator` has its own `MassOperator`.
     rhs /= param.density;
     inverse_mass.apply(initial_acceleration, rhs);
 
@@ -1110,8 +1137,8 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
 
   update_elasticity_operator(scaling_factor_mass, time);
 
-  // In case of a matrix-based implementation, we assemble the matrix once at initialization, since
-  // it remains constant, and avoid calling `assemble_matrix_if_matrix_based()` here.
+  // In case of a matrix-based implementation, we assemble the matrix once at initialization,
+  // since it remains constant, and avoid calling `assemble_matrix_if_matrix_based()` here.
 
   linear_solver->update_preconditioner(update_preconditioner);
 

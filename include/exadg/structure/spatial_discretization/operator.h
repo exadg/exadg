@@ -352,8 +352,13 @@ public:
 
   // compute Jacobian of the displacement field
   void
-  compute_displacement_jacobian(VectorType &       dst_tensor_valued,
+  compute_displacement_jacobian(VectorType &       dst_scalar_valued,
                                 VectorType const & src_vector_valued) const;
+
+  // compute maximum principal stress
+  void
+  compute_max_principal_stress(VectorType &       dst_scalar_valued,
+                               VectorType const & src_vector_valued) const;
 
 private:
   /*
@@ -560,6 +565,8 @@ private:
   MagnitudeCalculator<dim, Number> vector_magnitude_calculator;
 
   DisplacementJacobianCalculator<dim, Number> displacement_jacobian_calculator;
+
+  MaxPrincipalStressCalculator<dim, Number> max_principal_stress_calculator;
 
   /*
    * MPI communicator

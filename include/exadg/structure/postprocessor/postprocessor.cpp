@@ -87,6 +87,12 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     solution,
       additional_fields_vtu.push_back(&displacement_jacobian);
     }
 
+    if(pp_data.output_data.write_max_principal_stress)
+    {
+      max_principal_stress.evaluate(solution);
+      additional_fields_vtu.push_back(&max_principal_stress);
+    }
+
     output_generator.evaluate(solution,
                               additional_fields_vtu,
                               time,
@@ -137,6 +143,23 @@ PostProcessor<dim, Number>::initialize_derived_fields()
 
     displacement_jacobian.reinit();
   }
+
+  // Maximum principal stress
+  if(pp_data.output_data.write_max_principal_stress)
+  {
+    max_principal_stress.type              = SolutionFieldType::scalar;
+    max_principal_stress.name              = "max_principal_stress";
+    max_principal_stress.dof_handler       = &pde_operator->get_dof_handler_scalar();
+    max_principal_stress.initialize_vector = [&](VectorType & dst) {
+      pde_operator->initialize_dof_vector_scalar(dst);
+    };
+    max_principal_stress.recompute_solution_field = [&](VectorType &       dst_scalar_valued,
+                                                        const VectorType & src_vector_valued) {
+      pde_operator->compute_max_principal_stress(dst_scalar_valued, src_vector_valued);
+    };
+
+    max_principal_stress.reinit();
+  }
 }
 
 template<int dim, typename Number>
@@ -145,6 +168,7 @@ PostProcessor<dim, Number>::invalidate_derived_fields()
 {
   displacement_magnitude.invalidate();
   displacement_jacobian.invalidate();
+  max_principal_stress.invalidate();
 }
 
 template class PostProcessor<2, float>;

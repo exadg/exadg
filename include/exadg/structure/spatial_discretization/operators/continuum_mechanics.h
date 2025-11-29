@@ -183,6 +183,71 @@ inline DEAL_II_ALWAYS_INLINE //
   return result;
 }
 
+// Compute the push-forward of a symmetric tensor `S`, i.e.,
+// tau = (1/J) * F * S * F^T,
+// with `S` being symmetric, and therefore symmetric `tau`.
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
+  compute_push_forward(dealii::VectorizedArray<Number> const &                                  J,
+                       dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> const & S,
+                       dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const &          F)
+{
+  // Compute the non-symmetric S * F^T, since we do not want to recompute
+  // the components for the triple matrix product.
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> S_times_FT;
+  for(unsigned int i = 0; i < dim; ++i)
+  {
+    for(unsigned int j = 0; j < dim; ++j)
+    {
+      for(unsigned int k = 0; k < dim; ++k)
+      {
+        S_times_FT[i][j] += S[i][k] * F[j][k] /* FT[k][j] */;
+      }
+    }
+  }
+
+  // Compute the remaining product, exploit symmetry of the result.
+  dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> result;
+  for(unsigned int i = 0; i < dim; ++i)
+  {
+    for(unsigned int j = i; j < dim; ++j)
+    {
+      for(unsigned int k = 0; k < dim; ++k)
+      {
+        result[i][j] += F[i][k] * S_times_FT[k][j];
+      }
+    }
+  }
+
+  // Perform scaling with 1/J.
+  result /= J;
+
+  // Debug output.
+  if constexpr(false)
+  {
+    if constexpr(std::is_same_v<Number, double>)
+    {
+      dealii::VectorizedArray<Number> sum_err = 0.0;
+
+      dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> check =
+        (1.0 / J) * F * S * transpose(F);
+      for(unsigned int i = 0; i < dim; ++i)
+      {
+        for(unsigned int j = 0; j < dim; ++j)
+        {
+          sum_err += std::abs(check[i][j] - result[i][j]);
+        }
+      }
+      std::cout << "compute_push_forward : sum_err = " << sum_err << "\n";
+      AssertThrow(sum_err.sum() < 1e-18,
+                  dealii::ExcMessage("Check in `compute_push_forward()` failed."));
+    }
+  }
+
+  return result;
+}
+
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
