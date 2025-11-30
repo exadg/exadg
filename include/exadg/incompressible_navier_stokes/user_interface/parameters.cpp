@@ -408,17 +408,29 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
 
   if(spatial_discretization == SpatialDiscretization::HDIV)
   {
-    AssertThrow(
-      use_continuity_penalty == false,
-      dealii::ExcMessage(
-        "The use of continuity penalty term does not make sense in the case of HDIV since it is evaluated to zero. It should therefore be deactivated."));
+    AssertThrow(use_continuity_penalty == false,
+                dealii::ExcMessage("The use of the continuity penalty term does not make "
+                                   "sense in the case of HDIV since it evaluates to zero. "
+                                   "It should therefore be deactivated."));
+
+    if(use_divergence_penalty)
+    {
+      AssertThrow(preconditioner_projection == PreconditionerProjection::InverseMassMatrix or
+                    preconditioner_projection == PreconditionerProjection::PointJacobi,
+                  dealii::ExcMessage("Using HDIV and divergence penalty, "
+                                     "preconditioner options are limited."));
+    }
+
     if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
     {
-      AssertThrow(
-        preconditioner_velocity_block == MomentumPreconditioner::None or
-          preconditioner_velocity_block == MomentumPreconditioner::PointJacobi,
-        dealii::ExcMessage(
-          "Use either PointJacobi or None as preconditioner for the momentum block in the case of HDIV - Raviart-Thomas."));
+      AssertThrow(not use_divergence_penalty,
+                  dealii::ExcMessage("Using the divergence penalty term in the "
+                                     "coupled solution scheme does not make sense."));
+
+      AssertThrow(preconditioner_velocity_block == MomentumPreconditioner::None or
+                    preconditioner_velocity_block == MomentumPreconditioner::PointJacobi,
+                  dealii::ExcMessage("Use either PointJacobi or None as preconditioner for the "
+                                     "momentum block in the case of HDIV - Raviart-Thomas."));
     }
   }
 
@@ -455,11 +467,10 @@ Parameters::check(dealii::ConditionalOStream const & pcout) const
         << std::endl
         << "solution. Use the coupled scheme instead if this is desired." << std::endl;
 
-      AssertThrow(
-        preconditioner_momentum == MomentumPreconditioner::None or
-          preconditioner_momentum == MomentumPreconditioner::PointJacobi,
-        dealii::ExcMessage(
-          "Use either PointJacobi or None as preconditioner for the momentum step in the case of HDIV - Raviart-Thomas."));
+      AssertThrow(preconditioner_momentum == MomentumPreconditioner::None or
+                    preconditioner_momentum == MomentumPreconditioner::PointJacobi,
+                  dealii::ExcMessage("Use either PointJacobi or None as preconditioner for the "
+                                     "momentum step in the case of HDIV - Raviart-Thomas."));
     }
 
     AssertThrow(order_extrapolation_pressure_nbc <= order_time_integrator,
@@ -1415,7 +1426,6 @@ bool
 Parameters::involves_h_multigrid_penalty_step() const
 {
   bool involves_h_mg = false;
-
   if(preconditioner_projection == PreconditionerProjection::Multigrid and
      multigrid_data_projection.involves_h_transfer())
   {

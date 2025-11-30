@@ -71,7 +71,6 @@ SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
   pcout << std::endl
         << "Construct incompressible Navier-Stokes operator ..." << std::endl
         << std::flush;
-
   initialize_dof_handler_and_constraints();
 
   initialize_boundary_descriptor_laplace();
@@ -1777,10 +1776,13 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::setup_projection_solver()
 {
-  // setup projection solver
+  // skip setup of projection solver
+  if(param.use_divergence_penalty == false and param.use_continuity_penalty == false)
+    return;
 
-  // divergence penalty only -> local, elementwise problem
-  if(param.use_divergence_penalty == true and param.use_continuity_penalty == false)
+  // divergence penalty only -> local, elementwise problem for `SpatialDiscretization::L2`
+  if(param.use_divergence_penalty == true and param.use_continuity_penalty == false and
+     param.spatial_discretization == SpatialDiscretization::L2)
   {
     // elementwise operator
     elementwise_projection_operator =
@@ -1847,8 +1849,10 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
                   dealii::ExcMessage("Specified projection solver not implemented."));
     }
   }
-  // continuity penalty term with/without divergence penalty term -> globally coupled problem
-  else if(param.use_continuity_penalty == true)
+  // continuity penalty term with/without divergence penalty term *or* HDIV discretization
+  // (where continuity penalty could still be useful in projection/splitting schemes)
+  // give a globally coupled problem
+  else
   {
     // preconditioner
     if(param.preconditioner_projection == PreconditionerProjection::None)
@@ -1861,6 +1865,10 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       inverse_mass_operator_data.dof_index  = get_dof_index_velocity();
       inverse_mass_operator_data.quad_index = get_quad_index_velocity_standard();
       inverse_mass_operator_data.parameters = param.inverse_mass_preconditioner;
+      // overwrite invalid combination for HDIV, keep remaining parameters
+      if(param.spatial_discretization == SpatialDiscretization::HDIV)
+        inverse_mass_operator_data.parameters.implementation_type =
+          InverseMassType::GlobalKrylovSolver;
 
       preconditioner_projection =
         std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(*matrix_free,
@@ -1879,8 +1887,9 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
     {
       // Note that at this point (when initializing the Jacobi preconditioner)
       // the penalty parameter of the projection operator has not been calculated and the time step
-      // size has not been set. Hence, 'update_preconditioner = true' should be used for the Jacobi
-      // preconditioner in order to use to correct diagonal blocks for preconditioning.
+      // size has not been set. Hence, 'update_preconditioner = true' should be used for the
+      // `BlockJacobi` preconditioner in order to use to correct diagonal blocks for
+      // preconditioning.
       preconditioner_projection =
         std::make_shared<BlockJacobiPreconditioner<ProjOperator>>(*projection_operator, false);
     }
@@ -1971,13 +1980,6 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
     {
       AssertThrow(false, dealii::ExcMessage("Specified projection solver not implemented."));
     }
-  }
-  else
-  {
-    AssertThrow(
-      param.use_divergence_penalty == false and param.use_continuity_penalty == false,
-      dealii::ExcMessage(
-        "Specified combination of divergence and continuity penalty operators not implemented."));
   }
 }
 
