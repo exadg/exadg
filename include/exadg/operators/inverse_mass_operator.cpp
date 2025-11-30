@@ -94,17 +94,15 @@ InverseMassOperator<dim, n_components, Number>::initialize(
     {
       mass_operator_data.implement_block_diagonal_preconditioner_matrix_free = true;
       mass_operator_data.solver_block_diagonal = Elementwise::Solver::CG;
-      if(inverse_mass_operator_data.parameters.preconditioner == PreconditionerMass::None)
+      if(data.preconditioner == PreconditionerMass::None)
       {
         mass_operator_data.preconditioner_block_diagonal = Elementwise::Preconditioner::None;
       }
-      else if(inverse_mass_operator_data.parameters.preconditioner ==
-              PreconditionerMass::PointJacobi)
+      else if(data.preconditioner == PreconditionerMass::PointJacobi)
       {
         mass_operator_data.preconditioner_block_diagonal = Elementwise::Preconditioner::PointJacobi;
       }
-      mass_operator_data.solver_data_block_diagonal =
-        inverse_mass_operator_data.parameters.solver_data;
+      mass_operator_data.solver_data_block_diagonal = data.solver_data;
     }
 
     // Use constraints if provided.
@@ -132,41 +130,39 @@ InverseMassOperator<dim, n_components, Number>::initialize(
       block_jacobi_preconditioner =
         std::make_shared<BlockJacobiPreconditioner<MassOperator<dim, n_components, Number>>>(
           mass_operator, true /* initialize_preconditioner */);
+
+      // Store `0` to signal that no global iterations are done.
+      this->n_iter_global_last = 0;
     }
     else if(data.implementation_type == InverseMassType::GlobalKrylovSolver)
     {
       Krylov::SolverDataCG solver_data;
-      solver_data.max_iter             = inverse_mass_operator_data.parameters.solver_data.max_iter;
-      solver_data.solver_tolerance_abs = inverse_mass_operator_data.parameters.solver_data.abs_tol;
-      solver_data.solver_tolerance_rel = inverse_mass_operator_data.parameters.solver_data.rel_tol;
+      solver_data.max_iter             = data.solver_data.max_iter;
+      solver_data.solver_tolerance_abs = data.solver_data.abs_tol;
+      solver_data.solver_tolerance_rel = data.solver_data.rel_tol;
 
-      solver_data.use_preconditioner =
-        inverse_mass_operator_data.parameters.preconditioner != PreconditionerMass::None;
-      if(inverse_mass_operator_data.parameters.preconditioner == PreconditionerMass::None)
+      solver_data.use_preconditioner = data.preconditioner != PreconditionerMass::None;
+      if(data.preconditioner == PreconditionerMass::None)
       {
         // no setup required.
       }
-      else if(inverse_mass_operator_data.parameters.preconditioner ==
-              PreconditionerMass::PointJacobi)
+      else if(data.preconditioner == PreconditionerMass::PointJacobi)
       {
         global_preconditioner =
           std::make_shared<JacobiPreconditioner<MassOperator<dim, n_components, Number>>>(
             mass_operator, true /* initialize_preconditioner */);
       }
-      else if(inverse_mass_operator_data.parameters.preconditioner ==
-              PreconditionerMass::BlockJacobi)
+      else if(data.preconditioner == PreconditionerMass::BlockJacobi)
       {
         global_preconditioner =
           std::make_shared<BlockJacobiPreconditioner<MassOperator<dim, n_components, Number>>>(
             mass_operator, true /* initialize_preconditioner */);
       }
-      else if(inverse_mass_operator_data.parameters.preconditioner == PreconditionerMass::AMG)
+      else if(data.preconditioner == PreconditionerMass::AMG)
       {
         global_preconditioner =
           std::make_shared<PreconditionerAMG<MassOperator<dim, n_components, Number>, Number>>(
-            mass_operator,
-            true /* initialize_preconditioner */,
-            inverse_mass_operator_data.parameters.amg_data);
+            mass_operator, true /* initialize_preconditioner */, data.amg_data);
       }
       else
       {
