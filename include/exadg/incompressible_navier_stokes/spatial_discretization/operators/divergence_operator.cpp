@@ -317,7 +317,6 @@ DivergenceOperator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     pressure.reinit(cell);
-
     velocity.reinit(cell);
 
     if(data.integration_by_parts == true and
