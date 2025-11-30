@@ -276,30 +276,95 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>  <span class="keywordflow">return</span> result;</div>
 <div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>}</div>
 <div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span> </div>
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span><span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
-<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>  dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt;</div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>  get_F(<span class="keyword">const</span> dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt; &amp; gradient_displacement)</div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>{</div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>  <span class="keywordflow">return</span> add_identity&lt;dim, Number&gt;(gradient_displacement);</div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>}</div>
-<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span> </div>
-<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span><span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
-<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>  dealii::SymmetricTensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt;</div>
-<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>  get_E(<span class="keyword">const</span> dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt; &amp; gradient_displacement)</div>
-<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>{</div>
-<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  <span class="comment">// E = 0.5 (F^T * F) = 0.5 * (H + H^T + H^T * H),</span></div>
-<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>  <span class="comment">// where F is the deformation gradient and H is `gradient_displacement`.</span></div>
-<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>  <span class="comment">// Note that this version has also improved numerical stability.</span></div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  <span class="keywordflow">return</span> (0.5 *</div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>          (compute_H_plus_HT(gradient_displacement) + compute_HT_times_H(gradient_displacement)));</div>
-<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>}</div>
-<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span> </div>
-<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>} <span class="comment">// namespace Structure</span></div>
-<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span> </div>
-<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_CONTINUUM_MECHANICS_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span><span class="comment">// Compute the push-forward of a symmetric tensor `S`, i.e.,</span></div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span><span class="comment">// tau = (1/J) * F * S * F^T,</span></div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span><span class="comment">// with `S` being symmetric, and therefore symmetric `tau`.</span></div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span><span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>  dealii::SymmetricTensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt;</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>  compute_push_forward(dealii::VectorizedArray&lt;Number&gt; <span class="keyword">const</span> &amp;                                  J,</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>                       dealii::SymmetricTensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt; <span class="keyword">const</span> &amp; S,</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>                       dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt; <span class="keyword">const</span> &amp;          F)</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>{</div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>  <span class="comment">// Compute the non-symmetric S * F^T, since we do not want to recompute</span></div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>  <span class="comment">// the components for the triple matrix product.</span></div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>  dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt; S_times_FT;</div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; dim; ++i)</div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>  {</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> j = 0; j &lt; dim; ++j)</div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>    {</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>      <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> k = 0; k &lt; dim; ++k)</div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>      {</div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>        S_times_FT[i][j] += S[i][k] * F[j][k] <span class="comment">/* FT[k][j] */</span>;</div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>      }</div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>    }</div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>  }</div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span> </div>
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>  <span class="comment">// Compute the remaining product, exploit symmetry of the result.</span></div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>  dealii::SymmetricTensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt; result;</div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; dim; ++i)</div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>  {</div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> j = i; j &lt; dim; ++j)</div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>    {</div>
+<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>      <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> k = 0; k &lt; dim; ++k)</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>      {</div>
+<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>        result[i][j] += F[i][k] * S_times_FT[k][j];</div>
+<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>      }</div>
+<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>    }</div>
+<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>  }</div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span> </div>
+<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>  <span class="comment">// Perform scaling with 1/J.</span></div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>  result /= J;</div>
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span> </div>
+<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>  <span class="comment">// Debug output.</span></div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>  <span class="keywordflow">if</span> <span class="keyword">constexpr</span>(<span class="keyword">false</span>)</div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>  {</div>
+<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>    <span class="keywordflow">if</span> <span class="keyword">constexpr</span>(std::is_same_v&lt;Number, double&gt;)</div>
+<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>    {</div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>      dealii::VectorizedArray&lt;Number&gt; sum_err = 0.0;</div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span> </div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>      dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt; check =</div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>        (1.0 / J) * F * S * transpose(F);</div>
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>      <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; dim; ++i)</div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>      {</div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>        <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> j = 0; j &lt; dim; ++j)</div>
+<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>        {</div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>          sum_err += std::abs(check[i][j] - result[i][j]);</div>
+<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>        }</div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>      }</div>
+<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>      std::cout &lt;&lt; <span class="stringliteral">&quot;compute_push_forward : sum_err = &quot;</span> &lt;&lt; sum_err &lt;&lt; <span class="stringliteral">&quot;\n&quot;</span>;</div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>      AssertThrow(sum_err.sum() &lt; 1e-18,</div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>                  dealii::ExcMessage(<span class="stringliteral">&quot;Check in `compute_push_forward()` failed.&quot;</span>));</div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>    }</div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>  }</div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span> </div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>  <span class="keywordflow">return</span> result;</div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>}</div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span> </div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span><span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>  dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt;</div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>  get_F(<span class="keyword">const</span> dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt; &amp; gradient_displacement)</div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>{</div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>  <span class="keywordflow">return</span> add_identity&lt;dim, Number&gt;(gradient_displacement);</div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>}</div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span> </div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span><span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>  dealii::SymmetricTensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt;</div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>  get_E(<span class="keyword">const</span> dealii::Tensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt; &amp; gradient_displacement)</div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>{</div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>  <span class="comment">// E = 0.5 (F^T * F) = 0.5 * (H + H^T + H^T * H),</span></div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>  <span class="comment">// where F is the deformation gradient and H is `gradient_displacement`.</span></div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>  <span class="comment">// Note that this version has also improved numerical stability.</span></div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>  <span class="keywordflow">return</span> (0.5 *</div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>          (compute_H_plus_HT(gradient_displacement) + compute_HT_times_H(gradient_displacement)));</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>}</div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span> </div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>} <span class="comment">// namespace Structure</span></div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span> </div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_CONTINUUM_MECHANICS_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1Material_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1Material.html">ExaDG::Structure::tensor</a></div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 </div><!-- fragment --></div><!-- contents -->
