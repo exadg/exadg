@@ -156,8 +156,7 @@ private:
         pressure.submit_value(p, q);
       }
 
-      pressure.integrate(dealii::EvaluationFlags::values);
-      pressure.set_dof_values(dst);
+      pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 
@@ -199,8 +198,7 @@ private:
         velocity.submit_value(u, q);
       }
 
-      velocity.integrate(dealii::EvaluationFlags::values);
-      velocity.set_dof_values(dst);
+      velocity.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 
@@ -252,8 +250,7 @@ private:
         temperature.submit_value(T, q);
       }
 
-      temperature.integrate(dealii::EvaluationFlags::values);
-      temperature.set_dof_values(dst);
+      temperature.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 
