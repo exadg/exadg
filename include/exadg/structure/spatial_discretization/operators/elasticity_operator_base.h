@@ -101,6 +101,10 @@ public:
   OperatorData<dim> const &
   get_data() const;
 
+  Material<dim, Number> const &
+  get_material_in_cell(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+                       unsigned int const                      cell) const;
+
   /*
    * Provide near null space basis vectors, i.e., rigid body modes used in AMG setup.
    */

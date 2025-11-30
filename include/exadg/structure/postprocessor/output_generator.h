@@ -36,7 +36,10 @@ namespace Structure
 {
 struct OutputData : public OutputDataBase
 {
-  OutputData() : write_displacement_magnitude(false), write_displacement_jacobian(false)
+  OutputData()
+    : write_displacement_magnitude(false),
+      write_displacement_jacobian(false),
+      write_max_principal_stress(false)
   {
   }
 
@@ -47,6 +50,7 @@ struct OutputData : public OutputDataBase
 
     print_parameter(pcout, "Write displacement magnitude", write_displacement_magnitude);
     print_parameter(pcout, "Write displacement Jacobian", write_displacement_jacobian);
+    print_parameter(pcout, "Write maximum principal stress", write_max_principal_stress);
   }
 
   // write displacement magnitude
@@ -54,6 +58,9 @@ struct OutputData : public OutputDataBase
 
   // write Jacobian of the displacement field
   bool write_displacement_jacobian;
+
+  // write maximum principal stress
+  bool write_max_principal_stress;
 };
 
 template<int dim, typename Number>
