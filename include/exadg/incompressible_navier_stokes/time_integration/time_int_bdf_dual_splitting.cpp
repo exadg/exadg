@@ -182,26 +182,35 @@ template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::initialize_velocity_dbc()
 {
-  // fill vector velocity_dbc: The first entry [0] is already needed if start_with_low_order == true
-  if(this->param.ale_formulation)
+  if(this->param.spatial_discretization == SpatialDiscretization::L2)
   {
-    this->helpers_ale->move_grid(this->get_time());
-    this->helpers_ale->update_pde_operator_after_grid_motion();
-  }
-  pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[0], this->get_time());
-  // ... and previous times if start_with_low_order == false
-  if(this->start_with_low_order == false)
-  {
-    for(unsigned int i = 1; i < velocity_dbc.size(); ++i)
+    // fill vector velocity_dbc: The first entry [0] is already needed if start_with_low_order ==
+    // true
+    if(this->param.ale_formulation)
     {
-      double const time = this->get_time() - double(i) * this->get_time_step_size();
-      if(this->param.ale_formulation)
-      {
-        this->helpers_ale->move_grid(time);
-        this->helpers_ale->update_pde_operator_after_grid_motion();
-      }
-      pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[i], time);
+      this->helpers_ale->move_grid(this->get_time());
+      this->helpers_ale->update_pde_operator_after_grid_motion();
     }
+    pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[0], this->get_time());
+
+    // ... and previous times if start_with_low_order == false
+    if(this->start_with_low_order == false)
+    {
+      for(unsigned int i = 1; i < velocity_dbc.size(); ++i)
+      {
+        double const time = this->get_time() - double(i) * this->get_time_step_size();
+        if(this->param.ale_formulation)
+        {
+          this->helpers_ale->move_grid(time);
+          this->helpers_ale->update_pde_operator_after_grid_motion();
+        }
+        pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[i], time);
+      }
+    }
+  }
+  else if(this->param.spatial_discretization == SpatialDiscretization::HDIV)
+  {
+    // Currently, only zero Dirichlet BCs are supported for `SpatialDiscretization::HDIV`.
   }
 }
 
@@ -330,8 +339,15 @@ template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::do_timestep_solve()
 {
-  // pre-computations
-  pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
+  // update the vector holding the time derivative of Dirichlet data
+  if(this->param.spatial_discretization == SpatialDiscretization::L2)
+  {
+    pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
+  }
+  else if(this->param.spatial_discretization == SpatialDiscretization::HDIV)
+  {
+    // Currently, only zero Dirichlet BCs are supported for `SpatialDiscretization::HDIV`.
+  }
 
   // perform the sub-steps of the dual-splitting method
   if(this->update_velocity)
@@ -390,27 +406,29 @@ TimeIntBDFDualSplitting<dim, Number>::convective_step()
     velocity_np = 0.0;
   }
 
-
   // compute body force vector
   if(this->param.right_hand_side == true)
   {
     pde_operator->evaluate_add_body_force_term(velocity_np, this->get_next_time());
   }
 
+  // solve for a combined variable
+  // xi := gamma0/dt * u_hat - sum( alpha_i/dt * u_i )
   // apply inverse mass operator
   unsigned int const n_iter_mass =
     pde_operator->apply_inverse_mass_operator(velocity_np, velocity_np);
   iterations_mass.first += 1;
   iterations_mass.second += n_iter_mass;
 
-  // calculate sum (alpha_i/dt * u_i) and add to velocity_np, last addition is merged with scaling
-  // below
+  // recover gamma0/dt * u_hat from xi by adding
+  // sum (alpha_i/dt * u_i),
+  // where the last addition is merged with scaling below
   for(unsigned int i = 0; i < velocity.size() - 1; ++i)
   {
     velocity_np.add(this->bdf.get_alpha(i) / this->get_time_step_size(), velocity[i]);
   }
 
-  // solve discrete temporal derivative term for intermediate velocity u_hat, merged with last
+  // compute intermediate velocity u_hat by scaling merged with last
   // addition from above
   velocity_np.sadd(this->get_time_step_size() / this->bdf.get_gamma0(),
                    this->bdf.get_alpha(velocity.size() - 1) / this->bdf.get_gamma0(),
@@ -471,8 +489,8 @@ TimeIntBDFDualSplitting<dim, Number>::pressure_step()
   // extrapolate old solution to get a good initial estimate for the solver
   if(this->use_extrapolation)
   {
-    pressure_np = 0;
-    for(unsigned int i = 0; i < pressure.size(); ++i)
+    pressure_np.equ(this->extra.get_beta(0), pressure[0]);
+    for(unsigned int i = 1; i < pressure.size(); ++i)
     {
       pressure_np.add(this->extra.get_beta(i), pressure[i]);
     }

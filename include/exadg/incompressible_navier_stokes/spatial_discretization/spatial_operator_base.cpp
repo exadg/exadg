@@ -1587,7 +1587,8 @@ SpatialOperatorBase<dim, Number>::apply_inverse_mass_operator(VectorType &      
                                                               VectorType const & src) const
 {
   inverse_mass_velocity.apply(dst, src);
-  return 0;
+
+  return inverse_mass_velocity.get_n_iter_global_last();
 }
 
 template<int dim, typename Number>
