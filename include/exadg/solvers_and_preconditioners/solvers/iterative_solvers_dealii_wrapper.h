@@ -142,13 +142,30 @@ public:
 
     dealii::SolverCG<VectorType> solver(solver_control);
 
-    if(solver_data.use_preconditioner == false)
+    if(dealii::PointerComparison::equal(&dst, &rhs) == true)
     {
-      solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
+      VectorType tmp_dst;
+      tmp_dst.reinit(dst);
+      if(solver_data.use_preconditioner == false)
+      {
+        solver.solve(underlying_operator, tmp_dst, rhs, dealii::PreconditionIdentity());
+      }
+      else
+      {
+        solver.solve(underlying_operator, tmp_dst, rhs, preconditioner);
+      }
+      dst.copy_locally_owned_data_from(tmp_dst);
     }
     else
     {
-      solver.solve(underlying_operator, dst, rhs, preconditioner);
+      if(solver_data.use_preconditioner == false)
+      {
+        solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
+      }
+      else
+      {
+        solver.solve(underlying_operator, dst, rhs, preconditioner);
+      }
     }
 
     AssertThrow(std::isfinite(solver_control.last_value()),
@@ -271,6 +288,7 @@ public:
                                                 mpi_comm),
                                       true);
     }
+    AssertThrow(dealii::PointerComparison::equal(&dst, &rhs) == false, dealii::ExcNotImplemented());
 
     if(solver_data.use_preconditioner == false)
     {
@@ -374,6 +392,7 @@ public:
     // FGMRES always uses right preconditioning
 
     dealii::SolverFGMRES<VectorType> solver(solver_control, additional_data);
+    AssertThrow(dealii::PointerComparison::equal(&dst, &rhs) == false, dealii::ExcNotImplemented());
 
     if(solver_data.use_preconditioner == false)
     {
