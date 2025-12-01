@@ -101,6 +101,9 @@ private:
                               std::vector<VectorType> const & vectors_pressure) final;
 
   void
+  update_after_deserialization() final;
+
+  void
   initialize_pressure_on_boundary();
 
   void

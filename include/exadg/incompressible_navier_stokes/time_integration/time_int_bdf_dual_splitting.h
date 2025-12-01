@@ -92,6 +92,9 @@ private:
                               std::vector<VectorType> const & vectors_pressure) final;
 
   void
+  update_after_deserialization() final;
+
+  void
   do_timestep_solve() final;
 
   void
