@@ -103,6 +103,7 @@ enum class Solver
 {
   Undefined,
   CG,
+  GMRES,
   FGMRES
 };
 

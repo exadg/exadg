@@ -619,6 +619,38 @@ Operator<dim, Number>::setup_solver()
         std::make_shared<CG>(elasticity_operator_linear, *preconditioner, solver_data);
     }
   }
+  else if(param.solver == Solver::GMRES)
+  {
+    // initialize solver_data
+    Krylov::SolverDataGMRES solver_data;
+    solver_data.solver_tolerance_abs = param.solver_data.abs_tol;
+    solver_data.solver_tolerance_rel = param.solver_data.rel_tol;
+    solver_data.max_iter             = param.solver_data.max_iter;
+    solver_data.max_n_tmp_vectors    = param.solver_data.max_krylov_size;
+
+    if(param.preconditioner != Preconditioner::None)
+      solver_data.use_preconditioner = true;
+
+    // initialize solver
+    if(param.large_deformation)
+    {
+      typedef Krylov::
+        SolverGMRES<NonLinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
+          GMRES;
+      linear_solver = std::make_shared<GMRES>(elasticity_operator_nonlinear,
+                                              *preconditioner,
+                                              solver_data,
+                                              mpi_comm);
+    }
+    else
+    {
+      typedef Krylov::
+        SolverGMRES<LinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
+          GMRES;
+      linear_solver =
+        std::make_shared<GMRES>(elasticity_operator_linear, *preconditioner, solver_data, mpi_comm);
+    }
+  }
   else if(param.solver == Solver::FGMRES)
   {
     // initialize solver_data
