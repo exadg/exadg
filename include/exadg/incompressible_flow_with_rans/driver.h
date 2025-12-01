@@ -24,7 +24,7 @@
 
 // application
 #include <exadg/incompressible_flow_with_rans/user_interface/application_base.h>
-#include <exadg/incompressible_flow_with_rans/calculator/viscosity_calculator.h>
+#include <exadg/incompressible_flow_with_rans/calculator/operator.h>
 
 // utilities
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
@@ -75,6 +75,9 @@ private:
 
   void
   ale_update() const;
+
+  void
+  get_rans_scalars() const;
 
   void
   update_scalars() const;
@@ -155,7 +158,9 @@ private:
 
   mutable dealii::LinearAlgebra::distributed::Vector<Number> turbulent_dissipation_rate;
 
-  std::shared_ptr<ViscosityCalculator<dim, Number>> viscosity_calculator;
+  std::shared_ptr<ViscosityOperator<dim, Number>> viscosity_operator;
+
+  unsigned int eddy_viscosity_index;
   /*
    * Computation time (wall clock time).
    */

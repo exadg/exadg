@@ -70,9 +70,7 @@ public:
    */
   void
   initialize(dealii::MatrixFree<dim, Number> const &                matrix_free_in,
-             TurbulenceModelData const &                            turbulence_model_data_in,
-             unsigned int const                                     dof_index_in,
-             unsigned int const                                     quad_index_in);
+             TurbulenceModelData const &                            turbulence_model_data_in);
 
   /**
    * Function for *setting* the viscosity taking the viscosity stored in the viscous_kernel's data
@@ -298,6 +296,7 @@ public:
   VectorType eddy_viscosity;
 
 public:
+  unsigned int dof_index_eddy_viscosity;
   double diffusivity;
   ScalarType scalar_type;
 

@@ -76,11 +76,11 @@ public:
   add_viscosity(VectorType const & solution) = 0;
 
   double diffusivity;
-
+  unsigned int quad_index;
 protected:
   unsigned int dof_index;
 
-  unsigned int quad_index;
+
 
   dealii::MatrixFree<dim, Number> const * matrix_free;
 };

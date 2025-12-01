@@ -188,10 +188,6 @@ private:
                           tensor const & velocity_gradient,
                           double const & model_constant) const;
 
-  void
-  add_eddy_viscosity(scalar & viscosity,
-                     scalar const & eddy_viscosity_local) const;
-
   /**
    *  Smagorinsky model (1963):
    *
@@ -296,14 +292,6 @@ private:
               double const & C,
               scalar &       viscosity) const;
 
-  void
-  prandtl_mixing_length_model(scalar & viscosity,
-                              scalar const & eddy_viscosity_local) const;
-
-  void
-  standard_k_epsilon_model(scalar & viscosity,
-                           scalar const & eddy_viscosity_local) const;
-
   std::shared_ptr<TurbulenceDataBase>
   create_turbulence_data();
 
@@ -313,7 +301,7 @@ private:
 public:
   std::shared_ptr<TurbulenceDataBase> turbulence_data_base;
 
-  VectorType const * eddy_viscosity;
+  VectorType eddy_viscosity;
 };
 
 } // namespace IncRANS

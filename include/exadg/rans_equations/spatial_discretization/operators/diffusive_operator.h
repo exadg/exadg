@@ -52,6 +52,8 @@ struct DiffusiveKernelData
   ScalarType scalar_type;
   TurbulenceModelData turbulence_model_data;
   PositivityPreservingLimiter positivity_preserving_limiter;
+
+  unsigned int dof_index_eddy_viscosity;
 };
 
 template<int dim, typename Number>
@@ -86,12 +88,15 @@ public:
     AssertThrow(data.diffusivity > (0.0 - std::numeric_limits<double>::epsilon()),
                 dealii::ExcMessage("Diffusivity is not set!"));
 
-    integrator_cell_eddy_viscosity =
-      std::make_shared<IntegratorCell>(matrix_free, dof_index, quad_index);
-    integrator_face_eddy_viscosity_m =
-      std::make_shared<IntegratorFace>(matrix_free, true, dof_index, quad_index);
-    integrator_face_eddy_viscosity_p =
-      std::make_shared<IntegratorFace>(matrix_free, false, dof_index, quad_index);
+    if(data.turbulence_model_enabled)
+    {
+      integrator_cell_eddy_viscosity =
+        std::make_shared<IntegratorCell>(matrix_free, data.dof_index_eddy_viscosity, quad_index);
+      integrator_face_eddy_viscosity_m =
+        std::make_shared<IntegratorFace>(matrix_free, true, data.dof_index_eddy_viscosity, quad_index);
+      integrator_face_eddy_viscosity_p =
+        std::make_shared<IntegratorFace>(matrix_free, false, data.dof_index_eddy_viscosity, quad_index);
+    }
   }
 
   void

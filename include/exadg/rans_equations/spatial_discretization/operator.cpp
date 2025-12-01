@@ -215,11 +215,11 @@ Operator<dim, Number>::setup_operators()
   if (param.turbulence_model_data.is_active)
   {
     turbulence_model_ptr->diffusivity = param.diffusivity;
+    turbulence_model_ptr->dof_index_eddy_viscosity = get_dof_index_eddy_viscosity();
+    turbulence_model_ptr->quad_index = get_quad_index();
 
     turbulence_model_ptr->initialize(*matrix_free,
-                                      param.turbulence_model_data,
-                                      get_dof_index(),
-                                      get_quad_index());
+                                      param.turbulence_model_data);
     turbulence_model_ptr->scalar_type = param.scalar_type;
     turbulence_model_ptr->model_coefficients = param.turbulence_model_data.turbulence_data_base->get_all_coefficients();
   }
@@ -235,6 +235,7 @@ Operator<dim, Number>::setup_operators()
     diffusive_kernel_data.positivity_preserving_limiter = param.turbulence_model_data.positivity_preserving_limiter;
     diffusive_kernel_data.turbulence_model_data = param.turbulence_model_data;
     diffusive_kernel_data.scalar_type = param.scalar_type;
+    diffusive_kernel_data.dof_index_eddy_viscosity = get_dof_index_eddy_viscosity();
 
     diffusive_kernel = std::make_shared<Operators::DiffusiveKernel<dim, Number>>();
     diffusive_kernel->reinit(*matrix_free, diffusive_kernel_data, get_dof_index(), get_quad_index());
@@ -270,6 +271,7 @@ Operator<dim, Number>::setup_operators()
   rhs_kernel_data.positivity_preserving_limiter = param.turbulence_model_data.positivity_preserving_limiter;
   rhs_kernel_data.dof_index_velocity = get_dof_index_velocity();
   rhs_kernel_data.dof_index          = get_dof_index();
+  rhs_kernel_data.dof_index_eddy_viscosity = get_dof_index_eddy_viscosity();
   rhs_kernel_data.f                  = field_functions->right_hand_side;
   rhs_kernel_data.turbulence_model_data = param.turbulence_model_data;
 
@@ -840,6 +842,10 @@ Operator<dim, Number>::update_conv_diff_operator(double const       time,
       combined_operator.set_velocity_ptr(*velocity);
     }
   }
+  if (param.turbulence_model_data.is_active)
+  {
+    combined_operator.set_eddy_viscosity_ptr(turbulence_model_ptr->eddy_viscosity);
+  }
 }
 
 template<int dim, typename Number>
@@ -1014,6 +1020,13 @@ Operator<dim, Number>::get_dof_handler_velocity() const
 }
 
 template<int dim, typename Number>
+dealii::DoFHandler<dim> const &
+Operator<dim, Number>::get_dof_handler_eddy_viscosity() const
+{
+  return matrix_free_data->get_dof_handler(get_dof_name_eddy_viscosity());
+}
+
+template<int dim, typename Number>
 dealii::types::global_dof_index
 Operator<dim, Number>::get_number_of_dofs() const
 {
@@ -1077,6 +1090,13 @@ Operator<dim, Number>::get_dof_name_velocity() const
 }
 
 template<int dim, typename Number>
+std::string
+Operator<dim, Number>::get_dof_name_eddy_viscosity() const
+{
+  return dof_index_eddy_viscosity;
+}
+
+template<int dim, typename Number>
 unsigned int
 Operator<dim, Number>::get_dof_index_velocity() const
 {
@@ -1084,6 +1104,13 @@ Operator<dim, Number>::get_dof_index_velocity() const
     return matrix_free_data->get_dof_index(get_dof_name_velocity());
   else
     return dealii::numbers::invalid_unsigned_int;
+}
+
+template<int dim, typename Number>
+unsigned int 
+Operator<dim, Number>::get_dof_index_eddy_viscosity() const
+{
+  return matrix_free_data->get_dof_index(get_dof_name_eddy_viscosity());
 }
 
 template<int dim, typename Number>

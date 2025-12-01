@@ -48,22 +48,20 @@ template<int dim, typename Number>
 void
 TurbulenceModel<dim, Number>::initialize(
   dealii::MatrixFree<dim, Number> const &                matrix_free_in,
-  TurbulenceModelData const &                            turbulence_model_data_in,
-  unsigned int const                                     dof_index_in,
-  unsigned int const                                     quad_index_in)
+  TurbulenceModelData const &                            turbulence_model_data_in)
 {
-  Base::initialize(matrix_free_in, dof_index_in, quad_index_in);
+  Base::initialize(matrix_free_in, dof_index_eddy_viscosity, this->quad_index);
 
   turbulence_model_data = turbulence_model_data_in;
 
   turbulence_model_data.check();
 
-  viscosity_coefficients.initialize(matrix_free_in, quad_index_in, true, true);
+  viscosity_coefficients.initialize(matrix_free_in, this->quad_index, true, true);
   viscosity_coefficients.set_coefficients(diffusivity);
-  eddy_viscosity_coefficients.initialize(matrix_free_in, quad_index_in, true, true);
+  eddy_viscosity_coefficients.initialize(matrix_free_in, this->quad_index, true, true);
   eddy_viscosity_coefficients.set_coefficients(1.0);
 
-  this->matrix_free->initialize_dof_vector(eddy_viscosity, dof_index_in);
+  this->matrix_free->initialize_dof_vector(eddy_viscosity, dof_index_eddy_viscosity);
 
   /*model_coefficients = this->turbulence_data_base->get_all_coefficients();*/
 }
@@ -100,8 +98,8 @@ TurbulenceModel<dim, Number>::cell_loop_set_coefficients(
   Range const &      cell_range) 
 {
   IntegratorCell integrator(matrix_free,
-                                      this->dof_index,
-                                      this->quad_index);
+                            dof_index_eddy_viscosity,
+                            this->quad_index);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
@@ -139,11 +137,11 @@ TurbulenceModel<dim, Number>::face_loop_set_coefficients(
 {
   IntegratorFace integrator_m(matrix_free,
                               true,
-                              this->dof_index,
+                              dof_index_eddy_viscosity,
                               this->quad_index);
   IntegratorFace integrator_p(matrix_free,
                               false,
-                              this->dof_index,
+                              dof_index_eddy_viscosity,
                               this->quad_index);
   // loop over all interior faces
   for(unsigned int face = face_range.first; face < face_range.second; face++)
@@ -194,11 +192,11 @@ TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients(
 {
   IntegratorFace integrator(matrix_free,
                             true,
-                            this->dof_index,
+                            dof_index_eddy_viscosity,
                             this->quad_index);
   IntegratorFace integrator_secondary(matrix_free,
                                       true,
-                                      this->dof_index,
+                                      dof_index_eddy_viscosity,
                                       this->quad_index);
 
   // loop over all boundary faces

@@ -26,6 +26,8 @@
 #include <deal.II/matrix_free/fe_evaluation.h>
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/base/exceptions.h>
+#include <deal.II/numerics/vector_tools.h>
+#include <deal.II/numerics/fe_field_function.h>
 
 #include <exadg/matrix_free/integrators.h>
 
@@ -70,8 +72,12 @@ public:
   void
   calculate_eddy_viscosity();
 
-  dealii::LinearAlgebra::distributed::Vector<Number>
+  dealii::LinearAlgebra::distributed::Vector<Number> const &
   get_eddy_viscosity() const;
+
+  void
+  extrapolate_eddy_viscosity_to_dof(VectorType & dst,
+                                    unsigned int const & target_dof_index) const;
 private:
   void
   cell_loop_set_viscosity(dealii::MatrixFree<dim, Number> const & data,
@@ -96,6 +102,11 @@ private:
   void
   add_viscosity(scalar const & scalar_1,
                 scalar & viscosity) const;
+
+  void
+  extrapolate_to_new_dof(VectorType const & src,
+                         VectorType & dst,
+                         unsigned int const & target_dof_index) const;
 
 public:
   VectorType const * turbulent_kinetic_energy;

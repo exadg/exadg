@@ -172,7 +172,7 @@ private:
 
     //TURBULENCE
     this->param.turbulence_model_data.is_active        = true;
-    this->param.turbulence_model_data.turbulence_model = IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength;
+    this->param.turbulence_model_data.turbulence_model = IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon;
     this->param.treatment_of_variable_viscosity = TreatmentOfVariableViscosity::Explicit;
     this->param.turbulence_model_data.rans_model = true;
 

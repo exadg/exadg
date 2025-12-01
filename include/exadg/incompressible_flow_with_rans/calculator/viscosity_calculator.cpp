@@ -71,7 +71,7 @@ ViscosityCalculator<dim, Number>::set_tke_dissipation_rate(VectorType const & ep
 }
 
 template<int dim, typename Number>
-dealii::LinearAlgebra::distributed::Vector<Number>
+dealii::LinearAlgebra::distributed::Vector<Number> const &
 ViscosityCalculator<dim, Number>::get_eddy_viscosity() const
 {
   return eddy_viscosity;
@@ -82,10 +82,12 @@ void
 ViscosityCalculator<dim, Number>::calculate_eddy_viscosity()
 {
   VectorType dummy;
+  eddy_viscosity.zero_out_ghost_values();
   matrix_free->cell_loop(&This::cell_loop_set_viscosity,
                           this,
                           eddy_viscosity,
                           dummy);
+  eddy_viscosity.update_ghost_values();
 }
 
 template<int dim, typename Number>
@@ -106,6 +108,7 @@ ViscosityCalculator<dim, Number>::cell_loop_set_viscosity(dealii::MatrixFree<dim
                                       quad_index);
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
+    integrator_viscosity.reinit(cell);
     if(turbulence_model_data.turbulence_model==RANS::TurbulenceEddyViscosityModel::PrandtlMixingLength)
     {
       integrator_scalar_1.reinit(cell);
@@ -217,6 +220,49 @@ ViscosityCalculator<dim, Number>::standard_k_epsilon_model(scalar const & tke,
     AssertThrow(false, dealii::ExcMessage("PositivityPreservingLimiter needs to be specified for  calculating viscosity"));
   }
 }
+
+template<int dim, typename Number>
+void
+ViscosityCalculator<dim, Number>::extrapolate_eddy_viscosity_to_dof(VectorType & dst,
+                                                                    unsigned const & target_dof_index) const
+{
+  if(target_dof_index == dof_index)
+  {
+    dst = eddy_viscosity;
+    dst.update_ghost_values();
+    return;
+  }
+
+  extrapolate_to_new_dof(eddy_viscosity, dst, target_dof_index);
+}
+
+template<int dim, typename Number>
+void
+ViscosityCalculator<dim, Number>::extrapolate_to_new_dof(VectorType const & src,
+                                                         VectorType & dst,
+                                                         unsigned int const & target_dof_index) const
+{
+  // 1. Get the DoFHandlers for source and destination
+  auto const & dof_handler_src = matrix_free->get_dof_handler(dof_index);
+  auto const & dof_handler_dst = matrix_free->get_dof_handler(target_dof_index);
+
+  matrix_free->initialize_dof_vector(dst, target_dof_index);
+
+  // 3. Ensure source vector has ghost values updated
+  VectorType src_with_ghosts = src;
+  src_with_ghosts.update_ghost_values();
+
+  // 4. Create a continuous function wrapper around the source vector
+  dealii::Functions::FEFieldFunction<dim, dealii::LinearAlgebra::distributed::Vector<Number>>
+    src_function(dof_handler_src, src_with_ghosts);
+
+  // 5. Interpolate that function onto the destination space
+  dealii::VectorTools::interpolate(dof_handler_dst, src_function, dst);
+
+  // 6. Update ghosts so the new vector is ready for use
+  dst.update_ghost_values();
+}
+
 template class ViscosityCalculator<2, float>;
 template class ViscosityCalculator<2, double>;
 template class ViscosityCalculator<3, float>;

@@ -173,6 +173,22 @@ Driver<dim, Number>::setup()
   if(application->fluid->get_parameters().use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
 
+  if(application->fluid->get_parameters().turbulence_model_data.rans_model)
+  {
+    if(application->fluid->get_parameters().boussinesq_term)
+    {
+      eddy_viscosity_index = 1;
+    }
+    else
+    {
+      eddy_viscosity_index = 0;
+    }
+    viscosity_operator = std::make_shared<ViscosityOperator<dim, Number>>(grid,
+                                                                            application->scalars[eddy_viscosity_index]->get_parameters().degree);
+    matrix_free_data->append(viscosity_operator);
+  }
+
+
   matrix_free->reinit(*dynamic_mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
@@ -193,7 +209,7 @@ Driver<dim, Number>::setup()
   {
     // assume that the first scalar field with index 0 is the active scalar that
     // couples to the incompressible Navier-Stokes equations
-    fluid_operator->setup(matrix_free, matrix_free_data, scalar_operator[0]->get_dof_name(), scalar_operator[1]->get_dof_name());
+    fluid_operator->setup(matrix_free, matrix_free_data, scalar_operator[0]->get_dof_name());
   }
   else if(application->fluid->get_parameters().boussinesq_term)
   {
@@ -201,7 +217,7 @@ Driver<dim, Number>::setup()
   }
   else if(application->fluid->get_parameters().turbulence_model_data.rans_model)
   {
-    fluid_operator->setup(matrix_free, matrix_free_data, scalar_operator[0]->get_dof_name());
+    fluid_operator->setup(matrix_free, matrix_free_data);
   }
   else
   {
@@ -218,11 +234,9 @@ Driver<dim, Number>::setup()
 
   if(application->fluid->get_parameters().turbulence_model_data.rans_model)
   {
-    viscosity_calculator = std::make_shared<ViscosityCalculator<dim, Number>>();
-    viscosity_calculator->initialize(*matrix_free,
-                                     application->scalars[0]->get_parameters().turbulence_model_data,
-                                     scalar_operator[0]->get_dof_index(),
-                                     scalar_operator[0]->get_quad_index());
+    viscosity_operator->setup(matrix_free,
+                              matrix_free_data);
+    viscosity_operator->initialize_viscosity_calculator(application->scalars[0]->get_parameters().turbulence_model_data);
   }
 
   // Initialize DoF-vector temperature in case of transport->fluid coupling with Boussinesq term:
@@ -341,6 +355,14 @@ Driver<dim, Number>::setup()
   if(application->fluid->get_parameters().adaptive_time_stepping == true)
   {
     use_adaptive_time_stepping = true;
+  }
+
+  if(application->fluid->get_parameters().turbulence_model_data.rans_model)
+  {
+    get_rans_scalars();
+    update_scalars();
+    viscosity_operator->calculate_eddy_viscosity();
+    communicate_eddy_viscosity_to_all();
   }
 
   timer_tree.insert({"Flow + transport", "Setup"}, timer.wall_time());
@@ -484,32 +506,53 @@ Driver<dim ,Number>::communicate_eddy_viscosity_to_all() const
 {
   if (application->fluid->get_parameters().turbulence_model_data.rans_model)
   {
-    fluid_operator->set_eddy_viscosity(viscosity_calculator->get_eddy_viscosity());
+    VectorType fluid_eddy_viscosity;
+    viscosity_operator->extrapolate_eddy_viscosity_to_dof(fluid_eddy_viscosity,
+                                                          viscosity_operator->get_dof_index());
     if (application->fluid->get_parameters().boussinesq_term && application->fluid->get_parameters().turbulence_model_data.rans_model) {
       if (application->fluid->get_parameters().turbulence_model_data.turbulence_model==IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon) {
-        scalar_operator[1]->update_eddy_viscosity(viscosity_calculator->get_eddy_viscosity());
-        scalar_operator[2]->update_eddy_viscosity(viscosity_calculator->get_eddy_viscosity());
+        VectorType scalar_1_eddy_viscosity;
+        VectorType scalar_2_eddy_viscosity;
+        viscosity_operator->extrapolate_eddy_viscosity_to_dof(scalar_1_eddy_viscosity,
+                                                              viscosity_operator->get_dof_index());
+        viscosity_operator->extrapolate_eddy_viscosity_to_dof(scalar_2_eddy_viscosity,
+                                                              viscosity_operator->get_dof_index());
+        scalar_operator[1]->update_eddy_viscosity(scalar_1_eddy_viscosity);
+        scalar_operator[2]->update_eddy_viscosity(scalar_2_eddy_viscosity);
       }
       else if(application->fluid->get_parameters().turbulence_model_data.turbulence_model==IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength)
       {
-        scalar_operator[1]->update_eddy_viscosity(viscosity_calculator->get_eddy_viscosity());
+        VectorType scalar_eddy_viscosity;
+        viscosity_operator->extrapolate_eddy_viscosity_to_dof(scalar_eddy_viscosity,
+                                                              viscosity_operator->get_dof_index());
+        scalar_operator[1]->update_eddy_viscosity(scalar_eddy_viscosity);
       }
     } else if (application->fluid->get_parameters().turbulence_model_data.rans_model) {
       if (application->fluid->get_parameters().turbulence_model_data.turbulence_model==IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon) {
-        scalar_operator[0]->update_eddy_viscosity(viscosity_calculator->get_eddy_viscosity());
-        scalar_operator[1]->update_eddy_viscosity(viscosity_calculator->get_eddy_viscosity());
+        VectorType scalar_0_eddy_viscosity;
+        VectorType scalar_1_eddy_viscosity;
+        viscosity_operator->extrapolate_eddy_viscosity_to_dof(scalar_0_eddy_viscosity,
+                                                              viscosity_operator->get_dof_index());
+        viscosity_operator->extrapolate_eddy_viscosity_to_dof(scalar_1_eddy_viscosity,
+                                                              viscosity_operator->get_dof_index());
+        scalar_operator[0]->update_eddy_viscosity(scalar_0_eddy_viscosity);
+        scalar_operator[1]->update_eddy_viscosity(scalar_1_eddy_viscosity);
       }
       else if(application->fluid->get_parameters().turbulence_model_data.turbulence_model==IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength)
       {
-        scalar_operator[0]->update_eddy_viscosity(viscosity_calculator->get_eddy_viscosity());
+        VectorType scalar_eddy_viscosity;
+        viscosity_operator->extrapolate_eddy_viscosity_to_dof(scalar_eddy_viscosity,
+                                                              viscosity_operator->get_dof_index());
+        scalar_operator[0]->update_eddy_viscosity(scalar_eddy_viscosity);
       }
     }
+    fluid_operator->set_eddy_viscosity(fluid_eddy_viscosity);
   }
 }
 
 template<int dim, typename Number>
 void
-Driver<dim ,Number>::update_scalars() const
+Driver<dim ,Number>::get_rans_scalars() const
 {
   if (application->fluid->get_parameters().boussinesq_term && application->fluid->get_parameters().turbulence_model_data.rans_model) {
     if (application->scalars[0]->get_parameters().temporal_discretization == RANS::TemporalDiscretization::ExplRK) {
@@ -522,6 +565,8 @@ Driver<dim ,Number>::update_scalars() const
         AssertThrow(application->scalars[2]->get_parameters().temporal_discretization==RANS::TemporalDiscretization::ExplRK, dealii::ExcMessage("The temporal discretization of temperature, turbulent kinetic energy and dissipation rate has to be the same"));
         std::shared_ptr<RANS::TimeIntExplRK<Number>> time_int_scalar_epsilon = std::dynamic_pointer_cast<RANS::TimeIntExplRK<Number>>(scalar_time_integrator[2]);
         time_int_scalar_epsilon->extrapolate_solution(turbulent_dissipation_rate);
+
+        // set these values for viscosity_calculator
       }
       else if(application->fluid->get_parameters().turbulence_model_data.turbulence_model==IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength) {
         std::shared_ptr<RANS::TimeIntExplRK<Number>> time_int_scalar_tke = std::dynamic_pointer_cast<RANS::TimeIntExplRK<Number>>(scalar_time_integrator[1]);
@@ -575,6 +620,21 @@ Driver<dim ,Number>::update_scalars() const
     } else {
       AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
+  }
+}
+
+template<int dim, typename Number>
+void
+Driver<dim, Number>::update_scalars() const
+{
+  if(application->fluid->get_parameters().turbulence_model_data.turbulence_model==IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon)
+  {
+    viscosity_operator->set_turbulent_kinetic_energy(turbulent_kinetic_energy);
+    viscosity_operator->set_tke_dissipation_rate(turbulent_dissipation_rate);
+  }
+  else if(application->fluid->get_parameters().turbulence_model_data.turbulence_model==IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength)
+  {
+    viscosity_operator->set_turbulent_kinetic_energy(turbulent_kinetic_energy);
   }
 }
 
@@ -694,8 +754,9 @@ Driver<dim, Number>::solve() const
     // Communicate scalar -> fluid
     if(application->fluid->get_parameters().turbulence_model_data.rans_model)
     {
+      get_rans_scalars();
       update_scalars();
-      viscosity_calculator->calculate_eddy_viscosity();
+      viscosity_operator->calculate_eddy_viscosity();
       communicate_eddy_viscosity_to_all();
     }
     communicate_scalar_to_fluid();

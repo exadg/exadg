@@ -222,6 +222,7 @@ SET(TARGET_SRC
      # incompressible flow with rans
      include/exadg/incompressible_flow_with_rans/driver.cpp
      include/exadg/incompressible_flow_with_rans/calculator/viscosity_calculator.cpp
+     include/exadg/incompressible_flow_with_rans/calculator/operator.cpp
      # compressible Navier-Stokes equations
      include/exadg/compressible_navier_stokes/user_interface/parameters.cpp
      include/exadg/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.cpp

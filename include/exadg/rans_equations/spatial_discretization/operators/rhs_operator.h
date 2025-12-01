@@ -57,6 +57,7 @@ struct RHSKernelData
   ScalarType   scalar_type;
   bool         production_term;
   bool         dissipation_term;
+  unsigned int dof_index_eddy_viscosity;
   unsigned int dof_index_velocity;
   unsigned int dof_index;
   TurbulenceModelData turbulence_model_data;
@@ -94,7 +95,7 @@ public:
     integrator_solution =
       std::make_shared<IntegratorCell>(matrix_free_in, data.dof_index, quad_index);
     integrator_eddy_viscosity =
-      std::make_shared<IntegratorCell>(matrix_free_in, data.dof_index, quad_index);
+      std::make_shared<IntegratorCell>(matrix_free_in, data.dof_index_eddy_viscosity, quad_index);
   }
 
   static MappingFlags

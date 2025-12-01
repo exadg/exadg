@@ -277,6 +277,15 @@ public:
   dealii::DoFHandler<dim> const &
   get_dof_handler_velocity() const;
 
+  dealii::DoFHandler<dim> const &
+  get_dof_handler_eddy_viscosity() const;
+
+  std::string
+  get_dof_name_eddy_viscosity() const;
+
+  unsigned int 
+  get_dof_index_eddy_viscosity() const;
+
   dealii::types::global_dof_index
   get_number_of_dofs() const;
 
@@ -424,6 +433,7 @@ private:
 
   std::string const dof_index_std      = "conv_diff";
   std::string const dof_index_velocity = "conv_diff_velocity";
+  std::string const dof_index_eddy_viscosity = "eddy_viscosity";
 
   std::string const quad_index_std             = "conv_diff";
   std::string const quad_index_overintegration = "conv_diff_overintegration";

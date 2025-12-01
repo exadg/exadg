@@ -119,8 +119,7 @@ public:
   void
   setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
         std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
-        std::string const &                                    dof_index_scalar_one = "",
-        std::string const &                                    dof_index_scalar_two = "");
+        std::string const &                                    dof_index_scalar_one = "");
 protected:
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -161,10 +160,13 @@ public:
   unsigned int
   get_quad_index_pressure() const;
 
-protected:
   unsigned int
   get_dof_index_velocity_scalar() const;
 
+  std::string
+  get_dof_name_eddy_viscosity() const;
+
+protected:
   unsigned int
   get_quad_index_velocity_overintegration() const;
 
@@ -666,8 +668,7 @@ private:
   initialize_dirichlet_cached_bc();
 
   void
-  initialize_operators(std::string const & dof_index_scalar_one = "",
-                       std::string const & dof_index_scalar_two = "");
+  initialize_operators(std::string const & dof_index_scalar_one = "");
 
   void
   initialize_calculators_for_derived_quantities();
