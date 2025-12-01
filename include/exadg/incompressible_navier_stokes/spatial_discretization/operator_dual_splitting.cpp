@@ -117,8 +117,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_boundary_
         integrator.submit_value(-flux_times_normal, q);
       }
 
-      integrator.integrate(dealii::EvaluationFlags::values);
-      integrator.distribute_local_to_global(dst);
+      integrator.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
     else if(boundary_type == BoundaryTypeU::Neumann or boundary_type == BoundaryTypeU::Symmetry)
     {
@@ -298,8 +297,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_numerical_time_derivative_
         integrator_pressure.submit_value(h, q);
       }
 
-      integrator_pressure.integrate(dealii::EvaluationFlags::values);
-      integrator_pressure.distribute_local_to_global(dst);
+      integrator_pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
     else if(boundary_type == BoundaryTypeP::Dirichlet)
     {
@@ -369,8 +367,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_bounda
         integrator.submit_value(h, q);
       }
 
-      integrator.integrate(dealii::EvaluationFlags::values);
-      integrator.distribute_local_to_global(dst);
+      integrator.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
     else if(boundary_type == BoundaryTypeP::Dirichlet)
     {
