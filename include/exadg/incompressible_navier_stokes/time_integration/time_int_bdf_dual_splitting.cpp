@@ -117,6 +117,14 @@ TimeIntBDFDualSplitting<dim, Number>::set_vectors_deserialization(
 
 template<int dim, typename Number>
 void
+TimeIntBDFDualSplitting<dim, Number>::update_after_deserialization()
+{
+  // Update the stored viscosity parameter.
+  pde_operator->update_viscosity(velocity[0]);
+}
+
+template<int dim, typename Number>
+void
 TimeIntBDFDualSplitting<dim, Number>::allocate_vectors()
 {
   Base::allocate_vectors();

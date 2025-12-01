@@ -80,6 +80,14 @@ TimeIntBDFCoupled<dim, Number>::initialize_current_solution()
 
 template<int dim, typename Number>
 void
+TimeIntBDFCoupled<dim, Number>::update_after_deserialization()
+{
+  // Update the stored viscosity parameter.
+  pde_operator->update_viscosity(solution[0].block(0));
+}
+
+template<int dim, typename Number>
+void
 TimeIntBDFCoupled<dim, Number>::initialize_former_multistep_dof_vectors()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)

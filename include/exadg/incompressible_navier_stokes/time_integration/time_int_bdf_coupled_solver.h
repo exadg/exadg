@@ -88,6 +88,9 @@ private:
   initialize_former_multistep_dof_vectors() final;
 
   void
+  update_after_deserialization() final;
+
+  void
   do_timestep_solve() final;
 
   void

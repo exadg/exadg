@@ -125,6 +125,9 @@ protected:
   set_vectors_deserialization(std::vector<VectorType> const & vectors_velocity,
                               std::vector<VectorType> const & vectors_pressure);
 
+  virtual void
+  update_after_deserialization();
+
   void
   prepare_vectors_for_next_timestep() override;
 
