@@ -294,7 +294,7 @@ public:
     coarse_operator.calculate_inverse_diagonal(diagonal_vector);
 
     std::pair<double, double> eigenvalues =
-      compute_eigenvalues(coarse_operator, diagonal_vector, operator_is_singular);
+      estimate_eigenvalues_cg(coarse_operator, diagonal_vector, operator_is_singular);
 
     double const factor = 1.1;
 
