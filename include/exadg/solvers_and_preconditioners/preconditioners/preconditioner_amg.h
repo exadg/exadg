@@ -32,7 +32,9 @@
 
 // Trilinos
 #ifdef DEAL_II_WITH_TRILINOS
+DEAL_II_DISABLE_EXTRA_DIAGNOSTICS
 #  include <ml_MultiLevelPreconditioner.h>
+DEAL_II_ENABLE_EXTRA_DIAGNOSTICS
 #endif
 
 // ExaDG
