@@ -94,15 +94,14 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_boundary_
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    integrator.reinit(face);
-
     BoundaryTypeU boundary_type =
       this->boundary_descriptor->velocity->get_boundary_type(matrix_free.get_boundary_id(face));
 
-    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+    if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
     {
-      if(boundary_type == BoundaryTypeU::Dirichlet or
-         boundary_type == BoundaryTypeU::DirichletCached)
+      integrator.reinit(face);
+
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         dealii::Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
@@ -117,23 +116,21 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_boundary_
         // and avoids a scaling of the resulting vector by the factor -1.0
         integrator.submit_value(-flux_times_normal, q);
       }
-      else if(boundary_type == BoundaryTypeU::Neumann or boundary_type == BoundaryTypeU::Symmetry)
-      {
-        // Do nothing on Neumann and symmetry boundaries.
-        // Remark: On symmetry boundaries it follows from g_u * n = 0 that also g_{u_hat} * n = 0.
-        // Hence, a symmetry boundary for u is also a symmetry boundary for u_hat. Hence, there
-        // are no inhomogeneous contributions on symmetry boundaries.
-        scalar zero = dealii::make_vectorized_array<Number>(0.0);
-        integrator.submit_value(zero, q);
-      }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
+
+      integrator.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
-    integrator.integrate(dealii::EvaluationFlags::values);
-    integrator.distribute_local_to_global(dst);
+    else if(boundary_type == BoundaryTypeU::Neumann or boundary_type == BoundaryTypeU::Symmetry)
+    {
+      // Do nothing on Neumann and symmetry boundaries.
+      // Remark: On symmetry boundaries it follows from g_u * n = 0 that also g_{u_hat} * n = 0.
+      // Hence, a symmetry boundary for u is also a symmetry boundary for u_hat. Hence, there
+      // are no inhomogeneous contributions on symmetry boundaries.
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
   }
 }
 
@@ -179,26 +176,26 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    velocity.reinit(face);
-    velocity.gather_evaluate(src,
-                             dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
-
-    if(this->param.ale_formulation)
-    {
-      grid_velocity.reinit(face);
-      grid_velocity.gather_evaluate(this->convective_kernel->get_grid_velocity(),
-                                    dealii::EvaluationFlags::values);
-    }
-
-    pressure.reinit(face);
-
     BoundaryTypeU boundary_type =
       this->boundary_descriptor->velocity->get_boundary_type(matrix_free.get_boundary_id(face));
 
-    for(unsigned int q = 0; q < pressure.n_q_points; ++q)
+    if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
     {
-      if(boundary_type == BoundaryTypeU::Dirichlet or
-         boundary_type == BoundaryTypeU::DirichletCached)
+      velocity.reinit(face);
+      velocity.gather_evaluate(src,
+                               dealii::EvaluationFlags::values |
+                                 dealii::EvaluationFlags::gradients);
+
+      if(this->param.ale_formulation)
+      {
+        grid_velocity.reinit(face);
+        grid_velocity.gather_evaluate(this->convective_kernel->get_grid_velocity(),
+                                      dealii::EvaluationFlags::values);
+      }
+
+      pressure.reinit(face);
+
+      for(unsigned int q = 0; q < pressure.n_q_points; ++q)
       {
         vector normal = pressure.normal_vector(q);
 
@@ -231,22 +228,21 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
 
         pressure.submit_value(flux_times_normal, q);
       }
-      else if(boundary_type == BoundaryTypeU::Neumann or boundary_type == BoundaryTypeU::Symmetry)
-      {
-        // Do nothing on Neumann and symmetry boundaries.
-        // Remark: On symmetry boundaries it follows from g_u * n = 0 that also g_{u_hat} * n = 0.
-        // Hence, a symmetry boundary for u is also a symmetry boundary for u_hat. Hence, there
-        // are no inhomogeneous contributions on symmetry boundaries.
-        scalar zero = dealii::make_vectorized_array<Number>(0.0);
-        pressure.submit_value(zero, q);
-      }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
+
+      pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
-    pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
+    else if(boundary_type == BoundaryTypeU::Neumann or boundary_type == BoundaryTypeU::Symmetry)
+    {
+      // Do nothing on Neumann and symmetry boundaries.
+      // Remark: On symmetry boundaries it follows from g_u * n = 0 that also g_{u_hat} * n = 0.
+      // Hence, a symmetry boundary for u is also a symmetry boundary for u_hat. Hence, there
+      // are no inhomogeneous contributions on symmetry boundaries.
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
   }
 }
 
@@ -281,18 +277,18 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_numerical_time_derivative_
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    integrator_velocity.reinit(face);
-    integrator_velocity.gather_evaluate(acceleration, dealii::EvaluationFlags::values);
-
-    integrator_pressure.reinit(face);
-
     dealii::types::boundary_id boundary_id = data.get_boundary_id(face);
     BoundaryTypeP              boundary_type =
       this->boundary_descriptor->pressure->get_boundary_type(boundary_id);
 
-    for(unsigned int q = 0; q < integrator_pressure.n_q_points; ++q)
+    if(boundary_type == BoundaryTypeP::Neumann)
     {
-      if(boundary_type == BoundaryTypeP::Neumann)
+      integrator_velocity.reinit(face);
+      integrator_velocity.gather_evaluate(acceleration, dealii::EvaluationFlags::values);
+
+      integrator_pressure.reinit(face);
+
+      for(unsigned int q = 0; q < integrator_pressure.n_q_points; ++q)
       {
         vector normal = integrator_velocity.normal_vector(q);
         vector dudt   = integrator_velocity.get_value(q);
@@ -300,20 +296,18 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_numerical_time_derivative_
 
         integrator_pressure.submit_value(h, q);
       }
-      else if(boundary_type == BoundaryTypeP::Dirichlet)
-      {
-        scalar zero = dealii::make_vectorized_array<Number>(0.0);
-        integrator_pressure.submit_value(zero, q);
-      }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
-    }
 
-    integrator_pressure.integrate(dealii::EvaluationFlags::values);
-    integrator_pressure.distribute_local_to_global(dst);
+      integrator_pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
+    }
+    else if(boundary_type == BoundaryTypeP::Dirichlet)
+    {
+      // Nothing to do.
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
   }
 }
 
@@ -348,15 +342,15 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_bounda
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    integrator.reinit(face);
-
     dealii::types::boundary_id boundary_id = data.get_boundary_id(face);
     BoundaryTypeP              boundary_type =
       this->boundary_descriptor->pressure->get_boundary_type(boundary_id);
 
-    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+    if(boundary_type == BoundaryTypeP::Neumann)
     {
-      if(boundary_type == BoundaryTypeP::Neumann)
+      integrator.reinit(face);
+
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         dealii::Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
@@ -372,19 +366,18 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_bounda
 
         integrator.submit_value(h, q);
       }
-      else if(boundary_type == BoundaryTypeP::Dirichlet)
-      {
-        scalar zero = dealii::make_vectorized_array<Number>(0.0);
-        integrator.submit_value(zero, q);
-      }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
+
+      integrator.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
-    integrator.integrate(dealii::EvaluationFlags::values);
-    integrator.distribute_local_to_global(dst);
+    else if(boundary_type == BoundaryTypeP::Dirichlet)
+    {
+      // Nothing to do.
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
   }
 }
 
@@ -419,25 +412,26 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_boundary_fa
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    velocity.reinit(face);
-    velocity.gather_evaluate(src,
-                             dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
-
-    if(this->param.ale_formulation)
-    {
-      grid_velocity.reinit(face);
-      grid_velocity.gather_evaluate(this->convective_kernel->get_grid_velocity(),
-                                    dealii::EvaluationFlags::values);
-    }
-
-    pressure.reinit(face);
-
     BoundaryTypeP boundary_type =
       this->boundary_descriptor->pressure->get_boundary_type(matrix_free.get_boundary_id(face));
 
-    for(unsigned int q = 0; q < pressure.n_q_points; ++q)
+    if(boundary_type == BoundaryTypeP::Neumann)
     {
-      if(boundary_type == BoundaryTypeP::Neumann)
+      velocity.reinit(face);
+      velocity.gather_evaluate(src,
+                               dealii::EvaluationFlags::values |
+                                 dealii::EvaluationFlags::gradients);
+
+      if(this->param.ale_formulation)
+      {
+        grid_velocity.reinit(face);
+        grid_velocity.gather_evaluate(this->convective_kernel->get_grid_velocity(),
+                                      dealii::EvaluationFlags::values);
+      }
+
+      pressure.reinit(face);
+
+      for(unsigned int q = 0; q < pressure.n_q_points; ++q)
       {
         vector normal = pressure.normal_vector(q);
 
@@ -468,18 +462,18 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_boundary_fa
 
         pressure.submit_value(-normal * flux, q);
       }
-      else if(boundary_type == BoundaryTypeP::Dirichlet)
-      {
-        pressure.submit_value(dealii::make_vectorized_array<Number>(0.0), q);
-      }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
-    }
 
-    pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
+      pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
+    }
+    else if(boundary_type == BoundaryTypeP::Dirichlet)
+    {
+      // Nothing to do.
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
   }
 }
 
@@ -514,20 +508,20 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary_face(
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    pressure.reinit(face);
-
-    omega.reinit(face);
-    omega.gather_evaluate(src, dealii::EvaluationFlags::gradients);
-
     BoundaryTypeP boundary_type =
       this->boundary_descriptor->pressure->get_boundary_type(matrix_free.get_boundary_id(face));
 
-    for(unsigned int q = 0; q < pressure.n_q_points; ++q)
+    if(boundary_type == BoundaryTypeP::Neumann)
     {
-      scalar viscosity = this->get_viscosity_boundary_face(face, q);
+      pressure.reinit(face);
 
-      if(boundary_type == BoundaryTypeP::Neumann)
+      omega.reinit(face);
+      omega.gather_evaluate(src, dealii::EvaluationFlags::gradients);
+
+      for(unsigned int q = 0; q < pressure.n_q_points; ++q)
       {
+        scalar const viscosity = this->get_viscosity_boundary_face(face, q);
+
         vector const normal = pressure.normal_vector(q);
 
         vector const curl_omega = CurlCompute<dim, FaceIntegratorU>::compute(omega, q);
@@ -536,17 +530,18 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary_face(
 
         pressure.submit_value(h, q);
       }
-      else if(boundary_type == BoundaryTypeP::Dirichlet)
-      {
-        pressure.submit_value(dealii::make_vectorized_array<Number>(0.0), q);
-      }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
+
+      pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
-    pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
+    else if(boundary_type == BoundaryTypeP::Dirichlet)
+    {
+      // Nothing to do.
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
   }
 }
 
@@ -587,19 +582,19 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_variable_viscosity_add_bou
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    integrator_pressure.reinit(face);
-
-    integrator_viscosity.reinit(face);
-    integrator_viscosity.gather_evaluate(*this->viscosity, dealii::EvaluationFlags::gradients);
-
-    integrator_velocity.reinit(face);
-    integrator_velocity.gather_evaluate(velocity, dealii::EvaluationFlags::gradients);
-
     BoundaryTypeP boundary_type =
       this->boundary_descriptor->pressure->get_boundary_type(matrix_free.get_boundary_id(face));
 
     if(boundary_type == BoundaryTypeP::Neumann)
     {
+      integrator_pressure.reinit(face);
+
+      integrator_viscosity.reinit(face);
+      integrator_viscosity.gather_evaluate(*this->viscosity, dealii::EvaluationFlags::gradients);
+
+      integrator_velocity.reinit(face);
+      integrator_velocity.gather_evaluate(velocity, dealii::EvaluationFlags::gradients);
+
       for(unsigned int q = 0; q < integrator_pressure.n_q_points; ++q)
       {
         vector normal = integrator_pressure.normal_vector(q);
@@ -613,11 +608,12 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_variable_viscosity_add_bou
 
         integrator_pressure.submit_value(h, q);
       }
+
       integrator_pressure.integrate_scatter(dealii::EvaluationFlags::values, rhs_ppe);
     }
     else if(boundary_type == BoundaryTypeP::Dirichlet)
     {
-      // do nothing
+      // Nothing to do.
     }
     else
     {
