@@ -389,7 +389,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>    coarse_operator.calculate_inverse_diagonal(diagonal_vector);</div>
 <div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span> </div>
 <div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>    std::pair&lt;double, double&gt; eigenvalues =</div>
-<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>      compute_eigenvalues(coarse_operator, diagonal_vector, operator_is_singular);</div>
+<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>      estimate_eigenvalues_cg(coarse_operator, diagonal_vector, operator_is_singular);</div>
 <div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span> </div>
 <div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>    <span class="keywordtype">double</span> <span class="keyword">const</span> factor = 1.1;</div>
 <div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span> </div>
