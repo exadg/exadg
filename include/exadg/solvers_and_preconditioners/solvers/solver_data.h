@@ -36,11 +36,14 @@ struct SolverData
   {
   }
 
-  SolverData(unsigned int const max_iter_,
-             double const       abs_tol_,
-             double const       rel_tol_,
-             unsigned int const max_krylov_size_ = 30)
-    : max_iter(max_iter_), abs_tol(abs_tol_), rel_tol(rel_tol_), max_krylov_size(max_krylov_size_)
+  SolverData(unsigned int const max_iter_in,
+             double const       abs_tol_in,
+             double const       rel_tol_in,
+             unsigned int const max_krylov_size_in = 30)
+    : max_iter(max_iter_in),
+      abs_tol(abs_tol_in),
+      rel_tol(rel_tol_in),
+      max_krylov_size(max_krylov_size_in)
   {
   }
 

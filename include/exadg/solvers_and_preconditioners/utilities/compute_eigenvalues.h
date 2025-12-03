@@ -107,22 +107,22 @@ public:
  */
 template<typename Operator, typename Preconditioner, typename VectorType>
 std::vector<std::complex<double>>
-estimate_eigenvalues_gmres(Operator const &                underlying_operator,
-                           Preconditioner const &          preconditioner,
-                           VectorType const &              solution,
-                           VectorType const &              rhs,
-                           Krylov::SolverDataGMRES const & solver_data,
-                           bool const                      print)
+estimate_eigenvalues_gmres(Operator const &       underlying_operator,
+                           Preconditioner const & preconditioner,
+                           VectorType const &     solution,
+                           VectorType const &     rhs,
+                           SolverData const &     solver_data,
+                           bool const             print)
 {
   // initial guess
   VectorType tmp(solution);
 
   dealii::ReductionControl solver_control(solver_data.max_iter,
-                                          solver_data.solver_tolerance_abs,
-                                          solver_data.solver_tolerance_rel);
+                                          solver_data.abs_tol,
+                                          solver_data.rel_tol);
 
   typename dealii::SolverGMRES<VectorType>::AdditionalData additional_data;
-  additional_data.max_n_tmp_vectors     = solver_data.max_n_tmp_vectors;
+  additional_data.max_n_tmp_vectors     = solver_data.max_krylov_size;
   additional_data.right_preconditioning = true;
   dealii::SolverGMRES<VectorType> solver(solver_control, additional_data);
 

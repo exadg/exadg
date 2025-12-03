@@ -27,6 +27,7 @@
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/solver_gmres.h>
+#include <deal.II/lac/solver_selector.h>
 
 // ExaDG
 #include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
@@ -37,6 +38,9 @@ namespace ExaDG
 {
 namespace Krylov
 {
+/*
+ * Krylov solver base class agnostic of the operator used.
+ */
 template<typename VectorType>
 class SolverBase
 {
@@ -58,7 +62,7 @@ public:
 
   template<typename Control>
   void
-  compute_performance_metrics(Control const & solver_control) const
+  do_compute_performance_metrics(Control const & solver_control) const
   {
     // get some statistics related to convergence
     this->l2_0 = solver_control.initial_value();
@@ -139,7 +143,7 @@ public:
                 dealii::ExcMessage("Last iteration step contained NaN or Inf values."));
 
     if(solver_data.compute_performance_metrics)
-      this->compute_performance_metrics(solver_control);
+      this->do_compute_performance_metrics(solver_control);
 
     this->timer_tree->insert({"SolverCG"}, timer.wall_time());
 
@@ -208,14 +212,6 @@ public:
     additional_data.right_preconditioning = true;
     dealii::SolverGMRES<VectorType> solver(solver_control, additional_data);
 
-    // Store the initial guess for a *second* system solve during which eigenvalues are estimated.
-    VectorType initial_guess;
-    if(solver_data.compute_eigenvalues == true)
-    {
-      initial_guess.reinit(dst, true /* omit_zeroing_entries */);
-      initial_guess.copy_locally_owned_data_from(dst);
-    }
-
     if(solver_data.use_preconditioner == false)
     {
       solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
@@ -225,19 +221,11 @@ public:
       solver.solve(this->underlying_operator, dst, rhs, this->preconditioner);
     }
 
-    // Estimate eigenvalues using a *second* system solve. This approach should *only* be used to
-    // compute eigenvalues for debugging.
-    if(solver_data.compute_eigenvalues == true)
-    {
-      estimate_eigenvalues_gmres(
-        underlying_operator, preconditioner, initial_guess, rhs, solver_data, true /* print */);
-    }
-
     AssertThrow(std::isfinite(solver_control.last_value()),
                 dealii::ExcMessage("Last iteration step contained NaN or Inf values."));
 
     if(solver_data.compute_performance_metrics)
-      this->compute_performance_metrics(solver_control);
+      this->do_compute_performance_metrics(solver_control);
 
     this->timer_tree->insert({"SolverGMRES"}, timer.wall_time());
 
@@ -320,7 +308,7 @@ public:
                 dealii::ExcMessage("Last iteration step contained NaN or Inf values."));
 
     if(solver_data.compute_performance_metrics)
-      this->compute_performance_metrics(solver_control);
+      this->do_compute_performance_metrics(solver_control);
 
     this->timer_tree->insert({"SolverFGMRES"}, timer.wall_time());
 
@@ -342,6 +330,135 @@ private:
   Operator const &       underlying_operator;
   Preconditioner &       preconditioner;
   SolverDataFGMRES const solver_data;
+};
+
+/*
+ * Wrapper around `dealii::SolverSelector` with extended functionality.
+ */
+template<typename Operator, typename Preconditioner, typename VectorType>
+class KrylovSolver : public SolverBase<VectorType>
+{
+public:
+  KrylovSolver(Operator const &    underlying_operator_in,
+               Preconditioner &    preconditioner_in,
+               SolverData const &  solver_data_in,
+               std::string const & name_in,
+               bool const          use_preconditioner_in,
+               bool const          compute_performance_metrics_in = false,
+               bool const          compute_eigenvalues_in         = false)
+    : underlying_operator(underlying_operator_in),
+      preconditioner(preconditioner_in),
+      solver_data(solver_data_in),
+      name(name_in),
+      use_preconditioner(use_preconditioner_in),
+      compute_performance_metrics(compute_performance_metrics_in),
+      compute_eigenvalues(compute_eigenvalues_in)
+  {
+  }
+
+  virtual ~KrylovSolver()
+  {
+  }
+
+  void
+  update_preconditioner(bool const update_preconditioner) const override
+  {
+    if(use_preconditioner)
+    {
+      if(preconditioner.needs_update() or update_preconditioner)
+      {
+        preconditioner.update();
+      }
+    }
+  }
+
+  unsigned int
+  solve(VectorType & dst, VectorType const & rhs) const override
+  {
+    dealii::Timer timer;
+
+    dealii::ReductionControl solver_control(solver_data.max_iter,
+                                            solver_data.abs_tol,
+                                            solver_data.rel_tol);
+
+    dealii::SolverSelector<VectorType> solver(name, solver_control);
+
+    // Additional settings depending on requested solver type.
+    if(name == "gmres")
+    {
+      typename dealii::SolverGMRES<VectorType>::AdditionalData additional_data;
+      additional_data.max_n_tmp_vectors     = solver_data.max_krylov_size;
+      additional_data.right_preconditioning = true;
+
+      solver.set_data(additional_data);
+    }
+    else if(name == "fgmres")
+    {
+      typename dealii::SolverFGMRES<VectorType>::AdditionalData additional_data;
+      additional_data.max_basis_size = solver_data.max_krylov_size;
+      // FGMRES always uses right preconditioning
+
+      solver.set_date(additional_data);
+    }
+
+    // Store the initial guess for a *second* system solve during which eigenvalues are estimated.
+    VectorType initial_guess;
+    if(compute_eigenvalues == true)
+    {
+      initial_guess.reinit(dst, true /* omit_zeroing_entries */);
+      initial_guess.copy_locally_owned_data_from(dst);
+    }
+
+    if(use_preconditioner == false)
+    {
+      solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
+    }
+    else
+    {
+      solver.solve(underlying_operator, dst, rhs, preconditioner);
+    }
+
+    // Estimate eigenvalues using a *second* system solve using GMRES. This approach should *only*
+    // be used to compute eigenvalues for debugging.
+    if(compute_eigenvalues == true)
+    {
+      estimate_eigenvalues_gmres(
+        underlying_operator, preconditioner, initial_guess, rhs, solver_data, true /* print */);
+    }
+
+    AssertThrow(std::isfinite(solver_control.last_value()),
+                dealii::ExcMessage("Last iteration step contained NaN or Inf values."));
+
+    if(compute_performance_metrics)
+    {
+      this->do_compute_performance_metrics(solver_control);
+    }
+
+    this->timer_tree->insert({"Solver (" + name + ")"}, timer.wall_time());
+
+    return solver_control.last_step();
+  }
+
+  std::shared_ptr<TimerTree>
+  get_timings() const override
+  {
+    if(use_preconditioner)
+    {
+      this->timer_tree->insert({"Solver (" + name + ")"}, preconditioner.get_timings());
+    }
+
+    return timer_tree;
+  }
+
+private:
+  std::shared_ptr<TimerTree> timer_tree;
+  Operator const &           underlying_operator;
+  Preconditioner &           preconditioner;
+  SolverData const           solver_data;
+  std::string                name;
+  bool                       use_preconditioner;
+  bool                       compute_performance_metrics;
+  bool                       compute_eigenvalues;
 };
 
 } // namespace Krylov
