@@ -21,6 +21,7 @@
 
 #include <exadg/convection_diffusion/postprocessor/postprocessor.h>
 #include <exadg/convection_diffusion/spatial_discretization/operator.h>
+#include <exadg/utilities/evaluate_convergence_study.h>
 
 namespace ExaDG
 {
@@ -34,6 +35,17 @@ PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & pp_data
     output_generator(mpi_comm_in),
     error_calculator(mpi_comm_in)
 {
+}
+
+template<int dim, typename Number>
+PostProcessor<dim, Number>::~PostProcessor()
+{
+  // Evaluate the convergence study.
+  std::vector<std::string> error_directories;
+  if(pp_data.error_data.compute_convergence_table)
+    error_directories.push_back(pp_data.error_data.directory);
+
+  evaluate_convergence_study(mpi_comm, error_directories);
 }
 
 template<int dim, typename Number>

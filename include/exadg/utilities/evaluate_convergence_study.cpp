@@ -39,43 +39,31 @@
 namespace ExaDG
 {
 void
-evaluate_convergence_study(MPI_Comm const & mpi_comm, std::string const & input_parameter_file)
+evaluate_convergence_study(MPI_Comm const &                 mpi_comm,
+                           std::vector<std::string> const & error_directories)
 {
-  // parse parameter file
-  ExaDG::GeneralParameters const general(input_parameter_file);
-  bool const                     is_test = general.is_test;
+  // we display all results in one table, hence omit duplicate directories
+  std::set<std::string> const    set_of_unique_directories(error_directories.begin(),
+                                                        error_directories.end());
+  std::vector<std::string> const unique_directories(set_of_unique_directories.begin(),
+                                                    set_of_unique_directories.end());
 
-  ExaDG::SpatialResolutionParametersMinMax spatial(input_parameter_file);
-  ExaDG::TemporalResolutionParameters      temporal(input_parameter_file);
-  bool const no_refinement = temporal.refine_time_min == temporal.refine_time_max and
-                             spatial.degree_min == spatial.degree_max and
-                             spatial.refine_space_min == spatial.refine_space_max;
-
-  dealii::ParameterHandler prm;
-  OutputParameters         output_parameters;
-  output_parameters.add_parameters(prm);
-  prm.parse_input(input_parameter_file, "", true, true);
-  std::string const & output_directory = output_parameters.directory;
-
-  if(is_test or no_refinement)
+  // populate and print convergence study with single MPI rank
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
-    // skip convergence study
-  }
-  else
-  {
-    // populate and print convergence study
-    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+    // loop over uniqe directries provided
+    for(std::string const & directory : unique_directories)
     {
-      // find data in `output` folder
-      std::filesystem::path const fs_output_directory{output_directory};
-      if(std::filesystem::exists(fs_output_directory))
+      // find data in `directory`
+      std::filesystem::path const fs_directory{directory};
+      if(std::filesystem::exists(fs_directory))
       {
         // process files in output folder starting with 'run_'
-        std::string               filename_base = output_directory + "run_";
+        std::string               filename_base = directory + "run_";
         std::vector<std::string>  labels;
         std::vector<unsigned int> run_ids;
         std::vector<double>       errors;
-        for(auto const & fs_dir_entry : std::filesystem::directory_iterator{fs_output_directory})
+        for(auto const & fs_dir_entry : std::filesystem::directory_iterator{fs_directory})
         {
           std::string dir_entry = fs_dir_entry.path().string();
           if(dir_entry.size() >= filename_base.size())
@@ -116,12 +104,12 @@ evaluate_convergence_study(MPI_Comm const & mpi_comm, std::string const & input_
 
         if(labels.size() == 0)
         {
-          std::cout << "Could not detect any files matching \"" << output_directory
+          std::cout << "Could not detect any files matching \"" << directory
                     << "run_\". No convergence table to display.";
         }
         else if(max_run_id == 0)
         {
-          std::cout << "Only detected files with run_id = 0 matching \"" << output_directory
+          std::cout << "Only detected files with run_id = 0 matching \"" << directory
                     << "run_\". Not enough data to display convergence table.";
         }
         else
@@ -163,7 +151,7 @@ evaluate_convergence_study(MPI_Comm const & mpi_comm, std::string const & input_
 
           unsigned int min_run_id = *std::min_element(run_ids.begin(), run_ids.end());
           std::cout << "Convergence table for run_id = " << min_run_id << ", ..., " << max_run_id
-                    << ":" << std::endl
+                    << ": in " << directory << std::endl
                     << std::endl;
           convergence_table.write_text(std::cout);
         }

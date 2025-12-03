@@ -52,6 +52,9 @@ public:
 
   PostProcessor(PostProcessorData<dim> const & pp_data, MPI_Comm const & mpi_comm);
 
+  // custom destructor computing convergence tables if desired
+  virtual ~PostProcessor();
+
   void
   setup(Operator<dim, Number> const & pde_operator_in) override;
 
