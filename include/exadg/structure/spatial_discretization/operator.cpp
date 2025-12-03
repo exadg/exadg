@@ -591,67 +591,49 @@ void
 Operator<dim, Number>::setup_solver()
 {
   // initialize linear solver
+  std::string name;
   if(param.solver == Solver::CG)
   {
-    // initialize solver_data
-    Krylov::SolverDataCG solver_data;
-    solver_data.solver_tolerance_abs = param.solver_data.abs_tol;
-    solver_data.solver_tolerance_rel = param.solver_data.rel_tol;
-    solver_data.max_iter             = param.solver_data.max_iter;
-
-    if(param.preconditioner != Preconditioner::None)
-      solver_data.use_preconditioner = true;
-
-    // initialize solver
-    if(param.large_deformation)
-    {
-      typedef Krylov::
-        SolverCG<NonLinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
-          CG;
-      linear_solver =
-        std::make_shared<CG>(elasticity_operator_nonlinear, *preconditioner, solver_data);
-    }
-    else
-    {
-      typedef Krylov::SolverCG<LinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
-        CG;
-      linear_solver =
-        std::make_shared<CG>(elasticity_operator_linear, *preconditioner, solver_data);
-    }
+    name = "cg";
   }
   else if(param.solver == Solver::FGMRES)
   {
-    // initialize solver_data
-    Krylov::SolverDataFGMRES solver_data;
-    solver_data.solver_tolerance_abs = param.solver_data.abs_tol;
-    solver_data.solver_tolerance_rel = param.solver_data.rel_tol;
-    solver_data.max_iter             = param.solver_data.max_iter;
-    solver_data.max_n_tmp_vectors    = param.solver_data.max_krylov_size;
-
-    if(param.preconditioner != Preconditioner::None)
-      solver_data.use_preconditioner = true;
-
-    // initialize solver
-    if(param.large_deformation)
-    {
-      typedef Krylov::
-        SolverFGMRES<NonLinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
-          FGMRES;
-      linear_solver =
-        std::make_shared<FGMRES>(elasticity_operator_nonlinear, *preconditioner, solver_data);
-    }
-    else
-    {
-      typedef Krylov::
-        SolverFGMRES<LinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
-          FGMRES;
-      linear_solver =
-        std::make_shared<FGMRES>(elasticity_operator_linear, *preconditioner, solver_data);
-    }
+    name = "fgmres";
   }
   else
   {
-    AssertThrow(false, dealii::ExcMessage("Specified solver is not implemented!"));
+    AssertThrow(false, dealii::ExcMessage("Specified solver not implemented in structure module."));
+  }
+
+  bool const use_preconditioner              = param.preconditioner != Preconditioner::None;
+  bool constexpr compute_performance_metrics = false;
+  bool constexpr compute_eigenvalues         = false;
+
+  if(param.large_deformation)
+  {
+    typedef Krylov::
+      KrylovSolver<NonLinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
+        SolverType;
+    linear_solver = std::make_shared<SolverType>(elasticity_operator_nonlinear,
+                                                 *preconditioner,
+                                                 param.solver_data,
+                                                 name,
+                                                 use_preconditioner,
+                                                 compute_performance_metrics,
+                                                 compute_eigenvalues);
+  }
+  else
+  {
+    typedef Krylov::
+      KrylovSolver<LinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
+        SolverType;
+    linear_solver = std::make_shared<SolverType>(elasticity_operator_linear,
+                                                 *preconditioner,
+                                                 param.solver_data,
+                                                 name,
+                                                 use_preconditioner,
+                                                 compute_performance_metrics,
+                                                 compute_eigenvalues);
   }
 
   // initialize Newton solver

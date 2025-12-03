@@ -212,6 +212,11 @@ public:
     additional_data.right_preconditioning = true;
     dealii::SolverGMRES<VectorType> solver(solver_control, additional_data);
 
+    AssertThrow(
+      solver_data.compute_eigenvalues == false,
+      dealii::ExcMessage(
+        "Computing eigenvalues temporally disabled until move to `KrylovSolver` is complete"));
+
     if(solver_data.use_preconditioner == false)
     {
       solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
@@ -398,7 +403,7 @@ public:
       additional_data.max_basis_size = solver_data.max_krylov_size;
       // FGMRES always uses right preconditioning
 
-      solver.set_date(additional_data);
+      solver.set_data(additional_data);
     }
 
     // Store the initial guess for a *second* system solve during which eigenvalues are estimated.
@@ -447,18 +452,17 @@ public:
       this->timer_tree->insert({"Solver (" + name + ")"}, preconditioner.get_timings());
     }
 
-    return timer_tree;
+    return this->timer_tree;
   }
 
 private:
-  std::shared_ptr<TimerTree> timer_tree;
-  Operator const &           underlying_operator;
-  Preconditioner &           preconditioner;
-  SolverData const           solver_data;
-  std::string                name;
-  bool                       use_preconditioner;
-  bool                       compute_performance_metrics;
-  bool                       compute_eigenvalues;
+  Operator const & underlying_operator;
+  Preconditioner & preconditioner;
+  SolverData const solver_data;
+  std::string      name;
+  bool             use_preconditioner;
+  bool             compute_performance_metrics;
+  bool             compute_eigenvalues;
 };
 
 } // namespace Krylov
