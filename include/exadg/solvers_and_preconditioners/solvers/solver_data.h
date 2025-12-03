@@ -59,6 +59,71 @@ struct SolverData
   // only relevant for GMRES type solvers
   unsigned int max_krylov_size;
 };
+
+// `SolverData` structs for deal.II wrapper classes
+namespace Krylov
+{
+struct SolverDataCG
+{
+  SolverDataCG()
+    : max_iter(1e4),
+      solver_tolerance_abs(1.e-20),
+      solver_tolerance_rel(1.e-6),
+      use_preconditioner(false),
+      compute_performance_metrics(false)
+  {
+  }
+
+  unsigned int max_iter;
+  double       solver_tolerance_abs;
+  double       solver_tolerance_rel;
+  bool         use_preconditioner;
+  bool         compute_performance_metrics;
+};
+
+struct SolverDataGMRES
+{
+  SolverDataGMRES()
+    : max_iter(1e4),
+      solver_tolerance_abs(1.e-20),
+      solver_tolerance_rel(1.e-6),
+      use_preconditioner(false),
+      max_n_tmp_vectors(30),
+      compute_eigenvalues(false),
+      compute_performance_metrics(false)
+  {
+  }
+
+  unsigned int max_iter;
+  double       solver_tolerance_abs;
+  double       solver_tolerance_rel;
+  bool         use_preconditioner;
+  unsigned int max_n_tmp_vectors;
+  bool         compute_eigenvalues;
+  bool         compute_performance_metrics;
+};
+
+struct SolverDataFGMRES
+{
+  SolverDataFGMRES()
+    : max_iter(1e4),
+      solver_tolerance_abs(1.e-20),
+      solver_tolerance_rel(1.e-6),
+      use_preconditioner(false),
+      max_n_tmp_vectors(30),
+      compute_performance_metrics(false)
+  {
+  }
+
+  unsigned int max_iter;
+  double       solver_tolerance_abs;
+  double       solver_tolerance_rel;
+  bool         use_preconditioner;
+  unsigned int max_n_tmp_vectors;
+  bool         compute_performance_metrics;
+};
+
+} // namespace Krylov
 } // namespace ExaDG
 
 #endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_SOLVERS_SOLVER_DATA_H_ */

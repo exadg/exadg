@@ -29,6 +29,8 @@
 #include <deal.II/lac/solver_gmres.h>
 
 // ExaDG
+#include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
+#include <exadg/solvers_and_preconditioners/utilities/compute_eigenvalues.h>
 #include <exadg/utilities/timer_tree.h>
 
 namespace ExaDG
@@ -86,24 +88,6 @@ public:
 
 protected:
   std::shared_ptr<TimerTree> timer_tree;
-};
-
-struct SolverDataCG
-{
-  SolverDataCG()
-    : max_iter(1e4),
-      solver_tolerance_abs(1.e-20),
-      solver_tolerance_rel(1.e-6),
-      use_preconditioner(false),
-      compute_performance_metrics(false)
-  {
-  }
-
-  unsigned int max_iter;
-  double       solver_tolerance_abs;
-  double       solver_tolerance_rel;
-  bool         use_preconditioner;
-  bool         compute_performance_metrics;
 };
 
 template<typename Operator, typename Preconditioner, typename VectorType>
@@ -179,45 +163,6 @@ private:
   SolverDataCG const solver_data;
 };
 
-template<class Number>
-void
-output_eigenvalues(const std::vector<Number> & eigenvalues,
-                   std::string const &         text,
-                   MPI_Comm const &            mpi_comm)
-{
-  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-  {
-    std::cout << text << std::endl;
-    for(unsigned int j = 0; j < eigenvalues.size(); ++j)
-    {
-      std::cout << ' ' << eigenvalues.at(j) << std::endl;
-    }
-    std::cout << std::endl;
-  }
-}
-
-struct SolverDataGMRES
-{
-  SolverDataGMRES()
-    : max_iter(1e4),
-      solver_tolerance_abs(1.e-20),
-      solver_tolerance_rel(1.e-6),
-      use_preconditioner(false),
-      max_n_tmp_vectors(30),
-      compute_eigenvalues(false),
-      compute_performance_metrics(false)
-  {
-  }
-
-  unsigned int max_iter;
-  double       solver_tolerance_abs;
-  double       solver_tolerance_rel;
-  bool         use_preconditioner;
-  unsigned int max_n_tmp_vectors;
-  bool         compute_eigenvalues;
-  bool         compute_performance_metrics;
-};
-
 template<typename Operator, typename Preconditioner, typename VectorType>
 class SolverGMRES : public SolverBase<VectorType>
 {
@@ -263,13 +208,12 @@ public:
     additional_data.right_preconditioning = true;
     dealii::SolverGMRES<VectorType> solver(solver_control, additional_data);
 
+    // Store the initial guess for a *second* system solve during which eigenvalues are estimated.
+    VectorType initial_guess;
     if(solver_data.compute_eigenvalues == true)
     {
-      solver.connect_eigenvalues_slot(std::bind(output_eigenvalues<std::complex<double>>,
-                                                std::placeholders::_1,
-                                                "Eigenvalues: ",
-                                                mpi_comm),
-                                      true);
+      initial_guess.reinit(dst, true /* omit_zeroing_entries */);
+      initial_guess.copy_locally_owned_data_from(dst);
     }
 
     if(solver_data.use_preconditioner == false)
@@ -279,6 +223,14 @@ public:
     else
     {
       solver.solve(this->underlying_operator, dst, rhs, this->preconditioner);
+    }
+
+    // Estimate eigenvalues using a *second* system solve. This approach should *only* be used to
+    // compute eigenvalues for debugging.
+    if(solver_data.compute_eigenvalues == true)
+    {
+      estimate_eigenvalues_gmres(
+        underlying_operator, preconditioner, initial_guess, rhs, solver_data, true /* print */);
     }
 
     AssertThrow(std::isfinite(solver_control.last_value()),
@@ -309,26 +261,6 @@ private:
   SolverDataGMRES const solver_data;
 
   MPI_Comm const mpi_comm;
-};
-
-struct SolverDataFGMRES
-{
-  SolverDataFGMRES()
-    : max_iter(1e4),
-      solver_tolerance_abs(1.e-20),
-      solver_tolerance_rel(1.e-6),
-      use_preconditioner(false),
-      max_n_tmp_vectors(30),
-      compute_performance_metrics(false)
-  {
-  }
-
-  unsigned int max_iter;
-  double       solver_tolerance_abs;
-  double       solver_tolerance_rel;
-  bool         use_preconditioner;
-  unsigned int max_n_tmp_vectors;
-  bool         compute_performance_metrics;
 };
 
 template<typename Operator, typename Preconditioner, typename VectorType>
