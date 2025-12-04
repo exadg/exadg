@@ -1,0 +1,944 @@
+
+
+
+--> REFERENCE input file : input_reference_HDIV_DualSplitting_fixed_grid.json
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up incompressible Navier-Stokes solver:
+
+List of parameters:
+
+Mathematical model:
+  Problem type:                              Unsteady
+  Equation type:                             NavierStokes
+  Formulation of viscous term:               DivergenceFormulation
+  Formulation of convective term:            ConvectiveFormulation
+  Outflow BC for convective term:            false
+  Right-hand side:                           true
+  Boussinesq term:                           false
+  Boussinesq - dynamic part only:            false
+  Use ALE formulation:                       false
+
+Physical quantities:
+  Start time:                                0.0000e+00
+  End time:                                  2.5000e-02
+  Viscosity:                                 1.0000e-06
+  Density:                                   1.0000e+03
+
+Temporal discretization:
+  Temporal discretization method:            BDFCoupledSolution
+  Calculation of time step size:             UserSpecified
+  Adaptive time stepping:                    false
+  Maximum number of time steps:              4294967295
+  Temporal refinements:                      2
+  Order of time integration scheme:          2
+  Start with low order method:               false
+  Treatment of convective term:              Explicit
+  Solver information:
+  Interval physical time:                    2.5000e-03
+  Interval wall time:                        1.7977e+308
+  Interval time steps:                       4294967295
+  Restarted simulation:                      false
+  Restart:
+  Write restart:                             true
+  Interval physical time:                    1.2500e-02
+  Interval physical time window start:       1.2500e-02
+  Interval physical time window end:         2.5000e-02
+  Interval wall time:                        1.0000e+06
+  Interval time steps:                       100000000
+  Directory coarse triangulation:            output_test/
+  Directory:                                 output_test/
+  Filename:                                  test_restart
+
+Spatial discretization:
+  Triangulation type:                        Serial
+  Element type:                              Hypercube
+  Number of global refinements:              2
+  Create coarse triangulations:              false
+  Mapping degree:                            10
+  Mapping degree coarse grids:               10
+  FE space:                                  HDIV
+  Polynomial degree velocity (normal):       10
+  Polynomial degree velocity (tangential):   10
+  Polynomial degree pressure:                MixedOrder
+  Convective term - Upwind factor:           1.0000e+00
+  Convective term - Type of Dirichlet BC's:  Mirror
+  Viscous term - IP formulation:             SIPG
+  Viscous term - IP factor:                  1.0000e+00
+  Penalty term formulation viscous term:     Symmetrized
+  Grad(p) - integration by parts:            true
+  Grad(p) - formulation:                     Weak
+  Grad(p) - use boundary data:               true
+  Div(u) . integration by parts:             true
+  Div(u) - formulation:                      Weak
+  Div(u) - use boundary data:                true
+  Adjust pressure level (if undefined):      ApplyAnalyticalMeanValue
+  Use divergence penalty term:               false
+  Use continuity penalty term:               false
+
+Turbulence:
+  Use turbulence model:                      false
+
+Rheology:
+  Use generalized Newtonian model:           false
+
+Numerical parameters:
+  Block Jacobi matrix-free:                  false
+  Use cell-based face loops:                 false
+  Quadrature rule linearization:             Overintegration32k
+
+Coupled Navier-Stokes solver:
+  Use scaling of continuity equation:        false
+
+Linear solver:
+  Solver:                                    FGMRES
+  Maximum number of iterations:              10000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-08
+  Maximum size of Krylov space:              100
+  Preconditioner:                            BlockTriangular
+  Update preconditioner:                     true
+  Update every time steps:                   1
+
+  Velocity/momentum block:
+  Preconditioner:                            PointJacobi
+
+  Pressure/Schur-complement block:
+  Preconditioner:                            CahouetChabard
+  Multigrid type:                            cphMG
+  p-sequence:                                DecreaseByOne
+  Min degree matrix-free:                    1
+  Smoother:                                  Chebyshev
+  Preconditioner smoother:                   PointJacobi
+  Iterations smoother:                       5
+  Smoothing range:                           2.0000e+01
+  Iterations eigenvalue estimation:          20
+  Coarse grid solver:                        GMRES
+  Coarse grid preconditioner:                PointJacobi
+  Maximum number of iterations:              10000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-03
+  Maximum size of Krylov space:              30
+  Exact inversion of Laplace operator:       false
+
+Generating grid for 2-dimensional problem:
+
+  Max. number of refinements:                2
+  Number of cells:                           16
+
+Construct incompressible Navier-Stokes operator ...
+Velocity:
+  degree of 1D polynomials (normal):         10
+  degree of 1D polynomials (tangential):     9
+  number of dofs per cell:                   220
+  number of dofs (total):                    3280
+Pressure:
+  degree of 1D polynomials:                  9
+  number of dofs per cell:                   100
+  number of dofs (total):                    1600
+Velocity and pressure:
+  number of dofs per cell:                   320
+  number of dofs (total):                    4880
+
+... done!
+
+Setup incompressible Navier-Stokes operator ...
+
+... done!
+
+Setup Multistep time integrator ...
+
+User specified time step size:
+
+  time step size:                            3.1250e-04
+
+... done!
+
+Starting time loop ...
+
+Calculate error for velocity at time t = 0.0000e+00:
+  Relative error (L2-norm): 4.39608e-11
+
+Calculate error for pressure at time t = 0.0000e+00:
+  Relative error (L2-norm): 1.09010e-06
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 3.12500e-04
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 10      t = 2.81250e-03 -> t + dt = 3.12500e-03
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 18      t = 5.31250e-03 -> t + dt = 5.62500e-03
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 25      t = 7.50000e-03 -> t + dt = 7.81250e-03
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 33      t = 1.00000e-02 -> t + dt = 1.03125e-02
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Writing restart file at time t = 1.25000e-02:
+    vector global l2 norm: 4.44253584e+01      
+    vector global l2 norm: 4.44255298e+01      
+    vector global l2 norm: 4.23902362e-01      
+    vector global l2 norm: 4.23905632e-01      
+    vector global l2 norm: 3.06895408e+01      
+    vector global l2 norm: 3.06896592e+01      
+
+ ... done!
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 41      t = 1.25000e-02 -> t + dt = 1.28125e-02
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 49      t = 1.50000e-02 -> t + dt = 1.53125e-02
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 57      t = 1.75000e-02 -> t + dt = 1.78125e-02
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 65      t = 2.00000e-02 -> t + dt = 2.03125e-02
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 73      t = 2.25000e-02 -> t + dt = 2.28125e-02
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 2.5000e-02:
+  Relative error (L2-norm): 1.75448e-10
+
+Calculate error for pressure at time t = 2.5000e-02:
+  Relative error (L2-norm): 7.33575e-07
+
+
+
+--> RESTART input file : input_restart_HDIV_DualSplitting_fixed_grid.json
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up incompressible Navier-Stokes solver:
+
+List of parameters:
+
+Mathematical model:
+  Problem type:                              Unsteady
+  Equation type:                             NavierStokes
+  Formulation of viscous term:               DivergenceFormulation
+  Formulation of convective term:            ConvectiveFormulation
+  Outflow BC for convective term:            false
+  Right-hand side:                           true
+  Boussinesq term:                           false
+  Boussinesq - dynamic part only:            false
+  Use ALE formulation:                       false
+
+Physical quantities:
+  Start time:                                0.0000e+00
+  End time:                                  2.5000e-02
+  Viscosity:                                 1.0000e-06
+  Density:                                   1.0000e+03
+
+Temporal discretization:
+  Temporal discretization method:            BDFCoupledSolution
+  Calculation of time step size:             UserSpecified
+  Adaptive time stepping:                    false
+  Maximum number of time steps:              4294967295
+  Temporal refinements:                      2
+  Order of time integration scheme:          2
+  Start with low order method:               false
+  Treatment of convective term:              Explicit
+  Solver information:
+  Interval physical time:                    2.5000e-03
+  Interval wall time:                        1.7977e+308
+  Interval time steps:                       4294967295
+  Restarted simulation:                      true
+  Restart:
+  Write restart:                             false
+
+Spatial discretization:
+  Triangulation type:                        Distributed
+  Element type:                              Hypercube
+  Number of global refinements:              2
+  Create coarse triangulations:              false
+  Mapping degree:                            10
+  Mapping degree coarse grids:               10
+  FE space:                                  HDIV
+  Polynomial degree velocity (normal):       10
+  Polynomial degree velocity (tangential):   10
+  Polynomial degree pressure:                MixedOrder
+  Convective term - Upwind factor:           1.0000e+00
+  Convective term - Type of Dirichlet BC's:  Mirror
+  Viscous term - IP formulation:             SIPG
+  Viscous term - IP factor:                  1.0000e+00
+  Penalty term formulation viscous term:     Symmetrized
+  Grad(p) - integration by parts:            true
+  Grad(p) - formulation:                     Weak
+  Grad(p) - use boundary data:               true
+  Div(u) . integration by parts:             true
+  Div(u) - formulation:                      Weak
+  Div(u) - use boundary data:                true
+  Adjust pressure level (if undefined):      ApplyAnalyticalMeanValue
+  Use divergence penalty term:               false
+  Use continuity penalty term:               false
+
+Turbulence:
+  Use turbulence model:                      false
+
+Rheology:
+  Use generalized Newtonian model:           false
+
+Numerical parameters:
+  Block Jacobi matrix-free:                  false
+  Use cell-based face loops:                 false
+  Quadrature rule linearization:             Overintegration32k
+
+Coupled Navier-Stokes solver:
+  Use scaling of continuity equation:        false
+
+Linear solver:
+  Solver:                                    FGMRES
+  Maximum number of iterations:              10000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-08
+  Maximum size of Krylov space:              100
+  Preconditioner:                            BlockTriangular
+  Update preconditioner:                     true
+  Update every time steps:                   1
+
+  Velocity/momentum block:
+  Preconditioner:                            PointJacobi
+
+  Pressure/Schur-complement block:
+  Preconditioner:                            CahouetChabard
+  Multigrid type:                            cphMG
+  p-sequence:                                DecreaseByOne
+  Min degree matrix-free:                    1
+  Smoother:                                  Chebyshev
+  Preconditioner smoother:                   PointJacobi
+  Iterations smoother:                       5
+  Smoothing range:                           2.0000e+01
+  Iterations eigenvalue estimation:          20
+  Coarse grid solver:                        GMRES
+  Coarse grid preconditioner:                PointJacobi
+  Maximum number of iterations:              10000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-03
+  Maximum size of Krylov space:              30
+  Exact inversion of Laplace operator:       false
+
+Generating grid for 2-dimensional problem:
+
+  Max. number of refinements:                2
+  Number of cells:                           16
+
+Construct incompressible Navier-Stokes operator ...
+Velocity:
+  degree of 1D polynomials (normal):         10
+  degree of 1D polynomials (tangential):     9
+  number of dofs per cell:                   220
+  number of dofs (total):                    3280
+Pressure:
+  degree of 1D polynomials:                  9
+  number of dofs per cell:                   100
+  number of dofs (total):                    1600
+Velocity and pressure:
+  number of dofs per cell:                   320
+  number of dofs (total):                    4880
+
+... done!
+
+Setup incompressible Navier-Stokes operator ...
+
+... done!
+
+Setup Multistep time integrator ...
+
+________________________________________________________________________________
+
+ Reading restart file:
+    vector global l2 norm: 4.44253584e+01      
+    vector global l2 norm: 4.44255298e+01      
+    vector global l2 norm: 4.23902362e-01      
+    vector global l2 norm: 4.23905632e-01      
+    vector global l2 norm: 3.06895408e+01      
+    vector global l2 norm: 3.06896592e+01      
+
+ ... done!
+________________________________________________________________________________
+
+
+... done!
+
+Starting time loop ...
+
+Calculate error for velocity at time t = 1.2500e-02:
+  Relative error (L2-norm): 9.67689e-11
+
+Calculate error for pressure at time t = 1.2500e-02:
+  Relative error (L2-norm): 7.33578e-07
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 1.25000e-02 -> t + dt = 1.28125e-02
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 9       t = 1.50000e-02 -> t + dt = 1.53125e-02
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 17      t = 1.75000e-02 -> t + dt = 1.78125e-02
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 25      t = 2.00000e-02 -> t + dt = 2.03125e-02
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 33      t = 2.25000e-02 -> t + dt = 2.28125e-02
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 2.5000e-02:
+  Relative error (L2-norm): 1.75448e-10
+
+Calculate error for pressure at time t = 2.5000e-02:
+  Relative error (L2-norm): 7.33575e-07
+
+
+
+--> REFERENCE input file : input_reference_L2_DualSplitting_fixed_grid.json
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up incompressible Navier-Stokes solver:
+WARNING:
+Using the dual splitting scheme with HDIV does not produce an exactly divergence-free
+solution. Use the coupled scheme instead if this is desired.
+
+List of parameters:
+
+Mathematical model:
+  Problem type:                              Unsteady
+  Equation type:                             NavierStokes
+  Formulation of viscous term:               DivergenceFormulation
+  Formulation of convective term:            ConvectiveFormulation
+  Outflow BC for convective term:            false
+  Right-hand side:                           true
+  Boussinesq term:                           false
+  Boussinesq - dynamic part only:            false
+  Use ALE formulation:                       false
+
+Physical quantities:
+  Start time:                                0.0000e+00
+  End time:                                  2.5000e-02
+  Viscosity:                                 1.0000e-06
+  Density:                                   1.0000e+03
+
+Temporal discretization:
+  Temporal discretization method:            BDFDualSplitting
+  Calculation of time step size:             UserSpecified
+  Adaptive time stepping:                    false
+  Maximum number of time steps:              4294967295
+  Temporal refinements:                      2
+  Order of time integration scheme:          2
+  Start with low order method:               false
+  Treatment of convective term:              Explicit
+  Solver information:
+  Interval physical time:                    2.5000e-03
+  Interval wall time:                        1.7977e+308
+  Interval time steps:                       4294967295
+  Restarted simulation:                      false
+  Restart:
+  Write restart:                             true
+  Interval physical time:                    1.2500e-02
+  Interval physical time window start:       1.2500e-02
+  Interval physical time window end:         2.5000e-02
+  Interval wall time:                        1.0000e+06
+  Interval time steps:                       100000000
+  Directory coarse triangulation:            output_test/
+  Directory:                                 output_test/
+  Filename:                                  test_restart
+
+Spatial discretization:
+  Triangulation type:                        Serial
+  Element type:                              Hypercube
+  Number of global refinements:              2
+  Create coarse triangulations:              false
+  Mapping degree:                            10
+  Mapping degree coarse grids:               10
+  FE space:                                  HDIV
+  Polynomial degree velocity (normal):       10
+  Polynomial degree velocity (tangential):   10
+  Polynomial degree pressure:                MixedOrder
+  Convective term - Upwind factor:           1.0000e+00
+  Convective term - Type of Dirichlet BC's:  Mirror
+  Viscous term - IP formulation:             SIPG
+  Viscous term - IP factor:                  1.0000e+00
+  Penalty term formulation viscous term:     Symmetrized
+  Grad(p) - integration by parts:            true
+  Grad(p) - formulation:                     Weak
+  Grad(p) - use boundary data:               true
+  Div(u) . integration by parts:             true
+  Div(u) - formulation:                      Weak
+  Div(u) - use boundary data:                true
+  Adjust pressure level (if undefined):      ApplyAnalyticalMeanValue
+  Use divergence penalty term:               false
+  Use continuity penalty term:               false
+
+Turbulence:
+  Use turbulence model:                      false
+
+Rheology:
+  Use generalized Newtonian model:           false
+
+Numerical parameters:
+  Block Jacobi matrix-free:                  false
+  Use cell-based face loops:                 false
+  Quadrature rule linearization:             Overintegration32k
+
+High-order dual splitting scheme:
+  Order of extrapolation pressure NBC:       2
+  Formulation convective term in BC:         ConvectiveFormulation
+
+  Pressure Poisson equation (PPE):
+  interior penalty factor:                   1.0000e+00
+  Solver:                                    CG
+  Maximum number of iterations:              1000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-08
+  Maximum size of Krylov space:              30
+  Preconditioner:                            Multigrid
+  Update preconditioner pressure step:       false
+  Multigrid type:                            hMG
+  Min degree matrix-free:                    1
+  Smoother:                                  Chebyshev
+  Preconditioner smoother:                   PointJacobi
+  Iterations smoother:                       5
+  Smoothing range:                           2.0000e+01
+  Iterations eigenvalue estimation:          20
+  Coarse grid solver:                        Chebyshev
+  Coarse grid preconditioner:                PointJacobi
+  Maximum number of iterations:              10000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-03
+  Maximum size of Krylov space:              30
+
+  Projection step:
+
+  Momentum step:
+  Linear solver:
+  Solver:                                    CG
+  Maximum number of iterations:              1000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-08
+  Maximum size of Krylov space:              30
+  Preconditioner:                            PointJacobi
+  Update of preconditioner:                  false
+
+Generating grid for 2-dimensional problem:
+
+  Max. number of refinements:                2
+  Number of cells:                           16
+
+Construct incompressible Navier-Stokes operator ...
+Velocity:
+  degree of 1D polynomials (normal):         10
+  degree of 1D polynomials (tangential):     9
+  number of dofs per cell:                   220
+  number of dofs (total):                    3280
+Pressure:
+  degree of 1D polynomials:                  9
+  number of dofs per cell:                   100
+  number of dofs (total):                    1600
+Velocity and pressure:
+  number of dofs per cell:                   320
+  number of dofs (total):                    4880
+
+... done!
+
+Setup incompressible Navier-Stokes operator ...
+
+... done!
+
+Setup Multistep time integrator ...
+
+User specified time step size:
+
+  time step size:                            3.1250e-04
+
+... done!
+
+Starting time loop ...
+
+Calculate error for velocity at time t = 0.0000e+00:
+  Relative error (L2-norm): 4.39608e-11
+
+Calculate error for pressure at time t = 0.0000e+00:
+  Relative error (L2-norm): 1.09010e-06
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 3.12500e-04
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 10      t = 2.81250e-03 -> t + dt = 3.12500e-03
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 18      t = 5.31250e-03 -> t + dt = 5.62500e-03
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 25      t = 7.50000e-03 -> t + dt = 7.81250e-03
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 33      t = 1.00000e-02 -> t + dt = 1.03125e-02
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Writing restart file at time t = 1.25000e-02:
+    vector global l2 norm: 4.44253592e+01      
+    vector global l2 norm: 4.44255306e+01      
+    vector global l2 norm: 4.23902387e-01      
+    vector global l2 norm: 4.23905657e-01      
+    vector global l2 norm: 0.00000000e+00      
+    vector global l2 norm: 0.00000000e+00      
+    vector global l2 norm: 3.06895413e+01      
+    vector global l2 norm: 3.06896597e+01      
+
+ ... done!
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 41      t = 1.25000e-02 -> t + dt = 1.28125e-02
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 49      t = 1.50000e-02 -> t + dt = 1.53125e-02
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 57      t = 1.75000e-02 -> t + dt = 1.78125e-02
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 65      t = 2.00000e-02 -> t + dt = 2.03125e-02
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 73      t = 2.25000e-02 -> t + dt = 2.28125e-02
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 2.5000e-02:
+  Relative error (L2-norm): 4.50397e-05
+
+Calculate error for pressure at time t = 2.5000e-02:
+  Relative error (L2-norm): 1.22257e-05
+
+
+
+--> RESTART input file : input_restart_L2_DualSplitting_fixed_grid.json
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up incompressible Navier-Stokes solver:
+WARNING:
+Using the dual splitting scheme with HDIV does not produce an exactly divergence-free
+solution. Use the coupled scheme instead if this is desired.
+
+List of parameters:
+
+Mathematical model:
+  Problem type:                              Unsteady
+  Equation type:                             NavierStokes
+  Formulation of viscous term:               DivergenceFormulation
+  Formulation of convective term:            ConvectiveFormulation
+  Outflow BC for convective term:            false
+  Right-hand side:                           true
+  Boussinesq term:                           false
+  Boussinesq - dynamic part only:            false
+  Use ALE formulation:                       false
+
+Physical quantities:
+  Start time:                                0.0000e+00
+  End time:                                  2.5000e-02
+  Viscosity:                                 1.0000e-06
+  Density:                                   1.0000e+03
+
+Temporal discretization:
+  Temporal discretization method:            BDFDualSplitting
+  Calculation of time step size:             UserSpecified
+  Adaptive time stepping:                    false
+  Maximum number of time steps:              4294967295
+  Temporal refinements:                      2
+  Order of time integration scheme:          2
+  Start with low order method:               false
+  Treatment of convective term:              Explicit
+  Solver information:
+  Interval physical time:                    2.5000e-03
+  Interval wall time:                        1.7977e+308
+  Interval time steps:                       4294967295
+  Restarted simulation:                      true
+  Restart:
+  Write restart:                             false
+
+Spatial discretization:
+  Triangulation type:                        Distributed
+  Element type:                              Hypercube
+  Number of global refinements:              2
+  Create coarse triangulations:              false
+  Mapping degree:                            10
+  Mapping degree coarse grids:               10
+  FE space:                                  HDIV
+  Polynomial degree velocity (normal):       10
+  Polynomial degree velocity (tangential):   10
+  Polynomial degree pressure:                MixedOrder
+  Convective term - Upwind factor:           1.0000e+00
+  Convective term - Type of Dirichlet BC's:  Mirror
+  Viscous term - IP formulation:             SIPG
+  Viscous term - IP factor:                  1.0000e+00
+  Penalty term formulation viscous term:     Symmetrized
+  Grad(p) - integration by parts:            true
+  Grad(p) - formulation:                     Weak
+  Grad(p) - use boundary data:               true
+  Div(u) . integration by parts:             true
+  Div(u) - formulation:                      Weak
+  Div(u) - use boundary data:                true
+  Adjust pressure level (if undefined):      ApplyAnalyticalMeanValue
+  Use divergence penalty term:               false
+  Use continuity penalty term:               false
+
+Turbulence:
+  Use turbulence model:                      false
+
+Rheology:
+  Use generalized Newtonian model:           false
+
+Numerical parameters:
+  Block Jacobi matrix-free:                  false
+  Use cell-based face loops:                 false
+  Quadrature rule linearization:             Overintegration32k
+
+High-order dual splitting scheme:
+  Order of extrapolation pressure NBC:       2
+  Formulation convective term in BC:         ConvectiveFormulation
+
+  Pressure Poisson equation (PPE):
+  interior penalty factor:                   1.0000e+00
+  Solver:                                    CG
+  Maximum number of iterations:              1000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-08
+  Maximum size of Krylov space:              30
+  Preconditioner:                            Multigrid
+  Update preconditioner pressure step:       false
+  Multigrid type:                            hMG
+  Min degree matrix-free:                    1
+  Smoother:                                  Chebyshev
+  Preconditioner smoother:                   PointJacobi
+  Iterations smoother:                       5
+  Smoothing range:                           2.0000e+01
+  Iterations eigenvalue estimation:          20
+  Coarse grid solver:                        Chebyshev
+  Coarse grid preconditioner:                PointJacobi
+  Maximum number of iterations:              10000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-03
+  Maximum size of Krylov space:              30
+
+  Projection step:
+
+  Momentum step:
+  Linear solver:
+  Solver:                                    CG
+  Maximum number of iterations:              1000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-08
+  Maximum size of Krylov space:              30
+  Preconditioner:                            PointJacobi
+  Update of preconditioner:                  false
+
+Generating grid for 2-dimensional problem:
+
+  Max. number of refinements:                2
+  Number of cells:                           16
+
+Construct incompressible Navier-Stokes operator ...
+Velocity:
+  degree of 1D polynomials (normal):         10
+  degree of 1D polynomials (tangential):     9
+  number of dofs per cell:                   220
+  number of dofs (total):                    3280
+Pressure:
+  degree of 1D polynomials:                  9
+  number of dofs per cell:                   100
+  number of dofs (total):                    1600
+Velocity and pressure:
+  number of dofs per cell:                   320
+  number of dofs (total):                    4880
+
+... done!
+
+Setup incompressible Navier-Stokes operator ...
+
+... done!
+
+Setup Multistep time integrator ...
+
+________________________________________________________________________________
+
+ Reading restart file:
+    vector global l2 norm: 4.44253592e+01      
+    vector global l2 norm: 4.44255306e+01      
+    vector global l2 norm: 4.23902387e-01      
+    vector global l2 norm: 4.23905657e-01      
+    vector global l2 norm: 0.00000000e+00      
+    vector global l2 norm: 0.00000000e+00      
+    vector global l2 norm: 3.06895413e+01      
+    vector global l2 norm: 3.06896597e+01      
+
+ ... done!
+________________________________________________________________________________
+
+
+... done!
+
+Starting time loop ...
+
+Calculate error for velocity at time t = 1.2500e-02:
+  Relative error (L2-norm): 4.50361e-05
+
+Calculate error for pressure at time t = 1.2500e-02:
+  Relative error (L2-norm): 1.22280e-05
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 1.25000e-02 -> t + dt = 1.28125e-02
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 9       t = 1.50000e-02 -> t + dt = 1.53125e-02
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 17      t = 1.75000e-02 -> t + dt = 1.78125e-02
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 25      t = 2.00000e-02 -> t + dt = 2.03125e-02
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+ Time step number = 33      t = 2.25000e-02 -> t + dt = 2.28125e-02
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 2.5000e-02:
+  Relative error (L2-norm): 4.50397e-05
+
+Calculate error for pressure at time t = 2.5000e-02:
+  Relative error (L2-norm): 1.22257e-05
