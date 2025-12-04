@@ -72,6 +72,7 @@ public:
 
   PostProcessor(PostProcessorData<dim> const & postprocessor_data, MPI_Comm const & mpi_comm);
 
+  // custom destructor computing convergence tables if desired
   virtual ~PostProcessor();
 
   void

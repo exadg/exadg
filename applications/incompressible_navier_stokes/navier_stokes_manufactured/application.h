@@ -794,6 +794,7 @@ private:
     pp_data.output_data.write_higher_order = true;
 
     // calculation of velocity error
+    pp_data.error_data_u.compute_convergence_table          = false;
     pp_data.error_data_u.write_errors_to_file               = true;
     pp_data.error_data_u.time_control_data.is_active        = true;
     pp_data.error_data_u.time_control_data.start_time       = start_time;

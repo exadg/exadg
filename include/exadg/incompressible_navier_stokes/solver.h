@@ -27,7 +27,6 @@
 #include <exadg/incompressible_navier_stokes/user_interface/declare_get_application.h>
 #include <exadg/operators/resolution_parameters.h>
 #include <exadg/time_integration/resolution_parameters.h>
-#include <exadg/utilities/evaluate_convergence_study.h>
 #include <exadg/utilities/general_parameters.h>
 
 namespace ExaDG
@@ -190,9 +189,6 @@ main(int argc, char ** argv)
       }
     }
   }
-
-  // print convergence study given data in output folder defined in parameter file
-  ExaDG::evaluate_convergence_study(mpi_comm, input_file);
 
 #ifdef USE_SUB_COMMUNICATOR
   // free communicator

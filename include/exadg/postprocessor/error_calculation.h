@@ -41,6 +41,7 @@ struct ErrorCalculationData
     : calculate_relative_errors(true),
       calculate_H1_seminorm_error(false),
       write_errors_to_file(false),
+      compute_convergence_table(false),
       spatially_weight_error(false),
       weight(nullptr),
       additional_quadrature_points(3),
@@ -80,6 +81,9 @@ struct ErrorCalculationData
 
   // write errors to file?
   bool write_errors_to_file;
+
+  // process computed files generating a convergence table
+  bool compute_convergence_table;
 
   // If true, a spatially weighted norm is computed.
   bool spatially_weight_error;

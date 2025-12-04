@@ -25,12 +25,13 @@
 namespace ExaDG
 {
 /*
- * This function searches for files in the application directories created following a
+ * This function searches for files in the directories provided created following a
  * `run_<run_id>_<fieldname>_<error_type>` logic. It assumes refining in space, time or polynomial
  * degree with increasing `run_id`.
  */
 void
-evaluate_convergence_study(MPI_Comm const & mpi_comm, std::string const & input_parameter_file);
+evaluate_convergence_study(MPI_Comm const &                 mpi_comm,
+                           std::vector<std::string> const & error_directories);
 
 } // namespace ExaDG
 
