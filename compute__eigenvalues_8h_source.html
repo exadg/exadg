@@ -202,22 +202,22 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span><span class="comment"> */</span></div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> Operator, <span class="keyword">typename</span> Preconditioner, <span class="keyword">typename</span> VectorType&gt;</div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>std::vector&lt;std::complex&lt;double&gt;&gt;</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>estimate_eigenvalues_gmres(Operator <span class="keyword">const</span> &amp;                underlying_operator,</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>                           Preconditioner <span class="keyword">const</span> &amp;          preconditioner,</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>                           <a class="code hl_class" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> <span class="keyword">const</span> &amp;              solution,</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>                           <a class="code hl_class" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> <span class="keyword">const</span> &amp;              rhs,</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>                           <a class="code hl_struct" href="structExaDG_1_1Krylov_1_1SolverDataGMRES.html">Krylov::SolverDataGMRES</a> <span class="keyword">const</span> &amp; solver_data,</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>                           <span class="keywordtype">bool</span> <span class="keyword">const</span>                      print)</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>estimate_eigenvalues_gmres(Operator <span class="keyword">const</span> &amp;       underlying_operator,</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>                           Preconditioner <span class="keyword">const</span> &amp; preconditioner,</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>                           <a class="code hl_class" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> <span class="keyword">const</span> &amp;     solution,</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>                           <a class="code hl_class" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> <span class="keyword">const</span> &amp;     rhs,</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>                           <a class="code hl_struct" href="structExaDG_1_1SolverData.html">SolverData</a> <span class="keyword">const</span> &amp;     solver_data,</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>                           <span class="keywordtype">bool</span> <span class="keyword">const</span>             print)</div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>{</div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <span class="comment">// initial guess</span></div>
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  <a class="code hl_class" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> tmp(solution);</div>
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span> </div>
 <div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  dealii::ReductionControl solver_control(solver_data.max_iter,</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>                                          solver_data.solver_tolerance_abs,</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>                                          solver_data.solver_tolerance_rel);</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>                                          solver_data.abs_tol,</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>                                          solver_data.rel_tol);</div>
 <div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span> </div>
 <div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  <span class="keyword">typename</span> dealii::SolverGMRES&lt;VectorType&gt;::AdditionalData additional_data;</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  additional_data.max_n_tmp_vectors     = solver_data.max_n_tmp_vectors;</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  additional_data.max_n_tmp_vectors     = solver_data.max_krylov_size;</div>
 <div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  additional_data.right_preconditioning = <span class="keyword">true</span>;</div>
 <div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  dealii::SolverGMRES&lt;VectorType&gt; solver(solver_control, additional_data);</div>
 <div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span> </div>
@@ -261,7 +261,7 @@ $(function(){ initResizable(false); });
 <div class="ttc" id="aclassExaDG_1_1PreconditionerBase_html"><div class="ttname"><a href="classExaDG_1_1PreconditionerBase.html">ExaDG::VectorType</a></div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 <div class="ttc" id="astructExaDG_1_1EigenvalueTracker_html"><div class="ttname"><a href="structExaDG_1_1EigenvalueTracker.html">ExaDG::EigenvalueTracker</a></div><div class="ttdef"><b>Definition</b> compute_eigenvalues.h:92</div></div>
-<div class="ttc" id="astructExaDG_1_1Krylov_1_1SolverDataGMRES_html"><div class="ttname"><a href="structExaDG_1_1Krylov_1_1SolverDataGMRES.html">ExaDG::Krylov::SolverDataGMRES</a></div><div class="ttdef"><b>Definition</b> solver_data.h:85</div></div>
+<div class="ttc" id="astructExaDG_1_1SolverData_html"><div class="ttname"><a href="structExaDG_1_1SolverData.html">ExaDG::SolverData</a></div><div class="ttdef"><b>Definition</b> solver_data.h:34</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

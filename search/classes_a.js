@@ -5,5 +5,6 @@ var searchData=
   ['kineticenergycalculatordetailed_2',['KineticEnergyCalculatorDetailed',['../classExaDG_1_1IncNS_1_1KineticEnergyCalculatorDetailed.html',1,'ExaDG::IncNS']]],
   ['kineticenergydata_3',['KineticEnergyData',['../structExaDG_1_1KineticEnergyData.html',1,'ExaDG']]],
   ['kineticenergyspectrumcalculator_4',['KineticEnergySpectrumCalculator',['../classExaDG_1_1KineticEnergySpectrumCalculator.html',1,'ExaDG']]],
-  ['kineticenergyspectrumdata_5',['KineticEnergySpectrumData',['../structExaDG_1_1KineticEnergySpectrumData.html',1,'ExaDG']]]
+  ['kineticenergyspectrumdata_5',['KineticEnergySpectrumData',['../structExaDG_1_1KineticEnergySpectrumData.html',1,'ExaDG']]],
+  ['krylovsolver_6',['KrylovSolver',['../classExaDG_1_1Krylov_1_1KrylovSolver.html',1,'ExaDG::Krylov']]]
 ];
