@@ -130,13 +130,31 @@ public:
 
     dealii::SolverCG<VectorType> solver(solver_control);
 
-    if(solver_data.use_preconditioner == false)
+    // Iterative solvers might be brittle for matching `src` and `dst` depending on the FE space
+    // chosen.
+    if(dealii::PointerComparison::equal(&dst, &rhs) == true)
     {
-      solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
+      VectorType tmp_dst(dst);
+      if(solver_data.use_preconditioner == false)
+      {
+        solver.solve(underlying_operator, tmp_dst, rhs, dealii::PreconditionIdentity());
+      }
+      else
+      {
+        solver.solve(underlying_operator, tmp_dst, rhs, preconditioner);
+      }
+      dst.copy_locally_owned_data_from(tmp_dst);
     }
     else
     {
-      solver.solve(underlying_operator, dst, rhs, preconditioner);
+      if(solver_data.use_preconditioner == false)
+      {
+        solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
+      }
+      else
+      {
+        solver.solve(underlying_operator, dst, rhs, preconditioner);
+      }
     }
 
     AssertThrow(std::isfinite(solver_control.last_value()),
@@ -217,13 +235,31 @@ public:
       dealii::ExcMessage(
         "Computing eigenvalues temporally disabled until move to `KrylovSolver` is complete"));
 
-    if(solver_data.use_preconditioner == false)
+    // Iterative solvers might be brittle for matching `src` and `dst` depending on the FE space
+    // chosen.
+    if(dealii::PointerComparison::equal(&dst, &rhs) == true)
     {
-      solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
+      VectorType tmp_dst(dst);
+      if(solver_data.use_preconditioner == false)
+      {
+        solver.solve(underlying_operator, tmp_dst, rhs, dealii::PreconditionIdentity());
+      }
+      else
+      {
+        solver.solve(underlying_operator, tmp_dst, rhs, preconditioner);
+      }
+      dst.copy_locally_owned_data_from(tmp_dst);
     }
     else
     {
-      solver.solve(this->underlying_operator, dst, rhs, this->preconditioner);
+      if(solver_data.use_preconditioner == false)
+      {
+        solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
+      }
+      else
+      {
+        solver.solve(underlying_operator, dst, rhs, preconditioner);
+      }
     }
 
     AssertThrow(std::isfinite(solver_control.last_value()),
@@ -300,13 +336,31 @@ public:
 
     dealii::SolverFGMRES<VectorType> solver(solver_control, additional_data);
 
-    if(solver_data.use_preconditioner == false)
+    // Iterative solvers might be brittle for matching `src` and `dst` depending on the FE space
+    // chosen.
+    if(dealii::PointerComparison::equal(&dst, &rhs) == true)
     {
-      solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
+      VectorType tmp_dst(dst);
+      if(solver_data.use_preconditioner == false)
+      {
+        solver.solve(underlying_operator, tmp_dst, rhs, dealii::PreconditionIdentity());
+      }
+      else
+      {
+        solver.solve(underlying_operator, tmp_dst, rhs, preconditioner);
+      }
+      dst.copy_locally_owned_data_from(tmp_dst);
     }
     else
     {
-      solver.solve(underlying_operator, dst, rhs, preconditioner);
+      if(solver_data.use_preconditioner == false)
+      {
+        solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
+      }
+      else
+      {
+        solver.solve(underlying_operator, dst, rhs, preconditioner);
+      }
     }
 
     AssertThrow(std::isfinite(solver_control.last_value()),
