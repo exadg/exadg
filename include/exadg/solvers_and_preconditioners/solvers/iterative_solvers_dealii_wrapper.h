@@ -414,13 +414,31 @@ public:
       initial_guess.copy_locally_owned_data_from(dst);
     }
 
-    if(use_preconditioner == false)
+    // Iterative solvers might be brittle for matching `src` and `dst` depending on the FE space
+    // chosen.
+    if(dealii::PointerComparison::equal(&dst, &rhs) == true)
     {
-      solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
+      VectorType tmp_dst(dst);
+      if(use_preconditioner == false)
+      {
+        solver.solve(underlying_operator, tmp_dst, rhs, dealii::PreconditionIdentity());
+      }
+      else
+      {
+        solver.solve(underlying_operator, tmp_dst, rhs, preconditioner);
+      }
+      dst.copy_locally_owned_data_from(tmp_dst);
     }
     else
     {
-      solver.solve(underlying_operator, dst, rhs, preconditioner);
+      if(use_preconditioner == false)
+      {
+        solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
+      }
+      else
+      {
+        solver.solve(underlying_operator, dst, rhs, preconditioner);
+      }
     }
 
     // Estimate eigenvalues using a *second* system solve using GMRES. This approach should *only*
