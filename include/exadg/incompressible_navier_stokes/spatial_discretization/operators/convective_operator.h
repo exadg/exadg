@@ -179,30 +179,50 @@ public:
   set_velocity_copy(VectorType const & src)
   {
     velocity.own() = src;
-
-    velocity->update_ghost_values();
   }
 
   void
   set_velocity_ptr(VectorType const & src)
   {
     velocity.reset(src);
-
-    velocity->update_ghost_values();
   }
 
   void
   set_grid_velocity_ptr(VectorType const & src)
   {
     grid_velocity.reset(src);
-
-    grid_velocity->update_ghost_values();
   }
 
   VectorType const &
   get_grid_velocity() const
   {
     return *grid_velocity;
+  }
+
+  void
+  update_ghost_values_velocity()
+  {
+    velocity->update_ghost_values();
+  }
+
+  void
+  update_ghost_values_grid_velocity()
+  {
+    if(data.ale)
+      grid_velocity->update_ghost_values();
+  }
+
+  void
+  zero_out_ghost_values_velocity()
+  {
+    velocity->zero_out_ghost_values();
+  }
+
+  void
+  zero_out_ghost_values_grid_velocity()
+  {
+    if(data.ale)
+      grid_velocity->zero_out_ghost_values();
   }
 
   inline DEAL_II_ALWAYS_INLINE //

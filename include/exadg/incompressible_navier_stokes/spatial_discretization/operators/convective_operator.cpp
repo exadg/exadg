@@ -72,6 +72,9 @@ ConvectiveOperator<dim, Number>::evaluate_nonlinear_operator(VectorType &       
 {
   this->time = time;
 
+  kernel->update_ghost_values_velocity();
+  kernel->update_ghost_values_grid_velocity();
+
   this->matrix_free->loop(&This::cell_loop_nonlinear_operator,
                           &This::face_loop_nonlinear_operator,
                           &This::boundary_face_loop_nonlinear_operator,
@@ -81,6 +84,9 @@ ConvectiveOperator<dim, Number>::evaluate_nonlinear_operator(VectorType &       
                           true /*zero_dst_vector = true*/,
                           dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values,
                           dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values);
+
+  kernel->zero_out_ghost_values_velocity();
+  kernel->zero_out_ghost_values_grid_velocity();
 }
 
 template<int dim, typename Number>
@@ -91,6 +97,9 @@ ConvectiveOperator<dim, Number>::evaluate_nonlinear_operator_add(VectorType &   
 {
   this->time = time;
 
+  kernel->update_ghost_values_velocity();
+  kernel->update_ghost_values_grid_velocity();
+
   this->matrix_free->loop(&This::cell_loop_nonlinear_operator,
                           &This::face_loop_nonlinear_operator,
                           &This::boundary_face_loop_nonlinear_operator,
@@ -100,6 +109,9 @@ ConvectiveOperator<dim, Number>::evaluate_nonlinear_operator_add(VectorType &   
                           false /*zero_dst_vector = false*/,
                           dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values,
                           dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values);
+
+  kernel->zero_out_ghost_values_velocity();
+  kernel->zero_out_ghost_values_grid_velocity();
 }
 
 template<int dim, typename Number>

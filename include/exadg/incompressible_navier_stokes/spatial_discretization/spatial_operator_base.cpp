@@ -1299,6 +1299,9 @@ SpatialOperatorBase<dim, Number>::calculate_time_step_cfl(VectorType const & vel
                                                     param.cfl_exponent_fe_degree_velocity,
                                                     param.adaptive_time_stepping_cfl_type,
                                                     mpi_comm);
+
+  if(param.spatial_discretization == SpatialDiscretization::HDIV)
+    velocity.zero_out_ghost_values();
 }
 
 template<int dim, typename Number>
