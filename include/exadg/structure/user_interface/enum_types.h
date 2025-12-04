@@ -103,6 +103,8 @@ enum class Solver
 {
   Undefined,
   CG,
+  BiCGStab,
+  GMRES,
   FGMRES
 };
 

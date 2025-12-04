@@ -596,6 +596,14 @@ Operator<dim, Number>::setup_solver()
   {
     name = "cg";
   }
+  else if(param.solver == Solver::BiCGStab)
+  {
+    name = "bicgstab";
+  }
+  else if(param.solver == Solver::GMRES)
+  {
+    name = "gmres";
+  }
   else if(param.solver == Solver::FGMRES)
   {
     name = "fgmres";

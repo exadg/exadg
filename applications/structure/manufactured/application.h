@@ -340,6 +340,18 @@ public:
   {
   }
 
+  void
+  add_parameters(dealii::ParameterHandler & prm) final
+  {
+    ApplicationBase<dim, Number>::add_parameters(prm);
+
+    prm.enter_subsection("Application");
+    {
+      prm.add_parameter("Solver", solver, "Krylov solver used.");
+    }
+    prm.leave_subsection();
+  }
+
 private:
   void
   set_parameters() final
@@ -367,7 +379,7 @@ private:
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
 
     this->param.newton_solver_data  = Newton::SolverData(1e4, 1.e-10, 1.e-10);
-    this->param.solver              = Solver::CG;
+    this->param.solver              = solver;
     this->param.solver_data         = SolverData(1e4, 1.e-12, 1.e-6, 100);
     this->param.preconditioner      = Preconditioner::Multigrid;
     this->param.multigrid_data.type = MultigridType::phMG;
@@ -518,6 +530,8 @@ private:
   double const start_time       = 0.0;
   double const end_time         = 1.0;
   double const frequency        = 3.0 / 2.0 * dealii::numbers::PI / end_time;
+
+  Solver solver = Solver::CG;
 
   bool const prescribe_initial_acceleration_as_field_function = false;
 };
