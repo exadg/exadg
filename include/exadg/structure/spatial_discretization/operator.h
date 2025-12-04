@@ -92,7 +92,7 @@ public:
 
   /*
    * The implementation of the Newton solver requires a function called
-   * 'evaluate_residual'.
+   * 'evaluate_residual()'.
    */
   void
   evaluate_residual(VectorType & dst, VectorType const & src) const

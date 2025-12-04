@@ -353,6 +353,8 @@ private:
 
     this->param.density = density;
 
+    this->param.load_increment = 0.1;
+
     this->param.start_time                           = start_time;
     this->param.end_time                             = end_time;
     this->param.time_step_size                       = end_time;
