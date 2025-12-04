@@ -973,7 +973,7 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
 
   // To ensure convergence of the Newton solver, the residual has to be zero
   // for constrained degrees of freedom as well, which might not be the case
-  // in general, e.g. due to const_vector. Hence, we set the constrained
+  // in general, e.g. due to `const_vector`. Hence, we set the constrained
   // degrees of freedom explicitly to zero.
   elasticity_operator_nonlinear.set_constrained_dofs_to_zero(dst);
 }
