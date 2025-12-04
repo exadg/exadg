@@ -197,6 +197,8 @@ public:
         array_penalty_parameter[cell] = data.penalty_factor * (tau_convective + tau_viscous);
       }
     }
+
+    velocity.zero_out_ghost_values();
   }
 
   void
