@@ -150,9 +150,9 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> newton_iterations = 0, linear_iterations = 0;</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    <a class="code hl_class" href="classExaDG_1_1PreconditionerBase.html">VectorType</a> residual, increment, temporary;</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    residual.reinit(solution);</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    increment.reinit(solution);</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    temporary.reinit(solution);</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    residual.reinit(solution, <span class="keyword">true</span> <span class="comment">/* omit_zeroing_entries */</span>);</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    increment.reinit(solution, <span class="keyword">true</span> <span class="comment">/* omit_zeroing_entries */</span>);</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    temporary.reinit(solution, <span class="keyword">true</span> <span class="comment">/* omit_zeroing_entries */</span>);</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    <span class="comment">// evaluate residual using initial guess of solution</span></div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    nonlinear_operator.evaluate_residual(residual, solution);</div>
@@ -191,7 +191,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>      <span class="keywordflow">do</span></div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>      {</div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>        <span class="comment">// add increment to solution vector but scale by a factor omega &lt;= 1</span></div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>        temporary = solution;</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>        temporary.copy_locally_owned_data_from(solution);</div>
 <div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>        temporary.add(omega, increment);</div>
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span> </div>
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>        <span class="comment">// evaluate residual using the temporary solution</span></div>
@@ -212,8 +212,8 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>                                     <span class="stringliteral">&quot;Maximum number of iterations exceeded!&quot;</span>));</div>
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span> </div>
 <div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>      <span class="comment">// update solution and residual</span></div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>      solution = temporary;</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>      norm_r   = norm_r_damp;</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>      solution.copy_locally_owned_data_from(temporary);</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>      norm_r = norm_r_damp;</div>
 <div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span> </div>
 <div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>      <span class="comment">// increment iteration counter</span></div>
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>      ++newton_iterations;</div>
