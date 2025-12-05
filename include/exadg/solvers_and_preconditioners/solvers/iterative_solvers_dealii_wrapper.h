@@ -134,7 +134,9 @@ public:
     // chosen.
     if(dealii::PointerComparison::equal(&dst, &rhs) == true)
     {
-      VectorType tmp_dst(dst);
+      // Start from a zero initial guess.
+      VectorType tmp_dst;
+      tmp_dst.reinit(dst, false /* omit_zeroing_entries */);
       if(solver_data.use_preconditioner == false)
       {
         solver.solve(underlying_operator, tmp_dst, rhs, dealii::PreconditionIdentity());
@@ -239,7 +241,9 @@ public:
     // chosen.
     if(dealii::PointerComparison::equal(&dst, &rhs) == true)
     {
-      VectorType tmp_dst(dst);
+      // Start from a zero initial guess.
+      VectorType tmp_dst;
+      tmp_dst.reinit(dst, false /* omit_zeroing_entries */);
       if(solver_data.use_preconditioner == false)
       {
         solver.solve(underlying_operator, tmp_dst, rhs, dealii::PreconditionIdentity());
@@ -340,7 +344,9 @@ public:
     // chosen.
     if(dealii::PointerComparison::equal(&dst, &rhs) == true)
     {
-      VectorType tmp_dst(dst);
+      // Start from a zero initial guess.
+      VectorType tmp_dst;
+      tmp_dst.reinit(dst, false /* omit_zeroing_entries */);
       if(solver_data.use_preconditioner == false)
       {
         solver.solve(underlying_operator, tmp_dst, rhs, dealii::PreconditionIdentity());
@@ -472,7 +478,9 @@ public:
     // chosen.
     if(dealii::PointerComparison::equal(&dst, &rhs) == true)
     {
-      VectorType tmp_dst(dst);
+      // Start from a zero initial guess.
+      VectorType tmp_dst;
+      tmp_dst.reinit(dst, false /* omit_zeroing_entries */);
       if(use_preconditioner == false)
       {
         solver.solve(underlying_operator, tmp_dst, rhs, dealii::PreconditionIdentity());
