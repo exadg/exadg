@@ -62,11 +62,7 @@ BodyForceOperator<dim, Number>::evaluate_add(VectorType &       dst,
 {
   this->time = time;
 
-  src.update_ghost_values();
-
   matrix_free->cell_loop(&This::cell_loop, this, dst, src, false /*zero_dst_vector*/);
-
-  src.zero_out_ghost_values();
 }
 
 template<int dim, typename Number>
