@@ -90,7 +90,8 @@ public:
       if(dst.get_partitioner()->in_local_range(m.first))
         dst[m.first] = m.second;
 
-    dst.update_ghost_values();
+    // zero out ghost values to return to default state
+    dst.zero_out_ghost_values();
   }
 
 private:

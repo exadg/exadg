@@ -254,6 +254,9 @@ ElasticityOperatorBase<dim, Number>::set_inhomogeneous_constrained_values(Vector
       }
     }
   }
+
+  // zero out ghost values to return to default state
+  dst.zero_out_ghost_values();
 }
 
 template<int dim, typename Number>
