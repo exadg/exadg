@@ -213,7 +213,7 @@ public:
   get_container_interface_data();
 
   void
-  set_velocity_ptr(VectorType const & velocity) const;
+  set_velocity_copy(VectorType const & velocity) const;
 
   /*
    * Initialization of vectors.
@@ -443,7 +443,7 @@ public:
    * Sets the grid velocity.
    */
   void
-  set_grid_velocity(VectorType const & velocity);
+  set_grid_velocity(VectorType const & grid_velocity_in);
 
   /*
    *  Calls constraint_u.distribute(u) and updates the constrained DoFs of the velocity field

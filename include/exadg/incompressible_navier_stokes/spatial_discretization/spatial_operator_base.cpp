@@ -921,9 +921,9 @@ SpatialOperatorBase<dim, Number>::get_container_interface_data()
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::set_velocity_ptr(VectorType const & velocity) const
+SpatialOperatorBase<dim, Number>::set_velocity_copy(VectorType const & velocity) const
 {
-  convective_kernel->set_velocity_ptr(velocity);
+  convective_kernel->set_velocity_copy(velocity);
 }
 
 template<int dim, typename Number>
@@ -1771,9 +1771,9 @@ SpatialOperatorBase<dim, Number>::update_after_grid_motion(bool const update_mat
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::set_grid_velocity(VectorType const & u_grid_in)
+SpatialOperatorBase<dim, Number>::set_grid_velocity(VectorType const & grid_velocity_in)
 {
-  convective_kernel->set_grid_velocity_ptr(u_grid_in);
+  convective_kernel->set_grid_velocity_ptr(grid_velocity_in);
 }
 
 template<int dim, typename Number>

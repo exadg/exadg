@@ -108,7 +108,7 @@ public:
   void
   set_solution_linearization(BlockVectorType const & solution_linearization) const
   {
-    pde_operator->set_velocity_ptr(solution_linearization.block(0));
+    pde_operator->set_velocity_copy(solution_linearization.block(0));
   }
 
 
