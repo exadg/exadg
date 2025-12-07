@@ -457,7 +457,7 @@ TimeIntBDFConsistentSplitting<dim, Number>::momentum_step()
        *  to the next, i.e., it does not depend on the current solution of the nonlinear solver)
        */
       VectorType rhs;
-      velocity_np.reinit(velocity_np, true);
+      rhs.reinit(velocity_np, true /* omit_zeroing_entries */);
       VectorType transport_velocity_dummy;
       rhs_momentum(rhs, transport_velocity_dummy);
 
@@ -496,7 +496,7 @@ TimeIntBDFConsistentSplitting<dim, Number>::momentum_step()
        *  Calculate the right-hand side of the linear system of equations.
        */
       VectorType rhs;
-      rhs.reinit(velocity_np, true);
+      rhs.reinit(velocity_np, true /* omit_zeroing_entries */);
       rhs_momentum(rhs, transport_velocity);
 
       // solve linear system of equations
@@ -524,7 +524,7 @@ TimeIntBDFConsistentSplitting<dim, Number>::momentum_step()
      *  Calculate the right-hand side vector.
      */
     VectorType rhs;
-    rhs.reinit(velocity_np, true);
+    rhs.reinit(velocity_np, true /* omit_zeroing_entries */);
     VectorType transport_velocity_dummy;
     rhs_momentum(rhs, transport_velocity_dummy);
 
@@ -790,17 +790,17 @@ TimeIntBDFConsistentSplitting<dim, Number>::print_iterations() const
              "Momentum step (linear per nonlinear)"};
 
     iterations_avg.resize(4);
-    iterations_avg[1] =
+    iterations_avg[0] =
       (double)iterations_pressure.second / std::max(1., (double)iterations_pressure.first);
-    iterations_avg[2] = (double)std::get<0>(iterations_viscous.second) /
+    iterations_avg[1] = (double)std::get<0>(iterations_viscous.second) /
                         std::max(1., (double)iterations_viscous.first);
-    iterations_avg[3] = (double)std::get<1>(iterations_viscous.second) /
+    iterations_avg[2] = (double)std::get<1>(iterations_viscous.second) /
                         std::max(1., (double)iterations_viscous.first);
 
-    if(iterations_avg[2] > std::numeric_limits<double>::min())
-      iterations_avg[4] = iterations_avg[3] / iterations_avg[2];
+    if(iterations_avg[1] > std::numeric_limits<double>::min())
+      iterations_avg[3] = iterations_avg[2] / iterations_avg[1];
     else
-      iterations_avg[4] = iterations_avg[3];
+      iterations_avg[3] = iterations_avg[2];
   }
   else
   {
