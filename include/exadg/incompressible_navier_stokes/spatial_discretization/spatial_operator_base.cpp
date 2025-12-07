@@ -1562,14 +1562,24 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
                                 laplace_operator.get_data().bc->dirichlet_bc,
                                 dirichlet_bc_component_mask);
 
-  // setup solver
-  Krylov::SolverDataCG solver_data;
-  solver_data.solver_tolerance_rel = 1.e-10;
-  solver_data.use_preconditioner   = true;
+  // initialize solver data
+  SolverData solver_data;
+  solver_data.rel_tol                        = 1e-10;
+  bool constexpr compute_performance_metrics = false;
+  bool constexpr compute_eigenvalues         = false;
+  bool const        use_preconditioner       = true;
+  std::string const name                     = "cg";
 
-  Krylov::SolverCG<Laplace, PreconditionerBase<Number>, VectorType> poisson_solver(laplace_operator,
-                                                                                   *preconditioner,
-                                                                                   solver_data);
+  typedef Krylov::KrylovSolver<Laplace, PreconditionerBase<Number>, VectorType> SolverType;
+
+  // initialize solver
+  SolverType poisson_solver(laplace_operator,
+                            *preconditioner,
+                            solver_data,
+                            name,
+                            use_preconditioner,
+                            compute_performance_metrics,
+                            compute_eigenvalues);
 
   // solve Poisson problem
   poisson_solver.solve(dst, rhs);
@@ -1941,49 +1951,36 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
                     "Preconditioner specified for projection step is not implemented."));
     }
 
-    // solver
+    // initialize solver data
+    bool constexpr compute_performance_metrics = false;
+    bool constexpr compute_eigenvalues         = false;
+    bool const use_preconditioner =
+      param.preconditioner_projection != PreconditionerProjection::None;
+    std::string name;
     if(param.solver_projection == SolverProjection::CG)
     {
-      // setup solver data
-      Krylov::SolverDataCG solver_data;
-      solver_data.max_iter             = param.solver_data_projection.max_iter;
-      solver_data.solver_tolerance_abs = param.solver_data_projection.abs_tol;
-      solver_data.solver_tolerance_rel = param.solver_data_projection.rel_tol;
-      // default value of use_preconditioner = false
-      if(param.preconditioner_projection != PreconditionerProjection::None)
-      {
-        solver_data.use_preconditioner = true;
-      }
-
-      // setup solver
-      projection_solver =
-        std::make_shared<Krylov::SolverCG<ProjOperator, PreconditionerBase<Number>, VectorType>>(
-          *projection_operator, *preconditioner_projection, solver_data);
+      name = "cg";
     }
     else if(param.solver_projection == SolverProjection::FGMRES)
     {
-      // setup solver data
-      Krylov::SolverDataFGMRES solver_data;
-      solver_data.max_iter             = param.solver_data_projection.max_iter;
-      solver_data.solver_tolerance_abs = param.solver_data_projection.abs_tol;
-      solver_data.solver_tolerance_rel = param.solver_data_projection.rel_tol;
-      solver_data.max_n_tmp_vectors    = param.solver_data_projection.max_krylov_size;
-
-      // default value of use_preconditioner = false
-      if(param.preconditioner_projection != PreconditionerProjection::None)
-      {
-        solver_data.use_preconditioner = true;
-      }
-
-      // setup solver
-      projection_solver = std::make_shared<
-        Krylov::SolverFGMRES<ProjOperator, PreconditionerBase<Number>, VectorType>>(
-        *projection_operator, *preconditioner_projection, solver_data);
+      name = "fgmres";
     }
     else
     {
       AssertThrow(false, dealii::ExcMessage("Specified projection solver not implemented."));
     }
+
+
+    typedef Krylov::KrylovSolver<ProjOperator, PreconditionerBase<Number>, VectorType> SolverType;
+
+    // initialize solver
+    projection_solver = std::make_shared<SolverType>(*projection_operator,
+                                                     *preconditioner_projection,
+                                                     param.solver_data_projection,
+                                                     name,
+                                                     use_preconditioner,
+                                                     compute_performance_metrics,
+                                                     compute_eigenvalues);
   }
 }
 
