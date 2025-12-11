@@ -87,47 +87,36 @@ OperatorCoupled<dim, Number>::setup_solver_coupled()
 {
   linear_operator.initialize(*this);
 
-  // setup linear solver
+  // initialize solver data
+  bool constexpr compute_performance_metrics = false;
+  bool constexpr compute_eigenvalues         = false;
+  bool const use_preconditioner = this->param.preconditioner_coupled != PreconditionerCoupled::None;
+  std::string name;
   if(this->param.solver_coupled == SolverCoupled::GMRES)
   {
-    Krylov::SolverDataGMRES solver_data;
-    solver_data.max_iter             = this->param.solver_data_coupled.max_iter;
-    solver_data.solver_tolerance_abs = this->param.solver_data_coupled.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.solver_data_coupled.rel_tol;
-    solver_data.max_n_tmp_vectors    = this->param.solver_data_coupled.max_krylov_size;
-    solver_data.compute_eigenvalues  = false;
-
-    if(this->param.preconditioner_coupled != PreconditionerCoupled::None)
-    {
-      solver_data.use_preconditioner = true;
-    }
-
-    linear_solver = std::make_shared<
-      Krylov::SolverGMRES<LinearOperatorCoupled<dim, Number>, Preconditioner, BlockVectorType>>(
-      linear_operator, block_preconditioner, solver_data, this->mpi_comm);
+    name = "gmres";
   }
   else if(this->param.solver_coupled == SolverCoupled::FGMRES)
   {
-    Krylov::SolverDataFGMRES solver_data;
-    solver_data.max_iter             = this->param.solver_data_coupled.max_iter;
-    solver_data.solver_tolerance_abs = this->param.solver_data_coupled.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.solver_data_coupled.rel_tol;
-    solver_data.max_n_tmp_vectors    = this->param.solver_data_coupled.max_krylov_size;
-
-    if(this->param.preconditioner_coupled != PreconditionerCoupled::None)
-    {
-      solver_data.use_preconditioner = true;
-    }
-
-    linear_solver = std::make_shared<
-      Krylov::SolverFGMRES<LinearOperatorCoupled<dim, Number>, Preconditioner, BlockVectorType>>(
-      linear_operator, block_preconditioner, solver_data);
+    name = "fgmres";
   }
   else
   {
     AssertThrow(false,
                 dealii::ExcMessage("Specified solver for linearized problem is not implemented."));
   }
+
+  typedef Krylov::KrylovSolver<LinearOperatorCoupled<dim, Number>, Preconditioner, BlockVectorType>
+    SolverType;
+
+  // initialize solver
+  linear_solver = std::make_shared<SolverType>(linear_operator,
+                                               block_preconditioner,
+                                               this->param.solver_data_coupled,
+                                               name,
+                                               use_preconditioner,
+                                               compute_performance_metrics,
+                                               compute_eigenvalues);
 
   // setup Newton solver
   if(this->param.nonlinear_problem_has_to_be_solved())
@@ -610,16 +599,24 @@ OperatorCoupled<dim, Number>::setup_iterative_solver_momentum()
               dealii::ExcMessage("preconditioner_momentum is uninitialized"));
 
   // use FGMRES for "exact" solution of velocity block system
-  Krylov::SolverDataFGMRES gmres_data;
-  gmres_data.use_preconditioner   = true;
-  gmres_data.max_iter             = this->param.solver_data_velocity_block.max_iter;
-  gmres_data.solver_tolerance_abs = this->param.solver_data_velocity_block.abs_tol;
-  gmres_data.solver_tolerance_rel = this->param.solver_data_velocity_block.rel_tol;
-  gmres_data.max_n_tmp_vectors    = this->param.solver_data_velocity_block.max_krylov_size;
+  // initialize solver data
+  bool constexpr compute_performance_metrics = false;
+  bool constexpr compute_eigenvalues         = false;
+  bool const        use_preconditioner       = true;
+  std::string const name                     = "fgmres";
 
-  solver_velocity_block = std::make_shared<
-    Krylov::SolverFGMRES<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
-    this->momentum_operator, *preconditioner_momentum, gmres_data);
+  typedef Krylov::
+    KrylovSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
+      SolverType;
+
+  // initialize solver
+  solver_velocity_block = std::make_shared<SolverType>(this->momentum_operator,
+                                                       *preconditioner_momentum,
+                                                       this->param.solver_data_velocity_block,
+                                                       name,
+                                                       use_preconditioner,
+                                                       compute_performance_metrics,
+                                                       compute_eigenvalues);
 }
 
 template<int dim, typename Number>
@@ -753,12 +750,6 @@ OperatorCoupled<dim, Number>::setup_iterative_solver_schur_complement()
     dealii::ExcMessage(
       "Setup of iterative solver for Schur complement preconditioner: Multigrid preconditioner is uninitialized"));
 
-  Krylov::SolverDataCG solver_data;
-  solver_data.max_iter             = this->param.solver_data_pressure_block.max_iter;
-  solver_data.solver_tolerance_abs = this->param.solver_data_pressure_block.abs_tol;
-  solver_data.solver_tolerance_rel = this->param.solver_data_pressure_block.rel_tol;
-  solver_data.use_preconditioner   = true;
-
   Poisson::LaplaceOperatorData<0, dim> laplace_operator_data;
   laplace_operator_data.dof_index             = this->get_dof_index_pressure();
   laplace_operator_data.quad_index            = this->get_quad_index_pressure();
@@ -771,12 +762,24 @@ OperatorCoupled<dim, Number>::setup_iterative_solver_schur_complement()
                                laplace_operator_data,
                                true /* assemble_matrix */);
 
-  solver_pressure_block =
-    std::make_shared<Krylov::SolverCG<Poisson::LaplaceOperator<dim, Number, 1>,
-                                      PreconditionerBase<Number>,
-                                      VectorType>>(*laplace_operator,
-                                                   *multigrid_preconditioner_schur_complement,
-                                                   solver_data);
+  // initialize solver data
+  bool constexpr compute_performance_metrics = false;
+  bool constexpr compute_eigenvalues         = false;
+  bool const        use_preconditioner       = true;
+  std::string const name                     = "cg";
+
+  typedef Krylov::
+    KrylovSolver<Poisson::LaplaceOperator<dim, Number, 1>, PreconditionerBase<Number>, VectorType>
+      SolverType;
+
+  // initialize solver
+  solver_pressure_block = std::make_shared<SolverType>(*laplace_operator,
+                                                       *multigrid_preconditioner_schur_complement,
+                                                       this->param.solver_data_pressure_block,
+                                                       name,
+                                                       use_preconditioner,
+                                                       compute_performance_metrics,
+                                                       compute_eigenvalues);
 }
 
 template<int dim, typename Number>

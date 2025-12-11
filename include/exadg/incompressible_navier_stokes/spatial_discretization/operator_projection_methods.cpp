@@ -214,48 +214,19 @@ template<int dim, typename Number>
 void
 OperatorProjectionMethods<dim, Number>::setup_solver_pressure_poisson()
 {
+  // initialize solver data
+  bool constexpr compute_performance_metrics = false;
+  bool constexpr compute_eigenvalues         = false;
+  bool const use_preconditioner =
+    this->param.preconditioner_pressure_poisson != PreconditionerPressurePoisson::None;
+  std::string name;
   if(this->param.solver_pressure_poisson == SolverPressurePoisson::CG)
   {
-    // setup solver data
-    Krylov::SolverDataCG solver_data;
-    solver_data.max_iter             = this->param.solver_data_pressure_poisson.max_iter;
-    solver_data.solver_tolerance_abs = this->param.solver_data_pressure_poisson.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.solver_data_pressure_poisson.rel_tol;
-    // use default value of update_preconditioner (=false)
-
-    if(this->param.preconditioner_pressure_poisson != PreconditionerPressurePoisson::None)
-    {
-      solver_data.use_preconditioner = true;
-    }
-
-    // setup solver
-    pressure_poisson_solver =
-      std::make_shared<Krylov::SolverCG<Poisson::LaplaceOperator<dim, Number, 1>,
-                                        PreconditionerBase<Number>,
-                                        VectorType>>(laplace_operator,
-                                                     *preconditioner_pressure_poisson,
-                                                     solver_data);
+    name = "cg";
   }
   else if(this->param.solver_pressure_poisson == SolverPressurePoisson::FGMRES)
   {
-    Krylov::SolverDataFGMRES solver_data;
-    solver_data.max_iter             = this->param.solver_data_pressure_poisson.max_iter;
-    solver_data.solver_tolerance_abs = this->param.solver_data_pressure_poisson.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.solver_data_pressure_poisson.rel_tol;
-    solver_data.max_n_tmp_vectors    = this->param.solver_data_pressure_poisson.max_krylov_size;
-    // use default value of update_preconditioner (=false)
-
-    if(this->param.preconditioner_pressure_poisson != PreconditionerPressurePoisson::None)
-    {
-      solver_data.use_preconditioner = true;
-    }
-
-    pressure_poisson_solver =
-      std::make_shared<Krylov::SolverFGMRES<Poisson::LaplaceOperator<dim, Number, 1>,
-                                            PreconditionerBase<Number>,
-                                            VectorType>>(laplace_operator,
-                                                         *preconditioner_pressure_poisson,
-                                                         solver_data);
+    name = "fgmres";
   }
   else
   {
@@ -263,6 +234,19 @@ OperatorProjectionMethods<dim, Number>::setup_solver_pressure_poisson()
                 dealii::ExcMessage(
                   "Specified solver for pressure Poisson equation is not implemented."));
   }
+
+  typedef Krylov::
+    KrylovSolver<Poisson::LaplaceOperator<dim, Number, 1>, PreconditionerBase<Number>, VectorType>
+      SolverType;
+
+  // initialize solver
+  pressure_poisson_solver = std::make_shared<SolverType>(laplace_operator,
+                                                         *preconditioner_pressure_poisson,
+                                                         this->param.solver_data_pressure_poisson,
+                                                         name,
+                                                         use_preconditioner,
+                                                         compute_performance_metrics,
+                                                         compute_eigenvalues);
 }
 
 template<int dim, typename Number>
@@ -342,51 +326,23 @@ template<int dim, typename Number>
 void
 OperatorProjectionMethods<dim, Number>::setup_momentum_solver()
 {
+  // initialize solver data
+  bool constexpr compute_performance_metrics = false;
+  bool constexpr compute_eigenvalues         = false;
+  bool const use_preconditioner =
+    this->param.preconditioner_momentum != MomentumPreconditioner::None;
+  std::string name;
   if(this->param.solver_momentum == SolverMomentum::CG)
   {
-    // setup solver data
-    Krylov::SolverDataCG solver_data;
-    solver_data.max_iter             = this->param.solver_data_momentum.max_iter;
-    solver_data.solver_tolerance_abs = this->param.solver_data_momentum.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.solver_data_momentum.rel_tol;
-    if(this->param.preconditioner_momentum != MomentumPreconditioner::None)
-      solver_data.use_preconditioner = true;
-
-    // setup solver
-    momentum_linear_solver = std::make_shared<
-      Krylov::SolverCG<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
-      this->momentum_operator, *momentum_preconditioner, solver_data);
+    name = "cg";
   }
   else if(this->param.solver_momentum == SolverMomentum::GMRES)
   {
-    // setup solver data
-    Krylov::SolverDataGMRES solver_data;
-    solver_data.max_iter             = this->param.solver_data_momentum.max_iter;
-    solver_data.solver_tolerance_abs = this->param.solver_data_momentum.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.solver_data_momentum.rel_tol;
-    solver_data.max_n_tmp_vectors    = this->param.solver_data_momentum.max_krylov_size;
-    solver_data.compute_eigenvalues  = false;
-    if(this->param.preconditioner_momentum != MomentumPreconditioner::None)
-      solver_data.use_preconditioner = true;
-
-    // setup solver
-    momentum_linear_solver = std::make_shared<
-      Krylov::SolverGMRES<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
-      this->momentum_operator, *momentum_preconditioner, solver_data, this->mpi_comm);
+    name = "gmres";
   }
   else if(this->param.solver_momentum == SolverMomentum::FGMRES)
   {
-    Krylov::SolverDataFGMRES solver_data;
-    solver_data.max_iter             = this->param.solver_data_momentum.max_iter;
-    solver_data.solver_tolerance_abs = this->param.solver_data_momentum.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.solver_data_momentum.rel_tol;
-    solver_data.max_n_tmp_vectors    = this->param.solver_data_momentum.max_krylov_size;
-    if(this->param.preconditioner_momentum != MomentumPreconditioner::None)
-      solver_data.use_preconditioner = true;
-
-    momentum_linear_solver = std::make_shared<
-      Krylov::SolverFGMRES<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
-      this->momentum_operator, *momentum_preconditioner, solver_data);
+    name = "fgmres";
   }
   else
   {
@@ -394,6 +350,18 @@ OperatorProjectionMethods<dim, Number>::setup_momentum_solver()
                 dealii::ExcMessage("Specified solver for momentum equation is not implemented."));
   }
 
+  typedef Krylov::
+    KrylovSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
+      SolverType;
+
+  // initialize solver
+  momentum_linear_solver = std::make_shared<SolverType>(this->momentum_operator,
+                                                        *momentum_preconditioner,
+                                                        this->param.solver_data_momentum,
+                                                        name,
+                                                        use_preconditioner,
+                                                        compute_performance_metrics,
+                                                        compute_eigenvalues);
 
   // Navier-Stokes equations with an implicit treatment of the convective term
   if(this->param.nonlinear_problem_has_to_be_solved())
