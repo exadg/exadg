@@ -136,12 +136,6 @@ InverseMassOperator<dim, n_components, Number>::initialize(
     }
     else if(data.implementation_type == InverseMassType::GlobalKrylovSolver)
     {
-      Krylov::SolverDataCG solver_data;
-      solver_data.max_iter             = data.solver_data.max_iter;
-      solver_data.solver_tolerance_abs = data.solver_data.abs_tol;
-      solver_data.solver_tolerance_rel = data.solver_data.rel_tol;
-
-      solver_data.use_preconditioner = data.preconditioner != PreconditionerMass::None;
       if(data.preconditioner == PreconditionerMass::None)
       {
         // no setup required.
@@ -169,11 +163,23 @@ InverseMassOperator<dim, n_components, Number>::initialize(
         AssertThrow(false, dealii::ExcMessage("This `PreconditionerMass` is not implemented."));
       }
 
-      global_solver = std::make_shared<Krylov::SolverCG<MassOperator<dim, n_components, Number>,
-                                                        PreconditionerBase<Number>,
-                                                        VectorType>>(mass_operator,
-                                                                     *global_preconditioner,
-                                                                     solver_data);
+      std::string const name                     = "cg";
+      bool constexpr compute_performance_metrics = false;
+      bool constexpr compute_eigenvalues         = false;
+      bool const use_preconditioner              = data.preconditioner != PreconditionerMass::None;
+
+      typedef Krylov::KrylovSolver<MassOperator<dim, n_components, Number>,
+                                   PreconditionerBase<Number>,
+                                   VectorType>
+        SolverType;
+
+      global_solver = std::make_shared<SolverType>(mass_operator,
+                                                   *global_preconditioner,
+                                                   data.solver_data,
+                                                   name,
+                                                   use_preconditioner,
+                                                   compute_performance_metrics,
+                                                   compute_eigenvalues);
     }
     else
     {
