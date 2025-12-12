@@ -34,13 +34,6 @@ ConvectiveOperator<dim, Number>::set_velocity_copy(VectorType const & src) const
 }
 
 template<int dim, typename Number>
-void
-ConvectiveOperator<dim, Number>::set_velocity_ptr(VectorType const & src) const
-{
-  kernel->set_velocity_ptr(src);
-}
-
-template<int dim, typename Number>
 dealii::LinearAlgebra::distributed::Vector<Number> const &
 ConvectiveOperator<dim, Number>::get_velocity() const
 {
@@ -72,21 +65,15 @@ ConvectiveOperator<dim, Number>::evaluate_nonlinear_operator(VectorType &       
 {
   this->time = time;
 
-  kernel->update_ghost_values_velocity();
-  kernel->update_ghost_values_grid_velocity();
-
   this->matrix_free->loop(&This::cell_loop_nonlinear_operator,
                           &This::face_loop_nonlinear_operator,
                           &This::boundary_face_loop_nonlinear_operator,
                           this,
                           dst,
                           src,
-                          true /*zero_dst_vector = true*/,
+                          true /* zero_dst_vector */,
                           dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values,
                           dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values);
-
-  kernel->zero_out_ghost_values_velocity();
-  kernel->zero_out_ghost_values_grid_velocity();
 }
 
 template<int dim, typename Number>
@@ -97,21 +84,15 @@ ConvectiveOperator<dim, Number>::evaluate_nonlinear_operator_add(VectorType &   
 {
   this->time = time;
 
-  kernel->update_ghost_values_velocity();
-  kernel->update_ghost_values_grid_velocity();
-
   this->matrix_free->loop(&This::cell_loop_nonlinear_operator,
                           &This::face_loop_nonlinear_operator,
                           &This::boundary_face_loop_nonlinear_operator,
                           this,
                           dst,
                           src,
-                          false /*zero_dst_vector = false*/,
+                          false /* zero_dst_vector */,
                           dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values,
                           dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values);
-
-  kernel->zero_out_ghost_values_velocity();
-  kernel->zero_out_ghost_values_grid_velocity();
 }
 
 template<int dim, typename Number>

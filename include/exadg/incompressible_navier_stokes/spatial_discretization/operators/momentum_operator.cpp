@@ -182,7 +182,7 @@ template<int dim, typename Number>
 void
 MomentumOperator<dim, Number>::set_solution_linearization(VectorType const & velocity)
 {
-  this->set_velocity_ptr(velocity);
+  this->set_velocity_copy(velocity);
 }
 
 template<int dim, typename Number>
@@ -202,21 +202,10 @@ MomentumOperator<dim, Number>::set_velocity_copy(VectorType const & velocity) co
   {
     convective_kernel->set_velocity_copy(velocity);
   }
-  else
+  else if(viscous_kernel->get_use_velocity_own_storage())
   {
-    AssertThrow(viscous_kernel->get_use_velocity_own_storage(),
-                dealii::ExcMessage("No velocity stored in `viscous_kernel`."));
-
     viscous_kernel->set_velocity_copy(velocity);
   }
-}
-
-template<int dim, typename Number>
-void
-MomentumOperator<dim, Number>::set_velocity_ptr(VectorType const & velocity) const
-{
-  if(operator_data.convective_problem)
-    convective_kernel->set_velocity_ptr(velocity);
 }
 
 template<int dim, typename Number>

@@ -118,19 +118,19 @@ public:
   ViscousKernelData const &
   get_data() const
   {
-    return this->data;
+    return data;
   }
 
   bool
   get_use_velocity_own_storage() const
   {
-    return this->use_velocity_own_storage;
+    return use_velocity_own_storage;
   }
 
   VectorType const &
   get_velocity() const
   {
-    AssertThrow(this->use_velocity_own_storage,
+    AssertThrow(use_velocity_own_storage,
                 dealii::ExcMessage("Velocity vector not stored in the viscous kernel."));
 
     return velocity;
@@ -139,10 +139,11 @@ public:
   void
   set_velocity_copy(VectorType const & src)
   {
-    AssertThrow(this->use_velocity_own_storage,
+    AssertThrow(use_velocity_own_storage,
                 dealii::ExcMessage("Velocity vector not stored in the viscous kernel."));
 
-    this->velocity = src;
+    velocity = src;
+    velocity.update_ghost_values();
   }
 
   VariableCoefficients<dealii::VectorizedArray<Number>> const *
@@ -154,13 +155,13 @@ public:
   unsigned int
   get_quad_index() const
   {
-    return this->quad_index;
+    return quad_index;
   }
 
   unsigned int
   get_degree() const
   {
-    return this->degree;
+    return degree;
   }
 
   void
