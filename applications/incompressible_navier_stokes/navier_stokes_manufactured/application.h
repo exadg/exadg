@@ -401,7 +401,7 @@ private:
     this->param.solver_type                   = SolverType::Unsteady;
     this->param.temporal_discretization       = temporal_discretization;
     this->param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
-    this->param.time_step_size                = std::abs(end_time - start_time) / 100;
+    this->param.time_step_size                = std::abs(end_time - start_time) / 20;
     this->param.order_time_integrator         = 2;     // 1; // 2; // 3;
     this->param.start_with_low_order          = false; // true;
 
@@ -483,14 +483,14 @@ private:
     this->param.restart_data.interval_wall_time  = 1.e6;
     this->param.restart_data.interval_time_steps = 1e8;
 
-    this->param.restart_data.discretization_identical                        = false;
+    this->param.restart_data.discretization_identical                        = true;
     this->param.restart_data.consider_mapping_write                          = move_grid;
     this->param.restart_data.consider_mapping_read_source                    = move_grid;
     this->param.restart_data.consider_restart_time_in_mesh_movement_function = true;
 
     this->param.restart_data.rpe_rtree_level            = 0;
     this->param.restart_data.rpe_tolerance_unit_cell    = 1e-2;
-    this->param.restart_data.rpe_enforce_unique_mapping = false;
+    this->param.restart_data.rpe_enforce_unique_mapping = true;
 
     // PROJECTION METHODS
 
@@ -702,12 +702,13 @@ private:
     if(move_grid)
     {
       MeshMovementData<dim> data;
-      data.temporal                       = MeshMovementAdvanceInTime::Sin;
-      data.shape                          = MeshMovementShape::Sin;
-      data.dimensions[0]                  = std::abs(interval_end - interval_start);
-      data.dimensions[1]                  = std::abs(interval_end - interval_start);
-      data.amplitude                      = std::abs(interval_end - interval_start) / 15.0;
-      data.period                         = std::abs(end_time - start_time);
+      data.temporal      = MeshMovementAdvanceInTime::Sin;
+      data.shape         = MeshMovementShape::Sin;
+      data.dimensions[0] = std::abs(interval_end - interval_start);
+      data.dimensions[1] = std::abs(interval_end - interval_start);
+      data.amplitude     = std::abs(interval_end - interval_start) / 15.0;
+      // time period chosen independently to avoid large convective ALE velocities
+      data.period                         = 0.4;
       data.t_start                        = start_time;
       data.t_end                          = end_time;
       data.spatial_number_of_oscillations = 1.0;
