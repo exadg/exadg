@@ -43,8 +43,6 @@ template<int dim, typename Number>
 void
 NonLinearOperator<dim, Number>::evaluate_nonlinear(VectorType & dst, VectorType const & src) const
 {
-  src.update_ghost_values();
-
   this->matrix_free->loop(&This::cell_loop_nonlinear,
                           &This::face_loop_nonlinear,
                           &This::boundary_face_loop_nonlinear,
@@ -52,8 +50,6 @@ NonLinearOperator<dim, Number>::evaluate_nonlinear(VectorType & dst, VectorType 
                           dst,
                           src,
                           true);
-
-  src.zero_out_ghost_values();
 }
 
 template<int dim, typename Number>
