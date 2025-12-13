@@ -510,9 +510,6 @@ public:
   // interior penalty parameter scaling factor for pressure Poisson equation
   double IP_factor_pressure;
 
-  // description: see enum declaration
-  SolverPressurePoisson solver_pressure_poisson;
-
   // solver data for pressure Poisson equation
   SolverData solver_data_pressure_poisson;
 
@@ -566,9 +563,6 @@ public:
 
   // Newton solver data
   Newton::SolverData newton_solver_data_momentum;
-
-  // description: see enum declaration
-  SolverMomentum solver_momentum;
 
   // Solver data for (linearized) momentum equation
   SolverData solver_data_momentum;
@@ -660,9 +654,6 @@ public:
 
   // solver tolerances Newton solver
   Newton::SolverData newton_solver_data_coupled;
-
-  // description: see enum declaration
-  SolverCoupled solver_coupled;
 
   // Solver data for coupled solver
   SolverData solver_data_coupled;

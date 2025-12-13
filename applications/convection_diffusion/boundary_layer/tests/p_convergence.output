@@ -57,7 +57,7 @@ Spatial Discretization:
   IP factor viscous term:                    1.0000e+00
 
 Solver:
-  Solver:                                    GMRES
+  Solver:                                    gmres
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-08
@@ -176,7 +176,7 @@ Spatial Discretization:
   IP factor viscous term:                    1.0000e+00
 
 Solver:
-  Solver:                                    GMRES
+  Solver:                                    gmres
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-08
@@ -295,7 +295,7 @@ Spatial Discretization:
   IP factor viscous term:                    1.0000e+00
 
 Solver:
-  Solver:                                    GMRES
+  Solver:                                    gmres
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-08
@@ -414,7 +414,7 @@ Spatial Discretization:
   IP factor viscous term:                    1.0000e+00
 
 Solver:
-  Solver:                                    GMRES
+  Solver:                                    gmres
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-08
@@ -473,7 +473,7 @@ Solving steady state problem ...
 ... done!
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 6.62871e-06
+  Relative error (L2-norm): 6.62657e-06
 
 
 
@@ -533,7 +533,7 @@ Spatial Discretization:
   IP factor viscous term:                    1.0000e+00
 
 Solver:
-  Solver:                                    GMRES
+  Solver:                                    gmres
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-08
@@ -592,4 +592,4 @@ Solving steady state problem ...
 ... done!
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 4.68837e-07
+  Relative error (L2-norm): 4.38480e-07

@@ -149,8 +149,7 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
   // PROJECTION METHODS
 
   // pressure Poisson equation
-  param.solver_pressure_poisson              = SolverPressurePoisson::CG;
-  param.solver_data_pressure_poisson         = SolverData(1e4, 1.e-12, 1.e-6, 100);
+  param.solver_data_pressure_poisson         = SolverData(1e4, 1.e-12, 1.e-6, "cg", 100);
   param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
   param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
   param.multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
@@ -162,8 +161,7 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
     MultigridCoarseGridPreconditioner::PointJacobi;
 
   // pressure Poisson equation
-  param.solver_pressure_poisson              = SolverPressurePoisson::CG;
-  param.solver_data_pressure_poisson         = SolverData(1000, ABS_TOL, REL_TOL, 100);
+  param.solver_data_pressure_poisson         = SolverData(1000, ABS_TOL, REL_TOL, "cg", 100);
   param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
   param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
   param.multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG;
@@ -171,8 +169,7 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
     MultigridCoarseGridPreconditioner::AMG;
 
   // projection step
-  param.solver_projection         = SolverProjection::CG;
-  param.solver_data_projection    = SolverData(1000, ABS_TOL, REL_TOL);
+  param.solver_data_projection    = SolverData(1000, ABS_TOL, REL_TOL, "cg");
   param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
 
@@ -184,8 +181,7 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
 
   if(param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
   {
-    param.solver_momentum         = SolverMomentum::CG;
-    param.solver_data_momentum    = SolverData(1000, ABS_TOL, REL_TOL);
+    param.solver_data_momentum    = SolverData(1000, ABS_TOL, REL_TOL, "cg");
     param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
   }
 
@@ -203,11 +199,10 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
     param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
     // linear solver
-    param.solver_momentum = SolverMomentum::GMRES;
     if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-      param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
+      param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, "gmres", 100);
     else
-      param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+      param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, "gmres", 100);
 
     param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
   }
@@ -219,11 +214,10 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
   param.newton_solver_data_coupled = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
   // linear solver
-  param.solver_coupled = SolverCoupled::GMRES;
   if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-    param.solver_data_coupled = SolverData(1e3, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
+    param.solver_data_coupled = SolverData(1e3, ABS_TOL_LINEAR, REL_TOL_LINEAR, "gmres", 100);
   else
-    param.solver_data_coupled = SolverData(1e3, ABS_TOL, REL_TOL, 100);
+    param.solver_data_coupled = SolverData(1e3, ABS_TOL, REL_TOL, "gmres", 100);
 
   // preconditioning linear solver
   param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;

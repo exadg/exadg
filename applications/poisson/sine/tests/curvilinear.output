@@ -37,11 +37,10 @@ Spatial Discretization:
   Use matrix-based operator:                 false
 
 Solver:
-  Solver:                                    CG
+  Solver:                                    cg
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -125,11 +124,10 @@ Spatial Discretization:
   Use matrix-based operator:                 false
 
 Solver:
-  Solver:                                    CG
+  Solver:                                    cg
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -213,11 +211,10 @@ Spatial Discretization:
   Use matrix-based operator:                 false
 
 Solver:
-  Solver:                                    CG
+  Solver:                                    cg
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -301,11 +298,10 @@ Spatial Discretization:
   Use matrix-based operator:                 false
 
 Solver:
-  Solver:                                    CG
+  Solver:                                    cg
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -389,11 +385,10 @@ Spatial Discretization:
   Use matrix-based operator:                 false
 
 Solver:
-  Solver:                                    CG
+  Solver:                                    cg
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -477,11 +472,10 @@ Spatial Discretization:
   Use matrix-based operator:                 false
 
 Solver:
-  Solver:                                    CG
+  Solver:                                    cg
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -565,11 +559,10 @@ Spatial Discretization:
   Use matrix-based operator:                 false
 
 Solver:
-  Solver:                                    CG
+  Solver:                                    cg
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect

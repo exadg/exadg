@@ -103,11 +103,10 @@ Consistent splitting scheme:
 
   Pressure Poisson equation (PPE):
   interior penalty factor:                   1.0000e+00
-  Solver:                                    CG
+  Solver:                                    cg
   Maximum number of iterations:              1000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
-  Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
   Update preconditioner pressure step:       false
   Multigrid type:                            cphMG
@@ -126,11 +125,10 @@ Consistent splitting scheme:
   Maximum size of Krylov space:              30
 
   Projection step:
-  Solver projection step:                    CG
+  Solver:                                    cg
   Maximum number of iterations:              1000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
-  Maximum size of Krylov space:              30
   Preconditioner projection step:            InverseMassMatrix
   Update preconditioner projection step:     false
 
@@ -141,7 +139,7 @@ Consistent splitting scheme:
   Relative solver tolerance:                 1.0000e-06
 
   Linear solver:
-  Solver:                                    GMRES
+  Solver:                                    gmres
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06

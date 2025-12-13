@@ -494,24 +494,7 @@ Operator<dim, Number>::setup_solver()
   // initialize solver data
   bool constexpr compute_performance_metrics = false;
   bool constexpr compute_eigenvalues         = false;
-  bool const  use_preconditioner             = param.preconditioner != Preconditioner::None;
-  std::string name;
-  if(param.solver == Solver::CG)
-  {
-    name = "cg";
-  }
-  else if(param.solver == Solver::GMRES)
-  {
-    name = "gmres";
-  }
-  else if(param.solver == Solver::FGMRES)
-  {
-    name = "fgmres";
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("Specified solver is not implemented!"));
-  }
+  bool const use_preconditioner              = param.preconditioner != Preconditioner::None;
 
   typedef Krylov::
     KrylovSolver<CombinedOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
@@ -521,7 +504,6 @@ Operator<dim, Number>::setup_solver()
   iterative_solver = std::make_shared<SolverType>(combined_operator,
                                                   *preconditioner,
                                                   param.solver_data,
-                                                  name,
                                                   use_preconditioner,
                                                   compute_performance_metrics,
                                                   compute_eigenvalues);

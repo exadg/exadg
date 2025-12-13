@@ -103,8 +103,7 @@ private:
 
     // SOLVER
     this->param.use_cell_based_face_loops = true;
-    this->param.solver                    = Solver::GMRES;
-    this->param.solver_data               = SolverData(1e4, 1.e-20, 1.e-8, 100);
+    this->param.solver_data               = SolverData(1e4, 1.e-20, 1.e-8, "gmres", 100);
     this->param.preconditioner            = Preconditioner::Multigrid; // PointJacobi;
     this->param.mg_operator_type          = MultigridOperatorType::ReactionConvectionDiffusion;
     this->param.multigrid_data.type       = MultigridType::phMG;

@@ -64,7 +64,7 @@ Spatial Discretization:
   Numerical flux convective term:            LaxFriedrichsFlux
 
 Solver:
-  Solver:                                    GMRES
+  Solver:                                    gmres
   Maximum number of iterations:              1000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-08

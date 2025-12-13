@@ -97,18 +97,6 @@ enum class MaterialType
 /**************************************************************************************/
 
 /*
- *   Solver for linear system of equations
- */
-enum class Solver
-{
-  Undefined,
-  CG,
-  BiCGStab,
-  GMRES,
-  FGMRES
-};
-
-/*
  *  Preconditioner type for solution of linear system of equations
  */
 enum class Preconditioner

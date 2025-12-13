@@ -103,7 +103,7 @@ Coupled Navier-Stokes solver:
   Use scaling of continuity equation:        false
 
 Linear solver:
-  Solver:                                    FGMRES
+  Solver:                                    fgmres
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-14
   Relative solver tolerance:                 1.0000e-14
