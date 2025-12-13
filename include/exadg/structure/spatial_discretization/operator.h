@@ -154,16 +154,6 @@ public:
     pde_operator->update_elasticity_operator(scaling_factor_mass, time);
   }
 
-  /*
-   * The implementation of linear solvers in deal.ii requires that a function called 'vmult' is
-   * provided.
-   */
-  void
-  vmult(VectorType & dst, VectorType const & src) const
-  {
-    pde_operator->apply_linearized_operator(dst, src);
-  }
-
 private:
   PDEOperator const * pde_operator;
 
