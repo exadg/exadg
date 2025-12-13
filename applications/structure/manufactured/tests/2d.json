@@ -15,7 +15,7 @@
         "RefineTimeMax": "8"
     },
     "Application": {
-        "Solver": "CG",
+        "Solver": "cg",
         "Length": "100.0",
         "Height": "10.0",
         "Width": "10.0"

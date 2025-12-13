@@ -359,14 +359,7 @@ enum class QuadratureRuleLinearization
  *  use CG (conjugate gradient) method as default. FGMRES might be necessary
  *  if a Krylov method is used inside the preconditioner (e.g., as multigrid
  *  smoother or as multigrid coarse grid solver)
- */
-enum class SolverPressurePoisson
-{
-  CG,
-  FGMRES
-};
-
-/*
+ *
  *  Preconditioner type for solution of pressure Poisson equation:
  *
  *  use Multigrid as default
@@ -418,15 +411,7 @@ enum class PreconditionerProjection
  *
  *  - FGMRES might be necessary if a Krylov method is used inside the preconditioner
  *    (e.g., as multigrid smoother or as multigrid coarse grid solver).
- */
-enum class SolverMomentum
-{
-  CG,
-  GMRES,
-  FGMRES
-};
-
-/*
+ *
  *  Preconditioner type for solution of momentum equation:
  *
  *  see coupled solution approach below
@@ -446,14 +431,7 @@ enum class SolverMomentum
  *
  * - FGMRES might be necessary if a Krylov method is used inside the preconditioner
  *   (e.g., as multigrid smoother or as multigrid coarse grid solver).
- */
-enum class SolverCoupled
-{
-  GMRES,
-  FGMRES
-};
-
-/*
+ *
  *  Preconditioner type for linearized Navier-Stokes problem
  *
  *  - use BlockTriangular as default (typically best option in terms of time-to-solution, i.e.

@@ -32,17 +32,20 @@ namespace ExaDG
 {
 struct SolverData
 {
-  SolverData() : max_iter(1e3), abs_tol(1e-20), rel_tol(1e-6), max_krylov_size(30)
+  SolverData()
+    : max_iter(1e3), abs_tol(1e-20), rel_tol(1e-6), solver_name("undefined"), max_krylov_size(30)
   {
   }
 
-  SolverData(unsigned int const max_iter_in,
-             double const       abs_tol_in,
-             double const       rel_tol_in,
-             unsigned int const max_krylov_size_in = 30)
+  SolverData(unsigned int const  max_iter_in,
+             double const        abs_tol_in,
+             double const        rel_tol_in,
+             std::string const & solver_name_in     = "undefined",
+             unsigned int const  max_krylov_size_in = 30)
     : max_iter(max_iter_in),
       abs_tol(abs_tol_in),
       rel_tol(rel_tol_in),
+      solver_name(solver_name_in),
       max_krylov_size(max_krylov_size_in)
   {
   }
@@ -50,83 +53,30 @@ struct SolverData
   void
   print(dealii::ConditionalOStream const & pcout) const
   {
+    // `SolverData` can also be used to control tolerances without specifying the solver type.
+    if(solver_name != "undefined")
+      print_parameter(pcout, "Solver", solver_name);
+
     print_parameter(pcout, "Maximum number of iterations", max_iter);
     print_parameter(pcout, "Absolute solver tolerance", abs_tol);
     print_parameter(pcout, "Relative solver tolerance", rel_tol);
-    print_parameter(pcout, "Maximum size of Krylov space", max_krylov_size);
+
+    // Print maximum Krylov space size for relevant method or when using the default `solver_name`.
+    if(solver_name == "fgmres" or solver_name == "gmres" or solver_name == "undefined")
+      print_parameter(pcout, "Maximum size of Krylov space", max_krylov_size);
   }
 
   unsigned int max_iter;
   double       abs_tol;
   double       rel_tol;
+
+  // solver type to be used
+  std::string solver_name;
+
   // only relevant for GMRES type solvers
   unsigned int max_krylov_size;
 };
 
-// `SolverData` structs for deal.II wrapper classes
-namespace Krylov
-{
-struct SolverDataCG
-{
-  SolverDataCG()
-    : max_iter(1e4),
-      solver_tolerance_abs(1.e-20),
-      solver_tolerance_rel(1.e-6),
-      use_preconditioner(false),
-      compute_performance_metrics(false)
-  {
-  }
-
-  unsigned int max_iter;
-  double       solver_tolerance_abs;
-  double       solver_tolerance_rel;
-  bool         use_preconditioner;
-  bool         compute_performance_metrics;
-};
-
-struct SolverDataGMRES
-{
-  SolverDataGMRES()
-    : max_iter(1e4),
-      solver_tolerance_abs(1.e-20),
-      solver_tolerance_rel(1.e-6),
-      use_preconditioner(false),
-      max_n_tmp_vectors(30),
-      compute_eigenvalues(false),
-      compute_performance_metrics(false)
-  {
-  }
-
-  unsigned int max_iter;
-  double       solver_tolerance_abs;
-  double       solver_tolerance_rel;
-  bool         use_preconditioner;
-  unsigned int max_n_tmp_vectors;
-  bool         compute_eigenvalues;
-  bool         compute_performance_metrics;
-};
-
-struct SolverDataFGMRES
-{
-  SolverDataFGMRES()
-    : max_iter(1e4),
-      solver_tolerance_abs(1.e-20),
-      solver_tolerance_rel(1.e-6),
-      use_preconditioner(false),
-      max_n_tmp_vectors(30),
-      compute_performance_metrics(false)
-  {
-  }
-
-  unsigned int max_iter;
-  double       solver_tolerance_abs;
-  double       solver_tolerance_rel;
-  bool         use_preconditioner;
-  unsigned int max_n_tmp_vectors;
-  bool         compute_performance_metrics;
-};
-
-} // namespace Krylov
 } // namespace ExaDG
 
 #endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_SOLVERS_SOLVER_DATA_H_ */

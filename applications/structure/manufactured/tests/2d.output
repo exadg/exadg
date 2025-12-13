@@ -62,11 +62,10 @@ Newton:
   Relative solver tolerance:                 1.0000e-10
 
 Linear solver:
-  Solver:                                    CG
+  Solver:                                    cg
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
-  Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
   Multigrid type:                            phMG
   p-sequence:                                Bisect
@@ -182,11 +181,10 @@ Newton:
   Relative solver tolerance:                 1.0000e-10
 
 Linear solver:
-  Solver:                                    CG
+  Solver:                                    cg
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
-  Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
   Multigrid type:                            phMG
   p-sequence:                                Bisect
@@ -302,11 +300,10 @@ Newton:
   Relative solver tolerance:                 1.0000e-10
 
 Linear solver:
-  Solver:                                    CG
+  Solver:                                    cg
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
-  Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
   Multigrid type:                            phMG
   p-sequence:                                Bisect
@@ -422,11 +419,10 @@ Newton:
   Relative solver tolerance:                 1.0000e-10
 
 Linear solver:
-  Solver:                                    CG
+  Solver:                                    cg
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
-  Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
   Multigrid type:                            phMG
   p-sequence:                                Bisect
@@ -542,11 +538,10 @@ Newton:
   Relative solver tolerance:                 1.0000e-10
 
 Linear solver:
-  Solver:                                    CG
+  Solver:                                    cg
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
-  Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
   Multigrid type:                            phMG
   p-sequence:                                Bisect
@@ -662,11 +657,10 @@ Newton:
   Relative solver tolerance:                 1.0000e-10
 
 Linear solver:
-  Solver:                                    CG
+  Solver:                                    cg
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
-  Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
   Multigrid type:                            phMG
   p-sequence:                                Bisect
@@ -782,11 +776,10 @@ Newton:
   Relative solver tolerance:                 1.0000e-10
 
 Linear solver:
-  Solver:                                    CG
+  Solver:                                    cg
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
-  Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
   Multigrid type:                            phMG
   p-sequence:                                Bisect
@@ -902,11 +895,10 @@ Newton:
   Relative solver tolerance:                 1.0000e-10
 
 Linear solver:
-  Solver:                                    CG
+  Solver:                                    cg
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
-  Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
   Multigrid type:                            phMG
   p-sequence:                                Bisect
@@ -1022,11 +1014,10 @@ Newton:
   Relative solver tolerance:                 1.0000e-10
 
 Linear solver:
-  Solver:                                    CG
+  Solver:                                    cg
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
-  Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
   Multigrid type:                            phMG
   p-sequence:                                Bisect

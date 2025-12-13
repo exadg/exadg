@@ -219,21 +219,6 @@ OperatorProjectionMethods<dim, Number>::setup_solver_pressure_poisson()
   bool constexpr compute_eigenvalues         = false;
   bool const use_preconditioner =
     this->param.preconditioner_pressure_poisson != PreconditionerPressurePoisson::None;
-  std::string name;
-  if(this->param.solver_pressure_poisson == SolverPressurePoisson::CG)
-  {
-    name = "cg";
-  }
-  else if(this->param.solver_pressure_poisson == SolverPressurePoisson::FGMRES)
-  {
-    name = "fgmres";
-  }
-  else
-  {
-    AssertThrow(false,
-                dealii::ExcMessage(
-                  "Specified solver for pressure Poisson equation is not implemented."));
-  }
 
   typedef Krylov::
     KrylovSolver<Poisson::LaplaceOperator<dim, Number, 1>, PreconditionerBase<Number>, VectorType>
@@ -243,7 +228,6 @@ OperatorProjectionMethods<dim, Number>::setup_solver_pressure_poisson()
   pressure_poisson_solver = std::make_shared<SolverType>(laplace_operator,
                                                          *preconditioner_pressure_poisson,
                                                          this->param.solver_data_pressure_poisson,
-                                                         name,
                                                          use_preconditioner,
                                                          compute_performance_metrics,
                                                          compute_eigenvalues);
@@ -331,24 +315,6 @@ OperatorProjectionMethods<dim, Number>::setup_momentum_solver()
   bool constexpr compute_eigenvalues         = false;
   bool const use_preconditioner =
     this->param.preconditioner_momentum != MomentumPreconditioner::None;
-  std::string name;
-  if(this->param.solver_momentum == SolverMomentum::CG)
-  {
-    name = "cg";
-  }
-  else if(this->param.solver_momentum == SolverMomentum::GMRES)
-  {
-    name = "gmres";
-  }
-  else if(this->param.solver_momentum == SolverMomentum::FGMRES)
-  {
-    name = "fgmres";
-  }
-  else
-  {
-    AssertThrow(false,
-                dealii::ExcMessage("Specified solver for momentum equation is not implemented."));
-  }
 
   typedef Krylov::
     KrylovSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
@@ -358,7 +324,6 @@ OperatorProjectionMethods<dim, Number>::setup_momentum_solver()
   momentum_linear_solver = std::make_shared<SolverType>(this->momentum_operator,
                                                         *momentum_preconditioner,
                                                         this->param.solver_data_momentum,
-                                                        name,
                                                         use_preconditioner,
                                                         compute_performance_metrics,
                                                         compute_eigenvalues);

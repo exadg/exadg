@@ -86,7 +86,7 @@ Newton solver:
   Relative solver tolerance:                 1.0000e-14
 
 Linear solver:
-  Solver:                                    FGMRES
+  Solver:                                    fgmres
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-14
   Relative solver tolerance:                 1.0000e-02
@@ -163,10 +163,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 7.10250e-13
+  Absolute error (L2-norm): 8.05378e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 1.93302e-11
+  Absolute error (L2-norm): 2.20703e-11
 
 
 
@@ -255,7 +255,7 @@ Newton solver:
   Relative solver tolerance:                 1.0000e-14
 
 Linear solver:
-  Solver:                                    FGMRES
+  Solver:                                    fgmres
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-14
   Relative solver tolerance:                 1.0000e-02
@@ -332,10 +332,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 1.33547e-12
+  Absolute error (L2-norm): 9.54693e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 3.75586e-11
+  Absolute error (L2-norm): 2.73870e-11
 
 
 
@@ -424,7 +424,7 @@ Newton solver:
   Relative solver tolerance:                 1.0000e-14
 
 Linear solver:
-  Solver:                                    FGMRES
+  Solver:                                    fgmres
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-14
   Relative solver tolerance:                 1.0000e-02
@@ -501,10 +501,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 3.86312e-14
+  Absolute error (L2-norm): 3.74976e-14
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 1.07113e-12
+  Absolute error (L2-norm): 1.04691e-12
 
 
 
@@ -593,7 +593,7 @@ Newton solver:
   Relative solver tolerance:                 1.0000e-14
 
 Linear solver:
-  Solver:                                    FGMRES
+  Solver:                                    fgmres
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-14
   Relative solver tolerance:                 1.0000e-02
@@ -670,7 +670,7 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 1.13400e-11
+  Absolute error (L2-norm): 5.55319e-12
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 2.90980e-10
+  Absolute error (L2-norm): 1.43273e-10

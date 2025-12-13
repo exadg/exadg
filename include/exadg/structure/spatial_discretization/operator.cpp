@@ -591,28 +591,6 @@ void
 Operator<dim, Number>::setup_solver()
 {
   // initialize linear solver
-  std::string name;
-  if(param.solver == Solver::CG)
-  {
-    name = "cg";
-  }
-  else if(param.solver == Solver::BiCGStab)
-  {
-    name = "bicgstab";
-  }
-  else if(param.solver == Solver::GMRES)
-  {
-    name = "gmres";
-  }
-  else if(param.solver == Solver::FGMRES)
-  {
-    name = "fgmres";
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("Specified solver not implemented in structure module."));
-  }
-
   bool const use_preconditioner              = param.preconditioner != Preconditioner::None;
   bool constexpr compute_performance_metrics = false;
   bool constexpr compute_eigenvalues         = false;
@@ -625,7 +603,6 @@ Operator<dim, Number>::setup_solver()
     linear_solver = std::make_shared<SolverType>(elasticity_operator_nonlinear,
                                                  *preconditioner,
                                                  param.solver_data,
-                                                 name,
                                                  use_preconditioner,
                                                  compute_performance_metrics,
                                                  compute_eigenvalues);
@@ -638,7 +615,6 @@ Operator<dim, Number>::setup_solver()
     linear_solver = std::make_shared<SolverType>(elasticity_operator_linear,
                                                  *preconditioner,
                                                  param.solver_data,
-                                                 name,
                                                  use_preconditioner,
                                                  compute_performance_metrics,
                                                  compute_eigenvalues);

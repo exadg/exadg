@@ -283,9 +283,6 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // description: see enum declaration
-  Solver solver;
-
   // solver data
   SolverData solver_data;
 
