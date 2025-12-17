@@ -16,9 +16,7 @@
     },
     "Application": {
         "Solver": "CG",
-        "Length": "100.0",
-        "Height": "10.0",
-        "Width": "10.0"
+        "UseMatrixBasedOperator": "false"
     },
     "Output": {
         "OutputDirectory": "output/manufactured/",
