@@ -335,8 +335,7 @@ private:
     // PROJECTION METHODS
 
     // pressure Poisson equation
-    this->param.solver_pressure_poisson              = SolverPressurePoisson::CG;
-    this->param.solver_data_pressure_poisson         = SolverData(1000, 1.e-12, 1.e-6, 100);
+    this->param.solver_data_pressure_poisson         = SolverData(1000, 1.e-12, 1.e-6, LinearSolver::CG, 100);
     this->param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
     this->param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
     this->param.multigrid_data_pressure_poisson.coarse_problem.solver =
@@ -349,12 +348,12 @@ private:
       PreconditionerSmoother::PointJacobi;
 
     // projection step
-    this->param.solver_projection         = SolverProjection::CG;
-    this->param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-6);
+    this->param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-6, LinearSolver::CG);
     this->param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
     this->param.preconditioner_block_diagonal_projection =
       Elementwise::Preconditioner::InverseMassMatrix;
-    this->param.solver_data_block_diagonal_projection = SolverData(1000, 1.e-12, 1.e-2, 1000);
+    this->param.solver_data_block_diagonal_projection =
+      SolverData(1000, 1.e-12, 1.e-2, LinearSolver::Undefined, 1000);
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
 
@@ -367,15 +366,13 @@ private:
     {
       if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
       {
-        this->param.solver_momentum      = SolverMomentum::CG;
-        this->param.solver_data_momentum = SolverData(1000, 1.e-12, 1.e-6);
+        this->param.solver_data_momentum = SolverData(1000, 1.e-12, 1.e-6, LinearSolver::CG);
       }
       else
       {
         // Newton solver
         this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-10, 1.e-6);
-        this->param.solver_momentum             = SolverMomentum::GMRES;
-        this->param.solver_data_momentum        = SolverData(1000, 1.e-12, 1.e-6);
+        this->param.solver_data_momentum        = SolverData(1000, 1.e-12, 1.e-6, LinearSolver::GMRES);
       }
 
       this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
@@ -402,8 +399,7 @@ private:
       this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-6);
 
       // linear solver
-      this->param.solver_momentum                = SolverMomentum::FGMRES;
-      this->param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-6, 100);
+      this->param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-6, LinearSolver::FGMRES, 100);
       this->param.update_preconditioner_momentum = false;
       this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
       this->param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
@@ -427,12 +423,10 @@ private:
     this->param.use_scaling_continuity = false;
 
     // nonlinear solver (Newton solver)
-    this->param.newton_solver_data_coupled =
-      Newton::SolverData(100, 1.e-10, 1.e-6); // TODO did not converge with 1.e-12
+    this->param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-10, 1.e-6);
 
     // linear solver
-    this->param.solver_coupled      = SolverCoupled::FGMRES;
-    this->param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    this->param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-6, LinearSolver::FGMRES, 100);
 
     // preconditioner linear solver
     this->param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;
@@ -601,10 +595,7 @@ private:
     this->poisson_param.IP_factor              = 1.0e0;
 
     // SOLVER
-    this->poisson_param.solver                    = Poisson::LinearSolver::CG;
-    this->poisson_param.solver_data.abs_tol       = 1.e-20;
-    this->poisson_param.solver_data.rel_tol       = 1.e-10;
-    this->poisson_param.solver_data.max_iter      = 1e4;
+    this->poisson_param.solver_data               = SolverData(1e4, 1e-20, 1e-10, LinearSolver::CG);
     this->poisson_param.preconditioner            = Preconditioner::Multigrid;
     this->poisson_param.multigrid_data.type       = MultigridType::cphMG;
     this->poisson_param.multigrid_data.p_sequence = PSequenceType::Bisect;

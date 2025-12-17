@@ -57,7 +57,7 @@ struct InverseMassParameters
   InverseMassParameters()
     : implementation_type(InverseMassType::MatrixfreeOperator),
       preconditioner(PreconditionerMass::PointJacobi),
-      solver_data(SolverData()),
+      solver_data(SolverData(1e3, 1e-20, 1e-6, LinearSolver::CG)),
       amg_data(AMGData())
   {
   }

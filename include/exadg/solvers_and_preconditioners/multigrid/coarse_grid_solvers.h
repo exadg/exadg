@@ -73,7 +73,7 @@ public:
      */
     AdditionalData()
       : solver_type(MultigridCoarseGridSolver::CG),
-        solver_data(SolverData(1e4, 1.e-12, 1.e-3, 100)),
+        solver_data(SolverData(1e4, 1.e-12, 1.e-3, LinearSolver::Undefined, 100)),
         operator_is_singular(false),
         preconditioner(MultigridCoarseGridPreconditioner::None),
         amg_data(AMGData())
@@ -177,14 +177,15 @@ public:
     }
     else
     {
-      std::string name;
+      // Overwrite `linear_solver` as enum also enables non-Krylov coarse grid solvers.
+      SolverData solver_data = additional_data.solver_data;
       if(additional_data.solver_type == MultigridCoarseGridSolver::CG)
       {
-        name = "cg";
+        solver_data.linear_solver = LinearSolver::CG;
       }
       else if(additional_data.solver_type == MultigridCoarseGridSolver::GMRES)
       {
-        name = "gmres";
+        solver_data.linear_solver = LinearSolver::GMRES;
       }
       else
       {
@@ -212,8 +213,7 @@ public:
 
       SolverType solver(pde_operator,
                         *preconditioner,
-                        additional_data.solver_data,
-                        name,
+                        solver_data,
                         use_preconditioner,
                         compute_performance_metrics,
                         compute_eigenvalues);

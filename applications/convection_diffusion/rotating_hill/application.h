@@ -185,8 +185,7 @@ private:
     this->param.IP_factor = 1.0;
 
     // SOLVER
-    this->param.solver      = Solver::GMRES;
-    this->param.solver_data = SolverData(1e3, 1.e-20, 1.e-8, 100);
+    this->param.solver_data = SolverData(1e3, 1.e-20, 1.e-8, LinearSolver::GMRES, 100);
     this->param.preconditioner =
       Preconditioner::Multigrid; // None; //InverseMassMatrix; //PointJacobi; // BlockJacobi;
                                  // //Multigrid;
@@ -196,7 +195,8 @@ private:
     this->param.implement_block_diagonal_preconditioner_matrix_free = false; // true;
     this->param.solver_block_diagonal                               = Elementwise::Solver::GMRES;
     this->param.preconditioner_block_diagonal = Elementwise::Preconditioner::InverseMassMatrix;
-    this->param.solver_data_block_diagonal    = SolverData(1000, 1.e-12, 1.e-2, 1000);
+    this->param.solver_data_block_diagonal =
+      SolverData(1000, 1.e-12, 1.e-2, LinearSolver::Undefined, 1000);
 
     // Multigrid
     this->param.mg_operator_type    = MultigridOperatorType::ReactionConvection;

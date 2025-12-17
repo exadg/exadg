@@ -206,9 +206,6 @@ public:
   // Newton solver data (only relevant for nonlinear problems)
   Newton::SolverData newton_solver_data;
 
-  // description: see enum declaration
-  Solver solver;
-
   // solver data
   SolverData solver_data;
 

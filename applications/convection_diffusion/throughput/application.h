@@ -107,8 +107,8 @@ private:
     this->param.IP_factor = 1.0;
 
     // SOLVER
-    this->param.solver         = Solver::GMRES;
-    this->param.preconditioner = Preconditioner::None;
+    this->param.solver_data.linear_solver = LinearSolver::GMRES;
+    this->param.preconditioner            = Preconditioner::None;
 
     // NUMERICAL PARAMETERS
     this->param.use_cell_based_face_loops               = false;

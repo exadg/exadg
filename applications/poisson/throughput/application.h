@@ -86,8 +86,8 @@ private:
     this->param.sparse_matrix_type        = SparseMatrixType::Trilinos;
 
     // SOLVER
-    this->param.solver         = LinearSolver::CG;
-    this->param.preconditioner = Preconditioner::None;
+    this->param.solver_data.linear_solver = LinearSolver::CG;
+    this->param.preconditioner            = Preconditioner::None;
   }
 
   void

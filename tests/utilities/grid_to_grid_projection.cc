@@ -459,9 +459,7 @@ GridToGridProjector<dim, n_components>::project()
   }
 
   GridToGridProjection::GridToGridProjectionData<dim> data;
-  data.solver_data.max_iter = 1000;
-  data.solver_data.abs_tol  = 1.0e-12;
-  data.solver_data.rel_tol  = 1.0e-8;
+  data.solver_data = SolverData(1e3, 1e-12, 1e-8, LinearSolver::CG);
 
   data.rpe_data.tolerance              = 1e-6;
   data.rpe_data.enforce_unique_mapping = false;

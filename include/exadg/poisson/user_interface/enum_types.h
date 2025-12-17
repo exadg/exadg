@@ -49,16 +49,6 @@ enum class SpatialDiscretization
 /**************************************************************************************/
 
 /*
- *   Solver for linear system of equations
- */
-enum class LinearSolver
-{
-  Undefined,
-  CG,
-  FGMRES
-};
-
-/*
  *  Preconditioner type for solution of linear system of equations
  */
 enum class Preconditioner

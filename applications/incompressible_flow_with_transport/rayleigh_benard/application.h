@@ -168,8 +168,8 @@ private:
     // PROJECTION METHODS
 
     // pressure Poisson equation
-    this->param.solver_pressure_poisson              = SolverPressurePoisson::CG;
-    this->param.solver_data_pressure_poisson         = SolverData(1000, 1.e-12, 1.e-6, 100);
+    this->param.solver_data_pressure_poisson =
+      SolverData(1000, 1.e-12, 1.e-6, LinearSolver::CG, 100);
     this->param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
     this->param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
     this->param.multigrid_data_pressure_poisson.coarse_problem.solver =
@@ -182,8 +182,7 @@ private:
       PreconditionerSmoother::PointJacobi;
 
     // projection step
-    this->param.solver_projection         = SolverProjection::CG;
-    this->param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-6);
+    this->param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-6, LinearSolver::CG);
     this->param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -194,8 +193,7 @@ private:
 
     if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
     {
-      this->param.solver_momentum         = SolverMomentum::CG;
-      this->param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-6);
+      this->param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-6, LinearSolver::CG);
       this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
     }
 
@@ -213,8 +211,7 @@ private:
       this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-20, 1.e-6);
 
       // linear solver
-      this->param.solver_momentum         = SolverMomentum::GMRES;
-      this->param.solver_data_momentum    = SolverData(1e4, 1.e-12, 1.e-6, 100);
+      this->param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-6, LinearSolver::GMRES, 100);
       this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
     }
 
@@ -225,8 +222,7 @@ private:
     this->param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-12, 1.e-6);
 
     // linear solver
-    this->param.solver_coupled      = SolverCoupled::GMRES;
-    this->param.solver_data_coupled = SolverData(1e3, 1.e-12, 1.e-6, 100);
+    this->param.solver_data_coupled = SolverData(1e3, 1.e-12, 1.e-6, LinearSolver::GMRES, 100);
 
     // preconditioner linear solver
     this->param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;
@@ -445,8 +441,7 @@ private:
     this->param.use_cell_based_face_loops                           = false;
 
     // SOLVER
-    this->param.solver                    = ConvDiff::Solver::CG;
-    this->param.solver_data               = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    this->param.solver_data               = SolverData(1e4, 1.e-12, 1.e-6, LinearSolver::CG, 100);
     this->param.preconditioner            = Preconditioner::InverseMassMatrix;
     this->param.multigrid_data.type       = MultigridType::pMG;
     this->param.multigrid_data.p_sequence = PSequenceType::Bisect;

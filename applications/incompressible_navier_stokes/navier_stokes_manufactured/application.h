@@ -495,13 +495,11 @@ private:
     // PROJECTION METHODS
 
     // pressure Poisson equation
-    this->param.solver_pressure_poisson         = SolverPressurePoisson::CG;
     this->param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
-    this->param.solver_data_pressure_poisson    = SolverData(1000, 1.e-12, 1.e-8);
+    this->param.solver_data_pressure_poisson    = SolverData(1000, 1.e-12, 1.e-8, LinearSolver::CG);
 
     // projection step
-    this->param.solver_projection         = SolverProjection::CG;
-    this->param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-8);
+    this->param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-8, LinearSolver::CG);
     this->param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
     this->param.update_preconditioner_projection = true;
 
@@ -513,11 +511,9 @@ private:
 
     if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
     {
-      this->param.solver_momentum =
-        treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ?
-          SolverMomentum::CG :
-          SolverMomentum::FGMRES;
-      this->param.solver_data_momentum = SolverData(1000, 1e-12, 1e-8);
+      LinearSolver const linear_solver = treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ?
+          LinearSolver::CG : LinearSolver::FGMRES;
+      this->param.solver_data_momentum = SolverData(1000, 1e-12, 1e-8, linear_solver);
       this->param.preconditioner_momentum = spatial_discretization == SpatialDiscretization::L2 ?
                                              MomentumPreconditioner::Multigrid :
                                              MomentumPreconditioner::PointJacobi;
@@ -537,8 +533,7 @@ private:
       this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-14, 1.e-6);
 
       // linear solver
-      this->param.solver_momentum                = SolverMomentum::GMRES;
-      this->param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-8, 100);
+      this->param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-8, LinearSolver::GMRES, 100);
       this->param.preconditioner_momentum        = MomentumPreconditioner::Multigrid;
       this->param.update_preconditioner_momentum = true;
     }
@@ -557,7 +552,7 @@ private:
       this->param.multigrid_data_momentum.smoother_data.iterations_eigenvalue_estimation = 60; // Chebyshev, default: 20
 
       this->param.multigrid_data_momentum.coarse_problem.solver         = this->param.non_explicit_convective_problem() ? MultigridCoarseGridSolver::GMRES : MultigridCoarseGridSolver::CG; // MultigridCoarseGridSolver::AMG
-      this->param.multigrid_data_momentum.coarse_problem.solver_data    = SolverData(1000, 1e-12, 1e-8, 30);
+      this->param.multigrid_data_momentum.coarse_problem.solver_data    = SolverData(1000, 1e-12, 1e-8, LinearSolver::Undefined, 30);
       this->param.multigrid_data_momentum.smoother_data.preconditioner  = PreconditionerSmoother::PointJacobi;
       this->param.multigrid_data_momentum.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::PointJacobi;
 #ifdef DEAL_II_WITH_TRILINOS
@@ -575,8 +570,7 @@ private:
     this->param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-10, 1.e-6);
 
     // linear solver
-    this->param.solver_coupled      = SolverCoupled::FGMRES;
-    this->param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-8, 100);
+    this->param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-8, LinearSolver::FGMRES, 100);
 
     // preconditioning linear solver
     this->param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;

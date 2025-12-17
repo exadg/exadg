@@ -74,15 +74,14 @@ Parameters::Parameters()
     IP_factor(1.0),
 
     // SOLVER
-    solver(Solver::Undefined),
-    solver_data(SolverData(1e4, 1.e-12, 1.e-6, 100)),
+    solver_data(SolverData(1e4, 1.e-12, 1.e-6, LinearSolver::Undefined, 100)),
     preconditioner(Preconditioner::Undefined),
     update_preconditioner(false),
     update_preconditioner_every_time_steps(1),
     implement_block_diagonal_preconditioner_matrix_free(false),
     solver_block_diagonal(Elementwise::Solver::Undefined),
     preconditioner_block_diagonal(Elementwise::Preconditioner::InverseMassMatrix),
-    solver_data_block_diagonal(SolverData(1000, 1.e-12, 1.e-2, 1000)),
+    solver_data_block_diagonal(SolverData(1000, 1.e-12, 1.e-2, LinearSolver::Undefined, 1000)),
     mg_operator_type(MultigridOperatorType::Undefined),
     multigrid_data(MultigridData()),
     solver_info_data(SolverInfoData()),
@@ -282,7 +281,8 @@ Parameters::check() const
   // SOLVER
   if(temporal_discretization == TemporalDiscretization::BDF)
   {
-    AssertThrow(solver != Solver::Undefined, dealii::ExcMessage("parameter must be defined"));
+    AssertThrow(solver_data.linear_solver != LinearSolver::Undefined,
+                dealii::ExcMessage("parameter must be defined"));
 
     AssertThrow(preconditioner != Preconditioner::Undefined,
                 dealii::ExcMessage("parameter must be defined"));
@@ -545,8 +545,6 @@ void
 Parameters::print_parameters_solver(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Solver:" << std::endl;
-
-  print_parameter(pcout, "Solver", solver);
 
   solver_data.print(pcout);
 

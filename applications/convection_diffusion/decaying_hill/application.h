@@ -167,16 +167,15 @@ private:
     this->param.IP_factor = 1.0;
 
     // SOLVER
-    this->param.solver =
-      Solver::CG; // use FGMRES for elementwise iterative block Jacobi type preconditioners
-    this->param.solver_data      = SolverData(1e4, 1.e-20, 1.e-6, 100);
+    // use FGMRES for elementwise iterative block Jacobi type preconditioners
+    this->param.solver_data      = SolverData(1e4, 1.e-20, 1.e-6, LinearSolver::CG, 100);
     this->param.preconditioner   = Preconditioner::InverseMassMatrix; // BlockJacobi; //Multigrid;
     this->param.mg_operator_type = MultigridOperatorType::ReactionDiffusion;
     this->param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev; // GMRES;
     this->param.implement_block_diagonal_preconditioner_matrix_free = true;
     this->param.solver_block_diagonal                               = Elementwise::Solver::CG;
     this->param.preconditioner_block_diagonal = Elementwise::Preconditioner::InverseMassMatrix;
-    this->param.solver_data_block_diagonal    = SolverData(1000, 1.e-12, 1.e-2, 1000);
+    this->param.solver_data_block_diagonal    = SolverData(1000, 1.e-12, 1.e-2);
     this->param.use_cell_based_face_loops     = true;
     this->param.update_preconditioner         = false;
 

@@ -41,7 +41,6 @@ Solver:
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -133,7 +132,6 @@ Solver:
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -225,7 +223,6 @@ Solver:
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -317,7 +314,6 @@ Solver:
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -409,7 +405,6 @@ Solver:
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -501,7 +496,6 @@ Solver:
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -593,7 +587,6 @@ Solver:
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -685,7 +678,6 @@ Solver:
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -777,7 +769,6 @@ Solver:
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -869,7 +860,6 @@ Solver:
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -961,7 +951,6 @@ Solver:
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -1053,7 +1042,6 @@ Solver:
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -1145,7 +1133,6 @@ Solver:
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -1237,7 +1224,6 @@ Solver:
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
@@ -1329,7 +1315,6 @@ Solver:
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect

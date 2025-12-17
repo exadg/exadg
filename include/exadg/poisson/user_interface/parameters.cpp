@@ -44,8 +44,7 @@ Parameters::Parameters()
     sparse_matrix_type(SparseMatrixType::Undefined),
 
     // SOLVER
-    solver(LinearSolver::Undefined),
-    solver_data(SolverData(1e4, 1.e-20, 1.e-12)),
+    solver_data(SolverData(1e4, 1.e-20, 1.e-12, LinearSolver::CG)),
     compute_performance_metrics(false),
     preconditioner(Preconditioner::Undefined),
     multigrid_data(MultigridData()),
@@ -73,7 +72,8 @@ Parameters::check() const
   }
 
   // SOLVER
-  AssertThrow(solver != LinearSolver::Undefined, dealii::ExcMessage("parameter must be defined."));
+  AssertThrow(solver_data.linear_solver != LinearSolver::Undefined,
+              dealii::ExcMessage("Parameter must be defined."));
   AssertThrow(preconditioner != Preconditioner::Undefined,
               dealii::ExcMessage("parameter must be defined."));
 }
@@ -144,8 +144,6 @@ void
 Parameters::print_parameters_solver(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Solver:" << std::endl;
-
-  print_parameter(pcout, "Solver", solver);
 
   solver_data.print(pcout);
 

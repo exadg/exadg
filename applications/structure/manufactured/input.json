@@ -15,7 +15,7 @@
         "RefineTimeMax": "10"
     },
     "Application": {
-        "Solver": "CG",
+        "LinearSolver": "CG",
         "UseMatrixBasedOperator": "false"
     },
     "Output": {
