@@ -348,6 +348,10 @@ public:
     prm.enter_subsection("Application");
     {
       prm.add_parameter("Solver", solver, "Krylov solver used.");
+      prm.add_parameter("UseMatrixBasedOperator",
+                        use_matrix_based_operator,
+                        "Use matrix-based operators in global Krylov solver and Multigrid.",
+                        dealii::Patterns::Bool());
     }
     prm.leave_subsection();
   }
@@ -390,7 +394,7 @@ private:
       this->param.newton_solver_data.max_iter;
     this->param.update_preconditioner_once_newton_converged = true;
 
-    this->param.use_matrix_based_operator = false;                   // true;
+    this->param.use_matrix_based_operator = use_matrix_based_operator;
     this->param.sparse_matrix_type        = SparseMatrixType::PETSc; // Trilinos;
   }
 
@@ -531,7 +535,8 @@ private:
   double const end_time         = 1.0;
   double const frequency        = 3.0 / 2.0 * dealii::numbers::PI / end_time;
 
-  Solver solver = Solver::CG;
+  Solver solver                    = Solver::CG;
+  bool   use_matrix_based_operator = false;
 
   bool const prescribe_initial_acceleration_as_field_function = false;
 };
