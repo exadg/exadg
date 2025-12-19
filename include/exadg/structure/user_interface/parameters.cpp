@@ -71,8 +71,7 @@ Parameters::Parameters()
 
     // SOLVER
     newton_solver_data(Newton::SolverData(1e4, 1.e-12, 1.e-6)),
-    solver(Solver::Undefined),
-    solver_data(SolverData(1e4, 1.e-12, 1.e-6, 100)),
+    solver_data(SolverData(1e4, 1.e-12, 1.e-6, LinearSolver::Undefined, 100)),
     preconditioner(Preconditioner::AMG),
     update_preconditioner(false),
     update_preconditioner_every_time_steps(1),
@@ -132,7 +131,8 @@ Parameters::check() const
   }
 
   // SOLVER
-  AssertThrow(solver != Solver::Undefined, dealii::ExcMessage("Parameter must be defined."));
+  AssertThrow(solver_data.linear_solver != LinearSolver::Undefined,
+              dealii::ExcMessage("Parameter must be defined."));
 }
 
 bool
@@ -261,7 +261,6 @@ Parameters::print_parameters_solver(dealii::ConditionalOStream const & pcout) co
 
   // linear solver
   pcout << std::endl << "Linear solver:" << std::endl;
-  print_parameter(pcout, "Solver", solver);
   solver_data.print(pcout);
 
   // preconditioner for linear system of equations

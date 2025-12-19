@@ -163,7 +163,6 @@ InverseMassOperator<dim, n_components, Number>::initialize(
         AssertThrow(false, dealii::ExcMessage("This `PreconditionerMass` is not implemented."));
       }
 
-      std::string const name                     = "cg";
       bool constexpr compute_performance_metrics = false;
       bool constexpr compute_eigenvalues         = false;
       bool const use_preconditioner              = data.preconditioner != PreconditionerMass::None;
@@ -176,7 +175,6 @@ InverseMassOperator<dim, n_components, Number>::initialize(
       global_solver = std::make_shared<SolverType>(mass_operator,
                                                    *global_preconditioner,
                                                    data.solver_data,
-                                                   name,
                                                    use_preconditioner,
                                                    compute_performance_metrics,
                                                    compute_eigenvalues);

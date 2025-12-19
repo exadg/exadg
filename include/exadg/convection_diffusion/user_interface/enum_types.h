@@ -174,17 +174,6 @@ enum class NumericalFluxConvectiveOperator
 /**************************************************************************************/
 
 /*
- *   Solver for linear system of equations
- */
-enum class Solver
-{
-  Undefined,
-  CG,
-  GMRES,
-  FGMRES // flexible GMRES
-};
-
-/*
  *  Preconditioner type for solution of linear system of equations
  */
 enum class Preconditioner

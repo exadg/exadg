@@ -178,7 +178,7 @@ gmres_test_1a()
 {
   std::cout << std::endl << "GMRES solver (double), size M=3:" << std::endl << std::endl;
 
-  SolverData solver_data(100, tol, tol, 30);
+  SolverData solver_data(100, tol, tol, LinearSolver::Undefined, 30);
 
   typedef Elementwise::PreconditionerIdentity<double>      Preconditioner;
   typedef MyMatrix<double>                                 Matrix;
@@ -228,7 +228,7 @@ gmres_test_1b()
   std::cout << std::endl << "GMRES solver (double), size M=10000:" << std::endl << std::endl;
 
   unsigned int const M_large = 10000;
-  SolverData         solver_data(100, tol, tol, 30);
+  SolverData         solver_data(100, tol, tol, LinearSolver::Undefined, 30);
 
   typedef Elementwise::PreconditionerIdentity<double>      Preconditioner;
   typedef MyMatrix<double>                                 Matrix;
@@ -295,7 +295,7 @@ gmres_test_2a()
             << std::endl
             << std::endl;
 
-  SolverData solver_data(100, tol, tol, 30);
+  SolverData solver_data(100, tol, tol, LinearSolver::Undefined, 30);
 
   typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<double>> Preconditioner;
   typedef MyMatrix<dealii::VectorizedArray<double>>                            Matrix;
@@ -354,7 +354,7 @@ gmres_test_2b()
             << std::endl
             << std::endl;
 
-  SolverData solver_data(100, 1e-12, 1e-12, 30);
+  SolverData solver_data(100, 1e-12, 1e-12, LinearSolver::Undefined, 30);
 
   typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<double>> Preconditioner;
   typedef MyMatrix<dealii::VectorizedArray<double>>                            Matrix;
@@ -417,7 +417,7 @@ gmres_test_2c()
             << std::endl
             << std::endl;
 
-  SolverData solver_data(100, tol, tol, 30);
+  SolverData solver_data(100, tol, tol, LinearSolver::Undefined, 30);
 
   typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<double>> Preconditioner;
   typedef MyMatrix<dealii::VectorizedArray<double>>                            Matrix;

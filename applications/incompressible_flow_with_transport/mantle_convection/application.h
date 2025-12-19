@@ -197,14 +197,13 @@ private:
     // PROJECTION METHODS
 
     // pressure Poisson equation
-    this->param.solver_pressure_poisson              = SolverPressurePoisson::CG;
-    this->param.solver_data_pressure_poisson         = SolverData(1000, 1.e-30, reltol, 100);
+    this->param.solver_data_pressure_poisson =
+      SolverData(1000, 1.e-30, reltol, LinearSolver::CG, 100);
     this->param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
     this->param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
 
     // projection step
-    this->param.solver_projection         = SolverProjection::CG;
-    this->param.solver_data_projection    = SolverData(1000, 1.e-30, reltol);
+    this->param.solver_data_projection    = SolverData(1000, 1.e-30, reltol, LinearSolver::CG);
     this->param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -215,10 +214,9 @@ private:
 
     if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
     {
-      this->param.solver_momentum                  = SolverMomentum::CG;
-      this->param.solver_data_momentum             = SolverData(1000, 1.e-30, reltol);
-      this->param.preconditioner_momentum          = MomentumPreconditioner::Multigrid;
-      this->param.multigrid_data_momentum.type     = MultigridType::cphMG;
+      this->param.solver_data_momentum         = SolverData(1000, 1.e-30, reltol, LinearSolver::CG);
+      this->param.preconditioner_momentum      = MomentumPreconditioner::Multigrid;
+      this->param.multigrid_data_momentum.type = MultigridType::cphMG;
       this->param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
     }
 
@@ -236,9 +234,8 @@ private:
       this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-30, reltol);
 
       // linear solver
-      this->param.solver_momentum                  = SolverMomentum::CG;
-      this->param.solver_data_momentum             = SolverData(1e4, 1.e-30, reltol, 100);
-      this->param.preconditioner_momentum          = MomentumPreconditioner::Multigrid;
+      this->param.solver_data_momentum    = SolverData(1e4, 1.e-30, reltol, LinearSolver::CG, 100);
+      this->param.preconditioner_momentum = MomentumPreconditioner::Multigrid;
       this->param.multigrid_data_momentum.type     = MultigridType::cphMG;
       this->param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
     }
@@ -249,8 +246,7 @@ private:
     this->param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-30, reltol);
 
     // linear solver
-    this->param.solver_coupled         = SolverCoupled::GMRES;
-    this->param.solver_data_coupled    = SolverData(1e3, 1.e-30, reltol, 100);
+    this->param.solver_data_coupled    = SolverData(1e3, 1.e-30, reltol, LinearSolver::GMRES, 100);
     this->param.use_scaling_continuity = false;
 
     // preconditioner linear solver
@@ -450,8 +446,8 @@ private:
     this->param.use_cell_based_face_loops                           = false;
 
     // SOLVER
-    this->param.solver                = ConvDiff::Solver::GMRES; // CG;
-    this->param.solver_data           = SolverData(1e4, 1.e-30, reltol, 100);
+    this->param.solver_data =
+      SolverData(1e4, 1.e-30, reltol, LinearSolver::GMRES /* LinearSolver::CG */, 100);
     this->param.preconditioner        = Preconditioner::InverseMassMatrix;
     this->param.multigrid_data.type   = MultigridType::cphMG;
     this->param.mg_operator_type      = MultigridOperatorType::ReactionDiffusion;

@@ -53,7 +53,7 @@ struct GridToGridProjectionData
 {
   GridToGridProjectionData()
     : rpe_data(),
-      solver_data(),
+      solver_data(SolverData(1e3, 1e-20, 1e-6, LinearSolver::CG)),
       preconditioner(PreconditionerMass::PointJacobi),
       amg_data(AMGData()),
       additional_quadrature_points(1)

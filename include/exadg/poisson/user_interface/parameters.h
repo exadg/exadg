@@ -112,9 +112,6 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // description: see enum declaration
-  LinearSolver solver;
-
   // solver data
   SolverData solver_data;
   bool       compute_performance_metrics;

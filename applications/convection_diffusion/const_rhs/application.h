@@ -139,8 +139,7 @@ private:
     this->param.IP_factor = 1.0;
 
     // SOLVER
-    this->param.solver         = Solver::GMRES;
-    this->param.solver_data    = SolverData(1e4, 1.e-20, 1.e-8, 100);
+    this->param.solver_data    = SolverData(1e4, 1.e-20, 1.e-8, LinearSolver::GMRES, 100);
     this->param.preconditioner = Preconditioner::Multigrid; // PointJacobi; //BlockJacobi;
     this->param.implement_block_diagonal_preconditioner_matrix_free = false;
     this->param.use_cell_based_face_loops                           = false;

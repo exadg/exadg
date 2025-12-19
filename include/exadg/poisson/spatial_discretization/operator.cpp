@@ -385,27 +385,13 @@ Operator<dim, n_components, Number>::setup_preconditioner_and_solver()
   // initialize solver
   bool constexpr compute_performance_metrics = false;
   bool constexpr compute_eigenvalues         = false;
-  bool const  use_preconditioner = param.preconditioner != Poisson::Preconditioner::None;
-  std::string name;
-  if(param.solver == LinearSolver::CG)
-  {
-    name = "cg";
-  }
-  else if(param.solver == LinearSolver::FGMRES)
-  {
-    name = "fgmres";
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("Specified solver is not implemented!"));
-  }
+  bool const use_preconditioner = param.preconditioner != Poisson::Preconditioner::None;
 
   typedef Krylov::KrylovSolver<Laplace, PreconditionerBase<Number>, VectorType> SolverType;
 
   iterative_solver = std::make_shared<SolverType>(laplace_operator,
                                                   *preconditioner,
                                                   param.solver_data,
-                                                  name,
                                                   use_preconditioner,
                                                   compute_performance_metrics,
                                                   compute_eigenvalues);

@@ -330,10 +330,11 @@ private:
 
     this->param.newton_solver_data = Newton::SolverData(1e2, 1.e-9, 1.e-9);
 
-    bool const use_iterative_solver_on_coarse_grid = false;
-    this->param.solver         = use_iterative_solver_on_coarse_grid ? Solver::FGMRES : Solver::CG;
-    this->param.solver_data    = SolverData(1e3, 1.e-12, 1.e-8, 100);
-    this->param.preconditioner = preconditioner;
+    bool const         use_iterative_solver_on_coarse_grid = false;
+    LinearSolver const linear_solver =
+      use_iterative_solver_on_coarse_grid ? LinearSolver::FGMRES : LinearSolver::CG;
+    this->param.solver_data         = SolverData(1e3, 1.e-12, 1.e-8, linear_solver, 100);
+    this->param.preconditioner      = preconditioner;
     this->param.multigrid_data.type = MultigridType::phMG;
 
     this->param.multigrid_data.smoother_data.smoother       = MultigridSmoother::Chebyshev;
@@ -348,10 +349,11 @@ private:
     this->param.multigrid_data.smoother_data.iterations_eigenvalue_estimation =
       60; // Chebyshev, default: 20
 
-    this->param.multigrid_data.coarse_problem.solver      = use_iterative_solver_on_coarse_grid ?
-                                                              MultigridCoarseGridSolver::GMRES :
-                                                              MultigridCoarseGridSolver::AMG;
-    this->param.multigrid_data.coarse_problem.solver_data = SolverData(1e3, 1.e-12, 1.e-3, 100);
+    this->param.multigrid_data.coarse_problem.solver = use_iterative_solver_on_coarse_grid ?
+                                                         MultigridCoarseGridSolver::GMRES :
+                                                         MultigridCoarseGridSolver::AMG;
+    this->param.multigrid_data.coarse_problem.solver_data =
+      SolverData(1e3, 1.e-12, 1.e-3, LinearSolver::Undefined, 100);
     this->param.multigrid_data.coarse_problem.preconditioner =
       use_iterative_solver_on_coarse_grid ? MultigridCoarseGridPreconditioner::AMG :
                                             MultigridCoarseGridPreconditioner::None;

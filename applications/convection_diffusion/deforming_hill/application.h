@@ -131,8 +131,7 @@ private:
     this->param.IP_factor = 1.0;
 
     // SOLVER
-    this->param.solver         = Solver::GMRES;
-    this->param.solver_data    = SolverData(1e4, 1.e-20, 1.e-6, 100);
+    this->param.solver_data    = SolverData(1e4, 1.e-20, 1.e-6, LinearSolver::GMRES, 100);
     this->param.preconditioner = Preconditioner::InverseMassMatrix;
 
     // output of solver information

@@ -52,10 +52,7 @@ private:
     this->param.IP_factor                   = 1.0e0;
 
     // SOLVER
-    this->param.solver                      = Poisson::LinearSolver::CG;
-    this->param.solver_data.abs_tol         = 1.e-20;
-    this->param.solver_data.rel_tol         = 1.e-10;
-    this->param.solver_data.max_iter        = 1e4;
+    this->param.solver_data                 = SolverData(1e4, 1e-20, 1e-10, LinearSolver::CG);
     this->param.compute_performance_metrics = true;
     this->param.preconditioner              = Preconditioner::Multigrid;
     this->param.multigrid_data.type         = MultigridType::cphMG;

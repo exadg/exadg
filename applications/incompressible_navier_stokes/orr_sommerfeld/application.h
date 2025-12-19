@@ -231,14 +231,13 @@ private:
     // PROJECTION METHODS
 
     // pressure Poisson equation
-    this->param.solver_pressure_poisson              = SolverPressurePoisson::CG;
-    this->param.solver_data_pressure_poisson         = SolverData(1000, 1.e-14, 1.e-14, 100);
+    this->param.solver_data_pressure_poisson =
+      SolverData(1000, 1.e-14, 1.e-14, LinearSolver::CG, 100);
     this->param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
     this->param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
 
     // projection step
-    this->param.solver_projection         = SolverProjection::CG;
-    this->param.solver_data_projection    = SolverData(1000, 1.e-14, 1.e-14);
+    this->param.solver_data_projection    = SolverData(1000, 1.e-14, 1.e-14, LinearSolver::CG);
     this->param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -249,8 +248,7 @@ private:
 
     if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
     {
-      this->param.solver_momentum         = SolverMomentum::CG;
-      this->param.solver_data_momentum    = SolverData(1000, 1.e-14, 1.e-14);
+      this->param.solver_data_momentum    = SolverData(1000, 1.e-14, 1.e-14, LinearSolver::CG);
       this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
     }
 
@@ -267,8 +265,7 @@ private:
       this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-14, 1.e-14);
 
       // linear solver
-      this->param.solver_momentum         = SolverMomentum::GMRES;
-      this->param.solver_data_momentum    = SolverData(1e4, 1.e-14, 1.e-14, 100);
+      this->param.solver_data_momentum = SolverData(1e4, 1.e-14, 1.e-14, LinearSolver::GMRES, 100);
       this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
     }
 
@@ -278,8 +275,7 @@ private:
     this->param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-14, 1.e-14);
 
     // linear solver
-    this->param.solver_coupled      = SolverCoupled::GMRES;
-    this->param.solver_data_coupled = SolverData(1e4, 1.e-14, 1.e-14, 200);
+    this->param.solver_data_coupled = SolverData(1e4, 1.e-14, 1.e-14, LinearSolver::GMRES, 200);
 
     // preconditioning linear solver
     this->param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;

@@ -69,7 +69,7 @@ struct OperatorBaseData
       implement_block_diagonal_preconditioner_matrix_free(false),
       solver_block_diagonal(Elementwise::Solver::GMRES),
       preconditioner_block_diagonal(Elementwise::Preconditioner::InverseMassMatrix),
-      solver_data_block_diagonal(SolverData(1000, 1.e-12, 1.e-2, 1000))
+      solver_data_block_diagonal(SolverData(1000, 1.e-12, 1.e-2, LinearSolver::Undefined, 1000))
   {
   }
 

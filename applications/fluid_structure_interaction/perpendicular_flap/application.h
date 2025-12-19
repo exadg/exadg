@@ -203,8 +203,7 @@ private:
     // PROJECTION METHODS
 
     // pressure Poisson equation
-    param.solver_pressure_poisson              = SolverPressurePoisson::CG;
-    param.solver_data_pressure_poisson         = SolverData(1000, ABS_TOL, REL_TOL, 100);
+    param.solver_data_pressure_poisson = SolverData(1000, ABS_TOL, REL_TOL, LinearSolver::CG, 100);
     param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
     param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
     param.multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
@@ -215,8 +214,7 @@ private:
       MultigridCoarseGridPreconditioner::AMG;
 
     // projection step
-    param.solver_projection         = SolverProjection::CG;
-    param.solver_data_projection    = SolverData(1000, ABS_TOL, REL_TOL);
+    param.solver_data_projection    = SolverData(1000, ABS_TOL, REL_TOL, LinearSolver::CG);
     param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -228,8 +226,7 @@ private:
 
     if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
     {
-      this->param.solver_momentum         = SolverMomentum::CG;
-      this->param.solver_data_momentum    = SolverData(1000, ABS_TOL, REL_TOL);
+      this->param.solver_data_momentum    = SolverData(1000, ABS_TOL, REL_TOL, LinearSolver::CG);
       this->param.preconditioner_momentum = MomentumPreconditioner::PointJacobi;
     }
 
@@ -248,11 +245,11 @@ private:
       param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
       // linear solver
-      param.solver_momentum = SolverMomentum::FGMRES;
       if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-        param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
+        param.solver_data_momentum =
+          SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, LinearSolver::FGMRES, 100);
       else
-        param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+        param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, LinearSolver::FGMRES, 100);
       param.update_preconditioner_momentum = false;
       param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
     }
@@ -265,11 +262,11 @@ private:
     param.newton_solver_data_coupled = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
     // linear solver
-    param.solver_coupled = SolverCoupled::FGMRES;
     if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-      param.solver_data_coupled = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
+      param.solver_data_coupled =
+        SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, LinearSolver::FGMRES, 100);
     else
-      param.solver_data_coupled = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+      param.solver_data_coupled = SolverData(1e4, ABS_TOL, REL_TOL, LinearSolver::FGMRES, 100);
 
     // preconditioner linear solver
     param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;
@@ -481,8 +478,7 @@ private:
     param.degree                 = this->param.mapping_degree;
 
     // SOLVER
-    param.solver         = Poisson::LinearSolver::FGMRES;
-    param.solver_data    = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+    param.solver_data    = SolverData(1e4, ABS_TOL, REL_TOL, LinearSolver::FGMRES, 100);
     param.preconditioner = Preconditioner::Multigrid;
 
     param.multigrid_data.type                          = MultigridType::phMG;
@@ -541,11 +537,11 @@ private:
     param.degree = this->param.mapping_degree;
 
     param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
-    param.solver             = Structure::Solver::FGMRES;
     if(param.large_deformation)
-      param.solver_data = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
+      param.solver_data =
+        SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, LinearSolver::FGMRES, 100);
     else
-      param.solver_data = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+      param.solver_data = SolverData(1e4, ABS_TOL, REL_TOL, LinearSolver::FGMRES, 100);
     param.preconditioner                               = Preconditioner::Multigrid;
     param.multigrid_data.type                          = MultigridType::phMG;
     param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
@@ -669,11 +665,11 @@ public:
     param.mapping_degree_coarse_grids = param.mapping_degree;
 
     param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
-    param.solver             = Structure::Solver::FGMRES;
     if(param.large_deformation)
-      param.solver_data = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
+      param.solver_data =
+        SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, LinearSolver::FGMRES, 100);
     else
-      param.solver_data = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+      param.solver_data = SolverData(1e4, ABS_TOL, REL_TOL, LinearSolver::FGMRES, 100);
     param.preconditioner                               = Preconditioner::Multigrid;
     param.multigrid_data.type                          = MultigridType::phMG;
     param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;

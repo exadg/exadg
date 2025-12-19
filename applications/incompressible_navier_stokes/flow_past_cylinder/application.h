@@ -226,8 +226,8 @@ private:
     // PROJECTION METHODS
 
     // pressure Poisson equation
-    this->param.solver_pressure_poisson              = SolverPressurePoisson::CG;
-    this->param.solver_data_pressure_poisson         = SolverData(1000, ABS_TOL, REL_TOL, 30);
+    this->param.solver_data_pressure_poisson =
+      SolverData(1000, ABS_TOL, REL_TOL, LinearSolver::CG, 30);
     this->param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
     this->param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
     this->param.multigrid_data_pressure_poisson.smoother_data.smoother =
@@ -240,9 +240,8 @@ private:
     this->param.update_preconditioner_pressure_poisson = false;
 
     // projection step
-    this->param.solver_projection                = SolverProjection::CG;
-    this->param.solver_data_projection           = SolverData(1000, ABS_TOL, REL_TOL);
-    this->param.preconditioner_projection        = PreconditionerProjection::InverseMassMatrix;
+    this->param.solver_data_projection    = SolverData(1000, ABS_TOL, REL_TOL, LinearSolver::CG);
+    this->param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
     this->param.update_preconditioner_projection = false;
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -253,9 +252,8 @@ private:
 
     if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
     {
-      this->param.solver_momentum                = SolverMomentum::CG;
-      this->param.solver_data_momentum           = SolverData(1000, ABS_TOL, REL_TOL);
-      this->param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
+      this->param.solver_data_momentum    = SolverData(1000, ABS_TOL, REL_TOL, LinearSolver::CG);
+      this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
       this->param.update_preconditioner_momentum = false;
     }
 
@@ -272,8 +270,8 @@ private:
       this->param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
       // linear solver
-      this->param.solver_momentum      = SolverMomentum::FGMRES;
-      this->param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
+      this->param.solver_data_momentum =
+        SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, LinearSolver::FGMRES, 100);
 
       this->param.update_preconditioner_momentum                   = true;
       this->param.update_preconditioner_momentum_every_newton_iter = 10;
@@ -299,8 +297,8 @@ private:
     this->param.newton_solver_data_coupled = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
     // linear solver
-    this->param.solver_coupled      = SolverCoupled::FGMRES;
-    this->param.solver_data_coupled = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
+    this->param.solver_data_coupled =
+      SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, LinearSolver::FGMRES, 100);
 
     this->param.update_preconditioner_coupled                   = true;
     this->param.update_preconditioner_coupled_every_newton_iter = 10;

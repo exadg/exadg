@@ -173,10 +173,9 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
   // PROJECTION METHODS
 
   // pressure Poisson equation
-  param.IP_factor_pressure                   = 1.0;
-  param.solver_data_pressure_poisson         = SolverData(1000, 1.e-12, 1.e-3, 100);
-  param.solver_pressure_poisson              = SolverPressurePoisson::CG; // FGMRES;
-  param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
+  param.IP_factor_pressure              = 1.0;
+  param.solver_data_pressure_poisson    = SolverData(1000, 1.e-12, 1.e-3, LinearSolver::CG, 100);
+  param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
   param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
   if(is_precursor)
     param.multigrid_data_pressure_poisson.type = MultigridType::phMG;
@@ -188,8 +187,7 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
 
 
   // projection step
-  param.solver_projection                = SolverProjection::CG;
-  param.solver_data_projection           = SolverData(1000, 1.e-12, 1.e-3);
+  param.solver_data_projection           = SolverData(1000, 1.e-12, 1.e-3, LinearSolver::CG);
   param.preconditioner_projection        = PreconditionerProjection::InverseMassMatrix;
   param.update_preconditioner_projection = true;
 
@@ -202,8 +200,7 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
 
   if(param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
   {
-    param.solver_momentum         = SolverMomentum::CG;
-    param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-3);
+    param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-3, LinearSolver::CG);
     param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
   }
 
@@ -222,11 +219,10 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
 
     // linear solver
     if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-      param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-1, 100);
+      param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-1, LinearSolver::GMRES, 100);
     else
-      param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-3, 100);
+      param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-3, LinearSolver::GMRES, 100);
 
-    param.solver_momentum                = SolverMomentum::GMRES;
     param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
     param.update_preconditioner_momentum = false;
   }
@@ -238,11 +234,10 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
   param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-20, 1.e-3);
 
   // linear solver
-  param.solver_coupled = SolverCoupled::GMRES; // GMRES; //FGMRES;
   if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-    param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-1, 100);
+    param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-1, LinearSolver::GMRES, 100);
   else
-    param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-3, 100);
+    param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-3, LinearSolver::GMRES, 100);
 
   // preconditioning linear solver
   param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;

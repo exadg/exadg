@@ -109,18 +109,19 @@ private:
     // NUMERICAL PARAMETERS
     this->param.implement_block_diagonal_preconditioner_matrix_free = false;
     this->param.use_cell_based_face_loops                           = false;
-    this->param.solver_data_block_diagonal = SolverData(1000, 1.e-12, 1.e-2, 1000);
-    this->param.quad_rule_linearization    = QuadratureRuleLinearization::Overintegration32k;
+    this->param.solver_data_block_diagonal =
+      SolverData(1000, 1.e-12, 1.e-2, LinearSolver::Undefined, 1000);
+    this->param.quad_rule_linearization = QuadratureRuleLinearization::Overintegration32k;
 
     // PROJECTION METHODS
 
     // pressure Poisson equation
-    this->param.solver_data_pressure_poisson    = SolverData(1000, 1.e-12, 1.e-8, 100);
+    this->param.solver_data_pressure_poisson =
+      SolverData(1000, 1.e-12, 1.e-8, LinearSolver::CG, 100);
     this->param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
 
     // projection step
-    this->param.solver_projection         = SolverProjection::CG;
-    this->param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-8);
+    this->param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-8, LinearSolver::CG);
     this->param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
 
@@ -132,8 +133,7 @@ private:
 
     if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
     {
-      this->param.solver_momentum         = SolverMomentum::CG;
-      this->param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-8);
+      this->param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-8, LinearSolver::CG);
       this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
     }
 
@@ -147,11 +147,10 @@ private:
       this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-20, 1.e-6);
 
       // linear solver
-      this->param.solver_momentum = SolverMomentum::GMRES; // FGMRES;
       if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-        this->param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-2, 100);
+        this->param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-2, LinearSolver::GMRES, 100);
       else
-        this->param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-6, 100);
+        this->param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-6, LinearSolver::GMRES, 100);
       this->param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
       this->param.update_preconditioner_momentum = true;
       this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
@@ -173,11 +172,10 @@ private:
     this->param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-12, 1.e-8);
 
     // linear solver
-    this->param.solver_coupled = SolverCoupled::FGMRES; // FGMRES;
     if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-      this->param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-2, 1000);
+      this->param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-2, LinearSolver::FGMRES, 30);
     else
-      this->param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-6, 1000);
+      this->param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-6, LinearSolver::FGMRES, 30);
 
     // preconditioning linear solver
     this->param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;
@@ -198,7 +196,8 @@ private:
       MultigridCoarseGridSolver::GMRES;
 
     this->param.iterative_solve_of_velocity_block = false; // true;
-    this->param.solver_data_velocity_block        = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    this->param.solver_data_velocity_block =
+      SolverData(1e4, 1.e-12, 1.e-6, LinearSolver::FGMRES, 100);
 
     // preconditioner Schur-complement block
     this->param.preconditioner_pressure_block =
@@ -206,7 +205,7 @@ private:
     this->param.multigrid_data_pressure_block.coarse_problem.solver =
       MultigridCoarseGridSolver::Chebyshev;
     this->param.iterative_solve_of_pressure_block = false;
-    this->param.solver_data_pressure_block        = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    this->param.solver_data_pressure_block = SolverData(1e4, 1.e-12, 1.e-6, LinearSolver::CG, 100);
   }
 
   void

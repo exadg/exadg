@@ -57,10 +57,7 @@ public:
     p.IP_factor              = 1.0e0;
 
     // SOLVER
-    p.solver                      = LinearSolver::CG;
-    p.solver_data.abs_tol         = 1.e-20;
-    p.solver_data.rel_tol         = 1.e-10;
-    p.solver_data.max_iter        = 1e4;
+    p.solver_data                 = SolverData(1e4, 1e-20, 1e-10, LinearSolver::CG);
     p.compute_performance_metrics = true;
     p.preconditioner              = Preconditioner::Multigrid;
     p.multigrid_data.type         = MultigridType::cphMG;
@@ -189,10 +186,7 @@ private:
     p.IP_factor              = 1.0e0;
 
     // SOLVER
-    p.solver                      = LinearSolver::CG;
-    p.solver_data.abs_tol         = 1.e-20;
-    p.solver_data.rel_tol         = 1.e-10;
-    p.solver_data.max_iter        = 1e4;
+    p.solver_data                 = SolverData(1e4, 1e-20, 1e-10, LinearSolver::CG);
     p.compute_performance_metrics = true;
     p.preconditioner              = Preconditioner::Multigrid;
     p.multigrid_data.type         = MultigridType::cphMG;
