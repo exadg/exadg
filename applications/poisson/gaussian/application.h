@@ -194,6 +194,9 @@ public:
       prm.add_parameter("AdaptiveRefinement",
                         adaptive_refinement,
                         "Static adaptive refinement of the mesh.");
+      prm.add_parameter("SpatialDiscretization",
+                        spatial_discretization,
+                        "Spatial discretization considered: DG/CG.");
       prm.add_parameter("UseMatrixBasedOperator",
                         use_matrix_based_operator,
                         "Use matrix-based operators in global Krylov solver and Multigrid.");
@@ -220,7 +223,7 @@ private:
     this->param.grid.create_coarse_triangulations =
       adaptive_refinement ? true : false; // required for adaptive refinement
 
-    this->param.spatial_discretization = SpatialDiscretization::DG;
+    this->param.spatial_discretization = spatial_discretization;
     this->param.IP_factor              = 1.0e0;
 
     // SOLVER
@@ -397,11 +400,12 @@ private:
 
   MeshType mesh_type = MeshType::Cartesian;
 
-  bool           global_coarsening         = false;
-  bool           adaptive_refinement       = false;
-  bool           use_matrix_based_operator = false;
-  Preconditioner preconditioner            = Preconditioner::Multigrid;
-  unsigned int   min_degree_matrix_free    = 1;
+  bool                  global_coarsening         = false;
+  bool                  adaptive_refinement       = false;
+  SpatialDiscretization spatial_discretization    = SpatialDiscretization::DG;
+  bool                  use_matrix_based_operator = false;
+  Preconditioner        preconditioner            = Preconditioner::Multigrid;
+  unsigned int          min_degree_matrix_free    = 1;
 };
 
 } // namespace Poisson
