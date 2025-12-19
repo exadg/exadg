@@ -163,7 +163,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>      implement_block_diagonal_preconditioner_matrix_free(<span class="keyword">false</span>),</div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>      solver_block_diagonal(Elementwise::Solver::GMRES),</div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>      preconditioner_block_diagonal(Elementwise::Preconditioner::InverseMassMatrix),</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>      solver_data_block_diagonal(<a class="code hl_struct" href="structExaDG_1_1SolverData.html">SolverData</a>(1000, 1.e-12, 1.e-2, 1000))</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>      solver_data_block_diagonal(<a class="code hl_struct" href="structExaDG_1_1SolverData.html">SolverData</a>(1000, 1.e-12, 1.e-2, LinearSolver::Undefined, 1000))</div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  {</div>
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  }</div>
 <div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
@@ -890,7 +890,7 @@ $(function(){ initResizable(false); });
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 <div class="ttc" id="astructExaDG_1_1IntegratorFlags_html"><div class="ttname"><a href="structExaDG_1_1IntegratorFlags.html">ExaDG::IntegratorFlags</a></div><div class="ttdef"><b>Definition</b> integrator_flags.h:31</div></div>
 <div class="ttc" id="astructExaDG_1_1OperatorBaseData_html"><div class="ttname"><a href="structExaDG_1_1OperatorBaseData.html">ExaDG::OperatorBaseData</a></div><div class="ttdef"><b>Definition</b> operator_base.h:60</div></div>
-<div class="ttc" id="astructExaDG_1_1SolverData_html"><div class="ttname"><a href="structExaDG_1_1SolverData.html">ExaDG::SolverData</a></div><div class="ttdef"><b>Definition</b> solver_data.h:34</div></div>
+<div class="ttc" id="astructExaDG_1_1SolverData_html"><div class="ttname"><a href="structExaDG_1_1SolverData.html">ExaDG::SolverData</a></div><div class="ttdef"><b>Definition</b> solver_data.h:92</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

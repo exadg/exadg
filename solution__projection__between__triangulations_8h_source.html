@@ -147,7 +147,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>{</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  GridToGridProjectionData()</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    : rpe_data(),</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>      solver_data(),</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>      solver_data(<a class="code hl_struct" href="structExaDG_1_1SolverData.html">SolverData</a>(1e3, 1e-20, 1e-6, LinearSolver::CG)),</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>      preconditioner(PreconditionerMass::PointJacobi),</div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>      amg_data(<a class="code hl_struct" href="structExaDG_1_1AMGData.html">AMGData</a>()),</div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>      additional_quadrature_points(1)</div>
@@ -505,7 +505,7 @@ $(function(){ initResizable(false); });
 <div class="ttc" id="anamespaceExaDG_html_aa9171da72c58101e3d2929f4146ac00b"><div class="ttname"><a href="namespaceExaDG.html#aa9171da72c58101e3d2929f4146ac00b">ExaDG::get_element_type</a></div><div class="ttdeci">ElementType get_element_type(dealii::Triangulation&lt; dim &gt; const &amp;tria)</div><div class="ttdef"><b>Definition</b> grid_data.h:70</div></div>
 <div class="ttc" id="astructExaDG_1_1AMGData_html"><div class="ttname"><a href="structExaDG_1_1AMGData.html">ExaDG::AMGData</a></div><div class="ttdef"><b>Definition</b> multigrid_parameters.h:98</div></div>
 <div class="ttc" id="astructExaDG_1_1GridToGridProjection_1_1GridToGridProjectionData_html"><div class="ttname"><a href="structExaDG_1_1GridToGridProjection_1_1GridToGridProjectionData.html">ExaDG::GridToGridProjection::GridToGridProjectionData</a></div><div class="ttdef"><b>Definition</b> solution_projection_between_triangulations.h:53</div></div>
-<div class="ttc" id="astructExaDG_1_1SolverData_html"><div class="ttname"><a href="structExaDG_1_1SolverData.html">ExaDG::SolverData</a></div><div class="ttdef"><b>Definition</b> solver_data.h:34</div></div>
+<div class="ttc" id="astructExaDG_1_1SolverData_html"><div class="ttname"><a href="structExaDG_1_1SolverData.html">ExaDG::SolverData</a></div><div class="ttdef"><b>Definition</b> solver_data.h:92</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

@@ -512,6 +512,18 @@ Enumerations</h2></td></tr>
 , <b>AdditiveSchwarz</b>
  }</td></tr>
 <tr class="separator:af895b653334ae891f1463e38616458ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abc73af4780c44c2155c0d678c089f6f2" id="r_abc73af4780c44c2155c0d678c089f6f2"><td class="memItemLeft" align="right" valign="top"><a id="abc73af4780c44c2155c0d678c089f6f2" name="abc73af4780c44c2155c0d678c089f6f2"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>LinearSolver</b> { <br />
+&#160;&#160;<b>Undefined</b>
+, <b>CG</b>
+, <b>GMRES</b>
+, <b>FGMRES</b>
+, <br />
+&#160;&#160;<b>BiCGStab</b>
+, <b>MinRes</b>
+, <b>Richardson</b>
+<br />
+ }</td></tr>
+<tr class="separator:abc73af4780c44c2155c0d678c089f6f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9c9f994e71d9b2fa7a8323279749aadb" id="r_a9c9f994e71d9b2fa7a8323279749aadb"><td class="memItemLeft" align="right" valign="top"><a id="a9c9f994e71d9b2fa7a8323279749aadb" name="a9c9f994e71d9b2fa7a8323279749aadb"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>CFLConditionType</b> { <b>VelocityNorm</b>
 , <b>VelocityComponents</b>
  }</td></tr>
@@ -764,6 +776,9 @@ template&lt;int dim&gt; </td></tr>
 template&lt;int dim, int spacedim&gt; </td></tr>
 <tr class="memitem:a6f61a35f11fddf9bea2241f4010f1c3e"><td class="memTemplItemLeft" align="right" valign="top">std::unique_ptr&lt; MPI_Comm, void(*)(MPI_Comm *)&gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><b>create_subcommunicator</b> (dealii::DoFHandler&lt; dim, spacedim &gt; const &amp;dof_handler)</td></tr>
 <tr class="separator:a6f61a35f11fddf9bea2241f4010f1c3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeef3a8b3886543d48a71f13f1fe5fe2d" id="r_aeef3a8b3886543d48a71f13f1fe5fe2d"><td class="memItemLeft" align="right" valign="top"><a id="aeef3a8b3886543d48a71f13f1fe5fe2d" name="aeef3a8b3886543d48a71f13f1fe5fe2d"></a>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><b>linear_solver_to_string</b> (LinearSolver const linear_solver)</td></tr>
+<tr class="separator:aeef3a8b3886543d48a71f13f1fe5fe2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaaed83b3cf25ed588cbd40a098ff3730" id="r_aaaed83b3cf25ed588cbd40a098ff3730"><td class="memTemplParams" colspan="2"><a id="aaaed83b3cf25ed588cbd40a098ff3730" name="aaaed83b3cf25ed588cbd40a098ff3730"></a>
 template&lt;typename Number&gt; </td></tr>
 <tr class="memitem:aaaed83b3cf25ed588cbd40a098ff3730"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>initialize_block_jacobi_matrices_with_zero</b> (std::vector&lt; dealii::LAPACKFullMatrix&lt; Number &gt; &gt; &amp;matrices)</td></tr>
