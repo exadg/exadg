@@ -314,7 +314,7 @@ private:
       {
         for(auto const & f : cell->face_indices())
         {
-          double const z = cell->face(f)->center()(2);
+          double const z = cell->face(f)->center()(dim - 1);
 
           // inflow
           if(std::fabs(z - 0.0) < GEOMETRY_TOL)
@@ -728,7 +728,7 @@ private:
         {
           if(cell->face(f)->at_boundary())
           {
-            double const z   = cell->face(f)->center()(2);
+            double const z   = cell->face(f)->center()(dim - 1);
             double const TOL = 1.e-10;
 
             // left boundary
