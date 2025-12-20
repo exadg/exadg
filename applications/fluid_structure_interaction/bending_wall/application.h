@@ -106,8 +106,8 @@ public:
     double result = 0.0;
 
     if(component == 0)
-      result =
-        U_X_MAX * (1. - 4. * p[1] * p[1] / (H_F * H_F)) * (1. - 4. * p[2] * p[2] / (B_F * B_F));
+      result = U_X_MAX * (1. - 4. * p[1] * p[1] / (H_F * H_F)) *
+               (1. - 4. * p[dim - 1] * p[dim - 1] / (B_F * B_F));
 
     return result;
   }
@@ -818,18 +818,18 @@ private:
 
         dealii::Point<dim> p1, p2;
 
-        p1[0] = L_IN;
-        p1[1] = -H_F / 2.0;
-        p1[2] = -B_S / 2.0;
+        p1[0]       = L_IN;
+        p1[1]       = -H_F / 2.0;
+        p1[dim - 1] = -B_S / 2.0;
 
-        p2[0] = L_IN + T_S;
-        p2[1] = H_S - H_F / 2.0;
-        p2[2] = B_S / 2.0;
+        p2[0]       = L_IN + T_S;
+        p2[1]       = H_S - H_F / 2.0;
+        p2[dim - 1] = B_S / 2.0;
 
         std::vector<unsigned int> repetitions(dim);
-        repetitions[0] = N_CELLS_STRUCTURE_X;
-        repetitions[1] = N_CELLS_STRUCTURE_Y;
-        repetitions[2] = N_CELLS_STRUCTURE_Z;
+        repetitions[0]       = N_CELLS_STRUCTURE_X;
+        repetitions[1]       = N_CELLS_STRUCTURE_Y;
+        repetitions[dim - 1] = N_CELLS_STRUCTURE_Z;
 
         dealii::GridGenerator::subdivided_hyper_rectangle(tria, repetitions, p1, p2);
 
