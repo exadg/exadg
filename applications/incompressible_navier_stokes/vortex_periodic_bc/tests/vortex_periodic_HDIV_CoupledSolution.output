@@ -1,0 +1,333 @@
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up incompressible Navier-Stokes solver:
+
+List of parameters:
+
+Mathematical model:
+  Problem type:                              Unsteady
+  Equation type:                             NavierStokes
+  Formulation of viscous term:               LaplaceFormulation
+  Formulation of convective term:            DivergenceFormulation
+  Outflow BC for convective term:            false
+  Right-hand side:                           false
+  Boussinesq term:                           false
+  Boussinesq - dynamic part only:            false
+  Use ALE formulation:                       false
+
+Physical quantities:
+  Start time:                                0.0000e+00
+  End time:                                  5.0000e-01
+  Viscosity:                                 1.0000e-02
+  Density:                                   1.0000e+00
+
+Temporal discretization:
+  Temporal discretization method:            BDFCoupledSolution
+  Calculation of time step size:             CFL
+  Adaptive time stepping:                    false
+  Maximum number of time steps:              4294967295
+  Temporal refinements:                      0
+  Order of time integration scheme:          3
+  Start with low order method:               false
+  Treatment of convective term:              Explicit
+  Solver information:
+  Interval physical time:                    2.5000e-02
+  Interval wall time:                        1.7977e+308
+  Interval time steps:                       4294967295
+  Restarted simulation:                      false
+  Restart:
+  Write restart:                             false
+
+Spatial discretization:
+  Triangulation type:                        Distributed
+  Element type:                              Hypercube
+  Number of global refinements:              1
+  Create coarse triangulations:              false
+  Mapping degree:                            8
+  Mapping degree coarse grids:               8
+  FE space:                                  HDIV
+  Polynomial degree velocity (normal):       8
+  Polynomial degree velocity (tangential):   7
+  Polynomial degree pressure:                MixedOrder
+  Convective term - Upwind factor:           1.0000e+00
+  Convective term - Type of Dirichlet BC's:  Mirror
+  Viscous term - IP formulation:             SIPG
+  Viscous term - IP factor:                  1.0000e+00
+  Grad(p) - integration by parts:            true
+  Grad(p) - formulation:                     Weak
+  Grad(p) - use boundary data:               true
+  Div(u) . integration by parts:             true
+  Div(u) - formulation:                      Weak
+  Div(u) - use boundary data:                true
+  Adjust pressure level (if undefined):      ApplyAnalyticalMeanValue
+  Use divergence penalty term:               false
+  Use continuity penalty term:               false
+
+Turbulence:
+  Use turbulence model:                      false
+
+Rheology:
+  Use generalized Newtonian model:           false
+
+Numerical parameters:
+  Block Jacobi matrix-free:                  false
+  Use cell-based face loops:                 false
+  Quadrature rule linearization:             Overintegration32k
+
+Coupled Navier-Stokes solver:
+  Use scaling of continuity equation:        false
+
+Linear solver:
+  Solver:                                    GMRES
+  Maximum number of iterations:              10000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-02
+  Maximum size of Krylov space:              100
+  Preconditioner:                            BlockTriangular
+  Update preconditioner:                     false
+
+  Velocity/momentum block:
+  Preconditioner:                            PointJacobi
+
+  Pressure/Schur-complement block:
+  Preconditioner:                            CahouetChabard
+  Multigrid type:                            hMG
+  Min degree matrix-free:                    1
+  Smoother:                                  Chebyshev
+  Preconditioner smoother:                   PointJacobi
+  Iterations smoother:                       5
+  Smoothing range:                           2.0000e+01
+  Iterations eigenvalue estimation:          20
+  Coarse grid solver:                        Chebyshev
+  Coarse grid preconditioner:                PointJacobi
+  Maximum number of iterations:              10000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-03
+  Maximum size of Krylov space:              30
+  Exact inversion of Laplace operator:       false
+
+Generating grid for 2-dimensional problem:
+
+  Max. number of refinements:                2
+  Number of cells:                           16
+
+Construct incompressible Navier-Stokes operator ...
+Velocity:
+  degree of 1D polynomials (normal):         8
+  degree of 1D polynomials (tangential):     7
+  number of dofs per cell:                   144
+  number of dofs (total):                    2112
+Pressure:
+  degree of 1D polynomials:                  7
+  number of dofs per cell:                   64
+  number of dofs (total):                    1024
+Velocity and pressure:
+  number of dofs per cell:                   208
+  number of dofs (total):                    3136
+
+... done!
+
+Setup incompressible Navier-Stokes operator ...
+
+... done!
+
+Setup Multistep time integrator ...
+
+Calculation of time step size according to CFL condition:
+
+  CFL:                                       4.0000e-01
+  Time step size (global):                   8.8388e-03
+
+Adjust time step size to hit end time:
+
+  Time step size:                            8.7719e-03
+
+... done!
+
+Starting time loop ...
+
+Calculate error for velocity at time t = 0.0000e+00:
+  Relative error (L2-norm): 2.59347e-08
+
+Calculate error for pressure at time t = 0.0000e+00:
+  Relative error (L2-norm): 7.90661e-07
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 8.77193e-03
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 2.6316e-02:
+  Relative error (L2-norm): 2.71448e-08
+
+________________________________________________________________________________
+
+ Time step number = 4       t = 2.63158e-02 -> t + dt = 3.50877e-02
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 5.2632e-02:
+  Relative error (L2-norm): 2.66303e-08
+
+________________________________________________________________________________
+
+ Time step number = 7       t = 5.26316e-02 -> t + dt = 6.14035e-02
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 7.8947e-02:
+  Relative error (L2-norm): 2.67650e-08
+
+________________________________________________________________________________
+
+ Time step number = 10      t = 7.89474e-02 -> t + dt = 8.77193e-02
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 1.0526e-01:
+  Relative error (L2-norm): 2.69012e-08
+
+________________________________________________________________________________
+
+ Time step number = 13      t = 1.05263e-01 -> t + dt = 1.14035e-01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 1.3158e-01:
+  Relative error (L2-norm): 2.69985e-08
+
+________________________________________________________________________________
+
+ Time step number = 16      t = 1.31579e-01 -> t + dt = 1.40351e-01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 1.5789e-01:
+  Relative error (L2-norm): 2.70317e-08
+
+________________________________________________________________________________
+
+ Time step number = 19      t = 1.57895e-01 -> t + dt = 1.66667e-01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 1.7544e-01:
+  Relative error (L2-norm): 2.69865e-08
+
+________________________________________________________________________________
+
+ Time step number = 21      t = 1.75439e-01 -> t + dt = 1.84211e-01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 2.0175e-01:
+  Relative error (L2-norm): 2.69973e-08
+
+________________________________________________________________________________
+
+ Time step number = 24      t = 2.01754e-01 -> t + dt = 2.10526e-01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 2.2807e-01:
+  Relative error (L2-norm): 2.69805e-08
+
+________________________________________________________________________________
+
+ Time step number = 27      t = 2.28070e-01 -> t + dt = 2.36842e-01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 2.5439e-01:
+  Relative error (L2-norm): 2.69621e-08
+
+________________________________________________________________________________
+
+ Time step number = 30      t = 2.54386e-01 -> t + dt = 2.63158e-01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 2.8070e-01:
+  Relative error (L2-norm): 2.69877e-08
+
+________________________________________________________________________________
+
+ Time step number = 33      t = 2.80702e-01 -> t + dt = 2.89474e-01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 3.0702e-01:
+  Relative error (L2-norm): 2.69593e-08
+
+________________________________________________________________________________
+
+ Time step number = 36      t = 3.07018e-01 -> t + dt = 3.15789e-01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 3.3333e-01:
+  Relative error (L2-norm): 2.69265e-08
+
+________________________________________________________________________________
+
+ Time step number = 39      t = 3.33333e-01 -> t + dt = 3.42105e-01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 3.5088e-01:
+  Relative error (L2-norm): 2.69094e-08
+
+________________________________________________________________________________
+
+ Time step number = 41      t = 3.50877e-01 -> t + dt = 3.59649e-01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 3.7719e-01:
+  Relative error (L2-norm): 2.68589e-08
+
+________________________________________________________________________________
+
+ Time step number = 44      t = 3.77193e-01 -> t + dt = 3.85965e-01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 4.0351e-01:
+  Relative error (L2-norm): 2.68312e-08
+
+________________________________________________________________________________
+
+ Time step number = 47      t = 4.03509e-01 -> t + dt = 4.12281e-01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 4.2982e-01:
+  Relative error (L2-norm): 2.68256e-08
+
+________________________________________________________________________________
+
+ Time step number = 50      t = 4.29825e-01 -> t + dt = 4.38596e-01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 4.5614e-01:
+  Relative error (L2-norm): 2.67728e-08
+
+________________________________________________________________________________
+
+ Time step number = 53      t = 4.56140e-01 -> t + dt = 4.64912e-01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 4.8246e-01:
+  Relative error (L2-norm): 2.67687e-08
+
+________________________________________________________________________________
+
+ Time step number = 56      t = 4.82456e-01 -> t + dt = 4.91228e-01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 5.0000e-01:
+  Relative error (L2-norm): 2.67569e-08
+
+Calculate error for pressure at time t = 5.0000e-01:
+  Relative error (L2-norm): 5.21507e-07

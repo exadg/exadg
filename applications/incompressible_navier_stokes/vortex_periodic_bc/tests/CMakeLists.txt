@@ -8,7 +8,7 @@
 #
 #  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
 #
-#  Copyright (C) 2021 by the ExaDG authors
+#  Copyright (C) 2025 by the ExaDG authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -25,10 +25,8 @@
 #
 #########################################################################
 
-TARGETNAME(TARGET_NAME ${CMAKE_CURRENT_SOURCE_DIR})
-
-PROJECT(${TARGET_NAME})
-
-EXADG_PICKUP_EXE(solver.cpp ${TARGET_NAME} solver)
-
-ADD_SUBDIRECTORY(tests)
+GET_FILENAME_COMPONENT(PARENT_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
+TARGETNAME(TARGET_NAME ${PARENT_DIR})
+SET(TEST_LIBRARIES exadg)
+SET(TEST_TARGET ${TARGET_NAME})
+EXADG_PICKUP_TESTS(${TARGET_NAME})
