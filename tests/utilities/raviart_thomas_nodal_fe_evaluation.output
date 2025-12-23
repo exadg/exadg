@@ -1,0 +1,2 @@
+fe_eval.fast_evaluation_supported(degree, n_q_points_1d) = 1
+dst.l2_norm() = 2.4267
