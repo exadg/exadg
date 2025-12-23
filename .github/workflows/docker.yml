@@ -1,7 +1,7 @@
 name: github-docker
 
-on: 
-  push: 
+on:
+  push:
     branches:
       - 'docker*'
       - 'master'
@@ -13,7 +13,7 @@ permissions:
 jobs:
   build-master-docker:
     runs-on: ubuntu-latest
-    steps:          
+    steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -26,7 +26,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Build and push Docker image of master 
+      - name: Build and push Docker image of master
         uses: docker/build-push-action@v3
         with:
           build-args: branch_name=${{github.ref_name}}
