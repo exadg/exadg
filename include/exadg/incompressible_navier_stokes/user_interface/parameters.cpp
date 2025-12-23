@@ -944,7 +944,7 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
   else if(spatial_discretization == SpatialDiscretization::HDIV)
   {
     print_parameter(pcout, "Polynomial degree velocity (normal)", degree_u);
-    print_parameter(pcout, "Polynomial degree velocity (tangential)", degree_u);
+    print_parameter(pcout, "Polynomial degree velocity (tangential)", degree_u - 1);
   }
   else
   {
