@@ -104,6 +104,13 @@ public:
     prm.enter_subsection("Application");
     {
       prm.add_parameter("MeshType", mesh_type, "Type of mesh (Cartesian versus curvilinear).");
+      prm.add_parameter("TemporalDiscretization",
+                        temporal_discretization,
+                        "Type of temporal discretization.");
+      prm.add_parameter("SpatialDiscretization",
+                        spatial_discretization,
+                        "Type of spatial discretization.");
+      prm.add_parameter("EndTime", end_time, "Simulation end time used.");
     }
     prm.leave_subsection();
   }
@@ -126,7 +133,7 @@ private:
 
     // TEMPORAL DISCRETIZATION
     this->param.solver_type                     = SolverType::Unsteady;
-    this->param.temporal_discretization         = TemporalDiscretization::BDFCoupledSolution;
+    this->param.temporal_discretization         = temporal_discretization;
     this->param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     this->param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     this->param.max_velocity                    = 1.0;
@@ -145,7 +152,7 @@ private:
     // SPATIAL DISCRETIZATION
     this->param.degree_p                    = DegreePressure::MixedOrder;
     this->param.grid.triangulation_type     = TriangulationType::Distributed;
-    this->param.spatial_discretization      = SpatialDiscretization::HDIV;
+    this->param.spatial_discretization      = spatial_discretization;
     this->param.mapping_degree              = this->param.degree_u;
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
 
@@ -361,7 +368,7 @@ private:
   double const viscosity = 1.e-2;
 
   double const start_time = 0.0;
-  double const end_time   = 5.0;
+  double       end_time   = 5.0;
 
   // solver tolerances
   double const ABS_TOL = 1.e-12;
@@ -369,6 +376,10 @@ private:
 
   double const ABS_TOL_LINEAR = 1.e-12;
   double const REL_TOL_LINEAR = 1.e-2;
+
+  SpatialDiscretization spatial_discretization = SpatialDiscretization::HDIV;
+
+  TemporalDiscretization temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
 };
 
 } // namespace IncNS
