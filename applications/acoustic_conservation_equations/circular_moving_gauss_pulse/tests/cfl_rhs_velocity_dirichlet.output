@@ -81,8 +81,8 @@ Calculation of time step size:
 
 Calculation of time step size according to CFL condition:
 
-  CFL:                                       5.9000e-01
-  time step size:                            3.7597e-08
+  CFL:                                       5.0000e-01
+  time step size:                            3.1862e-08
 
 ... done!
 
@@ -96,11 +96,11 @@ Calculate error for velocity at time t = 0.0000e+00:
 
 ________________________________________________________________________________
 
- Time step number = 1       t = 0.00000e+00 -> t + dt = 3.75969e-08
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 3.18618e-08
 ________________________________________________________________________________
 
-Calculate error for pressure at time t = 1.5791e-06:
-  Relative error (L2-norm): 5.00126e-03
+Calculate error for pressure at time t = 1.5931e-06:
+  Relative error (L2-norm): 3.59463e-03
 
-Calculate error for velocity at time t = 1.5791e-06:
-  Relative error (L2-norm): 1.10293e-02
+Calculate error for velocity at time t = 1.5931e-06:
+  Relative error (L2-norm): 7.89104e-03

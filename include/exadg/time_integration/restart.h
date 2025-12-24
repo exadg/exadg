@@ -87,9 +87,9 @@ template<typename VectorType>
 inline void
 print_vector_l2_norm(VectorType const & vector)
 {
-  MPI_Comm const & mpi_comm = vector.get_mpi_communicator();
-  double const     l2_norm  = vector.l2_norm();
-  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  double const l2_norm = vector.l2_norm();
+  // Using `MPI_COMM_WORLD` as we might run on a sub-communicator with joined MPI processes.
+  if(dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
   {
     std::cout << "    vector global l2 norm: " << std::scientific << std::setprecision(8)
               << std::setw(20) << l2_norm << "\n";
