@@ -5,23 +5,23 @@
         "IsTest": "true"
     },
     "SpatialResolution": {
-        "DegreeMin": "6",
-        "DegreeMax": "6",
-        "RefineSpaceMin": "1",
-        "RefineSpaceMax": "1"
+        "DegreeMin": "3",
+        "DegreeMax": "3",
+        "RefineSpaceMin": "2",
+        "RefineSpaceMax": "2"
     },
     "TemporalResolution": {
         "RefineTimeMin": "0",
         "RefineTimeMax": "0"
     },
     "Application": {
-        "ReadRestart": "false",
+        "ReadRestart": "true",
         "WriteRestart": "false",
-        "ReadWriteMapping": "false",
+        "ReadWriteMapping": "true",
         "TriangulationType": "Distributed"
     },
     "Output": {
-        "OutputDirectory": "output/manufactured_solution/",
+        "OutputDirectory": "output_test/manufactured_solution/",
         "OutputName": "test",
         "WriteOutput": "false"
     }
