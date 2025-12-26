@@ -362,7 +362,7 @@ OperatorProjectionMethods<dim, Number>::rhs_add_convective_term(
   VectorType const & transport_velocity,
   double const       time) const
 {
-  this->convective_operator.set_velocity_ptr(transport_velocity);
+  this->convective_operator.set_velocity_copy(transport_velocity);
   this->convective_operator.set_time(time);
   this->convective_operator.rhs_add(dst);
 }
@@ -529,7 +529,7 @@ OperatorProjectionMethods<dim, Number>::evaluate_linearized_residual(
     }
     else if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
     {
-      this->convective_operator.set_velocity_ptr(transport_velocity);
+      this->convective_operator.set_velocity_copy(transport_velocity);
       this->convective_operator.apply_add(dst, src);
       this->convective_operator.rhs_add(dst);
     }

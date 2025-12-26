@@ -426,7 +426,7 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
   dealii::LinearAlgebra::distributed::Vector<Number> velocity;
   pde_operator->initialize_vector_velocity(velocity);
   velocity = 1.0;
-  pde_operator->set_velocity_ptr(velocity);
+  pde_operator->set_velocity_copy(velocity);
 
   // initialize vectors
   if(application->get_parameters().temporal_discretization ==

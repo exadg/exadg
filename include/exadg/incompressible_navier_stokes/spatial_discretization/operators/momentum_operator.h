@@ -120,9 +120,6 @@ public:
   void
   set_velocity_copy(VectorType const & velocity) const;
 
-  void
-  set_velocity_ptr(VectorType const & velocity) const;
-
   Number
   get_scaling_factor_mass_operator() const;
 

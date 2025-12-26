@@ -183,7 +183,7 @@ OperatorCoupled<dim, Number>::rhs_linear_problem(BlockVectorType &  dst,
   if(this->param.convective_problem() and
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
   {
-    this->convective_operator.set_velocity_ptr(transport_velocity);
+    this->convective_operator.set_velocity_copy(transport_velocity);
     this->convective_operator.set_time(time);
     this->convective_operator.rhs_add(dst.block(0));
   }
@@ -347,7 +347,7 @@ OperatorCoupled<dim, Number>::evaluate_linearized_residual(BlockVectorType &    
     }
     else if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
     {
-      this->convective_operator.set_velocity_ptr(transport_velocity);
+      this->convective_operator.set_velocity_copy(transport_velocity);
       this->convective_operator.apply_add(dst.block(0), src.block(0));
       this->convective_operator.rhs_add(dst.block(0));
     }
@@ -1264,7 +1264,7 @@ OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &  
 
     if(this->param.non_explicit_convective_problem())
     {
-      pressure_conv_diff_operator->set_velocity_ptr(this->convective_kernel->get_velocity());
+      pressure_conv_diff_operator->set_velocity_copy(this->convective_kernel->get_velocity());
     }
 
     pressure_conv_diff_operator->apply(dst, tmp_scp_pressure);

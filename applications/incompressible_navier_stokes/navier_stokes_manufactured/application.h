@@ -701,7 +701,7 @@ private:
       data.dimensions[0]                  = std::abs(interval_end - interval_start);
       data.dimensions[1]                  = std::abs(interval_end - interval_start);
       data.amplitude                      = std::abs(interval_end - interval_start) / 15.0;
-      data.period                         = std::abs(end_time - start_time);
+      data.period                         = 1.0;
       data.t_start                        = start_time;
       data.t_end                          = end_time;
       data.spatial_number_of_oscillations = 1.0;
