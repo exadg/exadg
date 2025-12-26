@@ -19,6 +19,8 @@
         "ReadRestart": "false",
         "WriteRestart": "false",
         "ApplyManifold": "true",
+        "ReadWriteMapping": "false",
+        "TriangulationType": "Serial",
         "UseExplicitTimeIntegration": "false"
     },
     "Output": {

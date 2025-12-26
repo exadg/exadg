@@ -15,11 +15,13 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-        "UseExplicitTimeIntegration": "false",
         "EnableAdaptivity": "true",
         "ReadRestart": "false",
         "WriteRestart": "false",
-        "ApplyManifold": "true"
+        "ApplyManifold": "true",
+        "ReadWriteMapping": "false",
+        "TriangulationType": "Distributed",
+        "UseExplicitTimeIntegration": "false"
     },
     "Output": {
         "OutputDirectory": "output/rotating_hill/",

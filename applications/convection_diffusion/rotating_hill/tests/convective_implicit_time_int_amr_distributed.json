@@ -5,8 +5,8 @@
         "IsTest": "true"
     },
     "SpatialResolution": {
-        "DegreeMin": "5",
-        "DegreeMax": "5",
+        "DegreeMin": "4",
+        "DegreeMax": "4",
         "RefineSpaceMin": "3",
         "RefineSpaceMax": "3"
     },
@@ -19,7 +19,9 @@
         "ReadRestart": "false",
         "WriteRestart": "false",
         "ApplyManifold": "true",
-        "UseExplicitTimeIntegration": "true"
+        "ReadWriteMapping": "false",
+        "TriangulationType": "Distributed",
+        "UseExplicitTimeIntegration": "false"
     },
     "Output": {
         "OutputDirectory": "output/rotating_hill/",

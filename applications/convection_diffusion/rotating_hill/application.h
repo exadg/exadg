@@ -99,6 +99,10 @@ public:
       prm.add_parameter("WriteRestart", write_restart, "Should restart files be written?");
       prm.add_parameter("ReadRestart", read_restart, "Is this a restarted simulation?");
       prm.add_parameter("ApplyManifold", apply_manifold, "Apply the `DeformedCubeManifold`?");
+      prm.add_parameter("TriangulationType", triangulation_type, "Triangulation type.");
+      prm.add_parameter("ReadWriteMapping",
+                        read_write_mapping,
+                        "Store/read mapping from restart files.");
       prm.add_parameter("UseExplicitTimeIntegration",
                         use_explicit_time_integration,
                         "Use explicit or implicit time integration.",
@@ -143,15 +147,15 @@ private:
     this->param.exponent_fe_degree_convection = 1.5;
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.triangulation_type     = TriangulationType::Distributed;
+    this->param.grid.triangulation_type     = triangulation_type;
     this->param.mapping_degree              = this->param.degree;
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
 
     // restart
     this->param.restarted_simulation       = read_restart;
     this->param.restart_data.write_restart = write_restart;
-    // write restart every 40% of the simulation time
-    this->param.restart_data.interval_time = (this->param.end_time - this->param.start_time) * 0.4;
+    // write restart every 80% of the simulation time
+    this->param.restart_data.interval_time = (this->param.end_time - this->param.start_time) * 0.8;
     this->param.restart_data.directory_coarse_triangulation = this->output_parameters.directory;
     this->param.restart_data.directory                      = this->output_parameters.directory;
     this->param.restart_data.filename            = this->output_parameters.filename + "_restart";
@@ -159,17 +163,17 @@ private:
     this->param.restart_data.interval_time_steps = 1e8;
 
     this->param.restart_data.discretization_identical     = false;
-    this->param.restart_data.consider_mapping_write       = true;
-    this->param.restart_data.consider_mapping_read_source = true;
+    this->param.restart_data.consider_mapping_write       = read_write_mapping;
+    this->param.restart_data.consider_mapping_read_source = read_write_mapping;
 
     this->param.restart_data.rpe_rtree_level            = 0;
     this->param.restart_data.rpe_tolerance_unit_cell    = 1e-2;
     this->param.restart_data.rpe_enforce_unique_mapping = false;
 
-    this->param.enable_adaptivity = enable_adaptivity;
-
     this->param.grid.create_coarse_triangulations = enable_adaptivity;
 
+    // adaptivity
+    this->param.enable_adaptivity                          = enable_adaptivity;
     this->param.amr_data.trigger_every_n_time_steps        = 30;
     this->param.amr_data.maximum_refinement_level          = 4;
     this->param.amr_data.minimum_refinement_level          = 0;
@@ -319,11 +323,13 @@ private:
   double const left  = -1.0;
   double const right = +1.0;
 
-  bool use_explicit_time_integration = false;
-  bool enable_adaptivity             = false;
-  bool write_restart                 = false;
-  bool read_restart                  = false;
-  bool apply_manifold                = false;
+  bool              use_explicit_time_integration = false;
+  bool              enable_adaptivity             = false;
+  bool              write_restart                 = false;
+  bool              read_restart                  = false;
+  bool              apply_manifold                = false;
+  bool              read_write_mapping            = false;
+  TriangulationType triangulation_type            = TriangulationType::Distributed;
 };
 
 } // namespace ConvDiff
