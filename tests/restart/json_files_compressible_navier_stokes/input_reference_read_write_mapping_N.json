@@ -16,12 +16,12 @@
     },
     "Application": {
         "ReadRestart": "false",
-        "WriteRestart": "false",
+        "WriteRestart": "true",
         "ReadWriteMapping": "false",
-        "TriangulationType": "Distributed"
+        "TriangulationType": "Serial"
     },
     "Output": {
-        "OutputDirectory": "output/manufactured_solution/",
+        "OutputDirectory": "output_test/manufactured_solution/",
         "OutputName": "test",
         "WriteOutput": "false"
     }
