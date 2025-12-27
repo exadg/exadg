@@ -151,7 +151,7 @@ private:
   do_cell_integral_nonlinear(IntegratorCell & integrator) const;
 
   /*
-   * Computes Neumann BC integral
+   * Computes the nonlinear Neumann boundary term
    *
    *  - (v_h, t_0)_{Gamma_N}
    *
@@ -164,8 +164,8 @@ private:
    * is necessary.
    */
   void
-  do_boundary_integral_continuous(IntegratorFace &                   integrator_m,
-                                  dealii::types::boundary_id const & boundary_id) const final;
+  do_boundary_integral_continuous_nonlinear(IntegratorFace &                   integrator,
+                                            dealii::types::boundary_id const & boundary_id) const;
 
   /*
    * Linearized operator.
@@ -199,7 +199,25 @@ private:
    *  the area ratio da/dA = function(d) is neglected in the linearization.
    */
   void
-  do_cell_integral(IntegratorCell & integrator) const override;
+  do_cell_integral(IntegratorCell & integrator) const final;
+
+  /*
+   * Compute the boundary term of the linearized operator
+   *
+   *  - delta (v_h, t_0)_{Gamma_N}
+   *
+   * with traction
+   *
+   *  t_0 = da/dA t .
+   *
+   * If the traction is specified as force per surface area of the underformed
+   * body, the specified traction t is interpreted as t_0 = t, and no pull-back
+   * is necessary.
+   */
+  void
+  do_boundary_integral_continuous(IntegratorFace &                   integrator,
+                                  OperatorType const &               operator_type,
+                                  dealii::types::boundary_id const & boundary_id) const final;
 
   mutable std::shared_ptr<IntegratorCell> integrator_lin;
   mutable VectorType                      displacement_lin;

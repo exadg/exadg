@@ -49,7 +49,7 @@ NonLinearOperator<dim, Number>::evaluate_nonlinear(VectorType & dst, VectorType 
                           this,
                           dst,
                           src,
-                          true);
+                          true /* zero_dst_vector */);
 }
 
 template<int dim, typename Number>
@@ -59,11 +59,8 @@ NonLinearOperator<dim, Number>::valid_deformation(VectorType const & displacemen
   Number dst = 0.0;
 
   // dst has to remain zero for a valid deformation state
-  this->matrix_free->cell_loop(&This::cell_loop_valid_deformation,
-                               this,
-                               dst,
-                               displacement,
-                               false /* no zeroing of dst vector */);
+  this->matrix_free->cell_loop(
+    &This::cell_loop_valid_deformation, this, dst, displacement, false /* zero_dst_vector */);
 
   // sum over all MPI processes
   Number valid = 0.0;
@@ -200,21 +197,21 @@ NonLinearOperator<dim, Number>::boundary_face_loop_nonlinear(
   VectorType const &                      src,
   Range const &                           range) const
 {
-  IntegratorFace integrator_m_inhom(matrix_free,
-                                    true,
-                                    this->operator_data.dof_index_inhomogeneous,
-                                    this->operator_data.quad_index);
+  IntegratorFace integrator_inhom(matrix_free,
+                                  true,
+                                  this->operator_data.dof_index_inhomogeneous,
+                                  this->operator_data.quad_index);
 
-  IntegratorFace integrator_m = IntegratorFace(matrix_free,
-                                               true,
-                                               this->operator_data.dof_index,
-                                               this->operator_data.quad_index);
+  IntegratorFace integrator = IntegratorFace(matrix_free,
+                                             true,
+                                             this->operator_data.dof_index,
+                                             this->operator_data.quad_index);
 
   // apply Neumann BCs
   for(unsigned int face = range.first; face < range.second; face++)
   {
-    this->reinit_boundary_face(integrator_m_inhom, face);
-    integrator_m.reinit(face);
+    this->reinit_boundary_face(integrator_inhom, face);
+    integrator.reinit(face);
 
     // In case of a pull-back of the traction vector, we need to evaluate
     // the displacement gradient to obtain the surface area ratio da/dA.
@@ -222,15 +219,15 @@ NonLinearOperator<dim, Number>::boundary_face_loop_nonlinear(
     // depend on the parameter pull_back_traction.
     if(this->operator_data.pull_back_traction)
     {
-      integrator_m_inhom.gather_evaluate(src, dealii::EvaluationFlags::gradients);
+      integrator_inhom.gather_evaluate(src, dealii::EvaluationFlags::gradients);
     }
 
-    do_boundary_integral_continuous(integrator_m_inhom, matrix_free.get_boundary_id(face));
+    do_boundary_integral_continuous_nonlinear(integrator_inhom, matrix_free.get_boundary_id(face));
 
     // make sure that we do not write into Dirichlet degrees of freedom
-    integrator_m_inhom.integrate(this->integrator_flags.face_integrate,
-                                 integrator_m.begin_dof_values());
-    integrator_m.distribute_local_to_global(dst);
+    integrator_inhom.integrate(this->integrator_flags.face_integrate,
+                               integrator.begin_dof_values());
+    integrator.distribute_local_to_global(dst);
   }
 }
 
@@ -270,7 +267,7 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
 
 template<int dim, typename Number>
 void
-NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
+NonLinearOperator<dim, Number>::do_boundary_integral_continuous_nonlinear(
   IntegratorFace &                   integrator,
   dealii::types::boundary_id const & boundary_id) const
 {
@@ -278,7 +275,7 @@ NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
 
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
-    auto traction = calculate_neumann_value<dim, Number>(
+    vector traction = calculate_neumann_value<dim, Number>(
       q, integrator, boundary_type, boundary_id, this->operator_data.bc, this->time);
 
     if(this->operator_data.pull_back_traction)
@@ -347,6 +344,34 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
                                 integrator.get_value(q),
                               q);
     }
+  }
+}
+
+template<int dim, typename Number>
+void
+NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
+  IntegratorFace &                   integrator,
+  OperatorType const &               operator_type,
+  dealii::types::boundary_id const & boundary_id) const
+{
+  (void)boundary_id;
+
+  if(operator_type == OperatorType::homogeneous)
+  {
+    // The derivative with respect to the pull-back of the traction vector is neglected. We still
+    // need to submit zeroes for consistency.
+    vector zero;
+    zero = 0.0;
+    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+    {
+      integrator.submit_value(zero, q);
+    }
+  }
+  else
+  {
+    AssertThrow(false,
+                dealii::ExcMessage("OperatorType not supported in "
+                                   "NonLinearOperator::do_boundary_integral_continuous()"));
   }
 }
 

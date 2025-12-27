@@ -39,6 +39,7 @@ private:
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
 
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>          vector;
   typedef dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> symmetric_tensor;
 
   /*
@@ -55,16 +56,17 @@ private:
    *  d_h denotes the displacement vector.
    */
   void
-  do_cell_integral(IntegratorCell & integrator) const override;
+  do_cell_integral(IntegratorCell & integrator) const final;
 
   /*
-   * Computes Neumann BC integral
+   * Computes the linear Neumann boundary term
    *
    *  - (v_h, t)_{Gamma_N}
    */
   void
-  do_boundary_integral_continuous(IntegratorFace &                   integrator_m,
-                                  dealii::types::boundary_id const & boundary_id) const override;
+  do_boundary_integral_continuous(IntegratorFace &                   integrator,
+                                  OperatorType const &               operator_type,
+                                  dealii::types::boundary_id const & boundary_id) const final;
 };
 
 } // namespace Structure
