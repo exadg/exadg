@@ -5,24 +5,24 @@
         "IsTest": "true"
     },
     "SpatialResolution": {
-        "DegreeMin": "5",
-        "DegreeMax": "5",
-        "RefineSpaceMin": "3",
-        "RefineSpaceMax": "3"
+        "DegreeMin": "9",
+        "DegreeMax": "9",
+        "RefineSpaceMin": "2",
+        "RefineSpaceMax": "2"
     },
     "TemporalResolution": {
         "RefineTimeMin": "0",
         "RefineTimeMax": "0"
     },
     "Application": {
-        "RuntimeInNumberOfPulseRotations": "0.1",
-        "ReadRestart": "false",
+        "RuntimeInNumberOfPulseRotations": "1.0",
+        "ReadRestart": "true",
         "WriteRestart": "false",
-        "ReadWriteMapping": "false",
+        "ReadWriteMapping": "true",
         "TriangulationType": "Distributed"
     },
     "Output": {
-        "OutputDirectory": "output/circular_moving_gauss_pulse/",
+        "OutputDirectory": "output_test/circular_moving_gauss_pulse/",
         "OutputName": "circular_moving_gauss_pulse",
         "WriteOutput": "false"
     }

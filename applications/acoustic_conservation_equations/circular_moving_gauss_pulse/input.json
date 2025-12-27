@@ -17,7 +17,9 @@
     "Application": {
         "RuntimeInNumberOfPulseRotations": "1.0",
         "ReadRestart": "false",
-        "WriteRestart": "false"
+        "WriteRestart": "false",
+        "ReadWriteMapping": "false",
+        "TriangulationType": "Distributed"
     },
     "Output": {
         "OutputDirectory": "output/circular_moving_gauss_pulse/",
