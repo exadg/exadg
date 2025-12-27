@@ -259,6 +259,10 @@ Parameters::check() const
 
   if(enable_adaptivity)
   {
+    AssertThrow(not enable_adaptivity or not restarted_simulation,
+                dealii::ExcMessage("Combination of adaptive mesh refinement "
+                                   "and (de-)serialization not implemented."));
+
     AssertThrow(not ale_formulation,
                 dealii::ExcMessage("Combination of adaptive mesh refinement "
                                    "and ALE formulation not implemented."));
