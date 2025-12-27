@@ -15,7 +15,7 @@ ________________________________________________________________________________
 
 MPI info:
 
-  Number of processes:                       1
+  Number of processes:                       2
 
 Setting up scalar convection-diffusion solver:
 
@@ -325,7 +325,7 @@ ________________________________________________________________________________
 ________________________________________________________________________________
   number of dofs (total) after adaptive mesh refinement:3168
   number of dofs (total) after adaptive mesh refinement:3168
-  number of dofs (total) after adaptive mesh refinement:2952
+  number of dofs (total) after adaptive mesh refinement:3060
   number of dofs (total) after adaptive mesh refinement:2844
 
 Calculate error for all fields at time t = 1.0000e+00:

@@ -15,7 +15,7 @@ ________________________________________________________________________________
 
 MPI info:
 
-  Number of processes:                       1
+  Number of processes:                       2
 
 Setting up scalar convection-diffusion solver:
 
@@ -47,7 +47,7 @@ Temporal discretization:
   Write restart:                             false
 
 Spatial Discretization:
-  Triangulation type:                        Serial
+  Triangulation type:                        Distributed
   Element type:                              Hypercube
   Number of global refinements:              3
   Create coarse triangulations:              true

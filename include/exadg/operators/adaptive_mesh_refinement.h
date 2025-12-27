@@ -27,7 +27,9 @@
 
 // deal.II
 #include <deal.II/base/quadrature_lib.h>
+#include <deal.II/distributed/fully_distributed_tria.h>
 #include <deal.II/distributed/grid_refinement.h>
+#include <deal.II/distributed/tria.h>
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/grid/grid_refinement.h>
 #include <deal.II/numerics/error_estimator.h>
@@ -162,7 +164,7 @@ mark_cells_kelly_error_estimator(dealii::Triangulation<dim> &              tria,
   constraints.distribute(locally_relevant_solution);
   locally_relevant_solution.update_ghost_values();
 
-  dealii::QGauss<dim - 1> face_quadrature(n_face_quadrature_points);
+  dealii::QGauss<dim - 1> const face_quadrature(n_face_quadrature_points);
 
   dealii::Vector<float> estimated_error_per_cell(tria.n_active_cells());
 
@@ -173,11 +175,32 @@ mark_cells_kelly_error_estimator(dealii::Triangulation<dim> &              tria,
                                              locally_relevant_solution,
                                              estimated_error_per_cell);
 
-  dealii::parallel::distributed::GridRefinement::refine_and_coarsen_fixed_number(
-    tria,
-    estimated_error_per_cell,
-    amr_data.fraction_of_cells_to_be_refined,
-    amr_data.fraction_of_cells_to_be_coarsened);
+  // Marking of cells depending on triangulation type
+  if(dealii::parallel::distributed::Triangulation<dim> * tria_ptr =
+       dynamic_cast<dealii::parallel::distributed::Triangulation<dim> *>(&tria))
+  {
+    dealii::parallel::distributed::GridRefinement::refine_and_coarsen_fixed_number(
+      tria,
+      estimated_error_per_cell,
+      amr_data.fraction_of_cells_to_be_refined,
+      amr_data.fraction_of_cells_to_be_coarsened);
+  }
+  else if(dealii::parallel::fullydistributed::Triangulation<dim> * tria_ptr =
+            dynamic_cast<dealii::parallel::fullydistributed::Triangulation<dim> *>(&tria))
+  {
+    AssertThrow(false,
+                dealii::ExcMessage(
+                  "Triangulation type `dealii::parallel::fullydistributed::Triangulation` "
+                  "not supported for adaptive mesh refinement."));
+  }
+  else
+  {
+    dealii::GridRefinement::refine_and_coarsen_fixed_number(
+      tria,
+      estimated_error_per_cell,
+      amr_data.fraction_of_cells_to_be_refined,
+      amr_data.fraction_of_cells_to_be_coarsened);
+  }
 }
 
 } // namespace ExaDG
