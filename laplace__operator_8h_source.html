@@ -441,18 +441,19 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span>  <span class="comment">// continuous FE: calculates Neumann boundary integral</span></div>
 <div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>  do_boundary_integral_continuous(IntegratorFace &amp;                   integrator_m,</div>
-<div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span>                                  dealii::types::boundary_id <span class="keyword">const</span> &amp; boundary_id) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
-<div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span> </div>
-<div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span>  <a class="code hl_struct" href="structExaDG_1_1Poisson_1_1LaplaceOperatorData.html">LaplaceOperatorData&lt;rank, dim&gt;</a> operator_data;</div>
-<div class="line"><a id="l00347" name="l00347"></a><span class="lineno">  347</span> </div>
-<div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span>  <a class="code hl_class" href="classExaDG_1_1Poisson_1_1Operators_1_1LaplaceKernel.html">Operators::LaplaceKernel&lt;dim, Number, n_components&gt;</a> kernel;</div>
-<div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span>};</div>
+<div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span>                                  OperatorType <span class="keyword">const</span> &amp;               operator_type,</div>
+<div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span>                                  dealii::types::boundary_id <span class="keyword">const</span> &amp; boundary_id) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span> </div>
+<div class="line"><a id="l00347" name="l00347"></a><span class="lineno">  347</span>  <a class="code hl_struct" href="structExaDG_1_1Poisson_1_1LaplaceOperatorData.html">LaplaceOperatorData&lt;rank, dim&gt;</a> operator_data;</div>
+<div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span> </div>
+<div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span>  <a class="code hl_class" href="classExaDG_1_1Poisson_1_1Operators_1_1LaplaceKernel.html">Operators::LaplaceKernel&lt;dim, Number, n_components&gt;</a> kernel;</div>
+<div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span>};</div>
 </div>
-<div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span> </div>
-<div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span>} <span class="comment">// namespace Poisson</span></div>
-<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span> </div>
-<div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_POISSON_SPATIAL_DISCRETIZATION_LAPLACE_OPERATOR_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span> </div>
+<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>} <span class="comment">// namespace Poisson</span></div>
+<div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span> </div>
+<div class="line"><a id="l00355" name="l00355"></a><span class="lineno">  355</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_POISSON_SPATIAL_DISCRETIZATION_LAPLACE_OPERATOR_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1Poisson_1_1LaplaceOperator_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1LaplaceOperator.html">ExaDG::Poisson::LaplaceOperator</a></div><div class="ttdef"><b>Definition</b> laplace_operator.h:230</div></div>
 <div class="ttc" id="aclassExaDG_1_1Poisson_1_1Operators_1_1LaplaceKernel_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1Operators_1_1LaplaceKernel.html">ExaDG::Poisson::Operators::LaplaceKernel</a></div><div class="ttdef"><b>Definition</b> laplace_operator.h:49</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>

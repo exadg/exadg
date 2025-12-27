@@ -133,39 +133,41 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keyword">typedef</span> <span class="keyword">typename</span> Base::IntegratorCell IntegratorCell;</div>
 <div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keyword">typedef</span> <span class="keyword">typename</span> Base::IntegratorFace IntegratorFace;</div>
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keyword">typedef</span> dealii::SymmetricTensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt; symmetric_tensor;</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span><span class="comment">   * Calculates the integral</span></div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="comment">   *</span></div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="comment">   *  (v_h, factor * d_h)_Omega + (grad(v_h), sigma_h)_Omega</span></div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="comment">   *</span></div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="comment">   * with</span></div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="comment">   *</span></div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="comment">   *  sigma_h = C : eps_h, eps_h = grad(d_h)</span></div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span><span class="comment">   *</span></div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span><span class="comment">   * where</span></div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><span class="comment">   *</span></div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span><span class="comment">   *  d_h denotes the displacement vector.</span></div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  do_cell_integral(IntegratorCell &amp; integrator) <span class="keyword">const override</span>;</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span><span class="comment">   * Computes Neumann BC integral</span></div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span><span class="comment">   *</span></div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span><span class="comment">   *  - (v_h, t)_{Gamma_N}</span></div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  do_boundary_integral_continuous(IntegratorFace &amp;                   integrator_m,</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>                                  dealii::types::boundary_id <span class="keyword">const</span> &amp; boundary_id) <span class="keyword">const override</span>;</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>};</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keyword">typedef</span> dealii::Tensor&lt;1, dim, dealii::VectorizedArray&lt;Number&gt;&gt;          vector;</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="keyword">typedef</span> dealii::SymmetricTensor&lt;2, dim, dealii::VectorizedArray&lt;Number&gt;&gt; symmetric_tensor;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="comment">   * Calculates the integral</span></div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="comment">   *</span></div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="comment">   *  (v_h, factor * d_h)_Omega + (grad(v_h), sigma_h)_Omega</span></div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="comment">   *</span></div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="comment">   * with</span></div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="comment">   *</span></div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span><span class="comment">   *  sigma_h = C : eps_h, eps_h = grad(d_h)</span></div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span><span class="comment">   *</span></div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><span class="comment">   * where</span></div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span><span class="comment">   *</span></div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="comment">   *  d_h denotes the displacement vector.</span></div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  do_cell_integral(IntegratorCell &amp; integrator) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="comment">/*</span></div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span><span class="comment">   * Computes the linear Neumann boundary term</span></div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span><span class="comment">   *</span></div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span><span class="comment">   *  - (v_h, t)_{Gamma_N}</span></div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span><span class="comment">   */</span></div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  do_boundary_integral_continuous(IntegratorFace &amp;                   integrator,</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>                                  OperatorType <span class="keyword">const</span> &amp;               operator_type,</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>                                  dealii::types::boundary_id <span class="keyword">const</span> &amp; boundary_id) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>};</div>
 </div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>} <span class="comment">// namespace Structure</span></div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_LINEAR_OPERATOR_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>} <span class="comment">// namespace Structure</span></div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span> </div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span><span class="preprocessor">#endif </span><span class="comment">/* EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_LINEAR_OPERATOR_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1LinearOperator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1LinearOperator.html">ExaDG::Structure::LinearOperator</a></div><div class="ttdef"><b>Definition</b> linear_operator.h:34</div></div>
 <div class="ttc" id="anamespaceExaDG_html"><div class="ttname"><a href="namespaceExaDG.html">ExaDG</a></div><div class="ttdef"><b>Definition</b> driver.cpp:33</div></div>
 </div><!-- fragment --></div><!-- contents -->
