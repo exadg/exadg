@@ -56,17 +56,38 @@ LinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
 template<int dim, typename Number>
 void
 LinearOperator<dim, Number>::do_boundary_integral_continuous(
-  IntegratorFace &                   integrator_m,
+  IntegratorFace &                   integrator,
+  OperatorType const &               operator_type,
   dealii::types::boundary_id const & boundary_id) const
 {
-  BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
-
-  for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+  if(operator_type == OperatorType::inhomogeneous or operator_type == OperatorType::full)
   {
-    auto const neumann_value = calculate_neumann_value<dim, Number>(
-      q, integrator_m, boundary_type, boundary_id, this->operator_data.bc, this->time);
+    BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 
-    integrator_m.submit_value(-neumann_value, q);
+    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+    {
+      vector const neumann_value = calculate_neumann_value<dim, Number>(
+        q, integrator, boundary_type, boundary_id, this->operator_data.bc, this->time);
+
+      integrator.submit_value(-neumann_value, q);
+    }
+  }
+  else if(operator_type == OperatorType::homogeneous)
+  {
+    // `OperatorType::homogeneous` does not involve boundary integrals. We still need to submit
+    // zeroes for consistency.
+    vector zero;
+    zero = 0.0;
+    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+    {
+      integrator.submit_value(zero, q);
+    }
+  }
+  else
+  {
+    AssertThrow(false,
+                dealii::ExcMessage("OperatorType not supported in "
+                                   "LinearOperator::do_boundary_integral_continuous()"));
   }
 }
 

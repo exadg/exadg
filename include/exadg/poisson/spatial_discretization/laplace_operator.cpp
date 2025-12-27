@@ -83,7 +83,7 @@ LaplaceOperator<dim, Number, n_components>::rhs_add_dirichlet_bc_from_dof_vector
                           this,
                           tmp,
                           src,
-                          false /*zero_dst_vector = false*/);
+                          false /* `zero_dst_vector` */);
 
   // multiply by -1.0 since the boundary face integrals have to be shifted to the right-hand side
   dst.add(-1.0, tmp);
@@ -388,16 +388,37 @@ template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
   IntegratorFace &                   integrator_m,
+  OperatorType const &               operator_type,
   dealii::types::boundary_id const & boundary_id) const
 {
-  BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
-
-  for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+  if(operator_type == OperatorType::inhomogeneous or operator_type == OperatorType::full)
   {
-    value neumann_value = calculate_neumann_value<dim, Number, n_components, rank>(
-      q, integrator_m, boundary_type, boundary_id, operator_data.bc, this->time);
+    BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
-    integrator_m.submit_value(-neumann_value, q);
+    for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+    {
+      value neumann_value = calculate_neumann_value<dim, Number, n_components, rank>(
+        q, integrator_m, boundary_type, boundary_id, operator_data.bc, this->time);
+
+      integrator_m.submit_value(-neumann_value, q);
+    }
+  }
+  else if(operator_type == OperatorType::homogeneous)
+  {
+    // `OperatorType::homogeneous` does not involve boundary integrals. We still need to submit
+    // zeroes for consistency.
+    value zero;
+    zero = 0.0;
+    for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+    {
+      integrator_m.submit_value(zero, q);
+    }
+  }
+  else
+  {
+    AssertThrow(false,
+                dealii::ExcMessage("OperatorType not supported in "
+                                   "LaplaceOperator::do_boundary_integral_continuous()"));
   }
 }
 
