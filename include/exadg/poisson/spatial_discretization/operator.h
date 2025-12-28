@@ -112,7 +112,7 @@ public:
   get_number_of_dofs() const;
 
   double
-  get_n10() const;
+  get_n_10() const;
 
   double
   get_average_convergence_rate() const;

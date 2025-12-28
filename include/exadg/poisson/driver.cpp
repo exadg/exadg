@@ -121,7 +121,7 @@ template<int dim, typename Number>
 SolverResult
 Driver<dim, Number>::print_performance_results(double const total_time) const
 {
-  double const n_10 = pde_operator->get_n10();
+  double const n_10 = pde_operator->get_n_10();
 
   dealii::types::global_dof_index const DoFs = pde_operator->get_number_of_dofs();
 

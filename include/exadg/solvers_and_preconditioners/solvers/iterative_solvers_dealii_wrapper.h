@@ -45,7 +45,7 @@ template<typename VectorType>
 class SolverBase
 {
 public:
-  SolverBase() : l2_0(1.0), l2_n(1.0), n(0), rho(0.0), n10(0)
+  SolverBase() : l2_0(1.0), l2_n(1.0), n(0), rho(0.0), n_10(0)
   {
     timer_tree = std::make_shared<TimerTree>();
   }
@@ -72,8 +72,8 @@ public:
     // compute some derived performance metrics
     if(n > 0)
     {
-      this->rho = std::pow(l2_n / l2_0, 1.0 / n);
-      this->n10 = -10.0 * std::log(10.0) / std::log(rho);
+      this->rho  = std::pow(l2_n / l2_0, 1.0 / n);
+      this->n_10 = -10.0 * std::log(10.0) / std::log(rho);
     }
   }
 
@@ -88,7 +88,7 @@ public:
   mutable double       l2_n; // norm of final residual
   mutable unsigned int n;    // number of iterations
   mutable double       rho;  // average convergence rate
-  mutable double       n10;  // number of iterations needed to reduce the residual by 1e10
+  mutable double       n_10; // number of iterations needed to reduce the residual by 1e10
 
 protected:
   std::shared_ptr<TimerTree> timer_tree;
