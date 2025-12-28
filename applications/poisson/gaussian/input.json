@@ -16,7 +16,8 @@
         "AdaptiveRefinement": "false",
         "UseMatrixBasedOperator": "false",
         "Preconditioner": "Multigrid",
-        "MinDegreeMatrixFree": "1"
+        "MinDegreeMatrixFree": "1",
+        "SpatialDiscretization": "CG"
     },
     "Output": {
         "OutputDirectory": "output/poisson/gaussian/",
