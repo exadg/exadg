@@ -383,7 +383,7 @@ Operator<dim, n_components, Number>::setup_preconditioner_and_solver()
   }
 
   // initialize solver
-  bool constexpr compute_performance_metrics = false;
+  bool constexpr compute_performance_metrics = true;
   bool constexpr compute_eigenvalues         = false;
   bool const use_preconditioner = param.preconditioner != Poisson::Preconditioner::None;
 
@@ -495,9 +495,9 @@ Operator<dim, n_components, Number>::get_number_of_dofs() const
 
 template<int dim, int n_components, typename Number>
 double
-Operator<dim, n_components, Number>::get_n10() const
+Operator<dim, n_components, Number>::get_n_10() const
 {
-  return iterative_solver->n10;
+  return iterative_solver->n_10;
 }
 
 template<int dim, int n_components, typename Number>
