@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POSTPROCESSOR_STATISTICS_MANAGER_H_
-#define INCLUDE_EXADG_POSTPROCESSOR_STATISTICS_MANAGER_H_
+#ifndef EXADG_POSTPROCESSOR_STATISTICS_MANAGER_H_
+#define EXADG_POSTPROCESSOR_STATISTICS_MANAGER_H_
 
 // deal.II
 #include <deal.II/dofs/dof_handler.h>
@@ -149,4 +149,4 @@ private:
 
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_POSTPROCESSOR_STATISTICS_MANAGER_H_ */

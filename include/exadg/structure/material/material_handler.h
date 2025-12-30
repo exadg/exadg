@@ -15,17 +15,18 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_MATERIAL_MATERIAL_HANDLER_H_
-#define INCLUDE_EXADG_STRUCTURE_MATERIAL_MATERIAL_HANDLER_H_
+#ifndef EXADG_STRUCTURE_MATERIAL_MATERIAL_HANDLER_H_
+#define EXADG_STRUCTURE_MATERIAL_MATERIAL_HANDLER_H_
 
 // deal.II
 #include <deal.II/matrix_free/matrix_free.h>
 
 // ExaDG
+#include <exadg/structure/material/library/incompressible_neo_hookean.h>
 #include <exadg/structure/material/library/st_venant_kirchhoff.h>
 #include <exadg/structure/material/material.h>
 #include <exadg/structure/user_interface/material_descriptor.h>
@@ -70,12 +71,29 @@ public:
         }
         case MaterialType::StVenantKirchhoff:
         {
-          std::shared_ptr<StVenantKirchhoffData<dim>> data_svk =
+          std::shared_ptr<StVenantKirchhoffData<dim>> data_StVenantKirchhoff =
             std::static_pointer_cast<StVenantKirchhoffData<dim>>(data);
+          material_map.insert(Pair(id,
+                                   new StVenantKirchhoff<dim, Number>(matrix_free,
+                                                                      dof_index,
+                                                                      quad_index,
+                                                                      *data_StVenantKirchhoff,
+                                                                      large_deformation)));
+          break;
+        }
+        case MaterialType::IncompressibleNeoHookean:
+        {
+          AssertThrow(
+            large_deformation == true,
+            dealii::ExcMessage(
+              "Incompressible Neo-Hookean material model defined for finite strain theory."));
+
+          std::shared_ptr<IncompressibleNeoHookeanData<dim>> data_IncompressibleNeoHookean =
+            std::static_pointer_cast<IncompressibleNeoHookeanData<dim>>(data);
           material_map.insert(
             Pair(id,
-                 new StVenantKirchhoff<dim, Number>(
-                   matrix_free, dof_index, quad_index, *data_svk, large_deformation)));
+                 new IncompressibleNeoHookean<dim, Number>(
+                   matrix_free, dof_index, quad_index, *data_IncompressibleNeoHookean)));
           break;
         }
         default:
@@ -120,4 +138,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_STRUCTURE_MATERIAL_MATERIAL_HANDLER_H_ */
+#endif /* EXADG_STRUCTURE_MATERIAL_MATERIAL_HANDLER_H_ */

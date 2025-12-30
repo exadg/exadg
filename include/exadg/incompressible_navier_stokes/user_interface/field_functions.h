@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_FIELD_FUNCTIONS_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_FIELD_FUNCTIONS_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_FIELD_FUNCTIONS_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_FIELD_FUNCTIONS_H_
 
 namespace ExaDG
 {
@@ -51,6 +51,12 @@ struct FieldFunctions
   std::shared_ptr<dealii::Function<dim>> analytical_solution_pressure;
 
   /*
+   * Analytical solution of the velocity. It is e.g. used by TimeIntInterpolateAnalyticalSolution
+   * that interpolates the analytical solution instead of computing the solution.
+   */
+  std::shared_ptr<dealii::Function<dim>> analytical_solution_velocity;
+
+  /*
    * The function right_hand_side is used to evaluate the body force term on the right-hand side of
    * the momentum equation of the incompressible Navier-Stokes equations.
    */
@@ -61,4 +67,4 @@ struct FieldFunctions
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_FIELD_FUNCTIONS_H_ */
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_FIELD_FUNCTIONS_H_ */

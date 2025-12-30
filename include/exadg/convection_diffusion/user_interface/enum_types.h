@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_ENUM_TYPES_H_
-#define INCLUDE_EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_ENUM_TYPES_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_ENUM_TYPES_H_
+#define EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_ENUM_TYPES_H_
 
+// C/C++
 #include <string>
 
 namespace ExaDG
@@ -173,17 +174,6 @@ enum class NumericalFluxConvectiveOperator
 /**************************************************************************************/
 
 /*
- *   Solver for linear system of equations
- */
-enum class Solver
-{
-  Undefined,
-  CG,
-  GMRES,
-  FGMRES // flexible GMRES
-};
-
-/*
  *  Preconditioner type for solution of linear system of equations
  */
 enum class Preconditioner
@@ -219,5 +209,4 @@ enum class MultigridOperatorType
 } // namespace ConvDiff
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_ENUM_TYPES_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_ENUM_TYPES_H_ */

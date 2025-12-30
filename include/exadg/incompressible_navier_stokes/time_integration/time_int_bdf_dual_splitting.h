@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_
 
+// ExaDG
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf.h>
 
 namespace ExaDG
@@ -36,6 +37,9 @@ template<int dim, typename Number>
 class TimeIntBDFDualSplitting : public TimeIntBDF<dim, Number>
 {
 private:
+  using BoostInputArchiveType  = TimeIntBase::BoostInputArchiveType;
+  using BoostOutputArchiveType = TimeIntBase::BoostOutputArchiveType;
+
   typedef TimeIntBDF<dim, Number> Base;
 
   typedef typename Base::VectorType VectorType;
@@ -80,10 +84,15 @@ private:
   setup_derived() final;
 
   void
-  read_restart_vectors(boost::archive::binary_iarchive & ia) final;
+  get_vectors_serialization(std::vector<VectorType const *> & vectors_velocity,
+                            std::vector<VectorType const *> & vectors_pressure) const final;
 
   void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const final;
+  set_vectors_deserialization(std::vector<VectorType> const & vectors_velocity,
+                              std::vector<VectorType> const & vectors_pressure) final;
+
+  void
+  update_after_deserialization() final;
 
   void
   do_timestep_solve() final;
@@ -128,7 +137,12 @@ private:
   viscous_step();
 
   void
-  rhs_viscous(VectorType & rhs) const;
+  rhs_viscous(VectorType &       rhs,
+              VectorType const & velocity_mass_operator,
+              VectorType const & transport_velocity) const;
+
+  void
+  residual_rhs_viscous(VectorType & rhs, VectorType const & velocity_mass_operator) const;
 
   void
   solve_steady_problem() final;
@@ -171,7 +185,11 @@ private:
     iterations_pressure;
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */>
     iterations_projection;
-  std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations_viscous;
+  std::pair<
+    unsigned int /* calls */,
+    std::tuple<unsigned long long, unsigned long long> /* iteration counts {Newton, linear} */>
+    iterations_viscous;
+
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations_penalty;
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations_mass;
 
@@ -182,5 +200,5 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_ \
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_ \
         */

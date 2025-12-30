@@ -15,19 +15,19 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-// deal.II
-#include <deal.II/numerics/vector_tools.h>
-
 // ExaDG
 #include <exadg/acoustic_conservation_equations/spatial_discretization/spatial_operator.h>
+#include <exadg/functions_and_boundary_conditions/interpolate.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/operators/finite_element.h>
 #include <exadg/operators/grid_related_time_step_restrictions.h>
 #include <exadg/operators/quadrature.h>
+#include <exadg/operators/solution_projection_between_triangulations.h>
+#include <exadg/time_integration/restart.h>
 #include <exadg/utilities/exceptions.h>
 
 namespace ExaDG
@@ -52,6 +52,7 @@ SpatialOperator<dim, Number>::SpatialOperator(
     field(field_in),
     dof_handler_p(*grid_in->triangulation),
     dof_handler_u(*grid_in->triangulation),
+    aero_acoustic_source_term(nullptr),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
 {
@@ -242,6 +243,170 @@ SpatialOperator<dim, Number>::get_dof_handler_u() const
 }
 
 template<int dim, typename Number>
+void
+SpatialOperator<dim, Number>::serialize_vectors(
+  std::vector<BlockVectorType const *> const & block_vectors) const
+{
+  // Write deserialization parameters. These do not change during the simulation, but the data are
+  // small and we want to make sure to overwrite them.
+  DeserializationParameters deserialization_parameters;
+  deserialization_parameters.degree_u               = param.degree_u;
+  deserialization_parameters.degree_p               = param.degree_p;
+  deserialization_parameters.mapping_degree         = param.mapping_degree;
+  deserialization_parameters.consider_mapping_write = param.restart_data.consider_mapping_write;
+  deserialization_parameters.triangulation_type     = param.grid.triangulation_type;
+  write_deserialization_parameters(mpi_comm, param.restart_data, deserialization_parameters);
+
+  // Attach vectors to triangulation and serialize.
+  std::vector<dealii::DoFHandler<dim> const *> dof_handlers(2);
+  dof_handlers.at(block_index_velocity) = &this->get_dof_handler_u();
+  dof_handlers.at(block_index_pressure) = &this->get_dof_handler_p();
+
+  std::vector<std::vector<VectorType const *>> vectors_per_dof_handler =
+    get_vectors_per_block<VectorType const, BlockVectorType const>(block_vectors);
+
+  if(param.restart_data.consider_mapping_write)
+  {
+    store_vectors_in_triangulation_and_serialize(param.restart_data,
+                                                 dof_handlers,
+                                                 vectors_per_dof_handler,
+                                                 *this->get_mapping(),
+                                                 dof_handler_mapping.get(),
+                                                 param.mapping_degree);
+  }
+  else
+  {
+    store_vectors_in_triangulation_and_serialize(param.restart_data,
+                                                 dof_handlers,
+                                                 vectors_per_dof_handler);
+  }
+}
+
+template<int dim, typename Number>
+void
+SpatialOperator<dim, Number>::deserialize_vectors(
+  std::vector<BlockVectorType *> const & block_vectors) const
+{
+  // Store ghost state to recover after deserialization.
+  std::vector<bool> const has_ghost_elements = get_ghost_state(block_vectors);
+
+  // Load the deserialization parameters.
+  DeserializationParameters const deserialization_parameters =
+    read_deserialization_parameters(mpi_comm, param.restart_data);
+
+  // Load potentially unfitting checkpoint triangulation of TriangulationType.
+  std::shared_ptr<dealii::Triangulation<dim>> checkpoint_triangulation =
+    deserialize_triangulation<dim>(param.restart_data,
+                                   deserialization_parameters.triangulation_type,
+                                   mpi_comm);
+
+  // Set up DoFHandlers *as checkpointed*, sequence matches `this->serialize_vectors()`.
+  dealii::DoFHandler<dim> checkpoint_dof_handler_u(*checkpoint_triangulation);
+  dealii::DoFHandler<dim> checkpoint_dof_handler_p(*checkpoint_triangulation);
+
+  ElementType const checkpoint_element_type = get_element_type(*checkpoint_triangulation);
+
+  std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_u = create_finite_element<dim>(
+    checkpoint_element_type, true, dim, deserialization_parameters.degree_u);
+  std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_p = create_finite_element<dim>(
+    checkpoint_element_type, true, 1, deserialization_parameters.degree_p);
+
+  checkpoint_dof_handler_u.distribute_dofs(*checkpoint_fe_u);
+  checkpoint_dof_handler_p.distribute_dofs(*checkpoint_fe_p);
+
+  std::vector<dealii::DoFHandler<dim> const *> checkpoint_dof_handlers(2);
+  checkpoint_dof_handlers[block_index_velocity] = &checkpoint_dof_handler_u;
+  checkpoint_dof_handlers[block_index_pressure] = &checkpoint_dof_handler_p;
+
+  // Deserialize the stored vectors associated with the previous triangulation / dof handlers,
+  // in the sequence if blocks (velocity/pressure) matching the one in `this->serialize_vectors()`.
+  std::vector<BlockVectorType> checkpoint_block_vectors =
+    get_block_vectors_from_dof_handlers<dim, BlockVectorType>(block_vectors.size(),
+                                                              checkpoint_dof_handlers);
+
+  std::vector<BlockVectorType *> checkpoint_block_vectors_ptr;
+  for(unsigned int i = 0; i < checkpoint_block_vectors.size(); ++i)
+  {
+    checkpoint_block_vectors_ptr.push_back(&checkpoint_block_vectors[i]);
+  }
+  std::vector<std::vector<VectorType *>> checkpoint_vectors =
+    get_vectors_per_block<VectorType, BlockVectorType>(checkpoint_block_vectors_ptr);
+
+  if(param.restart_data.discretization_identical)
+  {
+    // DoFHandlers need to be setup with `checkpoint_triangulation`, otherwise
+    // they are identical. We can simply copy the vector contents.
+    load_vectors(checkpoint_vectors, checkpoint_dof_handlers);
+    for(unsigned int i = 0; i < block_vectors.size(); ++i)
+    {
+      block_vectors[i]->copy_locally_owned_data_from(checkpoint_block_vectors[i]);
+    }
+  }
+  else
+  {
+    // Perform projection in case of a non-matching discretization.
+    std::vector<dealii::DoFHandler<dim> const *> dof_handlers(2);
+    dof_handlers.at(block_index_velocity) = &this->get_dof_handler_u();
+    dof_handlers.at(block_index_pressure) = &this->get_dof_handler_p();
+
+    std::vector<std::vector<VectorType *>> vectors_per_dof_handler =
+      get_vectors_per_block<VectorType, BlockVectorType>(block_vectors);
+
+    // Deserialize mapping from vector or project on reference triangulations.
+    check_mapping_deserialization(param.restart_data.consider_mapping_read_source,
+                                  deserialization_parameters.consider_mapping_write);
+    std::shared_ptr<dealii::Mapping<dim> const> checkpoint_mapping;
+    std::shared_ptr<MappingDoFVector<dim, typename VectorType::value_type>>
+      checkpoint_mapping_dof_vector;
+    if(param.restart_data.consider_mapping_read_source)
+    {
+      dealii::DoFHandler<dim> checkpoint_dof_handler_mapping(*checkpoint_triangulation);
+      std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_mapping =
+        create_finite_element<dim>(checkpoint_element_type,
+                                   true,
+                                   dim,
+                                   deserialization_parameters.mapping_degree);
+      checkpoint_dof_handler_mapping.distribute_dofs(*checkpoint_fe_mapping);
+
+      checkpoint_mapping_dof_vector = load_vectors(checkpoint_vectors,
+                                                   checkpoint_dof_handlers,
+                                                   &checkpoint_dof_handler_mapping,
+                                                   deserialization_parameters.mapping_degree);
+
+      checkpoint_mapping = checkpoint_mapping_dof_vector->get_mapping();
+    }
+    else
+    {
+      load_vectors(checkpoint_vectors, checkpoint_dof_handlers);
+
+      // Create dummy linear mapping since we have no mapping serialized to restore.
+      std::shared_ptr<dealii::Mapping<dim>> tmp;
+      GridUtilities::create_mapping(tmp,
+                                    get_element_type(*checkpoint_triangulation),
+                                    1 /* mapping_degree */);
+      checkpoint_mapping = std::const_pointer_cast<dealii::Mapping<dim> const>(tmp);
+    }
+
+    ExaDG::GridToGridProjection::GridToGridProjectionData<dim> data;
+    data.rpe_data.rtree_level            = param.restart_data.rpe_rtree_level;
+    data.rpe_data.tolerance              = param.restart_data.rpe_tolerance_unit_cell;
+    data.rpe_data.enforce_unique_mapping = param.restart_data.rpe_enforce_unique_mapping;
+
+    ExaDG::GridToGridProjection::do_grid_to_grid_projection<dim, Number, VectorType>(
+      checkpoint_mapping,
+      checkpoint_dof_handlers,
+      checkpoint_vectors,
+      dof_handlers,
+      *matrix_free,
+      vectors_per_dof_handler,
+      data);
+  }
+
+  // Recover ghost vector state.
+  set_ghost_state(block_vectors, has_ghost_elements);
+}
+
+template<int dim, typename Number>
 dealii::AffineConstraints<Number> const &
 SpatialOperator<dim, Number>::get_constraint_p() const
 {
@@ -279,32 +444,34 @@ SpatialOperator<dim, Number>::initialize_dof_vector(BlockVectorType & dst) const
 
 template<int dim, typename Number>
 void
+SpatialOperator<dim, Number>::initialize_dof_vector_pressure(VectorType & dst) const
+{
+  matrix_free->initialize_dof_vector(dst, get_dof_index_pressure());
+}
+
+template<int dim, typename Number>
+void
 SpatialOperator<dim, Number>::prescribe_initial_conditions(BlockVectorType & dst,
                                                            double const      time) const
 {
-  field_functions->initial_solution_pressure->set_time(time);
-  field_functions->initial_solution_velocity->set_time(time);
+  Utilities::interpolate(*get_mapping(),
+                         dof_handler_p,
+                         *(field_functions->initial_solution_pressure),
+                         dst.block(block_index_pressure),
+                         time);
+  Utilities::interpolate(*get_mapping(),
+                         dof_handler_u,
+                         *(field_functions->initial_solution_velocity),
+                         dst.block(block_index_velocity),
+                         time);
+}
 
-  // This is necessary if Number == float
-  using VectorTypeDouble = dealii::LinearAlgebra::distributed::Vector<double>;
-
-  VectorTypeDouble pressure_double;
-  VectorTypeDouble velocity_double;
-  pressure_double = dst.block(block_index_pressure);
-  velocity_double = dst.block(block_index_velocity);
-
-  dealii::VectorTools::interpolate(*get_mapping(),
-                                   dof_handler_p,
-                                   *(field_functions->initial_solution_pressure),
-                                   pressure_double);
-
-  dealii::VectorTools::interpolate(*get_mapping(),
-                                   dof_handler_u,
-                                   *(field_functions->initial_solution_velocity),
-                                   velocity_double);
-
-  dst.block(block_index_pressure) = pressure_double;
-  dst.block(block_index_velocity) = velocity_double;
+template<int dim, typename Number>
+void
+SpatialOperator<dim, Number>::set_aero_acoustic_source_term(
+  VectorType const & aero_acoustic_source_term_in)
+{
+  aero_acoustic_source_term = &aero_acoustic_source_term_in;
 }
 
 template<int dim, typename Number>
@@ -320,6 +487,13 @@ SpatialOperator<dim, Number>::evaluate(BlockVectorType &       dst,
 
   if(param.right_hand_side)
     rhs_operator.evaluate_add(dst.block(block_index_pressure), time);
+
+  if(param.aero_acoustic_source_term)
+  {
+    AssertThrow(aero_acoustic_source_term,
+                dealii::ExcMessage("Aero-acoustic source term not valid."));
+    dst.block(block_index_pressure) += *aero_acoustic_source_term;
+  }
 
   apply_scaled_inverse_mass_operator(dst, dst);
 }
@@ -378,6 +552,16 @@ SpatialOperator<dim, Number>::initialize_dof_handler_and_constraints()
   dof_handler_p.distribute_dofs(*fe_p);
   dof_handler_u.distribute_dofs(*fe_u);
 
+  // de-/serialization of mapping requires DoFHandler
+  if((param.restart_data.consider_mapping_write and param.restart_data.write_restart) or
+     (param.restart_data.consider_mapping_read_source and param.restarted_simulation))
+  {
+    fe_mapping =
+      create_finite_element<dim>(param.grid.element_type, true, dim, param.mapping_degree);
+    dof_handler_mapping = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
+    dof_handler_mapping->distribute_dofs(*fe_mapping);
+  }
+
   // close constraints
   constraint_u.close();
   constraint_p.close();
@@ -408,7 +592,7 @@ SpatialOperator<dim, Number>::initialize_operators()
 {
   // inverse mass operator pressure
   {
-    InverseMassOperatorData data;
+    InverseMassOperatorData<Number> data;
     data.dof_index  = get_dof_index_pressure();
     data.quad_index = get_quad_index_pressure();
     inverse_mass_pressure.initialize(*matrix_free, data);
@@ -416,7 +600,7 @@ SpatialOperator<dim, Number>::initialize_operators()
 
   // inverse mass operator velocity
   {
-    InverseMassOperatorData data;
+    InverseMassOperatorData<Number> data;
     data.dof_index  = get_dof_index_velocity();
     data.quad_index = get_quad_index_velocity();
     inverse_mass_velocity.initialize(*matrix_free, data);

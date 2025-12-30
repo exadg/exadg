@@ -15,13 +15,13 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
 
-#ifndef INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_FIELD_FUNCTIONS_H_
-#define INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_FIELD_FUNCTIONS_H_
+#ifndef EXADG_STRUCTURE_USER_INTERFACE_FIELD_FUNCTIONS_H_
+#define EXADG_STRUCTURE_USER_INTERFACE_FIELD_FUNCTIONS_H_
 
 namespace ExaDG
 {
@@ -46,4 +46,4 @@ struct FieldFunctions
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_USER_INTERFACE_FIELD_FUNCTIONS_H_ */

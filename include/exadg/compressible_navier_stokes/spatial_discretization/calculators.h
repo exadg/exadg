@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CALCULATORS_H_
-#define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CALCULATORS_H_
+#ifndef EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CALCULATORS_H_
+#define EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CALCULATORS_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -156,8 +156,7 @@ private:
         pressure.submit_value(p, q);
       }
 
-      pressure.integrate(dealii::EvaluationFlags::values);
-      pressure.set_dof_values(dst);
+      pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 
@@ -199,8 +198,7 @@ private:
         velocity.submit_value(u, q);
       }
 
-      velocity.integrate(dealii::EvaluationFlags::values);
-      velocity.set_dof_values(dst);
+      velocity.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 
@@ -252,8 +250,7 @@ private:
         temperature.submit_value(T, q);
       }
 
-      temperature.integrate(dealii::EvaluationFlags::values);
-      temperature.set_dof_values(dst);
+      temperature.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
   }
 
@@ -271,5 +268,4 @@ private:
 } // namespace CompNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CALCULATORS_H_ \
-        */
+#endif /* EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CALCULATORS_H_ */

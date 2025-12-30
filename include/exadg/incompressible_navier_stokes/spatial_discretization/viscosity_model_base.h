@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_VISCOSITY_MODEL_BASE_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_VISCOSITY_MODEL_BASE_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_VISCOSITY_MODEL_BASE_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_VISCOSITY_MODEL_BASE_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -39,7 +39,7 @@ namespace IncNS
  *  Base class for variable viscosity models.
  */
 template<int dim, typename Number>
-class ViscosityModelBase : public dealii::Subscriptor
+class ViscosityModelBase : public dealii::EnableObserverPointer
 {
 private:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -87,5 +87,5 @@ protected:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_VISCOSITY_MODEL_BASE_H_ \
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_VISCOSITY_MODEL_BASE_H_ \
         */

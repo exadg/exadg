@@ -15,15 +15,17 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef EXADG_GRID_GRID_PARAMETERS_H
-#define EXADG_GRID_GRID_PARAMETERS_H
+#ifndef EXADG_GRID_GRID_PARAMETERS_H_
+#define EXADG_GRID_GRID_PARAMETERS_H_
 
+// C/C++
 #include <string>
 
+// deal.II
 #include <deal.II/base/parameter_handler.h>
 
 namespace ExaDG
@@ -45,4 +47,4 @@ struct GridParameters
 
 } // namespace ExaDG
 
-#endif // EXADG_GRID_GRID_PARAMETERS_H
+#endif /* EXADG_GRID_GRID_PARAMETERS_H_ */

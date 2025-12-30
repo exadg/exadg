@@ -15,24 +15,54 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_POSTPROCESSOR_OUTPUT_GENERATOR_H_
-#define INCLUDE_EXADG_STRUCTURE_POSTPROCESSOR_OUTPUT_GENERATOR_H_
+#ifndef EXADG_STRUCTURE_POSTPROCESSOR_OUTPUT_GENERATOR_H_
+#define EXADG_STRUCTURE_POSTPROCESSOR_OUTPUT_GENERATOR_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
 #include <exadg/postprocessor/output_data_base.h>
+#include <exadg/postprocessor/solution_field.h>
 #include <exadg/postprocessor/time_control.h>
 
 namespace ExaDG
 {
 namespace Structure
 {
+struct OutputData : public OutputDataBase
+{
+  OutputData()
+    : write_displacement_magnitude(false),
+      write_displacement_jacobian(false),
+      write_max_principal_stress(false)
+  {
+  }
+
+  void
+  print(dealii::ConditionalOStream & pcout, bool unsteady)
+  {
+    OutputDataBase::print(pcout, unsteady);
+
+    print_parameter(pcout, "Write displacement magnitude", write_displacement_magnitude);
+    print_parameter(pcout, "Write displacement Jacobian", write_displacement_jacobian);
+    print_parameter(pcout, "Write maximum principal stress", write_max_principal_stress);
+  }
+
+  // write displacement magnitude
+  bool write_displacement_magnitude;
+
+  // write Jacobian of the displacement field
+  bool write_displacement_jacobian;
+
+  // write maximum principal stress
+  bool write_max_principal_stress;
+};
+
 template<int dim, typename Number>
 class OutputGenerator
 {
@@ -44,22 +74,27 @@ public:
   void
   setup(dealii::DoFHandler<dim> const & dof_handler,
         dealii::Mapping<dim> const &    mapping,
-        OutputDataBase const &          output_data);
+        OutputData const &              output_data);
 
   void
-  evaluate(VectorType const & solution, double const time, bool const unsteady);
+  evaluate(
+    VectorType const &                                                       solution,
+    std::vector<dealii::ObserverPointer<SolutionField<dim, Number>>> const & additional_fields,
+    double const                                                             time,
+    bool const                                                               unsteady);
 
   TimeControl time_control;
 
 private:
   MPI_Comm const mpi_comm;
 
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
-  dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;
-  OutputDataBase                                      output_data;
+  OutputData output_data;
+
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler;
+  dealii::ObserverPointer<dealii::Mapping<dim> const>    mapping;
 };
 
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_POSTPROCESSOR_OUTPUT_GENERATOR_H_ */

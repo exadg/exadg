@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_COUPLED_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_COUPLED_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_COUPLED_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_COUPLED_H_
 
+// ExaDG
 #include <exadg/convection_diffusion/spatial_discretization/operators/combined_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver.h>
@@ -82,7 +83,7 @@ private:
 };
 
 template<int dim, typename Number>
-class LinearOperatorCoupled : public dealii::Subscriptor
+class LinearOperatorCoupled : public dealii::EnableObserverPointer
 {
 private:
   typedef dealii::LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
@@ -90,7 +91,7 @@ private:
   typedef OperatorCoupled<dim, Number> PDEOperator;
 
 public:
-  LinearOperatorCoupled() : dealii::Subscriptor(), pde_operator(nullptr)
+  LinearOperatorCoupled() : dealii::EnableObserverPointer(), pde_operator(nullptr)
   {
   }
 
@@ -259,10 +260,11 @@ public:
    * can be omitted for steady problems.
    */
   unsigned int
-  solve_linear_stokes_problem(BlockVectorType &       dst,
-                              BlockVectorType const & src,
-                              bool const &            update_preconditioner,
-                              double const &          scaling_factor_mass = 1.0);
+  solve_linear_problem(BlockVectorType &       dst,
+                       BlockVectorType const & src,
+                       VectorType const &      transport_velocity,
+                       bool const &            update_preconditioner,
+                       double const &          scaling_factor_mass = 1.0);
 
   /*
    * Convective term treated implicitly: solve non-linear system of equations
@@ -290,6 +292,23 @@ public:
                               double const &          scaling_factor_mass) const;
 
   /*
+   * This function computes the rhs of the linearized problem residual
+   */
+  void
+  rhs_residual_linearized_problem(BlockVectorType & dst, double const & time) const;
+
+  /*
+   * This function evaluates the linearized residual.
+   */
+  void
+  evaluate_linearized_residual(BlockVectorType &       dst,
+                               BlockVectorType const & src,
+                               VectorType const &      transport_velocity,
+                               BlockVectorType const & rhs_vector,
+                               double const &          time,
+                               double const &          scaling_factor_mass);
+
+  /*
    * This function evaluates the nonlinear residual of the steady Navier-Stokes equations.
    * This function has to be implemented separately (for example, the convective term will be
    * evaluated in case of the Navier-Stokes equations and the time-derivative term is never
@@ -313,7 +332,9 @@ public:
    * problems.
    */
   void
-  rhs_stokes_problem(BlockVectorType & dst, double const & time = 0.0) const;
+  rhs_linear_problem(BlockVectorType &  dst,
+                     VectorType const & transport_velocity,
+                     double const &     time = 0.0) const;
 
   /*
    * Block preconditioner
@@ -425,5 +446,5 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_COUPLED_H_ \
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_COUPLED_H_ \
         */

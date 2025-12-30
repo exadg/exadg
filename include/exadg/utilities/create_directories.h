@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_CREATE_DIRECTORIES_H_
-#define INCLUDE_EXADG_UTILITIES_CREATE_DIRECTORIES_H_
+#ifndef EXADG_UTILITIES_CREATE_DIRECTORIES_H_
+#define EXADG_UTILITIES_CREATE_DIRECTORIES_H_
 
 // C/C++
 #include <filesystem>
@@ -42,6 +42,4 @@ create_directories(std::string const & directory, MPI_Comm const & mpi_comm)
 
 } // namespace ExaDG
 
-
-
-#endif /* INCLUDE_EXADG_UTILITIES_CREATE_DIRECTORIES_H_ */
+#endif /* EXADG_UTILITIES_CREATE_DIRECTORIES_H_ */

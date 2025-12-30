@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_COUPLED_SOLVER_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_COUPLED_SOLVER_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_COUPLED_SOLVER_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_COUPLED_SOLVER_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_block_vector.h>
@@ -88,6 +88,9 @@ private:
   initialize_former_multistep_dof_vectors() final;
 
   void
+  update_after_deserialization() final;
+
+  void
   do_timestep_solve() final;
 
   void
@@ -95,6 +98,13 @@ private:
 
   double
   evaluate_residual();
+
+  void
+  evaluate_right_hand_side(BlockVectorType &       rhs,
+                           bool const              residual_evaluation,
+                           BlockVectorType const & solution_np,
+                           VectorType const &      transport_velocity,
+                           VectorType const &      sum_alphai_ui);
 
   void
   penalty_step();
@@ -138,5 +148,5 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_COUPLED_SOLVER_H_ \
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_COUPLED_SOLVER_H_ \
         */

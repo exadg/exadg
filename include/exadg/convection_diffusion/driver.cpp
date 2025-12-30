@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -63,6 +63,35 @@ Driver<dim, Number>::setup()
 
   if(ale) // moving mesh
   {
+    // determine correct starting time for restarted run.
+    double start_time_mesh_movement_function = application->get_parameters().start_time;
+    {
+      RestartData const & restart_data = application->get_parameters().restart_data;
+      if(application->get_parameters().restarted_simulation and
+         restart_data.consider_restart_time_in_mesh_movement_function)
+      {
+        if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+        {
+          std::string const filename =
+            restart_data.directory + generate_restart_filename(restart_data.filename);
+
+          std::ifstream in(filename);
+          AssertThrow(in, dealii::ExcMessage("File " + filename + " does not exist."));
+
+          TimeIntBase::BoostInputArchiveType ia(in);
+
+          // Note that the operations done here must be in sync with `do_write_restart()`.
+
+          // 1. time
+          ia & start_time_mesh_movement_function;
+        }
+
+        // Synchronize read data.
+        start_time_mesh_movement_function =
+          dealii::Utilities::MPI::broadcast(mpi_comm, start_time_mesh_movement_function, 0);
+      }
+    }
+
     std::shared_ptr<dealii::Function<dim>> mesh_motion =
       application->create_mesh_movement_function();
     ale_mapping = std::make_shared<DeformedMappingFunction<dim, Number>>(
@@ -227,7 +256,9 @@ Driver<dim, Number>::do_adaptive_refinement()
     }
     else
     {
-      AssertThrow(false, dealii::ExcNotImplemented());
+      AssertThrow(false,
+                  dealii::ExcMessage(
+                    "Adaptive mesh refinement available only for unsteady problems."));
     }
   }
 }
@@ -252,16 +283,28 @@ Driver<dim, Number>::solve()
              application->get_parameters().amr_data.trigger_every_n_time_steps,
              time_integrator->get_number_of_time_steps()))
         {
-          // AMR is only implemented for implicit timestepping.
-          std::shared_ptr<TimeIntBDF<dim, Number>> bdf_time_integrator =
-            std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
-
-          AssertThrow(bdf_time_integrator.get(),
-                      dealii::ExcMessage("Adaptive mesh refinement only implemented"
-                                         " for implicit time integration."));
-
-          mark_cells_coarsening_and_refinement(*grid->triangulation,
-                                               bdf_time_integrator->get_solution_np());
+          // Mark cells for coarsening and refinement based on the most recent solution.
+          if(application->get_parameters().temporal_discretization ==
+             TemporalDiscretization::ExplRK)
+          {
+            std::shared_ptr<TimeIntExplRK<Number>> rk_time_integrator =
+              std::dynamic_pointer_cast<TimeIntExplRK<Number>>(time_integrator);
+            AssertThrow(rk_time_integrator.get(),
+                        dealii::ExcMessage("Dynamic cast from TimeIntBase "
+                                           "to TimeIntExplRK not successful."));
+            mark_cells_coarsening_and_refinement(*grid->triangulation,
+                                                 rk_time_integrator->get_solution_np());
+          }
+          else
+          {
+            std::shared_ptr<TimeIntBDF<dim, Number>> bdf_time_integrator =
+              std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
+            AssertThrow(bdf_time_integrator.get(),
+                        dealii::ExcMessage("Dynamic cast from TimeIntBase "
+                                           "to TimeIntBDF not successful."));
+            mark_cells_coarsening_and_refinement(*grid->triangulation,
+                                                 bdf_time_integrator->get_solution_np());
+          }
 
           do_adaptive_refinement();
         }

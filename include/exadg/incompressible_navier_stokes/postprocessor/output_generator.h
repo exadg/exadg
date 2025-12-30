@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_GENERATOR_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_GENERATOR_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_GENERATOR_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_GENERATOR_H_
 
+// ExaDG
 #include <exadg/postprocessor/output_data_base.h>
 #include <exadg/postprocessor/solution_field.h>
 #include <exadg/postprocessor/time_control.h>
@@ -36,13 +37,13 @@ struct OutputData : public OutputDataBase
     : write_vorticity(false),
       write_divergence(false),
       write_shear_rate(false),
+      write_viscosity(false),
       write_velocity_magnitude(false),
       write_vorticity_magnitude(false),
       write_streamfunction(false),
       write_q_criterion(false),
       mean_velocity(TimeControlData()),
-      write_cfl(false),
-      write_aspect_ratio(false)
+      write_cfl(false)
   {
   }
 
@@ -54,10 +55,12 @@ struct OutputData : public OutputDataBase
     print_parameter(pcout, "Write vorticity", write_vorticity);
     print_parameter(pcout, "Write divergence", write_divergence);
     print_parameter(pcout, "Write shear rate", write_shear_rate);
+    print_parameter(pcout, "Write viscosity", write_viscosity);
     print_parameter(pcout, "Write velocity magnitude", write_velocity_magnitude);
     print_parameter(pcout, "Write vorticity magnitude", write_vorticity_magnitude);
     print_parameter(pcout, "Write streamfunction", write_streamfunction);
     print_parameter(pcout, "Write Q criterion", write_q_criterion);
+    print_parameter(pcout, "Write CFL number", write_cfl);
 
     mean_velocity.print(pcout, unsteady);
   }
@@ -68,8 +71,11 @@ struct OutputData : public OutputDataBase
   // write divergence of velocity field
   bool write_divergence;
 
-  // write shear rate in velocity field
+  // write shear rate of velocity field
   bool write_shear_rate;
+
+  // write viscosity depending on viscosity field
+  bool write_viscosity;
 
   // write velocity magnitude
   bool write_velocity_magnitude;
@@ -98,9 +104,6 @@ struct OutputData : public OutputDataBase
 
   // write cfl
   bool write_cfl;
-
-  // write aspect ratio
-  bool write_aspect_ratio;
 };
 
 template<int dim, typename Number>
@@ -121,11 +124,12 @@ public:
         OutputData const &              output_data_in);
 
   void
-  evaluate(VectorType const &                                                    velocity,
-           VectorType const &                                                    pressure,
-           std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
-           double const                                                          time,
-           bool const                                                            unsteady) const;
+  evaluate(
+    VectorType const &                                                       velocity,
+    VectorType const &                                                       pressure,
+    std::vector<dealii::ObserverPointer<SolutionField<dim, Number>>> const & additional_fields,
+    double const                                                             time,
+    bool const                                                               unsteady) const;
 
   TimeControl time_control;
 
@@ -134,12 +138,12 @@ private:
 
   OutputData output_data;
 
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_velocity;
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_pressure;
-  dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler_velocity;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler_pressure;
+  dealii::ObserverPointer<dealii::Mapping<dim> const>    mapping;
 };
 
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_GENERATOR_H_ */
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_GENERATOR_H_ */

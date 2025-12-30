@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_POISSON_POSTPROCESSOR_H_
-#define INCLUDE_POISSON_POSTPROCESSOR_H_
+#ifndef EXADG_POISSON_POSTPROCESSOR_POSTPROCESSOR_H_
+#define EXADG_POISSON_POSTPROCESSOR_POSTPROCESSOR_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -59,6 +59,9 @@ protected:
 public:
   PostProcessor(PostProcessorData<dim> const & pp_data, MPI_Comm const & mpi_comm);
 
+  // custom destructor computing convergence tables if desired
+  virtual ~PostProcessor();
+
   void
   setup(Operator<dim, n_components, Number> const & pde_operator) override;
 
@@ -82,5 +85,4 @@ private:
 } // namespace Poisson
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_POISSON_POSTPROCESSOR_H_ */
+#endif /* EXADG_POISSON_POSTPROCESSOR_POSTPROCESSOR_H_ */

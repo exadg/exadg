@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef MEASURE_MINIMUM_TIME
-#define MEASURE_MINIMUM_TIME
+#ifndef EXADG_UTILITIES_MEASURE_MINIMUM_TIME_H_
+#define EXADG_UTILITIES_MEASURE_MINIMUM_TIME_H_
 
 namespace ExaDG
 {
@@ -80,6 +80,7 @@ private:
     convergence_table.set_scientific(label + "_ave", true);
   }
 };
+
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_UTILITIES_MEASURE_MINIMUM_TIME_H_ */

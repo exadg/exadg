@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_BOUNDARY_DESCRIPTOR_H_
-#define INCLUDE_CONVECTION_DIFFUSION_BOUNDARY_DESCRIPTOR_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_
+#define EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_
 
 // C/C++
 #include <memory>
@@ -87,4 +87,4 @@ struct BoundaryDescriptor
 } // namespace ConvDiff
 } // namespace ExaDG
 
-#endif /* INCLUDE_CONVECTION_DIFFUSION_BOUNDARY_DESCRIPTOR_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_ */

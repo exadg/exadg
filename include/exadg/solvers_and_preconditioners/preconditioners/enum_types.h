@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONER_ENUM_TYPES_H_
-#define INCLUDE_EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONER_ENUM_TYPES_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONERS_ENUM_TYPES_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONERS_ENUM_TYPES_H_
 
+// C/C++
 #include <string>
 
 namespace ExaDG
@@ -43,4 +44,4 @@ enum class Preconditioner
 } // namespace Elementwise
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONER_ENUM_TYPES_H_ */
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONERS_ENUM_TYPES_H_ */

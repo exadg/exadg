@@ -15,12 +15,13 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
 #include <exadg/poisson/postprocessor/postprocessor.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
+#include <exadg/utilities/evaluate_convergence_study.h>
 
 namespace ExaDG
 {
@@ -34,6 +35,17 @@ PostProcessor<dim, n_components, Number>::PostProcessor(PostProcessorData<dim> c
     output_generator(mpi_comm_in),
     error_calculator(mpi_comm_in)
 {
+}
+
+template<int dim, int n_components, typename Number>
+PostProcessor<dim, n_components, Number>::~PostProcessor()
+{
+  // Evaluate the convergence study.
+  std::vector<std::string> error_directories;
+  if(pp_data.error_data.compute_convergence_table)
+    error_directories.push_back(pp_data.error_data.directory);
+
+  evaluate_convergence_study(mpi_comm, error_directories);
 }
 
 template<int dim, int n_components, typename Number>

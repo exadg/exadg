@@ -1,5 +1,5 @@
 #########################################################################
-# 
+#
 #                 #######               ######  #######
 #                 ##                    ##   ## ##
 #                 #####   ##  ## #####  ##   ## ## ####
@@ -21,7 +21,7 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#  along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #########################################################################
 
@@ -36,6 +36,7 @@ SET( SOURCE_FILES
      moving_mesh.cpp
      particles.cpp
      global_coarsening.cpp
+     matrix_free_integrals_and_kernels.cpp
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )

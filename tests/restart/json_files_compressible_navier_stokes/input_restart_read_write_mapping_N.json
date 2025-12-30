@@ -1,0 +1,28 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "true"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "3",
+        "DegreeMax": "3",
+        "RefineSpaceMin": "2",
+        "RefineSpaceMax": "2"
+    },
+    "TemporalResolution": {
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+        "ReadRestart": "true",
+        "WriteRestart": "false",
+        "ReadWriteMapping": "false",
+        "TriangulationType": "Distributed"
+    },
+    "Output": {
+        "OutputDirectory": "output_test/manufactured_solution/",
+        "OutputName": "test",
+        "WriteOutput": "false"
+    }
+}

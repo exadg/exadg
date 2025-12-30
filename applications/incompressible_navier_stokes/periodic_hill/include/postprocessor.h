@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -71,7 +71,7 @@ public:
     mean_velocity_calculator.reset(
       new MeanVelocityCalculator<dim, Number>(pde_operator.get_matrix_free(),
                                               pde_operator.get_dof_index_velocity(),
-                                              pde_operator.get_quad_index_velocity_linear(),
+                                              pde_operator.get_quad_index_velocity_standard(),
                                               my_pp_data.mean_velocity_data,
                                               this->mpi_comm));
 

@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -119,6 +119,20 @@ void
 TimeIntExplRK<Number>::initialize_solution()
 {
   pde_operator->prescribe_initial_conditions(this->solution_n, this->time);
+}
+
+template<typename Number>
+void
+TimeIntExplRK<Number>::read_restart_vectors(std::vector<VectorType *> const & vectors)
+{
+  pde_operator->deserialize_vectors(vectors);
+}
+
+template<typename Number>
+void
+TimeIntExplRK<Number>::write_restart_vectors(std::vector<VectorType const *> const & vectors) const
+{
+  pde_operator->serialize_vectors(vectors);
 }
 
 /*

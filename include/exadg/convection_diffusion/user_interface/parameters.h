@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_INPUT_PARAMETERS_H_
-#define INCLUDE_CONVECTION_DIFFUSION_INPUT_PARAMETERS_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_PARAMETERS_H_
+#define EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_PARAMETERS_H_
 
 // deal.II
 #include <deal.II/base/exceptions.h>
@@ -283,9 +283,6 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // description: see enum declaration
-  Solver solver;
-
   // solver data
   SolverData solver_data;
 
@@ -361,4 +358,4 @@ public:
 } // namespace ConvDiff
 } // namespace ExaDG
 
-#endif /* INCLUDE_CONVECTION_DIFFUSION_INPUT_PARAMETERS_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_PARAMETERS_H_ */

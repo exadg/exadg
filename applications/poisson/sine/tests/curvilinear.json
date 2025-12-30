@@ -11,7 +11,8 @@
         "RefineSpaceMax": "2"
     },
     "Application": {
-        "MeshType": "Curvilinear"
+        "MeshType": "Curvilinear",
+        "MultigridCoarseGridPreconditioner": "PointJacobi"
     },
     "Output": {
         "OutputDirectory": "output/poisson/sine/",

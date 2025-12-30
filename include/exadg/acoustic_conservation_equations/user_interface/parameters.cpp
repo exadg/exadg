@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -35,12 +35,12 @@ Parameters::Parameters()
   : // MATHEMATICAL MODEL
     formulation(Formulation::Undefined),
     right_hand_side(false),
+    aero_acoustic_source_term(false),
 
     // PHYSICAL QUANTITIES
     start_time(0.),
     end_time(-1.),
     speed_of_sound(-1.),
-    density(-1.),
 
     // TEMPORAL DISCRETIZATION
     calculation_of_time_step_size(TimeStepCalculation::Undefined),
@@ -74,7 +74,6 @@ Parameters::check() const
   // PHYSICAL QUANTITIES
   AssertThrow(end_time > start_time, dealii::ExcMessage("parameter end_time must be defined"));
   AssertThrow(speed_of_sound >= 0.0, dealii::ExcMessage("parameter must be defined"));
-  AssertThrow(density >= 0.0, dealii::ExcMessage("parameter must be defined"));
 
   // TEMPORAL DISCRETIZATION
   AssertThrow(calculation_of_time_step_size != TimeStepCalculation::Undefined,
@@ -88,9 +87,6 @@ Parameters::check() const
     AssertThrow(cfl > 0., dealii::ExcMessage("parameter must be defined"));
     AssertThrow(cfl_exponent_fe_degree > 0., dealii::ExcMessage("cfl_exponent_fe_degree > 0."));
   }
-
-  AssertThrow(not(adaptive_time_stepping),
-              dealii::ExcMessage("adaptive timestepping not supported"));
 
   // SPATIAL DISCRETIZATION
   grid.check();
@@ -135,9 +131,6 @@ Parameters::print_parameters_physical_quantities(dealii::ConditionalOStream cons
 
   // speed of sound
   print_parameter(pcout, "Speed of sound", speed_of_sound);
-
-  // mean density
-  print_parameter(pcout, "Density", density);
 }
 
 void
@@ -159,6 +152,9 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
   // restart
   print_parameter(pcout, "Restarted simulation", restarted_simulation);
   restart_data.print(pcout);
+
+  // adaptive time-stepping
+  print_parameter(pcout, "Adaptive time stepping", adaptive_time_stepping);
 }
 
 void

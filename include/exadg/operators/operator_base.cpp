@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -30,20 +30,22 @@
 #include <exadg/operators/operator_base.h>
 #include <exadg/solvers_and_preconditioners/utilities/block_jacobi_matrices.h>
 #include <exadg/solvers_and_preconditioners/utilities/invert_diagonal.h>
+#include <exadg/solvers_and_preconditioners/utilities/linear_algebra_utilities.h>
 #include <exadg/solvers_and_preconditioners/utilities/verify_calculation_of_diagonal.h>
 
 namespace ExaDG
 {
 template<int dim, typename Number, int n_components>
 OperatorBase<dim, Number, n_components>::OperatorBase()
-  : dealii::Subscriptor(),
+  : dealii::EnableObserverPointer(),
     matrix_free(),
     time(0.0),
     is_mg(false),
     is_dg(true),
     data(OperatorBaseData()),
     level(dealii::numbers::invalid_unsigned_int),
-    n_mpi_processes(0)
+    n_mpi_processes(0),
+    system_matrix_based_been_initialized(false)
 {
 }
 
@@ -83,7 +85,7 @@ OperatorBase<dim, Number, n_components>::reinit(
   dealii::DoFHandler<dim> const & dof_handler =
     this->matrix_free->get_dof_handler(this->data.dof_index);
 
-  n_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(dof_handler.get_communicator());
+  n_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(dof_handler.get_mpi_communicator());
 }
 
 template<int dim, typename Number, int n_components>
@@ -130,6 +132,15 @@ OperatorBase<dim, Number, n_components>::get_dof_index() const
 
 template<int dim, typename Number, int n_components>
 unsigned int
+OperatorBase<dim, Number, n_components>::get_dof_index_inhomogeneous() const
+{
+  AssertThrow(data.dof_index_inhomogeneous != dealii::numbers::invalid_unsigned_int,
+              dealii::ExcMessage("dof_index_inhomogeneous is uninitialized."));
+  return this->data.dof_index_inhomogeneous;
+}
+
+template<int dim, typename Number, int n_components>
+unsigned int
 OperatorBase<dim, Number, n_components>::get_quad_index() const
 {
   return this->data.quad_index;
@@ -146,14 +157,28 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::vmult(VectorType & dst, VectorType const & src) const
 {
-  this->apply(dst, src);
+  if(this->data.use_matrix_based_operator_level)
+  {
+    this->apply_matrix_based(dst, src);
+  }
+  else
+  {
+    this->apply(dst, src);
+  }
 }
 
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::vmult_add(VectorType & dst, VectorType const & src) const
 {
-  this->apply_add(dst, src);
+  if(this->data.use_matrix_based_operator_level)
+  {
+    this->apply_matrix_based_add(dst, src);
+  }
+  else
+  {
+    this->apply_add(dst, src);
+  }
 }
 
 template<int dim, typename Number, int n_components>
@@ -227,10 +252,10 @@ OperatorBase<dim, Number, n_components>::calculate_inverse_diagonal(VectorType &
 {
   this->calculate_diagonal(diagonal);
 
-  if(false)
+  if constexpr(false)
   {
     verify_calculation_of_diagonal(
-      *this, diagonal, matrix_free->get_dof_handler(this->data.dof_index).get_communicator());
+      *this, diagonal, matrix_free->get_dof_handler(this->data.dof_index).get_mpi_communicator());
   }
 
   invert_diagonal(diagonal);
@@ -240,9 +265,9 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::apply(VectorType & dst, VectorType const & src) const
 {
-  if(is_dg)
+  if(evaluate_face_integrals())
   {
-    if(evaluate_face_integrals())
+    if(is_dg)
     {
       matrix_free->loop(&This::cell_loop,
                         &This::face_loop,
@@ -250,37 +275,32 @@ OperatorBase<dim, Number, n_components>::apply(VectorType & dst, VectorType cons
                         this,
                         dst,
                         src,
-                        true);
+                        true /* zero_dst_vector */);
     }
     else
     {
-      matrix_free->cell_loop(&This::cell_loop, this, dst, src, true);
-    }
-  }
-  else
-  {
-    // Compute matrix-vector product. Constrained degrees of freedom in the src-vector will not be
-    // used. The function read_dof_values() (or gather_evaluate()) uses the homogeneous boundary
-    // data passed to MatrixFree via AffineConstraints with the standard "dof_index".
-    if(evaluate_face_integrals())
-    {
+      // Compute matrix-vector product. Constrained degrees of freedom in the src-vector will not be
+      // used. The function `read_dof_values()` (or `gather_evaluate()`) uses the homogeneous
+      // boundary data passed to `MatrixFree` via `AffineConstraints` with the standard `dof_index`.
       matrix_free->loop(&This::cell_loop,
                         &This::face_loop_empty,
                         &This::boundary_face_loop_hom_operator,
                         this,
                         dst,
                         src,
-                        true);
+                        true /* zero_dst_vector */);
     }
-    else
-    {
-      matrix_free->cell_loop(&This::cell_loop, this, dst, src, true);
-    }
+  }
+  else
+  {
+    matrix_free->cell_loop(&This::cell_loop, this, dst, src, true /* zero_dst_vector */);
+  }
 
-    // Constrained degree of freedom are not removed from the system of equations.
-    // Instead, we set the diagonal entries of the matrix to 1 for these constrained
-    // degrees of freedom. This means that we simply copy the constrained values to the
-    // dst vector.
+  if(not is_dg)
+  {
+    // Constrained degrees of freedom are not removed from the system of equations. Instead, we set
+    // the diagonal entries of the matrix to 1 for these constrained degrees of freedom. This means
+    // that we need to copy the constrained values to the `dst` vector.
     for(unsigned int const constrained_index :
         matrix_free->get_constrained_dofs(this->data.dof_index))
     {
@@ -293,25 +313,18 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::apply_add(VectorType & dst, VectorType const & src) const
 {
-  if(is_dg)
+  if(evaluate_face_integrals())
   {
-    if(evaluate_face_integrals())
+    if(is_dg)
     {
       matrix_free->loop(
         &This::cell_loop, &This::face_loop, &This::boundary_face_loop_hom_operator, this, dst, src);
     }
     else
     {
-      matrix_free->cell_loop(&This::cell_loop, this, dst, src);
-    }
-  }
-  else
-  {
-    // See function apply() for additional comments.
-    // Note that MatrixFree will not touch constrained degrees of freedom in the dst-vector.
-    if(evaluate_face_integrals())
-
-    {
+      // Compute matrix-vector product. Constrained degrees of freedom in the `src`-vector will not
+      // be used. The function `read_dof_values()` (or `gather_evaluate()`) uses the homogeneous
+      // boundary data passed to `MatrixFree` via `AffineConstraints` with the standard `dof_index`.
       matrix_free->loop(&This::cell_loop,
                         &This::face_loop_empty,
                         &This::boundary_face_loop_hom_operator,
@@ -319,17 +332,176 @@ OperatorBase<dim, Number, n_components>::apply_add(VectorType & dst, VectorType 
                         dst,
                         src);
     }
-    else
-    {
-      matrix_free->cell_loop(&This::cell_loop, this, dst, src);
-    }
+  }
+  else
+  {
+    // See function `apply()` for additional comments. Note that `dealii::MatrixFree` will not touch
+    // constrained degrees of freedom in the `dst` vector.
+    matrix_free->cell_loop(&This::cell_loop, this, dst, src);
+  }
 
+  if(not is_dg)
+  {
+    // Constrained degrees of freedom are not removed from the system of equations. Instead, we set
+    // the diagonal entries of the matrix to 1 for these constrained degrees of freedom. This means
+    // that we need to copy the constrained values to the `dst` vector.
     for(unsigned int const constrained_index :
         matrix_free->get_constrained_dofs(this->data.dof_index))
     {
       dst.local_element(constrained_index) += src.local_element(constrained_index);
     }
   }
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::assemble_matrix_if_matrix_based() const
+{
+  if(this->data.use_matrix_based_operator_level)
+  {
+    // initialize matrix
+    if(not(system_matrix_based_been_initialized))
+    {
+      dealii::DoFHandler<dim> const & dof_handler =
+        this->matrix_free->get_dof_handler(this->data.dof_index);
+
+      if(this->data.sparse_matrix_type == SparseMatrixType::Trilinos)
+      {
+#ifdef DEAL_II_WITH_TRILINOS
+        init_system_matrix(system_matrix_trilinos, dof_handler.get_mpi_communicator());
+#else
+        AssertThrow(
+          false,
+          dealii::ExcMessage(
+            "Make sure that DEAL_II_WITH_TRILINOS is activated if you want to use SparseMatrixType::Trilinos."));
+#endif
+      }
+      else if(this->data.sparse_matrix_type == SparseMatrixType::PETSc)
+      {
+#ifdef DEAL_II_WITH_PETSC
+        init_system_matrix(system_matrix_petsc, dof_handler.get_mpi_communicator());
+#else
+        AssertThrow(
+          false,
+          dealii::ExcMessage(
+            "Make sure that DEAL_II_WITH_PETSC is activated if you want to use SparseMatrixType::PETSc."));
+#endif
+      }
+      else
+      {
+        AssertThrow(false, dealii::ExcMessage("not implemented."));
+      }
+
+      system_matrix_based_been_initialized = true;
+    }
+
+    // calculate matrix
+    if(this->data.sparse_matrix_type == SparseMatrixType::Trilinos)
+    {
+#ifdef DEAL_II_WITH_TRILINOS
+      system_matrix_trilinos *= 0.0;
+      calculate_system_matrix(system_matrix_trilinos);
+#else
+      AssertThrow(
+        false,
+        dealii::ExcMessage(
+          "Make sure that DEAL_II_WITH_TRILINOS is activated if you want to use SparseMatrixType::Trilinos."));
+#endif
+    }
+    else if(this->data.sparse_matrix_type == SparseMatrixType::PETSc)
+    {
+#ifdef DEAL_II_WITH_PETSC
+      system_matrix_petsc *= 0.0;
+      calculate_system_matrix(system_matrix_petsc);
+
+      if(system_matrix_petsc.m() > 0)
+      {
+        // get vector partitioner
+        dealii::LinearAlgebra::distributed::Vector<Number> vector;
+        initialize_dof_vector(vector);
+        VecCreateMPI(system_matrix_petsc.get_mpi_communicator(),
+                     vector.get_partitioner()->locally_owned_size(),
+                     PETSC_DETERMINE,
+                     &petsc_vector_dst);
+        VecCreateMPI(system_matrix_petsc.get_mpi_communicator(),
+                     vector.get_partitioner()->locally_owned_size(),
+                     PETSC_DETERMINE,
+                     &petsc_vector_src);
+      }
+#else
+      AssertThrow(
+        false,
+        dealii::ExcMessage(
+          "Make sure that DEAL_II_WITH_PETSC is activated if you want to use SparseMatrixType::PETSc."));
+#endif
+    }
+    else
+    {
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
+    }
+  }
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::apply_matrix_based(VectorType &       dst,
+                                                            VectorType const & src) const
+{
+  if(this->data.sparse_matrix_type == SparseMatrixType::Trilinos)
+  {
+#ifdef DEAL_II_WITH_TRILINOS
+    apply_function_in_double_precision(
+      dst,
+      src,
+      [&](dealii::LinearAlgebra::distributed::Vector<double> &       dst_double,
+          dealii::LinearAlgebra::distributed::Vector<double> const & src_double) {
+        system_matrix_trilinos.vmult(dst_double, src_double);
+      });
+#else
+    AssertThrow(
+      false,
+      dealii::ExcMessage(
+        "Make sure that DEAL_II_WITH_TRILINOS is activated if you want to use SparseMatrixType::Trilinos."));
+#endif
+  }
+  else if(this->data.sparse_matrix_type == SparseMatrixType::PETSc)
+  {
+#ifdef DEAL_II_WITH_PETSC
+    if(system_matrix_petsc.m() > 0)
+    {
+      apply_petsc_operation(dst,
+                            src,
+                            petsc_vector_dst,
+                            petsc_vector_src,
+                            [&](dealii::PETScWrappers::VectorBase &       petsc_dst,
+                                dealii::PETScWrappers::VectorBase const & petsc_src) {
+                              system_matrix_petsc.vmult(petsc_dst, petsc_src);
+                            });
+    }
+#else
+    AssertThrow(
+      false,
+      dealii::ExcMessage(
+        "Make sure that DEAL_II_WITH_PETSC is activated if you want to use SparseMatrixType::PETSc."));
+#endif
+  }
+  else
+  {
+    AssertThrow(false, dealii::ExcMessage("not implemented."));
+  }
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::apply_matrix_based_add(VectorType &       dst,
+                                                                VectorType const & src) const
+{
+  VectorType tmp;
+  tmp.reinit(dst, false);
+
+  apply_matrix_based(tmp, src);
+
+  dst += tmp;
 }
 
 template<int dim, typename Number, int n_components>
@@ -358,7 +530,7 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
                         tmp,
                         tmp);
 
-      // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand
+      // multiply by -1.0 since the boundary face integrals have to be shifted to the right-hand
       // side
       rhs.add(-1.0, tmp);
     }
@@ -369,9 +541,9 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
     src_tmp.reinit(rhs, false);
     dst_tmp.reinit(rhs, false);
 
-    // Set constrained degrees of freedom according to inhomogeneous Dirichlet boundary conditions.
-    //  The rest of the vector remains unchanged.
-    set_inhomogeneous_boundary_values(src_tmp);
+    // Set constrained degrees of freedom according to inhomogeneous Dirichlet boundary conditions,
+    // hanging node and periodicity constraints. The rest of the vector remains unchanged.
+    set_inhomogeneous_constrained_values(src_tmp);
 
     // Since src_tmp = 0 apart from inhomogeneous boundary data, the function evaluate_add() only
     // computes the inhomogeneous part of the operator.
@@ -478,23 +650,7 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
   }
   else
   {
-    dealii::MatrixFreeTools::
-      compute_diagonal<dim, -1, 0, n_components, Number, dealii::VectorizedArray<Number>>(
-        *matrix_free,
-        diagonal,
-        [&](auto & integrator) -> void {
-          // TODO: this is currently done for every column, but would only be necessary
-          // once per cell
-          this->reinit_cell_derived(integrator, integrator.get_current_cell_index());
-
-          integrator.evaluate(integrator_flags.cell_evaluate);
-
-          this->do_cell_integral(integrator);
-
-          integrator.integrate(integrator_flags.cell_integrate);
-        },
-        data.dof_index,
-        data.quad_index);
+    matrix_free->cell_loop(&This::cell_loop_diagonal, this, diagonal, diagonal);
   }
 }
 
@@ -584,30 +740,36 @@ void
 OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditioner_matrix_free(
   bool const initialize) const
 {
-  elementwise_operator = std::make_shared<ELEMENTWISE_OPERATOR>(*this);
+  elementwise_operator = std::make_shared<ElementwiseOperator>(*this);
 
   if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::None)
   {
-    typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<Number>> IDENTITY;
+    typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<Number>>
+      ElementwiseIdentityPreconditioner;
 
     IntegratorCell integrator =
       IntegratorCell(*this->matrix_free, this->data.dof_index, this->data.quad_index);
 
-    elementwise_preconditioner = std::make_shared<IDENTITY>(integrator.dofs_per_cell);
+    elementwise_preconditioner =
+      std::make_shared<ElementwiseIdentityPreconditioner>(integrator.dofs_per_cell);
   }
   else if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::PointJacobi)
   {
-    typedef Elementwise::JacobiPreconditioner<dim, n_components, Number, This> POINT_JACOBI;
+    typedef Elementwise::JacobiPreconditioner<dim, n_components, Number, This>
+      ElementwiseJacobiPreconditioner;
 
-    elementwise_preconditioner = std::make_shared<POINT_JACOBI>(
+    elementwise_preconditioner = std::make_shared<ElementwiseJacobiPreconditioner>(
       get_matrix_free(), get_dof_index(), get_quad_index(), *this, initialize);
   }
   else if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::InverseMassMatrix)
   {
-    typedef Elementwise::InverseMassPreconditioner<dim, n_components, Number> INVERSE_MASS;
+    typedef Elementwise::InverseMassPreconditioner<dim, n_components, Number>
+      ElementwiseInverseMassPreconditioner;
 
     elementwise_preconditioner =
-      std::make_shared<INVERSE_MASS>(get_matrix_free(), get_dof_index(), get_quad_index());
+      std::make_shared<ElementwiseInverseMassPreconditioner>(get_matrix_free(),
+                                                             get_dof_index(),
+                                                             get_quad_index());
   }
   else
   {
@@ -618,9 +780,9 @@ OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditione
   iterative_solver_data.solver_type = data.solver_block_diagonal;
   iterative_solver_data.solver_data = data.solver_data_block_diagonal;
 
-  elementwise_solver = std::make_shared<ELEMENTWISE_SOLVER>(
-    *std::dynamic_pointer_cast<ELEMENTWISE_OPERATOR>(elementwise_operator),
-    *std::dynamic_pointer_cast<ELEMENTWISE_PRECONDITIONER>(elementwise_preconditioner),
+  elementwise_solver = std::make_shared<ElementwiseSolver>(
+    *std::dynamic_pointer_cast<ElementwiseOperator>(elementwise_operator),
+    *std::dynamic_pointer_cast<ElementwisePreconditionerBase>(elementwise_preconditioner),
     iterative_solver_data);
 }
 
@@ -831,11 +993,10 @@ OperatorBase<dim, Number, n_components>::internal_init_system_matrix(
                 std::to_string(sum_of_locally_owned_dofs) + " vs " +
                 std::to_string(owned_dofs.size())));
 
-  dealii::IndexSet relevant_dofs;
-  if(is_mg)
-    dealii::DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);
-  else
-    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs);
+  dealii::IndexSet const relevant_dofs =
+    is_mg ? dealii::DoFTools::extract_locally_relevant_level_dofs(dof_handler, level) :
+            dealii::DoFTools::extract_locally_relevant_dofs(dof_handler);
+
   dsp.reinit(relevant_dofs.size(), relevant_dofs.size(), relevant_dofs);
 
   if(is_dg and is_mg)
@@ -864,7 +1025,7 @@ OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix(
   if(evaluate_face_integrals())
   {
     matrix_free->loop(&This::cell_loop_calculate_system_matrix,
-                      &This::face_loop_calculate_system_matrix /* no contributions added for CG */,
+                      &This::face_loop_calculate_system_matrix,
                       &This::boundary_face_loop_calculate_system_matrix,
                       this,
                       system_matrix,
@@ -880,6 +1041,46 @@ OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix(
 
   // communicate overlapping matrix parts
   system_matrix.compress(dealii::VectorOperation::add);
+
+  // set diagonal entries of constrained DoFs to 1.0
+  dealii::DoFHandler<dim> const & dof_handler =
+    this->matrix_free->get_dof_handler(this->data.dof_index);
+  for(auto const & line : this->constraint->get_lines())
+  {
+    if(dof_handler.locally_owned_dofs().is_element(line.index))
+    {
+      system_matrix.set(line.index, line.index, 1.0);
+    }
+  }
+  system_matrix.compress(dealii::VectorOperation::insert);
+}
+
+template<int dim, typename Number, int n_components>
+void
+OperatorBase<dim, Number, n_components>::get_constant_modes(
+  std::vector<std::vector<bool>> &   constant_modes,
+  std::vector<std::vector<double>> & constant_modes_values) const
+{
+  (void)constant_modes_values;
+
+  dealii::DoFHandler<dim> const & dof_handler =
+    this->matrix_free->get_dof_handler(this->data.dof_index);
+
+  if(dof_handler.has_level_dofs())
+  {
+    // Extract coarse level constant modes.
+    constant_modes =
+      dealii::DoFTools::extract_level_constant_modes(this->matrix_free->get_mg_level(),
+                                                     dof_handler,
+                                                     dealii::ComponentMask(n_components, true));
+  }
+  else
+  {
+    // Extract finest level constant modes.
+    constant_modes =
+      dealii::DoFTools::extract_constant_modes(dof_handler,
+                                               dealii::ComponentMask(n_components, true));
+  }
 }
 
 template<int dim, typename Number, int n_components>
@@ -1001,7 +1202,7 @@ OperatorBase<dim, Number, n_components>::do_boundary_integral_continuous(
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::set_inhomogeneous_boundary_values(
+OperatorBase<dim, Number, n_components>::set_inhomogeneous_constrained_values(
   VectorType & solution) const
 {
   (void)solution;
@@ -1009,7 +1210,7 @@ OperatorBase<dim, Number, n_components>::set_inhomogeneous_boundary_values(
   AssertThrow(
     false,
     dealii::ExcMessage(
-      "OperatorBase::set_inhomogeneous_boundary_values() has to be overridden by derived class!"));
+      "OperatorBase::set_inhomogeneous_constrained_values() has to be overridden by derived class!"));
 }
 
 template<int dim, typename Number, int n_components>
@@ -1182,29 +1383,22 @@ OperatorBase<dim, Number, n_components>::face_loop(
   VectorType const &                      src,
   Range const &                           range) const
 {
-  if(is_dg)
+  IntegratorFace integrator_m =
+    IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
+  IntegratorFace integrator_p =
+    IntegratorFace(matrix_free, false, this->data.dof_index, this->data.quad_index);
+
+  for(auto face = range.first; face < range.second; ++face)
   {
-    IntegratorFace integrator_m =
-      IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
-    IntegratorFace integrator_p =
-      IntegratorFace(matrix_free, false, this->data.dof_index, this->data.quad_index);
+    this->reinit_face(integrator_m, integrator_p, face);
 
-    for(auto face = range.first; face < range.second; ++face)
-    {
-      this->reinit_face(integrator_m, integrator_p, face);
+    integrator_m.gather_evaluate(src, integrator_flags.face_evaluate);
+    integrator_p.gather_evaluate(src, integrator_flags.face_evaluate);
 
-      integrator_m.gather_evaluate(src, integrator_flags.face_evaluate);
-      integrator_p.gather_evaluate(src, integrator_flags.face_evaluate);
+    this->do_face_integral(integrator_m, integrator_p);
 
-      this->do_face_integral(integrator_m, integrator_p);
-
-      integrator_m.integrate_scatter(integrator_flags.face_integrate, dst);
-      integrator_p.integrate_scatter(integrator_flags.face_integrate, dst);
-    }
-  }
-  else
-  {
-    AssertThrow(is_dg, dealii::ExcMessage("Zero interior face integrals expected for CG."));
+    integrator_m.integrate_scatter(integrator_flags.face_integrate, dst);
+    integrator_p.integrate_scatter(integrator_flags.face_integrate, dst);
   }
 }
 
@@ -1216,29 +1410,32 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_hom_operator(
   VectorType const &                      src,
   Range const &                           range) const
 {
-  IntegratorFace integrator_m =
-    IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
-
-  for(unsigned int face = range.first; face < range.second; face++)
+  if(evaluate_face_integrals())
   {
-    this->reinit_boundary_face(integrator_m, face);
+    IntegratorFace integrator_m =
+      IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
 
-    integrator_m.gather_evaluate(src, integrator_flags.face_evaluate);
-
-    if(is_dg)
+    for(unsigned int face = range.first; face < range.second; face++)
     {
-      do_boundary_integral(integrator_m,
-                           OperatorType::homogeneous,
-                           matrix_free.get_boundary_id(face));
-    }
-    else
-    {
-      do_boundary_integral_continuous(integrator_m,
-                                      OperatorType::homogeneous,
-                                      matrix_free.get_boundary_id(face));
-    }
+      this->reinit_boundary_face(integrator_m, face);
 
-    integrator_m.integrate_scatter(integrator_flags.face_integrate, dst);
+      integrator_m.gather_evaluate(src, integrator_flags.face_evaluate);
+
+      if(is_dg)
+      {
+        do_boundary_integral(integrator_m,
+                             OperatorType::homogeneous,
+                             matrix_free.get_boundary_id(face));
+      }
+      else
+      {
+        do_boundary_integral_continuous(integrator_m,
+                                        OperatorType::homogeneous,
+                                        matrix_free.get_boundary_id(face));
+      }
+
+      integrator_m.integrate_scatter(integrator_flags.face_integrate, dst);
+    }
   }
 }
 
@@ -1412,63 +1609,56 @@ OperatorBase<dim, Number, n_components>::face_loop_diagonal(
 {
   (void)src;
 
-  if(is_dg)
+  IntegratorFace integrator_m =
+    IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
+  IntegratorFace integrator_p =
+    IntegratorFace(matrix_free, false, this->data.dof_index, this->data.quad_index);
+
+  // create temporal array for local diagonal
+  unsigned int const                                     dofs_per_cell = integrator_m.dofs_per_cell;
+  dealii::AlignedVector<dealii::VectorizedArray<Number>> local_diag(dofs_per_cell);
+
+  for(auto face = range.first; face < range.second; ++face)
   {
-    IntegratorFace integrator_m =
-      IntegratorFace(matrix_free, true, this->data.dof_index, this->data.quad_index);
-    IntegratorFace integrator_p =
-      IntegratorFace(matrix_free, false, this->data.dof_index, this->data.quad_index);
+    this->reinit_face(integrator_m, integrator_p, face);
 
-    // create temporal array for local diagonal
-    unsigned int const dofs_per_cell = integrator_m.dofs_per_cell;
-    dealii::AlignedVector<dealii::VectorizedArray<Number>> local_diag(dofs_per_cell);
-
-    for(auto face = range.first; face < range.second; ++face)
+    // interior face
+    for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
-      this->reinit_face(integrator_m, integrator_p, face);
+      this->create_standard_basis(j, integrator_m);
 
-      // interior face
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      {
-        this->create_standard_basis(j, integrator_m);
+      integrator_m.evaluate(integrator_flags.face_evaluate);
 
-        integrator_m.evaluate(integrator_flags.face_evaluate);
+      this->do_face_int_integral(integrator_m, integrator_p);
 
-        this->do_face_int_integral(integrator_m, integrator_p);
+      integrator_m.integrate(integrator_flags.face_integrate);
 
-        integrator_m.integrate(integrator_flags.face_integrate);
-
-        local_diag[j] = integrator_m.begin_dof_values()[j];
-      }
-
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        integrator_m.begin_dof_values()[j] = local_diag[j];
-
-      integrator_m.distribute_local_to_global(dst);
-
-      // exterior face
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      {
-        this->create_standard_basis(j, integrator_p);
-
-        integrator_p.evaluate(integrator_flags.face_evaluate);
-
-        this->do_face_ext_integral(integrator_m, integrator_p);
-
-        integrator_p.integrate(integrator_flags.face_integrate);
-
-        local_diag[j] = integrator_p.begin_dof_values()[j];
-      }
-
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        integrator_p.begin_dof_values()[j] = local_diag[j];
-
-      integrator_p.distribute_local_to_global(dst);
+      local_diag[j] = integrator_m.begin_dof_values()[j];
     }
-  }
-  else
-  {
-    AssertThrow(is_dg, dealii::ExcMessage("Zero interior face integrals expected for CG"));
+
+    for(unsigned int j = 0; j < dofs_per_cell; ++j)
+      integrator_m.begin_dof_values()[j] = local_diag[j];
+
+    integrator_m.distribute_local_to_global(dst);
+
+    // exterior face
+    for(unsigned int j = 0; j < dofs_per_cell; ++j)
+    {
+      this->create_standard_basis(j, integrator_p);
+
+      integrator_p.evaluate(integrator_flags.face_evaluate);
+
+      this->do_face_ext_integral(integrator_m, integrator_p);
+
+      integrator_p.integrate(integrator_flags.face_integrate);
+
+      local_diag[j] = integrator_p.begin_dof_values()[j];
+    }
+
+    for(unsigned int j = 0; j < dofs_per_cell; ++j)
+      integrator_p.begin_dof_values()[j] = local_diag[j];
+
+    integrator_p.distribute_local_to_global(dst);
   }
 }
 
@@ -1522,7 +1712,6 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_diagonal(
   }
 }
 
-
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
@@ -1532,9 +1721,6 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
   Range const &                           range) const
 {
   (void)src;
-
-  AssertThrow(is_dg,
-              dealii::ExcMessage("Cell-based face integrals useful for DG discretizations only."));
 
   IntegratorCell integrator =
     IntegratorCell(matrix_free, this->data.dof_index, this->data.quad_index);
@@ -2113,7 +2299,7 @@ OperatorBase<dim, Number, n_components>::face_loop_calculate_system_matrix(
   }
   else
   {
-    // No interior face contribution for CG
+    // No internal face integrals for the CG case.
   }
 }
 
@@ -2181,16 +2367,6 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_calculate_system_mat
       else
         cell_v->get_dof_indices(dof_indices);
 
-      if(not is_dg)
-      {
-        // in the case of CG: shape functions are not ordered lexicographically
-        // see (https://www.dealii.org/8.5.1/doxygen/deal.II/classFE__Q.html)
-        // so we have to fix the order
-        auto temp = dof_indices;
-        for(unsigned int j = 0; j < dof_indices.size(); j++)
-          dof_indices[j] = temp[matrix_free.get_shape_info().lexicographic_numbering[j]];
-      }
-
       constraint_double.distribute_local_to_global(matrices[v], dof_indices, dst);
     }
   }
@@ -2219,12 +2395,12 @@ OperatorBase<dim, Number, n_components>::compute_factorized_additive_schwarz_mat
 {
 #ifdef DEAL_II_WITH_TRILINOS
   internal_compute_factorized_additive_schwarz_matrices<dealii::TrilinosWrappers::SparseMatrix>();
-#elif DEAL_II_WITH_PETSC
+#elif defined(DEAL_II_WITH_PETSC)
   internal_compute_factorized_additive_schwarz_matrices<dealii::PETScWrappers::MPI::SparseMatrix>();
 #else
   AssertThrow(
     n_mpi_processes == 1,
-    ExcMessage(
+    dealii::ExcMessage(
       "If you want to use this function in parallel you have to compile deal.II with either "
       "Trilinos or Petsc support for distributed sparse matrices."));
   internal_compute_factorized_additive_schwarz_matrices<dealii::SparseMatrix>();
@@ -2253,7 +2429,7 @@ OperatorBase<dim, Number, n_components>::internal_compute_factorized_additive_sc
     // assemble a temporary sparse matrix to cut out the blocks
     SparseMatrix                   tmp_matrix;
     dealii::DynamicSparsityPattern dsp;
-    internal_init_system_matrix(tmp_matrix, dsp, dof_handler.get_communicator());
+    internal_init_system_matrix(tmp_matrix, dsp, dof_handler.get_mpi_communicator());
     internal_calculate_system_matrix(tmp_matrix);
 
     // collect the DoF indices of all cells
@@ -2314,6 +2490,7 @@ OperatorBase<dim, Number, n_components>::internal_compute_factorized_additive_sc
 
         // store the cell matrix and renumber lexicographic
         auto & lapack_matrix = matrices[cell * vectorization_length + v];
+        lapack_matrix.reinit(dofs_per_cell);
 
         auto const & lex_to_hier =
           matrix_free->get_shape_info(this->data.dof_index).lexicographic_numbering;

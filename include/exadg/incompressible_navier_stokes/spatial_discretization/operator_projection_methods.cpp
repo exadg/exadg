@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -80,6 +80,9 @@ OperatorProjectionMethods<dim, Number>::setup_preconditioners_and_solvers()
   setup_solver_pressure_poisson();
 
   Base::setup_projection_solver();
+
+  setup_momentum_preconditioner();
+  setup_momentum_solver();
 }
 
 template<int dim, typename Number>
@@ -92,7 +95,7 @@ OperatorProjectionMethods<dim, Number>::initialize_laplace_operator()
   laplace_operator_data.quad_index = this->get_quad_index_pressure();
 
   /*
-   * In case no Dirichlet boundary conditions as prescribed for the pressure, the pressure Poisson
+   * In case no Dirichlet boundary conditions are prescribed for the pressure, the pressure Poisson
    * equation is singular (i.e. vectors describing a constant pressure state form the nullspace
    * of the discrete pressure Poisson operator). To solve the pressure Poisson equation in that
    * case, a Krylov subspace projection is applied during the solution of the linear system of
@@ -110,25 +113,31 @@ OperatorProjectionMethods<dim, Number>::initialize_laplace_operator()
    *
    *  p0^T * A * p = (A^T * p0)^T * p = 0 != p0 * rhs (since A is symmetric).
    */
-  if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting or
+     this->param.temporal_discretization == TemporalDiscretization::BDFConsistentSplitting or
+     this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    // the Krylov subspace projection is needed for the dual splitting scheme since the linear
-    // system of equations is not consistent for this splitting method (due to the boundary
-    // conditions).
+    /*
+     * For the dual splitting and the consistent splitting scheme, a Krylov subspace projection is
+     * needed since the linear system of equations is not consistent for these methods due to the
+     * boundary conditions.
+     *
+     * One can show that the linear system of equations of the pressure Poisson equation is
+     * consistent in case of the pressure-correction scheme if the velocity Dirichlet BC is
+     * consistent. So there should be no need to solve a transformed linear system of equations. In
+     * theory, the Krylov subspace projection should not be necessary as the linear system of
+     * equations is consistent. However, we observed convergence issues for some test cases using
+     * specific parameters. Hence, to increase robustness, we also solve a transformed linear system
+     * of equations in case of the pressure-correction scheme.
+     */
     laplace_operator_data.operator_is_singular = this->is_pressure_level_undefined();
   }
-  else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+  else
   {
-    // One can show that the linear system of equations of the pressure Poisson equation is
-    // consistent in case of the pressure-correction scheme if the velocity Dirichlet BC is
-    // consistent. So there should be no need to solve a transformed linear system of equations.
-    //    laplace_operator_data.operator_is_singular = false;
-
-    // In principle, it works (since the linear system of equations is consistent)
-    // but we detected no convergence for some test cases and specific parameters.
-    // Hence, for reasons of robustness we also solve a transformed linear system of equations
-    // in case of the pressure-correction scheme.
-    laplace_operator_data.operator_is_singular = this->is_pressure_level_undefined();
+    AssertThrow(false,
+                dealii::ExcMessage(
+                  "Unknown time integration scheme. "
+                  "Consider Krylov subspace projection for the Laplace operator."));
   }
 
   laplace_operator_data.bc                   = this->boundary_descriptor_laplace;
@@ -140,7 +149,8 @@ OperatorProjectionMethods<dim, Number>::initialize_laplace_operator()
 
   laplace_operator.initialize(this->get_matrix_free(),
                               this->get_constraint_p(),
-                              laplace_operator_data);
+                              laplace_operator_data,
+                              true /* assemble_matrix */);
 }
 
 template<int dim, typename Number>
@@ -204,64 +214,157 @@ template<int dim, typename Number>
 void
 OperatorProjectionMethods<dim, Number>::setup_solver_pressure_poisson()
 {
-  if(this->param.solver_pressure_poisson == SolverPressurePoisson::CG)
-  {
-    // setup solver data
-    Krylov::SolverDataCG solver_data;
-    solver_data.max_iter             = this->param.solver_data_pressure_poisson.max_iter;
-    solver_data.solver_tolerance_abs = this->param.solver_data_pressure_poisson.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.solver_data_pressure_poisson.rel_tol;
-    // use default value of update_preconditioner (=false)
+  // initialize solver data
+  bool constexpr compute_performance_metrics = false;
+  bool constexpr compute_eigenvalues         = false;
+  bool const use_preconditioner =
+    this->param.preconditioner_pressure_poisson != PreconditionerPressurePoisson::None;
 
-    if(this->param.preconditioner_pressure_poisson != PreconditionerPressurePoisson::None)
-    {
-      solver_data.use_preconditioner = true;
-    }
+  typedef Krylov::
+    KrylovSolver<Poisson::LaplaceOperator<dim, Number, 1>, PreconditionerBase<Number>, VectorType>
+      SolverType;
 
-    // setup solver
-    pressure_poisson_solver =
-      std::make_shared<Krylov::SolverCG<Poisson::LaplaceOperator<dim, Number, 1>,
-                                        PreconditionerBase<Number>,
-                                        VectorType>>(laplace_operator,
-                                                     *preconditioner_pressure_poisson,
-                                                     solver_data);
-  }
-  else if(this->param.solver_pressure_poisson == SolverPressurePoisson::FGMRES)
-  {
-    Krylov::SolverDataFGMRES solver_data;
-    solver_data.max_iter             = this->param.solver_data_pressure_poisson.max_iter;
-    solver_data.solver_tolerance_abs = this->param.solver_data_pressure_poisson.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.solver_data_pressure_poisson.rel_tol;
-    solver_data.max_n_tmp_vectors    = this->param.solver_data_pressure_poisson.max_krylov_size;
-    // use default value of update_preconditioner (=false)
-
-    if(this->param.preconditioner_pressure_poisson != PreconditionerPressurePoisson::None)
-    {
-      solver_data.use_preconditioner = true;
-    }
-
-    pressure_poisson_solver =
-      std::make_shared<Krylov::SolverFGMRES<Poisson::LaplaceOperator<dim, Number, 1>,
-                                            PreconditionerBase<Number>,
-                                            VectorType>>(laplace_operator,
+  // initialize solver
+  pressure_poisson_solver = std::make_shared<SolverType>(laplace_operator,
                                                          *preconditioner_pressure_poisson,
-                                                         solver_data);
+                                                         this->param.solver_data_pressure_poisson,
+                                                         use_preconditioner,
+                                                         compute_performance_metrics,
+                                                         compute_eigenvalues);
+}
+
+template<int dim, typename Number>
+void
+OperatorProjectionMethods<dim, Number>::setup_momentum_preconditioner()
+{
+  if(this->param.preconditioner_momentum == MomentumPreconditioner::InverseMassMatrix)
+  {
+    InverseMassOperatorData<Number> inverse_mass_operator_data;
+    inverse_mass_operator_data.dof_index  = this->get_dof_index_velocity();
+    inverse_mass_operator_data.quad_index = this->get_quad_index_velocity_standard();
+    inverse_mass_operator_data.parameters = this->param.inverse_mass_preconditioner;
+
+    momentum_preconditioner =
+      std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(this->get_matrix_free(),
+                                                                    inverse_mass_operator_data);
+  }
+  else if(this->param.preconditioner_momentum == MomentumPreconditioner::PointJacobi)
+  {
+    momentum_preconditioner =
+      std::make_shared<JacobiPreconditioner<MomentumOperator<dim, Number>>>(this->momentum_operator,
+                                                                            false);
+  }
+  else if(this->param.preconditioner_momentum == MomentumPreconditioner::BlockJacobi)
+  {
+    momentum_preconditioner =
+      std::make_shared<BlockJacobiPreconditioner<MomentumOperator<dim, Number>>>(
+        this->momentum_operator, false);
+  }
+  else if(this->param.preconditioner_momentum == MomentumPreconditioner::Multigrid)
+  {
+    typedef MultigridPreconditioner<dim, Number> Multigrid;
+
+    momentum_preconditioner = std::make_shared<Multigrid>(this->mpi_comm);
+
+    std::shared_ptr<Multigrid> mg_preconditioner =
+      std::dynamic_pointer_cast<Multigrid>(momentum_preconditioner);
+
+    std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      dirichlet_boundary_conditions = this->momentum_operator.get_data().bc->dirichlet_bc;
+
+    // We also need to add DirichletCached boundary conditions. From the
+    // perspective of multigrid, there is no difference between standard
+    // and cached Dirichlet BCs. Since multigrid does not need information
+    // about inhomogeneous boundary data, we simply fill the map with
+    // dealii::Functions::ZeroFunction for DirichletCached BCs.
+    for(auto iter : this->momentum_operator.get_data().bc->dirichlet_cached_bc)
+    {
+      typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+        pair;
+
+      dirichlet_boundary_conditions.insert(
+        pair(iter, new dealii::Functions::ZeroFunction<dim>(dim)));
+    }
+
+    typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
+    Map_DBC_ComponentMask                                               dirichlet_bc_component_mask;
+
+    mg_preconditioner->initialize(this->param.multigrid_data_momentum,
+                                  this->grid,
+                                  this->multigrid_mappings,
+                                  this->get_dof_handler_u().get_fe(),
+                                  this->momentum_operator,
+                                  this->param.multigrid_operator_type_momentum,
+                                  this->param.ale_formulation,
+                                  dirichlet_boundary_conditions,
+                                  dirichlet_bc_component_mask);
   }
   else
   {
-    AssertThrow(false,
-                dealii::ExcMessage(
-                  "Specified solver for pressure Poisson equation is not implemented."));
+    AssertThrow(this->param.preconditioner_momentum == MomentumPreconditioner::None,
+                dealii::ExcNotImplemented());
   }
 }
 
 template<int dim, typename Number>
 void
-OperatorProjectionMethods<dim, Number>::do_rhs_add_viscous_term(VectorType & dst,
-                                                                double const time) const
+OperatorProjectionMethods<dim, Number>::setup_momentum_solver()
+{
+  // initialize solver data
+  bool constexpr compute_performance_metrics = false;
+  bool constexpr compute_eigenvalues         = false;
+  bool const use_preconditioner =
+    this->param.preconditioner_momentum != MomentumPreconditioner::None;
+
+  typedef Krylov::
+    KrylovSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
+      SolverType;
+
+  // initialize solver
+  momentum_linear_solver = std::make_shared<SolverType>(this->momentum_operator,
+                                                        *momentum_preconditioner,
+                                                        this->param.solver_data_momentum,
+                                                        use_preconditioner,
+                                                        compute_performance_metrics,
+                                                        compute_eigenvalues);
+
+  // Navier-Stokes equations with an implicit treatment of the convective term
+  if(this->param.nonlinear_problem_has_to_be_solved())
+  {
+    // nonlinear_operator
+    nonlinear_operator.initialize(*this);
+
+    // setup Newton solver
+    momentum_newton_solver = std::make_shared<Newton::Solver<VectorType,
+                                                             NonlinearMomentumOperator<dim, Number>,
+                                                             MomentumOperator<dim, Number>,
+                                                             Krylov::SolverBase<VectorType>>>(
+      this->param.newton_solver_data_momentum,
+      nonlinear_operator,
+      this->momentum_operator,
+      *momentum_linear_solver);
+  }
+}
+
+template<int dim, typename Number>
+void
+OperatorProjectionMethods<dim, Number>::rhs_add_viscous_term(VectorType & dst,
+                                                             double const time) const
 {
   this->viscous_operator.set_time(time);
   this->viscous_operator.rhs_add(dst);
+}
+
+template<int dim, typename Number>
+void
+OperatorProjectionMethods<dim, Number>::rhs_add_convective_term(
+  VectorType &       dst,
+  VectorType const & transport_velocity,
+  double const       time) const
+{
+  this->convective_operator.set_velocity_ptr(transport_velocity);
+  this->convective_operator.set_time(time);
+  this->convective_operator.rhs_add(dst);
 }
 
 template<int dim, typename Number>
@@ -309,6 +412,136 @@ OperatorProjectionMethods<dim, Number>::apply_laplace_operator(VectorType &     
                                                                VectorType const & src) const
 {
   this->laplace_operator.vmult(dst, src);
+}
+
+template<int dim, typename Number>
+unsigned int
+OperatorProjectionMethods<dim, Number>::solve_linear_momentum_equation(
+  VectorType &       solution,
+  VectorType const & rhs,
+  VectorType const & transport_velocity,
+  bool const &       update_preconditioner,
+  double const &     scaling_factor_mass)
+{
+  // We do not need to set the time here, because time affects the operator only in the form of
+  // boundary conditions. The result of such boundary condition evaluations is handed over to this
+  // function via the vector rhs.
+  this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
+
+  // linearly implicit convective term
+  if(this->param.convective_problem() and
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+  {
+    this->momentum_operator.set_solution_linearization(transport_velocity);
+  }
+
+  this->momentum_linear_solver->update_preconditioner(update_preconditioner);
+
+  auto linear_iterations = this->momentum_linear_solver->solve(solution, rhs);
+
+  return linear_iterations;
+}
+
+template<int dim, typename Number>
+std::tuple<unsigned int, unsigned int>
+OperatorProjectionMethods<dim, Number>::solve_nonlinear_momentum_equation(
+  VectorType &       dst,
+  VectorType const & rhs_vector,
+  double const &     time,
+  bool const &       update_preconditioner,
+  double const &     scaling_factor_mass)
+{
+  // update nonlinear operator
+  this->nonlinear_operator.update(rhs_vector, time, scaling_factor_mass);
+
+  // Set time and scaling_factor_mass for linear operator
+  this->momentum_operator.set_time(time);
+  this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
+
+  // Solve nonlinear problem
+  Newton::UpdateData update;
+  update.do_update                = update_preconditioner;
+  update.update_every_newton_iter = this->param.update_preconditioner_momentum_every_newton_iter;
+
+  std::tuple<unsigned int, unsigned int> iter = this->momentum_newton_solver->solve(dst, update);
+
+  return iter;
+}
+
+template<int dim, typename Number>
+void
+OperatorProjectionMethods<dim, Number>::evaluate_nonlinear_residual(
+  VectorType &       dst,
+  VectorType const & src,
+  VectorType const * rhs_vector,
+  double const &     time,
+  double const &     scaling_factor_mass) const
+{
+  // update implicitly coupled viscosity
+  if(this->param.nonlinear_viscous_problem())
+  {
+    this->update_viscosity(src);
+  }
+
+  this->mass_operator.apply_scale(dst, scaling_factor_mass, src);
+
+  // implicitly treated convective term
+  if(this->param.implicit_nonlinear_convective_problem())
+  {
+    this->convective_operator.evaluate_nonlinear_operator_add(dst, src, time);
+  }
+
+  // viscous term
+  this->viscous_operator.set_time(time);
+  this->viscous_operator.evaluate_add(dst, src);
+
+  // rhs vector
+  dst.add(-1.0, *rhs_vector);
+}
+
+template<int dim, typename Number>
+void
+OperatorProjectionMethods<dim, Number>::evaluate_linearized_residual(
+  VectorType &       dst,
+  VectorType const & src,
+  VectorType const & transport_velocity,
+  VectorType const * rhs_vector,
+  double const &     time,
+  double const &     scaling_factor_mass)
+{
+  // update implicitly coupled viscosity
+  if(this->param.viscous_problem() and this->param.viscosity_is_variable())
+  {
+    this->update_viscosity(src);
+  }
+
+  this->mass_operator.apply_scale(dst, scaling_factor_mass, src);
+
+  // convective term
+  if(this->param.convective_problem())
+  {
+    if(this->param.solver_type == SolverType::Steady or
+       (this->param.solver_type == SolverType::Unsteady and
+        (this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)))
+    {
+      AssertThrow(false, dealii::ExcMessage("This should never be called."));
+      this->convective_operator.evaluate_nonlinear_operator_add(dst, src, time);
+    }
+    else if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+    {
+      this->convective_operator.set_velocity_ptr(transport_velocity);
+      this->convective_operator.apply_add(dst, src);
+      this->convective_operator.rhs_add(dst);
+    }
+    // The explicit convective term is contained in rhs_vector.
+  }
+
+  // viscous term
+  this->viscous_operator.set_time(time);
+  this->viscous_operator.evaluate_add(dst, src);
+
+  // rhs vector
+  dst.add(-1.0, *rhs_vector);
 }
 
 template<int dim, typename Number>

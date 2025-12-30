@@ -15,15 +15,16 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_INPUT_PARAMETERS_H_
-#define INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_INPUT_PARAMETERS_H_
+#ifndef EXADG_STRUCTURE_USER_INTERFACE_PARAMETERS_H_
+#define EXADG_STRUCTURE_USER_INTERFACE_PARAMETERS_H_
 
 // ExaDG
 #include <exadg/grid/grid_data.h>
+#include <exadg/operators/enum_types.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver_data.h>
 #include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
@@ -120,6 +121,9 @@ public:
   // the direction of the traction vector does not change by this pull-back operation.
   bool pull_back_traction;
 
+  // Material model considered
+  MaterialType material_type;
+
   /**************************************************************************************/
   /*                                                                                    */
   /*                                 PHYSICAL QUANTITIES                                */
@@ -184,6 +188,15 @@ public:
   // polynomial degree of shape functions
   unsigned int degree;
 
+  // use a matrix-based implementation of linear(ized) operators
+  // Note that this parameter only decides about the implementation of the operator in the Krylov
+  // solver. The decision whether a matrix-based or a matrix-free implementation within multigrid is
+  // considered is separate.
+  bool use_matrix_based_operator;
+
+  // this parameter is only relevant if use_matrix_based_operator == true
+  SparseMatrixType sparse_matrix_type;
+
   /**************************************************************************************/
   /*                                                                                    */
   /*                                       SOLVER                                       */
@@ -192,9 +205,6 @@ public:
 
   // Newton solver data (only relevant for nonlinear problems)
   Newton::SolverData newton_solver_data;
-
-  // description: see enum declaration
-  Solver solver;
 
   // solver data
   SolverData solver_data;
@@ -225,4 +235,4 @@ public:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_USER_INTERFACE_PARAMETERS_H_ */

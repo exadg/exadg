@@ -22,11 +22,11 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#  along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #########################################################################
 
 DEALII=$WORKING_DIRECTORY/dealii
 P4EST=$WORKING_DIRECTORY/p4est
 
-$DEALII/doc/external-libs/p4est-setup.sh $P4EST/p4est-2.0.tar.gz `pwd`
+$DEALII/doc/external-libs/p4est-setup.sh $P4EST/p4est-2.8.6.tar.gz `pwd`

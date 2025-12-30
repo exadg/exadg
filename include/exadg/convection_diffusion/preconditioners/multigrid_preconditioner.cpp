@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -157,8 +157,8 @@ MultigridPreconditioner<dim, Number>::update()
     // interpolate velocity from fine to coarse level
     this->transfer_from_fine_to_coarse_levels(
       [&](unsigned int const fine_level, unsigned int const coarse_level) {
-        auto & vector_fine_level   = this->get_operator(fine_level)->get_velocity();
-        auto   vector_coarse_level = this->get_operator(coarse_level)->get_velocity();
+        auto const & vector_fine_level   = this->get_operator(fine_level)->get_velocity();
+        auto         vector_coarse_level = this->get_operator(coarse_level)->get_velocity();
         transfers_velocity->interpolate(fine_level, vector_coarse_level, vector_fine_level);
         this->get_operator(coarse_level)->set_velocity_copy(vector_coarse_level);
       });
@@ -227,8 +227,15 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
 template<int dim, typename Number>
 std::shared_ptr<
   MultigridOperatorBase<dim, typename MultigridPreconditionerBase<dim, Number>::MultigridNumber>>
-MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const level)
+MultigridPreconditioner<dim, Number>::initialize_operator(
+  unsigned int const level,
+  bool const         use_matrix_based_operator_level,
+  bool const         assemble_matrix)
 {
+  (void)assemble_matrix;
+  AssertThrow(use_matrix_based_operator_level == false,
+              dealii::ExcMessage("Matrix-based implementation not supported."));
+
   // initialize pde_operator in a first step
   std::shared_ptr<PDEOperatorMG> pde_operator_level(new PDEOperatorMG());
 
@@ -241,6 +248,9 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
       this->matrix_free_data_objects[level]->get_dof_index("velocity_dof_handler");
   }
   data.quad_index = this->matrix_free_data_objects[level]->get_quad_index("std_quadrature");
+
+  // the choice matrix-free vs. matrix-based might be different from what we do on the fine level
+  data.use_matrix_based_operator_level = use_matrix_based_operator_level;
 
   pde_operator_level->initialize(*this->matrix_free_objects[level],
                                  *this->constraints[level],

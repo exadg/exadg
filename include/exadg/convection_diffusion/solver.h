@@ -15,28 +15,22 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_CONVECTION_DIFFUSION_SOLVER_H_
-#define INCLUDE_EXADG_CONVECTION_DIFFUSION_SOLVER_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_SOLVER_H_
+#define EXADG_CONVECTION_DIFFUSION_SOLVER_H_
 
 // deal.II
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/parameter_handler.h>
-
-// driver
 #include <exadg/convection_diffusion/driver.h>
-
-// utilities
+#include <exadg/convection_diffusion/user_interface/declare_get_application.h>
 #include <exadg/operators/resolution_parameters.h>
 #include <exadg/time_integration/resolution_parameters.h>
 #include <exadg/utilities/enum_patterns.h>
 #include <exadg/utilities/general_parameters.h>
-
-// application
-#include <exadg/convection_diffusion/user_interface/declare_get_application.h>
 
 namespace ExaDG
 {
@@ -179,4 +173,4 @@ main(int argc, char ** argv)
   return 0;
 }
 
-#endif /* INCLUDE_EXADG_CONVECTION_DIFFUSION_SOLVER_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_SOLVER_H_ */

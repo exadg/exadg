@@ -12,14 +12,21 @@
         "Degree": "1",
         "RefineSpace": "0"
     },
+    "Fluid" : {
+        "TemporalDiscretization": "BDFDualSplitting"
+    },
     "FSI" : {
         "AccelerationMethod": "IQN_ILS",
         "AbsTol": "1.e-9",
         "RelTol": "1.e-3",
         "OmegaInit": "0.3",
+        "InitialGuessCouplingScheme": "SolutionExtrapolatedToEndOfTimeStep",
         "PartitionedIterMax": "100",
         "ReusedTimeSteps": "10",
-        "GeometricTolerance": "1.e-8"
+        "GeometricTolerance": "1.e-8",
+        "UpdateALE": "true",
+        "UpdateFluidVelocity": "true",
+        "UpdateFluidPressure": "true"
     },
     "Application": {
     },

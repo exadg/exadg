@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_ADAPTER_BASE_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_ADAPTER_BASE_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MULTIGRID_PRECONDITIONER_BASE_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MULTIGRID_PRECONDITIONER_BASE_H_
 
 // deal.II
 #include <deal.II/base/mg_level_object.h>
@@ -210,6 +210,12 @@ protected:
   unsigned int
   get_number_of_levels() const;
 
+  /*
+   * Returns the correct mapping depending on the multigrid transfer type and the current h-level.
+   */
+  dealii::Mapping<dim> const &
+  get_mapping(unsigned int const h_level) const;
+
   /**
    * This is a generic function allowing to loop over all multigrid levels (including the coarsest
    * level). The operation to be performed on each level is passed as a lambda with argument level.
@@ -274,11 +280,11 @@ private:
   void
   initialize_levels(unsigned int const degree, bool const is_dg);
 
-  /*
-   * Returns the correct mapping depending on the multigrid transfer type and the current h-level.
+  /**
+   * Returns the number of h-levels.
    */
-  dealii::Mapping<dim> const &
-  get_mapping(unsigned int const h_level) const;
+  unsigned int
+  get_number_of_h_levels() const;
 
   /*
    * Data structures needed for matrix-free operator evaluation.
@@ -292,14 +298,21 @@ private:
    * Initializes the multigrid operators for all multigrid levels.
    */
   void
-  initialize_operators();
+  initialize_operators(bool const assemble_matrix);
 
   /*
    * This function initializes an operator for a specified level. It needs to be implemented by
-   * derived classes.
+   * derived classes. The parameter `use_matrix_based_operator_level` describes whether a
+   * matrix-based implementation is used on a given level. The parameter assemble_matrix describes
+   * whether the matrix should be assembled during initialize_operator(). This parameter only has an
+   * effect if `use_matrix_based_operator_level = true`. Note that you have to make sure that the
+   * parameter `use_matrix_based_operator_level` is passed correctly to the underlying PDE operator
+   * when implementing the function initialize_operator() in derived classes.
    */
   virtual std::shared_ptr<Operator>
-  initialize_operator(unsigned int const level);
+  initialize_operator(unsigned int const level,
+                      bool const         use_matrix_based_operator_level,
+                      bool const         assemble_matrix);
 
   /*
    * Smoother.
@@ -336,7 +349,7 @@ private:
 
   std::shared_ptr<MultigridAlgorithm<VectorTypeMG, Operator, Smoother>> multigrid_algorithm;
 };
+
 } // namespace ExaDG
 
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_ADAPTER_BASE_H_ \
-        */
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MULTIGRID_PRECONDITIONER_BASE_H_ */

@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_VERIFY_BOUNDARY_CONDITIONS_H_
-#define INCLUDE_FUNCTIONALITIES_VERIFY_BOUNDARY_CONDITIONS_H_
+#ifndef EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_VERIFY_BOUNDARY_CONDITIONS_H_
+#define EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_VERIFY_BOUNDARY_CONDITIONS_H_
 
 // ExaDG
 #include <exadg/grid/grid.h>
@@ -60,5 +60,4 @@ verify_boundary_conditions(BoundaryDescriptor const & boundary_descriptor, Grid<
 
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_FUNCTIONALITIES_VERIFY_BOUNDARY_CONDITIONS_H_ */
+#endif /* EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_VERIFY_BOUNDARY_CONDITIONS_H_ */

@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_ERROR_CALCULATION_H_
-#define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_ERROR_CALCULATION_H_
+#ifndef EXADG_POSTPROCESSOR_ERROR_CALCULATION_H_
+#define EXADG_POSTPROCESSOR_ERROR_CALCULATION_H_
 
 // deal.II
 #include <deal.II/base/function.h>
@@ -41,8 +41,10 @@ struct ErrorCalculationData
     : calculate_relative_errors(true),
       calculate_H1_seminorm_error(false),
       write_errors_to_file(false),
+      compute_convergence_table(false),
       spatially_weight_error(false),
       weight(nullptr),
+      additional_quadrature_points(3),
       directory("output/"),
       name("all fields")
   {
@@ -80,10 +82,16 @@ struct ErrorCalculationData
   // write errors to file?
   bool write_errors_to_file;
 
+  // process computed files generating a convergence table
+  bool compute_convergence_table;
+
   // If true, a spatially weighted norm is computed.
   bool spatially_weight_error;
   // Weight used to compute spatially weighted error.
   std::shared_ptr<dealii::Function<dim>> weight;
+
+  // Number of quadrature points in 1D: fe_degree + additional_quadrature_points
+  unsigned int additional_quadrature_points;
 
   // directory and name (used as filename and as identifier for screen output)
   std::string directory;
@@ -112,16 +120,21 @@ private:
   void
   do_evaluate(VectorType const & solution_vector, double const time);
 
+  std::string
+  filename_from_filename_base(std::string const & directory,
+                              std::string const & filename_base,
+                              bool const          initial_call);
+
   MPI_Comm const mpi_comm;
 
   bool clear_files_L2, clear_files_H1_seminorm;
 
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
-  dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler;
+  dealii::ObserverPointer<dealii::Mapping<dim> const>    mapping;
 
   ErrorCalculationData<dim> error_data;
 };
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_ERROR_CALCULATION_H_ */
+#endif /* EXADG_POSTPROCESSOR_ERROR_CALCULATION_H_ */

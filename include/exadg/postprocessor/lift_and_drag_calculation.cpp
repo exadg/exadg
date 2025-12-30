@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -77,7 +77,7 @@ calculate_lift_and_drag_force(dealii::Tensor<1, dim, Number> &             Force
         dealii::VectorizedArray<Number> pressure = integrator_pressure.get_value(q);
 
         dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normal =
-          integrator_velocity.get_normal_vector(q);
+          integrator_velocity.normal_vector(q);
         dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> velocity_gradient =
           integrator_velocity.get_gradient(q);
 

@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POISSON_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
-#define INCLUDE_EXADG_POISSON_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
+#ifndef EXADG_POISSON_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
+#define EXADG_POISSON_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
 
+// ExaDG
 #include <exadg/poisson/user_interface/application_base.h>
 
 namespace ExaDG
@@ -38,5 +39,4 @@ get_application(std::string input_file, MPI_Comm const & comm)
 } // namespace Poisson
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_POISSON_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_ */
+#endif /* EXADG_POISSON_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_ */

@@ -15,12 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
 #ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_ENUM_TYPES_H_
 #define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_ENUM_TYPES_H_
+
+// ExaDG
 #include <exadg/utilities/enum_utilities.h>
 
 namespace ExaDG
@@ -30,15 +32,20 @@ namespace Acoustics
 enum class Formulation
 {
   Undefined,
-  /** Weak form of pressure gradient and velocity divergence terms. */
+  /**
+   * Weak form of pressure gradient and velocity divergence terms.
+   */
   Weak,
-  /** Strong form of pressure gradient and velocity divergence terms. */
+  /**
+   * Strong form of pressure gradient and velocity divergence terms.
+   */
   Strong,
-  /** Strong form of the pressure gradient term and weak form of the velocity divergence term.
-   *  This way, the gradient is only used on scalar variables which reduces the number of sum
-   *  factorization sweeps in the cell loop. Additionally, only the skew-symmetric formulation
-   *  mathematically guarantees that energy will be non-increasing if the numerical quadrature
-   *  is not exact (non-affine cells).
+  /**
+   * Strong form of the pressure gradient term and weak form of the velocity divergence term.
+   * This way, the gradient is only used on scalar variables which reduces the number of sum
+   * factorization sweeps in the cell loop. Additionally, only the skew-symmetric formulation
+   * mathematically guarantees that energy will be non-increasing if the numerical quadrature
+   * is not exact (non-affine cells).
    */
   SkewSymmetric
 };
@@ -56,4 +63,4 @@ enum class TimeStepCalculation
 } // namespace Acoustics
 } // namespace ExaDG
 
-#endif /*EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_ENUM_TYPES_H_*/
+#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_ENUM_TYPES_H_ */

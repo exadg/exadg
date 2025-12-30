@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_MAPPING_DEFORMATION_BASE_H_
-#define INCLUDE_EXADG_GRID_MAPPING_DEFORMATION_BASE_H_
+#ifndef EXADG_GRID_MAPPING_DEFORMATION_BASE_H_
+#define EXADG_GRID_MAPPING_DEFORMATION_BASE_H_
 
 // deal.II
 #include <deal.II/dofs/dof_handler.h>
@@ -108,4 +108,4 @@ protected:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_GRID_MAPPING_DEFORMATION_BASE_H_ */
+#endif /* EXADG_GRID_MAPPING_DEFORMATION_BASE_H_ */

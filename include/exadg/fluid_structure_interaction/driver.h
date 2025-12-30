@@ -15,23 +15,19 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_DRIVER_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_DRIVER_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_DRIVER_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_DRIVER_H_
 
-// application
-#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
-
-// FSI
+// ExaDG
 #include <exadg/fluid_structure_interaction/acceleration_schemes/parameters.h>
 #include <exadg/fluid_structure_interaction/acceleration_schemes/partitioned_solver.h>
 #include <exadg/fluid_structure_interaction/single_field_solvers/fluid.h>
 #include <exadg/fluid_structure_interaction/single_field_solvers/structure.h>
-
-// utilities
+#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 #include <exadg/functions_and_boundary_conditions/interface_coupling.h>
 #include <exadg/utilities/timer_tree.h>
 
@@ -74,14 +70,25 @@ private:
   coupling_structure_to_ale(VectorType const & displacement_structure) const;
 
   void
-  coupling_structure_to_fluid(bool const extrapolate) const;
+  coupling_structure_to_fluid(unsigned int const iteration) const;
 
   void
   coupling_fluid_to_structure(bool const end_of_time_step) const;
 
   void
-  apply_dirichlet_neumann_scheme(VectorType &       d_tilde,
-                                 VectorType const & d,
+  solve_subproblem_ale(VectorType const & displacement_structure) const;
+
+  void
+  solve_subproblem_fluid(unsigned int const iteration,
+                         bool const         update_velocity,
+                         bool const         update_pressure) const;
+
+  void
+  solve_subproblem_structure(unsigned int const iteration) const;
+
+  void
+  apply_dirichlet_neumann_scheme(VectorType &       displacement_structure_updated,
+                                 VectorType const & displacement_structure,
                                  unsigned int       iteration) const;
 
   // MPI communicator
@@ -118,5 +125,4 @@ private:
 } // namespace FSI
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_DRIVER_H_ */
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_DRIVER_H_ */

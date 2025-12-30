@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -340,6 +340,22 @@ public:
   {
   }
 
+  void
+  add_parameters(dealii::ParameterHandler & prm) final
+  {
+    ApplicationBase<dim, Number>::add_parameters(prm);
+
+    prm.enter_subsection("Application");
+    {
+      prm.add_parameter("LinearSolver", linear_solver, "Krylov solver used.");
+      prm.add_parameter("UseMatrixBasedOperator",
+                        use_matrix_based_operator,
+                        "Use matrix-based operators in global Krylov solver and Multigrid.",
+                        dealii::Patterns::Bool());
+    }
+    prm.leave_subsection();
+  }
+
 private:
   void
   set_parameters() final
@@ -349,8 +365,11 @@ private:
     this->param.large_deformation    = true;
     this->param.pull_back_body_force = false;
     this->param.pull_back_traction   = false;
+    this->param.material_type        = MaterialType::StVenantKirchhoff;
 
     this->param.density = density;
+
+    this->param.load_increment = 0.1;
 
     this->param.start_time                           = start_time;
     this->param.end_time                             = end_time;
@@ -364,8 +383,7 @@ private:
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
 
     this->param.newton_solver_data  = Newton::SolverData(1e4, 1.e-10, 1.e-10);
-    this->param.solver              = Solver::CG;
-    this->param.solver_data         = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    this->param.solver_data         = SolverData(1e4, 1.e-12, 1.e-6, linear_solver, 100);
     this->param.preconditioner      = Preconditioner::Multigrid;
     this->param.multigrid_data.type = MultigridType::phMG;
 
@@ -374,6 +392,9 @@ private:
     this->param.update_preconditioner_every_newton_iterations =
       this->param.newton_solver_data.max_iter;
     this->param.update_preconditioner_once_newton_converged = true;
+
+    this->param.use_matrix_based_operator = use_matrix_based_operator;
+    this->param.sparse_matrix_type        = SparseMatrixType::PETSc; // Trilinos;
   }
 
   void
@@ -453,7 +474,7 @@ private:
     Type2D const       two_dim_type = Type2D::PlaneStrain;
 
     this->material_descriptor->insert(
-      Pair(0, new StVenantKirchhoffData<dim>(type, E, nu, two_dim_type)));
+      Pair(0, new StVenantKirchhoffData<dim>(type, youngs_modulus, poissons_ratio, two_dim_type)));
   }
 
   void
@@ -500,9 +521,10 @@ private:
 
   double length = 1.0, height = 1.0, width = 1.0;
 
-  double const E  = 1.0;
-  double const nu = 0.3;
-  double const f0 = E * (1.0 - nu) / (1 + nu) / (1.0 - 2.0 * nu); // plane strain
+  double const youngs_modulus = 1.0;
+  double const poissons_ratio = 0.3;
+  double const f0             = youngs_modulus * (1.0 - poissons_ratio) / (1 + poissons_ratio) /
+                    (1.0 - 2.0 * poissons_ratio); // plane strain
 
   double const density = 1.0;
 
@@ -511,6 +533,10 @@ private:
   double const start_time       = 0.0;
   double const end_time         = 1.0;
   double const frequency        = 3.0 / 2.0 * dealii::numbers::PI / end_time;
+
+  LinearSolver linear_solver = LinearSolver::CG;
+
+  bool use_matrix_based_operator = false;
 
   bool const prescribe_initial_acceleration_as_field_function = false;
 };

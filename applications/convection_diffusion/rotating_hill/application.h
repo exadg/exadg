@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -96,6 +96,17 @@ public:
                         enable_adaptivity,
                         "Enable adaptive mesh refinement.",
                         dealii::Patterns::Bool());
+      prm.add_parameter("WriteRestart", write_restart, "Should restart files be written?");
+      prm.add_parameter("ReadRestart", read_restart, "Is this a restarted simulation?");
+      prm.add_parameter("ApplyManifold", apply_manifold, "Apply the `DeformedCubeManifold`?");
+      prm.add_parameter("TriangulationType", triangulation_type, "Triangulation type.");
+      prm.add_parameter("ReadWriteMapping",
+                        read_write_mapping,
+                        "Store/read mapping from restart files.");
+      prm.add_parameter("UseExplicitTimeIntegration",
+                        use_explicit_time_integration,
+                        "Use explicit or implicit time integration.",
+                        dealii::Patterns::Bool());
     }
     prm.leave_subsection();
   }
@@ -116,13 +127,18 @@ private:
     this->param.diffusivity = 0.0;
 
     // TEMPORAL DISCRETIZATION
-    this->param.temporal_discretization      = TemporalDiscretization::BDF;
-    this->param.order_time_integrator        = 2; // instabilities for BDF 3 and 4
-    this->param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
-    this->param.start_with_low_order         = false;
-
-    //    this->param.temporal_discretization      = TemporalDiscretization::ExplRK;
-    //    this->param.time_integrator_rk           = TimeIntegratorRK::ExplRK3Stage7Reg2;
+    this->param.start_with_low_order = false;
+    if(use_explicit_time_integration)
+    {
+      this->param.temporal_discretization = TemporalDiscretization::ExplRK;
+      this->param.time_integrator_rk      = TimeIntegratorRK::ExplRK3Stage7Reg2;
+    }
+    else
+    {
+      this->param.temporal_discretization      = TemporalDiscretization::BDF;
+      this->param.order_time_integrator        = 2; // instabilities for BDF 3 and 4
+      this->param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+    }
 
     this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
     this->param.adaptive_time_stepping        = false;
@@ -130,21 +146,34 @@ private:
     this->param.cfl                           = 0.25;
     this->param.exponent_fe_degree_convection = 1.5;
 
-    // restart
-    this->param.restart_data.write_restart = false;
-    this->param.restart_data.filename      = "output_conv_diff/rotating_hill";
-    this->param.restart_data.interval_time = 0.4;
-
-
     // SPATIAL DISCRETIZATION
-    this->param.grid.triangulation_type     = TriangulationType::Distributed;
+    this->param.grid.triangulation_type     = triangulation_type;
     this->param.mapping_degree              = this->param.degree;
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
 
-    this->param.enable_adaptivity = enable_adaptivity;
+    // restart
+    this->param.restarted_simulation       = read_restart;
+    this->param.restart_data.write_restart = write_restart;
+    // write restart every 80% of the simulation time
+    this->param.restart_data.interval_time = (this->param.end_time - this->param.start_time) * 0.8;
+    this->param.restart_data.directory_coarse_triangulation = this->output_parameters.directory;
+    this->param.restart_data.directory                      = this->output_parameters.directory;
+    this->param.restart_data.filename            = this->output_parameters.filename + "_restart";
+    this->param.restart_data.interval_wall_time  = 1.e6;
+    this->param.restart_data.interval_time_steps = 1e8;
+
+    this->param.restart_data.discretization_identical     = false;
+    this->param.restart_data.consider_mapping_write       = read_write_mapping;
+    this->param.restart_data.consider_mapping_read_source = read_write_mapping;
+
+    this->param.restart_data.rpe_rtree_level            = 0;
+    this->param.restart_data.rpe_tolerance_unit_cell    = 1e-2;
+    this->param.restart_data.rpe_enforce_unique_mapping = false;
 
     this->param.grid.create_coarse_triangulations = enable_adaptivity;
 
+    // adaptivity
+    this->param.enable_adaptivity                          = enable_adaptivity;
     this->param.amr_data.trigger_every_n_time_steps        = 30;
     this->param.amr_data.maximum_refinement_level          = 4;
     this->param.amr_data.minimum_refinement_level          = 0;
@@ -160,8 +189,7 @@ private:
     this->param.IP_factor = 1.0;
 
     // SOLVER
-    this->param.solver      = Solver::GMRES;
-    this->param.solver_data = SolverData(1e3, 1.e-20, 1.e-8, 100);
+    this->param.solver_data = SolverData(1e3, 1.e-20, 1.e-8, LinearSolver::GMRES, 100);
     this->param.preconditioner =
       Preconditioner::Multigrid; // None; //InverseMassMatrix; //PointJacobi; // BlockJacobi;
                                  // //Multigrid;
@@ -171,7 +199,8 @@ private:
     this->param.implement_block_diagonal_preconditioner_matrix_free = false; // true;
     this->param.solver_block_diagonal                               = Elementwise::Solver::GMRES;
     this->param.preconditioner_block_diagonal = Elementwise::Preconditioner::InverseMassMatrix;
-    this->param.solver_data_block_diagonal    = SolverData(1000, 1.e-12, 1.e-2, 1000);
+    this->param.solver_data_block_diagonal =
+      SolverData(1000, 1.e-12, 1.e-2, LinearSolver::Undefined, 1000);
 
     // Multigrid
     this->param.mg_operator_type    = MultigridOperatorType::ReactionConvection;
@@ -214,12 +243,18 @@ private:
         // hypercube volume is [left,right]^dim
         dealii::GridGenerator::hyper_cube(tria, left, right);
 
-        // For AMR, we want to consider a mapping as well.
-        if(this->param.enable_adaptivity)
+        // Consider a mapped interior of the grid if desired.
+        if(apply_manifold)
         {
           unsigned int const frequency   = 1;
           double const       deformation = (right - left) * 0.1;
           apply_deformed_cube_manifold(tria, left, right, deformation, frequency);
+        }
+
+        // Save the *coarse* triangulation for later deserialization.
+        if(write_restart and this->param.grid.triangulation_type == TriangulationType::Serial)
+        {
+          save_coarse_triangulation<dim>(this->param.restart_data, tria);
         }
 
         tria.refine_global(global_refinements);
@@ -288,7 +323,13 @@ private:
   double const left  = -1.0;
   double const right = +1.0;
 
-  bool enable_adaptivity = false;
+  bool              use_explicit_time_integration = false;
+  bool              enable_adaptivity             = false;
+  bool              write_restart                 = false;
+  bool              read_restart                  = false;
+  bool              apply_manifold                = false;
+  bool              read_write_mapping            = false;
+  TriangulationType triangulation_type            = TriangulationType::Distributed;
 };
 
 } // namespace ConvDiff

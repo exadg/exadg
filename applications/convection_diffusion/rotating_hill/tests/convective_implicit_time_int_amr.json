@@ -15,7 +15,13 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-        "EnableAdaptivity": "true"
+        "EnableAdaptivity": "true",
+        "ReadRestart": "false",
+        "WriteRestart": "false",
+        "ApplyManifold": "true",
+        "ReadWriteMapping": "false",
+        "TriangulationType": "Serial",
+        "UseExplicitTimeIntegration": "false"
     },
     "Output": {
         "OutputDirectory": "output/rotating_hill/",

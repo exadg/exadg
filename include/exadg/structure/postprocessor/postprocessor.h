@@ -15,21 +15,21 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_POSTPROCESSOR_POSTPROCESSOR_H_
-#define INCLUDE_EXADG_STRUCTURE_POSTPROCESSOR_POSTPROCESSOR_H_
+#ifndef EXADG_STRUCTURE_POSTPROCESSOR_POSTPROCESSOR_H_
+#define EXADG_STRUCTURE_POSTPROCESSOR_POSTPROCESSOR_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
 #include <exadg/postprocessor/error_calculation.h>
-#include <exadg/postprocessor/output_data_base.h>
 #include <exadg/structure/postprocessor/output_generator.h>
 #include <exadg/structure/postprocessor/postprocessor_base.h>
+#include <exadg/structure/spatial_discretization/operator.h>
 
 namespace ExaDG
 {
@@ -38,21 +38,28 @@ namespace Structure
 template<int dim>
 struct PostProcessorData
 {
-  OutputDataBase            output_data;
+  OutputData                output_data;
   ErrorCalculationData<dim> error_data;
 };
 
 template<int dim, typename Number>
-class PostProcessor : public PostProcessorBase<Number>
+class PostProcessor : public PostProcessorBase<dim, Number>
 {
-private:
-  typedef typename PostProcessorBase<Number>::VectorType VectorType;
-
 public:
+  typedef PostProcessorBase<dim, Number> Base;
+
+  typedef typename Base::VectorType VectorType;
+
   PostProcessor(PostProcessorData<dim> const & pp_data, MPI_Comm const & mpi_comm);
 
+  // custom destructor computing convergence tables if desired
+  virtual ~PostProcessor();
+
   void
-  setup(dealii::DoFHandler<dim> const & dof_handler, dealii::Mapping<dim> const & mapping);
+  setup(Operator<dim, Number> const & pde_operator_in) override;
+
+  bool
+  requires_scalar_field() const;
 
   void
   do_postprocessing(VectorType const &     solution,
@@ -60,15 +67,31 @@ public:
                     types::time_step const time_step_number = numbers::steady_timestep) override;
 
 private:
+  void
+  initialize_derived_fields();
+
+  void
+  invalidate_derived_fields();
+
   PostProcessorData<dim> pp_data;
 
   MPI_Comm const mpi_comm;
 
+  dealii::ObserverPointer<Operator<dim, Number> const> pde_operator;
+
+  // Fields for derived quantities
+  SolutionField<dim, Number> displacement_magnitude;
+  SolutionField<dim, Number> displacement_jacobian;
+  SolutionField<dim, Number> max_principal_stress;
+
+  // write output for visualization of results (e.g., using paraview)
   OutputGenerator<dim, Number> output_generator;
+
+  // calculate errors for verification purposes for problems with known analytical solution
   ErrorCalculator<dim, Number> error_calculator;
 };
 
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_POSTPROCESSOR_POSTPROCESSOR_H_ */

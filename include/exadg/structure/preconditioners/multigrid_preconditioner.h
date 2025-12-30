@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
-#define INCLUDE_EXADG_STRUCTURE_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
+#ifndef EXADG_STRUCTURE_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
+#define EXADG_STRUCTURE_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
 
+// ExaDG
 #include <exadg/operators/multigrid_operator.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h>
 #include <exadg/structure/spatial_discretization/operators/elasticity_operator_base.h>
@@ -90,7 +91,9 @@ private:
                         unsigned int const                     dealii_tria_level) final;
 
   std::shared_ptr<MGOperatorBase>
-  initialize_operator(unsigned int const level) final;
+  initialize_operator(unsigned int const level,
+                      bool const         use_matrix_based_operator_level,
+                      bool const         assemble_matrix) final;
 
   /*
    * This function updates the multigrid operators for all levels
@@ -120,4 +123,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_ */

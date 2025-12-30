@@ -1,8 +1,22 @@
-/*
- * projection_operator.cpp
+/*  ______________________________________________________________________
  *
- *  Created on: Dec 6, 2018
- *      Author: fehn
+ *  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
+ *
+ *  Copyright (C) 2021 by the ExaDG authors
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *  ______________________________________________________________________
  */
 
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/projection_operator.h>
@@ -214,7 +228,7 @@ ProjectionOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
   {
     vector u_m      = integrator_m.get_value(q);
     vector u_p      = integrator_p.get_value(q);
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     vector flux = time_step_size * conti_kernel->calculate_flux(u_m, u_p, normal_m);
 
@@ -234,7 +248,7 @@ ProjectionOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrato
   {
     vector u_m = integrator_m.get_value(q);
     vector u_p; // set u_p to zero
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     vector flux = time_step_size * conti_kernel->calculate_flux(u_m, u_p, normal_m);
 
@@ -253,7 +267,7 @@ ProjectionOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrato
   {
     vector u_m; // set u_m to zero
     vector u_p      = integrator_p.get_value(q);
-    vector normal_p = -integrator_p.get_normal_vector(q);
+    vector normal_p = -integrator_p.normal_vector(q);
 
     vector flux = time_step_size * conti_kernel->calculate_flux(u_p, u_m, normal_p);
 
@@ -283,7 +297,7 @@ ProjectionOperator<dim, Number>::do_boundary_integral(
                                             boundary_id,
                                             operator_data.bc,
                                             this->time);
-      vector normal_m = integrator_m.get_normal_vector(q);
+      vector normal_m = integrator_m.normal_vector(q);
 
       vector flux = time_step_size * conti_kernel->calculate_flux(u_m, u_p, normal_m);
 

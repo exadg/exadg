@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef OPERATION_BASE_H
-#define OPERATION_BASE_H
+#ifndef EXADG_OPERATORS_OPERATOR_BASE_H_
+#define EXADG_OPERATORS_OPERATOR_BASE_H_
 
 // deal.II
 #include <deal.II/base/subscriptor.h>
@@ -49,6 +49,7 @@
 #include <exadg/utilities/lazy_ptr.h>
 
 #include <exadg/operators/elementwise_operator.h>
+#include <exadg/operators/enum_types.h>
 #include <exadg/operators/integrator_flags.h>
 #include <exadg/operators/mapping_flags.h>
 #include <exadg/operators/operator_type.h>
@@ -61,12 +62,14 @@ struct OperatorBaseData
     : dof_index(0),
       dof_index_inhomogeneous(dealii::numbers::invalid_unsigned_int),
       quad_index(0),
+      use_matrix_based_operator_level(false),
+      sparse_matrix_type(SparseMatrixType::Undefined),
       operator_is_singular(false),
       use_cell_based_loops(false),
       implement_block_diagonal_preconditioner_matrix_free(false),
       solver_block_diagonal(Elementwise::Solver::GMRES),
       preconditioner_block_diagonal(Elementwise::Preconditioner::InverseMassMatrix),
-      solver_data_block_diagonal(SolverData(1000, 1.e-12, 1.e-2, 1000))
+      solver_data_block_diagonal(SolverData(1000, 1.e-12, 1.e-2, LinearSolver::Undefined, 1000))
   {
   }
 
@@ -78,6 +81,12 @@ struct OperatorBaseData
   unsigned int dof_index_inhomogeneous;
 
   unsigned int quad_index;
+
+  // this parameter can be used to use sparse matrices for the vmult() operation. The default
+  // case is to use a matrix-free implementation, i.e. use_matrix_based_operator_level = false.
+  bool use_matrix_based_operator_level;
+
+  SparseMatrixType sparse_matrix_type;
 
   // Solution of linear systems of equations and preconditioning
   bool operator_is_singular;
@@ -94,7 +103,7 @@ struct OperatorBaseData
 };
 
 template<int dim, typename Number, int n_components = 1>
-class OperatorBase : public dealii::Subscriptor
+class OperatorBase : public dealii::EnableObserverPointer
 {
 public:
   typedef OperatorBase<dim, Number, n_components> This;
@@ -104,6 +113,7 @@ public:
   typedef CellIntegrator<dim, n_components, Number>          IntegratorCell;
   typedef FaceIntegrator<dim, n_components, Number>          IntegratorFace;
 
+  static unsigned int const dimension            = dim;
   static unsigned int const vectorization_length = dealii::VectorizedArray<Number>::size();
 
   typedef dealii::LAPACKFullMatrix<Number> LAPACKMatrix;
@@ -114,6 +124,18 @@ public:
 
   virtual ~OperatorBase()
   {
+    if(data.sparse_matrix_type == SparseMatrixType::PETSc)
+    {
+#ifdef DEAL_II_WITH_PETSC
+      if(system_matrix_petsc.m() > 0)
+      {
+        PetscErrorCode ierr = VecDestroy(&petsc_vector_dst);
+        AssertThrow(ierr == 0, dealii::ExcPETScError(ierr));
+        ierr = VecDestroy(&petsc_vector_src);
+        AssertThrow(ierr == 0, dealii::ExcPETScError(ierr));
+      }
+#endif
+    }
   }
 
   /*
@@ -136,6 +158,9 @@ public:
 
   unsigned int
   get_dof_index() const;
+
+  unsigned int
+  get_dof_index_inhomogeneous() const;
 
   unsigned int
   get_quad_index() const;
@@ -179,7 +204,7 @@ public:
    * function.
    */
   virtual void
-  set_inhomogeneous_boundary_values(VectorType & solution) const;
+  set_inhomogeneous_constrained_values(VectorType & solution) const;
 
   void
   set_constrained_dofs_to_zero(VectorType & vector) const;
@@ -233,6 +258,15 @@ public:
 #endif
 
   /*
+   * Provide near null space basis vectors used e.g. in AMG setup. ExaDG assumes a scalar Laplace
+   * operator as default, filling `constant_modes`, which can be overwritten in derived classes if
+   * necessary. `constant_modes_values` may alternatively be used to provide non-trivial modes.
+   */
+  virtual void
+  get_constant_modes(std::vector<std::vector<bool>> &   constant_modes,
+                     std::vector<std::vector<double>> & constant_modes_values) const;
+
+  /*
    * Evaluate the homogeneous part of an operator. The homogeneous operator is the operator that is
    * obtained for homogeneous boundary conditions. This operation is typically applied in linear
    * iterative solvers (as well as multigrid preconditioners and smoothers). Operations of this type
@@ -247,6 +281,22 @@ public:
   void
   apply_add(VectorType & dst, VectorType const & src) const;
 
+  void
+  assemble_matrix_if_matrix_based() const;
+
+  /*
+   * Matrix-based version of the apply function. This function is used if
+   * use_matrix_based_operator_level = true.
+   */
+  void
+  apply_matrix_based(VectorType & dst, VectorType const & src) const;
+
+  /*
+   * See function apply_matrix_based() for a description.
+   */
+  void
+  apply_matrix_based_add(VectorType & dst, VectorType const & src) const;
+
   /*
    * evaluate inhomogeneous parts of operator related to inhomogeneous boundary face integrals.
    * Operations of this type are called rhs_...() since these functions are called to calculate the
@@ -256,8 +306,8 @@ public:
    * 'virtual' to provide the opportunity to override and assert these functions in derived classes.
    *
    * For continuous Galerkin discretizations, this function calls internally the member function
-   * set_inhomogeneous_boundary_values(). Hence, prior to calling this function, one needs to call
-   * set_time() for a correct evaluation in case of time-dependent problems.
+   * set_inhomogeneous_constrained_values(). Hence, prior to calling this function, one needs to
+   * call set_time() for a correct evaluation in case of time-dependent problems.
    *
    * This function sets the dst vector to zero, and afterwards calls rhs_add().
    */
@@ -279,9 +329,10 @@ public:
    * and assert these functions in derived classes.
    *
    * Unlike the function rhs(), this function does not internally call the function
-   * set_inhomogeneous_boundary_values() prior to evaluation. Hence, one needs to explicitly call
-   * the function set_inhomogeneous_boundary_values() in case of continuous Galerkin discretizations
-   * with inhomogeneous Dirichlet boundary conditions before calling the present function.
+   * set_inhomogeneous_constrained_values() prior to evaluation. Hence, one needs to explicitly call
+   * the function set_inhomogeneous_constrained_values() in case of continuous Galerkin
+   * discretizations with inhomogeneous Dirichlet boundary conditions before calling the present
+   * function.
    */
   virtual void
   evaluate(VectorType & dst, VectorType const & src) const;
@@ -433,11 +484,13 @@ protected:
    */
   IntegratorFlags integrator_flags;
 
+private:
   /*
    * Is the operator used as a multigrid level operator?
    */
   bool is_mg;
 
+protected:
   /*
    * Is the discretization based on discontinuous Galerkin method?
    */
@@ -446,16 +499,16 @@ protected:
   /*
    * Block Jacobi preconditioner/smoother: matrix-free version with elementwise iterative solver
    */
-  typedef Elementwise::OperatorBase<dim, Number, This> ELEMENTWISE_OPERATOR;
+  typedef Elementwise::OperatorBase<dim, Number, This> ElementwiseOperator;
   typedef Elementwise::PreconditionerBase<dealii::VectorizedArray<Number>>
-    ELEMENTWISE_PRECONDITIONER;
+    ElementwisePreconditionerBase;
   typedef Elementwise::
-    IterativeSolver<dim, n_components, Number, ELEMENTWISE_OPERATOR, ELEMENTWISE_PRECONDITIONER>
-      ELEMENTWISE_SOLVER;
+    IterativeSolver<dim, n_components, Number, ElementwiseOperator, ElementwisePreconditionerBase>
+      ElementwiseSolver;
 
-  mutable std::shared_ptr<ELEMENTWISE_OPERATOR>       elementwise_operator;
-  mutable std::shared_ptr<ELEMENTWISE_PRECONDITIONER> elementwise_preconditioner;
-  mutable std::shared_ptr<ELEMENTWISE_SOLVER>         elementwise_solver;
+  mutable std::shared_ptr<ElementwiseOperator>           elementwise_operator;
+  mutable std::shared_ptr<ElementwisePreconditionerBase> elementwise_preconditioner;
+  mutable std::shared_ptr<ElementwiseSolver>             elementwise_solver;
 
 private:
   virtual void
@@ -718,7 +771,23 @@ private:
   mutable VectorType weights;
 
   unsigned int n_mpi_processes;
+
+  // sparse matrices for matrix-based vmult
+  mutable bool system_matrix_based_been_initialized;
+
+#ifdef DEAL_II_WITH_TRILINOS
+  mutable dealii::TrilinosWrappers::SparseMatrix system_matrix_trilinos;
+#endif
+
+#ifdef DEAL_II_WITH_PETSC
+  mutable dealii::PETScWrappers::MPI::SparseMatrix system_matrix_petsc;
+
+  // PETSc vector objects to avoid re-allocation in every vmult() operation
+  mutable Vec petsc_vector_src;
+  mutable Vec petsc_vector_dst;
+#endif
 };
+
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_OPERATORS_OPERATOR_BASE_H_ */

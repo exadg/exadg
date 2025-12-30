@@ -15,15 +15,17 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_ADDITIVESCHWARZPRECONDITIONER_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_ADDITIVESCHWARZPRECONDITIONER_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONERS_ADDITIVE_SCHWARZ_PRECONDITIONER_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONERS_ADDITIVE_SCHWARZ_PRECONDITIONER_H_
 
+// deal.II
 #include <deal.II/lac/sparse_matrix.h>
 
+// ExaDG
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 
 namespace ExaDG
@@ -77,5 +79,4 @@ private:
 
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_ADDITIVESCHWARZPRECONDITIONER_H_ */
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONERS_ADDITIVE_SCHWARZ_PRECONDITIONER_H_ */

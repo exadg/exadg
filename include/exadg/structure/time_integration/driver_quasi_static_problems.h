@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_TIME_INTEGRATION_DRIVER_QUASI_STATIC_PROBLEMS_H_
-#define INCLUDE_EXADG_STRUCTURE_TIME_INTEGRATION_DRIVER_QUASI_STATIC_PROBLEMS_H_
+#ifndef EXADG_STRUCTURE_TIME_INTEGRATION_DRIVER_QUASI_STATIC_PROBLEMS_H_
+#define EXADG_STRUCTURE_TIME_INTEGRATION_DRIVER_QUASI_STATIC_PROBLEMS_H_
 
 // deal.II
 #include <deal.II/base/timer.h>
@@ -36,8 +36,8 @@ namespace Structure
 // forward declarations
 class Parameters;
 
-template<typename Number>
-class PostProcessorBase;
+template<int dim, typename Number>
+class PostProcessor;
 
 namespace Interface
 {
@@ -52,11 +52,11 @@ private:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  DriverQuasiStatic(std::shared_ptr<Interface::Operator<Number>> operator_,
-                    std::shared_ptr<PostProcessorBase<Number>>   postprocessor_,
-                    Parameters const &                           param_,
-                    MPI_Comm const &                             mpi_comm_,
-                    bool const                                   is_test_);
+  DriverQuasiStatic(std::shared_ptr<Interface::Operator<Number>> operator_in,
+                    std::shared_ptr<PostProcessor<dim, Number>>  postprocessor_in,
+                    Parameters const &                           param_in,
+                    MPI_Comm const &                             mpi_comm_in,
+                    bool const                                   is_test_in);
 
   void
   setup();
@@ -91,7 +91,7 @@ private:
 
   std::shared_ptr<Interface::Operator<Number>> pde_operator;
 
-  std::shared_ptr<PostProcessorBase<Number>> postprocessor;
+  std::shared_ptr<PostProcessor<dim, Number>> postprocessor;
 
   Parameters const & param;
 
@@ -126,4 +126,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_TIME_INTEGRATION_DRIVER_QUASI_STATIC_PROBLEMS_H_ */

@@ -15,17 +15,16 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DOF_TOOLS_EXTENSION_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DOF_TOOLS_EXTENSION_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DOF_TOOLS_EXTENSION_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DOF_TOOLS_EXTENSION_H_
 
 // deal.II
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
-
 #include <deal.II/fe/fe.h>
 #include <deal.II/fe/mapping_q_generic.h>
 
@@ -93,4 +92,4 @@ map_boundary_dofs_to_support_points(
 
 DEAL_II_NAMESPACE_CLOSE
 
-#endif
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DOF_TOOLS_EXTENSION_H_ */

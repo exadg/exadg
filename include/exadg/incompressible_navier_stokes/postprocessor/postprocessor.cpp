@@ -15,11 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
+#include <exadg/utilities/evaluate_convergence_study.h>
 
 namespace ExaDG
 {
@@ -46,6 +47,14 @@ PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & postpro
 template<int dim, typename Number>
 PostProcessor<dim, Number>::~PostProcessor()
 {
+  // Evaluate the convergence study.
+  std::vector<std::string> error_directories;
+  if(pp_data.error_data_u.compute_convergence_table)
+    error_directories.push_back(pp_data.error_data_u.directory);
+  if(pp_data.error_data_p.compute_convergence_table)
+    error_directories.push_back(pp_data.error_data_p.directory);
+
+  evaluate_convergence_study(mpi_comm, error_directories);
 }
 
 template<int dim, typename Number>
@@ -58,53 +67,53 @@ PostProcessor<dim, Number>::setup(Operator const & pde_operator)
 
   initialize_derived_fields();
 
-  output_generator.setup(pde_operator.get_dof_handler_u(),
-                         pde_operator.get_dof_handler_p(),
-                         *pde_operator.get_mapping(),
+  output_generator.setup(navier_stokes_operator->get_dof_handler_u(),
+                         navier_stokes_operator->get_dof_handler_p(),
+                         *navier_stokes_operator->get_mapping(),
                          pp_data.output_data);
 
-  pointwise_output_generator.setup(pde_operator.get_dof_handler_u(),
-                                   pde_operator.get_dof_handler_p(),
-                                   *pde_operator.get_mapping(),
+  pointwise_output_generator.setup(navier_stokes_operator->get_dof_handler_u(),
+                                   navier_stokes_operator->get_dof_handler_p(),
+                                   *navier_stokes_operator->get_mapping(),
                                    pp_data.pointwise_output_data);
 
-  error_calculator_u.setup(pde_operator.get_dof_handler_u(),
-                           *pde_operator.get_mapping(),
+  error_calculator_u.setup(navier_stokes_operator->get_dof_handler_u(),
+                           *navier_stokes_operator->get_mapping(),
                            pp_data.error_data_u);
 
-  error_calculator_p.setup(pde_operator.get_dof_handler_p(),
-                           *pde_operator.get_mapping(),
+  error_calculator_p.setup(navier_stokes_operator->get_dof_handler_p(),
+                           *navier_stokes_operator->get_mapping(),
                            pp_data.error_data_p);
 
-  lift_and_drag_calculator.setup(pde_operator.get_dof_handler_u(),
-                                 pde_operator.get_matrix_free(),
-                                 pde_operator.get_dof_index_velocity(),
-                                 pde_operator.get_dof_index_pressure(),
-                                 pde_operator.get_quad_index_velocity_linear(),
+  lift_and_drag_calculator.setup(navier_stokes_operator->get_dof_handler_u(),
+                                 navier_stokes_operator->get_matrix_free(),
+                                 navier_stokes_operator->get_dof_index_velocity(),
+                                 navier_stokes_operator->get_dof_index_pressure(),
+                                 navier_stokes_operator->get_quad_index_velocity_standard(),
                                  pp_data.lift_and_drag_data);
 
-  pressure_difference_calculator.setup(pde_operator.get_dof_handler_p(),
-                                       *pde_operator.get_mapping(),
+  pressure_difference_calculator.setup(navier_stokes_operator->get_dof_handler_p(),
+                                       *navier_stokes_operator->get_mapping(),
                                        pp_data.pressure_difference_data);
 
-  div_and_mass_error_calculator.setup(pde_operator.get_matrix_free(),
-                                      pde_operator.get_dof_index_velocity(),
-                                      pde_operator.get_quad_index_velocity_linear(),
+  div_and_mass_error_calculator.setup(navier_stokes_operator->get_matrix_free(),
+                                      navier_stokes_operator->get_dof_index_velocity(),
+                                      navier_stokes_operator->get_quad_index_velocity_standard(),
                                       pp_data.mass_data);
 
-  kinetic_energy_calculator.setup(pde_operator,
-                                  pde_operator.get_matrix_free(),
-                                  pde_operator.get_dof_index_velocity(),
-                                  pde_operator.get_quad_index_velocity_linear(),
+  kinetic_energy_calculator.setup(*navier_stokes_operator,
+                                  navier_stokes_operator->get_matrix_free(),
+                                  navier_stokes_operator->get_dof_index_velocity(),
+                                  navier_stokes_operator->get_quad_index_velocity_standard(),
                                   pp_data.kinetic_energy_data);
 
-  kinetic_energy_spectrum_calculator.setup(pde_operator.get_matrix_free(),
-                                           pde_operator.get_dof_handler_u(),
+  kinetic_energy_spectrum_calculator.setup(navier_stokes_operator->get_matrix_free(),
+                                           navier_stokes_operator->get_dof_handler_u(),
                                            pp_data.kinetic_energy_spectrum_data);
 
-  line_plot_calculator.setup(pde_operator.get_dof_handler_u(),
-                             pde_operator.get_dof_handler_p(),
-                             *pde_operator.get_mapping(),
+  line_plot_calculator.setup(navier_stokes_operator->get_dof_handler_u(),
+                             navier_stokes_operator->get_dof_handler_p(),
+                             *navier_stokes_operator->get_mapping(),
                              pp_data.line_plot_data);
 }
 
@@ -135,7 +144,7 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
    */
   if(output_generator.time_control.needs_evaluation(time, time_step_number))
   {
-    std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> additional_fields_vtu;
+    std::vector<dealii::ObserverPointer<SolutionField<dim, Number>>> additional_fields_vtu;
     if(pp_data.output_data.write_vorticity)
     {
       vorticity.evaluate(velocity);
@@ -160,6 +169,11 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
     {
       shear_rate.evaluate(velocity);
       additional_fields_vtu.push_back(&shear_rate);
+    }
+    if(pp_data.output_data.write_viscosity)
+    {
+      viscosity.evaluate(velocity);
+      additional_fields_vtu.push_back(&viscosity);
     }
     if(pp_data.output_data.write_velocity_magnitude)
     {
@@ -348,6 +362,23 @@ PostProcessor<dim, Number>::initialize_derived_fields()
     shear_rate.reinit();
   }
 
+  // viscosity
+  if(pp_data.output_data.write_viscosity)
+  {
+    viscosity.type              = SolutionFieldType::scalar;
+    viscosity.name              = "viscosity";
+    viscosity.dof_handler       = &navier_stokes_operator->get_dof_handler_u_scalar();
+    viscosity.initialize_vector = [&](VectorType & dst) {
+      navier_stokes_operator->initialize_vector_velocity_scalar(dst);
+    };
+    viscosity.recompute_solution_field = [&](VectorType & dst, VectorType const &) {
+      // this only *accesses* the currently stored viscosity field
+      navier_stokes_operator->access_viscosity(dst);
+    };
+
+    viscosity.reinit();
+  }
+
   // velocity magnitude
   if(pp_data.output_data.write_velocity_magnitude)
   {
@@ -423,6 +454,7 @@ PostProcessor<dim, Number>::invalidate_derived_fields()
   vorticity.invalidate();
   divergence.invalidate();
   shear_rate.invalidate();
+  viscosity.invalidate();
   velocity_magnitude.invalidate();
   vorticity_magnitude.invalidate();
   streamfunction.invalidate();

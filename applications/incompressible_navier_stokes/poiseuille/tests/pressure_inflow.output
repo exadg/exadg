@@ -39,8 +39,7 @@ Physical quantities:
   Density:                                   1.0000e+00
 
 Temporal discretization:
-  Temporal discretization method:            BDFDualSplittingScheme
-  Treatment of convective term:              Explicit
+  Temporal discretization method:            BDFDualSplitting
   Calculation of time step size:             CFL
   Adaptive time stepping:                    true
   Adaptive time stepping limiting factor:    1.2000e+00
@@ -50,6 +49,7 @@ Temporal discretization:
   Temporal refinements:                      0
   Order of time integration scheme:          2
   Start with low order method:               true
+  Treatment of convective term:              Explicit
   Solver information:
   Interval physical time:                    1.0000e+01
   Interval wall time:                        1.7977e+308
@@ -109,10 +109,10 @@ High-order dual splitting scheme:
   Maximum number of iterations:              1000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-06
-  Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
   Update preconditioner pressure step:       false
   Multigrid type:                            hMG
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -126,22 +126,21 @@ High-order dual splitting scheme:
   Maximum size of Krylov space:              30
 
   Projection step:
-  Solver projection step:                    CG
+  Solver:                                    CG
   Maximum number of iterations:              1000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-12
-  Maximum size of Krylov space:              30
   Preconditioner projection step:            InverseMassMatrix
   Update preconditioner projection step:     false
 
-  Viscous step:
-  Solver viscous step:                       CG
+  Momentum step:
+  Linear solver:
+  Solver:                                    CG
   Maximum number of iterations:              1000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-06
-  Maximum size of Krylov space:              30
-  Preconditioner viscous step:               InverseMassMatrix
-  Update preconditioner viscous:             false
+  Preconditioner:                            InverseMassMatrix
+  Update of preconditioner:                  false
 
 Generating grid for 2-dimensional problem:
 
@@ -194,7 +193,7 @@ Calculate error for velocity at time t = 1.0056e+01:
   Absolute error (L2-norm): 1.68135e-01
 
 Calculate error for pressure at time t = 1.0056e+01:
-  Absolute error (L2-norm): 4.15952e-10
+  Absolute error (L2-norm): 1.12673e-09
 
 ________________________________________________________________________________
 
@@ -205,7 +204,7 @@ Calculate error for velocity at time t = 2.0119e+01:
   Absolute error (L2-norm): 1.36693e-02
 
 Calculate error for pressure at time t = 2.0119e+01:
-  Absolute error (L2-norm): 9.63754e-12
+  Absolute error (L2-norm): 1.73050e-11
 
 ________________________________________________________________________________
 
@@ -216,7 +215,7 @@ Calculate error for velocity at time t = 3.0043e+01:
   Absolute error (L2-norm): 1.15089e-03
 
 Calculate error for pressure at time t = 3.0043e+01:
-  Absolute error (L2-norm): 4.48146e-13
+  Absolute error (L2-norm): 3.49392e-13
 
 ________________________________________________________________________________
 
@@ -227,7 +226,7 @@ Calculate error for velocity at time t = 4.0085e+01:
   Absolute error (L2-norm): 9.40746e-05
 
 Calculate error for pressure at time t = 4.0085e+01:
-  Absolute error (L2-norm): 1.50021e-14
+  Absolute error (L2-norm): 8.69132e-14
 
 ________________________________________________________________________________
 
@@ -238,7 +237,7 @@ Calculate error for velocity at time t = 5.0126e+01:
   Absolute error (L2-norm): 7.69248e-06
 
 Calculate error for pressure at time t = 5.0126e+01:
-  Absolute error (L2-norm): 8.85091e-15
+  Absolute error (L2-norm): 4.70131e-15
 
 ________________________________________________________________________________
 
@@ -249,7 +248,7 @@ Calculate error for velocity at time t = 6.0025e+01:
   Absolute error (L2-norm): 6.51593e-07
 
 Calculate error for pressure at time t = 6.0025e+01:
-  Absolute error (L2-norm): 3.46411e-15
+  Absolute error (L2-norm): 9.00798e-16
 
 ________________________________________________________________________________
 
@@ -260,7 +259,7 @@ Calculate error for velocity at time t = 7.0066e+01:
   Absolute error (L2-norm): 5.32807e-08
 
 Calculate error for pressure at time t = 7.0066e+01:
-  Absolute error (L2-norm): 2.03147e-15
+  Absolute error (L2-norm): 3.82877e-15
 
 ________________________________________________________________________________
 
@@ -271,7 +270,7 @@ Calculate error for velocity at time t = 8.0107e+01:
   Absolute error (L2-norm): 4.35676e-09
 
 Calculate error for pressure at time t = 8.0107e+01:
-  Absolute error (L2-norm): 2.24639e-15
+  Absolute error (L2-norm): 4.10898e-15
 
 ________________________________________________________________________________
 
@@ -279,10 +278,10 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for velocity at time t = 9.0006e+01:
-  Absolute error (L2-norm): 3.69033e-10
+  Absolute error (L2-norm): 3.69028e-10
 
 Calculate error for pressure at time t = 9.0006e+01:
-  Absolute error (L2-norm): 3.87394e-15
+  Absolute error (L2-norm): 9.48560e-16
 
 ________________________________________________________________________________
 
@@ -290,7 +289,7 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for velocity at time t = 1.0005e+02:
-  Absolute error (L2-norm): 3.01711e-11
+  Absolute error (L2-norm): 3.01674e-11
 
 Calculate error for pressure at time t = 1.0005e+02:
-  Absolute error (L2-norm): 7.07261e-15
+  Absolute error (L2-norm): 4.12898e-15

@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -29,10 +29,10 @@ double const U_MEAN          = 10;
 double const FLUID_VISCOSITY = 1;
 double const FLUID_DENSITY   = 1;
 
-double const DENSITY_STRUCTURE       = 3.0e3;
-double const POISSON_RATIO_STRUCTURE = 0.3;
+double const DENSITY_STRUCTURE        = 3.0e3;
+double const POISSONS_RATIO_STRUCTURE = 0.3;
 // 1538462 being the shear modulus
-double const E_STRUCTURE = 1538462 * 2.0 * (1.0 + POISSON_RATIO_STRUCTURE);
+double const YOUNGS_MODULUS_STRUCTURE = 1538462 * 2.0 * (1.0 + POISSONS_RATIO_STRUCTURE);
 
 // physical dimensions (diameter D and center coordinate Y_C can be varied)
 double const X_0         = -3.0; // origin (x-coordinate)
@@ -147,7 +147,7 @@ private:
 
     // TEMPORAL DISCRETIZATION
     param.solver_type                     = SolverType::Unsteady;
-    param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
+    param.temporal_discretization         = TemporalDiscretization::BDFDualSplitting;
     param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     param.order_time_integrator           = 1;
     param.start_with_low_order            = true;
@@ -203,8 +203,7 @@ private:
     // PROJECTION METHODS
 
     // pressure Poisson equation
-    param.solver_pressure_poisson              = SolverPressurePoisson::CG;
-    param.solver_data_pressure_poisson         = SolverData(1000, ABS_TOL, REL_TOL, 100);
+    param.solver_data_pressure_poisson = SolverData(1000, ABS_TOL, REL_TOL, LinearSolver::CG, 100);
     param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
     param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
     param.multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
@@ -215,8 +214,7 @@ private:
       MultigridCoarseGridPreconditioner::AMG;
 
     // projection step
-    param.solver_projection         = SolverProjection::CG;
-    param.solver_data_projection    = SolverData(1000, ABS_TOL, REL_TOL);
+    param.solver_data_projection    = SolverData(1000, ABS_TOL, REL_TOL, LinearSolver::CG);
     param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -226,10 +224,11 @@ private:
       param.order_time_integrator <= 2 ? param.order_time_integrator : 2;
     param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
 
-    // viscous step
-    param.solver_viscous         = SolverViscous::CG;
-    param.solver_data_viscous    = SolverData(1000, ABS_TOL, REL_TOL);
-    param.preconditioner_viscous = PreconditionerViscous::PointJacobi;
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
+    {
+      this->param.solver_data_momentum    = SolverData(1000, ABS_TOL, REL_TOL, LinearSolver::CG);
+      this->param.preconditioner_momentum = MomentumPreconditioner::PointJacobi;
+    }
 
 
     // PRESSURE-CORRECTION SCHEME
@@ -240,18 +239,20 @@ private:
     param.rotational_formulation = true;
 
     // momentum step
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      // Newton solver
+      param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
-    // Newton solver
-    param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
-
-    // linear solver
-    param.solver_momentum = SolverMomentum::FGMRES;
-    if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-      param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
-    else
-      param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, 100);
-    param.update_preconditioner_momentum = false;
-    param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
+      // linear solver
+      if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+        param.solver_data_momentum =
+          SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, LinearSolver::FGMRES, 100);
+      else
+        param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, LinearSolver::FGMRES, 100);
+      param.update_preconditioner_momentum = false;
+      param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
+    }
 
 
     // COUPLED NAVIER-STOKES SOLVER
@@ -261,11 +262,11 @@ private:
     param.newton_solver_data_coupled = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
     // linear solver
-    param.solver_coupled = SolverCoupled::FGMRES;
     if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-      param.solver_data_coupled = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
+      param.solver_data_coupled =
+        SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, LinearSolver::FGMRES, 100);
     else
-      param.solver_data_coupled = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+      param.solver_data_coupled = SolverData(1e4, ABS_TOL, REL_TOL, LinearSolver::FGMRES, 100);
 
     // preconditioner linear solver
     param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;
@@ -345,8 +346,6 @@ private:
         (void)vector_local_refinements;
 
         create_triangulation(tria);
-
-        tria.set_all_manifold_ids(0);
 
         for(auto cell : tria.cell_iterators())
         {
@@ -479,8 +478,7 @@ private:
     param.degree                 = this->param.mapping_degree;
 
     // SOLVER
-    param.solver         = Poisson::LinearSolver::FGMRES;
-    param.solver_data    = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+    param.solver_data    = SolverData(1e4, ABS_TOL, REL_TOL, LinearSolver::FGMRES, 100);
     param.preconditioner = Preconditioner::Multigrid;
 
     param.multigrid_data.type                          = MultigridType::phMG;
@@ -539,11 +537,11 @@ private:
     param.degree = this->param.mapping_degree;
 
     param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
-    param.solver             = Structure::Solver::FGMRES;
     if(param.large_deformation)
-      param.solver_data = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
+      param.solver_data =
+        SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, LinearSolver::FGMRES, 100);
     else
-      param.solver_data = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+      param.solver_data = SolverData(1e4, ABS_TOL, REL_TOL, LinearSolver::FGMRES, 100);
     param.preconditioner                               = Preconditioner::Multigrid;
     param.multigrid_data.type                          = MultigridType::phMG;
     param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
@@ -605,12 +603,14 @@ private:
     MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlaneStrain;
 
-    double const                           E       = 1.0;
-    double const                           poisson = 0.3;
-    std::shared_ptr<dealii::Function<dim>> E_function;
-    E_function.reset(new SpatiallyVaryingE<dim>());
+    double const                           youngs_modulus = 1.0;
+    double const                           poissons_ratio = 0.3;
+    std::shared_ptr<dealii::Function<dim>> youngs_modulus_function;
+    youngs_modulus_function.reset(new SpatiallyVaryingE<dim>());
     material_descriptor->insert(
-      Pair(0, new StVenantKirchhoffData<dim>(type, E, poisson, two_dim_type, E_function)));
+      Pair(0,
+           new StVenantKirchhoffData<dim>(
+             type, youngs_modulus, poissons_ratio, two_dim_type, youngs_modulus_function)));
   }
 
   void
@@ -665,11 +665,11 @@ public:
     param.mapping_degree_coarse_grids = param.mapping_degree;
 
     param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
-    param.solver             = Structure::Solver::FGMRES;
     if(param.large_deformation)
-      param.solver_data = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
+      param.solver_data =
+        SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, LinearSolver::FGMRES, 100);
     else
-      param.solver_data = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+      param.solver_data = SolverData(1e4, ABS_TOL, REL_TOL, LinearSolver::FGMRES, 100);
     param.preconditioner                               = Preconditioner::Multigrid;
     param.multigrid_data.type                          = MultigridType::phMG;
     param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
@@ -720,8 +720,6 @@ public:
         (void)vector_local_refinements;
 
         create_triangulation(tria);
-
-        tria.set_all_manifold_ids(0);
 
         for(auto cell : tria.cell_iterators())
         {
@@ -810,8 +808,11 @@ public:
     MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlaneStrain;
 
-    material_descriptor->insert(Pair(
-      0, new StVenantKirchhoffData<dim>(type, E_STRUCTURE, POISSON_RATIO_STRUCTURE, two_dim_type)));
+    material_descriptor->insert(Pair(0,
+                                     new StVenantKirchhoffData<dim>(type,
+                                                                    YOUNGS_MODULUS_STRUCTURE,
+                                                                    POISSONS_RATIO_STRUCTURE,
+                                                                    two_dim_type)));
   }
 
   std::shared_ptr<Structure::PostProcessor<dim, Number>>

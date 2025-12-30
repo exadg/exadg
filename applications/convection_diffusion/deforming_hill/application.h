@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -131,8 +131,7 @@ private:
     this->param.IP_factor = 1.0;
 
     // SOLVER
-    this->param.solver         = Solver::GMRES;
-    this->param.solver_data    = SolverData(1e4, 1.e-20, 1.e-6, 100);
+    this->param.solver_data    = SolverData(1e4, 1.e-20, 1.e-6, LinearSolver::GMRES, 100);
     this->param.preconditioner = Preconditioner::InverseMassMatrix;
 
     // output of solver information

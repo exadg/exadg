@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONER_ELEMENTWISE_PRECONDITIONERS_H_
-#define INCLUDE_EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONER_ELEMENTWISE_PRECONDITIONERS_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONERS_ELEMENTWISE_PRECONDITIONERS_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONERS_ELEMENTWISE_PRECONDITIONERS_H_
 
 // deal.II
 #include <deal.II/matrix_free/operators.h>
@@ -249,6 +249,4 @@ private:
 } // namespace Elementwise
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONER_ELEMENTWISE_PRECONDITIONERS_H_ \
-        */
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONERS_ELEMENTWISE_PRECONDITIONERS_H_ */

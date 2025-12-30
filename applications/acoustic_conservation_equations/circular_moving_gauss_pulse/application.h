@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -153,6 +153,12 @@ public:
                         number_of_rotations,
                         "Number of pulse rotations during runtime.",
                         dealii::Patterns::Double(1.0e-12));
+      prm.add_parameter("WriteRestart", write_restart, "Should restart files be written?");
+      prm.add_parameter("ReadRestart", read_restart, "Is this a restarted simulation?");
+      prm.add_parameter("ReadWriteMapping",
+                        read_write_mapping,
+                        "Consider mapping when writing/reading restart files.");
+      prm.add_parameter("TriangulationType", triangulation_type, "Type of triangulation used.");
     }
     prm.leave_subsection();
   }
@@ -169,11 +175,11 @@ private:
     this->param.start_time     = start_time;
     this->param.end_time       = number_of_rotations * compute_rotation_duration();
     this->param.speed_of_sound = speed_of_sound;
-    this->param.density        = density;
 
     // TEMPORAL DISCRETIZATION
     this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
-    this->param.cfl                           = 0.59;
+    this->param.time_step_size                = compute_rotation_duration() / 1000.0;
+    this->param.cfl                           = 0.50;
     this->param.order_time_integrator         = 2;
     this->param.start_with_low_order          = false;
 
@@ -181,10 +187,29 @@ private:
     this->param.solver_info_data.interval_time = (this->param.end_time - this->param.start_time);
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.triangulation_type = triangulation_type;
     this->param.mapping_degree          = 2;
     this->param.degree_p                = this->param.degree_u;
     this->param.degree_u                = this->param.degree_p;
+
+    // restart
+    this->param.restarted_simulation       = read_restart;
+    this->param.restart_data.write_restart = write_restart;
+    // write restart every 80% of the simulation time
+    this->param.restart_data.interval_time = (this->param.end_time - this->param.start_time) * 0.8;
+    this->param.restart_data.interval_wall_time             = 1.e6;
+    this->param.restart_data.interval_time_steps            = 1e8;
+    this->param.restart_data.directory_coarse_triangulation = this->output_parameters.directory;
+    this->param.restart_data.directory                      = this->output_parameters.directory;
+    this->param.restart_data.filename = this->output_parameters.filename + "_restart";
+
+    this->param.restart_data.discretization_identical     = false;
+    this->param.restart_data.consider_mapping_write       = read_write_mapping;
+    this->param.restart_data.consider_mapping_read_source = read_write_mapping;
+
+    this->param.restart_data.rpe_rtree_level            = 0;
+    this->param.restart_data.rpe_tolerance_unit_cell    = 1e-6;
+    this->param.restart_data.rpe_enforce_unique_mapping = false;
   }
 
   void
@@ -203,6 +228,12 @@ private:
         for(const auto & face : tria.active_face_iterators())
           if(face->at_boundary())
             face->set_boundary_id(1);
+
+        // Save the *coarse* triangulation for later deserialization.
+        if(write_restart and this->param.grid.triangulation_type == TriangulationType::Serial)
+        {
+          save_coarse_triangulation<dim>(this->param.restart_data, tria);
+        }
 
         tria.refine_global(global_refinements);
       };
@@ -282,7 +313,6 @@ private:
   double radius              = 0.04;
   double l                   = 0.02;
   double speed_of_sound      = 1500.0;
-  double density             = 1000.0;
   double number_of_rotations = 1.0;
 
   double
@@ -291,7 +321,12 @@ private:
     return (2.0 * dealii::numbers::PI / xi);
   }
 
-  double const start_time = 0.0;
+  double const start_time         = 0.0;
+  bool         write_restart      = false;
+  bool         read_restart       = false;
+  bool         read_write_mapping = true;
+
+  TriangulationType triangulation_type = TriangulationType::Distributed;
 };
 
 } // namespace Acoustics

@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -78,14 +78,14 @@ struct InflowDataStorage
       {
         dealii::Tensor<1, dim, double> velocity;
         // flow in z-direction
-        velocity[2] = max_velocity * (1.0 - std::pow(r_values[iy] / R, 2.0));
+        velocity[dim - 1] = max_velocity * (1.0 - std::pow(r_values[iy] / R, 2.0));
 
         if(use_random_perturbations == true)
         {
           // Add random perturbation
-          double perturbation =
-            factor_random_perturbations * velocity[2] * ((double)rand() / RAND_MAX - 0.5) / 0.5;
-          velocity[2] += perturbation;
+          double perturbation = factor_random_perturbations * velocity[dim - 1] *
+                                ((double)rand() / RAND_MAX - 0.5) / 0.5;
+          velocity[dim - 1] += perturbation;
         }
 
         velocity_values[iy * n_points_phi + iz] = velocity;

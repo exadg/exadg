@@ -15,13 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_BASE_H_
-#define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_BASE_H_
-
+#ifndef EXADG_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_BASE_H_
+#define EXADG_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_BASE_H_
 
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
@@ -41,7 +40,6 @@
 // ExaDG
 #include <exadg/postprocessor/time_control.h>
 #include <exadg/utilities/tensor_utilities.h>
-
 
 namespace ExaDG
 {
@@ -167,8 +165,8 @@ private:
 
   MPI_Comm const mpi_comm;
 
-  dealii::SmartPointer<dealii::Triangulation<dim> const>              triangulation;
-  dealii::SmartPointer<dealii::Mapping<dim> const>                    mapping;
+  dealii::ObserverPointer<dealii::Triangulation<dim> const>           triangulation;
+  dealii::ObserverPointer<dealii::Mapping<dim> const>                 mapping;
   PointwiseOutputDataBase<dim>                                        pointwise_output_data;
   dealii::Vector<Number>                                              componentwise_result;
   unsigned int                                                        n_out_samples;
@@ -184,4 +182,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_BASE_H_*/
+#endif /* EXADG_POSTPROCESSOR_POINTWISE_OUTPUT_GENERATOR_BASE_H_ */

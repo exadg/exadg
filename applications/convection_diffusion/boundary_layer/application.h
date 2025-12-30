@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -103,11 +103,10 @@ private:
 
     // SOLVER
     this->param.use_cell_based_face_loops = true;
-    this->param.solver                    = Solver::GMRES;
-    this->param.solver_data               = SolverData(1e4, 1.e-20, 1.e-8, 100);
-    this->param.preconditioner            = Preconditioner::Multigrid; // PointJacobi;
-    this->param.mg_operator_type          = MultigridOperatorType::ReactionConvectionDiffusion;
-    this->param.multigrid_data.type       = MultigridType::phMG;
+    this->param.solver_data         = SolverData(1e4, 1.e-20, 1.e-8, LinearSolver::GMRES, 100);
+    this->param.preconditioner      = Preconditioner::Multigrid; // PointJacobi;
+    this->param.mg_operator_type    = MultigridOperatorType::ReactionConvectionDiffusion;
+    this->param.multigrid_data.type = MultigridType::phMG;
     // MG smoother
     this->param.multigrid_data.smoother_data.smoother = MultigridSmoother::Jacobi; // Chebyshev;
     // MG smoother data

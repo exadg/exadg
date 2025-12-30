@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef DEAL_SPECTRUM_SPECTRUM
-#define DEAL_SPECTRUM_SPECTRUM
+#ifndef EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_SPECTRUM_H_
+#define EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_SPECTRUM_H_
 
+// C/C++
 #include <fftw3-mpi.h>
 #include <mpi.h>
 #include <cmath>
@@ -524,4 +525,4 @@ private:
 
 } // namespace dealspectrum
 
-#endif
+#endif /* EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_SPECTRUM_H_ */

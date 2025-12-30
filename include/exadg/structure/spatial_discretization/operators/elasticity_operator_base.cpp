@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -31,8 +31,7 @@ namespace ExaDG
 namespace Structure
 {
 template<int dim, typename Number>
-ElasticityOperatorBase<dim, Number>::ElasticityOperatorBase()
-  : scaling_factor_mass(1.0), scaling_factor_mass_boundary(1.0)
+ElasticityOperatorBase<dim, Number>::ElasticityOperatorBase() : scaling_factor_mass(1.0)
 {
 }
 
@@ -48,8 +47,8 @@ ElasticityOperatorBase<dim, Number>::get_integrator_flags(bool const unsteady) c
   flags.cell_evaluate  = unsteady_flag | dealii::EvaluationFlags::gradients;
   flags.cell_integrate = unsteady_flag | dealii::EvaluationFlags::gradients;
 
-  // evaluation of Neumann and Robin BCs
-  flags.face_evaluate  = dealii::EvaluationFlags::values;
+  // evaluation of Neumann BCs
+  flags.face_evaluate  = dealii::EvaluationFlags::nothing;
   flags.face_integrate = dealii::EvaluationFlags::values;
 
   return flags;
@@ -75,7 +74,8 @@ void
 ElasticityOperatorBase<dim, Number>::initialize(
   dealii::MatrixFree<dim, Number> const &   matrix_free,
   dealii::AffineConstraints<Number> const & affine_constraints,
-  OperatorData<dim> const &                 data)
+  OperatorData<dim> const &                 data,
+  bool const                                assemble_matrix)
 {
   operator_data = data;
 
@@ -85,6 +85,11 @@ ElasticityOperatorBase<dim, Number>::initialize(
 
   material_handler.initialize(
     matrix_free, data.dof_index, data.quad_index, data.material_descriptor, data.large_deformation);
+
+  initialize_derived();
+
+  if(assemble_matrix)
+    this->assemble_matrix_if_matrix_based();
 }
 
 template<int dim, typename Number>
@@ -92,6 +97,52 @@ OperatorData<dim> const &
 ElasticityOperatorBase<dim, Number>::get_data() const
 {
   return operator_data;
+}
+
+template<int dim, typename Number>
+Material<dim, Number> const &
+ElasticityOperatorBase<dim, Number>::get_material_in_cell(
+  dealii::MatrixFree<dim, Number> const & matrix_free_in,
+  unsigned int const                      cell) const
+{
+  AssertThrow(
+    &matrix_free_in == &(*this->matrix_free),
+    dealii::ExcMessage(
+      "`MatrixFree` object underlying this `ElasticityOperatorBase` does not match the one provided."));
+
+  material_handler.reinit(matrix_free_in, cell);
+
+  return *(material_handler.get_material());
+}
+
+template<int dim, typename Number>
+void
+ElasticityOperatorBase<dim, Number>::get_constant_modes(
+  std::vector<std::vector<bool>> &   constant_modes,
+  std::vector<std::vector<double>> & constant_modes_values) const
+{
+  (void)constant_modes;
+
+  dealii::DoFHandler<dim> const & dof_handler =
+    this->matrix_free->get_dof_handler(this->get_dof_index());
+
+  if(dof_handler.has_level_dofs())
+  {
+    // Extract coarse level constant modes.
+    constant_modes_values = dealii::DoFTools::extract_level_rigid_body_modes(
+      this->matrix_free->get_mg_level(),
+      *this->matrix_free->get_mapping_info().mapping,
+      dof_handler,
+      dealii::ComponentMask(dim, true));
+  }
+  else
+  {
+    // Extract finest level constant modes.
+    constant_modes_values =
+      dealii::DoFTools::extract_rigid_body_modes(*this->matrix_free->get_mapping_info().mapping,
+                                                 dof_handler,
+                                                 dealii::ComponentMask(dim, true));
+  }
 }
 
 template<int dim, typename Number>
@@ -111,23 +162,17 @@ ElasticityOperatorBase<dim, Number>::get_scaling_factor_mass_operator() const
 
 template<int dim, typename Number>
 void
-ElasticityOperatorBase<dim, Number>::set_scaling_factor_mass_boundary_operator(
-  double const scaling_factor) const
+ElasticityOperatorBase<dim, Number>::set_inhomogeneous_constrained_values(VectorType & dst) const
 {
-  scaling_factor_mass_boundary = scaling_factor;
-}
+  // periodicity and hanging node constraints are enforced strongly for continuous spaces
+  if(not this->is_dg)
+  {
+    unsigned int const dof_index_inhomogeneous = this->get_dof_index_inhomogeneous();
+    dealii::AffineConstraints<Number> const & constraints =
+      this->matrix_free->get_affine_constraints(dof_index_inhomogeneous);
+    constraints.distribute(dst);
+  }
 
-template<int dim, typename Number>
-double
-ElasticityOperatorBase<dim, Number>::get_scaling_factor_mass_boundary_operator() const
-{
-  return scaling_factor_mass_boundary;
-}
-
-template<int dim, typename Number>
-void
-ElasticityOperatorBase<dim, Number>::set_inhomogeneous_boundary_values(VectorType & dst) const
-{
   // standard Dirichlet boundary conditions
   std::map<dealii::types::global_dof_index, double> boundary_values;
   for(auto dbc : operator_data.bc->dirichlet_bc)
@@ -204,12 +249,14 @@ ElasticityOperatorBase<dim, Number>::set_inhomogeneous_boundary_values(VectorTyp
       {
         AssertThrow(boundary_type == BoundaryType::Dirichlet or
                       boundary_type == BoundaryType::Neumann or
-                      boundary_type == BoundaryType::NeumannCached or
-                      boundary_type == BoundaryType::RobinSpringDashpotPressure,
+                      boundary_type == BoundaryType::NeumannCached,
                     dealii::ExcMessage("BoundaryType not implemented."));
       }
     }
   }
+
+  // zero out ghost values to return to default state
+  dst.zero_out_ghost_values();
 }
 
 template<int dim, typename Number>

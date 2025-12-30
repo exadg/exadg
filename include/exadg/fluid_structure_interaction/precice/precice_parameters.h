@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_PRECICE_PARAMETERS_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_PRECICE_PARAMETERS_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_PRECICE_PARAMETERS_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_PRECICE_PARAMETERS_H_
 
+// deal.II
 #include <deal.II/base/parameter_handler.h>
 
 // ExaDG
@@ -127,4 +128,4 @@ ConfigurationParameters::add_parameters(dealii::ParameterHandler & prm)
 } // namespace preCICE
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_PRECICE_PARAMETERS_H_ */

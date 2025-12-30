@@ -15,15 +15,17 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_H_
 
+// deal.II
 #include <deal.II/lac/la_parallel_vector.h>
 
+// ExaDG
 #include <exadg/fluid_structure_interaction/precice/precice_adapter.h>
 #include <exadg/fluid_structure_interaction/precice/precice_parameters.h>
 #include <exadg/fluid_structure_interaction/single_field_solvers/fluid.h>
@@ -93,5 +95,4 @@ protected:
 } // namespace FSI
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_H_ */
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_H_ */

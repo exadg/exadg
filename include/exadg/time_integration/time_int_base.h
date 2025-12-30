@@ -15,16 +15,18 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_BASE_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_BASE_H_
+#ifndef EXADG_TIME_INTEGRATION_TIME_INT_BASE_H_
+#define EXADG_TIME_INTEGRATION_TIME_INT_BASE_H_
 
 // C/C++
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
 
 #include <fstream>
 #include <sstream>
@@ -45,6 +47,13 @@ namespace ExaDG
 class TimeIntBase
 {
 public:
+  // Archive type used for serialization. Binary type for reduced file size.
+  typedef boost::archive::binary_iarchive BoostInputArchiveType;
+  typedef boost::archive::binary_oarchive BoostOutputArchiveType;
+  // Alternative human-readable type for debugging.
+  // typedef boost::archive::text_iarchive BoostInputArchiveType;
+  // typedef boost::archive::text_oarchive BoostOutputArchiveType;
+
   TimeIntBase(double const &      start_time_,
               double const &      end_time_,
               unsigned int const  max_number_of_time_steps_,
@@ -192,13 +201,15 @@ protected:
 
   /*
    * Write solution vectors to files so that the simulation can be restart from an intermediate
-   * state.
+   * state. Note that the sequence of writing and reading data in `write_restart` and `read_restart`
+   * needs to be identical.
    */
   void
   write_restart() const;
 
   /*
-   * Read all relevant data from restart files to start the time integrator.
+   * Read all relevant data from restart files to start the time integrator. Note that the sequence
+   * of writing and reading data in `write_restart` and `read_restart` needs to be identical.
    */
   void
   read_restart();
@@ -279,5 +290,4 @@ private:
 
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_BASE_H_ */
+#endif /* EXADG_TIME_INTEGRATION_TIME_INT_BASE_H_ */

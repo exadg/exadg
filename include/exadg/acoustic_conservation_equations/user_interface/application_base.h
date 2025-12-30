@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -176,9 +176,7 @@ private:
   set_field_functions() = 0;
 };
 
-
 } // namespace Acoustics
 } // namespace ExaDG
-
 
 #endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_APPLICATION_BASE_H_ */

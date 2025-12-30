@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POSTPROCESSOR_SOLUTION_INTERPOLATION_H_
-#define INCLUDE_EXADG_POSTPROCESSOR_SOLUTION_INTERPOLATION_H_
+#ifndef EXADG_POSTPROCESSOR_SOLUTION_INTERPOLATION_H_
+#define EXADG_POSTPROCESSOR_SOLUTION_INTERPOLATION_H_
 
 // deal.II
 #include <deal.II/base/point.h>
@@ -297,4 +297,4 @@ struct Interpolator<1, dim, Number>
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_POSTPROCESSOR_SOLUTION_INTERPOLATION_H_ */
+#endif /* EXADG_POSTPROCESSOR_SOLUTION_INTERPOLATION_H_ */

@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_INTERFACE_H_
-#define INCLUDE_EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_INTERFACE_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_INTERFACE_H_
+#define EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_INTERFACE_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -80,6 +80,13 @@ public:
   virtual void
   project_velocity(VectorType & velocity, double const time) const = 0;
 
+  // required for restart functionality
+  virtual void
+  serialize_vectors(std::vector<VectorType const *> const & vectors) const = 0;
+
+  virtual void
+  deserialize_vectors(std::vector<VectorType *> const & vectors) = 0;
+
   // time integration: prescribe initial conditions
   virtual void
   prescribe_initial_conditions(VectorType & src, double const evaluation_time) const = 0;
@@ -102,6 +109,15 @@ public:
   // needed for time step calculation
   virtual double
   calculate_time_step_diffusion() const = 0;
+
+  /*
+   * Prepare and interpolation in adaptive mesh refinement.
+   */
+  virtual void
+  prepare_coarsening_and_refinement(std::vector<VectorType *> & vectors) = 0;
+
+  virtual void
+  interpolate_after_coarsening_and_refinement(std::vector<VectorType *> & vectors) = 0;
 };
 } // namespace Interface
 
@@ -166,4 +182,4 @@ private:
 } // namespace ConvDiff
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_INTERFACE_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_INTERFACE_H_ */

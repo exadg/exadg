@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -107,6 +107,12 @@ public:
 
     prm.enter_subsection("Application");
     {
+      prm.add_parameter("WriteRestart", write_restart, "Should restart files be written?");
+      prm.add_parameter("ReadRestart", read_restart, "Is this a restarted simulation?");
+      prm.add_parameter("TemporalDiscretization",
+                        temporal_discretization,
+                        "Temporal discretization");
+      prm.add_parameter("SpatialDiscretization", spatial_discretization, "Spatial discretization");
       prm.add_parameter("Inviscid", inviscid, "Is this an inviscid simulation?");
       prm.add_parameter("ReynoldsNumber", Re, "Reynolds number (ignored if Inviscid = true)");
       prm.add_parameter("EndTime",
@@ -175,7 +181,7 @@ private:
 
     // TEMPORAL DISCRETIZATION
     this->param.solver_type                     = SolverType::Unsteady;
-    this->param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
+    this->param.temporal_discretization         = temporal_discretization;
     this->param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     this->param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     this->param.adaptive_time_stepping          = true;
@@ -184,12 +190,13 @@ private:
     this->param.cfl_exponent_fe_degree_velocity = 1.5;
     this->param.time_step_size                  = 1.0e-1;
     this->param.order_time_integrator           = 2;
-    this->param.start_with_low_order            = true;
+    this->param.start_with_low_order            = read_restart ? false : true;
 
     // output of solver information
     this->param.solver_info_data.interval_time = flow_through_time / 10.0;
 
     // SPATIAL DISCRETIZATION
+    this->param.spatial_discretization      = spatial_discretization;
     this->param.grid.triangulation_type     = TriangulationType::Distributed;
     this->param.mapping_degree              = this->param.degree_u;
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
@@ -201,6 +208,12 @@ private:
     // viscous term
     this->param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
+    // div-div and continuity penalty terms
+    this->param.use_divergence_penalty = true;
+    this->param.use_continuity_penalty = spatial_discretization == SpatialDiscretization::L2;
+    this->param.continuity_penalty_use_boundary_data       = true;
+    this->param.apply_penalty_terms_in_postprocessing_step = true;
+
     // TURBULENCE
     this->param.turbulence_model_data.is_active        = false;
     this->param.turbulence_model_data.turbulence_model = TurbulenceEddyViscosityModel::Sigma;
@@ -210,11 +223,31 @@ private:
     // Sigma: 1.35
     this->param.turbulence_model_data.constant = 1.35;
 
+    // RESTART
+    this->param.restarted_simulation       = read_restart;
+    this->param.restart_data.write_restart = write_restart;
+    // write restart every 40% of the simulation time
+    this->param.restart_data.interval_time = (this->param.end_time - this->param.start_time) * 0.4;
+    this->param.restart_data.directory_coarse_triangulation = this->output_parameters.directory;
+    this->param.restart_data.directory                      = this->output_parameters.directory;
+    this->param.restart_data.filename            = this->output_parameters.filename + "_restart";
+    this->param.restart_data.interval_wall_time  = 1.e6;
+    this->param.restart_data.interval_time_steps = 1e8;
+
+    this->param.restart_data.discretization_identical                        = false;
+    this->param.restart_data.consider_mapping_write                          = true;
+    this->param.restart_data.consider_mapping_read_source                    = true;
+    this->param.restart_data.consider_restart_time_in_mesh_movement_function = true;
+
+    this->param.restart_data.rpe_rtree_level            = 3;
+    this->param.restart_data.rpe_tolerance_unit_cell    = 1e-6;
+    this->param.restart_data.rpe_enforce_unique_mapping = false;
+
     // PROJECTION METHODS
 
     // pressure Poisson equation
-    this->param.solver_pressure_poisson              = SolverPressurePoisson::CG;
-    this->param.solver_data_pressure_poisson         = SolverData(1000, 1.e-12, 1.e-6, 100);
+    this->param.solver_data_pressure_poisson =
+      SolverData(1000, 1.e-12, 1.e-6, LinearSolver::CG, 100);
     this->param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
     this->param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
     this->param.multigrid_data_pressure_poisson.coarse_problem.solver =
@@ -223,9 +256,8 @@ private:
       MultigridCoarseGridPreconditioner::PointJacobi;
 
     // projection step
-    this->param.solver_projection                = SolverProjection::CG;
-    this->param.solver_data_projection           = SolverData(1000, 1.e-12, 1.e-6);
-    this->param.preconditioner_projection        = PreconditionerProjection::InverseMassMatrix;
+    this->param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-6, LinearSolver::CG);
+    this->param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
     this->param.update_preconditioner_projection = true;
 
 
@@ -235,10 +267,10 @@ private:
     this->param.order_extrapolation_pressure_nbc =
       this->param.order_time_integrator <= 2 ? this->param.order_time_integrator : 2;
 
-    // viscous step
-    this->param.solver_viscous         = SolverViscous::CG;
-    this->param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-6);
-    this->param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
+    this->param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-6, LinearSolver::CG);
+    this->param.preconditioner_momentum = spatial_discretization == SpatialDiscretization::L2 ?
+                                            MomentumPreconditioner::InverseMassMatrix :
+                                            MomentumPreconditioner::PointJacobi;
   }
 
   void
@@ -326,6 +358,12 @@ private:
         PeriodicHillManifold<dim>(H, length, height, grid_stretch_factor);
       tria.set_manifold(manifold_id, manifold);
 
+      // Save the *coarse* triangulation for later deserialization.
+      if(write_restart and this->param.grid.triangulation_type == TriangulationType::Serial)
+      {
+        save_coarse_triangulation<dim>(this->param.restart_data, tria);
+      }
+
       tria.refine_global(global_refinements);
     };
 
@@ -383,12 +421,14 @@ private:
     pp_data.output_data.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
     pp_data.output_data.directory                 = this->output_parameters.directory + "vtu/";
     pp_data.output_data.filename                  = this->output_parameters.filename;
-    pp_data.output_data.write_velocity_magnitude  = true;
+    pp_data.output_data.write_velocity_magnitude  = false;
     pp_data.output_data.write_vorticity           = true;
     pp_data.output_data.write_vorticity_magnitude = true;
     pp_data.output_data.write_q_criterion         = true;
     pp_data.output_data.degree                    = this->param.degree_u;
-    pp_data.output_data.write_higher_order        = false;
+    pp_data.output_data.write_higher_order        = true;
+    pp_data.output_data.write_aspect_ratio        = false;
+    pp_data.output_data.write_processor_id        = false;
 
     MyPostProcessorData<dim> my_pp_data;
     my_pp_data.pp_data = pp_data;
@@ -567,7 +607,15 @@ private:
   // grid
   double grid_stretch_factor = 1.6;
 
+  // dicretization
+  TemporalDiscretization temporal_discretization = TemporalDiscretization::Undefined;
+  SpatialDiscretization  spatial_discretization  = SpatialDiscretization::L2;
+
   // postprocessing
+
+  // restart
+  bool write_restart = false;
+  bool read_restart  = false;
 
   // sampling
   bool         calculate_statistics        = true;

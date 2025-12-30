@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_MULTIGRID_PRECONDITIONER_H_
-#define INCLUDE_CONVECTION_DIFFUSION_MULTIGRID_PRECONDITIONER_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
+#define EXADG_CONVECTION_DIFFUSION_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
 
+// ExaDG
 #include <exadg/convection_diffusion/spatial_discretization/operators/combined_operator.h>
 #include <exadg/operators/multigrid_operator.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h>
@@ -87,7 +88,9 @@ private:
                         unsigned int const                     dealii_tria_level) final;
 
   std::shared_ptr<MGOperatorBase>
-  initialize_operator(unsigned int const level) final;
+  initialize_operator(unsigned int const level,
+                      bool const         use_matrix_based_operator_level,
+                      bool const         assemble_matrix) final;
 
   void
   initialize_dof_handler_and_constraints(
@@ -122,4 +125,4 @@ private:
 } // namespace ConvDiff
 } // namespace ExaDG
 
-#endif /* INCLUDE_CONVECTION_DIFFUSION_MULTIGRID_PRECONDITIONER_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_ */

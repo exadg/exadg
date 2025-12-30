@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_ENUM_TYPES_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_ENUM_TYPES_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_ENUM_TYPES_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_ENUM_TYPES_H_
 
+// C/C++
 #include <string>
 
 namespace ExaDG
@@ -123,9 +124,11 @@ enum class SolverType
 enum class TemporalDiscretization
 {
   Undefined,
-  BDFDualSplittingScheme,
+  BDFDualSplitting,
+  BDFConsistentSplitting,
   BDFPressureCorrection,
-  BDFCoupledSolution
+  BDFCoupledSolution,
+  InterpolateAnalyticalSolution
 };
 
 /*
@@ -135,7 +138,8 @@ enum class TreatmentOfConvectiveTerm
 {
   Undefined,
   Explicit,
-  Implicit
+  Implicit,
+  LinearlyImplicit
 };
 
 /*
@@ -199,6 +203,7 @@ enum class ConvergenceCriterionSteadyProblem
  */
 enum class SpatialDiscretization
 {
+  Undefined,
   L2,
   HDIV
 };
@@ -354,14 +359,7 @@ enum class QuadratureRuleLinearization
  *  use CG (conjugate gradient) method as default. FGMRES might be necessary
  *  if a Krylov method is used inside the preconditioner (e.g., as multigrid
  *  smoother or as multigrid coarse grid solver)
- */
-enum class SolverPressurePoisson
-{
-  CG,
-  FGMRES
-};
-
-/*
+ *
  *  Preconditioner type for solution of pressure Poisson equation:
  *
  *  use Multigrid as default
@@ -400,37 +398,6 @@ enum class PreconditionerProjection
   Multigrid
 };
 
-/*
- *  Solver type for solution of viscous step:
- *
- *  use CG (conjugate gradient) method as default and GMRES if the problem
- *  is non-symmetric (Divergence formulation of viscous term, but note that often
- *  CG also works in this case).
- *  FGMRES might be necessary if a Krylov method is used inside the preconditioner
- *  (e.g., as multigrid smoother or as multigrid coarse grid solver).
- */
-enum class SolverViscous
-{
-  CG,
-  GMRES,
-  FGMRES
-};
-
-/*
- *  Preconditioner type for solution of viscous step:
- *
- *  Use InverseMassMatrix as default. As a rule of thumb, only try other
- *  preconditioners if the number of iterations is significantly larger than 10.
- */
-enum class PreconditionerViscous
-{
-  None,
-  InverseMassMatrix,
-  PointJacobi,
-  BlockJacobi,
-  Multigrid
-};
-
 /**************************************************************************************/
 /*                                                                                    */
 /*                             PRESSURE-CORRECTION SCHEME                             */
@@ -444,15 +411,7 @@ enum class PreconditionerViscous
  *
  *  - FGMRES might be necessary if a Krylov method is used inside the preconditioner
  *    (e.g., as multigrid smoother or as multigrid coarse grid solver).
- */
-enum class SolverMomentum
-{
-  CG,
-  GMRES,
-  FGMRES
-};
-
-/*
+ *
  *  Preconditioner type for solution of momentum equation:
  *
  *  see coupled solution approach below
@@ -472,14 +431,7 @@ enum class SolverMomentum
  *
  * - FGMRES might be necessary if a Krylov method is used inside the preconditioner
  *   (e.g., as multigrid smoother or as multigrid coarse grid solver).
- */
-enum class SolverCoupled
-{
-  GMRES,
-  FGMRES
-};
-
-/*
+ *
  *  Preconditioner type for linearized Navier-Stokes problem
  *
  *  - use BlockTriangular as default (typically best option in terms of time-to-solution, i.e.
@@ -538,4 +490,4 @@ enum class SchurComplementPreconditioner
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_ENUM_TYPES_H_ */
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_ENUM_TYPES_H_ */

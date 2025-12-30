@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -85,7 +85,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
 
   this->initialize_transfer_operators();
 
-  this->initialize_operators();
+  this->initialize_operators(initialize_preconditioners);
 
   this->initialize_smoothers(initialize_preconditioners);
 
@@ -326,9 +326,7 @@ template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mapping()
 {
-  unsigned int const n_h_levels = level_info.back().h_level() - level_info.front().h_level() + 1;
-
-  multigrid_mappings->initialize_coarse_mappings(*grid, n_h_levels);
+  multigrid_mappings->initialize_coarse_mappings(*grid, this->get_number_of_h_levels());
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -336,9 +334,7 @@ dealii::Mapping<dim> const &
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::get_mapping(
   unsigned int const h_level) const
 {
-  unsigned int const n_h_levels = level_info.back().h_level() - level_info.front().h_level() + 1;
-
-  return multigrid_mappings->get_mapping(h_level, n_h_levels);
+  return multigrid_mappings->get_mapping(h_level, this->get_number_of_h_levels());
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -350,6 +346,17 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::get_number_of_levels(
                 "MultigridPreconditionerBase: level_info seems to be uninitialized."));
 
   return level_info.size();
+}
+
+template<int dim, typename Number, typename MultigridNumber>
+unsigned int
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::get_number_of_h_levels() const
+{
+  AssertThrow(level_info.size() > 0,
+              dealii::ExcMessage(
+                "MultigridPreconditionerBase: level_info seems to be uninitialized."));
+
+  return (level_info.back().h_level() - level_info.front().h_level() + 1);
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -423,9 +430,9 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
 
       AssertThrow(is_singular == false, dealii::ExcNotImplemented());
 
-      dealii::IndexSet locally_relevant_dofs;
-      dealii::DoFTools::extract_locally_relevant_dofs(*dof_handler, locally_relevant_dofs);
-      affine_constraints_own->reinit(locally_relevant_dofs);
+      dealii::IndexSet const locally_relevant_dofs =
+        dealii::DoFTools::extract_locally_relevant_dofs(*dof_handler);
+      affine_constraints_own->reinit(dof_handler->locally_owned_dofs(), locally_relevant_dofs);
 
       // hanging nodes (needs to be done before imposing periodicity constraints and boundary
       // conditions)
@@ -471,8 +478,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
       dealii::Functions::ZeroFunction<dim, MultigridNumber> zero_function(
         dof_handler->get_fe().n_components());
 
-      auto const & mapping_dummy =
-        dof_handler->get_fe().reference_cell().template get_default_linear_mapping<dim>();
+      auto const & mapping_dummy = dealii::get_default_linear_mapping<dim>(*grid->triangulation);
 
       for(auto & it : dirichlet_bc)
       {
@@ -603,12 +609,17 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_matrix_free_ob
 
 template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_operators()
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_operators(
+  bool const assemble_matrix)
 {
   this->operators.resize(0, this->get_number_of_levels() - 1);
 
-  for_all_levels(
-    [&](unsigned int const level) { operators[level] = this->initialize_operator(level); });
+  for_all_levels([&](unsigned int const level) {
+    bool const use_matrix_based_operator_level =
+      level_info[level].degree() < this->data.min_degree_matrix_free;
+    operators[level] =
+      this->initialize_operator(level, use_matrix_based_operator_level, assemble_matrix);
+  });
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -616,9 +627,13 @@ std::shared_ptr<MultigridOperatorBase<
   dim,
   typename MultigridPreconditionerBase<dim, Number, MultigridNumber>::MultigridNumber>>
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_operator(
-  unsigned int const level)
+  unsigned int const level,
+  bool const         use_matrix_based_operator_level,
+  bool const         assemble_matrix)
 {
   (void)level;
+  (void)use_matrix_based_operator_level;
+  (void)assemble_matrix;
 
   AssertThrow(false,
               dealii::ExcMessage("This function needs to be implemented by derived classes."));
@@ -803,12 +818,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_sol
     {
       typename MGCoarseKrylov<Operator>::AdditionalData additional_data;
 
-      if(data.coarse_problem.solver == MultigridCoarseGridSolver::CG)
-        additional_data.solver_type = KrylovSolverType::CG;
-      else if(data.coarse_problem.solver == MultigridCoarseGridSolver::GMRES)
-        additional_data.solver_type = KrylovSolverType::GMRES;
-      else
-        AssertThrow(false, dealii::ExcMessage("Not implemented."));
+      additional_data.solver_type = data.coarse_problem.solver;
 
       additional_data.solver_data          = data.coarse_problem.solver_data;
       additional_data.operator_is_singular = operator_is_singular;

@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -149,6 +149,8 @@ private:
     this->param.mapping_degree              = this->param.degree_u;
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
 
+    this->param.divu_formulation = FormulationVelocityDivergenceTerm::Weak;
+
     // div-div and continuity penalty
     this->param.use_divergence_penalty                     = false;
     this->param.divergence_penalty_factor                  = 1.0e0;
@@ -169,14 +171,13 @@ private:
     // PROJECTION METHODS
 
     // pressure Poisson equation
-    this->param.solver_pressure_poisson         = SolverPressurePoisson::CG;
-    this->param.solver_data_pressure_poisson    = SolverData(1000, ABS_TOL, REL_TOL, 100);
+    this->param.solver_data_pressure_poisson =
+      SolverData(1000, ABS_TOL, REL_TOL, LinearSolver::CG, 100);
     this->param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
 
     // projection step
-    this->param.solver_projection         = SolverProjection::CG;
-    this->param.solver_data_projection    = SolverData(1000, ABS_TOL, REL_TOL);
-    this->param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
+    this->param.solver_data_projection    = SolverData(1000, ABS_TOL, REL_TOL, LinearSolver::CG);
+    this->param.preconditioner_projection = PreconditionerProjection::PointJacobi;
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
 
@@ -184,28 +185,31 @@ private:
     this->param.order_extrapolation_pressure_nbc =
       this->param.order_time_integrator <= 2 ? this->param.order_time_integrator : 2;
 
-    // viscous step
-    this->param.solver_viscous         = SolverViscous::CG;
-    this->param.solver_data_viscous    = SolverData(1000, ABS_TOL, REL_TOL);
-    this->param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
+    {
+      this->param.solver_data_momentum    = SolverData(1000, ABS_TOL, REL_TOL, LinearSolver::CG);
+      this->param.preconditioner_momentum = MomentumPreconditioner::PointJacobi;
+    }
+
 
     // PRESSURE-CORRECTION SCHEME
 
     // momentum step
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      // Newton solver
+      this->param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
-    // Newton solver
-    this->param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
-
-    // linear solver
-    this->param.solver_momentum         = SolverMomentum::GMRES;
-    this->param.solver_data_momentum    = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
-    this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
-    this->param.update_preconditioner_momentum = false;
+      // linear solver
+      this->param.solver_data_momentum =
+        SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, LinearSolver::GMRES, 100);
+      this->param.preconditioner_momentum        = MomentumPreconditioner::PointJacobi;
+      this->param.update_preconditioner_momentum = false;
+    }
 
     // formulation
     this->param.order_pressure_extrapolation = 1;
     this->param.rotational_formulation       = true;
-    this->param.divu_formulation             = FormulationVelocityDivergenceTerm::Weak;
 
     // COUPLED NAVIER-STOKES SOLVER
 
@@ -213,8 +217,8 @@ private:
     this->param.newton_solver_data_coupled = Newton::SolverData(1000, ABS_TOL, REL_TOL);
 
     // linear solver
-    this->param.solver_coupled      = SolverCoupled::GMRES;
-    this->param.solver_data_coupled = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
+    this->param.solver_data_coupled =
+      SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, LinearSolver::GMRES, 100);
 
     // preconditioning linear solver
     this->param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
@@ -233,8 +237,9 @@ private:
     this->param.preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard;
 
     // Inversion of mass operator in case of H(div)-conforming method
-    this->param.inverse_mass_operator_hdiv.solver_data    = SolverData(1000, ABS_TOL, REL_TOL);
-    this->param.inverse_mass_operator_hdiv.preconditioner = PreconditionerMass::PointJacobi;
+    this->param.inverse_mass_operator.solver_data =
+      SolverData(1000, ABS_TOL, REL_TOL, LinearSolver::CG);
+    this->param.inverse_mass_operator.preconditioner = PreconditionerMass::PointJacobi;
   }
 
   void
@@ -249,7 +254,6 @@ private:
                                                  unsigned int const          global_refinements,
                                                  std::vector<unsigned int> const &
                                                    vector_local_refinements) {
-      (void)periodic_face_pairs;
       (void)vector_local_refinements;
 
       AssertThrow(
@@ -279,6 +283,9 @@ private:
                           right,
                           mesh_type == MeshType::Curvilinear,
                           deformation);
+
+      if(global_refinements > 0)
+        tria.refine_global(global_refinements);
     };
 
     GridUtilities::create_triangulation_with_multigrid<dim>(grid,

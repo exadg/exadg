@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_SOLVERS_AND_PRECONDITIONERS_SOLVERS_WRAPPER_ELEMENTWISE_SOLVERS_H_
-#define INCLUDE_EXADG_SOLVERS_AND_PRECONDITIONERS_SOLVERS_WRAPPER_ELEMENTWISE_SOLVERS_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_SOLVERS_WRAPPER_ELEMENTWISE_SOLVERS_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_SOLVERS_WRAPPER_ELEMENTWISE_SOLVERS_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -90,8 +90,6 @@ public:
   unsigned int
   solve(VectorType & dst, VectorType const & src) const override
   {
-    dst = 0;
-
     op.get_matrix_free().cell_loop(&THIS::solve_elementwise, this, dst, src);
 
     return 0;
@@ -110,7 +108,8 @@ private:
 
     unsigned int const dofs_per_cell = integrator.dofs_per_cell;
 
-    dealii::AlignedVector<dealii::VectorizedArray<Number>> solution(dofs_per_cell);
+    dealii::AlignedVector<dealii::VectorizedArray<Number>> solution(
+      dofs_per_cell, dealii::make_vectorized_array<Number>(0.0));
 
     // setup elementwise solver
     if(iterative_solver_data.solver_type == Solver::CG)
@@ -164,5 +163,5 @@ private:
 } // namespace Elementwise
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_SOLVERS_AND_PRECONDITIONERS_SOLVERS_WRAPPER_ELEMENTWISE_SOLVERS_H_ \
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_SOLVERS_WRAPPER_ELEMENTWISE_SOLVERS_H_ \
         */

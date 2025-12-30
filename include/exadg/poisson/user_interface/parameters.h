@@ -15,14 +15,16 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_LAPLACE_INPUT_PARAMETERS_H_
-#define INCLUDE_LAPLACE_INPUT_PARAMETERS_H_
+#ifndef EXADG_POISSON_USER_INTERFACE_PARAMETERS_H_
+#define EXADG_POISSON_USER_INTERFACE_PARAMETERS_H_
 
+// ExaDG
 #include <exadg/grid/grid_data.h>
+#include <exadg/operators/enum_types.h>
 #include <exadg/poisson/user_interface/enum_types.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
@@ -95,15 +97,20 @@ public:
   // interior penalty parameter scaling factor: default value is 1.0
   double IP_factor;
 
+  // Use a matrix-based implementation of linear(ized) operators. Note that this parameter only
+  // decides about the implementation of the operator in the Krylov solver. This parameter does not
+  // affect matrix-based vs. matrix-free implementations within multigrid.
+  bool use_matrix_based_operator;
+
+  // this parameter is only relevant if use_matrix_based_operator == true
+  SparseMatrixType sparse_matrix_type;
+
 
   /**************************************************************************************/
   /*                                                                                    */
   /*                                       SOLVER                                       */
   /*                                                                                    */
   /**************************************************************************************/
-
-  // description: see enum declaration
-  LinearSolver solver;
 
   // solver data
   SolverData solver_data;
@@ -133,4 +140,4 @@ public:
 } // namespace Poisson
 } // namespace ExaDG
 
-#endif /* INCLUDE_LAPLACE_INPUT_PARAMETERS_H_ */
+#endif /* EXADG_POISSON_USER_INTERFACE_PARAMETERS_H_ */

@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -75,8 +75,8 @@ private:
     // TEMPORAL DISCRETIZATION
     this->param.solver_type = SolverType::Unsteady;
     this->param.temporal_discretization =
-      TemporalDiscretization::BDFDualSplittingScheme; // BDFPressureCorrection;
-                                                      // //BDFCoupledSolution;
+      TemporalDiscretization::BDFDualSplitting; // BDFPressureCorrection;
+                                                // //BDFCoupledSolution;
     this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
     this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
     this->param.cfl                           = 1.0;
@@ -120,31 +120,36 @@ private:
     // PROJECTION METHODS
 
     // pressure Poisson equation
-    this->param.solver_pressure_poisson         = SolverPressurePoisson::CG;
-    this->param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::None;
+
+    this->param.solver_data_pressure_poisson.linear_solver = LinearSolver::CG;
+    this->param.preconditioner_pressure_poisson            = PreconditionerPressurePoisson::None;
 
     // projection step
-    this->param.solver_projection         = SolverProjection::CG;
-    this->param.preconditioner_projection = PreconditionerProjection::None;
+    this->param.solver_data_projection.linear_solver = LinearSolver::CG;
+    this->param.preconditioner_projection            = PreconditionerProjection::None;
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
 
-    // viscous step
-    this->param.solver_viscous         = SolverViscous::CG;
-    this->param.preconditioner_viscous = PreconditionerViscous::None;
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
+    {
+      this->param.solver_data_momentum.linear_solver = LinearSolver::CG;
+      this->param.preconditioner_momentum            = MomentumPreconditioner::None;
+    }
 
     // PRESSURE-CORRECTION SCHEME
 
     // momentum step
-
-    // linear solver
-    this->param.solver_momentum         = SolverMomentum::GMRES;
-    this->param.preconditioner_momentum = MomentumPreconditioner::None;
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      // linear solver
+      this->param.solver_data_momentum.linear_solver = LinearSolver::GMRES;
+      this->param.preconditioner_momentum            = MomentumPreconditioner::None;
+    }
 
     // COUPLED NAVIER-STOKES SOLVER
 
     // linear solver
-    this->param.solver_coupled = SolverCoupled::GMRES;
+    this->param.solver_data_coupled.linear_solver = LinearSolver::GMRES;
 
     // preconditioning linear solver
     this->param.preconditioner_coupled = PreconditionerCoupled::None;

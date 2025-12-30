@@ -15,9 +15,8 @@
         "RefineTimeMax": "10"
     },
     "Application": {
-        "Length": "100.0",
-        "Height": "10.0",
-        "Width": "10.0"
+        "LinearSolver": "CG",
+        "UseMatrixBasedOperator": "false"
     },
     "Output": {
         "OutputDirectory": "output/manufactured/",

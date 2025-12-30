@@ -15,16 +15,18 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_OPERATORS_MASS_KERNEL_H_
-#define INCLUDE_OPERATORS_MASS_KERNEL_H_
+#ifndef EXADG_OPERATORS_MASS_KERNEL_H_
+#define EXADG_OPERATORS_MASS_KERNEL_H_
 
+// ExaDG
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/integrator_flags.h>
 #include <exadg/operators/mapping_flags.h>
+#include <exadg/operators/variable_coefficients.h>
 
 namespace ExaDG
 {
@@ -69,8 +71,27 @@ public:
   {
     return scaling_factor * value;
   }
+
+  /*
+   * Variable coefficients not managed by this class.
+   */
+  void
+  set_variable_coefficients_ptr(
+    VariableCoefficients<dealii::VectorizedArray<Number>> const * variable_coefficients_in)
+  {
+    variable_coefficients = variable_coefficients_in;
+  }
+
+  VariableCoefficients<dealii::VectorizedArray<Number>> const *
+  get_variable_coefficients_ptr() const
+  {
+    return variable_coefficients;
+  }
+
+private:
+  VariableCoefficients<dealii::VectorizedArray<Number>> const * variable_coefficients;
 };
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_OPERATORS_MASS_KERNEL_H_ */
+#endif /* EXADG_OPERATORS_MASS_KERNEL_H_ */

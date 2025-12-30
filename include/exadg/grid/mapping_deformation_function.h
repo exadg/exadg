@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_GRID_MAPPING_DEFORMATION_FUNCTION_H_
-#define INCLUDE_GRID_MAPPING_DEFORMATION_FUNCTION_H_
+#ifndef EXADG_GRID_MAPPING_DEFORMATION_FUNCTION_H_
+#define EXADG_GRID_MAPPING_DEFORMATION_FUNCTION_H_
 
+// ExaDG
 #include <exadg/grid/grid_data.h>
 #include <exadg/grid/mapping_deformation_base.h>
 
@@ -124,4 +125,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /*INCLUDE_GRID_MAPPING_DEFORMATION_FUNCTION_H_*/
+#endif /* EXADG_GRID_MAPPING_DEFORMATION_FUNCTION_H_ */

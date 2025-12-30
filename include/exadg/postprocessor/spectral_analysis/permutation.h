@@ -15,14 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef DEAL_SPECTRUM_PERMUTATION
-#define DEAL_SPECTRUM_PERMUTATION
+#ifndef EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_PERMUTATION_H_
+#define EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_PERMUTATION_H_
 
-// std
+// C/C++
 #include <math.h>
 #include <mpi.h>
 #include <stdio.h>
@@ -497,4 +497,4 @@ private:
 
 } // namespace dealspectrum
 
-#endif
+#endif /* EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_PERMUTATION_H_ */

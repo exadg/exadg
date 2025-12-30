@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -50,10 +50,7 @@ CombinedOperator<dim, Number>::initialize(
   if(operator_data.convective_problem)
   {
     convective_kernel = std::make_shared<Operators::ConvectiveKernel<dim, Number>>();
-    convective_kernel->reinit(matrix_free,
-                              data.convective_kernel_data,
-                              data.quad_index,
-                              this->is_mg);
+    convective_kernel->reinit(matrix_free, data.convective_kernel_data, data.quad_index, true);
   }
 
   if(operator_data.diffusive_problem)
@@ -274,7 +271,7 @@ CombinedOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
     scalar value_m = integrator_m.get_value(q);
     scalar value_p = integrator_p.get_value(q);
 
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     scalar value_flux_m = dealii::make_vectorized_array<Number>(0.0);
     scalar value_flux_p = dealii::make_vectorized_array<Number>(0.0);
@@ -327,7 +324,7 @@ CombinedOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_
     scalar value_p = dealii::make_vectorized_array<Number>(0.0);
     scalar value_m = integrator_m.get_value(q);
 
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     scalar value_flux = dealii::make_vectorized_array<Number>(0.0);
 
@@ -374,7 +371,7 @@ CombinedOperator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & 
     scalar value_p = dealii::make_vectorized_array<Number>(0.0);
     scalar value_m = integrator_m.get_value(q);
 
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     scalar value_flux = dealii::make_vectorized_array<Number>(0.0);
 
@@ -428,7 +425,7 @@ CombinedOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_
     scalar value_p = integrator_p.get_value(q);
 
     // n⁺ = -n⁻
-    vector normal_p = -integrator_p.get_normal_vector(q);
+    vector normal_p = -integrator_p.normal_vector(q);
 
     scalar value_flux = dealii::make_vectorized_array<Number>(0.0);
 
@@ -483,7 +480,7 @@ CombinedOperator<dim, Number>::do_boundary_integral(
                                               operator_data.bc,
                                               this->time);
 
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     scalar value_flux = dealii::make_vectorized_array<Number>(0.0);
 

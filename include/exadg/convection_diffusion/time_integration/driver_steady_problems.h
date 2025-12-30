@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_DRIVER_STEADY_PROBLEMS_H_
-#define INCLUDE_CONVECTION_DIFFUSION_DRIVER_STEADY_PROBLEMS_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_TIME_INTEGRATION_DRIVER_STEADY_PROBLEMS_H_
+#define EXADG_CONVECTION_DIFFUSION_TIME_INTEGRATION_DRIVER_STEADY_PROBLEMS_H_
 
 // deal.II
 #include <deal.II/base/timer.h>
@@ -103,4 +103,4 @@ private:
 } // namespace ConvDiff
 } // namespace ExaDG
 
-#endif /* INCLUDE_CONVECTION_DIFFUSION_DRIVER_STEADY_PROBLEMS_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_TIME_INTEGRATION_DRIVER_STEADY_PROBLEMS_H_ */

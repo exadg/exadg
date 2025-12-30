@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -108,11 +108,13 @@ MultigridPreconditioner<dim, Number>::update()
       vector_multigrid_type_ptr  = &vector_multigrid_type_copy;
     }
 
-    // copy velocity to finest level
+    // Copy displacement vector to finest level
+    // Note: This function also re-assembles the sparse matrix in case a matrix-based implementation
+    // is used
     this->get_operator_nonlinear(this->get_number_of_levels() - 1)
       ->set_solution_linearization(*vector_multigrid_type_ptr);
 
-    // interpolate velocity from fine to coarse level
+    // interpolate displacement vector from fine to coarse level
     this->transfer_from_fine_to_coarse_levels(
       [&](unsigned int const fine_level, unsigned int const coarse_level) {
         auto const & vector_fine_level =
@@ -120,17 +122,22 @@ MultigridPreconditioner<dim, Number>::update()
         auto vector_coarse_level =
           this->get_operator_nonlinear(coarse_level)->get_solution_linearization();
         this->transfers->interpolate(fine_level, vector_coarse_level, vector_fine_level);
+        // Note: This function also re-assembles the sparse matrix in case a matrix-based
+        // implementation is used
         this->get_operator_nonlinear(coarse_level)->set_solution_linearization(vector_coarse_level);
       });
   }
-
-  // In case that the operators have been updated, we also need to update the smoothers and the
-  // coarse grid solver. This is generic functionality implemented in the base class.
-  if(nonlinear or data.unsteady)
+  else // linear problems
   {
-    this->update_smoothers();
-    this->update_coarse_solver();
+    this->for_all_levels([&](unsigned int const level) {
+      this->get_operator_linear(level)->assemble_matrix_if_matrix_based();
+    });
   }
+
+  // Update the smoothers and the coarse grid solver. This is generic functionality implemented in
+  // the base class.
+  this->update_smoothers();
+  this->update_coarse_solver();
 
   this->update_needed = false;
 }
@@ -221,7 +228,10 @@ MultigridPreconditioner<dim, Number>::get_operator_linear(unsigned int level)
 template<int dim, typename Number>
 std::shared_ptr<
   MultigridOperatorBase<dim, typename MultigridPreconditionerBase<dim, Number>::MultigridNumber>>
-MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const level)
+MultigridPreconditioner<dim, Number>::initialize_operator(
+  unsigned int const level,
+  bool const         use_matrix_based_operator_level,
+  bool const         assemble_matrix)
 {
   std::shared_ptr<MGOperatorBase> mg_operator_level;
 
@@ -232,6 +242,9 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
       this->matrix_free_data_objects[level]->get_dof_index("elasticity_dof_index_inhomogeneous");
   }
   data.quad_index = this->matrix_free_data_objects[level]->get_quad_index("elasticity_quadrature");
+
+  // the choice matrix-free vs. matrix-based might be different from what we do on the fine level
+  data.use_matrix_based_operator_level = use_matrix_based_operator_level;
 
   if(nonlinear)
   {
@@ -248,7 +261,8 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
 
     pde_operator_level->initialize(*this->matrix_free_objects[level],
                                    *this->constraints[level],
-                                   data);
+                                   data,
+                                   assemble_matrix);
 
     mg_operator_level = std::make_shared<MGOperatorNonlinear>(pde_operator_level);
   }
@@ -267,7 +281,8 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
 
     pde_operator_level->initialize(*this->matrix_free_objects[level],
                                    *this->constraints[level],
-                                   data);
+                                   data,
+                                   assemble_matrix);
 
     mg_operator_level = std::make_shared<MGOperatorLinear>(pde_operator_level);
   }

@@ -15,18 +15,17 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_FLUID_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_FLUID_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_FLUID_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_FLUID_H_
 
-// grid
+// ExaDG
+#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 #include <exadg/grid/mapping_deformation_poisson.h>
 #include <exadg/grid/mapping_deformation_structure.h>
-
-// IncNS
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
@@ -36,12 +35,7 @@
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
-
-// utilities
 #include <exadg/utilities/timer_tree.h>
-
-// application
-#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 
 namespace ExaDG
 {
@@ -131,6 +125,7 @@ SolverFluid<dim, Number>::setup(std::shared_ptr<FluidFSI::ApplicationBase<dim, N
       application->get_material_descriptor_ale_elasticity(),
       application->get_parameters_ale_elasticity(),
       "ale_elasticity",
+      false /* setup_scalar_field */,
       mpi_comm);
   }
   else
@@ -221,6 +216,4 @@ SolverFluid<dim, Number>::get_timings_ale() const
 } // namespace FSI
 } // namespace ExaDG
 
-
-
-#endif /* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_FLUID_H_ */
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_FLUID_H_ */

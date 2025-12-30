@@ -15,19 +15,17 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_STRUCTURE_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_STRUCTURE_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_STRUCTURE_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_STRUCTURE_H_
 
-// Structure
+// ExaDG
+#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 #include <exadg/structure/spatial_discretization/operator.h>
 #include <exadg/structure/time_integration/time_int_gen_alpha.h>
-
-// application
-#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 
 namespace ExaDG
 {
@@ -72,6 +70,10 @@ SolverStructure<dim, Number>::setup(
   // setup application
   application->setup(grid, mapping, multigrid_mappings);
 
+  // initialize postprocessor, i.e., get user parameters
+  postprocessor                 = application->create_postprocessor();
+  bool const setup_scalar_field = postprocessor->requires_scalar_field();
+
   // setup spatial operator
   pde_operator =
     std::make_shared<Structure::Operator<dim, Number>>(grid,
@@ -82,6 +84,7 @@ SolverStructure<dim, Number>::setup(
                                                        application->get_material_descriptor(),
                                                        application->get_parameters(),
                                                        "elasticity",
+                                                       setup_scalar_field,
                                                        mpi_comm);
 
   // initialize matrix_free
@@ -97,9 +100,8 @@ SolverStructure<dim, Number>::setup(
 
   pde_operator->setup(matrix_free, matrix_free_data);
 
-  // initialize postprocessor
-  postprocessor = application->create_postprocessor();
-  postprocessor->setup(pde_operator->get_dof_handler(), *mapping);
+  // set up postprocessor
+  postprocessor->setup(*pde_operator);
 
   // initialize time integrator
   time_integrator = std::make_shared<Structure::TimeIntGenAlpha<dim, Number>>(
@@ -111,4 +113,4 @@ SolverStructure<dim, Number>::setup(
 } // namespace FSI
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_STRUCTURE_H_ */
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_SINGLE_FIELD_SOLVERS_STRUCTURE_H_ */

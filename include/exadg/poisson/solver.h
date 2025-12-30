@@ -15,25 +15,19 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POISSON_SOLVER_H_
-#define INCLUDE_EXADG_POISSON_SOLVER_H_
+#ifndef EXADG_POISSON_SOLVER_H_
+#define EXADG_POISSON_SOLVER_H_
 
 // ExaDG
-
-// driver
-#include <exadg/poisson/driver.h>
-
-// utilities
 #include <exadg/grid/grid_data.h>
 #include <exadg/operators/resolution_parameters.h>
-#include <exadg/utilities/general_parameters.h>
-
-// application
+#include <exadg/poisson/driver.h>
 #include <exadg/poisson/user_interface/declare_get_application.h>
+#include <exadg/utilities/general_parameters.h>
 
 namespace ExaDG
 {
@@ -163,5 +157,4 @@ main(int argc, char ** argv)
   return 0;
 }
 
-
-#endif /* INCLUDE_EXADG_POISSON_SOLVER_H_ */
+#endif /* EXADG_POISSON_SOLVER_H_ */

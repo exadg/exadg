@@ -18,7 +18,7 @@
     },
     "Output": {
         "OutputDirectory": "output/vortex/",
-        "OutputName": "ale",
+        "OutputName": "vortex",
         "WriteOutput": "false"
     }
 }

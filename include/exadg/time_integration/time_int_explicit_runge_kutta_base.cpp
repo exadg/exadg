@@ -15,10 +15,11 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
+#include <exadg/time_integration/restart.h>
 #include <exadg/time_integration/time_int_explicit_runge_kutta_base.h>
 
 namespace ExaDG
@@ -133,56 +134,77 @@ TimeIntExplRKBase<Number>::do_write_restart(std::string const & filename) const
 {
   std::ostringstream oss;
 
-  boost::archive::binary_oarchive oa(oss);
+  // The restart header file is wrtten using a single thread only.
+  if(dealii::Utilities::MPI::this_mpi_process(this->mpi_comm) == 0)
+  {
+    BoostOutputArchiveType oa(oss);
 
-  unsigned int n_ranks = dealii::Utilities::MPI::n_mpi_processes(this->mpi_comm);
+    // Note that the operations done here must be in sync with `do_read_restart()`.
 
-  // 1. ranks
-  oa & n_ranks;
+    // 1. time
+    oa & time;
 
-  // 2. time
-  oa & time;
+    // 2. time step size
+    oa & time_step;
 
-  // 3. time step size
-  oa & time_step;
+    write_restart_file(oss, filename);
+  }
 
-  // 4. solution vectors
-  oa << solution_n;
-
-  write_restart_file(oss, filename);
+  // Write solution vectors, independent of the restart header file.
+  std::vector<VectorType const *> vectors{&solution_n};
+  this->write_restart_vectors(vectors);
 }
 
 template<typename Number>
 void
 TimeIntExplRKBase<Number>::do_read_restart(std::ifstream & in)
 {
-  boost::archive::binary_iarchive ia(in);
+  // The restart header file is read using a single thread only.
+  if(dealii::Utilities::MPI::this_mpi_process(this->mpi_comm) == 0)
+  {
+    BoostInputArchiveType ia(in);
 
-  // Note that the operations done here must be in sync with the output.
+    // Note that the operations done here must be in sync with `do_write_restart()`.
 
-  // 1. ranks
-  unsigned int n_old_ranks = 1;
-  ia &         n_old_ranks;
+    // 1. time
+    ia & time;
 
-  unsigned int n_ranks = dealii::Utilities::MPI::n_mpi_processes(this->mpi_comm);
-  AssertThrow(n_old_ranks == n_ranks,
-              dealii::ExcMessage("Tried to restart with " + dealii::Utilities::to_string(n_ranks) +
-                                 " processes, "
-                                 "but restart was written on " +
-                                 dealii::Utilities::to_string(n_old_ranks) + " processes."));
+    // 2. time step size
+    ia & time_step;
+  }
 
-  // 2. time
-  ia & time;
+  // Broadcast data.
+  time      = dealii::Utilities::MPI::broadcast(mpi_comm, time, 0);
+  time_step = dealii::Utilities::MPI::broadcast(mpi_comm, time_step, 0);
 
-  // Note that start_time has to be set to the new start_time (since param.start_time might still be
-  // the original start time).
+  // Note that `start_time` has to be set to the new start_time, since param.start_time might still
+  // be the original start time.
   this->start_time = time;
 
-  // 3. time step size
-  ia & time_step;
+  // Read solution vectors, independent of restart header file.
+  std::vector<VectorType *> vectors{&solution_n};
+  this->read_restart_vectors(vectors);
+}
 
-  // 4. solution vectors
-  ia >> solution_n;
+template<typename Number>
+void
+TimeIntExplRKBase<Number>::read_restart_vectors(std::vector<VectorType *> const & vectors)
+{
+  (void)vectors;
+  AssertThrow(false,
+              dealii::ExcMessage("Overwrite this method in the derived "
+                                 "class to enable de-/serialization."));
+}
+
+template<typename Number>
+void
+TimeIntExplRKBase<Number>::write_restart_vectors(
+  std::vector<VectorType const *> const & vectors) const
+{
+  (void)vectors;
+  AssertThrow(false,
+              dealii::ExcMessage("Overwrite this method in the derived "
+                                 "class to enable de-/serialization."));
 }
 
 // instantiations

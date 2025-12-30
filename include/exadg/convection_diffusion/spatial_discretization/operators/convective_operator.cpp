@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -147,7 +147,7 @@ ConvectiveOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
     scalar value_m = integrator_m.get_value(q);
     scalar value_p = integrator_p.get_value(q);
 
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     std::tuple<scalar, scalar> flux = kernel->calculate_flux_interior_and_neighbor(
       q, integrator_m, value_m, value_p, normal_m, this->time, true);
@@ -170,7 +170,7 @@ ConvectiveOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrato
     scalar value_p = dealii::make_vectorized_array<Number>(0.0);
     scalar value_m = integrator_m.get_value(q);
 
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     scalar flux = kernel->calculate_flux_interior(
       q, integrator_m, value_m, value_p, normal_m, this->time, true);
@@ -195,7 +195,7 @@ ConvectiveOperator<dim, Number>::do_face_int_integral_cell_based(
     scalar value_p = dealii::make_vectorized_array<Number>(0.0);
     scalar value_m = integrator_m.get_value(q);
 
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     // TODO
     // The matrix-free implementation in deal.II does currently not allow to access neighboring data
@@ -225,7 +225,7 @@ ConvectiveOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrato
     scalar value_p = integrator_p.get_value(q);
 
     // n⁺ = -n⁻
-    vector normal_p = -integrator_p.get_normal_vector(q);
+    vector normal_p = -integrator_p.normal_vector(q);
 
     scalar flux = kernel->calculate_flux_interior(
       q, integrator_p, value_p, value_m, normal_p, this->time, true);
@@ -255,7 +255,7 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(
                                               operator_data.bc,
                                               this->time);
 
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     // In case of numerical velocity field:
     // Simply use velocity_p = velocity_m on boundary faces -> exterior_velocity_available = false.

@@ -10,11 +10,15 @@
         "RefineSpaceMin": "2",
         "RefineSpaceMax": "2"
     },
-    "TemporalResolution": { 
+    "TemporalResolution": {
         "RefineTimeMin": "0",
         "RefineTimeMax": "0"
     },
     "Application": {
+        "ReadRestart": "false",
+        "WriteRestart": "false",
+        "TemporalDiscretization": "BDFDualSplitting",
+        "SpatialDiscretization": "L2",
         "Inviscid": "false",
         "ReynoldsNumber": "5600.0",
         "EndTime": "1",

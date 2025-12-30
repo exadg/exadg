@@ -15,19 +15,19 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
 #ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_H_
 #define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_H_
 
+// ExaDG
 #include <exadg/acoustic_conservation_equations/postprocessor/output_generator.h>
 #include <exadg/acoustic_conservation_equations/postprocessor/pointwise_output_generator.h>
 #include <exadg/acoustic_conservation_equations/postprocessor/postprocessor_base.h>
 #include <exadg/acoustic_conservation_equations/postprocessor/sound_energy_calculator.h>
 #include <exadg/postprocessor/error_calculation.h>
-
 
 namespace ExaDG
 {
@@ -60,6 +60,9 @@ public:
 
   PostProcessor(PostProcessorData<dim> const & postprocessor_data, MPI_Comm const & mpi_comm);
 
+  // custom destructor computing convergence tables if desired
+  virtual ~PostProcessor();
+
   void
   setup(AcousticsOperator const & pde_operator) final;
 
@@ -88,10 +91,7 @@ private:
   SoundEnergyCalculator<dim, Number> sound_energy_calculator;
 };
 
-
-
 } // namespace Acoustics
 } // namespace ExaDG
 
-
-#endif /*EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_H_*/
+#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_POSTPROCESSOR_H_ */

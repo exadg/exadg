@@ -15,16 +15,16 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
 // deal.II
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/lac/petsc_vector.h>
-#include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
+#include <exadg/functions_and_boundary_conditions/interpolate.h>
 #include <exadg/grid/grid_data.h>
 #include <exadg/operators/constraints.h>
 #include <exadg/operators/finite_element.h>
@@ -38,7 +38,6 @@
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_amg.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
 #include <exadg/solvers_and_preconditioners/utilities/check_multigrid.h>
-#include <exadg/solvers_and_preconditioners/utilities/petsc_operation.h>
 #include <exadg/utilities/exceptions.h>
 
 namespace ExaDG
@@ -55,7 +54,7 @@ Operator<dim, n_components, Number>::Operator(
   Parameters const &                                    param_in,
   std::string const &                                   field_in,
   MPI_Comm const &                                      mpi_comm_in)
-  : dealii::Subscriptor(),
+  : dealii::EnableObserverPointer(),
     grid(grid_in),
     mapping(mapping_in),
     multigrid_mappings(multigrid_mappings_in),
@@ -238,10 +237,15 @@ Operator<dim, n_components, Number>::setup_operators()
 
     laplace_operator_data.quad_index_gauss_lobatto = get_quad_index_gauss_lobatto();
   }
-  laplace_operator_data.bc                    = boundary_descriptor;
-  laplace_operator_data.use_cell_based_loops  = param.enable_cell_based_face_loops;
-  laplace_operator_data.kernel_data.IP_factor = param.IP_factor;
-  laplace_operator.initialize(*matrix_free, affine_constraints, laplace_operator_data);
+  laplace_operator_data.bc                              = boundary_descriptor;
+  laplace_operator_data.use_cell_based_loops            = param.enable_cell_based_face_loops;
+  laplace_operator_data.kernel_data.IP_factor           = param.IP_factor;
+  laplace_operator_data.use_matrix_based_operator_level = param.use_matrix_based_operator;
+  laplace_operator_data.sparse_matrix_type              = param.sparse_matrix_type;
+  laplace_operator.initialize(*matrix_free,
+                              affine_constraints,
+                              laplace_operator_data,
+                              true /* assemble_matrix */);
 
   // rhs operator
   if(param.right_hand_side)
@@ -378,45 +382,19 @@ Operator<dim, n_components, Number>::setup_preconditioner_and_solver()
     AssertThrow(false, dealii::ExcMessage("Specified preconditioner is not implemented!"));
   }
 
-  if(param.solver == LinearSolver::CG)
-  {
-    // initialize solver_data
-    Krylov::SolverDataCG solver_data;
-    solver_data.solver_tolerance_abs        = param.solver_data.abs_tol;
-    solver_data.solver_tolerance_rel        = param.solver_data.rel_tol;
-    solver_data.max_iter                    = param.solver_data.max_iter;
-    solver_data.compute_performance_metrics = param.compute_performance_metrics;
+  // initialize solver
+  bool constexpr compute_performance_metrics = false;
+  bool constexpr compute_eigenvalues         = false;
+  bool const use_preconditioner = param.preconditioner != Poisson::Preconditioner::None;
 
-    if(param.preconditioner != Poisson::Preconditioner::None)
-      solver_data.use_preconditioner = true;
+  typedef Krylov::KrylovSolver<Laplace, PreconditionerBase<Number>, VectorType> SolverType;
 
-    // initialize solver
-    iterative_solver =
-      std::make_shared<Krylov::SolverCG<Laplace, PreconditionerBase<Number>, VectorType>>(
-        laplace_operator, *preconditioner, solver_data);
-  }
-  else if(param.solver == LinearSolver::FGMRES)
-  {
-    // initialize solver_data
-    Krylov::SolverDataFGMRES solver_data;
-    solver_data.solver_tolerance_abs        = param.solver_data.abs_tol;
-    solver_data.solver_tolerance_rel        = param.solver_data.rel_tol;
-    solver_data.max_iter                    = param.solver_data.max_iter;
-    solver_data.max_n_tmp_vectors           = param.solver_data.max_krylov_size;
-    solver_data.compute_performance_metrics = param.compute_performance_metrics;
-
-    if(param.preconditioner != Preconditioner::None)
-      solver_data.use_preconditioner = true;
-
-    // initialize solver
-    iterative_solver =
-      std::make_shared<Krylov::SolverFGMRES<Laplace, PreconditionerBase<Number>, VectorType>>(
-        laplace_operator, *preconditioner, solver_data);
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("Specified solver is not implemented!"));
-  }
+  iterative_solver = std::make_shared<SolverType>(laplace_operator,
+                                                  *preconditioner,
+                                                  param.solver_data,
+                                                  use_preconditioner,
+                                                  compute_performance_metrics,
+                                                  compute_eigenvalues);
 }
 
 template<int dim, int n_components, typename Number>
@@ -430,17 +408,7 @@ template<int dim, int n_components, typename Number>
 void
 Operator<dim, n_components, Number>::prescribe_initial_conditions(VectorType & src) const
 {
-  field_functions->initial_solution->set_time(0.0);
-
-  // This is necessary if Number == float
-  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-
-  VectorTypeDouble src_double;
-  src_double = src;
-
-  dealii::VectorTools::interpolate(dof_handler, *(field_functions->initial_solution), src_double);
-
-  src = src_double;
+  Utilities::interpolate(dof_handler, *(field_functions->initial_solution), src, 0.0);
 }
 
 template<int dim, int n_components, typename Number>
@@ -498,7 +466,7 @@ Operator<dim, n_components, Number>::solve(VectorType &       sol,
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
     laplace_operator.set_time(time);
-    laplace_operator.set_inhomogeneous_boundary_values(sol);
+    laplace_operator.set_inhomogeneous_constrained_values(sol);
   }
 
   return n_iterations;

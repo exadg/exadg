@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_TENSOR_UTILITIES_H_
-#define INCLUDE_EXADG_UTILITIES_TENSOR_UTILITIES_H_
+#ifndef EXADG_UTILITIES_TENSOR_UTILITIES_H_
+#define EXADG_UTILITIES_TENSOR_UTILITIES_H_
 
 // C/C++
 #include <memory>
@@ -89,6 +89,4 @@ n_components_to_rank()
 
 } // namespace ExaDG
 
-
-
-#endif /* INCLUDE_EXADG_UTILITIES_TENSOR_UTILITIES_H_ */
+#endif /* EXADG_UTILITIES_TENSOR_UTILITIES_H_ */

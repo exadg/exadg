@@ -1,0 +1,736 @@
+
+
+
+--> REFERENCE input file : input_reference_read_write_mapping_N.json
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up compressible Navier-Stokes solver:
+
+List of parameters:
+
+Mathematical model:
+  Equation type:                             NavierStokes
+  Right-hand side:                           true
+
+Physical quantities:
+  Start time:                                0.0000e+00
+  End time:                                  7.5000e-01
+  Dynamic viscosity:                         1.0000e-01
+  Reference density:                         1.0000e+00
+  Heat capacity ratio:                       1.4000e+00
+  Thermal conductivity:                      0.0000e+00
+  Specific gas constant:                     1.0000e+00
+
+Temporal discretization:
+  Temporal discretization method:            ExplRK3Stage7Reg2
+  Calculation of time step size:             CFLAndDiffusion
+  Maximum number of time steps:              4294967295
+  Temporal refinements:                      0
+  Restarted simulation:                      false
+  Restart:
+  Write restart:                             true
+  Interval physical time:                    6.0000e-01
+  Interval physical time window start:       -1.7977e+308
+  Interval physical time window end:         1.7977e+308
+  Interval wall time:                        1.0000e+06
+  Interval time steps:                       100000000
+  Directory coarse triangulation:            output_test/manufactured_solution/
+  Directory:                                 output_test/manufactured_solution/
+  Filename:                                  test_restart
+  Solver information:
+  Interval physical time:                    7.5000e-02
+  Interval wall time:                        1.7977e+308
+  Interval time steps:                       4294967295
+
+Spatial Discretization:
+  Triangulation type:                        Serial
+  Element type:                              Hypercube
+  Number of global refinements:              1
+  Create coarse triangulations:              false
+  Mapping degree:                            6
+  Polynomial degree:                         6
+  Quadrature rule convective term:           Standard
+  Quadrature rule viscous term:              Standard
+  IP factor viscous term:                    1.0000e+00
+
+Numerical parameters:
+  Detect instabilities:                      false
+  Use combined operator:                     false
+
+Generating grid for 2-dimensional problem:
+
+  Max. number of refinements:                1
+  Number of cells:                           4
+
+Construct compressible Navier-Stokes DG operator ...
+
+Discontinuous Galerkin finite element discretization:
+
+  degree of 1D polynomials:                  6
+  number of dofs per cell:                   196
+  number of dofs (total):                    784
+
+... done!
+
+Quadrature rules:
+
+  number of 1D q-points (std):               7
+  number of 1D q-points (conv):              7
+  number of 1D q-points (vis):               7
+
+Setup compressible Navier-Stokes DG operator ...
+
+... done!
+
+Setup time integrator ...
+
+Calculation of time step size:
+
+  CFL:                                       2.5000e-02
+  Time step size (convection):               3.4722e-05
+  Diffusion number:                          1.0000e-01
+  Time step size (diffusion):                4.3403e-04
+  Time step size (combined):                 3.4721e-05
+
+... done!
+
+Starting time loop ...
+
+Calculate error for all fields at time t = 0.0000e+00:
+  Relative error (L2-norm): 2.49361e-16
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 3.47206e-05
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 3.7533e-02:
+  Relative error (L2-norm): 5.85750e-14
+
+Calculate error for all fields at time t = 7.5031e-02:
+  Relative error (L2-norm): 1.17976e-13
+
+________________________________________________________________________________
+
+ Time step number = 2162    t = 7.50312e-02 -> t + dt = 7.50660e-02
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 1.1253e-01:
+  Relative error (L2-norm): 1.93727e-13
+
+Calculate error for all fields at time t = 1.5003e-01:
+  Relative error (L2-norm): 3.00348e-13
+
+________________________________________________________________________________
+
+ Time step number = 4322    t = 1.50028e-01 -> t + dt = 1.50062e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 1.8753e-01:
+  Relative error (L2-norm): 4.48772e-13
+
+Calculate error for all fields at time t = 2.2502e-01:
+  Relative error (L2-norm): 6.40599e-13
+
+________________________________________________________________________________
+
+ Time step number = 6482    t = 2.25024e-01 -> t + dt = 2.25059e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 2.6252e-01:
+  Relative error (L2-norm): 8.68323e-13
+
+Calculate error for all fields at time t = 3.0002e-01:
+  Relative error (L2-norm): 1.11762e-12
+
+________________________________________________________________________________
+
+ Time step number = 8642    t = 3.00021e-01 -> t + dt = 3.00056e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 3.3752e-01:
+  Relative error (L2-norm): 1.36950e-12
+
+Calculate error for all fields at time t = 3.7502e-01:
+  Relative error (L2-norm): 1.60214e-12
+
+________________________________________________________________________________
+
+ Time step number = 10802   t = 3.75017e-01 -> t + dt = 3.75052e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 4.1252e-01:
+  Relative error (L2-norm): 1.79519e-12
+
+Calculate error for all fields at time t = 4.5001e-01:
+  Relative error (L2-norm): 1.93039e-12
+
+________________________________________________________________________________
+
+ Time step number = 12962   t = 4.50014e-01 -> t + dt = 4.50049e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 4.8751e-01:
+  Relative error (L2-norm): 1.99493e-12
+
+Calculate error for all fields at time t = 5.2501e-01:
+  Relative error (L2-norm): 1.98257e-12
+
+________________________________________________________________________________
+
+ Time step number = 15122   t = 5.25010e-01 -> t + dt = 5.25045e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 5.6251e-01:
+  Relative error (L2-norm): 1.89472e-12
+
+________________________________________________________________________________
+
+ Writing restart file at time t = 6.00007e-01:
+    vector global l2 norm: 1.37694533e+06      
+
+ ... done!
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 6.0001e-01:
+  Relative error (L2-norm): 1.73975e-12
+
+________________________________________________________________________________
+
+ Time step number = 17282   t = 6.00007e-01 -> t + dt = 6.00042e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 6.3751e-01:
+  Relative error (L2-norm): 1.53231e-12
+
+Calculate error for all fields at time t = 6.7500e-01:
+  Relative error (L2-norm): 1.29160e-12
+
+________________________________________________________________________________
+
+ Time step number = 19442   t = 6.75003e-01 -> t + dt = 6.75038e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 7.1250e-01:
+  Relative error (L2-norm): 1.03883e-12
+
+Calculate error for all fields at time t = 7.5000e-01:
+  Relative error (L2-norm): 7.94733e-13
+
+
+
+--> RESTART input file : input_restart_read_write_mapping_N.json
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       2
+
+Setting up compressible Navier-Stokes solver:
+
+List of parameters:
+
+Mathematical model:
+  Equation type:                             NavierStokes
+  Right-hand side:                           true
+
+Physical quantities:
+  Start time:                                0.0000e+00
+  End time:                                  7.5000e-01
+  Dynamic viscosity:                         1.0000e-01
+  Reference density:                         1.0000e+00
+  Heat capacity ratio:                       1.4000e+00
+  Thermal conductivity:                      0.0000e+00
+  Specific gas constant:                     1.0000e+00
+
+Temporal discretization:
+  Temporal discretization method:            ExplRK3Stage7Reg2
+  Calculation of time step size:             CFLAndDiffusion
+  Maximum number of time steps:              4294967295
+  Temporal refinements:                      0
+  Restarted simulation:                      true
+  Restart:
+  Write restart:                             false
+  Solver information:
+  Interval physical time:                    7.5000e-02
+  Interval wall time:                        1.7977e+308
+  Interval time steps:                       4294967295
+
+Spatial Discretization:
+  Triangulation type:                        Distributed
+  Element type:                              Hypercube
+  Number of global refinements:              2
+  Create coarse triangulations:              false
+  Mapping degree:                            3
+  Polynomial degree:                         3
+  Quadrature rule convective term:           Standard
+  Quadrature rule viscous term:              Standard
+  IP factor viscous term:                    1.0000e+00
+
+Numerical parameters:
+  Detect instabilities:                      false
+  Use combined operator:                     false
+
+Generating grid for 2-dimensional problem:
+
+  Max. number of refinements:                2
+  Number of cells:                           16
+
+Construct compressible Navier-Stokes DG operator ...
+
+Discontinuous Galerkin finite element discretization:
+
+  degree of 1D polynomials:                  3
+  number of dofs per cell:                   64
+  number of dofs (total):                    1024
+
+... done!
+
+Quadrature rules:
+
+  number of 1D q-points (std):               4
+  number of 1D q-points (conv):              4
+  number of 1D q-points (vis):               4
+
+Setup compressible Navier-Stokes DG operator ...
+
+... done!
+
+Setup time integrator ...
+
+________________________________________________________________________________
+
+ Reading restart file:
+    vector global l2 norm: 1.37694533e+06      
+
+ ... done!
+________________________________________________________________________________
+
+
+... done!
+
+Starting time loop ...
+
+Calculate error for all fields at time t = 6.0001e-01:
+  Relative error (L2-norm): 4.54157e-10
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 6.00007e-01 -> t + dt = 6.00042e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 6.3751e-01:
+  Relative error (L2-norm): 6.58440e-07
+
+Calculate error for all fields at time t = 6.7500e-01:
+  Relative error (L2-norm): 5.81528e-07
+
+________________________________________________________________________________
+
+ Time step number = 2161    t = 6.75003e-01 -> t + dt = 6.75038e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 7.1250e-01:
+  Relative error (L2-norm): 4.94338e-07
+
+Calculate error for all fields at time t = 7.5000e-01:
+  Relative error (L2-norm): 4.01831e-07
+
+
+
+--> REFERENCE input file : input_reference_read_write_mapping_Y.json
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       1
+
+Setting up compressible Navier-Stokes solver:
+
+List of parameters:
+
+Mathematical model:
+  Equation type:                             NavierStokes
+  Right-hand side:                           true
+
+Physical quantities:
+  Start time:                                0.0000e+00
+  End time:                                  7.5000e-01
+  Dynamic viscosity:                         1.0000e-01
+  Reference density:                         1.0000e+00
+  Heat capacity ratio:                       1.4000e+00
+  Thermal conductivity:                      0.0000e+00
+  Specific gas constant:                     1.0000e+00
+
+Temporal discretization:
+  Temporal discretization method:            ExplRK3Stage7Reg2
+  Calculation of time step size:             CFLAndDiffusion
+  Maximum number of time steps:              4294967295
+  Temporal refinements:                      0
+  Restarted simulation:                      false
+  Restart:
+  Write restart:                             true
+  Interval physical time:                    6.0000e-01
+  Interval physical time window start:       -1.7977e+308
+  Interval physical time window end:         1.7977e+308
+  Interval wall time:                        1.0000e+06
+  Interval time steps:                       100000000
+  Directory coarse triangulation:            output_test/manufactured_solution/
+  Directory:                                 output_test/manufactured_solution/
+  Filename:                                  test_restart
+  Solver information:
+  Interval physical time:                    7.5000e-02
+  Interval wall time:                        1.7977e+308
+  Interval time steps:                       4294967295
+
+Spatial Discretization:
+  Triangulation type:                        Serial
+  Element type:                              Hypercube
+  Number of global refinements:              1
+  Create coarse triangulations:              false
+  Mapping degree:                            6
+  Polynomial degree:                         6
+  Quadrature rule convective term:           Standard
+  Quadrature rule viscous term:              Standard
+  IP factor viscous term:                    1.0000e+00
+
+Numerical parameters:
+  Detect instabilities:                      false
+  Use combined operator:                     false
+
+Generating grid for 2-dimensional problem:
+
+  Max. number of refinements:                1
+  Number of cells:                           4
+
+Construct compressible Navier-Stokes DG operator ...
+
+Discontinuous Galerkin finite element discretization:
+
+  degree of 1D polynomials:                  6
+  number of dofs per cell:                   196
+  number of dofs (total):                    784
+
+... done!
+
+Quadrature rules:
+
+  number of 1D q-points (std):               7
+  number of 1D q-points (conv):              7
+  number of 1D q-points (vis):               7
+
+Setup compressible Navier-Stokes DG operator ...
+
+... done!
+
+Setup time integrator ...
+
+Calculation of time step size:
+
+  CFL:                                       2.5000e-02
+  Time step size (convection):               3.4722e-05
+  Diffusion number:                          1.0000e-01
+  Time step size (diffusion):                4.3403e-04
+  Time step size (combined):                 3.4721e-05
+
+... done!
+
+Starting time loop ...
+
+Calculate error for all fields at time t = 0.0000e+00:
+  Relative error (L2-norm): 2.49361e-16
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 3.47206e-05
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 3.7533e-02:
+  Relative error (L2-norm): 5.85750e-14
+
+Calculate error for all fields at time t = 7.5031e-02:
+  Relative error (L2-norm): 1.17976e-13
+
+________________________________________________________________________________
+
+ Time step number = 2162    t = 7.50312e-02 -> t + dt = 7.50660e-02
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 1.1253e-01:
+  Relative error (L2-norm): 1.93727e-13
+
+Calculate error for all fields at time t = 1.5003e-01:
+  Relative error (L2-norm): 3.00348e-13
+
+________________________________________________________________________________
+
+ Time step number = 4322    t = 1.50028e-01 -> t + dt = 1.50062e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 1.8753e-01:
+  Relative error (L2-norm): 4.48772e-13
+
+Calculate error for all fields at time t = 2.2502e-01:
+  Relative error (L2-norm): 6.40599e-13
+
+________________________________________________________________________________
+
+ Time step number = 6482    t = 2.25024e-01 -> t + dt = 2.25059e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 2.6252e-01:
+  Relative error (L2-norm): 8.68323e-13
+
+Calculate error for all fields at time t = 3.0002e-01:
+  Relative error (L2-norm): 1.11762e-12
+
+________________________________________________________________________________
+
+ Time step number = 8642    t = 3.00021e-01 -> t + dt = 3.00056e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 3.3752e-01:
+  Relative error (L2-norm): 1.36950e-12
+
+Calculate error for all fields at time t = 3.7502e-01:
+  Relative error (L2-norm): 1.60214e-12
+
+________________________________________________________________________________
+
+ Time step number = 10802   t = 3.75017e-01 -> t + dt = 3.75052e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 4.1252e-01:
+  Relative error (L2-norm): 1.79519e-12
+
+Calculate error for all fields at time t = 4.5001e-01:
+  Relative error (L2-norm): 1.93039e-12
+
+________________________________________________________________________________
+
+ Time step number = 12962   t = 4.50014e-01 -> t + dt = 4.50049e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 4.8751e-01:
+  Relative error (L2-norm): 1.99493e-12
+
+Calculate error for all fields at time t = 5.2501e-01:
+  Relative error (L2-norm): 1.98257e-12
+
+________________________________________________________________________________
+
+ Time step number = 15122   t = 5.25010e-01 -> t + dt = 5.25045e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 5.6251e-01:
+  Relative error (L2-norm): 1.89472e-12
+
+________________________________________________________________________________
+
+ Writing restart file at time t = 6.00007e-01:
+    vector global l2 norm: 1.37694533e+06      
+    vector global l2 norm: 1.04734513e+01      
+
+ ... done!
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 6.0001e-01:
+  Relative error (L2-norm): 1.73975e-12
+
+________________________________________________________________________________
+
+ Time step number = 17282   t = 6.00007e-01 -> t + dt = 6.00042e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 6.3751e-01:
+  Relative error (L2-norm): 1.53231e-12
+
+Calculate error for all fields at time t = 6.7500e-01:
+  Relative error (L2-norm): 1.29160e-12
+
+________________________________________________________________________________
+
+ Time step number = 19442   t = 6.75003e-01 -> t + dt = 6.75038e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 7.1250e-01:
+  Relative error (L2-norm): 1.03883e-12
+
+Calculate error for all fields at time t = 7.5000e-01:
+  Relative error (L2-norm): 7.94733e-13
+
+
+
+--> RESTART input file : input_restart_read_write_mapping_Y.json
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+
+MPI info:
+
+  Number of processes:                       2
+
+Setting up compressible Navier-Stokes solver:
+
+List of parameters:
+
+Mathematical model:
+  Equation type:                             NavierStokes
+  Right-hand side:                           true
+
+Physical quantities:
+  Start time:                                0.0000e+00
+  End time:                                  7.5000e-01
+  Dynamic viscosity:                         1.0000e-01
+  Reference density:                         1.0000e+00
+  Heat capacity ratio:                       1.4000e+00
+  Thermal conductivity:                      0.0000e+00
+  Specific gas constant:                     1.0000e+00
+
+Temporal discretization:
+  Temporal discretization method:            ExplRK3Stage7Reg2
+  Calculation of time step size:             CFLAndDiffusion
+  Maximum number of time steps:              4294967295
+  Temporal refinements:                      0
+  Restarted simulation:                      true
+  Restart:
+  Write restart:                             false
+  Solver information:
+  Interval physical time:                    7.5000e-02
+  Interval wall time:                        1.7977e+308
+  Interval time steps:                       4294967295
+
+Spatial Discretization:
+  Triangulation type:                        Distributed
+  Element type:                              Hypercube
+  Number of global refinements:              2
+  Create coarse triangulations:              false
+  Mapping degree:                            3
+  Polynomial degree:                         3
+  Quadrature rule convective term:           Standard
+  Quadrature rule viscous term:              Standard
+  IP factor viscous term:                    1.0000e+00
+
+Numerical parameters:
+  Detect instabilities:                      false
+  Use combined operator:                     false
+
+Generating grid for 2-dimensional problem:
+
+  Max. number of refinements:                2
+  Number of cells:                           16
+
+Construct compressible Navier-Stokes DG operator ...
+
+Discontinuous Galerkin finite element discretization:
+
+  degree of 1D polynomials:                  3
+  number of dofs per cell:                   64
+  number of dofs (total):                    1024
+
+... done!
+
+Quadrature rules:
+
+  number of 1D q-points (std):               4
+  number of 1D q-points (conv):              4
+  number of 1D q-points (vis):               4
+
+Setup compressible Navier-Stokes DG operator ...
+
+... done!
+
+Setup time integrator ...
+
+________________________________________________________________________________
+
+ Reading restart file:
+    vector global l2 norm: 1.37694533e+06      
+    vector global l2 norm: 1.04734513e+01      
+
+ ... done!
+________________________________________________________________________________
+
+
+... done!
+
+Starting time loop ...
+
+Calculate error for all fields at time t = 6.0001e-01:
+  Relative error (L2-norm): 4.54157e-10
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 6.00007e-01 -> t + dt = 6.00042e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 6.3751e-01:
+  Relative error (L2-norm): 6.58440e-07
+
+Calculate error for all fields at time t = 6.7500e-01:
+  Relative error (L2-norm): 5.81528e-07
+
+________________________________________________________________________________
+
+ Time step number = 2161    t = 6.75003e-01 -> t + dt = 6.75038e-01
+________________________________________________________________________________
+
+Calculate error for all fields at time t = 7.1250e-01:
+  Relative error (L2-norm): 4.94338e-07
+
+Calculate error for all fields at time t = 7.5000e-01:
+  Relative error (L2-norm): 4.01831e-07

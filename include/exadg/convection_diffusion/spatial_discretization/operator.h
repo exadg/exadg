@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_DG_CONVECTION_DIFFUSION_OPERATION_H_
-#define INCLUDE_CONVECTION_DIFFUSION_DG_CONVECTION_DIFFUSION_OPERATION_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATOR_H_
+#define EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATOR_H_
 
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
@@ -45,7 +45,7 @@ namespace ExaDG
 namespace ConvDiff
 {
 template<int dim, typename Number>
-class Operator : public dealii::Subscriptor, public Interface::Operator<Number>
+class Operator : public dealii::EnableObserverPointer, public Interface::Operator<Number>
 {
 private:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -115,6 +115,15 @@ public:
    */
   void
   project_velocity(VectorType & velocity, double const time) const final;
+
+  /*
+   * De-/serialize the vectors given.
+   */
+  void
+  serialize_vectors(std::vector<VectorType const *> const & vectors) const final;
+
+  void
+  deserialize_vectors(std::vector<VectorType *> const & vectors) final;
 
   /*
    * Prescribe initial conditions using a specified analytical function.
@@ -214,10 +223,10 @@ public:
    * Prepare and interpolation in adaptive mesh refinement.
    */
   void
-  prepare_coarsening_and_refinement(std::vector<VectorType *> & vectors);
+  prepare_coarsening_and_refinement(std::vector<VectorType *> & vectors) override;
 
   void
-  interpolate_after_coarsening_and_refinement(std::vector<VectorType *> & vectors);
+  interpolate_after_coarsening_and_refinement(std::vector<VectorType *> & vectors) override;
 
   /*
    * This function solves the linear system of equations in case of implicit time integration or
@@ -322,6 +331,9 @@ private:
   bool
   needs_own_dof_handler_velocity() const;
 
+  bool
+  needs_dof_handler_mapping() const;
+
   std::string
   get_quad_name() const;
 
@@ -387,6 +399,12 @@ private:
    */
   std::shared_ptr<dealii::FiniteElement<dim>> fe;
   dealii::DoFHandler<dim>                     dof_handler;
+
+  /*
+   * De-/serialization of the mapping requires a vector-valued `dealii::DofHandler`.
+   */
+  std::shared_ptr<dealii::FiniteElement<dim>> fe_mapping;
+  std::shared_ptr<dealii::DoFHandler<dim>>    dof_handler_mapping;
 
   /*
    * Numerical velocity field.
@@ -455,4 +473,4 @@ private:
 } // namespace ConvDiff
 } // namespace ExaDG
 
-#endif /* INCLUDE_CONVECTION_DIFFUSION_DG_CONVECTION_DIFFUSION_OPERATION_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATOR_H_ */

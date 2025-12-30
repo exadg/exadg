@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_ONESIDEDSPHERICALMANIFOLD_H_
-#define INCLUDE_FUNCTIONALITIES_ONESIDEDSPHERICALMANIFOLD_H_
+#ifndef EXADG_GRID_ONE_SIDED_CYLINDRICAL_MANIFOLD_H_
+#define EXADG_GRID_ONE_SIDED_CYLINDRICAL_MANIFOLD_H_
 
+// deal.II
 #include <deal.II/grid/manifold_lib.h>
 
 namespace ExaDG
@@ -482,7 +483,7 @@ public:
     displ = x_S - x_lin;
 
     // conical manifold
-    displ *= (1 - xi[2] * (r_0 - r_1) / r_0);
+    displ *= (1 - xi[dim - 1] * (r_0 - r_1) / r_0);
 
     // deformation decreases linearly in the second (other) direction
     dealii::Point<1> xi_other_1d = dealii::Point<1>(xi_other);
@@ -627,10 +628,10 @@ public:
       else if(xi[1] > 1.0)
         xi[1] = 1.0;
 
-      if(xi[2] < 0.0)
-        xi[2] = 0.0;
-      else if(xi[2] > 1.0)
-        xi[2] = 1.0;
+      if(xi[dim - 1] < 0.0)
+        xi[dim - 1] = 0.0;
+      else if(xi[dim - 1] > 1.0)
+        xi[dim - 1] = 1.0;
 
       // evaluate residual
       residual = push_forward(xi) - x;
@@ -649,8 +650,8 @@ public:
     Assert(xi[1] >= 0.0 and xi[1] <= 1.0,
            dealii::ExcMessage("Pull back operation generated invalid xi[1] values."));
 
-    Assert(xi[2] >= 0.0 and xi[2] <= 1.0,
-           dealii::ExcMessage("Pull back operation generated invalid xi[2] values."));
+    Assert(xi[dim - 1] >= 0.0 and xi[dim - 1] <= 1.0,
+           dealii::ExcMessage("Pull back operation generated invalid xi[dim-1] values."));
 
     return xi;
   }
@@ -723,7 +724,7 @@ public:
       space_point[1] = radius * sin(theta);
 
       if(spacedim == 3)
-        space_point[2] = ref_point[2];
+        space_point[dim - 1] = ref_point[dim - 1];
     }
 
     return space_point + center;
@@ -735,7 +736,7 @@ public:
     dealii::Tensor<1, spacedim> vector;
     vector[0] = space_point[0] - center[0];
     vector[1] = space_point[1] - center[1];
-    // for the 3D case: vector[2] will always be 0.
+    // for the 3D case: vector[dim-1] will always be 0.
 
     double const radius = vector.norm();
 
@@ -745,7 +746,7 @@ public:
     if(ref_point[1] < 0)
       ref_point[1] += 2.0 * dealii::numbers::PI;
     if(spacedim == 3)
-      ref_point[2] = space_point[2];
+      ref_point[dim - 1] = space_point[dim - 1];
 
     return ref_point;
   }
@@ -760,6 +761,7 @@ public:
 private:
   dealii::Point<dim> center;
 };
+
 } // namespace ExaDG
 
-#endif /* INCLUDE_FUNCTIONALITIES_ONESIDEDSPHERICALMANIFOLD_H_ */
+#endif /* EXADG_GRID_ONE_SIDED_CYLINDRICAL_MANIFOLD_H_ */

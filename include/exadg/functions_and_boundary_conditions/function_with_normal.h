@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_FUNCTION_WITH_NORMAL_H_
-#define INCLUDE_FUNCTION_WITH_NORMAL_H_
+#ifndef EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_FUNCTION_WITH_NORMAL_H_
+#define EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_FUNCTION_WITH_NORMAL_H_
 
 namespace ExaDG
 {
@@ -59,4 +59,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_FUNCTION_WITH_NORMAL_H_ */
+#endif /* EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_FUNCTION_WITH_NORMAL_H_ */

@@ -15,14 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
-#define INCLUDE_EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
+#define EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
 
-
+// ExaDG
 #include <exadg/convection_diffusion/user_interface/application_base.h>
 
 namespace ExaDG
@@ -39,5 +39,4 @@ get_application(std::string input_file, MPI_Comm const & comm)
 } // namespace ConvDiff
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_ */

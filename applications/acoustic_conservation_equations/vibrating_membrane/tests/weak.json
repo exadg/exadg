@@ -22,7 +22,7 @@
         "UserSpecifiedTimeStepSize": "1.0e-4",
         "OrderTimeIntegrator": "2",
         "RuntimeInNumberOfPeriods": "0.25",
-        "Modes": "2.0"
+        "Modes": "1.5"
     },
     "Output": {
         "OutputDirectory": "output/vibrating_membrane/",

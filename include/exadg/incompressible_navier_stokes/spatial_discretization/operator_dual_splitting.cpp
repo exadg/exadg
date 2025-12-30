@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -57,166 +57,6 @@ OperatorDualSplitting<dim, Number>::~OperatorDualSplitting()
 
 template<int dim, typename Number>
 void
-OperatorDualSplitting<dim, Number>::setup_preconditioners_and_solvers()
-{
-  ProjectionBase::setup_preconditioners_and_solvers();
-
-  setup_helmholtz_preconditioner();
-  setup_helmholtz_solver();
-}
-
-template<int dim, typename Number>
-void
-OperatorDualSplitting<dim, Number>::setup_helmholtz_preconditioner()
-{
-  if(this->param.preconditioner_viscous == PreconditionerViscous::None)
-  {
-    // do nothing, preconditioner will not be used
-  }
-  else if(this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix)
-  {
-    InverseMassOperatorData inverse_mass_operator_data;
-    inverse_mass_operator_data.dof_index  = this->get_dof_index_velocity();
-    inverse_mass_operator_data.quad_index = this->get_quad_index_velocity_linear();
-    inverse_mass_operator_data.parameters = this->param.inverse_mass_preconditioner;
-
-    helmholtz_preconditioner =
-      std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(this->get_matrix_free(),
-                                                                    inverse_mass_operator_data);
-  }
-  else if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi)
-  {
-    helmholtz_preconditioner =
-      std::make_shared<JacobiPreconditioner<MomentumOperator<dim, Number>>>(this->momentum_operator,
-                                                                            false);
-  }
-  else if(this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi)
-  {
-    helmholtz_preconditioner =
-      std::make_shared<BlockJacobiPreconditioner<MomentumOperator<dim, Number>>>(
-        this->momentum_operator, false);
-  }
-  else if(this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
-  {
-    typedef MultigridPreconditioner<dim, Number> Multigrid;
-
-    helmholtz_preconditioner = std::make_shared<Multigrid>(this->mpi_comm);
-
-    std::shared_ptr<Multigrid> mg_preconditioner =
-      std::dynamic_pointer_cast<Multigrid>(helmholtz_preconditioner);
-
-    std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
-      dirichlet_boundary_conditions = this->momentum_operator.get_data().bc->dirichlet_bc;
-
-    // We also need to add DirichletCached boundary conditions. From the
-    // perspective of multigrid, there is no difference between standard
-    // and cached Dirichlet BCs. Since multigrid does not need information
-    // about inhomogeneous boundary data, we simply fill the map with
-    // dealii::Functions::ZeroFunction for DirichletCached BCs.
-    for(auto iter : this->momentum_operator.get_data().bc->dirichlet_cached_bc)
-    {
-      typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
-        pair;
-
-      dirichlet_boundary_conditions.insert(
-        pair(iter, new dealii::Functions::ZeroFunction<dim>(dim)));
-    }
-
-    typedef std::map<dealii::types::boundary_id, dealii::ComponentMask> Map_DBC_ComponentMask;
-    Map_DBC_ComponentMask                                               dirichlet_bc_component_mask;
-
-    mg_preconditioner->initialize(this->param.multigrid_data_viscous,
-                                  this->grid,
-                                  this->multigrid_mappings,
-                                  this->get_dof_handler_u().get_fe(),
-                                  this->momentum_operator,
-                                  MultigridOperatorType::ReactionDiffusion,
-                                  this->param.ale_formulation,
-                                  dirichlet_boundary_conditions,
-                                  dirichlet_bc_component_mask);
-  }
-  else
-  {
-    AssertThrow(
-      false, dealii::ExcMessage("Preconditioner specified for viscous step is not implemented."));
-  }
-}
-
-template<int dim, typename Number>
-void
-OperatorDualSplitting<dim, Number>::setup_helmholtz_solver()
-{
-  if(this->param.solver_viscous == SolverViscous::CG)
-  {
-    // setup solver data
-    Krylov::SolverDataCG solver_data;
-    solver_data.max_iter             = this->param.solver_data_viscous.max_iter;
-    solver_data.solver_tolerance_abs = this->param.solver_data_viscous.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.solver_data_viscous.rel_tol;
-
-    if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi or
-       this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi or
-       this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix or
-       this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
-    {
-      solver_data.use_preconditioner = true;
-    }
-
-    helmholtz_solver = std::make_shared<
-      Krylov::SolverCG<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
-      this->momentum_operator, *helmholtz_preconditioner, solver_data);
-  }
-  else if(this->param.solver_viscous == SolverViscous::GMRES)
-  {
-    // setup solver data
-    Krylov::SolverDataGMRES solver_data;
-    solver_data.max_iter             = this->param.solver_data_viscous.max_iter;
-    solver_data.solver_tolerance_abs = this->param.solver_data_viscous.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.solver_data_viscous.rel_tol;
-    solver_data.max_n_tmp_vectors    = this->param.solver_data_viscous.max_krylov_size;
-    // use default value of compute_eigenvalues
-
-    // default value of use_preconditioner = false
-    if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi or
-       this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi or
-       this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix or
-       this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
-    {
-      solver_data.use_preconditioner = true;
-    }
-
-    helmholtz_solver = std::make_shared<
-      Krylov::SolverGMRES<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
-      this->momentum_operator, *helmholtz_preconditioner, solver_data, this->mpi_comm);
-  }
-  else if(this->param.solver_viscous == SolverViscous::FGMRES)
-  {
-    Krylov::SolverDataFGMRES solver_data;
-    solver_data.max_iter             = this->param.solver_data_viscous.max_iter;
-    solver_data.solver_tolerance_abs = this->param.solver_data_viscous.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.solver_data_viscous.rel_tol;
-    solver_data.max_n_tmp_vectors    = this->param.solver_data_viscous.max_krylov_size;
-
-    if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi or
-       this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi or
-       this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix or
-       this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
-    {
-      solver_data.use_preconditioner = true;
-    }
-
-    helmholtz_solver = std::make_shared<
-      Krylov::SolverFGMRES<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
-      this->momentum_operator, *helmholtz_preconditioner, solver_data);
-  }
-  else
-  {
-    AssertThrow(false, dealii::ExcMessage("Specified viscous solver is not implemented."));
-  }
-}
-
-template<int dim, typename Number>
-void
 OperatorDualSplitting<dim, Number>::apply_velocity_divergence_term(VectorType &       dst,
                                                                    VectorType const & src) const
 {
@@ -254,15 +94,14 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_boundary_
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    integrator.reinit(face);
-
     BoundaryTypeU boundary_type =
       this->boundary_descriptor->velocity->get_boundary_type(matrix_free.get_boundary_id(face));
 
-    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+    if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
     {
-      if(boundary_type == BoundaryTypeU::Dirichlet or
-         boundary_type == BoundaryTypeU::DirichletCached)
+      integrator.reinit(face);
+
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         dealii::Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
@@ -272,28 +111,26 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_boundary_
                                                    q_points,
                                                    this->evaluation_time);
 
-        scalar flux_times_normal = rhs * integrator.get_normal_vector(q);
+        scalar flux_times_normal = rhs * integrator.normal_vector(q);
         // minus sign is introduced here which allows to call a function of type ...add()
         // and avoids a scaling of the resulting vector by the factor -1.0
         integrator.submit_value(-flux_times_normal, q);
       }
-      else if(boundary_type == BoundaryTypeU::Neumann or boundary_type == BoundaryTypeU::Symmetry)
-      {
-        // Do nothing on Neumann and symmetry boundaries.
-        // Remark: On symmetry boundaries it follows from g_u * n = 0 that also g_{u_hat} * n = 0.
-        // Hence, a symmetry boundary for u is also a symmetry boundary for u_hat. Hence, there
-        // are no inhomogeneous contributions on symmetry boundaries.
-        scalar zero = dealii::make_vectorized_array<Number>(0.0);
-        integrator.submit_value(zero, q);
-      }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
+
+      integrator.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
-    integrator.integrate(dealii::EvaluationFlags::values);
-    integrator.distribute_local_to_global(dst);
+    else if(boundary_type == BoundaryTypeU::Neumann or boundary_type == BoundaryTypeU::Symmetry)
+    {
+      // Do nothing on Neumann and symmetry boundaries.
+      // Remark: On symmetry boundaries it follows from g_u * n = 0 that also g_{u_hat} * n = 0.
+      // Hence, a symmetry boundary for u is also a symmetry boundary for u_hat. Hence, there
+      // are no inhomogeneous contributions on symmetry boundaries.
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
   }
 }
 
@@ -330,7 +167,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
 {
   unsigned int const dof_index_velocity = this->get_dof_index_velocity();
   unsigned int const dof_index_pressure = this->get_dof_index_pressure();
-  unsigned int const quad_index         = this->get_quad_index_velocity_nonlinear();
+  unsigned int const quad_index         = this->get_quad_index_velocity_overintegration();
 
   FaceIntegratorU velocity(matrix_free, true, dof_index_velocity, quad_index);
   FaceIntegratorP pressure(matrix_free, true, dof_index_pressure, quad_index);
@@ -339,28 +176,28 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    velocity.reinit(face);
-    velocity.gather_evaluate(src,
-                             dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
-
-    if(this->param.ale_formulation)
-    {
-      grid_velocity.reinit(face);
-      grid_velocity.gather_evaluate(this->convective_kernel->get_grid_velocity(),
-                                    dealii::EvaluationFlags::values);
-    }
-
-    pressure.reinit(face);
-
     BoundaryTypeU boundary_type =
       this->boundary_descriptor->velocity->get_boundary_type(matrix_free.get_boundary_id(face));
 
-    for(unsigned int q = 0; q < pressure.n_q_points; ++q)
+    if(boundary_type == BoundaryTypeU::Dirichlet or boundary_type == BoundaryTypeU::DirichletCached)
     {
-      if(boundary_type == BoundaryTypeU::Dirichlet or
-         boundary_type == BoundaryTypeU::DirichletCached)
+      velocity.reinit(face);
+      velocity.gather_evaluate(src,
+                               dealii::EvaluationFlags::values |
+                                 dealii::EvaluationFlags::gradients);
+
+      if(this->param.ale_formulation)
       {
-        vector normal = pressure.get_normal_vector(q);
+        grid_velocity.reinit(face);
+        grid_velocity.gather_evaluate(this->convective_kernel->get_grid_velocity(),
+                                      dealii::EvaluationFlags::values);
+      }
+
+      pressure.reinit(face);
+
+      for(unsigned int q = 0; q < pressure.n_q_points; ++q)
+      {
+        vector normal = pressure.normal_vector(q);
 
         vector u      = velocity.get_value(q);
         tensor grad_u = velocity.get_gradient(q);
@@ -391,22 +228,21 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
 
         pressure.submit_value(flux_times_normal, q);
       }
-      else if(boundary_type == BoundaryTypeU::Neumann or boundary_type == BoundaryTypeU::Symmetry)
-      {
-        // Do nothing on Neumann and symmetry boundaries.
-        // Remark: On symmetry boundaries it follows from g_u * n = 0 that also g_{u_hat} * n = 0.
-        // Hence, a symmetry boundary for u is also a symmetry boundary for u_hat. Hence, there
-        // are no inhomogeneous contributions on symmetry boundaries.
-        scalar zero = dealii::make_vectorized_array<Number>(0.0);
-        pressure.submit_value(zero, q);
-      }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
+
+      pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
-    pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
+    else if(boundary_type == BoundaryTypeU::Neumann or boundary_type == BoundaryTypeU::Symmetry)
+    {
+      // Do nothing on Neumann and symmetry boundaries.
+      // Remark: On symmetry boundaries it follows from g_u * n = 0 that also g_{u_hat} * n = 0.
+      // Hence, a symmetry boundary for u is also a symmetry boundary for u_hat. Hence, there
+      // are no inhomogeneous contributions on symmetry boundaries.
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
   }
 }
 
@@ -434,46 +270,44 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_numerical_time_derivative_
 {
   unsigned int dof_index_velocity  = this->get_dof_index_velocity();
   unsigned int dof_index_pressure  = this->get_dof_index_pressure();
-  unsigned int quad_index_velocity = this->get_quad_index_velocity_linear();
+  unsigned int quad_index_velocity = this->get_quad_index_velocity_standard();
 
   FaceIntegratorU integrator_velocity(data, true, dof_index_velocity, quad_index_velocity);
   FaceIntegratorP integrator_pressure(data, true, dof_index_pressure, quad_index_velocity);
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    integrator_velocity.reinit(face);
-    integrator_velocity.gather_evaluate(acceleration, dealii::EvaluationFlags::values);
-
-    integrator_pressure.reinit(face);
-
     dealii::types::boundary_id boundary_id = data.get_boundary_id(face);
     BoundaryTypeP              boundary_type =
       this->boundary_descriptor->pressure->get_boundary_type(boundary_id);
 
-    for(unsigned int q = 0; q < integrator_pressure.n_q_points; ++q)
+    if(boundary_type == BoundaryTypeP::Neumann)
     {
-      if(boundary_type == BoundaryTypeP::Neumann)
+      integrator_velocity.reinit(face);
+      integrator_velocity.gather_evaluate(acceleration, dealii::EvaluationFlags::values);
+
+      integrator_pressure.reinit(face);
+
+      for(unsigned int q = 0; q < integrator_pressure.n_q_points; ++q)
       {
-        vector normal = integrator_velocity.get_normal_vector(q);
+        vector normal = integrator_velocity.normal_vector(q);
         vector dudt   = integrator_velocity.get_value(q);
         scalar h      = -normal * dudt;
 
         integrator_pressure.submit_value(h, q);
       }
-      else if(boundary_type == BoundaryTypeP::Dirichlet)
-      {
-        scalar zero = dealii::make_vectorized_array<Number>(0.0);
-        integrator_pressure.submit_value(zero, q);
-      }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
-    }
 
-    integrator_pressure.integrate(dealii::EvaluationFlags::values);
-    integrator_pressure.distribute_local_to_global(dst);
+      integrator_pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
+    }
+    else if(boundary_type == BoundaryTypeP::Dirichlet)
+    {
+      // Nothing to do.
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
   }
 }
 
@@ -508,15 +342,15 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_bounda
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    integrator.reinit(face);
-
     dealii::types::boundary_id boundary_id = data.get_boundary_id(face);
     BoundaryTypeP              boundary_type =
       this->boundary_descriptor->pressure->get_boundary_type(boundary_id);
 
-    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+    if(boundary_type == BoundaryTypeP::Neumann)
     {
-      if(boundary_type == BoundaryTypeP::Neumann)
+      integrator.reinit(face);
+
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         dealii::Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
@@ -526,25 +360,24 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_bounda
                                                    q_points,
                                                    this->evaluation_time);
 
-        vector normal = integrator.get_normal_vector(q);
+        vector normal = integrator.normal_vector(q);
 
         scalar h = normal * rhs;
 
         integrator.submit_value(h, q);
       }
-      else if(boundary_type == BoundaryTypeP::Dirichlet)
-      {
-        scalar zero = dealii::make_vectorized_array<Number>(0.0);
-        integrator.submit_value(zero, q);
-      }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
+
+      integrator.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
-    integrator.integrate(dealii::EvaluationFlags::values);
-    integrator.distribute_local_to_global(dst);
+    else if(boundary_type == BoundaryTypeP::Dirichlet)
+    {
+      // Nothing to do.
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
   }
 }
 
@@ -571,7 +404,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_boundary_fa
 {
   unsigned int const dof_index_velocity = this->get_dof_index_velocity();
   unsigned int const dof_index_pressure = this->get_dof_index_pressure();
-  unsigned int const quad_index         = this->get_quad_index_velocity_nonlinear();
+  unsigned int const quad_index         = this->get_quad_index_velocity_overintegration();
 
   FaceIntegratorU velocity(matrix_free, true, dof_index_velocity, quad_index);
   FaceIntegratorP pressure(matrix_free, true, dof_index_pressure, quad_index);
@@ -579,27 +412,28 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_boundary_fa
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    velocity.reinit(face);
-    velocity.gather_evaluate(src,
-                             dealii::EvaluationFlags::values | dealii::EvaluationFlags::gradients);
-
-    if(this->param.ale_formulation)
-    {
-      grid_velocity.reinit(face);
-      grid_velocity.gather_evaluate(this->convective_kernel->get_grid_velocity(),
-                                    dealii::EvaluationFlags::values);
-    }
-
-    pressure.reinit(face);
-
     BoundaryTypeP boundary_type =
       this->boundary_descriptor->pressure->get_boundary_type(matrix_free.get_boundary_id(face));
 
-    for(unsigned int q = 0; q < pressure.n_q_points; ++q)
+    if(boundary_type == BoundaryTypeP::Neumann)
     {
-      if(boundary_type == BoundaryTypeP::Neumann)
+      velocity.reinit(face);
+      velocity.gather_evaluate(src,
+                               dealii::EvaluationFlags::values |
+                                 dealii::EvaluationFlags::gradients);
+
+      if(this->param.ale_formulation)
       {
-        vector normal = pressure.get_normal_vector(q);
+        grid_velocity.reinit(face);
+        grid_velocity.gather_evaluate(this->convective_kernel->get_grid_velocity(),
+                                      dealii::EvaluationFlags::values);
+      }
+
+      pressure.reinit(face);
+
+      for(unsigned int q = 0; q < pressure.n_q_points; ++q)
+      {
+        vector normal = pressure.normal_vector(q);
 
         vector u      = velocity.get_value(q);
         tensor grad_u = velocity.get_gradient(q);
@@ -628,18 +462,18 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_boundary_fa
 
         pressure.submit_value(-normal * flux, q);
       }
-      else if(boundary_type == BoundaryTypeP::Dirichlet)
-      {
-        pressure.submit_value(dealii::make_vectorized_array<Number>(0.0), q);
-      }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
-    }
 
-    pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
+      pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
+    }
+    else if(boundary_type == BoundaryTypeP::Dirichlet)
+    {
+      // Nothing to do.
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
   }
 }
 
@@ -665,8 +499,8 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary_face(
   Range const &                           face_range) const
 {
   unsigned int const dof_index_velocity = this->get_dof_index_velocity();
-  unsigned int const dof_index_pressure = this->get_quad_index_pressure();
-  unsigned int const quad_index         = this->get_quad_index_velocity_linear();
+  unsigned int const dof_index_pressure = this->get_dof_index_pressure();
+  unsigned int const quad_index         = this->get_quad_index_velocity_standard();
 
   FaceIntegratorU omega(matrix_free, true, dof_index_velocity, quad_index);
 
@@ -674,41 +508,118 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary_face(
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    pressure.reinit(face);
-
-    omega.reinit(face);
-    omega.gather_evaluate(src, dealii::EvaluationFlags::gradients);
-
     BoundaryTypeP boundary_type =
       this->boundary_descriptor->pressure->get_boundary_type(matrix_free.get_boundary_id(face));
 
-    for(unsigned int q = 0; q < pressure.n_q_points; ++q)
+    if(boundary_type == BoundaryTypeP::Neumann)
     {
-      scalar viscosity = this->get_viscosity_boundary_face(face, q);
+      pressure.reinit(face);
 
-      if(boundary_type == BoundaryTypeP::Neumann)
+      omega.reinit(face);
+      omega.gather_evaluate(src, dealii::EvaluationFlags::gradients);
+
+      for(unsigned int q = 0; q < pressure.n_q_points; ++q)
       {
-        scalar h = dealii::make_vectorized_array<Number>(0.0);
+        scalar const viscosity = this->get_viscosity_boundary_face(face, q);
 
-        vector normal = pressure.get_normal_vector(q);
+        vector const normal = pressure.normal_vector(q);
 
-        vector curl_omega = CurlCompute<dim, FaceIntegratorU>::compute(omega, q);
+        vector const curl_omega = CurlCompute<dim, FaceIntegratorU>::compute(omega, q);
 
-        h = -normal * (viscosity * curl_omega);
+        scalar const h = -normal * (viscosity * curl_omega);
 
         pressure.submit_value(h, q);
       }
-      else if(boundary_type == BoundaryTypeP::Dirichlet)
-      {
-        pressure.submit_value(dealii::make_vectorized_array<Number>(0.0), q);
-      }
-      else
-      {
-        AssertThrow(false,
-                    dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
+
+      pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
     }
-    pressure.integrate_scatter(dealii::EvaluationFlags::values, dst);
+    else if(boundary_type == BoundaryTypeP::Dirichlet)
+    {
+      // Nothing to do.
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
+  }
+}
+
+template<int dim, typename Number>
+void
+OperatorDualSplitting<dim, Number>::rhs_ppe_nbc_variable_viscosity_add(VectorType &       rhs_ppe,
+                                                                       VectorType const & velocity,
+                                                                       VectorType const & viscosity)
+{
+  this->viscosity = &viscosity;
+
+  this->get_matrix_free().loop(&This::cell_loop_empty,
+                               &This::face_loop_empty,
+                               &This::local_rhs_ppe_nbc_variable_viscosity_add_boundary_face,
+                               this,
+                               rhs_ppe,
+                               velocity);
+
+  this->viscosity = nullptr;
+}
+
+template<int dim, typename Number>
+void
+OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_variable_viscosity_add_boundary_face(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            rhs_ppe,
+  VectorType const &                      velocity,
+  Range const &                           face_range) const
+{
+  unsigned int const dof_index_velocity        = this->get_dof_index_velocity();
+  unsigned int const dof_index_velocity_scalar = this->get_dof_index_velocity_scalar();
+  unsigned int const dof_index_pressure        = this->get_dof_index_pressure();
+  unsigned int const quad_index                = this->get_quad_index_velocity_standard();
+
+  FaceIntegratorU integrator_velocity(matrix_free, true, dof_index_velocity, quad_index);
+  FaceIntegratorP integrator_viscosity(matrix_free, true, dof_index_velocity_scalar, quad_index);
+  FaceIntegratorP integrator_pressure(matrix_free, true, dof_index_pressure, quad_index);
+
+  for(unsigned int face = face_range.first; face < face_range.second; face++)
+  {
+    BoundaryTypeP boundary_type =
+      this->boundary_descriptor->pressure->get_boundary_type(matrix_free.get_boundary_id(face));
+
+    if(boundary_type == BoundaryTypeP::Neumann)
+    {
+      integrator_pressure.reinit(face);
+
+      integrator_viscosity.reinit(face);
+      integrator_viscosity.gather_evaluate(*this->viscosity, dealii::EvaluationFlags::gradients);
+
+      integrator_velocity.reinit(face);
+      integrator_velocity.gather_evaluate(velocity, dealii::EvaluationFlags::gradients);
+
+      for(unsigned int q = 0; q < integrator_pressure.n_q_points; ++q)
+      {
+        vector normal = integrator_pressure.normal_vector(q);
+
+        dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> sym_grad_u =
+          integrator_velocity.get_symmetric_gradient(q);
+
+        vector grad_nu = integrator_viscosity.get_gradient(q);
+
+        scalar h = dealii::make_vectorized_array<Number>(2.0) * (normal * (sym_grad_u * grad_nu));
+
+        integrator_pressure.submit_value(h, q);
+      }
+
+      integrator_pressure.integrate_scatter(dealii::EvaluationFlags::values, rhs_ppe);
+    }
+    else if(boundary_type == BoundaryTypeP::Dirichlet)
+    {
+      // Nothing to do.
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
   }
 }
 
@@ -727,31 +638,6 @@ OperatorDualSplitting<dim, Number>::solve_pressure(VectorType &       dst,
                                                    bool const         update_preconditioner) const
 {
   return ProjectionBase::do_solve_pressure(dst, src, update_preconditioner);
-}
-
-template<int dim, typename Number>
-void
-OperatorDualSplitting<dim, Number>::rhs_add_viscous_term(VectorType & dst,
-                                                         double const evaluation_time) const
-{
-  ProjectionBase::do_rhs_add_viscous_term(dst, evaluation_time);
-}
-
-template<int dim, typename Number>
-unsigned int
-OperatorDualSplitting<dim, Number>::solve_viscous(VectorType &       dst,
-                                                  VectorType const & src,
-                                                  bool const &       update_preconditioner,
-                                                  double const &     factor)
-{
-  // Update operator
-  this->momentum_operator.set_scaling_factor_mass_operator(factor);
-
-  helmholtz_solver->update_preconditioner(update_preconditioner);
-
-  unsigned int n_iter = helmholtz_solver->solve(dst, src);
-
-  return n_iter;
 }
 
 template<int dim, typename Number>
@@ -780,11 +666,8 @@ OperatorDualSplitting<dim, Number>::local_interpolate_velocity_dirichlet_bc_boun
   VectorType const &,
   Range const & face_range) const
 {
-  unsigned int const dof_index = this->get_dof_index_velocity();
-  AssertThrow(
-    matrix_free.get_dof_handler(dof_index).get_triangulation().all_reference_cells_are_hyper_cube(),
-    dealii::ExcMessage("This function is only implemented for hypercube elements."));
-  unsigned int const quad_index = this->get_quad_index_velocity_gauss_lobatto();
+  unsigned int const dof_index  = this->get_dof_index_velocity();
+  unsigned int const quad_index = this->get_quad_index_velocity_nodal_points();
 
   FaceIntegratorU integrator(matrix_free, true, dof_index, quad_index);
 

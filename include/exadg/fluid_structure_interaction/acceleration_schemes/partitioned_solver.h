@@ -15,21 +15,19 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_PARTITIONED_SOLVER_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_PARTITIONED_SOLVER_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_PARTITIONED_SOLVER_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_PARTITIONED_SOLVER_H_
 
-// FSI
+// ExaDG
 #include <exadg/fluid_structure_interaction/acceleration_schemes/linear_algebra.h>
 #include <exadg/fluid_structure_interaction/acceleration_schemes/parameters.h>
 #include <exadg/fluid_structure_interaction/single_field_solvers/fluid.h>
 #include <exadg/fluid_structure_interaction/single_field_solvers/structure.h>
-
-// utilities
 #include <exadg/utilities/print_solver_results.h>
 #include <exadg/utilities/timer_tree.h>
 
@@ -60,7 +58,14 @@ public:
   std::shared_ptr<TimerTree>
   get_timings() const;
 
+  void
+  get_structure_velocity(VectorType & velocity_structure, unsigned int const iteration) const;
+
 private:
+  void
+  get_structure_displacement(VectorType &       displacement_structure,
+                             unsigned int const iteration) const;
+
   bool
   check_convergence(VectorType const & residual) const;
 
@@ -174,6 +179,66 @@ PartitionedSolver<dim, Number>::get_timings() const
 
 template<int dim, typename Number>
 void
+PartitionedSolver<dim, Number>::get_structure_velocity(VectorType & velocity_structure,
+                                                       unsigned int iteration) const
+{
+  if(iteration == 0)
+  {
+    if(parameters.initial_guess_coupling_scheme ==
+       InitialGuessCouplingScheme::SolutionExtrapolatedToEndOfTimeStep)
+    {
+      structure->time_integrator->extrapolate_velocity_to_np(velocity_structure);
+    }
+    else if(parameters.initial_guess_coupling_scheme ==
+            InitialGuessCouplingScheme::ConvergedSolutionOfPreviousTimeStep)
+    {
+      velocity_structure = structure->time_integrator->get_velocity_n();
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage(
+                    "Behavior for this `InitialGuessCouplingScheme` is not defined."));
+    }
+  }
+  else
+  {
+    velocity_structure = structure->time_integrator->get_velocity_np();
+  }
+}
+
+template<int dim, typename Number>
+void
+PartitionedSolver<dim, Number>::get_structure_displacement(VectorType & displacement_structure,
+                                                           unsigned int const iteration) const
+{
+  if(iteration == 0)
+  {
+    if(this->parameters.initial_guess_coupling_scheme ==
+       InitialGuessCouplingScheme::SolutionExtrapolatedToEndOfTimeStep)
+    {
+      structure->time_integrator->extrapolate_displacement_to_np(displacement_structure);
+    }
+    else if(this->parameters.initial_guess_coupling_scheme ==
+            InitialGuessCouplingScheme::ConvergedSolutionOfPreviousTimeStep)
+    {
+      displacement_structure = structure->time_integrator->get_displacement_n();
+    }
+    else
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage(
+                    "Behavior for this `InitialGuessCouplingScheme` is not defined."));
+    }
+  }
+  else
+  {
+    displacement_structure = structure->time_integrator->get_displacement_np();
+  }
+}
+
+template<int dim, typename Number>
+void
 PartitionedSolver<dim, Number>::solve(
   std::function<void(VectorType &, VectorType const &, unsigned int)> const &
     apply_dirichlet_neumann_scheme)
@@ -194,10 +259,7 @@ PartitionedSolver<dim, Number>::solve(
     {
       print_solver_info_header(k);
 
-      if(k == 0)
-        structure->time_integrator->extrapolate_displacement_to_np(d);
-      else
-        d = structure->time_integrator->get_displacement_np();
+      get_structure_displacement(d, k);
 
       VectorType d_tilde(d);
       apply_dirichlet_neumann_scheme(d_tilde, d, k);
@@ -257,10 +319,7 @@ PartitionedSolver<dim, Number>::solve(
     {
       print_solver_info_header(k);
 
-      if(k == 0)
-        structure->time_integrator->extrapolate_displacement_to_np(d);
-      else
-        d = structure->time_integrator->get_displacement_np();
+      get_structure_displacement(d, k);
 
       apply_dirichlet_neumann_scheme(d_tilde, d, k);
 
@@ -385,10 +444,7 @@ PartitionedSolver<dim, Number>::solve(
     {
       print_solver_info_header(k);
 
-      if(k == 0)
-        structure->time_integrator->extrapolate_displacement_to_np(d);
-      else
-        d = structure->time_integrator->get_displacement_np();
+      get_structure_displacement(d, k);
 
       apply_dirichlet_neumann_scheme(d_tilde, d, k);
 
@@ -498,4 +554,4 @@ PartitionedSolver<dim, Number>::solve(
 } // namespace FSI
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_PARTITIONED_SOLVER_H_ */
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_ACCELERATION_SCHEMES_PARTITIONED_SOLVER_H_ */

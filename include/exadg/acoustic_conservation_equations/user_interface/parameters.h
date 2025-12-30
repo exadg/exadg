@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_INPUT_PARAMETERS_H_
-#define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_INPUT_PARAMETERS_H_
+#ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_PARAMETERS_H_
+#define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_PARAMETERS_H_
 
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
@@ -75,6 +75,8 @@ public:
   // if there are acoustic source terms, set right_hand_side = true
   bool right_hand_side;
 
+  // Use the aero-acoustic source term that is internally computed from the fluid solution
+  bool aero_acoustic_source_term;
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -90,9 +92,6 @@ public:
 
   // speed_of_sound of underlying fluid
   double speed_of_sound;
-
-  // mean density of underlying fluid
-  double density;
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -161,4 +160,4 @@ public:
 } // namespace Acoustics
 } // namespace ExaDG
 
-#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_INPUT_PARAMETERS_H_ */
+#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_PARAMETERS_H_ */

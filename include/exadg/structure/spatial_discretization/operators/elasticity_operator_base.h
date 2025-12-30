@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_ELASTICITY_OPERATOR_BASE_H_
-#define INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_ELASTICITY_OPERATOR_BASE_H_
+#ifndef EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_ELASTICITY_OPERATOR_BASE_H_
+#define EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_ELASTICITY_OPERATOR_BASE_H_
 
+// ExaDG
 #include <exadg/operators/operator_base.h>
 #include <exadg/structure/material/material_handler.h>
 #include <exadg/structure/user_interface/boundary_descriptor.h>
@@ -91,13 +92,25 @@ public:
   static MappingFlags
   get_mapping_flags();
 
-  virtual void
+  void
   initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
              dealii::AffineConstraints<Number> const & affine_constraints,
-             OperatorData<dim> const &                 data);
+             OperatorData<dim> const &                 data,
+             bool const                                assemble_matrix);
 
   OperatorData<dim> const &
   get_data() const;
+
+  Material<dim, Number> const &
+  get_material_in_cell(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+                       unsigned int const                      cell) const;
+
+  /*
+   * Provide near null space basis vectors, i.e., rigid body modes used in AMG setup.
+   */
+  void
+  get_constant_modes(std::vector<std::vector<bool>> &   constant_modes,
+                     std::vector<std::vector<double>> & constant_modes_values) const override;
 
   void
   set_scaling_factor_mass_operator(double const scaling_factor) const;
@@ -106,28 +119,23 @@ public:
   get_scaling_factor_mass_operator() const;
 
   void
-  set_scaling_factor_mass_boundary_operator(double const scaling_factor) const;
-
-  double
-  get_scaling_factor_mass_boundary_operator() const;
-
-  void
-  set_inhomogeneous_boundary_values(VectorType & dst) const final;
+  set_inhomogeneous_constrained_values(VectorType & dst) const final;
 
 protected:
   void
   reinit_cell_derived(IntegratorCell & integrator, unsigned int const cell) const override;
+
+  virtual void
+  initialize_derived(){};
 
   OperatorData<dim> operator_data;
 
   mutable MaterialHandler<dim, Number> material_handler;
 
   mutable double scaling_factor_mass;
-  mutable double scaling_factor_mass_boundary;
 };
 
 } // namespace Structure
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_ELASTICITY_OPERATOR_BASE_H_ */
+#endif /* EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_ELASTICITY_OPERATOR_BASE_H_ */

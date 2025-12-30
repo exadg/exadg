@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -159,11 +159,10 @@ private:
 
     this->param.load_increment = 0.1;
 
-    this->param.newton_solver_data                     = Newton::SolverData(1e3, 1.e-10, 1.e-6);
-    this->param.solver                                 = Solver::CG;
-    this->param.solver_data                            = SolverData(1e3, 1.e-14, 1.e-6, 100);
-    this->param.preconditioner                         = Preconditioner::Multigrid;
-    this->param.update_preconditioner                  = true;
+    this->param.newton_solver_data    = Newton::SolverData(1e3, 1.e-10, 1.e-6);
+    this->param.solver_data           = SolverData(1e3, 1.e-14, 1.e-6, LinearSolver::CG, 100);
+    this->param.preconditioner        = Preconditioner::Multigrid;
+    this->param.update_preconditioner = true;
     this->param.update_preconditioner_every_time_steps = 1;
     this->param.update_preconditioner_every_newton_iterations =
       this->param.newton_solver_data.max_iter;
@@ -298,12 +297,13 @@ private:
   {
     typedef std::pair<dealii::types::material_id, std::shared_ptr<MaterialData>> Pair;
 
-    MaterialType const type = MaterialType::StVenantKirchhoff;
-    double const       E = 200.0e9, nu = 0.3;
-    Type2D const       two_dim_type = Type2D::PlaneStress;
+    MaterialType const type           = MaterialType::StVenantKirchhoff;
+    double const       youngs_modulus = 200.0e9;
+    double const       poissons_ratio = 0.3;
+    Type2D const       two_dim_type   = Type2D::PlaneStress;
 
     this->material_descriptor->insert(
-      Pair(0, new StVenantKirchhoffData<dim>(type, E, nu, two_dim_type)));
+      Pair(0, new StVenantKirchhoffData<dim>(type, youngs_modulus, poissons_ratio, two_dim_type)));
   }
 
   void

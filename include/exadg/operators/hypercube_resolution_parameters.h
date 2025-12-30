@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_HYPERCUBE_RESOLUTION_PARAMETERS_H_
-#define INCLUDE_EXADG_OPERATORS_HYPERCUBE_RESOLUTION_PARAMETERS_H_
+#ifndef EXADG_OPERATORS_HYPERCUBE_RESOLUTION_PARAMETERS_H_
+#define EXADG_OPERATORS_HYPERCUBE_RESOLUTION_PARAMETERS_H_
 
 // deal.II
 #include <deal.II/base/parameter_handler.h>
@@ -52,7 +52,7 @@ fill_resolutions_vector(
                                         resolutions,
   unsigned int const                    dim,
   unsigned int const                    degree,
-  unsigned int const                    dofs_per_element,
+  double const                          dofs_per_element,
   dealii::types::global_dof_index const n_dofs_min,
   dealii::types::global_dof_index const n_dofs_max,
   RunType const &                       run_type,
@@ -60,38 +60,42 @@ fill_resolutions_vector(
 {
   unsigned int const resolutions_initial_size = resolutions.size();
 
-  dealii::types::global_dof_index const n_cells_min =
-    (n_dofs_min + dofs_per_element - 1) / dofs_per_element;
-  dealii::types::global_dof_index const n_cells_max = n_dofs_max / dofs_per_element;
+  double dofs_per_cube = dofs_per_element;
 
-  // Determine the number of cells per cube
-
-  // refers to dealii::GridTools::subdivided_hyper_cube() for Hypercube elements
-  unsigned int n_cells_per_cube = 1;
-
-  // refers to dealii::GridTools::subdivided_hyper_cube_with_simplices()
+  // in case of simplex elements, we create a mesh of hypercube elements that gets later subdivided
+  // into simplex elements using dealii::GridTools::subdivided_hyper_cube_with_simplices()
   if(element_type == ElementType::Simplex)
   {
+    unsigned int n_cells_per_cube = 1;
+
+    // Determine the number of simplex cells per hypercube cell
     if(dim == 2)
       n_cells_per_cube = 2;
     else if(dim == 3)
       n_cells_per_cube = 5;
     else
       AssertThrow(false, dealii::ExcMessage("not implemented."));
+
+    // From now on, we think of a hyerpcube mesh that gets later subdivided into simplex elements
+    // with n_cells_per_cube simplices per hypercube cell
+    dofs_per_cube *= n_cells_per_cube;
   }
 
+  dealii::types::global_dof_index const n_cells_min =
+    static_cast<dealii::types::global_dof_index>((n_dofs_min + dofs_per_cube - 1) / dofs_per_cube);
+  dealii::types::global_dof_index const n_cells_max =
+    static_cast<dealii::types::global_dof_index>(n_dofs_max / dofs_per_cube);
+
   // From the maximum number of cells, we derive a maximum refinement level for a uniformly refined
-  // mesh with n_cells_per_cube coarse-grid cells.
+  // mesh with one coarse-grid cells
   unsigned int const refine_level_max =
-    int(std::log((double)n_cells_max / (double)n_cells_per_cube) /
-        std::log((double)dealii::Utilities::pow(2ULL, dim))) +
-    1;
+    int(std::log((double)n_cells_max) / std::log((double)dealii::Utilities::pow(2ULL, dim))) + 1;
 
   // we start with the coarsest possible mesh and then increase the refine level by 1
   // until we hit the maximum refinement level
   unsigned int refine_level = 0;
 
-  // This loop is for a uniformly refined mesh with n_cells_per_cube coarse-grid cells. Inside the
+  // This loop is for a uniformly refined hypercube mesh. Inside the
   // loop, we test whether additional combinations of coarse-grid cells and mesh refinement levels
   // are suitable in terms of n_cells_min/n_cells_max. The reason behind is that we want to have
   // more data points than just data points differing by a factor of 2^dim in the number of cells.
@@ -107,9 +111,8 @@ fill_resolutions_vector(
       unsigned int const n_subdivisions_1d = 3;
       unsigned int const l                 = refine_level - 2;
 
-      unsigned int const n_cells = n_cells_per_cube *
-                                   dealii::Utilities::pow(n_subdivisions_1d, dim) *
-                                   dealii::Utilities::pow(2ULL, l * dim);
+      unsigned int const n_cells =
+        dealii::Utilities::pow(n_subdivisions_1d, dim) * dealii::Utilities::pow(2ULL, l * dim);
 
       if(n_cells >= n_cells_min and n_cells <= n_cells_max)
       {
@@ -123,12 +126,12 @@ fill_resolutions_vector(
       }
     }
 
-    // coarse grid with n_cells_per_cube cells, and refine_level uniform refinements
+    // coarse grid with one cell and refine_level uniform refinements
     {
       unsigned int const n_subdivisions_1d = 1;
       unsigned int const l                 = refine_level;
 
-      unsigned int const n_cells = n_cells_per_cube * dealii::Utilities::pow(2ULL, l * dim);
+      unsigned int const n_cells = dealii::Utilities::pow(2ULL, l * dim);
 
       if(n_cells >= n_cells_min and n_cells <= n_cells_max)
       {
@@ -148,9 +151,8 @@ fill_resolutions_vector(
       unsigned int const n_subdivisions_1d = 5;
       unsigned int const l                 = refine_level - 2;
 
-      unsigned int const n_cells = n_cells_per_cube *
-                                   dealii::Utilities::pow(n_subdivisions_1d, dim) *
-                                   dealii::Utilities::pow(2ULL, l * dim);
+      unsigned int const n_cells =
+        dealii::Utilities::pow(n_subdivisions_1d, dim) * dealii::Utilities::pow(2ULL, l * dim);
 
       if(n_cells >= n_cells_min and n_cells <= n_cells_max)
       {
@@ -266,8 +268,7 @@ struct HypercubeResolutionParameters
 
   void
   fill_resolution_vector(
-    std::function<unsigned int(unsigned int, unsigned int, ElementType)> const &
-      get_dofs_per_element)
+    std::function<double(unsigned int, unsigned int, ElementType)> const & get_dofs_per_element)
   {
     if(run_type == RunType::RefineHAndP)
     {
@@ -289,7 +290,7 @@ struct HypercubeResolutionParameters
     {
       for(unsigned int degree = degree_min; degree <= degree_max; ++degree)
       {
-        unsigned int dofs_per_element = get_dofs_per_element(dim, degree, element_type);
+        double dofs_per_element = get_dofs_per_element(dim, degree, element_type);
         fill_resolutions_vector(resolutions,
                                 dim,
                                 degree,
@@ -326,5 +327,4 @@ struct HypercubeResolutionParameters
 };
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_OPERATORS_HYPERCUBE_RESOLUTION_PARAMETERS_H_ */
+#endif /* EXADG_OPERATORS_HYPERCUBE_RESOLUTION_PARAMETERS_H_ */

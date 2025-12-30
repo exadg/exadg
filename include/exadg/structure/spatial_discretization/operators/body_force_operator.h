@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_RHS_OPERATOR_H_
-#define INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_RHS_OPERATOR_H_
+#ifndef EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_BODY_FORCE_OPERATOR_H_
+#define EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_BODY_FORCE_OPERATOR_H_
 
 // ExaDG
 #include <exadg/matrix_free/integrators.h>
@@ -95,4 +95,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_BODY_FORCE_OPERATOR_H_ */

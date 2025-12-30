@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -360,6 +360,23 @@ public:
   {
   }
 
+  void
+  add_parameters(dealii::ParameterHandler & prm) final
+  {
+    ApplicationBase<dim, Number>::add_parameters(prm);
+
+    prm.enter_subsection("Application");
+    {
+      prm.add_parameter("WriteRestart", write_restart, "Should restart files be written?");
+      prm.add_parameter("ReadRestart", read_restart, "Is this a restarted simulation?");
+      prm.add_parameter("ReadWriteMapping",
+                        read_write_mapping,
+                        "Consider mapping changes when reading/writing restart files?");
+      prm.add_parameter("TriangulationType", triangulation_type, "Type of triangulation used.");
+    }
+    prm.leave_subsection();
+  }
+
 private:
   void
   set_parameters() final
@@ -391,17 +408,29 @@ private:
     this->param.exponent_fe_degree_viscous    = 4.0;
 
     // restart
-    this->param.restarted_simulation       = false;
-    this->param.restart_data.write_restart = false;
-    this->param.restart_data.interval_time = 0.5;
-    this->param.restart_data.filename =
-      this->output_parameters.directory + this->output_parameters.filename + "_restart";
+    this->param.restarted_simulation       = read_restart;
+    this->param.restart_data.write_restart = write_restart;
+    // write restart every 80% of the simulation time
+    this->param.restart_data.interval_time = (this->param.end_time - this->param.start_time) * 0.8;
+    this->param.restart_data.interval_wall_time             = 1.e6;
+    this->param.restart_data.interval_time_steps            = 1e8;
+    this->param.restart_data.directory_coarse_triangulation = this->output_parameters.directory;
+    this->param.restart_data.directory                      = this->output_parameters.directory;
+    this->param.restart_data.filename = this->output_parameters.filename + "_restart";
+
+    this->param.restart_data.discretization_identical     = false;
+    this->param.restart_data.consider_mapping_write       = read_write_mapping;
+    this->param.restart_data.consider_mapping_read_source = read_write_mapping;
+
+    this->param.restart_data.rpe_rtree_level            = 0;
+    this->param.restart_data.rpe_tolerance_unit_cell    = 1e-6;
+    this->param.restart_data.rpe_enforce_unique_mapping = false;
 
     // output of solver information
     this->param.solver_info_data.interval_time = (end_time - start_time) / 10;
 
     // SPATIAL DISCRETIZATION
-    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.triangulation_type = triangulation_type;
     this->param.mapping_degree          = this->param.degree;
     this->param.n_q_points_convective   = QuadratureRule::Standard;
     this->param.n_q_points_viscous      = QuadratureRule::Standard;
@@ -453,6 +482,12 @@ private:
 
       dealii::GridTools::collect_periodic_faces(tria, 0 + 10, 1 + 10, 1, periodic_face_pairs);
       tria.add_periodicity(periodic_face_pairs);
+
+      // Save the *coarse* triangulation for later deserialization.
+      if(write_restart and this->param.grid.triangulation_type == TriangulationType::Serial)
+      {
+        save_coarse_triangulation<dim>(this->param.restart_data, tria);
+      }
 
       tria.refine_global(global_refinements);
     };
@@ -525,6 +560,12 @@ private:
 
   double const start_time = 0.0;
   double const end_time   = 0.75;
+
+  bool read_restart       = false;
+  bool write_restart      = false;
+  bool read_write_mapping = false;
+
+  TriangulationType triangulation_type = TriangulationType::Distributed;
 };
 
 } // namespace CompNS

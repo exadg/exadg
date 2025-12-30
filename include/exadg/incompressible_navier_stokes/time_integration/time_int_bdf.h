@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -45,9 +45,11 @@ template<int dim, typename Number>
 class TimeIntBDF : public TimeIntBDFBase
 {
 public:
-  using Base            = TimeIntBDFBase;
-  using VectorType      = dealii::LinearAlgebra::distributed::Vector<Number>;
-  using BlockVectorType = dealii::LinearAlgebra::distributed::BlockVector<Number>;
+  using Base                   = TimeIntBDFBase;
+  using VectorType             = dealii::LinearAlgebra::distributed::Vector<Number>;
+  using BlockVectorType        = dealii::LinearAlgebra::distributed::BlockVector<Number>;
+  using BoostInputArchiveType  = TimeIntBase::BoostInputArchiveType;
+  using BoostOutputArchiveType = TimeIntBase::BoostOutputArchiveType;
 
   TimeIntBDF(std::shared_ptr<SpatialOperatorBase<dim, Number>> operator_in,
              std::shared_ptr<HelpersALE<dim, Number> const>    helpers_ale_in,
@@ -92,7 +94,9 @@ public:
   ale_update();
 
   void
-  advance_one_timestep_partitioned_solve(bool const use_extrapolation);
+  advance_one_timestep_partitioned_solve(bool const use_extrapolation,
+                                         bool const update_velocity,
+                                         bool const update_pressure);
 
   virtual void
   print_iterations() const = 0;
@@ -108,10 +112,21 @@ protected:
   setup_derived() override;
 
   void
-  read_restart_vectors(boost::archive::binary_iarchive & ia) override;
+  read_restart_vectors() final;
 
   void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const override;
+  write_restart_vectors() const final;
+
+  virtual void
+  get_vectors_serialization(std::vector<VectorType const *> & vectors_velocity,
+                            std::vector<VectorType const *> & vectors_pressure) const;
+
+  virtual void
+  set_vectors_deserialization(std::vector<VectorType> const & vectors_velocity,
+                              std::vector<VectorType> const & vectors_pressure);
+
+  virtual void
+  update_after_deserialization();
 
   void
   prepare_vectors_for_next_timestep() override;
@@ -129,12 +144,15 @@ protected:
   std::shared_ptr<SpatialOperatorBase<dim, Number>> operator_base;
 
   // convective term formulated explicitly
+  bool                    needs_vector_convective_term;
   std::vector<VectorType> vec_convective_term;
   VectorType              convective_term_np;
 
   // required for strongly-coupled partitioned iteration
   bool use_extrapolation;
   bool store_solution;
+  bool update_velocity;
+  bool update_pressure;
 
   // This object allows to access utility functions needed for ALE
   std::shared_ptr<HelpersALE<dim, Number> const> helpers_ale;
@@ -189,4 +207,4 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_H_ */
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_H_ */

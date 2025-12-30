@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -59,6 +59,14 @@ Driver<dim, Number>::setup()
 
   application->setup(grid, mapping, multigrid_mappings);
 
+  bool setup_scalar_field = false;
+  if(not is_throughput_study)
+  {
+    // initialize postprocessor, i.e., get user parameters
+    postprocessor      = application->create_postprocessor();
+    setup_scalar_field = postprocessor->requires_scalar_field();
+  }
+
   // setup spatial operator
   pde_operator = std::make_shared<Operator<dim, Number>>(grid,
                                                          mapping,
@@ -68,15 +76,15 @@ Driver<dim, Number>::setup()
                                                          application->get_material_descriptor(),
                                                          application->get_parameters(),
                                                          "elasticity",
+                                                         setup_scalar_field,
                                                          mpi_comm);
 
   pde_operator->setup();
 
   if(not is_throughput_study)
   {
-    // initialize postprocessor
-    postprocessor = application->create_postprocessor();
-    postprocessor->setup(pde_operator->get_dof_handler(), pde_operator->get_mapping());
+    // set up postprocessor
+    postprocessor->setup(*pde_operator);
 
     // initialize time integrator/driver
     if(application->get_parameters().problem_type == ProblemType::Unsteady)
@@ -218,20 +226,32 @@ Driver<dim, Number>::apply_operator(OperatorType const & operator_type,
   pde_operator->initialize_dof_vector(dst);
   src = 1.0;
 
-  if(application->get_parameters().large_deformation and operator_type == OperatorType::Apply)
+  pde_operator->update_elasticity_operator(1.0, 0.0);
+
+  if(operator_type == OperatorType::Apply)
   {
-    pde_operator->initialize_dof_vector(linearization);
-    linearization = 1.0;
+    if(application->get_parameters().large_deformation)
+    {
+      pde_operator->initialize_dof_vector(linearization);
+      linearization = 1.0;
+
+      // note that this function assembles the matrix in case of a matrix-based implementation
+      pde_operator->set_solution_linearization(linearization);
+    }
+    else
+    {
+      pde_operator->assemble_matrix_if_matrix_based();
+    }
   }
 
   const std::function<void(void)> operator_evaluation = [&](void) {
     if(operator_type == OperatorType::Evaluate)
     {
-      pde_operator->evaluate_elasticity_operator(dst, src, 1.0, 1.0, 0.0);
+      pde_operator->evaluate_elasticity_operator(dst, src, 1.0, 0.0);
     }
     else if(operator_type == OperatorType::Apply)
     {
-      pde_operator->apply_elasticity_operator(dst, src, linearization, 1.0, 1.0, 0.0);
+      pde_operator->apply_elasticity_operator(dst, src);
     }
   };
 

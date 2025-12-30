@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POISSON_OVERSET_GRIDS_DRIVER_H_
-#define INCLUDE_EXADG_POISSON_OVERSET_GRIDS_DRIVER_H_
+#ifndef EXADG_POISSON_OVERSET_GRIDS_DRIVER_H_
+#define EXADG_POISSON_OVERSET_GRIDS_DRIVER_H_
 
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/interface_coupling.h>
@@ -106,5 +106,4 @@ private:
 } // namespace Poisson
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_POISSON_OVERSET_GRIDS_DRIVER_H_ */
+#endif /* EXADG_POISSON_OVERSET_GRIDS_DRIVER_H_ */

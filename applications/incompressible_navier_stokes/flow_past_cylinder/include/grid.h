@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -232,8 +232,6 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & tria, bool const compu
     if(compute_in_2d)
     {
       // set manifold ID's
-      tria.set_all_manifold_ids(0);
-
       for(auto cell : tria.cell_iterators())
       {
         if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
@@ -381,8 +379,6 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & tria, bool const compu
     if(compute_in_2d)
     {
       // set manifold ID's
-      tria.set_all_manifold_ids(0);
-
       for(auto cell : tria.cell_iterators())
       {
         if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
@@ -518,8 +514,6 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & tria, bool const compu
     if(compute_in_2d)
     {
       // set manifold ID's
-      tria.set_all_manifold_ids(0);
-
       for(auto cell : tria.cell_iterators())
       {
         if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
@@ -631,8 +625,6 @@ do_create_coarse_triangulation(dealii::Triangulation<2> & tria, bool const compu
     if(compute_in_2d)
     {
       // set manifold ID's
-      tria.set_all_manifold_ids(0);
-
       for(auto cell : tria.cell_iterators())
       {
         if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
@@ -696,8 +688,6 @@ do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
     dealii::GridGenerator::extrude_triangulation(tria_2d, 3, H, tria);
 
     // set manifold ID's
-    tria.set_all_manifold_ids(0);
-
     if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
     {
       for(auto cell : tria.cell_iterators())
@@ -756,8 +746,6 @@ do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
     dealii::GridGenerator::extrude_triangulation(tria_2d, 3, H, tria);
 
     // set manifold ID's
-    tria.set_all_manifold_ids(0);
-
     if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
     {
       for(auto cell : tria.cell_iterators())
@@ -815,8 +803,6 @@ do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
     dealii::GridGenerator::extrude_triangulation(tria_2d, 2, H, tria);
 
     // set manifold ID's
-    tria.set_all_manifold_ids(0);
-
     if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
     {
       for(auto cell : tria.cell_iterators())
@@ -867,8 +853,6 @@ do_create_coarse_triangulation(dealii::Triangulation<3> & tria)
     dealii::GridGenerator::extrude_triangulation(tria_2d, 2, H, tria);
 
     // set manifold ID's
-    tria.set_all_manifold_ids(0);
-
     if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
     {
       for(auto cell : tria.cell_iterators())

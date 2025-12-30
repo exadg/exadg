@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -27,7 +27,7 @@ namespace IncNS
 {
 template<int dim, typename Number>
 ViscosityModelBase<dim, Number>::ViscosityModelBase()
-  : dealii::Subscriptor(), dof_index_velocity(0), matrix_free(nullptr)
+  : dealii::EnableObserverPointer(), dof_index_velocity(0), matrix_free(nullptr)
 {
 }
 

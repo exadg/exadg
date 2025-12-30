@@ -15,14 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_USER_INTERFACE_DECLARE_GET_APPLICATION_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_USER_INTERFACE_DECLARE_GET_APPLICATION_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_USER_INTERFACE_DECLARE_GET_APPLICATION_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_USER_INTERFACE_DECLARE_GET_APPLICATION_H_
 
-
+// ExaDG
 #include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 
 namespace ExaDG
@@ -36,5 +36,4 @@ get_application(std::string input_file, MPI_Comm const & comm);
 } // namespace FSI
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_USER_INTERFACE_DECLARE_GET_APPLICATION_H_ */
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_USER_INTERFACE_DECLARE_GET_APPLICATION_H_ */

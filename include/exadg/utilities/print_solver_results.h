@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_PRINT_SOLVER_RESULTS_H_
-#define INCLUDE_EXADG_UTILITIES_PRINT_SOLVER_RESULTS_H_
+#ifndef EXADG_UTILITIES_PRINT_SOLVER_RESULTS_H_
+#define EXADG_UTILITIES_PRINT_SOLVER_RESULTS_H_
 
 // C/C++
 #include <iostream>
@@ -132,6 +132,27 @@ print_throughput_unsteady(dealii::ConditionalOStream const &    pcout,
   // clang-format on
 }
 
+inline void
+print_throughput_unsteady(dealii::ConditionalOStream const & pcout,
+                          double const                       avg_n_dofs,
+                          double const                       overall_time_avg,
+                          unsigned int const                 N_time_steps,
+                          unsigned int const                 N_mpi_processes)
+{
+  double const time_per_timestep = overall_time_avg / (double)N_time_steps;
+
+  // clang-format off
+  pcout << std::endl
+        << "Throughput per time step:" << std::endl
+        << "  Number of MPI processes    = " << N_mpi_processes << std::endl
+        << "  Average Degrees of freedom = " << std::scientific << std::setprecision(2)<< avg_n_dofs << std::endl
+        << "  Wall time                  = " << std::scientific << std::setprecision(2) << overall_time_avg << " s" << std::endl
+        << "  Time steps                 = " << std::left << N_time_steps << std::endl
+        << "  Wall time per time step    = " << std::scientific << std::setprecision(2) << time_per_timestep << " s" << std::endl
+        << "  Throughput                 = " << std::scientific << std::setprecision(2) << avg_n_dofs / (time_per_timestep * N_mpi_processes) << " DoFs/s/core" << std::endl
+        << std::flush;
+  // clang-format on
+}
 
 inline void
 print_costs(dealii::ConditionalOStream const & pcout,
@@ -161,7 +182,7 @@ print_solver_info_nonlinear(dealii::ConditionalOStream const & pcout,
 
   // clang-format off
   pcout << std::endl
-        << "  Newton iterations:      " << std::setw(12) << std::right << N_iter_nonlinear << std::endl
+        << "  Nonlinear iterations:   " << std::setw(12) << std::right << N_iter_nonlinear << std::endl
         << "  Linear iterations (avg):" << std::setw(12) << std::fixed << std::setprecision(1) << std::right << N_iter_linear_avg << std::endl
         << "  Linear iterations (tot):" << std::setw(12) << std::right << N_iter_linear << std::endl
         << "  Wall time [s]:          " << std::setw(12) << std::scientific << std::setprecision(2) << std::right << wall_time << std::endl
@@ -286,4 +307,4 @@ print_results(std::vector<SolverResult> const & results, MPI_Comm const & mpi_co
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_UTILITIES_PRINT_SOLVER_RESULTS_H_ */
+#endif /* EXADG_UTILITIES_PRINT_SOLVER_RESULTS_H_ */

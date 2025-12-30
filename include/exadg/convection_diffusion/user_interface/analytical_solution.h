@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_ANALYTICAL_SOLUTION_H_
-#define INCLUDE_CONVECTION_DIFFUSION_ANALYTICAL_SOLUTION_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_ANALYTICAL_SOLUTION_H_
+#define EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_ANALYTICAL_SOLUTION_H_
 
+// deal.II
 #include <deal.II/base/function.h>
 
 namespace ExaDG
@@ -37,4 +38,4 @@ struct AnalyticalSolution
 } // namespace ConvDiff
 } // namespace ExaDG
 
-#endif /* INCLUDE_CONVECTION_DIFFUSION_ANALYTICAL_SOLUTION_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_ANALYTICAL_SOLUTION_H_ */

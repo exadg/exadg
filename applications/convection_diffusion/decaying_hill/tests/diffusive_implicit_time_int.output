@@ -58,7 +58,6 @@ Solver:
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-06
-  Maximum size of Krylov space:              100
   Preconditioner:                            InverseMassMatrix
   Update preconditioner:                     false
   Block Jacobi matrix-free:                  true
@@ -67,7 +66,7 @@ Solver:
   Maximum number of iterations:              1000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-02
-  Maximum size of Krylov space:              1000
+  Maximum size of Krylov space:              30
   Solver information:
   Interval physical time:                    1.0000e+00
   Interval wall time:                        1.7977e+308
@@ -122,7 +121,7 @@ Calculate error for all fields at time t = 1.0000e-01:
   Relative error (L2-norm): 5.27880e-11
 
 Calculate error for all fields at time t = 1.5000e-01:
-  Relative error (L2-norm): 5.28141e-11
+  Relative error (L2-norm): 5.28142e-11
 
 Calculate error for all fields at time t = 2.0000e-01:
   Relative error (L2-norm): 5.28508e-11
@@ -146,13 +145,13 @@ Calculate error for all fields at time t = 5.0000e-01:
   Relative error (L2-norm): 5.32889e-11
 
 Calculate error for all fields at time t = 5.5000e-01:
-  Relative error (L2-norm): 5.33979e-11
+  Relative error (L2-norm): 5.33980e-11
 
 Calculate error for all fields at time t = 6.0000e-01:
   Relative error (L2-norm): 5.35171e-11
 
 Calculate error for all fields at time t = 6.5000e-01:
-  Relative error (L2-norm): 5.36463e-11
+  Relative error (L2-norm): 5.36464e-11
 
 Calculate error for all fields at time t = 7.0000e-01:
   Relative error (L2-norm): 5.37856e-11
@@ -164,7 +163,7 @@ Calculate error for all fields at time t = 8.0000e-01:
   Relative error (L2-norm): 5.40938e-11
 
 Calculate error for all fields at time t = 8.5000e-01:
-  Relative error (L2-norm): 5.42625e-11
+  Relative error (L2-norm): 5.42626e-11
 
 Calculate error for all fields at time t = 9.0000e-01:
   Relative error (L2-norm): 5.44409e-11

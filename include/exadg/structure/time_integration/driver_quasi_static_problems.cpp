@@ -15,11 +15,11 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#include <exadg/structure/postprocessor/postprocessor_base.h>
+#include <exadg/structure/postprocessor/postprocessor.h>
 #include <exadg/structure/spatial_discretization/interface.h>
 #include <exadg/structure/time_integration/driver_quasi_static_problems.h>
 #include <exadg/structure/user_interface/parameters.h>
@@ -31,17 +31,17 @@ namespace Structure
 {
 template<int dim, typename Number>
 DriverQuasiStatic<dim, Number>::DriverQuasiStatic(
-  std::shared_ptr<Interface::Operator<Number>> operator_,
-  std::shared_ptr<PostProcessorBase<Number>>   postprocessor_,
-  Parameters const &                           param_,
-  MPI_Comm const &                             mpi_comm_,
-  bool const                                   is_test_)
-  : pde_operator(operator_),
-    postprocessor(postprocessor_),
-    param(param_),
-    mpi_comm(mpi_comm_),
-    is_test(is_test_),
-    pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
+  std::shared_ptr<Interface::Operator<Number>> operator_in,
+  std::shared_ptr<PostProcessor<dim, Number>>  postprocessor_in,
+  Parameters const &                           param_in,
+  MPI_Comm const &                             mpi_comm_in,
+  bool const                                   is_test_in)
+  : pde_operator(operator_in),
+    postprocessor(postprocessor_in),
+    param(param_in),
+    mpi_comm(mpi_comm_in),
+    is_test(is_test_in),
+    pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
     last_load_increment(param.load_increment),
     step_number(1),
     timer_tree(new TimerTree()),

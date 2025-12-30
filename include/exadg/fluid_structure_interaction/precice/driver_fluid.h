@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_FLUID_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_FLUID_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_FLUID_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_FLUID_H_
 
 // ExaDG
 #include <exadg/fluid_structure_interaction/single_field_solvers/fluid.h>
@@ -76,7 +76,7 @@ public:
         this->precice_parameters.write_data_type,
         fluid->pde_operator->get_matrix_free(),
         fluid->pde_operator->get_dof_index_velocity(),
-        fluid->pde_operator->get_quad_index_velocity_linear());
+        fluid->pde_operator->get_quad_index_velocity_standard());
     }
 
     // structure to ALE
@@ -171,7 +171,9 @@ public:
         coupling_structure_to_fluid();
 
         // solve fluid problem
-        fluid->time_integrator->advance_one_timestep_partitioned_solve(is_new_time_window);
+        fluid->time_integrator->advance_one_timestep_partitioned_solve(is_new_time_window,
+                                                                       true /* update_velocity */,
+                                                                       true /* update_pressure */);
 
         // compute and send stress to solid
         coupling_fluid_to_structure();
@@ -307,5 +309,4 @@ private:
 } // namespace FSI
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_SOLID_H_ */
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_SOLID_H_ */

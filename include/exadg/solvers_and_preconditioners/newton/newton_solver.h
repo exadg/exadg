@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_NEWTON_NEWTON_SOLVER_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_NEWTON_NEWTON_SOLVER_H_
 
 // deal.II
 #include <deal.II/base/exceptions.h>
@@ -56,9 +56,9 @@ public:
     unsigned int newton_iterations = 0, linear_iterations = 0;
 
     VectorType residual, increment, temporary;
-    residual.reinit(solution);
-    increment.reinit(solution);
-    temporary.reinit(solution);
+    residual.reinit(solution, true /* omit_zeroing_entries */);
+    increment.reinit(solution, true /* omit_zeroing_entries */);
+    temporary.reinit(solution, true /* omit_zeroing_entries */);
 
     // evaluate residual using initial guess of solution
     nonlinear_operator.evaluate_residual(residual, solution);
@@ -97,7 +97,7 @@ public:
       do
       {
         // add increment to solution vector but scale by a factor omega <= 1
-        temporary = solution;
+        temporary.copy_locally_owned_data_from(solution);
         temporary.add(omega, increment);
 
         // evaluate residual using the temporary solution
@@ -118,8 +118,8 @@ public:
                                      "Maximum number of iterations exceeded!"));
 
       // update solution and residual
-      solution = temporary;
-      norm_r   = norm_r_damp;
+      solution.copy_locally_owned_data_from(temporary);
+      norm_r = norm_r_damp;
 
       // increment iteration counter
       ++newton_iterations;
@@ -152,4 +152,4 @@ private:
 } // namespace Newton
 } // namespace ExaDG
 
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_H_ */
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_NEWTON_NEWTON_SOLVER_H_ */

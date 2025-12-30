@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_BDF_CONSTANTS_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_BDF_CONSTANTS_H_
+#ifndef EXADG_TIME_INTEGRATION_BDF_CONSTANTS_H_
+#define EXADG_TIME_INTEGRATION_BDF_CONSTANTS_H_
 
 // C/C++
 #include <algorithm>
@@ -139,7 +139,6 @@ compute_bdf_time_derivative(VectorType &                            derivative,
     derivative, *previous_solutions_np[0], previous_solutions, bdf, time_steps[0]);
 }
 
-
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_BDF_CONSTANTS_H_ */
+#endif /* EXADG_TIME_INTEGRATION_BDF_CONSTANTS_H_ */

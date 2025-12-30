@@ -15,21 +15,19 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_PRECICE_ADAPTER_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_PRECICE_ADAPTER_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_PRECICE_ADAPTER_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_PRECICE_ADAPTER_H_
 
 // deal.II
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/utilities.h>
-
 #include <deal.II/fe/fe.h>
 #include <deal.II/fe/mapping_q_generic.h>
-
 #include <deal.II/matrix_free/matrix_free.h>
 
 // ExaDG
@@ -43,6 +41,7 @@
 #  include <precice/SolverInterface.hpp>
 #endif
 
+// C/C++
 #include <ostream>
 
 namespace ExaDG
@@ -462,8 +461,7 @@ Adapter<dim, data_dim, VectorType, VectorizedArrayType>::is_time_window_complete
 #endif
 }
 
-
 } // namespace preCICE
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_PRECICE_ADAPTER_H_ */

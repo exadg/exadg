@@ -15,26 +15,32 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_ITERATIVESOLVERS_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_ITERATIVESOLVERS_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_SOLVERS_ITERATIVE_SOLVERS_DEALII_WRAPPER_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_SOLVERS_ITERATIVE_SOLVERS_DEALII_WRAPPER_H_
 
 // deal.II
 #include <deal.II/base/timer.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/solver_gmres.h>
+#include <deal.II/lac/solver_selector.h>
 
 // ExaDG
+#include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
+#include <exadg/solvers_and_preconditioners/utilities/compute_eigenvalues.h>
 #include <exadg/utilities/timer_tree.h>
 
 namespace ExaDG
 {
 namespace Krylov
 {
+/*
+ * Krylov solver base class agnostic of the operator used.
+ */
 template<typename VectorType>
 class SolverBase
 {
@@ -56,7 +62,7 @@ public:
 
   template<typename Control>
   void
-  compute_performance_metrics(Control const & solver_control) const
+  do_compute_performance_metrics(Control const & solver_control) const
   {
     // get some statistics related to convergence
     this->l2_0 = solver_control.initial_value();
@@ -88,159 +94,37 @@ protected:
   std::shared_ptr<TimerTree> timer_tree;
 };
 
-struct SolverDataCG
-{
-  SolverDataCG()
-    : max_iter(1e4),
-      solver_tolerance_abs(1.e-20),
-      solver_tolerance_rel(1.e-6),
-      use_preconditioner(false),
-      compute_performance_metrics(false)
-  {
-  }
-
-  unsigned int max_iter;
-  double       solver_tolerance_abs;
-  double       solver_tolerance_rel;
-  bool         use_preconditioner;
-  bool         compute_performance_metrics;
-};
-
+/*
+ * Wrapper around `dealii::SolverSelector` with extended functionality.
+ */
 template<typename Operator, typename Preconditioner, typename VectorType>
-class SolverCG : public SolverBase<VectorType>
+class KrylovSolver : public SolverBase<VectorType>
 {
 public:
-  SolverCG(Operator const &     underlying_operator_in,
-           Preconditioner &     preconditioner_in,
-           SolverDataCG const & solver_data_in)
-    : underlying_operator(underlying_operator_in),
-      preconditioner(preconditioner_in),
-      solver_data(solver_data_in)
-  {
-  }
-
-  void
-  update_preconditioner(bool const update_preconditioner) const override
-  {
-    if(solver_data.use_preconditioner)
-    {
-      if(preconditioner.needs_update() or update_preconditioner)
-      {
-        preconditioner.update();
-      }
-    }
-  }
-
-  unsigned int
-  solve(VectorType & dst, VectorType const & rhs) const override
-  {
-    dealii::Timer timer;
-
-    dealii::ReductionControl solver_control(solver_data.max_iter,
-                                            solver_data.solver_tolerance_abs,
-                                            solver_data.solver_tolerance_rel);
-
-    dealii::SolverCG<VectorType> solver(solver_control);
-
-    if(solver_data.use_preconditioner == false)
-    {
-      solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
-    }
-    else
-    {
-      solver.solve(underlying_operator, dst, rhs, preconditioner);
-    }
-
-    AssertThrow(std::isfinite(solver_control.last_value()),
-                dealii::ExcMessage("Solver contained NaN of Inf values"));
-
-    if(solver_data.compute_performance_metrics)
-      this->compute_performance_metrics(solver_control);
-
-    this->timer_tree->insert({"SolverCG"}, timer.wall_time());
-
-    return solver_control.last_step();
-  }
-
-  std::shared_ptr<TimerTree>
-  get_timings() const override
-  {
-    if(solver_data.use_preconditioner)
-    {
-      this->timer_tree->insert({"SolverCG"}, preconditioner.get_timings());
-    }
-
-    return this->timer_tree;
-  }
-
-private:
-  Operator const &   underlying_operator;
-  Preconditioner &   preconditioner;
-  SolverDataCG const solver_data;
-};
-
-template<class Number>
-void
-output_eigenvalues(const std::vector<Number> & eigenvalues,
-                   std::string const &         text,
-                   MPI_Comm const &            mpi_comm)
-{
-  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-  {
-    std::cout << text << std::endl;
-    for(unsigned int j = 0; j < eigenvalues.size(); ++j)
-    {
-      std::cout << ' ' << eigenvalues.at(j) << std::endl;
-    }
-    std::cout << std::endl;
-  }
-}
-
-struct SolverDataGMRES
-{
-  SolverDataGMRES()
-    : max_iter(1e4),
-      solver_tolerance_abs(1.e-20),
-      solver_tolerance_rel(1.e-6),
-      use_preconditioner(false),
-      max_n_tmp_vectors(30),
-      compute_eigenvalues(false),
-      compute_performance_metrics(false)
-  {
-  }
-
-  unsigned int max_iter;
-  double       solver_tolerance_abs;
-  double       solver_tolerance_rel;
-  bool         use_preconditioner;
-  unsigned int max_n_tmp_vectors;
-  bool         compute_eigenvalues;
-  bool         compute_performance_metrics;
-};
-
-template<typename Operator, typename Preconditioner, typename VectorType>
-class SolverGMRES : public SolverBase<VectorType>
-{
-public:
-  SolverGMRES(Operator const &        underlying_operator_in,
-              Preconditioner &        preconditioner_in,
-              SolverDataGMRES const & solver_data_in,
-              MPI_Comm const &        mpi_comm_in)
+  KrylovSolver(Operator const &   underlying_operator_in,
+               Preconditioner &   preconditioner_in,
+               SolverData const & solver_data_in,
+               bool const         use_preconditioner_in,
+               bool const         compute_performance_metrics_in = false,
+               bool const         compute_eigenvalues_in         = false)
     : underlying_operator(underlying_operator_in),
       preconditioner(preconditioner_in),
       solver_data(solver_data_in),
-      mpi_comm(mpi_comm_in)
+      solver_name(linear_solver_to_string(solver_data.linear_solver)),
+      use_preconditioner(use_preconditioner_in),
+      compute_performance_metrics(compute_performance_metrics_in),
+      compute_eigenvalues(compute_eigenvalues_in)
   {
   }
 
-  virtual ~SolverGMRES()
+  virtual ~KrylovSolver()
   {
   }
 
   void
   update_preconditioner(bool const update_preconditioner) const override
   {
-    if(solver_data.use_preconditioner)
+    if(use_preconditioner)
     {
       if(preconditioner.needs_update() or update_preconditioner)
       {
@@ -255,142 +139,83 @@ public:
     dealii::Timer timer;
 
     dealii::ReductionControl solver_control(solver_data.max_iter,
-                                            solver_data.solver_tolerance_abs,
-                                            solver_data.solver_tolerance_rel);
+                                            solver_data.abs_tol,
+                                            solver_data.rel_tol);
 
-    typename dealii::SolverGMRES<VectorType>::AdditionalData additional_data;
-    additional_data.max_n_tmp_vectors     = solver_data.max_n_tmp_vectors;
-    additional_data.right_preconditioning = true;
-    dealii::SolverGMRES<VectorType> solver(solver_control, additional_data);
+    dealii::SolverSelector<VectorType> solver(solver_name, solver_control);
 
-    if(solver_data.compute_eigenvalues == true)
+    // Additional settings depending on requested solver type.
+    if(solver_name == "gmres")
     {
-      solver.connect_eigenvalues_slot(std::bind(output_eigenvalues<std::complex<double>>,
-                                                std::placeholders::_1,
-                                                "Eigenvalues: ",
-                                                mpi_comm),
-                                      true);
+      typename dealii::SolverGMRES<VectorType>::AdditionalData additional_data;
+      additional_data.max_n_tmp_vectors     = solver_data.max_krylov_size;
+      additional_data.right_preconditioning = true;
+
+      solver.set_data(additional_data);
+    }
+    else if(solver_name == "fgmres")
+    {
+      typename dealii::SolverFGMRES<VectorType>::AdditionalData additional_data;
+      additional_data.max_basis_size = solver_data.max_krylov_size;
+      // FGMRES always uses right preconditioning
+
+      solver.set_data(additional_data);
     }
 
-    if(solver_data.use_preconditioner == false)
+    // Store the initial guess for a *second* system solve during which eigenvalues are estimated.
+    VectorType initial_guess;
+    if(compute_eigenvalues == true)
     {
-      solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
+      initial_guess.reinit(dst, true /* omit_zeroing_entries */);
+      initial_guess.copy_locally_owned_data_from(dst);
+    }
+
+    // Iterative solvers might be brittle for matching `src` and `dst` depending on the FE space
+    // chosen.
+    if(dealii::PointerComparison::equal(&dst, &rhs) == true)
+    {
+      // Start from a zero initial guess.
+      VectorType tmp_dst;
+      tmp_dst.reinit(dst, false /* omit_zeroing_entries */);
+      if(use_preconditioner == false)
+      {
+        solver.solve(underlying_operator, tmp_dst, rhs, dealii::PreconditionIdentity());
+      }
+      else
+      {
+        solver.solve(underlying_operator, tmp_dst, rhs, preconditioner);
+      }
+      dst.copy_locally_owned_data_from(tmp_dst);
     }
     else
     {
-      solver.solve(this->underlying_operator, dst, rhs, this->preconditioner);
-    }
-
-    AssertThrow(std::isfinite(solver_control.last_value()),
-                dealii::ExcMessage("Solver contained NaN of Inf values"));
-
-    if(solver_data.compute_performance_metrics)
-      this->compute_performance_metrics(solver_control);
-
-    this->timer_tree->insert({"SolverGMRES"}, timer.wall_time());
-
-    return solver_control.last_step();
-  }
-
-  std::shared_ptr<TimerTree>
-  get_timings() const override
-  {
-    if(solver_data.use_preconditioner)
-    {
-      this->timer_tree->insert({"SolverGMRES"}, preconditioner.get_timings());
-    }
-
-    return this->timer_tree;
-  }
-
-private:
-  Operator const &      underlying_operator;
-  Preconditioner &      preconditioner;
-  SolverDataGMRES const solver_data;
-
-  MPI_Comm const mpi_comm;
-};
-
-struct SolverDataFGMRES
-{
-  SolverDataFGMRES()
-    : max_iter(1e4),
-      solver_tolerance_abs(1.e-20),
-      solver_tolerance_rel(1.e-6),
-      use_preconditioner(false),
-      max_n_tmp_vectors(30),
-      compute_performance_metrics(false)
-  {
-  }
-
-  unsigned int max_iter;
-  double       solver_tolerance_abs;
-  double       solver_tolerance_rel;
-  bool         use_preconditioner;
-  unsigned int max_n_tmp_vectors;
-  bool         compute_performance_metrics;
-};
-
-template<typename Operator, typename Preconditioner, typename VectorType>
-class SolverFGMRES : public SolverBase<VectorType>
-{
-public:
-  SolverFGMRES(Operator const &         underlying_operator_in,
-               Preconditioner &         preconditioner_in,
-               SolverDataFGMRES const & solver_data_in)
-    : underlying_operator(underlying_operator_in),
-      preconditioner(preconditioner_in),
-      solver_data(solver_data_in)
-  {
-  }
-
-  virtual ~SolverFGMRES()
-  {
-  }
-
-  void
-  update_preconditioner(bool const update_preconditioner) const override
-  {
-    if(solver_data.use_preconditioner)
-    {
-      if(preconditioner.needs_update() or update_preconditioner)
+      if(use_preconditioner == false)
       {
-        preconditioner.update();
+        solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
+      }
+      else
+      {
+        solver.solve(underlying_operator, dst, rhs, preconditioner);
       }
     }
-  }
 
-  unsigned int
-  solve(VectorType & dst, VectorType const & rhs) const override
-  {
-    dealii::Timer timer;
-
-    dealii::ReductionControl solver_control(solver_data.max_iter,
-                                            solver_data.solver_tolerance_abs,
-                                            solver_data.solver_tolerance_rel);
-
-    typename dealii::SolverFGMRES<VectorType>::AdditionalData additional_data;
-    additional_data.max_basis_size = solver_data.max_n_tmp_vectors;
-    // FGMRES always uses right preconditioning
-
-    dealii::SolverFGMRES<VectorType> solver(solver_control, additional_data);
-
-    if(solver_data.use_preconditioner == false)
+    // Estimate eigenvalues using a *second* system solve using GMRES. This approach should *only*
+    // be used to compute eigenvalues for debugging.
+    if(compute_eigenvalues == true)
     {
-      solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
-    }
-    else
-    {
-      solver.solve(underlying_operator, dst, rhs, preconditioner);
+      estimate_eigenvalues_gmres(
+        underlying_operator, preconditioner, initial_guess, rhs, solver_data, true /* print */);
     }
 
     AssertThrow(std::isfinite(solver_control.last_value()),
-                dealii::ExcMessage("Solver contained NaN of Inf values"));
+                dealii::ExcMessage("Last iteration step contained NaN or Inf values."));
 
-    if(solver_data.compute_performance_metrics)
-      this->compute_performance_metrics(solver_control);
+    if(compute_performance_metrics)
+    {
+      this->do_compute_performance_metrics(solver_control);
+    }
 
-    this->timer_tree->insert({"SolverFGMRES"}, timer.wall_time());
+    this->timer_tree->insert({"Solver (" + solver_name + ")"}, timer.wall_time());
 
     return solver_control.last_step();
   }
@@ -398,21 +223,29 @@ public:
   std::shared_ptr<TimerTree>
   get_timings() const override
   {
-    if(solver_data.use_preconditioner)
+    if(use_preconditioner)
     {
-      this->timer_tree->insert({"SolverFGMRES"}, preconditioner.get_timings());
+      this->timer_tree->insert({"Solver (" + solver_name + ")"}, preconditioner.get_timings());
     }
 
     return this->timer_tree;
   }
 
 private:
-  Operator const &       underlying_operator;
-  Preconditioner &       preconditioner;
-  SolverDataFGMRES const solver_data;
+  Operator const & underlying_operator;
+  Preconditioner & preconditioner;
+  SolverData const solver_data;
+
+  // `LinearSolver` enum converted to `std::string` identifying the linear solver type
+  // `dealii::SolverSelector::solver_name`.
+  std::string const solver_name;
+
+  bool use_preconditioner;
+  bool compute_performance_metrics;
+  bool compute_eigenvalues;
 };
+
 } // namespace Krylov
-
 } // namespace ExaDG
 
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_ITERATIVESOLVERS_H_ */
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_SOLVERS_ITERATIVE_SOLVERS_DEALII_WRAPPER_H_ */

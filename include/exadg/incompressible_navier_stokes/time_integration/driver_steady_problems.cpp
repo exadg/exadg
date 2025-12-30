@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -142,7 +142,7 @@ DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_pro
   }
 
   // explicit viscosity update
-  if(this->param.viscosity_is_variable() and
+  if(this->param.viscous_problem() and this->param.viscosity_is_variable() and
      this->param.treatment_of_variable_viscosity == TreatmentOfVariableViscosity::Explicit)
   {
     dealii::Timer timer_viscosity_update;
@@ -177,12 +177,16 @@ DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_pro
   }
   else // linear problem
   {
+    // linearly implicit convective term does not make sense for steady problems, but we need to
+    // pass a vector to the functions rhs_linear_problem() and solve_linear_problem()
+    VectorType transport_velocity;
+
     // calculate rhs vector
-    pde_operator->rhs_stokes_problem(rhs_vector, time);
+    pde_operator->rhs_linear_problem(rhs_vector, transport_velocity, time);
 
     // solve coupled system of equations
-    unsigned int const n_iter = pde_operator->solve_linear_stokes_problem(
-      solution, rhs_vector, this->param.update_preconditioner_coupled, time);
+    unsigned int const n_iter = pde_operator->solve_linear_problem(
+      solution, rhs_vector, transport_velocity, this->param.update_preconditioner_coupled, time);
 
     if(print_solver_info(time, unsteady_problem) and not(this->is_test))
       print_solver_info_linear(pcout, n_iter, timer.wall_time());

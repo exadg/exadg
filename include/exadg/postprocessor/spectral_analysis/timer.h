@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef DEAL_SPECTRUM_TIMER
-#define DEAL_SPECTRUM_TIMER
+#ifndef EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_TIMER_H_
+#define EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_TIMER_H_
 
 namespace dealspectrum
 {
@@ -139,4 +139,4 @@ public:
 
 } // namespace dealspectrum
 
-#endif
+#endif /* EXADG_POSTPROCESSOR_SPECTRAL_ANALYSIS_TIMER_H_ */

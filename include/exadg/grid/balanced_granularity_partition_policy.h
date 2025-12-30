@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_BALANCED_GRANULARITY_PARTITION_POLICY_H_
-#define INCLUDE_EXADG_GRID_BALANCED_GRANULARITY_PARTITION_POLICY_H_
+#ifndef EXADG_GRID_BALANCED_GRANULARITY_PARTITION_POLICY_H_
+#define EXADG_GRID_BALANCED_GRANULARITY_PARTITION_POLICY_H_
 
 // deal.II
 #include <deal.II/distributed/fully_distributed_tria.h>
@@ -74,5 +74,4 @@ private:
 };
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_GRID_BALANCED_GRANULARITY_PARTITION_POLICY_H_ */
+#endif /* EXADG_GRID_BALANCED_GRANULARITY_PARTITION_POLICY_H_ */

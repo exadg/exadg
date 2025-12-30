@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef OPERATOR_BASE_CATEGORIZATION_H
-#define OPERATOR_BASE_CATEGORIZATION_H
+#ifndef EXADG_MATRIX_FREE_CATEGORIZATION_H_
+#define EXADG_MATRIX_FREE_CATEGORIZATION_H_
 
 // deal.II
 #include <deal.II/grid/tria.h>
@@ -110,4 +110,4 @@ do_cell_based_loops(dealii::Triangulation<dim> const & tria,
 } // namespace Categorization
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_MATRIX_FREE_CATEGORIZATION_H_ */

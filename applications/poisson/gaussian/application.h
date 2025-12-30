@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -191,6 +191,19 @@ public:
                         global_coarsening,
                         "Use Global Coarsening",
                         dealii::Patterns::Bool());
+      prm.add_parameter("AdaptiveRefinement",
+                        adaptive_refinement,
+                        "Static adaptive refinement of the mesh.");
+      prm.add_parameter("SpatialDiscretization",
+                        spatial_discretization,
+                        "Spatial discretization considered: DG/CG.");
+      prm.add_parameter("UseMatrixBasedOperator",
+                        use_matrix_based_operator,
+                        "Use matrix-based operators in global Krylov solver and Multigrid.");
+      prm.add_parameter("Preconditioner", preconditioner, "Preconditioner for the linear system.");
+      prm.add_parameter("MinDegreeMatrixFree",
+                        min_degree_matrix_free,
+                        "Minimum polynomial degree for matrix-free operators in multigrid.");
     }
     prm.leave_subsection();
   }
@@ -207,16 +220,16 @@ private:
     this->param.mapping_degree              = this->param.degree;
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
 
-    this->param.spatial_discretization = SpatialDiscretization::DG;
+    this->param.grid.create_coarse_triangulations =
+      adaptive_refinement ? true : false; // required for adaptive refinement
+
+    this->param.spatial_discretization = spatial_discretization;
     this->param.IP_factor              = 1.0e0;
 
     // SOLVER
-    this->param.solver                      = LinearSolver::CG;
-    this->param.solver_data.abs_tol         = 1.e-20;
-    this->param.solver_data.rel_tol         = 1.e-10;
-    this->param.solver_data.max_iter        = 1e4;
+    this->param.solver_data                 = SolverData(1e4, 1e-20, 1e-10, LinearSolver::CG);
     this->param.compute_performance_metrics = true;
-    this->param.preconditioner              = Preconditioner::Multigrid;
+    this->param.preconditioner              = preconditioner;
     this->param.multigrid_data.type         = MultigridType::cphMG;
     this->param.multigrid_data.p_sequence   = PSequenceType::Bisect;
     // MG smoother
@@ -227,6 +240,10 @@ private:
     this->param.multigrid_data.coarse_problem.preconditioner =
       MultigridCoarseGridPreconditioner::AMG;
     this->param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-6;
+    this->param.multigrid_data.min_degree_matrix_free             = min_degree_matrix_free;
+
+    this->param.use_matrix_based_operator = use_matrix_based_operator;
+    this->param.sparse_matrix_type        = SparseMatrixType::Trilinos;
   }
 
   void
@@ -246,10 +263,8 @@ private:
 
       double const length = 1.0;
       double const left = -length, right = length;
-      dealii::GridGenerator::subdivided_hyper_cube(tria,
-                                                   this->n_subdivisions_1d_hypercube,
-                                                   left,
-                                                   right);
+      dealii::GridGenerator::subdivided_hyper_cube(
+        tria, this->n_subdivisions_1d_hypercube, left, right, false /* colorize */);
 
       if(mesh_type == MeshType::Cartesian)
       {
@@ -289,6 +304,60 @@ private:
                                                  this->param.mapping_degree,
                                                  this->param.mapping_degree_coarse_grids,
                                                  this->param.involves_h_multigrid());
+
+    if(adaptive_refinement && this->param.grid.element_type == ElementType::Hypercube)
+    {
+      // Flag all cells touching one of the boundaries with a face.
+      std::vector<dealii::types::boundary_id> refine_bdry_id = {0};
+      bool constexpr n_adaptive_refinements                  = 2;
+      for(unsigned int i = 0; i < n_adaptive_refinements; ++i)
+      {
+        for(auto const & cell : grid.triangulation->active_cell_iterators())
+        {
+          for(auto const face : cell->face_indices())
+          {
+            if(cell->at_boundary(face))
+            {
+              if(std::find(refine_bdry_id.begin(),
+                           refine_bdry_id.end(),
+                           cell->face(face)->boundary_id()) != refine_bdry_id.end())
+              {
+                if(not cell->refine_flag_set())
+                {
+                  cell->clear_coarsen_flag();
+                  cell->set_refine_flag();
+                }
+              }
+            }
+          }
+        }
+        grid.triangulation->prepare_coarsening_and_refinement();
+        grid.triangulation->execute_coarsening_and_refinement();
+      }
+
+      // Update coarse_triangulations after adaptive refinement.
+      if(this->param.involves_h_multigrid())
+      {
+        GridUtilities::create_coarse_triangulations_after_coarsening_and_refinement(
+          *grid.triangulation,
+          grid.periodic_face_pairs,
+          grid.coarse_triangulations,
+          grid.coarse_periodic_face_pairs,
+          this->param.grid,
+          false /* preserve_boundary_cells */);
+      }
+
+      // Fill coarse mappings based on fine mapping.
+      std::shared_ptr<dealii::Mapping<dim>> coarse_mapping;
+      if(this->param.involves_h_multigrid())
+      {
+        GridUtilities::create_mapping(coarse_mapping,
+                                      this->param.grid.element_type,
+                                      this->param.mapping_degree_coarse_grids);
+      }
+      multigrid_mappings =
+        std::make_shared<MultigridMappings<dim, Number>>(mapping, coarse_mapping);
+    }
   }
 
   void
@@ -331,7 +400,12 @@ private:
 
   MeshType mesh_type = MeshType::Cartesian;
 
-  bool global_coarsening = false;
+  bool                  global_coarsening         = false;
+  bool                  adaptive_refinement       = false;
+  SpatialDiscretization spatial_discretization    = SpatialDiscretization::DG;
+  bool                  use_matrix_based_operator = false;
+  Preconditioner        preconditioner            = Preconditioner::Multigrid;
+  unsigned int          min_degree_matrix_free    = 1;
 };
 
 } // namespace Poisson

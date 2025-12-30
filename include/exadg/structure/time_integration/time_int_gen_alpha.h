@@ -15,17 +15,18 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_TIME_INTEGRATION_TIME_INT_GEN_ALPHA_H_
-#define INCLUDE_EXADG_STRUCTURE_TIME_INTEGRATION_TIME_INT_GEN_ALPHA_H_
+#ifndef EXADG_STRUCTURE_TIME_INTEGRATION_TIME_INT_GEN_ALPHA_H_
+#define EXADG_STRUCTURE_TIME_INTEGRATION_TIME_INT_GEN_ALPHA_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
+#include <exadg/structure/postprocessor/postprocessor.h>
 #include <exadg/time_integration/time_int_gen_alpha_base.h>
 #include <exadg/utilities/timer_tree.h>
 
@@ -36,8 +37,8 @@ namespace Structure
 // forward declarations
 class Parameters;
 
-template<typename Number>
-class PostProcessorBase;
+template<int dim, typename Number>
+class PostProcessor;
 
 namespace Interface
 {
@@ -54,11 +55,11 @@ private:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  TimeIntGenAlpha(std::shared_ptr<Interface::Operator<Number>> operator_,
-                  std::shared_ptr<PostProcessorBase<Number>>   postprocessor_,
-                  Parameters const &                           param_,
-                  MPI_Comm const &                             mpi_comm_,
-                  bool const                                   is_test_);
+  TimeIntGenAlpha(std::shared_ptr<Interface::Operator<Number>> operator_in,
+                  std::shared_ptr<PostProcessor<dim, Number>>  postprocessor_in,
+                  Parameters const &                           param_in,
+                  MPI_Comm const &                             mpi_comm_in,
+                  bool const                                   is_test_in);
 
   void
   setup(bool const do_restart) final;
@@ -78,6 +79,9 @@ public:
 
   VectorType const &
   get_displacement_np();
+
+  VectorType const &
+  get_displacement_n();
 
   void
   extrapolate_velocity_to_np(VectorType & velocity);
@@ -120,7 +124,7 @@ private:
 
   std::shared_ptr<Interface::Operator<Number>> pde_operator;
 
-  std::shared_ptr<PostProcessorBase<Number>> postprocessor;
+  std::shared_ptr<PostProcessor<dim, Number>> postprocessor;
 
   // number of refinement steps, where the time step size is reduced in
   // factors of 2 with each refinement
@@ -151,5 +155,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_STRUCTURE_TIME_INTEGRATION_TIME_INT_GEN_ALPHA_H_ */
+#endif /* EXADG_STRUCTURE_TIME_INTEGRATION_TIME_INT_GEN_ALPHA_H_ */

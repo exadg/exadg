@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -96,11 +96,11 @@ class NeumannBoundaryVelocity : public dealii::Function<dim>
 public:
   NeumannBoundaryVelocity(double const                 u_x_max,
                           double const                 viscosity,
-                          FormulationViscousTerm const formulation_viscous)
+                          FormulationViscousTerm const formulation_viscous_term)
     : dealii::Function<dim>(dim, 0.0),
       u_x_max(u_x_max),
       viscosity(viscosity),
-      formulation_viscous(formulation_viscous)
+      formulation_viscous_term(formulation_viscous_term)
   {
   }
 
@@ -113,7 +113,7 @@ public:
     double result = 0.0;
     // clang-format off
     // prescribe F_nu(u) / nu = grad(u)
-    if(formulation_viscous == FormulationViscousTerm::LaplaceFormulation)
+    if(formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
     {
       if(component==0)
       {
@@ -131,7 +131,7 @@ public:
       }
     }
     // prescribe F_nu(u) / nu = ( grad(u) + grad(u)^T )
-    else if(formulation_viscous == FormulationViscousTerm::DivergenceFormulation)
+    else if(formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
     {
       if(component==0)
       {
@@ -150,8 +150,8 @@ public:
     }
     else
     {
-      AssertThrow(formulation_viscous == FormulationViscousTerm::LaplaceFormulation or
-                  formulation_viscous == FormulationViscousTerm::DivergenceFormulation,
+      AssertThrow(formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation or
+                  formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation,
                   dealii::ExcMessage("Specified formulation of viscous term is not implemented!"));
     }
     // clang-format on
@@ -161,7 +161,7 @@ public:
 
 private:
   double const                 u_x_max, viscosity;
-  FormulationViscousTerm const formulation_viscous;
+  FormulationViscousTerm const formulation_viscous_term;
 };
 
 template<int dim>
@@ -170,11 +170,11 @@ class NeumannBoundaryVelocityALE : public FunctionWithNormal<dim>
 public:
   NeumannBoundaryVelocityALE(double const                 u_x_max,
                              double const                 viscosity,
-                             FormulationViscousTerm const formulation_viscous)
+                             FormulationViscousTerm const formulation_viscous_term)
     : FunctionWithNormal<dim>(dim, 0.0),
       u_x_max(u_x_max),
       viscosity(viscosity),
-      formulation_viscous(formulation_viscous)
+      formulation_viscous_term(formulation_viscous_term)
   {
   }
 
@@ -188,7 +188,7 @@ public:
 
     double result = 0.0;
     // prescribe F_nu(u) / nu = grad(u)
-    if(formulation_viscous == FormulationViscousTerm::LaplaceFormulation)
+    if(formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
     {
       if(component == 0)
         result = 0 * n[0] - u_x_max * 2.0 * pi * std::cos(2 * pi * p[1]) *
@@ -199,7 +199,7 @@ public:
                  0 * n[1];
     }
     // prescribe F_nu(u) / nu = ( grad(u) + grad(u)^T )
-    else if(formulation_viscous == FormulationViscousTerm::DivergenceFormulation)
+    else if(formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
     {
       if(component == 0)
         result = 0 * n[0] + u_x_max * 2.0 * pi *
@@ -212,8 +212,8 @@ public:
     }
     else
     {
-      AssertThrow(formulation_viscous == FormulationViscousTerm::LaplaceFormulation or
-                    formulation_viscous == FormulationViscousTerm::DivergenceFormulation,
+      AssertThrow(formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation or
+                    formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation,
                   dealii::ExcMessage("Specified formulation of viscous term is not implemented!"));
     }
 
@@ -222,7 +222,7 @@ public:
 
 private:
   double const                 u_x_max, viscosity;
-  FormulationViscousTerm const formulation_viscous;
+  FormulationViscousTerm const formulation_viscous_term;
 };
 
 template<int dim, typename Number>
@@ -234,6 +234,21 @@ public:
   {
   }
 
+  void
+  add_parameters(dealii::ParameterHandler & prm) final
+  {
+    ApplicationBase<dim, Number>::add_parameters(prm);
+
+    prm.enter_subsection("Application");
+    {
+      // clang-format off
+      prm.add_parameter("FormulationViscousTerm",     formulation_viscous_term,     "Formulation of the viscous term.");
+      prm.add_parameter("TreatmentOfConvectiveTerm",  treatment_of_convective_term,  "Treatment of the convective term.");
+      // clang-format off
+    }
+    prm.leave_subsection();
+  }
+
 private:
   void
   set_parameters() final
@@ -241,7 +256,7 @@ private:
     // MATHEMATICAL MODEL
     this->param.problem_type                = ProblemType::Unsteady;
     this->param.equation_type               = EquationType::NavierStokes;
-    this->param.formulation_viscous_term    = formulation_viscous;
+    this->param.formulation_viscous_term    = formulation_viscous_term;
     this->param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
     this->param.right_hand_side             = false;
 
@@ -258,8 +273,8 @@ private:
 
     // TEMPORAL DISCRETIZATION
     this->param.solver_type                  = SolverType::Unsteady;
-    this->param.temporal_discretization      = TemporalDiscretization::BDFDualSplittingScheme;
-    this->param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+    this->param.temporal_discretization      = TemporalDiscretization::BDFConsistentSplitting;
+    this->param.treatment_of_convective_term = treatment_of_convective_term;
     this->param.order_time_integrator        = 2;
     this->param.start_with_low_order         = false;
     this->param.adaptive_time_stepping       = false;
@@ -320,8 +335,7 @@ private:
     // PROJECTION METHODS
 
     // pressure Poisson equation
-    this->param.solver_pressure_poisson              = SolverPressurePoisson::CG;
-    this->param.solver_data_pressure_poisson         = SolverData(1000, 1.e-12, 1.e-6, 100);
+    this->param.solver_data_pressure_poisson         = SolverData(1000, 1.e-12, 1.e-6, LinearSolver::CG, 100);
     this->param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
     this->param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
     this->param.multigrid_data_pressure_poisson.coarse_problem.solver =
@@ -334,12 +348,12 @@ private:
       PreconditionerSmoother::PointJacobi;
 
     // projection step
-    this->param.solver_projection         = SolverProjection::CG;
-    this->param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-6);
+    this->param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-6, LinearSolver::CG);
     this->param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
     this->param.preconditioner_block_diagonal_projection =
       Elementwise::Preconditioner::InverseMassMatrix;
-    this->param.solver_data_block_diagonal_projection = SolverData(1000, 1.e-12, 1.e-2, 1000);
+    this->param.solver_data_block_diagonal_projection =
+      SolverData(1000, 1.e-12, 1.e-2, LinearSolver::Undefined, 1000);
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
 
@@ -348,14 +362,28 @@ private:
       this->param.order_time_integrator <= 2 ? this->param.order_time_integrator : 2;
     this->param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
 
-    // viscous step
-    this->param.solver_viscous         = SolverViscous::CG;
-    this->param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-6);
-    this->param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; // Multigrid;
-    this->param.multigrid_data_viscous.type                   = MultigridType::hMG;
-    this->param.multigrid_data_viscous.smoother_data.smoother = MultigridSmoother::Chebyshev;
-    this->param.update_preconditioner_viscous                 = false;
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
+    {
+      if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+      {
+        this->param.solver_data_momentum = SolverData(1000, 1.e-12, 1.e-6, LinearSolver::CG);
+      }
+      else
+      {
+        // Newton solver
+        this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-10, 1.e-6);
+        this->param.solver_data_momentum        = SolverData(1000, 1.e-12, 1.e-6, LinearSolver::GMRES);
+      }
 
+      this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
+      this->param.multigrid_data_momentum.type                   = MultigridType::hMG;
+      this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Chebyshev;
+      this->param.update_preconditioner_momentum                 = false;
+    }
+
+    // CONSISTENT SPLITTING SCHEME
+    this->param.order_extrapolation_pressure_rhs = 2;
+    this->param.apply_leray_projection           = true;
 
     // PRESSURE-CORRECTION SCHEME
 
@@ -365,41 +393,40 @@ private:
     this->param.rotational_formulation = true;
 
     // momentum step
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      // Newton solver
+      this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-6);
 
-    // Newton solver
-    this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-6); // TODO
+      // linear solver
+      this->param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-6, LinearSolver::FGMRES, 100);
+      this->param.update_preconditioner_momentum = false;
+      this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
+      this->param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
 
-    // linear solver
-    this->param.solver_momentum                = SolverMomentum::FGMRES;
-    this->param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-6, 100);
-    this->param.update_preconditioner_momentum = false;
-    this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
-    this->param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
+      // Jacobi smoother data
+      //  this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
+      //  this->param.multigrid_data_momentum.smoother_data.preconditioner =
+      //  PreconditionerSmoother::BlockJacobi;
+      //  this->param.multigrid_data_momentum.smoother_data.iterations = 5;
+      //  this->param.multigrid_data_momentum.coarse_problem.solver =
+      //  MultigridCoarseGridSolver::GMRES;
 
-    // Jacobi smoother data
-    //  this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
-    //  this->param.multigrid_data_momentum.smoother_data.preconditioner =
-    //  PreconditionerSmoother::BlockJacobi;
-    //  this->param.multigrid_data_momentum.smoother_data.iterations = 5;
-    //  this->param.multigrid_data_momentum.coarse_problem.solver =
-    //  MultigridCoarseGridSolver::GMRES;
-
-    // Chebyshev smoother data
-    this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Chebyshev;
-    this->param.multigrid_data_momentum.coarse_problem.solver =
-      MultigridCoarseGridSolver::Chebyshev;
+      // Chebyshev smoother data
+      this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Chebyshev;
+      this->param.multigrid_data_momentum.coarse_problem.solver =
+        MultigridCoarseGridSolver::Chebyshev;
+    }
 
 
     // COUPLED NAVIER-STOKES SOLVER
     this->param.use_scaling_continuity = false;
 
     // nonlinear solver (Newton solver)
-    this->param.newton_solver_data_coupled =
-      Newton::SolverData(100, 1.e-10, 1.e-6); // TODO did not converge with 1.e-12
+    this->param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-10, 1.e-6);
 
     // linear solver
-    this->param.solver_coupled      = SolverCoupled::FGMRES;
-    this->param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    this->param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-6, LinearSolver::FGMRES, 100);
 
     // preconditioner linear solver
     this->param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;
@@ -510,10 +537,10 @@ private:
       pair(0, new AnalyticalSolutionVelocity<dim>(u_x_max, viscosity)));
     if(ALE)
       this->boundary_descriptor->velocity->neumann_bc.insert(
-        pair(1, new NeumannBoundaryVelocityALE<dim>(u_x_max, viscosity, formulation_viscous)));
+        pair(1, new NeumannBoundaryVelocityALE<dim>(u_x_max, viscosity, formulation_viscous_term)));
     else
       this->boundary_descriptor->velocity->neumann_bc.insert(
-        pair(1, new NeumannBoundaryVelocity<dim>(u_x_max, viscosity, formulation_viscous)));
+        pair(1, new NeumannBoundaryVelocity<dim>(u_x_max, viscosity, formulation_viscous_term)));
 
     // fill boundary descriptor pressure
     this->boundary_descriptor->pressure->neumann_bc.insert(0);
@@ -568,10 +595,7 @@ private:
     this->poisson_param.IP_factor              = 1.0e0;
 
     // SOLVER
-    this->poisson_param.solver                    = Poisson::LinearSolver::CG;
-    this->poisson_param.solver_data.abs_tol       = 1.e-20;
-    this->poisson_param.solver_data.rel_tol       = 1.e-10;
-    this->poisson_param.solver_data.max_iter      = 1e4;
+    this->poisson_param.solver_data               = SolverData(1e4, 1e-20, 1e-10, LinearSolver::CG);
     this->poisson_param.preconditioner            = Preconditioner::Multigrid;
     this->poisson_param.multigrid_data.type       = MultigridType::cphMG;
     this->poisson_param.multigrid_data.p_sequence = PSequenceType::Bisect;
@@ -663,11 +687,13 @@ private:
   double const start_time = 0.0;
   double const end_time   = 1.0;
 
-  FormulationViscousTerm const formulation_viscous = FormulationViscousTerm::LaplaceFormulation;
+  FormulationViscousTerm formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
+
+  TreatmentOfConvectiveTerm treatment_of_convective_term = TreatmentOfConvectiveTerm::LinearlyImplicit;
 
   MeshType const mesh_type = MeshType::Cartesian;
 
-  bool const ALE = true;
+  bool const ALE = false;
 };
 
 } // namespace IncNS

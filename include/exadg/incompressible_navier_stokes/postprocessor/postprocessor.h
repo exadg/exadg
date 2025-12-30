@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_
 
+// ExaDG
 #include <exadg/incompressible_navier_stokes/postprocessor/divergence_and_mass_error.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/kinetic_energy_dissipation_detailed.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/line_plot_calculation.h>
@@ -71,6 +72,7 @@ public:
 
   PostProcessor(PostProcessorData<dim> const & postprocessor_data, MPI_Comm const & mpi_comm);
 
+  // custom destructor computing convergence tables if desired
   virtual ~PostProcessor();
 
   void
@@ -94,12 +96,13 @@ private:
 
   PostProcessorData<dim> pp_data;
 
-  dealii::SmartPointer<NavierStokesOperator const> navier_stokes_operator;
+  dealii::ObserverPointer<NavierStokesOperator const> navier_stokes_operator;
 
-  // DoF vectors for derived quantities
+  // Fields for derived quantities
   SolutionField<dim, Number> vorticity;
   SolutionField<dim, Number> divergence;
   SolutionField<dim, Number> shear_rate;
+  SolutionField<dim, Number> viscosity;
   SolutionField<dim, Number> velocity_magnitude;
   SolutionField<dim, Number> vorticity_magnitude;
   SolutionField<dim, Number> streamfunction;
@@ -140,9 +143,7 @@ private:
   LinePlotCalculator<dim, Number> line_plot_calculator;
 };
 
-
-
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_ */
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_ */

@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -79,7 +79,7 @@ private:
     // TEMPORAL DISCRETIZATION
     this->param.solver_type = SolverType::Steady; // Unsteady;
     this->param.temporal_discretization =
-      TemporalDiscretization::BDFCoupledSolution; // BDFDualSplittingScheme;
+      TemporalDiscretization::BDFCoupledSolution; // BDFDualSplitting;
     this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Implicit; // Explicit;
     this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
     this->param.max_velocity                  = max_velocity;
@@ -109,13 +109,11 @@ private:
     // PROJECTION METHODS
 
     // pressure Poisson equation
-    this->param.solver_pressure_poisson         = SolverPressurePoisson::CG;
-    this->param.solver_data_pressure_poisson    = SolverData(1000, 1.e-20, 1.e-6);
+    this->param.solver_data_pressure_poisson    = SolverData(1000, 1.e-20, 1.e-6, LinearSolver::CG);
     this->param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
 
     // projection step
-    this->param.solver_projection         = SolverProjection::CG;
-    this->param.solver_data_projection    = SolverData(1000, 1.e-20, 1.e-12);
+    this->param.solver_data_projection    = SolverData(1000, 1.e-20, 1.e-12, LinearSolver::CG);
     this->param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -125,22 +123,27 @@ private:
       this->param.order_time_integrator <= 2 ? this->param.order_time_integrator : 2;
 
     // viscous step
-    this->param.solver_viscous         = SolverViscous::CG;
-    this->param.solver_data_viscous    = SolverData(1000, 1.e-20, 1.e-6);
-    this->param.preconditioner_viscous = PreconditionerViscous::Multigrid;
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
+    {
+      this->param.solver_data_momentum    = SolverData(1000, 1.e-20, 1.e-6, LinearSolver::CG);
+      this->param.preconditioner_momentum = MomentumPreconditioner::Multigrid;
+      this->param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
+    }
+
 
     // PRESSURE-CORRECTION SCHEME
 
     // momentum step
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      // Newton solver
+      this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-20, 1.e-6);
 
-    // Newton solver
-    this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-20, 1.e-6);
-
-    // linear solver
-    this->param.solver_momentum                = SolverMomentum::GMRES;
-    this->param.solver_data_momentum           = SolverData(1e4, 1.e-20, 1.e-4, 100);
-    this->param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
-    this->param.update_preconditioner_momentum = false;
+      // linear solver
+      this->param.solver_data_momentum = SolverData(1e4, 1.e-20, 1.e-4, LinearSolver::GMRES, 100);
+      this->param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
+      this->param.update_preconditioner_momentum = false;
+    }
 
     // formulation
     this->param.order_pressure_extrapolation = 1;
@@ -152,8 +155,7 @@ private:
     this->param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-14, 1.e-14);
 
     // linear solver
-    this->param.solver_coupled      = SolverCoupled::FGMRES;
-    this->param.solver_data_coupled = SolverData(1e4, 1.e-14, 1.e-2, 100);
+    this->param.solver_data_coupled = SolverData(1e4, 1.e-14, 1.e-2, LinearSolver::FGMRES, 100);
 
     // preconditioning linear solver
     this->param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;

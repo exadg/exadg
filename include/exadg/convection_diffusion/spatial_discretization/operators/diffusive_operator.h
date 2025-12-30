@@ -15,18 +15,18 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef CONV_DIFF_DIFFUSIVE_OPERATOR
-#define CONV_DIFF_DIFFUSIVE_OPERATOR
+#ifndef EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_DIFFUSIVE_OPERATOR_H_
+#define EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_DIFFUSIVE_OPERATOR_H_
 
+// ExaDG
 #include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/convection_diffusion/user_interface/parameters.h>
 #include <exadg/operators/interior_penalty_parameter.h>
 #include <exadg/operators/operator_base.h>
-
 
 namespace ExaDG
 {
@@ -286,7 +286,8 @@ private:
 
   std::shared_ptr<Operators::DiffusiveKernel<dim, Number>> kernel;
 };
+
 } // namespace ConvDiff
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_DIFFUSIVE_OPERATOR_H_ */

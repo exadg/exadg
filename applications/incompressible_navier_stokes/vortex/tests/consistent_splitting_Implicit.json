@@ -1,0 +1,26 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "true"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "5",
+        "DegreeMax": "5",
+        "RefineSpaceMin": "2",
+        "RefineSpaceMax": "2"
+    },
+    "TemporalResolution": {
+        "RefineTimeMin": "10",
+        "RefineTimeMax": "10"
+    },
+    "Application": {
+        "FormulationViscousTerm": "LaplaceFormulation",
+        "TreatmentOfConvectiveTerm": "Implicit"
+    },
+    "Output": {
+        "OutputDirectory": "output/vortex/",
+        "OutputName": "sol",
+        "WriteOutput": "false"
+    }
+}

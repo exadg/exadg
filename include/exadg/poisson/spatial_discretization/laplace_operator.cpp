@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -35,7 +35,8 @@ void
 LaplaceOperator<dim, Number, n_components>::initialize(
   dealii::MatrixFree<dim, Number> const &   matrix_free,
   dealii::AffineConstraints<Number> const & affine_constraints,
-  LaplaceOperatorData<rank, dim> const &    data)
+  LaplaceOperatorData<rank, dim> const &    data,
+  bool const                                assemble_matrix)
 {
   operator_data = data;
 
@@ -44,6 +45,9 @@ LaplaceOperator<dim, Number, n_components>::initialize(
   kernel.reinit(matrix_free, data.kernel_data, data.dof_index);
 
   this->integrator_flags = kernel.get_integrator_flags(this->is_dg);
+
+  if(assemble_matrix)
+    this->assemble_matrix_if_matrix_based();
 }
 
 template<int dim, typename Number, int n_components>
@@ -79,9 +83,9 @@ LaplaceOperator<dim, Number, n_components>::rhs_add_dirichlet_bc_from_dof_vector
                           this,
                           tmp,
                           src,
-                          false /*zero_dst_vector = false*/);
+                          false /* `zero_dst_vector` */);
 
-  // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
+  // multiply by -1.0 since the boundary face integrals have to be shifted to the right-hand side
   dst.add(-1.0, tmp);
 }
 
@@ -387,8 +391,7 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
   OperatorType const &               operator_type,
   dealii::types::boundary_id const & boundary_id) const
 {
-  (void)operator_type;
-  // if(operator_type == OperatorType::inhomogeneous || operator_type == OperatorType::full)
+  if(operator_type == OperatorType::inhomogeneous or operator_type == OperatorType::full)
   {
     BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
@@ -400,13 +403,39 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
       integrator_m.submit_value(-neumann_value, q);
     }
   }
+  else if(operator_type == OperatorType::homogeneous)
+  {
+    // `OperatorType::homogeneous` does not involve boundary integrals. We still need to submit
+    // zeroes for consistency.
+    value zero;
+    zero = 0.0;
+    for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+    {
+      integrator_m.submit_value(zero, q);
+    }
+  }
+  else
+  {
+    AssertThrow(false,
+                dealii::ExcMessage("OperatorType not supported in "
+                                   "LaplaceOperator::do_boundary_integral_continuous()"));
+  }
 }
 
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::set_inhomogeneous_boundary_values(
+LaplaceOperator<dim, Number, n_components>::set_inhomogeneous_constrained_values(
   VectorType & dst) const
 {
+  // periodicity and hanging node constraints are enforced strongly for continuous spaces
+  if(not this->is_dg)
+  {
+    unsigned int const dof_index_inhomogeneous = this->get_dof_index_inhomogeneous();
+    dealii::AffineConstraints<Number> const & constraints =
+      this->matrix_free->get_affine_constraints(dof_index_inhomogeneous);
+    constraints.distribute(dst);
+  }
+
   // standard Dirichlet boundary conditions
   std::map<dealii::types::global_dof_index, double> boundary_values;
   for(auto dbc : operator_data.bc->dirichlet_bc)

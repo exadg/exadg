@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -66,7 +66,6 @@ private:
     this->param.start_time     = 0.0;
     this->param.end_time       = 1.0;
     this->param.speed_of_sound = 1.0;
-    this->param.density        = 1.0;
 
     // TEMPORAL DISCRETIZATION
     this->param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;

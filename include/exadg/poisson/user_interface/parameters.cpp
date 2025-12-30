@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -40,10 +40,11 @@ Parameters::Parameters()
     spatial_discretization(SpatialDiscretization::Undefined),
     degree(1),
     IP_factor(1.0),
+    use_matrix_based_operator(false),
+    sparse_matrix_type(SparseMatrixType::Undefined),
 
     // SOLVER
-    solver(LinearSolver::Undefined),
-    solver_data(SolverData(1e4, 1.e-20, 1.e-12)),
+    solver_data(SolverData(1e4, 1.e-20, 1.e-12, LinearSolver::CG)),
     compute_performance_metrics(false),
     preconditioner(Preconditioner::Undefined),
     multigrid_data(MultigridData()),
@@ -64,8 +65,15 @@ Parameters::check() const
 
   AssertThrow(degree > 0, dealii::ExcMessage("Polynomial degree must be larger than zero."));
 
+  if(use_matrix_based_operator)
+  {
+    AssertThrow(sparse_matrix_type != SparseMatrixType::Undefined,
+                dealii::ExcMessage("Parameter must be defined."));
+  }
+
   // SOLVER
-  AssertThrow(solver != LinearSolver::Undefined, dealii::ExcMessage("parameter must be defined."));
+  AssertThrow(solver_data.linear_solver != LinearSolver::Undefined,
+              dealii::ExcMessage("Parameter must be defined."));
   AssertThrow(preconditioner != Preconditioner::Undefined,
               dealii::ExcMessage("parameter must be defined."));
 }
@@ -123,14 +131,19 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
 
   if(spatial_discretization == SpatialDiscretization::DG)
     print_parameter(pcout, "IP factor", IP_factor);
+
+  print_parameter(pcout, "Use matrix-based operator", use_matrix_based_operator);
+
+  if(use_matrix_based_operator)
+  {
+    print_parameter(pcout, "Sparse matrix type", sparse_matrix_type);
+  }
 }
 
 void
 Parameters::print_parameters_solver(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Solver:" << std::endl;
-
-  print_parameter(pcout, "Solver", solver);
 
   solver_data.print(pcout);
 

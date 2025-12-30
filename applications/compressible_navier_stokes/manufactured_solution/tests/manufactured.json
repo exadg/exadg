@@ -15,6 +15,10 @@
         "RefineTimeMax": "0"
     },
     "Application": {
+        "ReadRestart": "false",
+        "WriteRestart": "false",
+        "ReadWriteMapping": "false",
+        "TriangulationType": "Distributed"
     },
     "Output": {
         "OutputDirectory": "output/manufactured_solution/",

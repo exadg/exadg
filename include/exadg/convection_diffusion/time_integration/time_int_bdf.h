@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_TIME_INT_BDF_H_
-#define INCLUDE_CONVECTION_DIFFUSION_TIME_INT_BDF_H_
+#ifndef EXADG_CONVECTION_DIFFUSION_TIME_INTEGRATION_TIME_INT_BDF_H_
+#define EXADG_CONVECTION_DIFFUSION_TIME_INTEGRATION_TIME_INT_BDF_H_
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
@@ -49,7 +49,9 @@ template<int dim, typename Number>
 class TimeIntBDF : public TimeIntBDFBase
 {
 public:
-  using VectorType = dealii::LinearAlgebra::distributed::Vector<Number>;
+  using VectorType             = dealii::LinearAlgebra::distributed::Vector<Number>;
+  using BoostInputArchiveType  = TimeIntBase::BoostInputArchiveType;
+  using BoostOutputArchiveType = TimeIntBase::BoostOutputArchiveType;
 
   TimeIntBDF(std::shared_ptr<Operator<dim, Number>>          operator_in,
              std::shared_ptr<HelpersALE<dim, Number> const>  helpers_ale_in,
@@ -115,10 +117,10 @@ private:
   print_solver_info() const final;
 
   void
-  read_restart_vectors(boost::archive::binary_iarchive & ia) final;
+  read_restart_vectors() final;
 
   void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const final;
+  write_restart_vectors() const final;
 
   void
   postprocessing() const final;
@@ -161,4 +163,4 @@ private:
 } // namespace ConvDiff
 } // namespace ExaDG
 
-#endif /* INCLUDE_CONVECTION_DIFFUSION_TIME_INT_BDF_H_ */
+#endif /* EXADG_CONVECTION_DIFFUSION_TIME_INTEGRATION_TIME_INT_BDF_H_ */

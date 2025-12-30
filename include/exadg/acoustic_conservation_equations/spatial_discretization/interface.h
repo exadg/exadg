@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -35,6 +35,7 @@ template<typename Number>
 class SpatialOperator
 {
 public:
+  using VectorType      = dealii::LinearAlgebra::distributed::Vector<Number>;
   using BlockVectorType = dealii::LinearAlgebra::distributed::BlockVector<Number>;
 
   virtual ~SpatialOperator() = default;
@@ -51,6 +52,13 @@ public:
   // time integration: evaluate
   virtual void
   evaluate(BlockVectorType & dst, BlockVectorType const & src, double const time) const = 0;
+
+  // required for restart functionality
+  virtual void
+  serialize_vectors(std::vector<BlockVectorType const *> const & block_vectors) const = 0;
+
+  virtual void
+  deserialize_vectors(std::vector<BlockVectorType *> const & block_vectors) const = 0;
 
   virtual double
   calculate_time_step_cfl() const = 0;

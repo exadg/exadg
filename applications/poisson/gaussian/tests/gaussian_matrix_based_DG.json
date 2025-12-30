@@ -1,0 +1,27 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "true"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "6",
+        "DegreeMax": "6",
+        "RefineSpaceMin": "4",
+        "RefineSpaceMax": "4"
+    },
+    "Application": {
+       	"Name": "Gaussian",
+        "MeshType": "Cartesian",
+        "AdaptiveRefinement": "false",
+        "SpatialDiscretization": "DG",
+        "Preconditioner": "Multigrid",
+        "UseMatrixBasedOperator": "true",
+        "MinDegreeMatrixFree": "1"
+    },
+    "Output": {
+        "OutputDirectory": "output/poisson/gaussian/",
+        "OutputName": "gaussian",
+        "WriteOutput": "false"
+    }
+}

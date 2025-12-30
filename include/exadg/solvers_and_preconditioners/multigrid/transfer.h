@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MUTLIGRID_TRANSFER_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MUTLIGRID_TRANSFER_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_TRANSFER_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_TRANSFER_H_
 
 // deal.II
 #include <deal.II/fe/mapping.h>
@@ -59,6 +59,7 @@ private:
 
   std::unique_ptr<dealii::MGTransferGlobalCoarsening<dim, VectorType>> mg_transfer;
 };
+
 } // namespace ExaDG
 
-#endif // INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MUTLIGRID_TRANSFER_H_
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_TRANSFER_H_ */

@@ -1,10 +1,23 @@
-/*
- * viscous_operator.cpp
+/*  ______________________________________________________________________
  *
- *  Created on: Nov 5, 2018
- *      Author: fehn
+ *  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
+ *
+ *  Copyright (C) 2021 by the ExaDG authors
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *  ______________________________________________________________________
  */
-
 
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.h>
 
@@ -92,7 +105,7 @@ ViscousOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
   {
     vector value_m = integrator_m.get_value(q);
     vector value_p = integrator_p.get_value(q);
-    vector normal  = integrator_m.get_normal_vector(q);
+    vector normal  = integrator_m.normal_vector(q);
 
     scalar average_viscosity =
       kernel->get_viscosity_interior_face(integrator_m.get_current_cell_index(), q);
@@ -124,7 +137,7 @@ ViscousOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_m
   {
     vector value_m = integrator_m.get_value(q);
     vector value_p; // set exterior values to zero
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     scalar average_viscosity =
       kernel->get_viscosity_interior_face(integrator_m.get_current_cell_index(), q);
@@ -154,7 +167,7 @@ ViscousOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_m
     vector value_m; // set exterior values to zero
     vector value_p = integrator_p.get_value(q);
     // multiply by -1.0 to get the correct normal vector !
-    vector normal_p = -integrator_p.get_normal_vector(q);
+    vector normal_p = -integrator_p.normal_vector(q);
 
     scalar average_viscosity =
       kernel->get_viscosity_interior_face(integrator_p.get_current_cell_index(), q);
@@ -195,7 +208,7 @@ ViscousOperator<dim, Number>::do_boundary_integral(
                                               operator_data.bc,
                                               this->time);
 
-    vector normal = integrator.get_normal_vector(q);
+    vector normal = integrator.normal_vector(q);
 
     scalar viscosity = kernel->get_viscosity_boundary_face(integrator.get_current_cell_index(), q);
     tensor gradient_flux = kernel->calculate_gradient_flux(value_m, value_p, normal, viscosity);

@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -30,9 +30,9 @@ namespace ExaDG
 double const FLUID_VISCOSITY = 3.0e-6;
 double const FLUID_DENSITY   = 1.0e3;
 
-double const DENSITY_STRUCTURE       = 1.2e3;
-double const POISSON_RATIO_STRUCTURE = 0.3;
-double const E_STRUCTURE             = 3.0e5;
+double const DENSITY_STRUCTURE        = 1.2e3;
+double const POISSONS_RATIO_STRUCTURE = 0.3;
+double const YOUNGS_MODULUS_STRUCTURE = 3.0e5;
 
 double const R_INNER = 0.5e-2;
 double const R_OUTER = 0.6e-2;
@@ -99,6 +99,22 @@ public:
   {
   }
 
+  void
+  add_parameters(dealii::ParameterHandler & prm) final
+  {
+    ApplicationBase<dim, Number>::add_parameters(prm);
+
+    // clang format off
+    prm.enter_subsection("Fluid");
+    prm.add_parameter("TemporalDiscretization",
+                      temporal_discretization,
+                      "Temporal discretization of Navier-Stokes equations.",
+                      Patterns::Enum<IncNS::TemporalDiscretization>(),
+                      false);
+    prm.leave_subsection();
+    // clang format on
+  }
+
 private:
   void
   set_parameters() final
@@ -128,7 +144,7 @@ private:
 
     // TEMPORAL DISCRETIZATION
     param.solver_type                     = SolverType::Unsteady;
-    param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
+    param.temporal_discretization         = temporal_discretization;
     param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     param.order_time_integrator           = 2;
     param.start_with_low_order            = true;
@@ -186,8 +202,7 @@ private:
     // PROJECTION METHODS
 
     // pressure Poisson equation
-    param.solver_pressure_poisson              = SolverPressurePoisson::CG;
-    param.solver_data_pressure_poisson         = SolverData(1000, ABS_TOL, REL_TOL, 100);
+    param.solver_data_pressure_poisson = SolverData(1000, ABS_TOL, REL_TOL, LinearSolver::CG, 100);
     param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
     param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
     param.multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
@@ -199,8 +214,7 @@ private:
     param.multigrid_data_pressure_poisson.coarse_problem.solver_data.rel_tol = 1.e-3;
 
     // projection step
-    param.solver_projection         = SolverProjection::CG;
-    param.solver_data_projection    = SolverData(1000, ABS_TOL, REL_TOL);
+    param.solver_data_projection    = SolverData(1000, ABS_TOL, REL_TOL, LinearSolver::CG);
     param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -210,10 +224,11 @@ private:
       param.order_time_integrator <= 2 ? param.order_time_integrator : 2;
     param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
 
-    // viscous step
-    param.solver_viscous         = SolverViscous::CG;
-    param.solver_data_viscous    = SolverData(1000, ABS_TOL, REL_TOL);
-    param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
+    {
+      this->param.solver_data_momentum    = SolverData(1000, ABS_TOL, REL_TOL, LinearSolver::CG);
+      this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
+    }
 
 
     // PRESSURE-CORRECTION SCHEME
@@ -224,23 +239,25 @@ private:
     param.rotational_formulation = true;
 
     // momentum step
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      // Newton solver
+      param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
-    // Newton solver
-    param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
+      // linear solver
+      if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+        param.solver_data_momentum =
+          SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, LinearSolver::FGMRES, 100);
+      else
+        param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, LinearSolver::FGMRES, 100);
+      param.update_preconditioner_momentum = false;
+      param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
+      param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
 
-    // linear solver
-    param.solver_momentum = SolverMomentum::FGMRES;
-    if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-      param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
-    else
-      param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, 100);
-    param.update_preconditioner_momentum = false;
-    param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
-    param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
-
-    // Chebyshev smoother data
-    param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Chebyshev;
-    param.multigrid_data_momentum.coarse_problem.solver  = MultigridCoarseGridSolver::Chebyshev;
+      // Chebyshev smoother data
+      param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Chebyshev;
+      param.multigrid_data_momentum.coarse_problem.solver  = MultigridCoarseGridSolver::Chebyshev;
+    }
 
 
     // COUPLED NAVIER-STOKES SOLVER
@@ -250,11 +267,11 @@ private:
     param.newton_solver_data_coupled = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
     // linear solver
-    param.solver_coupled = SolverCoupled::FGMRES;
     if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-      param.solver_data_coupled = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
+      param.solver_data_coupled =
+        SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, LinearSolver::FGMRES, 100);
     else
-      param.solver_data_coupled = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+      param.solver_data_coupled = SolverData(1e4, ABS_TOL, REL_TOL, LinearSolver::FGMRES, 100);
 
     // preconditioner linear solver
     param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;
@@ -297,7 +314,7 @@ private:
       {
         for(auto const & f : cell->face_indices())
         {
-          double const z = cell->face(f)->center()(2);
+          double const z = cell->face(f)->center()(dim - 1);
 
           // inflow
           if(std::fabs(z - 0.0) < GEOMETRY_TOL)
@@ -319,8 +336,6 @@ private:
       /*
        *  MANIFOLDS
        */
-      tria.set_all_manifold_ids(0);
-
       // first fill vectors of manifold_ids and face_ids
       std::vector<unsigned int> manifold_ids;
       std::vector<unsigned int> face_ids;
@@ -482,8 +497,7 @@ private:
     param.degree                 = this->param.mapping_degree;
 
     // SOLVER
-    param.solver         = Poisson::LinearSolver::FGMRES;
-    param.solver_data    = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+    param.solver_data    = SolverData(1e4, ABS_TOL, REL_TOL, LinearSolver::FGMRES, 100);
     param.preconditioner = Preconditioner::Multigrid;
 
     param.multigrid_data.type                          = MultigridType::phMG;
@@ -546,11 +560,11 @@ private:
     param.degree = this->param.mapping_degree;
 
     param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
-    param.solver             = Structure::Solver::FGMRES;
     if(param.large_deformation)
-      param.solver_data = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
+      param.solver_data =
+        SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, LinearSolver::FGMRES, 100);
     else
-      param.solver_data = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+      param.solver_data = SolverData(1e4, ABS_TOL, REL_TOL, LinearSolver::FGMRES, 100);
     param.preconditioner                               = Preconditioner::Multigrid;
     param.multigrid_data.type                          = MultigridType::phMG;
     param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
@@ -603,10 +617,10 @@ private:
     MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlaneStress;
 
-    double const E       = 1.0;
-    double const poisson = 0.3;
+    double const youngs_modulus = 1.0;
+    double const poissons_ratio = 0.3;
     material_descriptor->insert(
-      Pair(0, new StVenantKirchhoffData<dim>(type, E, poisson, two_dim_type)));
+      Pair(0, new StVenantKirchhoffData<dim>(type, youngs_modulus, poissons_ratio, two_dim_type)));
   }
 
   void
@@ -619,6 +633,9 @@ private:
     field_functions->initial_displacement.reset(new dealii::Functions::ZeroFunction<dim>(dim));
     field_functions->initial_velocity.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
+
+  IncNS::TemporalDiscretization temporal_discretization =
+    IncNS::TemporalDiscretization::BDFDualSplitting;
 };
 } // namespace FluidFSI
 
@@ -661,11 +678,11 @@ private:
     param.mapping_degree_coarse_grids = param.mapping_degree;
 
     param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
-    param.solver             = Structure::Solver::FGMRES;
     if(param.large_deformation)
-      param.solver_data = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
+      param.solver_data =
+        SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, LinearSolver::FGMRES, 100);
     else
-      param.solver_data = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+      param.solver_data = SolverData(1e4, ABS_TOL, REL_TOL, LinearSolver::FGMRES, 100);
     param.preconditioner                               = Preconditioner::AMG; // Multigrid;
     param.multigrid_data.type                          = MultigridType::phMG;
     param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
@@ -711,7 +728,7 @@ private:
         {
           if(cell->face(f)->at_boundary())
           {
-            double const z   = cell->face(f)->center()(2);
+            double const z   = cell->face(f)->center()(dim - 1);
             double const TOL = 1.e-10;
 
             // left boundary
@@ -818,8 +835,11 @@ private:
     MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlaneStress;
 
-    material_descriptor->insert(Pair(
-      0, new StVenantKirchhoffData<dim>(type, E_STRUCTURE, POISSON_RATIO_STRUCTURE, two_dim_type)));
+    material_descriptor->insert(Pair(0,
+                                     new StVenantKirchhoffData<dim>(type,
+                                                                    YOUNGS_MODULUS_STRUCTURE,
+                                                                    POISSONS_RATIO_STRUCTURE,
+                                                                    two_dim_type)));
   }
 
   void

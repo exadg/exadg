@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_MAPPING_DEFORMATION_STRUCTURE_H_
-#define INCLUDE_EXADG_GRID_MAPPING_DEFORMATION_STRUCTURE_H_
+#ifndef EXADG_GRID_MAPPING_DEFORMATION_STRUCTURE_H_
+#define EXADG_GRID_MAPPING_DEFORMATION_STRUCTURE_H_
 
 // deal.II
 #include <deal.II/base/timer.h>
@@ -57,6 +57,7 @@ public:
     std::shared_ptr<MaterialDescriptor const>             material_descriptor,
     Parameters const &                                    param,
     std::string const &                                   field,
+    bool const                                            setup_scalar_field,
     MPI_Comm const &                                      mpi_comm)
     : DeformedMappingBase<dim, Number>(mapping_undeformed, param.degree, *grid->triangulation),
       param(param),
@@ -72,6 +73,7 @@ public:
                                                            material_descriptor,
                                                            param,
                                                            field,
+                                                           setup_scalar_field,
                                                            mpi_comm);
 
     // setup PDE operator and solver
@@ -220,4 +222,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_GRID_MAPPING_DEFORMATION_STRUCTURE_H_ */
+#endif /* EXADG_GRID_MAPPING_DEFORMATION_STRUCTURE_H_ */

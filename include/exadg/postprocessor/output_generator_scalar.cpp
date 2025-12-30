@@ -15,15 +15,9 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
-
-// C/C++
-#include <fstream>
-
-// deal.II
-#include <deal.II/numerics/data_out.h>
 
 // ExaDG
 #include <exadg/postprocessor/output_generator_scalar.h>
@@ -32,31 +26,6 @@
 
 namespace ExaDG
 {
-template<int dim, typename VectorType>
-void
-write_output(OutputDataBase const &          output_data,
-             dealii::DoFHandler<dim> const & dof_handler,
-             dealii::Mapping<dim> const &    mapping,
-             VectorType const &              solution_vector,
-             unsigned int const              output_counter,
-             MPI_Comm const &                mpi_comm)
-{
-  std::string folder = output_data.directory, file = output_data.filename;
-
-  dealii::DataOutBase::VtkFlags flags;
-  flags.write_higher_order_cells = output_data.write_higher_order;
-
-  dealii::DataOut<dim> data_out;
-  data_out.set_flags(flags);
-
-  data_out.attach_dof_handler(dof_handler);
-
-  data_out.add_data_vector(solution_vector, "solution");
-  data_out.build_patches(mapping, output_data.degree, dealii::DataOut<dim>::curved_inner_cells);
-
-  data_out.write_vtu_with_pvtu_record(folder, file, output_counter, mpi_comm, 4);
-}
-
 template<int dim, typename Number>
 OutputGenerator<dim, Number>::OutputGenerator(MPI_Comm const & comm) : mpi_comm(comm)
 {
@@ -121,8 +90,13 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & solution,
 {
   print_write_output_time(time, time_control.get_counter(), unsteady, mpi_comm);
 
-  write_output<dim>(
-    output_data, *dof_handler, *mapping, solution, time_control.get_counter(), mpi_comm);
+  VectorWriter<dim, Number> vector_writer(output_data, time_control.get_counter(), mpi_comm);
+
+  vector_writer.add_data_vector(solution, *dof_handler, {"solution"});
+
+  vector_writer.write_aspect_ratio(*dof_handler, *mapping);
+
+  vector_writer.write_pvtu(&(*mapping));
 }
 
 template class OutputGenerator<2, float>;

@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MUTLIGRID_TRANSFER_BASE_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_MUTLIGRID_TRANSFER_BASE_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_TRANSFER_BASE_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_TRANSFER_BASE_H_
 
 namespace ExaDG
 {
@@ -39,6 +39,7 @@ public:
   virtual void
   prolongate_and_add(unsigned int const level, VectorType & dst, VectorType const & src) const = 0;
 };
+
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_TRANSFER_BASE_H_ */

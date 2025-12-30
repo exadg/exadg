@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef APPLICATIONS_GRID_TOOLS_PERIODIC_BOX_H_
-#define APPLICATIONS_GRID_TOOLS_PERIODIC_BOX_H_
+#ifndef EXADG_GRID_PERIODIC_BOX_H_
+#define EXADG_GRID_PERIODIC_BOX_H_
 
 // deal.II
 #include <deal.II/distributed/tria.h>
@@ -38,13 +38,13 @@ create_periodic_box(dealii::Triangulation<dim> &                             tri
                     unsigned int const                                       n_refine_space,
                     std::vector<dealii::GridTools::PeriodicFacePair<
                       typename dealii::Triangulation<dim>::cell_iterator>> & periodic_faces,
-                    unsigned int const                                       n_subdivisions,
+                    unsigned int const                                       repetitions,
                     double const                                             left,
                     double const                                             right,
                     bool const   curvilinear_mesh = false,
                     double const deformation      = 0.1)
 {
-  dealii::GridGenerator::subdivided_hyper_cube(triangulation, n_subdivisions, left, right);
+  dealii::GridGenerator::subdivided_hyper_cube(triangulation, repetitions, left, right);
 
   if(curvilinear_mesh)
   {
@@ -88,4 +88,4 @@ create_periodic_box(dealii::Triangulation<dim> &                             tri
 
 } // namespace ExaDG
 
-#endif /* APPLICATIONS_GRID_TOOLS_PERIODIC_BOX_H_ */
+#endif /* EXADG_GRID_PERIODIC_BOX_H_ */

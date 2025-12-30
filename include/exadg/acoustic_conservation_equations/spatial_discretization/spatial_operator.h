@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_
-#define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_
+#ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_H_
+#define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_H_
 
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
@@ -37,6 +37,7 @@
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
 #include <exadg/operators/rhs_operator.h>
+#include <exadg/utilities/lazy_ptr.h>
 
 namespace ExaDG
 {
@@ -54,6 +55,7 @@ namespace Acoustics
 template<int dim, typename Number>
 class SpatialOperator : public Interface::SpatialOperator<Number>
 {
+  using VectorType      = typename Interface::SpatialOperator<Number>::VectorType;
   using BlockVectorType = typename Interface::SpatialOperator<Number>::BlockVectorType;
 
 public:
@@ -132,6 +134,12 @@ public:
   dealii::DoFHandler<dim> const &
   get_dof_handler_u() const;
 
+  void
+  serialize_vectors(std::vector<BlockVectorType const *> const & block_vectors) const final;
+
+  void
+  deserialize_vectors(std::vector<BlockVectorType *> const & block_vectors) const final;
+
   dealii::AffineConstraints<Number> const &
   get_constraint_p() const;
 
@@ -147,11 +155,20 @@ public:
   void
   initialize_dof_vector(BlockVectorType & dst) const final;
 
+  void
+  initialize_dof_vector_pressure(VectorType & dst) const;
+
   /*
    * Prescribe initial conditions using a specified analytical/initial solution function.
    */
   void
   prescribe_initial_conditions(BlockVectorType & dst, double const time) const final;
+
+  /*
+   * Set aero-acoustic source term.
+   */
+  void
+  set_aero_acoustic_source_term(VectorType const & aero_acoustic_source_term_in);
 
   /*
    *  This function is used in case of explicit time integration:
@@ -230,6 +247,9 @@ private:
   dealii::DoFHandler<dim> dof_handler_p;
   dealii::DoFHandler<dim> dof_handler_u;
 
+  std::shared_ptr<dealii::FiniteElement<dim>> fe_mapping;
+  std::shared_ptr<dealii::DoFHandler<dim>>    dof_handler_mapping;
+
   dealii::AffineConstraints<Number> constraint_p, constraint_u;
 
   std::string const dof_index_p = "pressure";
@@ -262,6 +282,9 @@ private:
    */
   RHSOperator<dim, Number, 1> rhs_operator;
 
+  // The aero-acoustic source term has been computed externally.
+  VectorType const * aero_acoustic_source_term;
+
   MPI_Comm const mpi_comm;
 
   dealii::ConditionalOStream pcout;
@@ -270,4 +293,4 @@ private:
 } // namespace Acoustics
 } // namespace ExaDG
 
-#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_ */
+#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_H_ */

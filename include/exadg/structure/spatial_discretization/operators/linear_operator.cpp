@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -36,7 +36,7 @@ LinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
     // Cauchy stresses, only valid for linear elasticity
-    tensor const sigma =
+    symmetric_tensor const sigma =
       material->second_piola_kirchhoff_stress(integrator.get_gradient(q),
                                               integrator.get_current_cell_index(),
                                               q);
@@ -56,73 +56,38 @@ LinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
 template<int dim, typename Number>
 void
 LinearOperator<dim, Number>::do_boundary_integral_continuous(
-  IntegratorFace &                   integrator_m,
+  IntegratorFace &                   integrator,
   OperatorType const &               operator_type,
   dealii::types::boundary_id const & boundary_id) const
 {
-  BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
-
-  for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+  if(operator_type == OperatorType::inhomogeneous or operator_type == OperatorType::full)
   {
-    vector traction;
+    BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 
-    // integrate standard (stored) traction or exterior pressure on Robin boundaries
-    if(boundary_type == BoundaryType::Neumann or boundary_type == BoundaryType::NeumannCached or
-       boundary_type == BoundaryType::RobinSpringDashpotPressure)
+    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      if(operator_type == OperatorType::inhomogeneous or operator_type == OperatorType::full)
-      {
-        traction -= calculate_neumann_value<dim, Number>(
-          q, integrator_m, boundary_type, boundary_id, this->operator_data.bc, this->time);
-      }
-    }
+      vector const neumann_value = calculate_neumann_value<dim, Number>(
+        q, integrator, boundary_type, boundary_id, this->operator_data.bc, this->time);
 
-    // check boundary ID in robin_k_c_p_param to add boundary mass integrals from Robin boundaries
-    // on BoundaryType::NeumannCached or BoundaryType::RobinSpringDashpotPressure
-    if(boundary_type == BoundaryType::NeumannCached or
-       boundary_type == BoundaryType::RobinSpringDashpotPressure)
+      integrator.submit_value(-neumann_value, q);
+    }
+  }
+  else if(operator_type == OperatorType::homogeneous)
+  {
+    // `OperatorType::homogeneous` does not involve boundary integrals. We still need to submit
+    // zeroes for consistency.
+    vector zero;
+    zero = 0.0;
+    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      if(operator_type == OperatorType::homogeneous or operator_type == OperatorType::full)
-      {
-        auto const it = this->operator_data.bc->robin_k_c_p_param.find(boundary_id);
-
-        if(it != this->operator_data.bc->robin_k_c_p_param.end())
-        {
-          bool const   normal_projection_displacement = it->second.first[0];
-          double const coefficient_displacement       = it->second.second[0];
-
-          if(normal_projection_displacement)
-          {
-            vector const N = integrator_m.get_normal_vector(q);
-            traction += N * (coefficient_displacement * (N * integrator_m.get_value(q)));
-          }
-          else
-          {
-            traction += coefficient_displacement * integrator_m.get_value(q);
-          }
-
-          if(this->operator_data.unsteady)
-          {
-            bool const   normal_projection_velocity = it->second.first[1];
-            double const coefficient_velocity       = it->second.second[1];
-
-            if(normal_projection_velocity)
-            {
-              vector const N = integrator_m.get_normal_vector(q);
-              traction += N * (coefficient_velocity * this->scaling_factor_mass_boundary *
-                               (N * integrator_m.get_value(q)));
-            }
-            else
-            {
-              traction += coefficient_velocity * this->scaling_factor_mass_boundary *
-                          integrator_m.get_value(q);
-            }
-          }
-        }
-      }
+      integrator.submit_value(zero, q);
     }
-
-    integrator_m.submit_value(traction, q);
+  }
+  else
+  {
+    AssertThrow(false,
+                dealii::ExcMessage("OperatorType not supported in "
+                                   "LinearOperator::do_boundary_integral_continuous()"));
   }
 }
 

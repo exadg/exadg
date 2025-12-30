@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_MASS_OPERATOR_H_
-#define INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_MASS_OPERATOR_H_
+#ifndef EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_MASS_OPERATOR_H_
+#define EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_MASS_OPERATOR_H_
 
 // deal.II
 #include <deal.II/numerics/vector_tools.h>
@@ -32,8 +32,8 @@ namespace ExaDG
 {
 namespace Structure
 {
-template<int dim>
-struct MassOperatorData : public ExaDG::MassOperatorData<dim>
+template<int dim, typename Number>
+struct MassOperatorData : public ExaDG::MassOperatorData<dim, Number>
 {
   std::shared_ptr<BoundaryDescriptor<dim> const> bc;
 };
@@ -49,7 +49,7 @@ public:
   void
   initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
              dealii::AffineConstraints<Number> const & affine_constraints,
-             MassOperatorData<dim> const &             data)
+             MassOperatorData<dim, Number> const &     data)
   {
     operator_data = data;
 
@@ -57,8 +57,18 @@ public:
   }
 
   void
-  set_inhomogeneous_boundary_values(VectorType & dst) const final
+  set_inhomogeneous_constrained_values(VectorType & dst) const final
   {
+    // periodicity and hanging node constraints are enforced strongly for continuous spaces
+    if(not this->is_dg)
+    {
+      unsigned int const dof_index_inhomogeneous = this->get_dof_index_inhomogeneous();
+      dealii::AffineConstraints<Number> const & constraints =
+        this->matrix_free->get_affine_constraints(dof_index_inhomogeneous);
+      constraints.distribute(dst);
+    }
+
+    // standard Dirichlet boundary conditions
     std::map<dealii::types::global_dof_index, double> boundary_values;
     for(auto dbc : operator_data.bc->dirichlet_bc_initial_acceleration)
     {
@@ -80,16 +90,15 @@ public:
       if(dst.get_partitioner()->in_local_range(m.first))
         dst[m.first] = m.second;
 
-    dst.update_ghost_values();
+    // zero out ghost values to return to default state
+    dst.zero_out_ghost_values();
   }
 
 private:
-  MassOperatorData<dim> operator_data;
+  MassOperatorData<dim, Number> operator_data;
 };
 
 } // namespace Structure
 } // namespace ExaDG
 
-
-
-#endif /* INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_MASS_OPERATOR_H_ */
+#endif /* EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_MASS_OPERATOR_H_ */

@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -87,47 +87,21 @@ OperatorCoupled<dim, Number>::setup_solver_coupled()
 {
   linear_operator.initialize(*this);
 
-  // setup linear solver
-  if(this->param.solver_coupled == SolverCoupled::GMRES)
-  {
-    Krylov::SolverDataGMRES solver_data;
-    solver_data.max_iter             = this->param.solver_data_coupled.max_iter;
-    solver_data.solver_tolerance_abs = this->param.solver_data_coupled.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.solver_data_coupled.rel_tol;
-    solver_data.max_n_tmp_vectors    = this->param.solver_data_coupled.max_krylov_size;
-    solver_data.compute_eigenvalues  = false;
+  // initialize solver data
+  bool constexpr compute_performance_metrics = false;
+  bool constexpr compute_eigenvalues         = false;
+  bool const use_preconditioner = this->param.preconditioner_coupled != PreconditionerCoupled::None;
 
-    if(this->param.preconditioner_coupled != PreconditionerCoupled::None)
-    {
-      solver_data.use_preconditioner = true;
-    }
+  typedef Krylov::KrylovSolver<LinearOperatorCoupled<dim, Number>, Preconditioner, BlockVectorType>
+    SolverType;
 
-    linear_solver = std::make_shared<
-      Krylov::SolverGMRES<LinearOperatorCoupled<dim, Number>, Preconditioner, BlockVectorType>>(
-      linear_operator, block_preconditioner, solver_data, this->mpi_comm);
-  }
-  else if(this->param.solver_coupled == SolverCoupled::FGMRES)
-  {
-    Krylov::SolverDataFGMRES solver_data;
-    solver_data.max_iter             = this->param.solver_data_coupled.max_iter;
-    solver_data.solver_tolerance_abs = this->param.solver_data_coupled.abs_tol;
-    solver_data.solver_tolerance_rel = this->param.solver_data_coupled.rel_tol;
-    solver_data.max_n_tmp_vectors    = this->param.solver_data_coupled.max_krylov_size;
-
-    if(this->param.preconditioner_coupled != PreconditionerCoupled::None)
-    {
-      solver_data.use_preconditioner = true;
-    }
-
-    linear_solver = std::make_shared<
-      Krylov::SolverFGMRES<LinearOperatorCoupled<dim, Number>, Preconditioner, BlockVectorType>>(
-      linear_operator, block_preconditioner, solver_data);
-  }
-  else
-  {
-    AssertThrow(false,
-                dealii::ExcMessage("Specified solver for linearized problem is not implemented."));
-  }
+  // initialize solver
+  linear_solver = std::make_shared<SolverType>(linear_operator,
+                                               block_preconditioner,
+                                               this->param.solver_data_coupled,
+                                               use_preconditioner,
+                                               compute_performance_metrics,
+                                               compute_eigenvalues);
 
   // setup Newton solver
   if(this->param.nonlinear_problem_has_to_be_solved())
@@ -166,16 +140,24 @@ OperatorCoupled<dim, Number>::set_scaling_factor_continuity(double const scaling
 
 template<int dim, typename Number>
 unsigned int
-OperatorCoupled<dim, Number>::solve_linear_stokes_problem(BlockVectorType &       dst,
-                                                          BlockVectorType const & src,
-                                                          bool const &   update_preconditioner,
-                                                          double const & scaling_factor_mass)
+OperatorCoupled<dim, Number>::solve_linear_problem(BlockVectorType &       dst,
+                                                   BlockVectorType const & src,
+                                                   VectorType const &      transport_velocity,
+                                                   bool const &            update_preconditioner,
+                                                   double const &          scaling_factor_mass)
 {
   // Update momentum operator
   // We do not need to set the time here, because time affects the operator only in the form of
   // boundary conditions. The result of such boundary condition evaluations is handed over to this
   // function via the vector src.
   this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
+
+  // linearly implicit convective term
+  if(this->param.convective_problem() and
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+  {
+    this->momentum_operator.set_solution_linearization(transport_velocity);
+  }
 
   linear_solver->update_preconditioner(update_preconditioner);
 
@@ -184,14 +166,27 @@ OperatorCoupled<dim, Number>::solve_linear_stokes_problem(BlockVectorType &     
 
 template<int dim, typename Number>
 void
-OperatorCoupled<dim, Number>::rhs_stokes_problem(BlockVectorType & dst, double const & time) const
+OperatorCoupled<dim, Number>::rhs_linear_problem(BlockVectorType &  dst,
+                                                 VectorType const & transport_velocity,
+                                                 double const &     time) const
 {
   // velocity-block
   this->gradient_operator.rhs(dst.block(0), time);
   dst.block(0) *= scaling_factor_continuity;
 
-  this->viscous_operator.set_time(time);
-  this->viscous_operator.rhs_add(dst.block(0));
+  if(this->param.viscous_problem())
+  {
+    this->viscous_operator.set_time(time);
+    this->viscous_operator.rhs_add(dst.block(0));
+  }
+
+  if(this->param.convective_problem() and
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+  {
+    this->convective_operator.set_velocity_ptr(transport_velocity);
+    this->convective_operator.set_time(time);
+    this->convective_operator.rhs_add(dst.block(0));
+  }
 
   if(this->param.apply_penalty_terms_in_postprocessing_step == false)
   {
@@ -287,7 +282,7 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &     
   else
     dst.block(0) = 0.0;
 
-  if(this->param.implicit_convective_problem())
+  if(this->param.implicit_nonlinear_convective_problem())
   {
     this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0), src.block(0), time);
   }
@@ -325,6 +320,88 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &     
 
 template<int dim, typename Number>
 void
+OperatorCoupled<dim, Number>::evaluate_linearized_residual(BlockVectorType &       dst,
+                                                           BlockVectorType const & src,
+                                                           VectorType const & transport_velocity,
+                                                           BlockVectorType const & rhs_vector,
+                                                           double const &          time,
+                                                           double const & scaling_factor_mass)
+{
+  // viscosity has to be updated before calling this function.
+
+  // velocity-block
+
+  if(this->unsteady_problem_has_to_be_solved())
+    this->mass_operator.apply_scale(dst.block(0), scaling_factor_mass, src.block(0));
+  else
+    dst.block(0) = 0.0;
+
+  if(this->param.convective_problem())
+  {
+    if(this->param.solver_type == SolverType::Steady or
+       (this->param.solver_type == SolverType::Unsteady and
+        (this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)))
+    {
+      AssertThrow(false, dealii::ExcMessage("This should never be called."));
+      this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0), src.block(0), time);
+    }
+    else if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
+    {
+      this->convective_operator.set_velocity_ptr(transport_velocity);
+      this->convective_operator.apply_add(dst.block(0), src.block(0));
+      this->convective_operator.rhs_add(dst.block(0));
+    }
+    // The explicit convective term is contained in rhs_vector.
+  }
+
+  if(this->param.viscous_problem())
+  {
+    this->viscous_operator.set_time(time);
+    this->viscous_operator.evaluate_add(dst.block(0), src.block(0));
+  }
+
+  // Divergence and continuity penalty operators
+  if(this->param.apply_penalty_terms_in_postprocessing_step == false)
+  {
+    if(this->param.use_divergence_penalty == true)
+      this->div_penalty_operator.apply_add(dst.block(0), src.block(0));
+    if(this->param.use_continuity_penalty == true)
+      this->conti_penalty_operator.evaluate_add(dst.block(0), src.block(0), time);
+  }
+
+  // gradient operator scaled by scaling_factor_continuity
+  this->gradient_operator.evaluate(temp_vector, src.block(1), time);
+  dst.block(0).add(scaling_factor_continuity, temp_vector);
+
+  // constant right-hand side vector (body force, sum_alphai_ui and explicit convective terms)
+  dst.block(0).add(-1.0, rhs_vector.block(0));
+
+  // pressure-block
+
+  this->divergence_operator.evaluate(dst.block(1), src.block(0), time);
+  // multiply by -1.0 since we use a formulation with symmetric saddle point matrix
+  // with respect to pressure gradient term and velocity divergence term
+  // scale by scaling_factor_continuity
+  dst.block(1) *= -scaling_factor_continuity;
+
+  dst.block(1).add(-1.0, rhs_vector.block(1));
+}
+
+template<int dim, typename Number>
+void
+OperatorCoupled<dim, Number>::rhs_residual_linearized_problem(BlockVectorType & dst,
+                                                              double const &    time) const
+{
+  dst = 0.0;
+
+  if(this->param.right_hand_side == true)
+  {
+    this->rhs_operator.evaluate(dst.block(0), time);
+  }
+}
+
+template<int dim, typename Number>
+void
 OperatorCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVectorType &       dst,
                                                                  BlockVectorType const & src,
                                                                  double const &          time) const
@@ -350,7 +427,7 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVectorType
     dst.block(0) *= -1.0;
   }
 
-  if(this->param.implicit_convective_problem())
+  if(this->param.implicit_nonlinear_convective_problem())
   {
     this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0), src.block(0), time);
   }
@@ -435,9 +512,9 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_velocity_block()
   }
   else if(type == MomentumPreconditioner::InverseMassMatrix)
   {
-    InverseMassOperatorData inverse_mass_operator_data;
+    InverseMassOperatorData<Number> inverse_mass_operator_data;
     inverse_mass_operator_data.dof_index  = this->get_dof_index_velocity();
-    inverse_mass_operator_data.quad_index = this->get_quad_index_velocity_linear();
+    inverse_mass_operator_data.quad_index = this->get_quad_index_velocity_standard();
     inverse_mass_operator_data.parameters = this->param.inverse_mass_preconditioner;
 
     preconditioner_momentum =
@@ -448,7 +525,7 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_velocity_block()
   {
     setup_multigrid_preconditioner_momentum();
 
-    if(this->param.exact_inversion_of_velocity_block == true)
+    if(this->param.iterative_solve_of_velocity_block == true)
     {
       setup_iterative_solver_momentum();
     }
@@ -507,16 +584,22 @@ OperatorCoupled<dim, Number>::setup_iterative_solver_momentum()
               dealii::ExcMessage("preconditioner_momentum is uninitialized"));
 
   // use FGMRES for "exact" solution of velocity block system
-  Krylov::SolverDataFGMRES gmres_data;
-  gmres_data.use_preconditioner   = true;
-  gmres_data.max_iter             = this->param.solver_data_velocity_block.max_iter;
-  gmres_data.solver_tolerance_abs = this->param.solver_data_velocity_block.abs_tol;
-  gmres_data.solver_tolerance_rel = this->param.solver_data_velocity_block.rel_tol;
-  gmres_data.max_n_tmp_vectors    = this->param.solver_data_velocity_block.max_krylov_size;
+  // initialize solver data
+  bool constexpr compute_performance_metrics = false;
+  bool constexpr compute_eigenvalues         = false;
+  bool const use_preconditioner              = true;
 
-  solver_velocity_block = std::make_shared<
-    Krylov::SolverFGMRES<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
-    this->momentum_operator, *preconditioner_momentum, gmres_data);
+  typedef Krylov::
+    KrylovSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
+      SolverType;
+
+  // initialize solver
+  solver_velocity_block = std::make_shared<SolverType>(this->momentum_operator,
+                                                       *preconditioner_momentum,
+                                                       this->param.solver_data_velocity_block,
+                                                       use_preconditioner,
+                                                       compute_performance_metrics,
+                                                       compute_eigenvalues);
 }
 
 template<int dim, typename Number>
@@ -525,10 +608,19 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
 {
   auto type = this->param.preconditioner_pressure_block;
 
-  InverseMassOperatorData inverse_mass_operator_data;
-  inverse_mass_operator_data.dof_index  = this->get_dof_index_pressure();
-  inverse_mass_operator_data.quad_index = this->get_quad_index_pressure();
-  inverse_mass_operator_data.parameters = this->param.inverse_mass_preconditioner;
+  InverseMassOperatorData<Number> inverse_mass_operator_data;
+  inverse_mass_operator_data.dof_index               = this->get_dof_index_pressure();
+  inverse_mass_operator_data.quad_index              = this->get_quad_index_pressure();
+  inverse_mass_operator_data.parameters              = this->param.inverse_mass_preconditioner;
+  inverse_mass_operator_data.coefficient_is_variable = this->param.viscosity_is_variable();
+  if(inverse_mass_operator_data.coefficient_is_variable)
+  {
+    // The mass operator in the pressure space uses the inverse coefficient (q_h , p_h / nu).
+    // The viscous kernel manages the update of the variable coefficient.
+    inverse_mass_operator_data.consider_inverse_coefficient = true;
+    inverse_mass_operator_data.variable_coefficients =
+      this->viscous_kernel->get_viscosity_coefficients();
+  }
 
   if(type == SchurComplementPreconditioner::InverseMassMatrix)
   {
@@ -540,7 +632,7 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
   {
     setup_multigrid_preconditioner_schur_complement();
 
-    if(this->param.exact_inversion_of_laplace_operator == true)
+    if(this->param.iterative_solve_of_pressure_block == true)
     {
       setup_iterative_solver_schur_complement();
     }
@@ -553,7 +645,7 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
 
     setup_multigrid_preconditioner_schur_complement();
 
-    if(this->param.exact_inversion_of_laplace_operator == true)
+    if(this->param.iterative_solve_of_pressure_block == true)
     {
       setup_iterative_solver_schur_complement();
     }
@@ -574,7 +666,7 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
     // I. multigrid for negative Laplace operator (classical or compatible discretization)
     setup_multigrid_preconditioner_schur_complement();
 
-    if(this->param.exact_inversion_of_laplace_operator == true)
+    if(this->param.iterative_solve_of_pressure_block == true)
     {
       setup_iterative_solver_schur_complement();
     }
@@ -641,12 +733,6 @@ OperatorCoupled<dim, Number>::setup_iterative_solver_schur_complement()
     dealii::ExcMessage(
       "Setup of iterative solver for Schur complement preconditioner: Multigrid preconditioner is uninitialized"));
 
-  Krylov::SolverDataCG solver_data;
-  solver_data.max_iter             = this->param.solver_data_pressure_block.max_iter;
-  solver_data.solver_tolerance_abs = this->param.solver_data_pressure_block.abs_tol;
-  solver_data.solver_tolerance_rel = this->param.solver_data_pressure_block.rel_tol;
-  solver_data.use_preconditioner   = true;
-
   Poisson::LaplaceOperatorData<0, dim> laplace_operator_data;
   laplace_operator_data.dof_index             = this->get_dof_index_pressure();
   laplace_operator_data.quad_index            = this->get_quad_index_pressure();
@@ -656,14 +742,25 @@ OperatorCoupled<dim, Number>::setup_iterative_solver_schur_complement()
   laplace_operator = std::make_shared<Poisson::LaplaceOperator<dim, Number, 1>>();
   laplace_operator->initialize(this->get_matrix_free(),
                                this->get_constraint_p(),
-                               laplace_operator_data);
+                               laplace_operator_data,
+                               true /* assemble_matrix */);
 
-  solver_pressure_block =
-    std::make_shared<Krylov::SolverCG<Poisson::LaplaceOperator<dim, Number, 1>,
-                                      PreconditionerBase<Number>,
-                                      VectorType>>(*laplace_operator,
-                                                   *multigrid_preconditioner_schur_complement,
-                                                   solver_data);
+  // initialize solver data
+  bool constexpr compute_performance_metrics = false;
+  bool constexpr compute_eigenvalues         = false;
+  bool const use_preconditioner              = true;
+
+  typedef Krylov::
+    KrylovSolver<Poisson::LaplaceOperator<dim, Number, 1>, PreconditionerBase<Number>, VectorType>
+      SolverType;
+
+  // initialize solver
+  solver_pressure_block = std::make_shared<SolverType>(*laplace_operator,
+                                                       *multigrid_preconditioner_schur_complement,
+                                                       this->param.solver_data_pressure_block,
+                                                       use_preconditioner,
+                                                       compute_performance_metrics,
+                                                       compute_eigenvalues);
 }
 
 template<int dim, typename Number>
@@ -733,7 +830,7 @@ OperatorCoupled<dim, Number>::setup_pressure_convection_diffusion_operator()
   operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
 
   operator_data.unsteady_problem   = this->unsteady_problem_has_to_be_solved();
-  operator_data.convective_problem = this->param.implicit_convective_problem();
+  operator_data.convective_problem = this->param.non_explicit_convective_problem();
   operator_data.diffusive_problem  = this->param.viscous_problem();
 
   operator_data.convective_kernel_data = convective_kernel_data;
@@ -850,8 +947,9 @@ OperatorCoupled<dim, Number>::update_block_preconditioner()
   // momentum block
   preconditioner_momentum->update();
 
-  // pressure block
-  if(this->param.ale_formulation) // only if mesh is moving
+  // Update pressure block preconditioner if mesh is moving or a variable coefficient is present
+  if(this->param.ale_formulation or
+     (this->param.viscous_problem() and this->param.viscosity_is_variable()))
   {
     auto const type = this->param.preconditioner_pressure_block;
 
@@ -863,17 +961,20 @@ OperatorCoupled<dim, Number>::update_block_preconditioner()
       inverse_mass_preconditioner_schur_complement->update();
     }
 
-    // Laplace operator
-    if(type == SchurComplementPreconditioner::LaplaceOperator or
-       type == SchurComplementPreconditioner::CahouetChabard or
-       type == SchurComplementPreconditioner::PressureConvectionDiffusion)
+    if(this->param.ale_formulation)
     {
-      if(this->param.exact_inversion_of_laplace_operator == true)
+      // Laplace operator
+      if(type == SchurComplementPreconditioner::LaplaceOperator or
+         type == SchurComplementPreconditioner::CahouetChabard or
+         type == SchurComplementPreconditioner::PressureConvectionDiffusion)
       {
-        laplace_operator->update_penalty_parameter();
-      }
+        if(this->param.iterative_solve_of_pressure_block == true)
+        {
+          laplace_operator->update_penalty_parameter();
+        }
 
-      multigrid_preconditioner_schur_complement->update();
+        multigrid_preconditioner_schur_complement->update();
+      }
     }
   }
 }
@@ -1047,12 +1148,12 @@ OperatorCoupled<dim, Number>::apply_preconditioner_velocity_block(VectorType &  
   }
   else if(type == MomentumPreconditioner::Multigrid)
   {
-    if(this->param.exact_inversion_of_velocity_block == false)
+    if(this->param.iterative_solve_of_velocity_block == false)
     {
       // perform one multigrid V-cylce
       preconditioner_momentum->vmult(dst, src);
     }
-    else // exact_inversion_of_velocity_block == true
+    else // iterative_solve_of_velocity_block == true
     {
       // check correctness of multigrid V-cycle
 
@@ -1108,9 +1209,15 @@ OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &  
   else if(type == SchurComplementPreconditioner::InverseMassMatrix)
   {
     // - S^{-1} = nu M_p^{-1}
-    // TODO consider variable viscosity here
     inverse_mass_preconditioner_schur_complement->vmult(dst, src);
-    dst *= this->param.viscosity;
+    if(this->param.viscosity_is_variable())
+    {
+      // Variable viscosity is accounted for in mass operator.
+    }
+    else
+    {
+      dst *= this->param.viscosity;
+    }
   }
   else if(type == SchurComplementPreconditioner::LaplaceOperator)
   {
@@ -1128,11 +1235,18 @@ OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &  
 
     // II. M_p^{-1}, apply inverse pressure mass operator to src-vector and store the result in a
     // temporary vector
-    // TODO consider variable viscosity here
     inverse_mass_preconditioner_schur_complement->vmult(tmp_scp_pressure, src);
 
     // III. add temporary vector scaled by viscosity
-    dst.add(this->param.viscosity, tmp_scp_pressure);
+    if(this->param.viscosity_is_variable())
+    {
+      // Variable viscosity is accounted for in mass operator.
+      dst += tmp_scp_pressure;
+    }
+    else
+    {
+      dst.add(this->param.viscosity, tmp_scp_pressure);
+    }
   }
   else if(type == SchurComplementPreconditioner::PressureConvectionDiffusion)
   {
@@ -1148,7 +1262,7 @@ OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &  
         this->momentum_operator.get_scaling_factor_mass_operator());
     }
 
-    if(this->param.implicit_convective_problem())
+    if(this->param.non_explicit_convective_problem())
     {
       pressure_conv_diff_operator->set_velocity_ptr(this->convective_kernel->get_velocity());
     }
@@ -1156,7 +1270,7 @@ OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &  
     pressure_conv_diff_operator->apply(dst, tmp_scp_pressure);
 
     // III. inverse pressure mass operator M_p^{-1}
-    // TODO consider variable viscosity here
+    // Variable viscosit is accounted for in mass operator.
     inverse_mass_preconditioner_schur_complement->vmult(dst, dst);
   }
   else
@@ -1177,31 +1291,29 @@ void
 OperatorCoupled<dim, Number>::apply_inverse_negative_laplace_operator(VectorType &       dst,
                                                                       VectorType const & src) const
 {
-  if(this->param.exact_inversion_of_laplace_operator == false)
+  if(this->param.iterative_solve_of_pressure_block == false)
   {
     // perform one multigrid V-cycle in order to approximately invert the negative Laplace
     // operator (classical or compatible)
     multigrid_preconditioner_schur_complement->vmult(dst, src);
   }
-  else // exact_inversion_of_laplace_operator == true
+  else // iterative_solve_of_pressure_block == true
   {
-    // solve a linear system of equations for negative Laplace operator to given (relative)
-    // tolerance using the PCG method
+    // solve a linear system of equations related to the negative Laplace operator to given
+    // (relative) tolerance using an iterative method
     VectorType const * pointer_to_src = &src;
-    if(this->is_pressure_level_undefined())
+
+    // manipulate src-vector if operator is singular
+    VectorType vector_zero_mean;
+    if(laplace_operator->operator_is_singular())
     {
-      VectorType vector_zero_mean;
       vector_zero_mean = src;
-
-      if(laplace_operator->operator_is_singular())
-      {
-        dealii::VectorTools::subtract_mean_value(vector_zero_mean);
-      }
-
+      dealii::VectorTools::subtract_mean_value(vector_zero_mean);
       pointer_to_src = &vector_zero_mean;
     }
 
     dst = 0.0;
+
     // Note that the preconditioner is not updated here since it has
     // already been updated in the function update_block_preconditioner().
     solver_pressure_block->solve(dst, *pointer_to_src);

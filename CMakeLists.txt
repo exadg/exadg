@@ -1,5 +1,5 @@
 #########################################################################
-# 
+#
 #                 #######               ######  #######
 #                 ##                    ##   ## ##
 #                 #####   ##  ## #####  ##   ## ## ####
@@ -21,11 +21,11 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#  along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #########################################################################
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.1.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.16)
 
 SET(CMAKE_CXX_STANDARD 17)
 
@@ -34,7 +34,7 @@ ADD_SUBDIRECTORY(cmake)
 PRINT_EXADG_HEADER()
 
 # deal.II
-FIND_PACKAGE(deal.II 9.3 QUIET
+FIND_PACKAGE(deal.II 9.7 QUIET
   HINTS ${deal.II_DIR} ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
   )
 IF(NOT ${deal.II_FOUND})
@@ -58,12 +58,13 @@ DEAL_II_INITIALIZE_CACHED_VARIABLES()
 DEAL_II_QUERY_GIT_INFORMATION(EXADG)
 CONFIGURE_FILE(
   ${CMAKE_SOURCE_DIR}/include/exadg/utilities/exadg_revision.h.in
-  ${CMAKE_SOURCE_DIR}/include/exadg/utilities/exadg_revision.h
+  ${CMAKE_BINARY_DIR}/include/exadg/utilities/exadg_revision.h
   )
 
 
 # Set the source files to be compiled
 SET(TARGET_SRC
+     include/exadg/utilities/evaluate_convergence_study.cpp
      include/exadg/utilities/timer_tree.cpp
      include/exadg/utilities/print_general_infos.cpp
      include/exadg/time_integration/bdf_constants.cpp
@@ -93,9 +94,10 @@ SET(TARGET_SRC
      include/exadg/postprocessor/statistics_manager.cpp
      include/exadg/operators/operator_base.cpp
      include/exadg/operators/mass_operator.cpp
-     include/exadg/operators/boundary_mass_operator.cpp
+     include/exadg/operators/inverse_mass_operator.cpp
      include/exadg/operators/rhs_operator.cpp
      include/exadg/operators/navier_stokes_calculators.cpp
+     include/exadg/operators/structure_calculators.cpp
      # Poisson equation
      include/exadg/poisson/user_interface/parameters.cpp
      include/exadg/poisson/spatial_discretization/operator.cpp
@@ -136,6 +138,7 @@ SET(TARGET_SRC
      include/exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/operator_projection_methods.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.cpp
+     include/exadg/incompressible_navier_stokes/spatial_discretization/operator_consistent_splitting.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/calculators/streamfunction_calculator_rhs_operator.cpp
@@ -144,6 +147,7 @@ SET(TARGET_SRC
      include/exadg/incompressible_navier_stokes/time_integration/time_int_bdf.cpp
      include/exadg/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.cpp
      include/exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.cpp
+     include/exadg/incompressible_navier_stokes/time_integration/time_int_bdf_consistent_splitting.cpp
      include/exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.cpp
      include/exadg/incompressible_navier_stokes/time_integration/driver_steady_problems.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/output_generator.cpp
@@ -173,6 +177,7 @@ SET(TARGET_SRC
      # elasticity
      include/exadg/structure/user_interface/parameters.cpp
      include/exadg/structure/material/library/st_venant_kirchhoff.cpp
+     include/exadg/structure/material/library/incompressible_neo_hookean.cpp
      include/exadg/structure/spatial_discretization/operators/elasticity_operator_base.cpp
      include/exadg/structure/spatial_discretization/operators/nonlinear_operator.cpp
      include/exadg/structure/spatial_discretization/operators/linear_operator.cpp
@@ -195,6 +200,8 @@ SET(TARGET_SRC
      include/exadg/acoustic_conservation_equations/postprocessor/postprocessor.cpp
      include/exadg/acoustic_conservation_equations/postprocessor/output_generator.cpp
      include/exadg/acoustic_conservation_equations/driver.cpp
+     # aero-acoustic
+     include/exadg/aero_acoustic/driver.cpp
      )
 
 SET(DEAL_II_HAVE_TESTS_DIRECTORY TRUE)
@@ -208,7 +215,7 @@ OPTION(BUILD_SHARED_LIBS "Build shared library." ON)
 ADD_LIBRARY(exadg ${TARGET_SRC})
 
 # Set the include directories
-SET(EXADG_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/bundled)
+SET(EXADG_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/bundled ${CMAKE_BINARY_DIR}/include)
 TARGET_INCLUDE_DIRECTORIES(exadg PUBLIC ${EXADG_INCLUDE_DIRS})
 
 # FFTW

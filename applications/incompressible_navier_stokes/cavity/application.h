@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -109,18 +109,19 @@ private:
     // NUMERICAL PARAMETERS
     this->param.implement_block_diagonal_preconditioner_matrix_free = false;
     this->param.use_cell_based_face_loops                           = false;
-    this->param.solver_data_block_diagonal = SolverData(1000, 1.e-12, 1.e-2, 1000);
-    this->param.quad_rule_linearization    = QuadratureRuleLinearization::Overintegration32k;
+    this->param.solver_data_block_diagonal =
+      SolverData(1000, 1.e-12, 1.e-2, LinearSolver::Undefined, 1000);
+    this->param.quad_rule_linearization = QuadratureRuleLinearization::Overintegration32k;
 
     // PROJECTION METHODS
 
     // pressure Poisson equation
-    this->param.solver_data_pressure_poisson    = SolverData(1000, 1.e-12, 1.e-8, 100);
+    this->param.solver_data_pressure_poisson =
+      SolverData(1000, 1.e-12, 1.e-8, LinearSolver::CG, 100);
     this->param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
 
     // projection step
-    this->param.solver_projection         = SolverProjection::CG;
-    this->param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-8);
+    this->param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-8, LinearSolver::CG);
     this->param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
 
@@ -130,33 +131,35 @@ private:
     this->param.order_extrapolation_pressure_nbc =
       this->param.order_time_integrator <= 2 ? this->param.order_time_integrator : 2;
 
-    // viscous step
-    this->param.solver_viscous         = SolverViscous::CG;
-    this->param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-8);
-    this->param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; // Multigrid;
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
+    {
+      this->param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-8, LinearSolver::CG);
+      this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
+    }
 
 
     // PRESSURE-CORRECTION SCHEME
 
     // momentum step
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      // Newton solver
+      this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-20, 1.e-6);
 
-    // Newton solver
-    this->param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-20, 1.e-6);
-
-    // linear solver
-    this->param.solver_momentum = SolverMomentum::GMRES; // FGMRES;
-    if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-      this->param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-2, 100);
-    else
-      this->param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-6, 100);
-    this->param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
-    this->param.update_preconditioner_momentum = true;
-    this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
-    this->param.multigrid_data_momentum.smoother_data.preconditioner =
-      PreconditionerSmoother::BlockJacobi;
-    this->param.multigrid_data_momentum.smoother_data.iterations        = 5;
-    this->param.multigrid_data_momentum.smoother_data.relaxation_factor = 0.7;
-    this->param.multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
+      // linear solver
+      if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+        this->param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-2, LinearSolver::GMRES, 100);
+      else
+        this->param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-6, LinearSolver::GMRES, 100);
+      this->param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
+      this->param.update_preconditioner_momentum = true;
+      this->param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
+      this->param.multigrid_data_momentum.smoother_data.preconditioner =
+        PreconditionerSmoother::BlockJacobi;
+      this->param.multigrid_data_momentum.smoother_data.iterations        = 5;
+      this->param.multigrid_data_momentum.smoother_data.relaxation_factor = 0.7;
+      this->param.multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
+    }
 
     // formulation
     this->param.order_pressure_extrapolation = 1;
@@ -169,11 +172,10 @@ private:
     this->param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-12, 1.e-8);
 
     // linear solver
-    this->param.solver_coupled = SolverCoupled::FGMRES; // FGMRES;
     if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-      this->param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-2, 1000);
+      this->param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-2, LinearSolver::FGMRES, 30);
     else
-      this->param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-6, 1000);
+      this->param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-6, LinearSolver::FGMRES, 30);
 
     // preconditioning linear solver
     this->param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;
@@ -193,16 +195,17 @@ private:
     this->param.multigrid_data_velocity_block.coarse_problem.solver =
       MultigridCoarseGridSolver::GMRES;
 
-    this->param.exact_inversion_of_velocity_block = false; // true;
-    this->param.solver_data_velocity_block        = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    this->param.iterative_solve_of_velocity_block = false; // true;
+    this->param.solver_data_velocity_block =
+      SolverData(1e4, 1.e-12, 1.e-6, LinearSolver::FGMRES, 100);
 
     // preconditioner Schur-complement block
     this->param.preconditioner_pressure_block =
       SchurComplementPreconditioner::PressureConvectionDiffusion;
     this->param.multigrid_data_pressure_block.coarse_problem.solver =
       MultigridCoarseGridSolver::Chebyshev;
-    this->param.exact_inversion_of_laplace_operator = false;
-    this->param.solver_data_pressure_block          = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    this->param.iterative_solve_of_pressure_block = false;
+    this->param.solver_data_pressure_block = SolverData(1e4, 1.e-12, 1.e-6, LinearSolver::CG, 100);
   }
 
   void

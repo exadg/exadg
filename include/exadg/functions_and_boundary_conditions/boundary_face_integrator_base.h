@@ -15,15 +15,17 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
 #ifndef EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_BOUNDARY_FACE_INTEGRATOR_BASE_H_
 #define EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_BOUNDARY_FACE_INTEGRATOR_BASE_H_
 
+// deal.II
 #include <deal.II/matrix_free/matrix_free.h>
 
+// ExaDG
 #include <exadg/utilities/enum_utilities.h>
 
 namespace ExaDG
@@ -81,4 +83,4 @@ protected:
 
 } // namespace ExaDG
 
-#endif /*EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_BOUNDARY_FACE_INTEGRATOR_BASE_H_*/
+#endif /* EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_BOUNDARY_FACE_INTEGRATOR_BASE_H_ */

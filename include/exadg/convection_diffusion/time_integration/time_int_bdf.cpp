@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -23,8 +23,9 @@
 #include <exadg/convection_diffusion/spatial_discretization/operator.h>
 #include <exadg/convection_diffusion/time_integration/time_int_bdf.h>
 #include <exadg/convection_diffusion/user_interface/parameters.h>
-#include <exadg/time_integration/push_back_vectors.h>
+#include <exadg/time_integration/restart.h>
 #include <exadg/time_integration/time_step_calculation.h>
+#include <exadg/time_integration/vector_handling.h>
 #include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
@@ -379,7 +380,7 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::prepare_vectors_for_next_timestep()
 {
-  push_back(solution);
+  swap_back_one_step(solution);
 
   solution[0].swap(solution_np);
 
@@ -388,14 +389,14 @@ TimeIntBDF<dim, Number>::prepare_vectors_for_next_timestep()
   {
     if(param.ale_formulation == false)
     {
-      push_back(vec_convective_term);
+      swap_back_one_step(vec_convective_term);
       vec_convective_term[0].swap(convective_term_np);
     }
   }
 
   if(param.ale_formulation)
   {
-    push_back(vec_grid_coordinates);
+    swap_back_one_step(vec_grid_coordinates);
     vec_grid_coordinates[0].swap(grid_coordinates_np);
   }
 }
@@ -427,11 +428,13 @@ TimeIntBDF<dim, Number>::print_solver_info() const
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::read_restart_vectors(boost::archive::binary_iarchive & ia)
+TimeIntBDF<dim, Number>::read_restart_vectors()
 {
+  std::vector<VectorType *> vectors;
+
   for(unsigned int i = 0; i < this->order; i++)
   {
-    ia >> solution[i];
+    vectors.push_back(&solution[i]);
   }
 
   if(param.convective_problem() and
@@ -441,7 +444,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(boost::archive::binary_iarchive & 
     {
       for(unsigned int i = 0; i < this->order; i++)
       {
-        ia >> vec_convective_term[i];
+        vectors.push_back(&vec_convective_term[i]);
       }
     }
   }
@@ -450,18 +453,22 @@ TimeIntBDF<dim, Number>::read_restart_vectors(boost::archive::binary_iarchive & 
   {
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
-      ia >> vec_grid_coordinates[i];
+      vectors.push_back(&vec_grid_coordinates[i]);
     }
   }
+
+  pde_operator->deserialize_vectors(vectors);
 }
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::write_restart_vectors(boost::archive::binary_oarchive & oa) const
+TimeIntBDF<dim, Number>::write_restart_vectors() const
 {
+  std::vector<VectorType const *> vectors;
+
   for(unsigned int i = 0; i < this->order; i++)
   {
-    oa << solution[i];
+    vectors.push_back(&solution[i]);
   }
 
   if(param.convective_problem() and
@@ -471,7 +478,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(boost::archive::binary_oarchive &
     {
       for(unsigned int i = 0; i < this->order; i++)
       {
-        oa << vec_convective_term[i];
+        vectors.push_back(&vec_convective_term[i]);
       }
     }
   }
@@ -480,9 +487,11 @@ TimeIntBDF<dim, Number>::write_restart_vectors(boost::archive::binary_oarchive &
   {
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
-      oa << vec_grid_coordinates[i];
+      vectors.push_back(&vec_grid_coordinates[i]);
     }
   }
+
+  pde_operator->serialize_vectors(vectors);
 }
 
 template<int dim, typename Number>

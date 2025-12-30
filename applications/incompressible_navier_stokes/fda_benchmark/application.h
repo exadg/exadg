@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -125,7 +125,7 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
 
-  //  param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  //  param.temporal_discretization = TemporalDiscretization::BDFDualSplitting;
   //  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   //  param.calculation_of_time_step_size = TimeStepCalculation::CFL;
   //  param.adaptive_time_stepping = true;
@@ -173,10 +173,9 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
   // PROJECTION METHODS
 
   // pressure Poisson equation
-  param.IP_factor_pressure                   = 1.0;
-  param.solver_data_pressure_poisson         = SolverData(1000, 1.e-12, 1.e-3, 100);
-  param.solver_pressure_poisson              = SolverPressurePoisson::CG; // FGMRES;
-  param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
+  param.IP_factor_pressure              = 1.0;
+  param.solver_data_pressure_poisson    = SolverData(1000, 1.e-12, 1.e-3, LinearSolver::CG, 100);
+  param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
   param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
   if(is_precursor)
     param.multigrid_data_pressure_poisson.type = MultigridType::phMG;
@@ -188,8 +187,7 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
 
 
   // projection step
-  param.solver_projection                = SolverProjection::CG;
-  param.solver_data_projection           = SolverData(1000, 1.e-12, 1.e-3);
+  param.solver_data_projection           = SolverData(1000, 1.e-12, 1.e-3, LinearSolver::CG);
   param.preconditioner_projection        = PreconditionerProjection::InverseMassMatrix;
   param.update_preconditioner_projection = true;
 
@@ -200,10 +198,11 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
   param.order_extrapolation_pressure_nbc =
     param.order_time_integrator <= 2 ? param.order_time_integrator : 2;
 
-  // viscous step
-  param.solver_viscous         = SolverViscous::CG;
-  param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-3);
-  param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
+  if(param.temporal_discretization == TemporalDiscretization::BDFDualSplitting)
+  {
+    param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-3, LinearSolver::CG);
+    param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
+  }
 
 
   // PRESSURE-CORRECTION SCHEME
@@ -213,19 +212,20 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
   param.rotational_formulation       = true; // use false for standard formulation
 
   // momentum step
+  if(param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+  {
+    // Newton solver
+    param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-3);
 
-  // Newton solver
-  param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-3);
+    // linear solver
+    if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+      param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-1, LinearSolver::GMRES, 100);
+    else
+      param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-3, LinearSolver::GMRES, 100);
 
-  // linear solver
-  if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-    param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-1, 100);
-  else
-    param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-3, 100);
-
-  param.solver_momentum                = SolverMomentum::GMRES;
-  param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
-  param.update_preconditioner_momentum = false;
+    param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
+    param.update_preconditioner_momentum = false;
+  }
 
   // COUPLED NAVIER-STOKES SOLVER
   param.use_scaling_continuity = false;
@@ -234,11 +234,10 @@ do_set_parameters(Parameters & param, bool const is_precursor = false)
   param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-20, 1.e-3);
 
   // linear solver
-  param.solver_coupled = SolverCoupled::GMRES; // GMRES; //FGMRES;
   if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-    param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-1, 100);
+    param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-1, LinearSolver::GMRES, 100);
   else
-    param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-3, 100);
+    param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-3, LinearSolver::GMRES, 100);
 
   // preconditioning linear solver
   param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;
@@ -406,7 +405,7 @@ public:
     pp_data_fda.mean_velocity_data.directory = this->output_parameters.directory;
     pp_data_fda.mean_velocity_data.filename  = filename_flowrate;
     dealii::Tensor<1, dim, double> direction;
-    direction[2]                                 = 1.0;
+    direction[dim - 1]                           = 1.0;
     pp_data_fda.mean_velocity_data.direction     = direction;
     pp_data_fda.mean_velocity_data.write_to_file = true;
 
@@ -666,7 +665,7 @@ public:
     radial_profile_z12->n_points_circumferential = n_points_line_circumferential;
 
     dealii::Tensor<1, dim, double> normal;
-    normal[2]                         = 1.0;
+    normal[dim - 1]                   = 1.0;
     radial_profile_z1->normal_vector  = normal;
     radial_profile_z2->normal_vector  = normal;
     radial_profile_z3->normal_vector  = normal;

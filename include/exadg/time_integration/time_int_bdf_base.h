@@ -15,18 +15,17 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_
+#ifndef EXADG_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_
+#define EXADG_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_
 
 // ExaDG
 #include <exadg/time_integration/bdf_constants.h>
 #include <exadg/time_integration/extrapolation_constants.h>
 #include <exadg/time_integration/time_int_multistep_base.h>
-
 
 namespace ExaDG
 {
@@ -61,4 +60,4 @@ protected:
 };
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_ */
+#endif /* EXADG_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_ */

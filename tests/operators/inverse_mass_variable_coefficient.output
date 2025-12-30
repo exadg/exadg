@@ -1,0 +1,374 @@
+  element_type     = Simplex
+  dim              = 2
+  n_components     = 1
+  is_dg            = 1
+  RT_on_hypercube  = 0
+  InverseMassType  = ElementwiseKrylovSolver
+  Number of degrees of freedom: 192
+
+  ||ref||_infty = 0.999994
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 2.44249e-15
+
+  ||ref||_infty = 0.986467
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 1.95677e-15
+
+
+  element_type     = Simplex
+  dim              = 2
+  n_components     = 2
+  is_dg            = 1
+  RT_on_hypercube  = 0
+  InverseMassType  = ElementwiseKrylovSolver
+  Number of degrees of freedom: 384
+
+  ||ref||_infty = 0.99797
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 1.9984e-15
+
+  ||ref||_infty = 0.996042
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 2.10942e-15
+
+
+  element_type     = Simplex
+  dim              = 3
+  n_components     = 1
+  is_dg            = 1
+  RT_on_hypercube  = 0
+  InverseMassType  = ElementwiseKrylovSolver
+  Number of degrees of freedom: 1536
+
+  ||ref||_infty = 0.999241
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 1.43219e-14
+
+  ||ref||_infty = 0.99966
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 1.25455e-14
+
+
+  element_type     = Simplex
+  dim              = 3
+  n_components     = 3
+  is_dg            = 1
+  RT_on_hypercube  = 0
+  InverseMassType  = ElementwiseKrylovSolver
+  Number of degrees of freedom: 4608
+
+  ||ref||_infty = 0.999696
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 2.29816e-14
+
+  ||ref||_infty = 0.999992
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 2.52021e-14
+
+
+  element_type     = Simplex
+  dim              = 2
+  n_components     = 1
+  is_dg            = 1
+  RT_on_hypercube  = 0
+  InverseMassType  = BlockMatrices
+  Number of degrees of freedom: 192
+
+  ||ref||_infty = 0.995733
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 6.66134e-16
+
+  ||ref||_infty = 0.999373
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 5.55112e-16
+
+
+  element_type     = Simplex
+  dim              = 2
+  n_components     = 2
+  is_dg            = 1
+  RT_on_hypercube  = 0
+  InverseMassType  = BlockMatrices
+  Number of degrees of freedom: 384
+
+  ||ref||_infty = 0.996732
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 7.77156e-16
+
+  ||ref||_infty = 0.993933
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 7.77156e-16
+
+
+  element_type     = Simplex
+  dim              = 3
+  n_components     = 1
+  is_dg            = 1
+  RT_on_hypercube  = 0
+  InverseMassType  = BlockMatrices
+  Number of degrees of freedom: 1536
+
+  ||ref||_infty = 0.999402
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 1.11022e-15
+
+  ||ref||_infty = 0.998749
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 1.33227e-15
+
+
+  element_type     = Simplex
+  dim              = 3
+  n_components     = 3
+  is_dg            = 1
+  RT_on_hypercube  = 0
+  InverseMassType  = BlockMatrices
+  Number of degrees of freedom: 4608
+
+  ||ref||_infty = 0.999968
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 1.33227e-15
+
+  ||ref||_infty = 0.999779
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 1.33227e-15
+
+
+  element_type     = Hypercube
+  dim              = 2
+  n_components     = 1
+  is_dg            = 1
+  RT_on_hypercube  = 0
+  InverseMassType  = MatrixfreeOperator
+  Number of degrees of freedom: 32
+
+  ||ref||_infty = 0.938772
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 9.99201e-16
+
+  ||ref||_infty = 0.98091
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 1.66533e-15
+
+
+  element_type     = Hypercube
+  dim              = 2
+  n_components     = 2
+  is_dg            = 1
+  RT_on_hypercube  = 0
+  InverseMassType  = MatrixfreeOperator
+  Number of degrees of freedom: 64
+
+  ||ref||_infty = 0.998551
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 1.77636e-15
+
+  ||ref||_infty = 0.997072
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 1.66533e-15
+
+
+  element_type     = Hypercube
+  dim              = 3
+  n_components     = 1
+  is_dg            = 1
+  RT_on_hypercube  = 0
+  InverseMassType  = MatrixfreeOperator
+  Number of degrees of freedom: 128
+
+  ||ref||_infty = 0.968867
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 3.77476e-15
+
+  ||ref||_infty = 0.999406
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 2.10942e-15
+
+
+  element_type     = Hypercube
+  dim              = 3
+  n_components     = 3
+  is_dg            = 1
+  RT_on_hypercube  = 0
+  InverseMassType  = MatrixfreeOperator
+  Number of degrees of freedom: 384
+
+  ||ref||_infty = 0.997656
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 2.9976e-15
+
+  ||ref||_infty = 0.998806
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 0
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 2.55351e-15
+
+
+  element_type     = Hypercube
+  dim              = 2
+  n_components     = 2
+  is_dg            = 1
+  RT_on_hypercube  = 1
+  InverseMassType  = GlobalKrylovSolver
+  Number of degrees of freedom: 24
+
+  ||ref||_infty = 0.994656
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 3.39073e-12
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 0
+
+  ||ref||_infty = 0.998113
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 1.90539e-12
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 0
+
+
+  element_type     = Hypercube
+  dim              = 3
+  n_components     = 3
+  is_dg            = 1
+  RT_on_hypercube  = 1
+  InverseMassType  = GlobalKrylovSolver
+  Number of degrees of freedom: 72
+
+  ||ref||_infty = 0.986796
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 2.61066e-11
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 0
+
+  ||ref||_infty = 0.988108
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 3.17257e-12
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 0
+
+
+  element_type     = Simplex
+  dim              = 2
+  n_components     = 1
+  is_dg            = 0
+  RT_on_hypercube  = 0
+  InverseMassType  = GlobalKrylovSolver
+  Number of degrees of freedom: 48
+
+  ||ref||_infty = 0.935288
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 1.89893e-12
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 0
+
+  ||ref||_infty = 0.999922
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 2.89468e-12
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 0
+
+
+  element_type     = Simplex
+  dim              = 2
+  n_components     = 2
+  is_dg            = 0
+  RT_on_hypercube  = 0
+  InverseMassType  = GlobalKrylovSolver
+  Number of degrees of freedom: 96
+
+  ||ref||_infty = 0.993914
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 2.59648e-12
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 0
+
+  ||ref||_infty = 0.996245
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 4.30311e-12
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 0
+
+
+  element_type     = Simplex
+  dim              = 3
+  n_components     = 1
+  is_dg            = 0
+  RT_on_hypercube  = 0
+  InverseMassType  = GlobalKrylovSolver
+  Number of degrees of freedom: 120
+
+  ||ref||_infty = 0.990025
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 4.59227e-12
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 0
+
+  ||ref||_infty = 0.996509
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 4.19054e-12
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 0
+
+
+  element_type     = Simplex
+  dim              = 3
+  n_components     = 3
+  is_dg            = 0
+  RT_on_hypercube  = 0
+  InverseMassType  = GlobalKrylovSolver
+  Number of degrees of freedom: 360
+
+  ||ref||_infty = 0.999524
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 1.9893e-12
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 0
+
+  ||ref||_infty = 0.998155
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 1.92144e-12
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 0
+
+
+  element_type     = Hypercube
+  dim              = 2
+  n_components     = 1
+  is_dg            = 0
+  RT_on_hypercube  = 0
+  InverseMassType  = GlobalKrylovSolver
+  Number of degrees of freedom: 16
+
+  ||ref||_infty = 0.930171
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 2.43139e-14
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 0
+
+  ||ref||_infty = 0.931347
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 1.26565e-14
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 0
+
+
+  element_type     = Hypercube
+  dim              = 2
+  n_components     = 2
+  is_dg            = 0
+  RT_on_hypercube  = 0
+  InverseMassType  = GlobalKrylovSolver
+  Number of degrees of freedom: 32
+
+  ||ref||_infty = 0.956524
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 2.87548e-14
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 0
+
+  ||ref||_infty = 0.977503
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 1.385e-14
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 0
+
+
+  element_type     = Hypercube
+  dim              = 3
+  n_components     = 1
+  is_dg            = 0
+  RT_on_hypercube  = 0
+  InverseMassType  = GlobalKrylovSolver
+  Number of degrees of freedom: 48
+
+  ||ref||_infty = 0.911832
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 6.98441e-13
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 0
+
+  ||ref||_infty = 0.964755
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 3.75733e-12
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 0
+
+
+  element_type     = Hypercube
+  dim              = 3
+  n_components     = 3
+  is_dg            = 0
+  RT_on_hypercube  = 0
+  InverseMassType  = GlobalKrylovSolver
+  Number of degrees of freedom: 144
+
+  ||ref||_infty = 0.994434
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 5.91913e-12
+  consider_inverse_coefficient = 0   : || vec  - ref ||_infty = 0
+
+  ||ref||_infty = 0.992968
+  &src == &dst in InverseMassOperator: || vec1 - vec2||_infty = 4.241e-12
+  consider_inverse_coefficient = 1   : || vec  - ref ||_infty = 0
+
+

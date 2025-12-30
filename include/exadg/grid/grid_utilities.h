@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_GRID_UTILITIES_H_
-#define INCLUDE_EXADG_GRID_GRID_UTILITIES_H_
+#ifndef EXADG_GRID_GRID_UTILITIES_H_
+#define EXADG_GRID_GRID_UTILITIES_H_
 
 // deal.II
 #include <deal.II/fe/fe_simplex_p.h>
@@ -249,12 +249,13 @@ create_triangulation(
       std::make_shared<dealii::parallel::fullydistributed::Triangulation<dim>>(mpi_comm);
 
     auto const description = dealii::TriangulationDescription::Utilities::
-      create_description_from_triangulation_in_groups<dim, dim>(serial_grid_generator,
-                                                                serial_grid_partitioner,
-                                                                triangulation->get_communicator(),
-                                                                group_size,
-                                                                mesh_smoothing,
-                                                                triangulation_description_setting);
+      create_description_from_triangulation_in_groups<dim, dim>(
+        serial_grid_generator,
+        serial_grid_partitioner,
+        triangulation->get_mpi_communicator(),
+        group_size,
+        mesh_smoothing,
+        triangulation_description_setting);
 
     triangulation->create_triangulation(description);
   }
@@ -313,7 +314,7 @@ create_coarse_triangulations_automatically_from_fine_triangulation(
       dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
         fine_triangulation,
         BalancedGranularityPartitionPolicy<dim>(
-          dealii::Utilities::MPI::n_mpi_processes(fine_triangulation.get_communicator())));
+          dealii::Utilities::MPI::n_mpi_processes(fine_triangulation.get_mpi_communicator())));
   }
   else
   {
@@ -372,7 +373,7 @@ create_coarse_triangulations_for_fully_distributed_triangulation(
       {
         GridUtilities::create_triangulation<dim>(coarse_triangulations[level],
                                                  coarse_periodic_face_pairs[level],
-                                                 fine_triangulation.get_communicator(),
+                                                 fine_triangulation.get_mpi_communicator(),
                                                  data,
                                                  false /*construct_multigrid_hierarchy */,
                                                  lambda_create_triangulation,
@@ -401,7 +402,7 @@ create_coarse_triangulations_for_fully_distributed_triangulation(
 
         GridUtilities::create_triangulation<dim>(coarse_triangulations[level],
                                                  coarse_periodic_face_pairs[level],
-                                                 fine_triangulation.get_communicator(),
+                                                 fine_triangulation.get_mpi_communicator(),
                                                  data,
                                                  false /*construct_multigrid_hierarchy */,
                                                  lambda_create_triangulation,
@@ -656,5 +657,4 @@ read_external_triangulation(dealii::Triangulation<dim, dim> & tria, GridData con
 } // namespace GridUtilities
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_GRID_GRID_UTILITIES_H_ */
+#endif /* EXADG_GRID_GRID_UTILITIES_H_ */

@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -238,84 +238,74 @@ TimeIntMultistepBase::do_timestep_post_solve()
   }
 }
 
+void
+TimeIntMultistepBase::do_write_restart(std::string const & filename) const
+{
+  // The restart header archive file is wrtten using a single thread only.
+  if(dealii::Utilities::MPI::this_mpi_process(this->mpi_comm) == 0)
+  {
+    std::ostringstream oss;
+
+    BoostOutputArchiveType oa(oss);
+
+    // 1. time
+    oa & time;
+
+    // 2. order
+    oa & order;
+
+    // 3. time step sizes
+    for(unsigned int i = 0; i < order; i++)
+      oa & time_steps[i];
+
+    write_restart_file(oss, filename);
+  }
+
+  // Write solution vectors, independent of the restart header file.
+  write_restart_vectors();
+}
 
 void
 TimeIntMultistepBase::do_read_restart(std::ifstream & in)
 {
-  boost::archive::binary_iarchive ia(in);
-  read_restart_preamble(ia);
-  read_restart_vectors(ia);
+  // The restart header archive file is read using a single thread only.
+  if(dealii::Utilities::MPI::this_mpi_process(this->mpi_comm) == 0)
+  {
+    BoostInputArchiveType ia(in);
+
+    // Note that the operations done here must be in sync with `do_write_restart()`.
+
+    // 1. time
+    ia & time;
+
+    // 2. order
+    unsigned int old_order;
+    ia &         old_order;
+
+    AssertThrow(old_order == order, dealii::ExcMessage("Order of time integrator may not change."));
+
+    // 3. time step sizes
+    for(unsigned int i = 0; i < order; i++)
+      ia & time_steps[i];
+  }
+
+  // Synchronize read data.
+  time = dealii::Utilities::MPI::broadcast(mpi_comm, time, 0);
+  for(unsigned int i = 0; i < order; i++)
+    time_steps[i] = dealii::Utilities::MPI::broadcast(mpi_comm, time_steps[i], 0);
+
+  // Note that start_time has to be set to the new start_time (since param.start_time might still be
+  // the original start time).
+  this->start_time = time;
 
   // In order to change the CFL number (or the time step calculation criterion in general),
   // start_with_low_order = true has to be used. Otherwise, the old solutions would not fit the
   // time step increments.
   if(start_with_low_order == true)
     time_steps[0] = calculate_time_step_size();
-}
 
-void
-TimeIntMultistepBase::read_restart_preamble(boost::archive::binary_iarchive & ia)
-{
-  // Note that the operations done here must be in sync with the output.
-
-  // 1. ranks
-  unsigned int n_old_ranks = 1;
-  ia &         n_old_ranks;
-
-  unsigned int n_ranks = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
-  AssertThrow(n_old_ranks == n_ranks,
-              dealii::ExcMessage("Tried to restart with " + dealii::Utilities::to_string(n_ranks) +
-                                 " processes, "
-                                 "but restart was written on " +
-                                 dealii::Utilities::to_string(n_old_ranks) + " processes."));
-
-  // 2. time
-  ia & time;
-
-  // Note that start_time has to be set to the new start_time (since param.start_time might still be
-  // the original start time).
-  this->start_time = time;
-
-  // 3. order
-  unsigned int old_order = 1;
-  ia &         old_order;
-
-  AssertThrow(old_order == order, dealii::ExcMessage("Order of time integrator may not change."));
-
-  // 4. time step sizes
-  for(unsigned int i = 0; i < order; i++)
-    ia & time_steps[i];
-}
-
-void
-TimeIntMultistepBase::do_write_restart(std::string const & filename) const
-{
-  std::ostringstream oss;
-
-  boost::archive::binary_oarchive oa(oss);
-
-  write_restart_preamble(oa);
-  write_restart_vectors(oa);
-  write_restart_file(oss, filename);
-}
-
-void
-TimeIntMultistepBase::write_restart_preamble(boost::archive::binary_oarchive & oa) const
-{
-  unsigned int n_ranks = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
-
-  // 1. ranks
-  oa & n_ranks;
-
-  // 2. time
-  oa & time;
-
-  // 3. order
-  oa & order;
-
-  // 4. time step sizes
-  for(unsigned int i = 0; i < order; i++)
-    oa & time_steps[i];
+  // Read solution vectors, independent of the restart header file.
+  read_restart_vectors();
 }
 
 void

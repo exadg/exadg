@@ -15,20 +15,21 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  *
  * Source: https://github.com/MeltPoolDG/MeltPoolDG
  * Author: Peter Munch, Magdalena Schreter, TUM, December 2020
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_ADAPTIVE_MESH_REFINEMENT_H_
-#define INCLUDE_EXADG_OPERATORS_ADAPTIVE_MESH_REFINEMENT_H_
+#ifndef EXADG_OPERATORS_ADAPTIVE_MESH_REFINEMENT_H_
+#define EXADG_OPERATORS_ADAPTIVE_MESH_REFINEMENT_H_
 
 // deal.II
 #include <deal.II/base/quadrature_lib.h>
+#include <deal.II/distributed/fully_distributed_tria.h>
 #include <deal.II/distributed/grid_refinement.h>
-#include <deal.II/distributed/solution_transfer.h>
+#include <deal.II/distributed/tria.h>
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/grid/grid_refinement.h>
 #include <deal.II/numerics/error_estimator.h>
@@ -36,7 +37,6 @@
 
 // ExaDG
 #include <exadg/utilities/print_functions.h>
-
 
 namespace ExaDG
 {
@@ -141,7 +141,7 @@ any_cells_flagged_for_coarsening_or_refinement(dealii::Triangulation<dim> const 
     }
   }
 
-  any_flag_set = dealii::Utilities::MPI::logical_or(any_flag_set, tria.get_communicator());
+  any_flag_set = dealii::Utilities::MPI::logical_or(any_flag_set, tria.get_mpi_communicator());
 
   return any_flag_set;
 }
@@ -159,12 +159,12 @@ mark_cells_kelly_error_estimator(dealii::Triangulation<dim> &              tria,
   VectorType locally_relevant_solution;
   locally_relevant_solution.reinit(dof_handler.locally_owned_dofs(),
                                    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler),
-                                   dof_handler.get_communicator());
+                                   dof_handler.get_mpi_communicator());
   locally_relevant_solution.copy_locally_owned_data_from(solution);
   constraints.distribute(locally_relevant_solution);
   locally_relevant_solution.update_ghost_values();
 
-  dealii::QGauss<dim - 1> face_quadrature(n_face_quadrature_points);
+  dealii::QGauss<dim - 1> const face_quadrature(n_face_quadrature_points);
 
   dealii::Vector<float> estimated_error_per_cell(tria.n_active_cells());
 
@@ -175,14 +175,34 @@ mark_cells_kelly_error_estimator(dealii::Triangulation<dim> &              tria,
                                              locally_relevant_solution,
                                              estimated_error_per_cell);
 
-  dealii::parallel::distributed::GridRefinement::refine_and_coarsen_fixed_number(
-    tria,
-    estimated_error_per_cell,
-    amr_data.fraction_of_cells_to_be_refined,
-    amr_data.fraction_of_cells_to_be_coarsened);
+  // Marking of cells depending on triangulation type
+  if(dealii::parallel::distributed::Triangulation<dim> * tria_ptr =
+       dynamic_cast<dealii::parallel::distributed::Triangulation<dim> *>(&tria))
+  {
+    dealii::parallel::distributed::GridRefinement::refine_and_coarsen_fixed_number(
+      tria,
+      estimated_error_per_cell,
+      amr_data.fraction_of_cells_to_be_refined,
+      amr_data.fraction_of_cells_to_be_coarsened);
+  }
+  else if(dealii::parallel::fullydistributed::Triangulation<dim> * tria_ptr =
+            dynamic_cast<dealii::parallel::fullydistributed::Triangulation<dim> *>(&tria))
+  {
+    AssertThrow(false,
+                dealii::ExcMessage(
+                  "Triangulation type `dealii::parallel::fullydistributed::Triangulation` "
+                  "not supported for adaptive mesh refinement."));
+  }
+  else
+  {
+    dealii::GridRefinement::refine_and_coarsen_fixed_number(
+      tria,
+      estimated_error_per_cell,
+      amr_data.fraction_of_cells_to_be_refined,
+      amr_data.fraction_of_cells_to_be_coarsened);
+  }
 }
-
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_OPERATORS_ADAPTIVE_MESH_REFINEMENT_H_ */
+#endif /* EXADG_OPERATORS_ADAPTIVE_MESH_REFINEMENT_H_ */

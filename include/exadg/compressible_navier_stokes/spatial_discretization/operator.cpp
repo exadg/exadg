@@ -15,19 +15,21 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
 // deal.II
 #include <deal.II/base/timer.h>
-#include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
 #include <exadg/compressible_navier_stokes/spatial_discretization/operator.h>
+#include <exadg/functions_and_boundary_conditions/interpolate.h>
 #include <exadg/operators/finite_element.h>
 #include <exadg/operators/grid_related_time_step_restrictions.h>
 #include <exadg/operators/quadrature.h>
+#include <exadg/operators/solution_projection_between_triangulations.h>
+#include <exadg/time_integration/restart.h>
 
 namespace ExaDG
 {
@@ -42,7 +44,7 @@ Operator<dim, Number>::Operator(
   Parameters const &                             param_in,
   std::string const &                            field_in,
   MPI_Comm const &                               mpi_comm_in)
-  : dealii::Subscriptor(),
+  : dealii::EnableObserverPointer(),
     grid(grid_in),
     mapping(mapping_in),
     boundary_descriptor(boundary_descriptor_in),
@@ -75,6 +77,15 @@ Operator<dim, Number>::initialize_dof_handler_and_constraints()
   dof_handler.distribute_dofs(*fe);
   dof_handler_vector.distribute_dofs(*fe_vector);
   dof_handler_scalar.distribute_dofs(*fe_scalar);
+
+  if((param.restart_data.consider_mapping_write and param.restart_data.write_restart) or
+     (param.restart_data.consider_mapping_read_source and param.restarted_simulation))
+  {
+    fe_mapping =
+      create_finite_element<dim>(ElementType::Hypercube, true, dim, param.mapping_degree);
+    dof_handler_mapping = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
+    dof_handler_mapping->distribute_dofs(*fe_mapping);
+  }
 
   constraint.close();
 
@@ -164,19 +175,19 @@ Operator<dim, Number>::setup_operators()
   mass_operator.initialize(*matrix_free, mass_operator_data);
 
   // inverse mass operator
-  InverseMassOperatorData inverse_mass_operator_data_all;
+  InverseMassOperatorData<Number> inverse_mass_operator_data_all;
   inverse_mass_operator_data_all.dof_index  = get_dof_index_all();
   inverse_mass_operator_data_all.quad_index = get_quad_index_standard();
   inverse_mass_operator_data_all.parameters = param.inverse_mass_operator;
   inverse_mass_all.initialize(*matrix_free, inverse_mass_operator_data_all);
 
-  InverseMassOperatorData inverse_mass_operator_data_vector;
+  InverseMassOperatorData<Number> inverse_mass_operator_data_vector;
   inverse_mass_operator_data_vector.dof_index  = get_dof_index_vector();
   inverse_mass_operator_data_vector.quad_index = get_quad_index_standard();
   inverse_mass_operator_data_vector.parameters = param.inverse_mass_operator;
   inverse_mass_vector.initialize(*matrix_free, inverse_mass_operator_data_vector);
 
-  InverseMassOperatorData inverse_mass_operator_data_scalar;
+  InverseMassOperatorData<Number> inverse_mass_operator_data_scalar;
   inverse_mass_operator_data_scalar.dof_index  = get_dof_index_scalar();
   inverse_mass_operator_data_scalar.quad_index = get_quad_index_standard();
   inverse_mass_operator_data_scalar.parameters = param.inverse_mass_operator;
@@ -323,20 +334,149 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::prescribe_initial_conditions(VectorType & src, double const time) const
 {
-  this->field_functions->initial_solution->set_time(time);
+  Utilities::interpolate(
+    *mapping, dof_handler, *(this->field_functions->initial_solution), src, time);
+}
 
-  // This is necessary if Number == float
-  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+template<int dim, typename Number>
+void
+Operator<dim, Number>::serialize_vectors(std::vector<VectorType const *> const & vectors) const
+{
+  // Write deserialization parameters. These do not change during the simulation, but the data are
+  // small and we want to make sure to overwrite them.
+  DeserializationParameters deserialization_parameters;
+  deserialization_parameters.degree                 = param.degree;
+  deserialization_parameters.mapping_degree         = param.mapping_degree;
+  deserialization_parameters.consider_mapping_write = param.restart_data.consider_mapping_write;
+  deserialization_parameters.triangulation_type     = param.grid.triangulation_type;
+  write_deserialization_parameters(mpi_comm, param.restart_data, deserialization_parameters);
 
-  VectorTypeDouble src_double;
-  src_double = src;
+  // Attach vectors to triangulation and serialize.
+  std::vector<dealii::DoFHandler<dim> const *> dof_handlers{&dof_handler};
+  std::vector<std::vector<VectorType const *>> vectors_per_dof_handler{vectors};
+  if(param.restart_data.consider_mapping_write)
+  {
+    store_vectors_in_triangulation_and_serialize(param.restart_data,
+                                                 dof_handlers,
+                                                 vectors_per_dof_handler,
+                                                 this->get_mapping(),
+                                                 dof_handler_mapping.get(),
+                                                 param.mapping_degree);
+  }
+  else
+  {
+    store_vectors_in_triangulation_and_serialize(param.restart_data,
+                                                 dof_handlers,
+                                                 vectors_per_dof_handler);
+  }
+}
 
-  dealii::VectorTools::interpolate(*mapping,
-                                   dof_handler,
-                                   *(this->field_functions->initial_solution),
-                                   src_double);
+template<int dim, typename Number>
+void
+Operator<dim, Number>::deserialize_vectors(std::vector<VectorType *> const & vectors)
+{
+  // Store ghost state to recover after deserialization.
+  std::vector<bool> const has_ghost_elements = get_ghost_state(vectors);
 
-  src = src_double;
+  // Load the deserialization parameters.
+  DeserializationParameters const deserialization_parameters =
+    read_deserialization_parameters(mpi_comm, param.restart_data);
+
+  // Load potentially unfitting checkpoint triangulation of TriangulationType.
+  std::shared_ptr<dealii::Triangulation<dim>> checkpoint_triangulation =
+    deserialize_triangulation<dim>(param.restart_data,
+                                   deserialization_parameters.triangulation_type,
+                                   mpi_comm);
+
+  // Set up DoFHandlers *as checkpointed*, sequence matches `this->serialize_vectors()`.
+  dealii::DoFHandler<dim> checkpoint_dof_handler(*checkpoint_triangulation);
+
+  ElementType const checkpoint_element_type = get_element_type(*checkpoint_triangulation);
+
+  std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe = create_finite_element<dim>(
+    checkpoint_element_type, true, dim + 2, deserialization_parameters.degree);
+
+  checkpoint_dof_handler.distribute_dofs(*checkpoint_fe);
+
+  std::vector<dealii::DoFHandler<dim> const *> checkpoint_dof_handlers{&checkpoint_dof_handler};
+
+  std::vector<VectorType>                checkpoint_vectors(vectors.size());
+  std::vector<std::vector<VectorType *>> checkpoint_vectors_ptr(1);
+  checkpoint_vectors_ptr[0].resize(vectors.size());
+  for(unsigned int i = 0; i < vectors.size(); ++i)
+  {
+    checkpoint_vectors[i].reinit(checkpoint_dof_handler.locally_owned_dofs(), mpi_comm);
+    checkpoint_vectors_ptr[0][i] = &checkpoint_vectors[i];
+  }
+
+  if(param.restart_data.discretization_identical)
+  {
+    // DoFHandlers need to be setup with `checkpoint_triangulation`, otherwise
+    // they are identical. We can simply copy the vector contents.
+    load_vectors(checkpoint_vectors_ptr, checkpoint_dof_handlers);
+    for(unsigned int i = 0; i < vectors.size(); ++i)
+    {
+      vectors[i]->copy_locally_owned_data_from(checkpoint_vectors[i]);
+    }
+  }
+  else
+  {
+    // Perform projection in case of a non-matching discretization.
+    std::vector<dealii::DoFHandler<dim> const *> dof_handlers{&dof_handler};
+    std::vector<std::vector<VectorType *>>       vectors_per_dof_handler{vectors};
+
+    // Deserialize mapping from vector or project on reference triangulations.
+    check_mapping_deserialization(param.restart_data.consider_mapping_read_source,
+                                  deserialization_parameters.consider_mapping_write);
+    std::shared_ptr<dealii::Mapping<dim> const> checkpoint_mapping;
+    std::shared_ptr<MappingDoFVector<dim, typename VectorType::value_type>>
+      checkpoint_mapping_dof_vector;
+    if(param.restart_data.consider_mapping_read_source)
+    {
+      dealii::DoFHandler<dim> checkpoint_dof_handler_mapping(*checkpoint_triangulation);
+      std::shared_ptr<dealii::FiniteElement<dim>> checkpoint_fe_mapping =
+        create_finite_element<dim>(checkpoint_element_type,
+                                   true,
+                                   dim,
+                                   deserialization_parameters.mapping_degree);
+      checkpoint_dof_handler_mapping.distribute_dofs(*checkpoint_fe_mapping);
+
+      checkpoint_mapping_dof_vector = load_vectors(checkpoint_vectors_ptr,
+                                                   checkpoint_dof_handlers,
+                                                   &checkpoint_dof_handler_mapping,
+                                                   deserialization_parameters.mapping_degree);
+
+      checkpoint_mapping = checkpoint_mapping_dof_vector->get_mapping();
+    }
+    else
+    {
+      load_vectors(checkpoint_vectors_ptr, checkpoint_dof_handlers);
+
+      // Create dummy linear mapping since we have no mapping serialized to restore.
+      std::shared_ptr<dealii::Mapping<dim>> tmp;
+      GridUtilities::create_mapping(tmp,
+                                    get_element_type(*checkpoint_triangulation),
+                                    1 /* mapping_degree */);
+      checkpoint_mapping = std::const_pointer_cast<dealii::Mapping<dim> const>(tmp);
+    }
+
+    ExaDG::GridToGridProjection::GridToGridProjectionData<dim> data;
+    data.rpe_data.rtree_level            = param.restart_data.rpe_rtree_level;
+    data.rpe_data.tolerance              = param.restart_data.rpe_tolerance_unit_cell;
+    data.rpe_data.enforce_unique_mapping = param.restart_data.rpe_enforce_unique_mapping;
+
+    ExaDG::GridToGridProjection::do_grid_to_grid_projection<dim, Number, VectorType>(
+      checkpoint_mapping,
+      checkpoint_dof_handlers,
+      checkpoint_vectors_ptr,
+      dof_handlers,
+      *matrix_free,
+      vectors_per_dof_handler,
+      data);
+  }
+
+  // Recover ghost vector state.
+  set_ghost_state(vectors, has_ghost_elements);
 }
 
 template<int dim, typename Number>
@@ -546,7 +686,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::compute_vorticity(VectorType & dst, VectorType const & src) const
 {
-  vorticity_calculator.compute_vorticity(dst, src);
+  vorticity_calculator.compute_projection_rhs(dst, src);
   inverse_mass_vector.apply(dst, dst);
 }
 
@@ -554,7 +694,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::compute_divergence(VectorType & dst, VectorType const & src) const
 {
-  divergence_calculator.compute_divergence(dst, src);
+  divergence_calculator.compute_projection_rhs(dst, src);
   inverse_mass_scalar.apply(dst, dst);
 }
 
@@ -562,7 +702,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::compute_shear_rate(VectorType & dst, VectorType const & src) const
 {
-  shear_rate_calculator.compute_shear_rate(dst, src);
+  shear_rate_calculator.compute_projection_rhs(dst, src);
   inverse_mass_scalar.apply(dst, dst);
 }
 

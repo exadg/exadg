@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_EVALUATE_FUNCTIONS_H_
-#define INCLUDE_EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_EVALUATE_FUNCTIONS_H_
+#ifndef EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_EVALUATE_FUNCTIONS_H_
+#define EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_EVALUATE_FUNCTIONS_H_
 
 // deal.II
 #include <deal.II/base/function.h>
@@ -28,9 +28,11 @@
 #include <deal.II/base/tensor.h>
 #include <deal.II/base/vectorization.h>
 
+// ExaDG
 #include <exadg/functions_and_boundary_conditions/container_interface_data.h>
 #include <exadg/functions_and_boundary_conditions/function_with_normal.h>
 
+// C/C++
 #include <memory>
 
 namespace ExaDG
@@ -40,17 +42,25 @@ struct FunctionEvaluator
 {
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>>
-    value(dealii::Function<dim> &                                     function,
-          dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points,
-          double const &                                              time)
+    value(dealii::Function<dim> const &                               function,
+          dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points)
   {
     (void)function;
     (void)q_points;
-    (void)time;
 
     AssertThrow(false, dealii::ExcMessage("should not arrive here."));
 
     return dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>>();
+  }
+
+  static inline DEAL_II_ALWAYS_INLINE //
+    dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>>
+    value(dealii::Function<dim> &                                     function,
+          dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points,
+          double const &                                              time)
+  {
+    function.set_time(time);
+    return value(function, q_points);
   }
 
   static inline DEAL_II_ALWAYS_INLINE //
@@ -72,19 +82,41 @@ struct FunctionEvaluator
 
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>>
+    value(FunctionWithNormal<dim> const &                                 function_with_normal,
+          dealii::Point<dim, dealii::VectorizedArray<Number>> const &     q_points,
+          dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & normals)
+  {
+    (void)function_with_normal;
+    (void)q_points;
+    (void)normals;
+
+    AssertThrow(false, dealii::ExcMessage("not implemented."));
+
+    return dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>>();
+  }
+
+  static inline DEAL_II_ALWAYS_INLINE //
+    dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>>
     value(FunctionWithNormal<dim> &                                       function_with_normal,
           dealii::Point<dim, dealii::VectorizedArray<Number>> const &     q_points,
           dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & normals,
           double const &                                                  time)
   {
-    (void)function_with_normal;
+    function_with_normal.set_time(time);
+    return value(function_with_normal, q_points, normals);
+  }
+
+  static inline DEAL_II_ALWAYS_INLINE //
+    dealii::SymmetricTensor<rank, dim, dealii::VectorizedArray<Number>>
+    value_symmetric(dealii::Function<dim> const &                               function,
+                    dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points)
+  {
+    (void)function;
     (void)q_points;
-    (void)normals;
-    (void)time;
 
-    AssertThrow(false, dealii::ExcMessage("not implemented."));
+    AssertThrow(false, dealii::ExcMessage("should not arrive here."));
 
-    return dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>>();
+    return dealii::SymmetricTensor<rank, dim, dealii::VectorizedArray<Number>>();
   }
 
   static inline DEAL_II_ALWAYS_INLINE //
@@ -93,13 +125,8 @@ struct FunctionEvaluator
                     dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points,
                     double const &                                              time)
   {
-    (void)function;
-    (void)q_points;
-    (void)time;
-
-    AssertThrow(false, dealii::ExcMessage("should not arrive here."));
-
-    return dealii::SymmetricTensor<rank, dim, dealii::VectorizedArray<Number>>();
+    function.set_time(time);
+    return value_symmetric(function, q_points);
   }
 
   static inline DEAL_II_ALWAYS_INLINE //
@@ -125,9 +152,8 @@ struct FunctionEvaluator<0, dim, Number>
 {
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<0, dim, dealii::VectorizedArray<Number>>
-    value(dealii::Function<dim> &                                     function,
-          dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points,
-          double const &                                              time)
+    value(dealii::Function<dim> const &                               function,
+          dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points)
   {
     dealii::VectorizedArray<Number> value = dealii::make_vectorized_array<Number>(0.0);
 
@@ -137,12 +163,22 @@ struct FunctionEvaluator<0, dim, Number>
       for(unsigned int d = 0; d < dim; ++d)
         q_point[d] = q_points[d][v];
 
-      function.set_time(time);
       value[v] = function.value(q_point);
     }
 
     return value;
   }
+
+  static inline DEAL_II_ALWAYS_INLINE //
+    dealii::Tensor<0, dim, dealii::VectorizedArray<Number>>
+    value(dealii::Function<dim> &                                     function,
+          dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points,
+          double const &                                              time)
+  {
+    function.set_time(time);
+    return value(function, q_points);
+  }
+
 
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<0, dim, dealii::VectorizedArray<Number>>
@@ -165,9 +201,8 @@ struct FunctionEvaluator<1, dim, Number>
 {
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
-    value(dealii::Function<dim> &                                     function,
-          dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points,
-          double const &                                              time)
+    value(dealii::Function<dim> const &                               function,
+          dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points)
   {
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> value;
 
@@ -179,12 +214,21 @@ struct FunctionEvaluator<1, dim, Number>
         for(unsigned int i = 0; i < dim; ++i)
           q_point[i] = q_points[i][v];
 
-        function.set_time(time);
         value[d][v] = function.value(q_point, d);
       }
     }
 
     return value;
+  }
+
+  static inline DEAL_II_ALWAYS_INLINE //
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
+    value(dealii::Function<dim> &                                     function,
+          dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points,
+          double const &                                              time)
+  {
+    function.set_time(time);
+    return value(function, q_points);
   }
 
   static inline DEAL_II_ALWAYS_INLINE //
@@ -215,8 +259,7 @@ struct FunctionEvaluator<1, dim, Number>
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
     value(FunctionWithNormal<dim> &                                       function_with_normal,
           dealii::Point<dim, dealii::VectorizedArray<Number>> const &     q_points,
-          dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & normals,
-          double const &                                                  time)
+          dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & normals)
   {
     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> value;
 
@@ -231,13 +274,23 @@ struct FunctionEvaluator<1, dim, Number>
           q_point[i] = q_points[i][v];
           normal[i]  = normals[i][v];
         }
-        function_with_normal.set_time(time);
         function_with_normal.set_normal_vector(normal);
         value[d][v] = function_with_normal.value(q_point, d);
       }
     }
 
     return value;
+  }
+
+  static inline DEAL_II_ALWAYS_INLINE //
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
+    value(FunctionWithNormal<dim> &                                       function_with_normal,
+          dealii::Point<dim, dealii::VectorizedArray<Number>> const &     q_points,
+          dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & normals,
+          double const &                                                  time)
+  {
+    function_with_normal.set_time(time);
+    return value(function_with_normal, q_points, normals);
   }
 };
 
@@ -246,9 +299,8 @@ struct FunctionEvaluator<2, dim, Number>
 {
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
-    value(dealii::Function<dim> &                                     function,
-          dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points,
-          double const &                                              time)
+    value(dealii::Function<dim> const &                               function,
+          dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points)
   {
     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> value;
 
@@ -263,8 +315,6 @@ struct FunctionEvaluator<2, dim, Number>
           for(unsigned int i = 0; i < dim; ++i)
             q_point[i] = q_points[i][v];
 
-          function.set_time(time);
-
           auto const unrolled_index =
             dealii::Tensor<2, dim>::component_to_unrolled_index(dealii::TableIndices<2>(d1, d2));
 
@@ -274,6 +324,16 @@ struct FunctionEvaluator<2, dim, Number>
     }
 
     return value;
+  }
+
+  static inline DEAL_II_ALWAYS_INLINE //
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+    value(dealii::Function<dim> &                                     function,
+          dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points,
+          double const &                                              time)
+  {
+    function.set_time(time);
+    return value(function, q_points);
   }
 
   static inline DEAL_II_ALWAYS_INLINE //
@@ -305,9 +365,8 @@ struct FunctionEvaluator<2, dim, Number>
 
   static inline DEAL_II_ALWAYS_INLINE //
     dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
-    value_symmetric(dealii::Function<dim> &                                     function,
-                    dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points,
-                    double const &                                              time)
+    value_symmetric(dealii::Function<dim> const &                               function,
+                    dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points)
   {
     dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> value;
 
@@ -322,8 +381,6 @@ struct FunctionEvaluator<2, dim, Number>
           for(unsigned int i = 0; i < dim; ++i)
             q_point[i] = q_points[i][v];
 
-          function.set_time(time);
-
           auto const unrolled_index = dealii::SymmetricTensor<2, dim>::component_to_unrolled_index(
             dealii::TableIndices<2>(d1, d2));
 
@@ -333,6 +390,16 @@ struct FunctionEvaluator<2, dim, Number>
     }
 
     return value;
+  }
+
+  static inline DEAL_II_ALWAYS_INLINE //
+    dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>>
+    value_symmetric(dealii::Function<dim> &                                     function,
+                    dealii::Point<dim, dealii::VectorizedArray<Number>> const & q_points,
+                    double const &                                              time)
+  {
+    function.set_time(time);
+    return value(q_points, time);
   }
 
   static inline DEAL_II_ALWAYS_INLINE //
@@ -365,4 +432,4 @@ struct FunctionEvaluator<2, dim, Number>
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_EVALUATE_FUNCTIONS_H_ */
+#endif /* EXADG_FUNCTIONS_AND_BOUNDARY_CONDITIONS_EVALUATE_FUNCTIONS_H_ */

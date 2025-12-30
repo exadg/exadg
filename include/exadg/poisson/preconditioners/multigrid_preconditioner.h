@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_POISSON_MULTIGRID_PRECONDITIONER_H_
-#define INCLUDE_POISSON_MULTIGRID_PRECONDITIONER_H_
+#ifndef EXADG_POISSON_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
+#define EXADG_POISSON_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
 
+// ExaDG
 #include <exadg/operators/multigrid_operator.h>
 #include <exadg/poisson/spatial_discretization/laplace_operator.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h>
@@ -78,7 +79,9 @@ private:
                         unsigned int const                     dealii_triangulation_level) final;
 
   std::shared_ptr<MGOperatorBase>
-  initialize_operator(unsigned int const level) final;
+  initialize_operator(unsigned int const level,
+                      bool const         use_matrix_based_operator_level,
+                      bool const         assemble_matrix) final;
 
   std::shared_ptr<Laplace>
   get_operator(unsigned int level);
@@ -93,4 +96,4 @@ private:
 } // namespace Poisson
 } // namespace ExaDG
 
-#endif /* INCLUDE_POISSON_MULTIGRID_PRECONDITIONER_H_ */
+#endif /* EXADG_POISSON_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_ */

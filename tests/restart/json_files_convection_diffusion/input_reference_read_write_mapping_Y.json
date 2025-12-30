@@ -1,0 +1,31 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "true"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "5",
+        "DegreeMax": "5",
+        "RefineSpaceMin": "3",
+        "RefineSpaceMax": "3"
+    },
+    "TemporalResolution": {
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+        "EnableAdaptivity": "false",
+        "ReadRestart": "false",
+        "WriteRestart": "true",
+        "ApplyManifold": "true",
+        "ReadWriteMapping": "true",
+        "TriangulationType": "Serial",
+        "UseExplicitTimeIntegration": "false"
+    },
+    "Output": {
+        "OutputDirectory": "output_test/rotating_hill/",
+        "OutputName": "test",
+        "WriteOutput": "false"
+    }
+}

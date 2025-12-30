@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_
-#define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_
+#ifndef EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_
+#define EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_
 
+// ExaDG
 #include <exadg/compressible_navier_stokes/postprocessor/output_generator.h>
 #include <exadg/compressible_navier_stokes/postprocessor/pointwise_output_generator.h>
 #include <exadg/compressible_navier_stokes/postprocessor/postprocessor_base.h>
@@ -55,6 +56,7 @@ public:
 
   PostProcessor(PostProcessorData<dim> const & postprocessor_data, MPI_Comm const & comm);
 
+  // custom destructor computing convergence tables if desired
   virtual ~PostProcessor();
 
   void
@@ -84,7 +86,7 @@ private:
 
   PostProcessorData<dim> pp_data;
 
-  dealii::SmartPointer<Operator<dim, Number> const> navier_stokes_operator;
+  dealii::ObserverPointer<Operator<dim, Number> const> navier_stokes_operator;
 
   OutputGenerator<dim, Number>                 output_generator;
   PointwiseOutputGenerator<dim, Number>        pointwise_output_generator;
@@ -98,4 +100,4 @@ private:
 } // namespace CompNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_ */
+#endif /* EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_ */

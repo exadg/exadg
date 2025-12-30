@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -85,8 +85,7 @@ NormalFluxCalculator<dim, Number>::evaluate(VectorType const & solution,
 
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
-        flux_face +=
-          integrator.JxW(q) * integrator.get_gradient(q) * integrator.get_normal_vector(q);
+        flux_face += integrator.JxW(q) * integrator.get_gradient(q) * integrator.normal_vector(q);
       }
 
       // sum over all entries of dealii::VectorizedArray

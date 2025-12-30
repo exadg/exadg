@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -119,7 +119,12 @@ MultigridPreconditioner<dim, Number>::update()
     });
   }
 
-  if(mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
+  // Update data storage of nonlinear convective and viscous terms if needed.
+  bool const update_convective_data =
+    mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion;
+  bool const update_viscous_data =
+    data.viscous_problem and data.viscous_kernel_data.viscosity_is_variable;
+  if(update_convective_data or update_viscous_data)
   {
     VectorType const & vector_linearization = pde_operator->get_velocity();
 
@@ -140,20 +145,34 @@ MultigridPreconditioner<dim, Number>::update()
     this->get_operator(this->get_number_of_levels() - 1)
       ->set_velocity_copy(*vector_multigrid_type_ptr);
 
-    // interpolate velocity from fine to coarse level
+    // update variable viscosity on finest level
+    if(update_viscous_data)
+    {
+      this->get_operator(this->get_number_of_levels() - 1)
+        ->update_viscosity(*vector_multigrid_type_ptr);
+    }
+
+    // interpolate velocity from fine to coarse level and update data
     this->transfer_from_fine_to_coarse_levels(
       [&](unsigned int const fine_level, unsigned int const coarse_level) {
-        auto & vector_fine_level   = this->get_operator(fine_level)->get_velocity();
-        auto   vector_coarse_level = this->get_operator(coarse_level)->get_velocity();
+        auto const & vector_fine_level   = this->get_operator(fine_level)->get_velocity();
+        auto         vector_coarse_level = this->get_operator(coarse_level)->get_velocity();
         this->transfers->interpolate(fine_level, vector_coarse_level, vector_fine_level);
+
+        // set velocity vector
         this->get_operator(coarse_level)->set_velocity_copy(vector_coarse_level);
+
+        // update variable variable viscosity
+        if(update_viscous_data)
+        {
+          this->get_operator(coarse_level)->update_viscosity(vector_coarse_level);
+        }
       });
   }
 
   // In case the operators have been updated, we also need to update the smoothers and the coarse
   // grid solver. This is generic functionality implemented in the base class.
-  if(mesh_is_moving or data.unsteady_problem or
-     (mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion) or
+  if(mesh_is_moving or data.unsteady_problem or update_convective_data or update_viscous_data or
      this->update_needed)
   {
     this->update_smoothers();
@@ -200,17 +219,28 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
 template<int dim, typename Number>
 std::shared_ptr<
   MultigridOperatorBase<dim, typename MultigridPreconditionerBase<dim, Number>::MultigridNumber>>
-MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const level)
+MultigridPreconditioner<dim, Number>::initialize_operator(
+  unsigned int const level,
+  bool const         use_matrix_based_operator_level,
+  bool const         assemble_matrix)
 {
+  (void)assemble_matrix;
+  AssertThrow(use_matrix_based_operator_level == false,
+              dealii::ExcMessage("Matrix-based implementation not supported."));
+
   // initialize pde_operator in a first step
   std::shared_ptr<PDEOperatorMG> pde_operator_level(new PDEOperatorMG());
 
   data.dof_index  = this->matrix_free_data_objects[level]->get_dof_index("std_dof_handler");
   data.quad_index = this->matrix_free_data_objects[level]->get_quad_index("std_quadrature");
 
+  // the choice matrix-free vs. matrix-based might be different from what we do on the fine level
+  data.use_matrix_based_operator_level = use_matrix_based_operator_level;
+
   pde_operator_level->initialize(*this->matrix_free_objects[level],
                                  *this->constraints[level],
-                                 data);
+                                 data,
+                                 this->get_mapping(this->level_info[level].h_level()));
 
   // The operator also depends on the time. This is due to the fact that the linearized
   // convective term does not only depend on the linearized velocity field but also on Dirichlet

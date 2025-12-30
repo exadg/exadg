@@ -15,14 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_DUAL_SPLITTING_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_DUAL_SPLITTING_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_DUAL_SPLITTING_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_DUAL_SPLITTING_H_
 
-// base class
+// ExaDG
 #include <exadg/incompressible_navier_stokes/spatial_discretization/curl_compute.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_projection_methods.h>
 
@@ -103,6 +103,12 @@ public:
   void
   rhs_ppe_nbc_viscous_add(VectorType & dst, VectorType const & src) const;
 
+  // rhs pressure Poisson equation: Neumann BC variable viscosity term
+  void
+  rhs_ppe_nbc_variable_viscosity_add(VectorType &       rhs_ppe,
+                                     VectorType const & velocity,
+                                     VectorType const & viscosity);
+
   void
   rhs_ppe_laplace_add(VectorType & dst, double const & time) const;
 
@@ -116,14 +122,6 @@ public:
   void
   apply_helmholtz_operator(VectorType & dst, VectorType const & src) const;
 
-  void
-  rhs_add_viscous_term(VectorType & dst, double const time) const;
-
-  unsigned int
-  solve_viscous(VectorType &       dst,
-                VectorType const & src,
-                bool const &       update_preconditioner,
-                double const &     scaling_factor_mass);
 
   /*
    * Fill a DoF vector with velocity Dirichlet values on Dirichlet boundaries.
@@ -137,18 +135,6 @@ public:
   interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time) const;
 
 private:
-  void
-  setup_preconditioners_and_solvers() final;
-
-  /*
-   * Setup of Helmholtz solver.
-   */
-  void
-  setup_helmholtz_preconditioner();
-
-  void
-  setup_helmholtz_solver();
-
   /*
    * rhs pressure Poisson equation
    */
@@ -220,6 +206,14 @@ private:
                                               VectorType const &                      src,
                                               Range const & face_range) const;
 
+  // viscous term from variable viscosity
+  void
+  local_rhs_ppe_nbc_variable_viscosity_add_boundary_face(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           face_range) const;
+
   void
   local_interpolate_velocity_dirichlet_bc_boundary_face(
     dealii::MatrixFree<dim, Number> const & matrix_free,
@@ -227,17 +221,12 @@ private:
     VectorType const &                      src,
     Range const &                           face_range) const;
 
-
-  /*
-   * Viscous step (Helmholtz-like equation).
-   */
-  std::shared_ptr<PreconditionerBase<Number>> helmholtz_preconditioner;
-
-  std::shared_ptr<Krylov::SolverBase<VectorType>> helmholtz_solver;
+  // Pointer to vector holding the viscosity in the velocity scalar field.
+  VectorType const * viscosity = nullptr;
 };
 
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_DUAL_SPLITTING_H_ \
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_DUAL_SPLITTING_H_ \
         */

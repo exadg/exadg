@@ -15,16 +15,20 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_ENUM_UTILITIES_H_
-#define INCLUDE_EXADG_UTILITIES_ENUM_UTILITIES_H_
+#ifndef EXADG_UTILITIES_ENUM_UTILITIES_H_
+#define EXADG_UTILITIES_ENUM_UTILITIES_H_
+
+// C/C++
+#include <vector>
 
 #include <boost/algorithm/string/join.hpp>
 #include <magic_enum/magic_enum.hpp>
 
+// deal.II
 #include <deal.II/base/exceptions.h>
 
 namespace ExaDG
@@ -84,4 +88,4 @@ string_to_enum(EnumType & enum_type, std::string const & enum_name)
 } // namespace Utilities
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_UTILITIES_ENUM_UTILITIES_H_ */
+#endif /* EXADG_UTILITIES_ENUM_UTILITIES_H_ */

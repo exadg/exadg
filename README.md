@@ -9,7 +9,7 @@ ExaDG's range of applicability currently also covers coupled flow-transport prob
 
 ## Philosophy
 
-ExaDG does not intend to reinvent the wheel. This project therefore relies on well-established third party libraries where possible. ExaDG mainly builds upon *deal.II*, a generic finite element library written in C++. The *deal.II* library provides sophisticated interfaces and data structures, and highly-efficient matrix-free algorithms. Aspects of parallelization are almost completely hidden by *deal.II*. While *deal.II* has a strong focus on aspects of computer science and software development, ExaDG bridges the gap to the application world in the field of computational fluid dynamics and offers efficient solver, e.g., for fluid dynamics and turbulence researchers whose primary interest might not be software development.
+ExaDG does not intend to reinvent the wheel. This project therefore relies on well-established third party libraries where possible. ExaDG mainly builds upon *deal.II*, a generic finite element library written in C++. The *deal.II* library provides sophisticated interfaces and data structures, and highly-efficient matrix-free algorithms. Aspects of parallelization are almost completely hidden by *deal.II*. While *deal.II* has a strong focus on aspects of computer science and software development, ExaDG bridges the gap to the application world in the field of computational fluid dynamics and offers efficient solvers, e.g., to fluid dynamics and turbulence researchers whose primary interest might not be software development.
 
 Our motto is to provide a software that is intuitive to use and where changes and new features can be realized easily. We want to develop computationally efficient solvers at the frontiers of research. This requires agility in software development, and a lightweight code base. In this early stage of ExaDG, we want to enable changes to the software design whenever we realize that parts of the code are too rigid and hinder our daily work, of course, with the goal to maintain compatibility as much as possible. New modules that have proven both robust and computationally efficient, and that can be realized generically, are migrated to third party libraries such as *deal.II*, in order to let a broader community benefit from the developments, and in order to keep the present software project lean. ExaDG is an interdisciplinary effort and a community project where all contributions are highly welcome!
 
@@ -36,33 +36,16 @@ make -j<N>
 
 Please feel free to start a [discussion](https://github.com/exadg/exadg/discussions) to ask questions, share ideas, or get advice. In case you plan major contributions to the project, we suggest to start a discussion in an early stage of your work to make sure that your efforts are well-directed.
 
-## Publications
+## Citing this work
 
-Please consider citing the following paper for acknowledging this software contribution:
+Please consider citing this github project in scientific contributions for acknowledging this software contribution.
 
-```
-@InProceedings{ExaDG2020,
-title     = {{ExaDG}: High-Order Discontinuous {G}alerkin for the Exa-Scale},
-author    = {Arndt, Daniel and Fehn, Niklas and Kanschat, Guido and Kormann, Katharina 
-             and Kronbichler, Martin and Munch, Peter and Wall, Wolfgang A. and Witte, Julius},
-editor    = {Bungartz, Hans-Joachim and Reiz, Severin and Uekermann, Benjamin 
-             and Neumann, Philipp and Nagel, Wolfgang E.},
-booktitle = {Software for Exascale Computing - SPPEXA 2016-2019},
-year      = {2020},
-publisher = {Springer International Publishing},
-address   = {Cham},
-pages     = {189--224}
-}
-```
-A detailed list of publications can be found on the wiki page [Publications](https://github.com/exadg/exadg/wiki/Publications).
+There is currently no paper dedicated to the software project **ExaDG**. A detailed list of publications with information on **ExaDG** and its numerical methods can be found on the wiki page [Publications](https://github.com/exadg/exadg/wiki/Publications). The most comprehensive overview of **ExaDG** is currently provided in [Fehn (2021)](https://mediatum.ub.tum.de/1601025).
 
 ## Authors
 
-ExaDG's principal developers are:
+ExaDG's principal developer is [Niklas Fehn](https://scholar.google.de/citations?user=8Dm3CikAAAAJ&hl=de&oi=ao) ([@nfehn](https://github.com/nfehn)).
 
-- [Niklas Fehn](https://www.epc.ed.tum.de/lnm/staff/niklas-fehn/) ([@nfehn](https://github.com/nfehn)), University of Augsburg, DE
-- [Martin Kronbichler](https://www.uni-augsburg.de/en/fakultaet/mntf/math/prof/hpc/team/kronbichler/) ([@kronbichler](https://github.com/kronbichler)), University of Augsburg, DE
-- [Peter Munch](https://www.uni-augsburg.de/en/fakultaet/mntf/math/prof/hpc/team/munch/) ([@peterrum](https://github.com/peterrum)), University of Augsburg, DE
 
 ## License
 

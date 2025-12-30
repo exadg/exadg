@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_NONLINEAR_OPERATOR_H_
-#define INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_NONLINEAR_OPERATOR_H_
+#ifndef EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_NONLINEAR_OPERATOR_H_
+#define EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_NONLINEAR_OPERATOR_H_
 
+// ExaDG
 #include <exadg/structure/spatial_discretization/operators/elasticity_operator_base.h>
 
 namespace ExaDG
@@ -42,19 +43,19 @@ private:
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
-  typedef dealii::VectorizedArray<Number>                         scalar;
-  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
-  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
+  typedef dealii::VectorizedArray<Number>                                  scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>          vector;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>          tensor;
+  typedef dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> symmetric_tensor;
 
-public:
+private:
   /**
    * Initialize function.
    */
   void
-  initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
-             dealii::AffineConstraints<Number> const & affine_constraints,
-             OperatorData<dim> const &                 data) override;
+  initialize_derived() override;
 
+public:
   /**
    * Evaluates the non-linear operator.
    *
@@ -124,7 +125,7 @@ private:
   /*
    * Calculates the integral
    *
-   *  (v_h, factor * density * d_h)_Omega + (Grad(v_h), P_h)_Omega ,
+   *  (v_h, factor * d_h)_Omega + (Grad(v_h), P_h)_Omega
    *
    * with 1st Piola-Kirchhoff stress tensor P_h
    *
@@ -150,31 +151,21 @@ private:
   do_cell_integral_nonlinear(IntegratorCell & integrator) const;
 
   /*
-   * Computes boundary integrals
+   * Computes the nonlinear Neumann boundary term
    *
-   * inhomogeneous operator:
-   *  - (v_h, t_0)_{Gamma_N} - (v_h, - p * N)_{Gamma_R} ,
-   *
+   *  - (v_h, t_0)_{Gamma_N}
    *
    * with traction
    *
-   *  t_0 = da/dA t ,
+   *  t_0 = da/dA t .
    *
-   * and exterior pressure p. If the traction is specified as force per surface area of the
-   * underformed body, the specified traction t is interpreted as t_0 = t, and no pull-back is
-   * necessary.
-   *
-   * homogeneous operator on Robin boundary:
-   *  + (v_h, k * d_h + c * factor_velocity * d_h)_{Gamma_R} ,
-   *
-   * with spring stiffness k, dashpot coefficient c and time integration coefficient
-   * factor_velocity, which together with the remainding terms added via a const_vector on the rhs
-   * constitutes the complete .
+   * If the traction is specified as force per surface area of the underformed
+   * body, the specified traction t is interpreted as t_0 = t, and no pull-back
+   * is necessary.
    */
   void
-  do_boundary_integral_continuous(IntegratorFace &                   integrator_m,
-                                  OperatorType const &               operator_type,
-                                  dealii::types::boundary_id const & boundary_id) const final;
+  do_boundary_integral_continuous_nonlinear(IntegratorFace &                   integrator,
+                                            dealii::types::boundary_id const & boundary_id) const;
 
   /*
    * Linearized operator.
@@ -185,7 +176,7 @@ private:
   /*
    * Calculates the integral
    *
-   *  (v_h, factor * density * delta d_h)_Omega + (Grad(v_h), delta P_h)_Omega
+   *  (v_h, factor * delta d_h)_Omega + (Grad(v_h), delta P_h)_Omega
    *
    * with the directional derivative of the 1st Piola-Kirchhoff stress tensor P_h
    *
@@ -208,7 +199,25 @@ private:
    *  the area ratio da/dA = function(d) is neglected in the linearization.
    */
   void
-  do_cell_integral(IntegratorCell & integrator) const override;
+  do_cell_integral(IntegratorCell & integrator) const final;
+
+  /*
+   * Compute the boundary term of the linearized operator
+   *
+   *  - delta (v_h, t_0)_{Gamma_N}
+   *
+   * with traction
+   *
+   *  t_0 = da/dA t .
+   *
+   * If the traction is specified as force per surface area of the underformed
+   * body, the specified traction t is interpreted as t_0 = t, and no pull-back
+   * is necessary.
+   */
+  void
+  do_boundary_integral_continuous(IntegratorFace &                   integrator,
+                                  OperatorType const &               operator_type,
+                                  dealii::types::boundary_id const & boundary_id) const final;
 
   mutable std::shared_ptr<IntegratorCell> integrator_lin;
   mutable VectorType                      displacement_lin;
@@ -217,4 +226,4 @@ private:
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_NONLINEAR_OPERATOR_H_ */

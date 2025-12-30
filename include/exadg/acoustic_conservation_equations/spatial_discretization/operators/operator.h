@@ -15,15 +15,17 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
 #ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_OPERATORS_OPERATOR_H_
 #define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_OPERATORS_OPERATOR_H_
 
+// deal.II
 #include <deal.II/lac/la_parallel_block_vector.h>
 
+// ExaDG
 #include <exadg/acoustic_conservation_equations/spatial_discretization/operators/weak_boundary_conditions.h>
 #include <exadg/acoustic_conservation_equations/user_interface/boundary_descriptor.h>
 #include <exadg/acoustic_conservation_equations/user_interface/enum_types.h>
@@ -251,13 +253,13 @@ public:
   void
   evaluate(BlockVectorType & dst, BlockVectorType const & src, double const time) const
   {
-    do_evaluate(dst, src, true, time);
+    do_evaluate(dst, src, time, true);
   }
 
   void
   evaluate_add(BlockVectorType & dst, BlockVectorType const & src, double const time) const
   {
-    do_evaluate(dst, src, false, time);
+    do_evaluate(dst, src, time, true);
   }
 
 private:
@@ -474,7 +476,10 @@ private:
     BoundaryFaceIntegratorP<dim, Number> pressure_p(pressure_m, *data.bc);
 
     FaceIntegratorU velocity_m(matrix_free_in, true, data.dof_index_velocity, data.quad_index);
-    BoundaryFaceIntegratorU<dim, Number> velocity_p(velocity_m, *data.bc);
+    BoundaryFaceIntegratorU<dim, Number> velocity_p(velocity_m,
+                                                    pressure_m,
+                                                    data.speed_of_sound,
+                                                    *data.bc);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
@@ -501,8 +506,8 @@ private:
 
   mutable Number evaluation_time;
 
-  dealii::SmartPointer<dealii::MatrixFree<dim, Number> const> matrix_free;
-  OperatorData<dim>                                           data;
+  dealii::ObserverPointer<dealii::MatrixFree<dim, Number> const> matrix_free;
+  OperatorData<dim>                                              data;
 
   Number tau;
   Number gamma;
@@ -514,5 +519,4 @@ private:
 } // namespace Acoustics
 } // namespace ExaDG
 
-
-#endif /*EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_OPERATORS_OPERATOR_H_*/
+#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_SPATIAL_DISCRETIZATION_OPERATORS_OPERATOR_H_ */

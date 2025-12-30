@@ -16,15 +16,17 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DOF_COUPLING_H_
-#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DOF_COUPLING_H_
+#ifndef EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DOF_COUPLING_H_
+#define EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DOF_COUPLING_H_
 
+// deal.II
 #include <deal.II/dofs/dof_tools.h>
 
+// ExaDG
 #include <exadg/fluid_structure_interaction/precice/coupling_base.h>
 #include <exadg/fluid_structure_interaction/precice/dof_tools_extension.h>
 
@@ -248,4 +250,4 @@ DoFCoupling<dim, data_dim, VectorizedArrayType>::get_surface_type() const
 } // namespace preCICE
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DOF_COUPLING_H_ */

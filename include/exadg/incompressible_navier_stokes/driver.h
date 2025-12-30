@@ -15,21 +15,24 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
 
+// ExaDG
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/grid/mapping_deformation_function.h>
 #include <exadg/grid/mapping_deformation_poisson.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor_base.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_consistent_splitting.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.h>
 #include <exadg/incompressible_navier_stokes/time_integration/driver_steady_problems.h>
+#include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_consistent_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
@@ -82,17 +85,17 @@ get_dofs_per_element(OperatorType const &     operator_type,
   else
     AssertThrow(false, dealii::ExcMessage("Not implemented."));
 
-  unsigned int const velocity_dofs_per_element = ExaDG::get_dofs_per_element(
+  double const velocity_dofs_per_element = ExaDG::get_dofs_per_element(
     element_type, true /* is_dg */, dim /* n_components */, degree, dim);
 
-  unsigned int const pressure_dofs_per_element = ExaDG::get_dofs_per_element(
+  double const pressure_dofs_per_element = ExaDG::get_dofs_per_element(
     element_type, true /* is_dg */, 1 /* n_components */, degree_p, dim);
 
   // coupled/monolithic problem
   if(operator_type == OperatorType::CoupledNonlinearResidual or
      operator_type == OperatorType::CoupledLinearized)
   {
-    return velocity_dofs_per_element + pressure_dofs_per_element;
+    return static_cast<unsigned int>(velocity_dofs_per_element + pressure_dofs_per_element);
   }
   // velocity only
   else if(operator_type == OperatorType::ConvectiveOperator or
@@ -101,12 +104,12 @@ get_dofs_per_element(OperatorType const &     operator_type,
           operator_type == OperatorType::ProjectionOperator or
           operator_type == OperatorType::InverseMassOperator)
   {
-    return velocity_dofs_per_element;
+    return static_cast<unsigned int>(velocity_dofs_per_element);
   }
   // pressure only
   else if(operator_type == OperatorType::PressurePoissonOperator)
   {
-    return pressure_dofs_per_element;
+    return static_cast<unsigned int>(pressure_dofs_per_element);
   }
   else
   {
@@ -209,4 +212,4 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_H_ */
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_H_ */

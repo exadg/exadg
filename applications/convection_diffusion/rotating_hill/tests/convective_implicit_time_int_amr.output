@@ -47,7 +47,7 @@ Temporal discretization:
   Write restart:                             false
 
 Spatial Discretization:
-  Triangulation type:                        Distributed
+  Triangulation type:                        Serial
   Element type:                              Hypercube
   Number of global refinements:              3
   Create coarse triangulations:              true
@@ -75,6 +75,7 @@ Solver:
   Block Jacobi matrix-free:                  false
   Multigrid operator type:                   ReactionConvection
   Multigrid type:                            hMG
+  Min degree matrix-free:                    1
   Smoother:                                  Jacobi
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5

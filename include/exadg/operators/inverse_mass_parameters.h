@@ -15,14 +15,15 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_INVERSE_MASS_PARAMETERS_H_
-#define INCLUDE_EXADG_OPERATORS_INVERSE_MASS_PARAMETERS_H_
+#ifndef EXADG_OPERATORS_INVERSE_MASS_PARAMETERS_H_
+#define EXADG_OPERATORS_INVERSE_MASS_PARAMETERS_H_
 
 // ExaDG
+#include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
 
 namespace ExaDG
@@ -32,25 +33,32 @@ enum class InverseMassType
   MatrixfreeOperator, // currently only available via deal.II for Hypercube elements with n_nodes_1d
                       // = n_q_points_1d
   ElementwiseKrylovSolver,
-  BlockMatrices
+  BlockMatrices,
+  GlobalKrylovSolver
 };
 
 enum class PreconditionerMass
 {
   None,
-  PointJacobi
+  PointJacobi,
+  BlockJacobi,
+  AMG
 };
 
 /**
- * Data struct for mass operator inversion in case of discontinuous Galerkin methods with a
- * block-diagonal mass matrix.
+ * Data struct for mass operator inversion covering L2-conforming or Hdiv-conforming discontinuous
+ * Galerkin methods and continuous Galerkin methods. Depending on the underlying discretization,
+ * various implementations exploiting the structure of the matrix related to the discretized mass
+ * operator are available. Choices not approximating the inverse operator up to linear solver
+ * tolerance are asserted.
  */
 struct InverseMassParameters
 {
   InverseMassParameters()
     : implementation_type(InverseMassType::MatrixfreeOperator),
       preconditioner(PreconditionerMass::PointJacobi),
-      solver_data(SolverData(1000, 1e-12, 1e-12))
+      solver_data(SolverData(1e3, 1e-20, 1e-6, LinearSolver::CG)),
+      amg_data(AMGData())
   {
   }
 
@@ -58,33 +66,18 @@ struct InverseMassParameters
   InverseMassType implementation_type;
 
   // This parameter is only relevant if the mass operator is inverted by an iterative solver with
-  // matrix-free implementation, InverseMassType::ElementwiseKrylovSolver.
+  // matrix-free implementation, `InverseMassType::ElementwiseKrylovSolver` or
+  // `InverseMassType::GlobalKrylovSolver`.
   PreconditionerMass preconditioner;
 
   // solver data for iterative solver in case of implementation type
-  // InverseMassType::ElementwiseKrylovSolver.
+  // `InverseMassType::ElementwiseKrylovSolver` or `InverseMassType::GlobalKrylovSolver`.
   SolverData solver_data;
+
+  // Configuration of AMG settings for `PreconditionerMass::AMG`.
+  AMGData amg_data;
 };
 
-/**
- * Data struct for mass operator inversion by iterative solution techniques in case of
- * H(div)-conforming discretization where the mass matrix is a globally coupled problem as opposed
- * to DG methods (where the mass matrix is block-diagonal).
- */
-struct InverseMassParametersHdiv
-{
-  InverseMassParametersHdiv()
-    : preconditioner(PreconditionerMass::PointJacobi), solver_data(SolverData(1000, 1e-12, 1e-12))
-  {
-  }
-
-  // The preconditioner used to iteratively solve the global mass problem
-  PreconditionerMass preconditioner;
-
-  // solver data for iterative solver
-  SolverData solver_data;
-};
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_OPERATORS_INVERSE_MASS_PARAMETERS_H_ */
+#endif /* EXADG_OPERATORS_INVERSE_MASS_PARAMETERS_H_ */

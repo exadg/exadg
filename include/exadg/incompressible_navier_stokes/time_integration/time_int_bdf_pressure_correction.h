@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_PRESSURE_CORRECTION_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_PRESSURE_CORRECTION_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_PRESSURE_CORRECTION_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_PRESSURE_CORRECTION_H_
 
+// ExaDG
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf.h>
 
 namespace ExaDG
@@ -36,6 +37,9 @@ template<int dim, typename Number>
 class TimeIntBDFPressureCorrection : public TimeIntBDF<dim, Number>
 {
 private:
+  using BoostInputArchiveType  = TimeIntBase::BoostInputArchiveType;
+  using BoostOutputArchiveType = TimeIntBase::BoostOutputArchiveType;
+
   typedef TimeIntBDF<dim, Number> Base;
 
   typedef typename Base::VectorType VectorType;
@@ -89,10 +93,15 @@ private:
   initialize_former_multistep_dof_vectors() final;
 
   void
-  read_restart_vectors(boost::archive::binary_iarchive & ia) final;
+  get_vectors_serialization(std::vector<VectorType const *> & vectors_velocity,
+                            std::vector<VectorType const *> & vectors_pressure) const final;
 
   void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const final;
+  set_vectors_deserialization(std::vector<VectorType> const & vectors_velocity,
+                              std::vector<VectorType> const & vectors_pressure) final;
+
+  void
+  update_after_deserialization() final;
 
   void
   initialize_pressure_on_boundary();
@@ -110,7 +119,7 @@ private:
   momentum_step();
 
   void
-  rhs_momentum(VectorType & rhs);
+  rhs_momentum(VectorType & rhs, VectorType const & transport_velocity);
 
   void
   pressure_step(VectorType & pressure_increment);
@@ -185,5 +194,5 @@ private:
 } // namespace ExaDG
 
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_PRESSURE_CORRECTION_H_ \
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_PRESSURE_CORRECTION_H_ \
         */

@@ -15,14 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
 #ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
 #define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
 
-
+// ExaDG
 #include <exadg/incompressible_navier_stokes/user_interface/application_base.h>
 
 namespace ExaDG
@@ -38,6 +38,5 @@ get_application(std::string input_file, MPI_Comm const & comm)
 
 } // namespace Acoustics
 } // namespace ExaDG
-
 
 #endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_ */

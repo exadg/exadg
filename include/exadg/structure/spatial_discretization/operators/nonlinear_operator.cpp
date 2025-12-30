@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -29,13 +29,8 @@ namespace Structure
 {
 template<int dim, typename Number>
 void
-NonLinearOperator<dim, Number>::initialize(
-  dealii::MatrixFree<dim, Number> const &   matrix_free,
-  dealii::AffineConstraints<Number> const & affine_constraints,
-  OperatorData<dim> const &                 data)
+NonLinearOperator<dim, Number>::initialize_derived()
 {
-  Base::initialize(matrix_free, affine_constraints, data);
-
   integrator_lin = std::make_shared<IntegratorCell>(*this->matrix_free,
                                                     this->operator_data.dof_index_inhomogeneous,
                                                     this->operator_data.quad_index);
@@ -54,7 +49,7 @@ NonLinearOperator<dim, Number>::evaluate_nonlinear(VectorType & dst, VectorType 
                           this,
                           dst,
                           src,
-                          true);
+                          true /* zero_dst_vector */);
 }
 
 template<int dim, typename Number>
@@ -64,16 +59,13 @@ NonLinearOperator<dim, Number>::valid_deformation(VectorType const & displacemen
   Number dst = 0.0;
 
   // dst has to remain zero for a valid deformation state
-  this->matrix_free->cell_loop(&This::cell_loop_valid_deformation,
-                               this,
-                               dst,
-                               displacement,
-                               false /* no zeroing of dst vector */);
+  this->matrix_free->cell_loop(
+    &This::cell_loop_valid_deformation, this, dst, displacement, false /* zero_dst_vector */);
 
   // sum over all MPI processes
   Number valid = 0.0;
   valid        = dealii::Utilities::MPI::sum(
-    dst, this->matrix_free->get_dof_handler(this->operator_data.dof_index).get_communicator());
+    dst, this->matrix_free->get_dof_handler(this->operator_data.dof_index).get_mpi_communicator());
 
   return (valid == 0.0);
 }
@@ -89,6 +81,8 @@ NonLinearOperator<dim, Number>::set_solution_linearization(VectorType const & ve
   {
     displacement_lin = vector;
     displacement_lin.update_ghost_values();
+
+    this->assemble_matrix_if_matrix_based();
   }
 }
 
@@ -203,44 +197,37 @@ NonLinearOperator<dim, Number>::boundary_face_loop_nonlinear(
   VectorType const &                      src,
   Range const &                           range) const
 {
-  IntegratorFace integrator_m_inhom(matrix_free,
-                                    true,
-                                    this->operator_data.dof_index_inhomogeneous,
-                                    this->operator_data.quad_index);
+  IntegratorFace integrator_inhom(matrix_free,
+                                  true,
+                                  this->operator_data.dof_index_inhomogeneous,
+                                  this->operator_data.quad_index);
 
-  IntegratorFace integrator_m = IntegratorFace(matrix_free,
-                                               true,
-                                               this->operator_data.dof_index,
-                                               this->operator_data.quad_index);
+  IntegratorFace integrator = IntegratorFace(matrix_free,
+                                             true,
+                                             this->operator_data.dof_index,
+                                             this->operator_data.quad_index);
 
-  // apply Neumann or Robin BCs
+  // apply Neumann BCs
   for(unsigned int face = range.first; face < range.second; face++)
   {
-    this->reinit_boundary_face(integrator_m_inhom, face);
-    integrator_m.reinit(face);
+    this->reinit_boundary_face(integrator_inhom, face);
+    integrator.reinit(face);
 
-    // In case of a pull-back of the traction vector, we need to evaluate the displacement gradient
-    // to obtain the surface area ratio da/dA. We write the integrator flags explicitly in this case
-    // since they depend on the parameter pull_back_traction. On Robin boundaries, we need the
-    // solution values.
-    bool const is_on_robin_boundary =
-      this->operator_data.bc->get_boundary_type(matrix_free.get_boundary_id(face)) ==
-      BoundaryType::RobinSpringDashpotPressure;
-    if(this->operator_data.pull_back_traction or is_on_robin_boundary)
+    // In case of a pull-back of the traction vector, we need to evaluate
+    // the displacement gradient to obtain the surface area ratio da/dA.
+    // We write the integrator flags explicitly in this case since they
+    // depend on the parameter pull_back_traction.
+    if(this->operator_data.pull_back_traction)
     {
-      integrator_m_inhom.gather_evaluate(src,
-                                         dealii::EvaluationFlags::gradients |
-                                           dealii::EvaluationFlags::values);
+      integrator_inhom.gather_evaluate(src, dealii::EvaluationFlags::gradients);
     }
 
-    do_boundary_integral_continuous(integrator_m_inhom,
-                                    OperatorType::full,
-                                    matrix_free.get_boundary_id(face));
+    do_boundary_integral_continuous_nonlinear(integrator_inhom, matrix_free.get_boundary_id(face));
 
     // make sure that we do not write into Dirichlet degrees of freedom
-    integrator_m_inhom.integrate(this->integrator_flags.face_integrate,
-                                 integrator_m.begin_dof_values());
-    integrator_m.distribute_local_to_global(dst);
+    integrator_inhom.integrate(this->integrator_flags.face_integrate,
+                               integrator.begin_dof_values());
+    integrator.distribute_local_to_global(dst);
   }
 }
 
@@ -260,7 +247,7 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
     tensor const F = get_F<dim, Number>(Grad_d);
 
     // 2nd Piola-Kirchhoff stresses
-    tensor const S =
+    symmetric_tensor const S =
       material->second_piola_kirchhoff_stress(Grad_d, integrator.get_current_cell_index(), q);
 
     // 1st Piola-Kirchhoff stresses P = F * S
@@ -280,85 +267,29 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
 
 template<int dim, typename Number>
 void
-NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
+NonLinearOperator<dim, Number>::do_boundary_integral_continuous_nonlinear(
   IntegratorFace &                   integrator,
-  OperatorType const &               operator_type,
   dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
-    vector traction;
+    vector traction = calculate_neumann_value<dim, Number>(
+      q, integrator, boundary_type, boundary_id, this->operator_data.bc, this->time);
 
-    // integrate standard (stored) traction or exterior pressure on Robin boundaries
-    if(boundary_type == BoundaryType::Neumann or boundary_type == BoundaryType::NeumannCached or
-       boundary_type == BoundaryType::RobinSpringDashpotPressure)
+    if(this->operator_data.pull_back_traction)
     {
-      if(operator_type == OperatorType::inhomogeneous or operator_type == OperatorType::full)
-      {
-        traction -= calculate_neumann_value<dim, Number>(
-          q, integrator, boundary_type, boundary_id, this->operator_data.bc, this->time);
-
-        if(this->operator_data.pull_back_traction)
-        {
-          tensor F = get_F<dim, Number>(integrator.get_gradient(q));
-          vector N = integrator.get_normal_vector(q);
-          // da/dA * n = det F F^{-T} * N := n_star
-          // -> da/dA = n_star.norm()
-          vector n_star = determinant(F) * transpose(invert(F)) * N;
-          // t_0 = da/dA * t
-          traction *= n_star.norm();
-        }
-      }
+      tensor F = get_F<dim, Number>(integrator.get_gradient(q));
+      vector N = integrator.normal_vector(q);
+      // da/dA * n = det F F^{-T} * N := n_star
+      // -> da/dA = n_star.norm()
+      vector n_star = determinant(F) * transpose(invert(F)) * N;
+      // t_0 = da/dA * t
+      traction *= n_star.norm();
     }
 
-    // check boundary ID in robin_k_c_p_param to add boundary mass integrals from Robin boundaries
-    // on BoundaryType::NeumannCached or BoundaryType::RobinSpringDashpotPressure
-    if(boundary_type == BoundaryType::NeumannCached or
-       boundary_type == BoundaryType::RobinSpringDashpotPressure)
-    {
-      if(operator_type == OperatorType::homogeneous or operator_type == OperatorType::full)
-      {
-        auto const it = this->operator_data.bc->robin_k_c_p_param.find(boundary_id);
-
-        if(it != this->operator_data.bc->robin_k_c_p_param.end())
-        {
-          bool const   normal_projection_displacement = it->second.first[0];
-          double const coefficient_displacement       = it->second.second[0];
-
-          if(normal_projection_displacement)
-          {
-            vector const N = integrator.get_normal_vector(q);
-            traction += N * (coefficient_displacement * (N * integrator.get_value(q)));
-          }
-          else
-          {
-            traction += coefficient_displacement * integrator.get_value(q);
-          }
-
-          if(this->operator_data.unsteady)
-          {
-            bool const   normal_projection_velocity = it->second.first[1];
-            double const coefficient_velocity       = it->second.second[1];
-
-            if(normal_projection_velocity)
-            {
-              vector const N = integrator.get_normal_vector(q);
-              traction += N * (coefficient_velocity * this->scaling_factor_mass_boundary *
-                               (N * integrator.get_value(q)));
-            }
-            else
-            {
-              traction +=
-                coefficient_velocity * this->scaling_factor_mass_boundary * integrator.get_value(q);
-            }
-          }
-        }
-      }
-    }
-
-    integrator.submit_value(traction, q);
+    integrator.submit_value(-traction, q);
   }
 }
 
@@ -392,7 +323,7 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
     tensor const F_lin = get_F<dim, Number>(Grad_d_lin);
 
     // 2nd Piola-Kirchhoff stresses
-    tensor const S_lin =
+    symmetric_tensor const S_lin =
       material->second_piola_kirchhoff_stress(Grad_d_lin, integrator.get_current_cell_index(), q);
 
     // directional derivative of 1st Piola-Kirchhoff stresses P
@@ -413,6 +344,34 @@ NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
                                 integrator.get_value(q),
                               q);
     }
+  }
+}
+
+template<int dim, typename Number>
+void
+NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
+  IntegratorFace &                   integrator,
+  OperatorType const &               operator_type,
+  dealii::types::boundary_id const & boundary_id) const
+{
+  (void)boundary_id;
+
+  if(operator_type == OperatorType::homogeneous)
+  {
+    // The derivative with respect to the pull-back of the traction vector is neglected. We still
+    // need to submit zeroes for consistency.
+    vector zero;
+    zero = 0.0;
+    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+    {
+      integrator.submit_value(zero, q);
+    }
+  }
+  else
+  {
+    AssertThrow(false,
+                dealii::ExcMessage("OperatorType not supported in "
+                                   "NonLinearOperator::do_boundary_integral_continuous()"));
   }
 }
 

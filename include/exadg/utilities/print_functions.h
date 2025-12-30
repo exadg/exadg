@@ -15,15 +15,16 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_PRINTFUNCTIONS_H_
-#define INCLUDE_FUNCTIONALITIES_PRINTFUNCTIONS_H_
+#ifndef EXADG_UTILITIES_PRINT_FUNCTIONS_H_
+#define EXADG_UTILITIES_PRINT_FUNCTIONS_H_
 
 // C/C++
 #include <iomanip>
+#include <iostream>
 
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
@@ -138,4 +139,4 @@ print_write_output_time(double const       time,
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_FUNCTIONALITIES_PRINTFUNCTIONS_H_ */
+#endif /* EXADG_UTILITIES_PRINT_FUNCTIONS_H_ */

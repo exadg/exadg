@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_USER_INTERFACE_APPLICATION_BASE_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_USER_INTERFACE_APPLICATION_BASE_H_
+#ifndef EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_USER_INTERFACE_APPLICATION_BASE_H_
+#define EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_USER_INTERFACE_APPLICATION_BASE_H_
 
 // deal.II
 #include <deal.II/grid/grid_generator.h>
@@ -28,19 +28,16 @@
 #include <deal.II/grid/tria_description.h>
 
 // ExaDG
-#include <exadg/grid/grid.h>
-#include <exadg/grid/grid_utilities.h>
-
-#include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
-#include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
-#include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
-#include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
-
 #include <exadg/convection_diffusion/postprocessor/postprocessor.h>
 #include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/convection_diffusion/user_interface/field_functions.h>
 #include <exadg/convection_diffusion/user_interface/parameters.h>
-
+#include <exadg/grid/grid.h>
+#include <exadg/grid/grid_utilities.h>
+#include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
+#include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
+#include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
+#include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/operators/resolution_parameters.h>
 #include <exadg/postprocessor/output_parameters.h>
 
@@ -385,5 +382,4 @@ private:
 } // namespace FTI
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_USER_INTERFACE_APPLICATION_BASE_H_ */
+#endif /* EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_USER_INTERFACE_APPLICATION_BASE_H_ */

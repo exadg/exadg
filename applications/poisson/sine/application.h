@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -123,6 +123,9 @@ public:
     prm.enter_subsection("Application");
     {
       prm.add_parameter("MeshType", mesh_type, "Type of mesh (Cartesian versus curvilinear).");
+      prm.add_parameter("MultigridCoarseGridPreconditioner",
+                        multigrid_coarse_grid_preconditioner,
+                        "Preconditioner for the linear system on the coarse grid.");
     }
     prm.leave_subsection();
   }
@@ -158,22 +161,19 @@ private:
     this->param.IP_factor              = 1.0e0;
 
     // SOLVER
-    this->param.solver                      = LinearSolver::CG;
-    this->param.solver_data.abs_tol         = 1.e-20;
-    this->param.solver_data.rel_tol         = 1.e-10;
-    this->param.solver_data.max_iter        = 1e4;
+    this->param.solver_data                 = SolverData(1e4, 1e-20, 1e-10, LinearSolver::CG);
     this->param.compute_performance_metrics = true;
     this->param.preconditioner              = Preconditioner::Multigrid;
     this->param.multigrid_data.type         = MultigridType::cphMG;
     this->param.multigrid_data.p_sequence   = PSequenceType::Bisect;
+
     // MG smoother
     this->param.multigrid_data.smoother_data.smoother        = MultigridSmoother::Chebyshev;
     this->param.multigrid_data.smoother_data.iterations      = 5;
     this->param.multigrid_data.smoother_data.smoothing_range = 20;
     // MG coarse grid solver
-    this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
-    this->param.multigrid_data.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::AMG;
+    this->param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
+    this->param.multigrid_data.coarse_problem.preconditioner = multigrid_coarse_grid_preconditioner;
     this->param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
   }
 
@@ -382,7 +382,9 @@ private:
 
   bool const read_external_grid = false;
 
-  MeshType mesh_type = MeshType::Cartesian;
+  MeshType                          mesh_type = MeshType::Cartesian;
+  MultigridCoarseGridPreconditioner multigrid_coarse_grid_preconditioner =
+    MultigridCoarseGridPreconditioner::PointJacobi;
 };
 
 } // namespace Poisson

@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_POISSON_OVERSET_GRIDS_USER_INTERFACE_APPLICATION_BASE_H_
-#define INCLUDE_EXADG_POISSON_OVERSET_GRIDS_USER_INTERFACE_APPLICATION_BASE_H_
+#ifndef EXADG_POISSON_OVERSET_GRIDS_USER_INTERFACE_APPLICATION_BASE_H_
+#define EXADG_POISSON_OVERSET_GRIDS_USER_INTERFACE_APPLICATION_BASE_H_
 
 // deal.II
 #include <deal.II/grid/grid_tools_cache.h>
@@ -73,21 +73,13 @@ set_boundary_ids_overlap_region(dealii::Triangulation<dim> const & tria_dst,
   }
 
   // create and reinit RemotePointEvaluation: find points on src-side
-  std::vector<bool> marked_vertices = {};
-  double const      tolerance       = 1.e-10;
+  typename dealii::Utilities::MPI::RemotePointEvaluation<dim>::AdditionalData rpe_data;
+  std::vector<bool>                                                           marked_vertices = {};
+  rpe_data.tolerance       = 1.e-10;
+  rpe_data.marked_vertices = [marked_vertices]() { return marked_vertices; };
 
   dealii::Utilities::MPI::RemotePointEvaluation<dim> rpe =
-    dealii::Utilities::MPI::RemotePointEvaluation<dim>(tolerance,
-                                                       false
-#if DEAL_II_VERSION_GTE(9, 4, 0)
-                                                       ,
-                                                       0,
-                                                       [marked_vertices]() {
-                                                         return marked_vertices;
-                                                       }
-#endif
-    );
-
+    dealii::Utilities::MPI::RemotePointEvaluation<dim>(rpe_data);
   rpe.reinit(points, tria_src, mapping_src);
 
   // check which points have been found and whether a face on dst-side is located inside the src
@@ -289,4 +281,4 @@ private:
 } // namespace Poisson
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_POISSON_OVERSET_GRIDS_USER_INTERFACE_APPLICATION_BASE_H_ */
+#endif /* EXADG_POISSON_OVERSET_GRIDS_USER_INTERFACE_APPLICATION_BASE_H_ */

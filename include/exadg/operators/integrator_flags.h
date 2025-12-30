@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_INTEGRATOR_FLAGS_H_
-#define INCLUDE_EXADG_OPERATORS_INTEGRATOR_FLAGS_H_
+#ifndef EXADG_OPERATORS_INTEGRATOR_FLAGS_H_
+#define EXADG_OPERATORS_INTEGRATOR_FLAGS_H_
 
+// deal.II
 #include <deal.II/matrix_free/evaluation_flags.h>
 
 namespace ExaDG
@@ -51,4 +52,4 @@ struct IntegratorFlags
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_OPERATORS_INTEGRATOR_FLAGS_H_ */
+#endif /* EXADG_OPERATORS_INTEGRATOR_FLAGS_H_ */

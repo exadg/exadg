@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_
-#define INCLUDE_FUNCTIONALITIES_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_
+#ifndef EXADG_GRID_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_
+#define EXADG_GRID_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_
 
 // deal.II
 #include <deal.II/base/mpi.h>
@@ -119,4 +119,4 @@ calculate_high_order_element_length(Number const       element_length,
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_FUNCTIONALITIES_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_ */
+#endif /* EXADG_GRID_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_ */

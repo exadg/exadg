@@ -15,19 +15,21 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef CONV_DIFF_CONVECTION_OPERATOR
-#define CONV_DIFF_CONVECTION_OPERATOR
+#ifndef EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_CONVECTIVE_OPERATOR_H_
+#define EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_CONVECTIVE_OPERATOR_H_
 
+// ExaDG
 #include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/convection_diffusion/user_interface/parameters.h>
 #include <exadg/functions_and_boundary_conditions/evaluate_functions.h>
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/operator_base.h>
 
+// C/C++
 #include <memory>
 
 namespace ExaDG
@@ -83,7 +85,7 @@ public:
   reinit(dealii::MatrixFree<dim, Number> const & matrix_free,
          ConvectiveKernelData<dim> const &       data_in,
          unsigned int const                      quad_index,
-         bool const                              is_mg)
+         bool const                              use_own_velocity_storage)
   {
     data = data_in;
 
@@ -102,8 +104,7 @@ public:
                                                                        data.dof_index_velocity,
                                                                        quad_index);
 
-      // use own storage of velocity vector only in case of multigrid
-      if(is_mg)
+      if(use_own_velocity_storage)
       {
         velocity.reset();
         matrix_free.initialize_dof_vector(velocity.own(), data.dof_index_velocity);
@@ -624,7 +625,8 @@ private:
 
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel;
 };
+
 } // namespace ConvDiff
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_CONVECTIVE_OPERATOR_H_ */

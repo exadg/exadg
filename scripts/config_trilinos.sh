@@ -1,6 +1,6 @@
 #!/bin/sh
 #########################################################################
-# 
+#
 #                 #######               ######  #######
 #                 ##                    ##   ## ##
 #                 #####   ##  ## #####  ##   ## ## ####
@@ -22,14 +22,14 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#  along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #########################################################################
 
 rm -rf CMakeFiles/ CMakeCache.txt
 
 TRILINOS=../
-TRILINOS_INSTALL=$WORKING_DIRECTORY/trilinos/install
+TRILINOS_INSTALL=$WORKING_DIRECTORY/trilinos/Trilinos-trilinos-release-16-1-0/build
 
 MPIDIR=/usr
 #MPIDIR=/usr/lib64/openmpi
@@ -50,37 +50,21 @@ cmake \
     -D BUILD_SHARED_LIBS:BOOL=ON \
     -D MPI_INCLUDE_PATH:FILEPATH="$MPIDIR/include" \
     -D MPI_LIBRARY:FILEPATH="$MPIDIR" \
-    -D Gtest_SKIP_INSTALL:BOOL=TRUE \
+    -D Gtest_SKIP_INSTALL:BOOL=FALSE \
     -D Trilinos_ASSERT_MISSING_PACKAGES=OFF \
     -D Trilinos_VERBOSE_CONFIGURE:BOOL=OFF \
     -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
     -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
-    -D Trilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON \
     -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
     -D Trilinos_ENABLE_TESTS:BOOL=OFF \
     -D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
-    -D Trilinos_ENABLE_AMESOS_SuperLUDist:BOOL=ON \
-    -D Trilinos_ENABLE_AMESOS_SuperLU:BOOL=ON \
-    -D Trilinos_ENABLE_AMESOS_UMFPACK:BOOL=ON \
     -D Trilinos_ENABLE_Amesos2:BOOL=OFF \
-    -D Trilinos_ENABLE_ANASAZI:BOOL=ON \
-    -D Trilinos_ENABLE_ANASAZI_AMESOS:BOOL=ON \
-    -D Trilinos_ENABLE_ANASAZI_AZTECOO:BOOL=ON \
-    -D Trilinos_ENABLE_ANASAZI_BELOS:BOOL=ON \
-    -D Trilinos_ENABLE_ANASAZI_EPETRAEXT:BOOL=ON \
-    -D Trilinos_ENABLE_ANASAZI_IFPACK:BOOL=ON \
-    -D Trilinos_ENABLE_ANASAZI_THYRA:BOOL=OFF \
-    -D Trilinos_ENABLE_ANASAZI_TRIUTILS:BOOL=ON \
-    -D Trilinos_ENABLE_AZTECOO:BOOL=ON \
     -D Trilinos_ENABLE_Amesos:BOOL=ON \
     -D Trilinos_ENABLE_Anasazi:BOOL=ON \
     -D Trilinos_ENABLE_AztecOO:BOOL=ON \
     -D Trilinos_ENABLE_Belos:BOOL=ON \
     -D Trilinos_ENABLE_Epetra:BOOL=ON \
     -D Trilinos_ENABLE_EpetraExt:BOOL=ON \
-    -D Trilinos_ENABLE_EpetraExt_all:BOOL=ON \
-    -D Trilinos_ENABLE_FEI:BOOL=OFF \
-    -D Trilinos_ENABLE_GALERI:BOOL=OFF \
     -D Trilinos_ENABLE_Galeri:BOOL=OFF \
     -D Trilinos_ENABLE_Ifpack2:BOOL=ON \
     -D Trilinos_ENABLE_Ifpack:BOOL=ON \
@@ -88,19 +72,10 @@ cmake \
     -D Trilinos_ENABLE_Isorropia:BOOL=ON \
     -D Trilinos_ENABLE_Kokkos:BOOL=ON \
     -D Trilinos_ENABLE_ML:BOOL=ON \
-    -D Trilinos_ENABLE_ML_MLAPI:BOOL=ON \
-    -D Trilinos_ENABLE_ML_NOX:BOOL=ON \
-    -D Trilinos_ENABLE_ML_METIS:BOOL=ON \
-    -D Trilinos_ENABLE_ML_PARMETIS3X:BOOL=ON \
-    -D Trilinos_ENABLE_ML_SUPERLUDIST:BOOL=ON \
     -D Trilinos_ENABLE_NOX:BOOL=ON \
-    -D Trilinos_ENABLE_NOX_EPETRA:BOOL=ON \
-    -D Trilinos_ENABLE_NOX_THYRA:BOOL=OFF \
     -D Trilinos_ENABLE_Pamgen:BOOL=ON \
     -D Trilinos_ENABLE_Phalanx:BOOL=ON \
-    -D Trilinos_ENABLE_Phdmesh:BOOL=ON \
     -D Trilinos_ENABLE_RTOp:BOOL=ON \
-    -D Trilinos_ENABLE_Rythmos:BOOL=OFF \
     -D Trilinos_ENABLE_STK:BOOL=OFF \
     -D Trilinos_ENABLE_Sacado:BOOL=ON \
     -D Trilinos_ENABLE_SEACAS:BOOL=ON \
@@ -111,18 +86,10 @@ cmake \
     -D Trilinos_ENABLE_Shards:BOOL=ON \
     -D Trilinos_ENABLE_Stokhos:BOOL=OFF \
     -D Trilinos_ENABLE_Stratimikos:BOOL=ON \
-    -D Trilinos_ENABLE_Stratimikos_Amesos:BOOL=ON \
-    -D Trilinos_ENABLE_Stratimikos_Aztecoo:BOOL=ON \
-    -D Trilinos_ENABLE_Stratimikos_Belos:BOOL=ON \
-    -D Trilinos_ENABLE_Stratimikos_Ifpack:BOOL=ON \
-    -D Trilinos_ENABLE_Stratimikos_Ml:BOOL=ON \
     -D Trilinos_ENABLE_Teuchos:BOOL=ON \
-    -D Trilinos_ENABLE_ThreadPool:BOOL=OFF \
     -D Trilinos_ENABLE_Thyra:BOOL=ON \
-    -D Trilinos_ENABLE_Tifpack:BOOL=ON \
     -D Trilinos_ENABLE_Tpetra:BOOL=ON \
     -D Trilinos_ENABLE_TriKota:BOOL=OFF \
-    -D TriKota_ENABLE_TESTS:BOOL=OFF \
     -D Trilinos_ENABLE_TrilinosCouplings:BOOL=ON \
     -D Trilinos_ENABLE_Teko:BOOL=OFF \
     -D Teko_ENABLE_TESTS:BOOL=OFF \
@@ -149,13 +116,8 @@ cmake \
     -D TPL_ENABLE_SuperLU:BOOL=OFF \
     -D TPL_ENABLE_SuperLUDist:BOOL=OFF \
     -D TPL_ENABLE_X11:BOOL=OFF \
-    -D EpetraExt_BUILD_BDF:BOOL=ON \
     -D EpetraExt_BUILD_GRAPH_REORDERINGS:BOOL=ON \
     -D EpetraExt_ENABLE_HDF5:BOOL=OFF \
-    -D Phdmesh_ENABLE_ExodusII:BOOL=ON \
-    -D Phdmesh_ENABLE_Nemesis:BOOL=ON \
-    -D Phdmesh_ENABLE_Netcdf:BOOL=ON \
-    -D Phdmesh_ENABLE_Pthread:BOOL=ON \
     $EXTRA_ARGS \
     ${TRILINOS}
 

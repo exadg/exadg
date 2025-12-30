@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_LINEAR_OPERATOR_H_
-#define INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_LINEAR_OPERATOR_H_
+#ifndef EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_LINEAR_OPERATOR_H_
+#define EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_LINEAR_OPERATOR_H_
 
+// ExaDG
 #include <exadg/structure/spatial_discretization/operators/elasticity_operator_base.h>
 
 namespace ExaDG
@@ -38,13 +39,13 @@ private:
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
 
-  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
-  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>          vector;
+  typedef dealii::SymmetricTensor<2, dim, dealii::VectorizedArray<Number>> symmetric_tensor;
 
   /*
    * Calculates the integral
    *
-   *  (v_h, factor * density * d_h)_Omega + (grad(v_h), sigma_h)_Omega
+   *  (v_h, factor * d_h)_Omega + (grad(v_h), sigma_h)_Omega
    *
    * with
    *
@@ -55,24 +56,20 @@ private:
    *  d_h denotes the displacement vector.
    */
   void
-  do_cell_integral(IntegratorCell & integrator) const override;
+  do_cell_integral(IntegratorCell & integrator) const final;
 
   /*
-   * Computes boundary integrals
+   * Computes the linear Neumann boundary term
    *
-   * inhomogeneous operator:
-   *  - (v_h, t)_{Gamma_N} - (v_h, - p * N)_{Gamma_R}
-   *
-   * homogeneous operator:
-   *  + (v_h, k * d_h + c * factor_velocity * d_h)_{Gamma_R}
+   *  - (v_h, t)_{Gamma_N}
    */
   void
-  do_boundary_integral_continuous(IntegratorFace &                   integrator_m,
+  do_boundary_integral_continuous(IntegratorFace &                   integrator,
                                   OperatorType const &               operator_type,
-                                  dealii::types::boundary_id const & boundary_id) const override;
+                                  dealii::types::boundary_id const & boundary_id) const final;
 };
 
 } // namespace Structure
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_LINEAR_OPERATOR_H_ */

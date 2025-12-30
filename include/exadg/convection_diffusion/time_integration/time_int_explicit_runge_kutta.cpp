@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -70,6 +70,44 @@ void
 TimeIntExplRK<Number>::extrapolate_solution(VectorType & vector)
 {
   vector.equ(1.0, this->solution_n);
+}
+
+template<typename Number>
+dealii::LinearAlgebra::distributed::Vector<Number> const &
+TimeIntExplRK<Number>::get_solution_np() const
+{
+  return (this->solution_np);
+}
+
+template<typename Number>
+std::shared_ptr<std::vector<dealii::LinearAlgebra::distributed::Vector<Number> *>>
+TimeIntExplRK<Number>::get_vectors()
+{
+  std::shared_ptr<std::vector<VectorType *>> vectors =
+    std::make_shared<std::vector<VectorType *>>();
+
+  vectors->emplace_back(&this->solution_np);
+  vectors->emplace_back(&this->solution_n);
+
+  return vectors;
+}
+
+template<typename Number>
+void
+TimeIntExplRK<Number>::prepare_coarsening_and_refinement()
+{
+  std::shared_ptr<std::vector<VectorType *>> vectors = get_vectors();
+  pde_operator->prepare_coarsening_and_refinement(*vectors);
+}
+
+template<typename Number>
+void
+TimeIntExplRK<Number>::interpolate_after_coarsening_and_refinement()
+{
+  this->initialize_vectors();
+
+  std::shared_ptr<std::vector<VectorType *>> vectors = get_vectors();
+  pde_operator->interpolate_after_coarsening_and_refinement(*vectors);
 }
 
 template<typename Number>
@@ -328,6 +366,20 @@ TimeIntExplRK<Number>::initialize_time_integrator()
   {
     AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
+}
+
+template<typename Number>
+void
+TimeIntExplRK<Number>::read_restart_vectors(std::vector<VectorType *> const & vectors)
+{
+  pde_operator->deserialize_vectors(vectors);
+}
+
+template<typename Number>
+void
+TimeIntExplRK<Number>::write_restart_vectors(std::vector<VectorType const *> const & vectors) const
+{
+  pde_operator->serialize_vectors(vectors);
 }
 
 template<typename Number>

@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_TIME_INTEGRATION_CONSTANTS_BASE_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_TIME_INTEGRATION_CONSTANTS_BASE_H_
+#ifndef EXADG_TIME_INTEGRATION_TIME_INTEGRATION_CONSTANTS_BASE_H_
+#define EXADG_TIME_INTEGRATION_TIME_INTEGRATION_CONSTANTS_BASE_H_
 
+// C/C++
 #include <vector>
 
 namespace ExaDG
@@ -107,5 +108,4 @@ private:
 };
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_TIME_INTEGRATION_CONSTANTS_BASE_H_ */
+#endif /* EXADG_TIME_INTEGRATION_TIME_INTEGRATION_CONSTANTS_BASE_H_ */

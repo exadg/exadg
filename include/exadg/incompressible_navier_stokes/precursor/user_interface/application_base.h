@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_APPLICATION_BASE_PRECURSOR_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_APPLICATION_BASE_PRECURSOR_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_PRECURSOR_USER_INTERFACE_APPLICATION_BASE_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_PRECURSOR_USER_INTERFACE_APPLICATION_BASE_H_
 
 // deal.II
 #include <deal.II/distributed/fully_distributed_tria.h>
@@ -229,7 +229,4 @@ protected:
 } // namespace IncNS
 } // namespace ExaDG
 
-
-
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_APPLICATION_BASE_PRECURSOR_H_ \
-        */
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_PRECURSOR_USER_INTERFACE_APPLICATION_BASE_H_ */

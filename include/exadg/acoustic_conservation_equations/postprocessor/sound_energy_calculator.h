@@ -15,20 +15,22 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
+#ifndef EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_SOUND_ENERGY_CALCULATOR_H_
+#define EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_SOUND_ENERGY_CALCULATOR_H_
 
-#ifndef EXADG_ACOUSTIC_CONSERVATION_LAWS_POSTPROCESSOR_POINTWISE_SOUND_ENERGY_CALCULATIOR_H_
-#define EXADG_ACOUSTIC_CONSERVATION_LAWS_POSTPROCESSOR_POINTWISE_SOUND_ENERGY_CALCULATIOR_H_
-
+// deal.II
 #include <deal.II/matrix_free/matrix_free.h>
 
+// ExaDG
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/utilities/create_directories.h>
 #include <exadg/utilities/print_functions.h>
 
+// C/C++
 #include <fstream>
 
 namespace ExaDG
@@ -155,6 +157,8 @@ private:
       {
         f.open(filename.str().c_str(), std::ios::trunc);
         f << "Time, Sound energy: E = (1,p*p/(2*rho*c*c)+rho*u*u/2)_Omega" << std::endl;
+        f << "c   = " << data.speed_of_sound << std::endl;
+        f << "rho = " << data.density << std::endl;
         clear_files = false;
       }
       else
@@ -253,4 +257,4 @@ private:
 } // namespace Acoustics
 } // namespace ExaDG
 
-#endif /*EXADG_ACOUSTIC_CONSERVATION_LAWS_POSTPROCESSOR_POINTWISE_SOUND_ENERGY_CALCULATIOR_H_*/
+#endif /* EXADG_ACOUSTIC_CONSERVATION_EQUATIONS_POSTPROCESSOR_SOUND_ENERGY_CALCULATOR_H_ */

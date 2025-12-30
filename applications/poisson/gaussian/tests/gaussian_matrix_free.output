@@ -34,16 +34,17 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         1
   IP factor:                                 1.0000e+00
+  Use matrix-based operator:                 false
 
 Solver:
   Solver:                                    CG
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -124,16 +125,17 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         2
   IP factor:                                 1.0000e+00
+  Use matrix-based operator:                 false
 
 Solver:
   Solver:                                    CG
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -214,16 +216,17 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         3
   IP factor:                                 1.0000e+00
+  Use matrix-based operator:                 false
 
 Solver:
   Solver:                                    CG
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -304,16 +307,17 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         4
   IP factor:                                 1.0000e+00
+  Use matrix-based operator:                 false
 
 Solver:
   Solver:                                    CG
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -394,16 +398,17 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         5
   IP factor:                                 1.0000e+00
+  Use matrix-based operator:                 false
 
 Solver:
   Solver:                                    CG
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -484,16 +489,17 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         6
   IP factor:                                 1.0000e+00
+  Use matrix-based operator:                 false
 
 Solver:
   Solver:                                    CG
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -574,16 +580,17 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         7
   IP factor:                                 1.0000e+00
+  Use matrix-based operator:                 false
 
 Solver:
   Solver:                                    CG
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -664,16 +671,17 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         8
   IP factor:                                 1.0000e+00
+  Use matrix-based operator:                 false
 
 Solver:
   Solver:                                    CG
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -754,16 +762,17 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         9
   IP factor:                                 1.0000e+00
+  Use matrix-based operator:                 false
 
 Solver:
   Solver:                                    CG
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -844,16 +853,17 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         10
   IP factor:                                 1.0000e+00
+  Use matrix-based operator:                 false
 
 Solver:
   Solver:                                    CG
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -934,16 +944,17 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         11
   IP factor:                                 1.0000e+00
+  Use matrix-based operator:                 false
 
 Solver:
   Solver:                                    CG
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -1024,16 +1035,17 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         12
   IP factor:                                 1.0000e+00
+  Use matrix-based operator:                 false
 
 Solver:
   Solver:                                    CG
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -1077,7 +1089,7 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 4.58640e-11
+  Relative error (L2-norm): 4.58597e-11
 
 
 
@@ -1114,16 +1126,17 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         13
   IP factor:                                 1.0000e+00
+  Use matrix-based operator:                 false
 
 Solver:
   Solver:                                    CG
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -1167,7 +1180,7 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 4.25200e-11
+  Relative error (L2-norm): 4.24979e-11
 
 
 
@@ -1204,16 +1217,17 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         14
   IP factor:                                 1.0000e+00
+  Use matrix-based operator:                 false
 
 Solver:
   Solver:                                    CG
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -1257,7 +1271,7 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 2.43664e-12
+  Relative error (L2-norm): 2.46814e-12
 
 
 
@@ -1294,16 +1308,17 @@ Spatial Discretization:
   FE space:                                  DG
   Polynomial degree:                         15
   IP factor:                                 1.0000e+00
+  Use matrix-based operator:                 false
 
 Solver:
   Solver:                                    CG
   Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-20
   Relative solver tolerance:                 1.0000e-10
-  Maximum size of Krylov space:              30
   Preconditioner:                            Multigrid
   Multigrid type:                            cphMG
   p-sequence:                                Bisect
+  Min degree matrix-free:                    1
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -1347,4 +1362,4 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 1.54768e-12
+  Relative error (L2-norm): 1.48926e-12

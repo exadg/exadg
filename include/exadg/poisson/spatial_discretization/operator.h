@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_LAPLACE_DG_LAPLACE_OPERATION_H_
-#define INCLUDE_LAPLACE_DG_LAPLACE_OPERATION_H_
+#ifndef EXADG_POISSON_SPATIAL_DISCRETIZATION_OPERATOR_H_
+#define EXADG_POISSON_SPATIAL_DISCRETIZATION_OPERATOR_H_
 
 // ExaDG
 #include <exadg/grid/grid.h>
@@ -38,7 +38,7 @@ namespace ExaDG
 namespace Poisson
 {
 template<int dim, int n_components, typename Number>
-class Operator : public dealii::Subscriptor
+class Operator : public dealii::EnableObserverPointer
 {
 private:
   static unsigned int const rank =
@@ -248,4 +248,4 @@ private:
 } // namespace Poisson
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_POISSON_SPATIAL_DISCRETIZATION_OPERATOR_H_ */

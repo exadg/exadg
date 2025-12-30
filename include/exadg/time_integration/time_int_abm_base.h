@@ -15,18 +15,19 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_ABM_BASE_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_ABM_BASE_H_
+#ifndef EXADG_TIME_INTEGRATION_TIME_INT_ABM_BASE_H_
+#define EXADG_TIME_INTEGRATION_TIME_INT_ABM_BASE_H_
 
-
+// ExaDG
 #include <exadg/time_integration/ab_constants.h>
 #include <exadg/time_integration/am_constants.h>
-#include <exadg/time_integration/push_back_vectors.h>
+#include <exadg/time_integration/restart.h>
 #include <exadg/time_integration/time_int_multistep_base.h>
+#include <exadg/time_integration/vector_handling.h>
 #include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
@@ -37,7 +38,9 @@ namespace ExaDG
 template<typename Operator, typename VectorType>
 class TimeIntAdamsBashforthMoultonBase : public TimeIntMultistepBase
 {
-  using Number = typename VectorType::value_type;
+  using Number                 = typename VectorType::value_type;
+  using BoostInputArchiveType  = TimeIntBase::BoostInputArchiveType;
+  using BoostOutputArchiveType = TimeIntBase::BoostOutputArchiveType;
 
 public:
   TimeIntAdamsBashforthMoultonBase(std::shared_ptr<Operator> pde_operator_in,
@@ -212,23 +215,33 @@ private:
   {
     if(vec_evaluated_operators.size() > 0)
     {
-      push_back(vec_evaluated_operators);
+      swap_back_one_step(vec_evaluated_operators);
       std::swap(vec_evaluated_operators[0], evaluated_operator_np);
     }
   }
 
   void
-  read_restart_vectors(boost::archive::binary_iarchive & ia) final
+  read_restart_vectors() final
   {
-    ia >> solution;
-    ia >> prediction;
+    std::vector<VectorType *> vectors{&solution, &prediction};
+    for(unsigned int i = 0; i < vec_evaluated_operators.size(); ++i)
+    {
+      vectors.push_back(&vec_evaluated_operators[i]);
+    }
+
+    pde_operator->deserialize_vectors(vectors);
   }
 
   void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const final
+  write_restart_vectors() const final
   {
-    oa << solution;
-    oa << prediction;
+    std::vector<VectorType const *> vectors{&solution, &prediction};
+    for(unsigned int i = 0; i < vec_evaluated_operators.size(); ++i)
+    {
+      vectors.push_back(&vec_evaluated_operators[i]);
+    }
+
+    pde_operator->serialize_vectors(vectors);
   }
 
   void
@@ -256,4 +269,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_ABM_BASE_H_*/
+#endif /* EXADG_TIME_INTEGRATION_TIME_INT_ABM_BASE_H_*/

@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -37,6 +37,7 @@ Parameters::Parameters()
     large_deformation(false),
     pull_back_body_force(false),
     pull_back_traction(false),
+    material_type(MaterialType::Undefined),
 
     // PHYSICAL QUANTITIES
     density(1.0),
@@ -65,11 +66,12 @@ Parameters::Parameters()
     mapping_degree(1),
     mapping_degree_coarse_grids(1),
     degree(1),
+    use_matrix_based_operator(false),
+    sparse_matrix_type(SparseMatrixType::Undefined),
 
     // SOLVER
     newton_solver_data(Newton::SolverData(1e4, 1.e-12, 1.e-6)),
-    solver(Solver::Undefined),
-    solver_data(SolverData(1e4, 1.e-12, 1.e-6, 100)),
+    solver_data(SolverData(1e4, 1.e-12, 1.e-6, LinearSolver::Undefined, 100)),
     preconditioner(Preconditioner::AMG),
     update_preconditioner(false),
     update_preconditioner_every_time_steps(1),
@@ -107,13 +109,30 @@ Parameters::check() const
                 dealii::ExcMessage("Weak damping coefficient defined positive."));
   }
 
+  AssertThrow(material_type != MaterialType::Undefined,
+              dealii::ExcMessage("Parameter must be defined."));
+
+  if(material_type == MaterialType::IncompressibleNeoHookean)
+  {
+    AssertThrow(large_deformation == true,
+                dealii::ExcMessage(
+                  "Large deformation must be considered for hyperelastic materials."));
+  }
+
   // SPATIAL DISCRETIZATION
   grid.check();
 
   AssertThrow(degree > 0, dealii::ExcMessage("Polynomial degree must be larger than zero."));
 
+  if(use_matrix_based_operator)
+  {
+    AssertThrow(sparse_matrix_type != SparseMatrixType::Undefined,
+                dealii::ExcMessage("Parameter must be defined."));
+  }
+
   // SOLVER
-  AssertThrow(solver != Solver::Undefined, dealii::ExcMessage("Parameter must be defined."));
+  AssertThrow(solver_data.linear_solver != LinearSolver::Undefined,
+              dealii::ExcMessage("Parameter must be defined."));
 }
 
 bool
@@ -162,6 +181,8 @@ Parameters::print_parameters_mathematical_model(dealii::ConditionalOStream const
     print_parameter(pcout, "Pull back body force", pull_back_body_force);
     print_parameter(pcout, "Pull back traction", pull_back_traction);
   }
+
+  print_parameter(pcout, "Material type", material_type);
 }
 
 void
@@ -217,6 +238,13 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
     print_parameter(pcout, "Mapping degree coarse grids", mapping_degree_coarse_grids);
 
   print_parameter(pcout, "Polynomial degree", degree);
+
+  print_parameter(pcout, "Use matrix-based operator", use_matrix_based_operator);
+
+  if(use_matrix_based_operator)
+  {
+    print_parameter(pcout, "Sparse matrix type", sparse_matrix_type);
+  }
 }
 
 void
@@ -233,7 +261,6 @@ Parameters::print_parameters_solver(dealii::ConditionalOStream const & pcout) co
 
   // linear solver
   pcout << std::endl << "Linear solver:" << std::endl;
-  print_parameter(pcout, "Solver", solver);
   solver_data.print(pcout);
 
   // preconditioner for linear system of equations

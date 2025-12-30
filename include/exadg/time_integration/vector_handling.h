@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_TIME_INTEGRATION_PUSH_BACK_VECTORS_H_
-#define INCLUDE_EXADG_TIME_INTEGRATION_PUSH_BACK_VECTORS_H_
+#ifndef EXADG_TIME_INTEGRATION_VECTOR_HANDLING_H_
+#define EXADG_TIME_INTEGRATION_VECTOR_HANDLING_H_
 
 // C/C++
 #include <vector>
@@ -30,12 +30,12 @@ namespace ExaDG
 /*
  * This function implements a push-back operation that is needed in multistep time integration
  * schemes like BDF schemes in order to update the solution vectors from one time step to the
- * next. The prerequisite to call this function is that the type VectorType implements a
- * swap-function!
+ * next. The prerequisite to call this function is that the type `VectorType` implements a
+ * swap-function.
  */
 template<typename VectorType>
 void
-push_back(std::vector<VectorType> & vector)
+swap_back_one_step(std::vector<VectorType> & vector)
 {
   /*
    *   time t
@@ -59,4 +59,4 @@ push_back(std::vector<VectorType> & vector)
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_TIME_INTEGRATION_PUSH_BACK_VECTORS_H_ */
+#endif /* EXADG_TIME_INTEGRATION_VECTOR_HANDLING_H_ */

@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_BLOCK_JACOBI_MATRICES_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_BLOCK_JACOBI_MATRICES_H_
+#ifndef EXADG_SOLVERS_AND_PRECONDITIONERS_UTILITIES_BLOCK_JACOBI_MATRICES_H_
+#define EXADG_SOLVERS_AND_PRECONDITIONERS_UTILITIES_BLOCK_JACOBI_MATRICES_H_
 
 namespace ExaDG
 {
@@ -69,5 +69,4 @@ calculate_lu_factorization_block_jacobi(std::vector<dealii::LAPACKFullMatrix<Num
 
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_BLOCK_JACOBI_MATRICES_H_ */
+#endif /* EXADG_SOLVERS_AND_PRECONDITIONERS_UTILITIES_BLOCK_JACOBI_MATRICES_H_ */

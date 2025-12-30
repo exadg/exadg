@@ -1,8 +1,22 @@
-/*
- * continuity_penalty_operator.cpp
+/*  ______________________________________________________________________
  *
- *  Created on: Jun 25, 2019
- *      Author: fehn
+ *  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
+ *
+ *  Copyright (C) 2021 by the ExaDG authors
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *  ______________________________________________________________________
  */
 
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/continuity_penalty_operator.h>
@@ -93,7 +107,7 @@ ContinuityPenaltyOperator<dim, Number>::rhs_add(VectorType & dst,
                     tmp,
                     false /*zero_dst_vector = false*/);
 
-  // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
+  // multiply by -1.0 since the boundary face integrals have to be shifted to the right-hand side
   dst.add(-1.0, tmp);
 }
 
@@ -281,7 +295,7 @@ ContinuityPenaltyOperator<dim, Number>::do_face_integral(IntegratorFace & integr
   {
     vector u_m      = integrator_m.get_value(q);
     vector u_p      = integrator_p.get_value(q);
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     vector flux = kernel->calculate_flux(u_m, u_p, normal_m);
 
@@ -304,7 +318,7 @@ ContinuityPenaltyOperator<dim, Number>::do_boundary_integral(
     vector u_m = calculate_interior_value(q, integrator_m, operator_type);
     vector u_p = calculate_exterior_value(
       u_m, q, integrator_m, operator_type, boundary_type, boundary_id, data.bc, time);
-    vector normal_m = integrator_m.get_normal_vector(q);
+    vector normal_m = integrator_m.normal_vector(q);
 
     vector flux = kernel->calculate_flux(u_m, u_p, normal_m);
 

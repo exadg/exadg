@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -23,8 +23,9 @@
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf.h>
 #include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
-#include <exadg/time_integration/push_back_vectors.h>
+#include <exadg/time_integration/restart.h>
 #include <exadg/time_integration/time_step_calculation.h>
+#include <exadg/time_integration/vector_handling.h>
 
 namespace ExaDG
 {
@@ -54,10 +55,16 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
     vec_convective_term(this->order),
     use_extrapolation(true),
     store_solution(false),
+    update_velocity(true),
+    update_pressure(true),
     helpers_ale(helpers_ale_in),
     postprocessor(postprocessor_in),
     vec_grid_coordinates(param_in.order_time_integrator)
 {
+  needs_vector_convective_term =
+    this->param.convective_problem() and
+    (this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit or
+     this->param.temporal_discretization == TemporalDiscretization::BDFDualSplitting);
 }
 
 template<int dim, typename Number>
@@ -65,8 +72,7 @@ void
 TimeIntBDF<dim, Number>::allocate_vectors()
 {
   // convective term
-  if(this->param.convective_problem() and
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  if(needs_vector_convective_term)
   {
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
       this->operator_base->initialize_vector_velocity(vec_convective_term[i]);
@@ -114,8 +120,7 @@ TimeIntBDF<dim, Number>::setup_derived()
     }
   }
 
-  if(this->param.convective_problem() and
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  if(needs_vector_convective_term)
   {
     // vec_convective_term does not have to be initialized in ALE case (the convective
     // term is recomputed in each time step for all previous times on the new mesh).
@@ -132,19 +137,18 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::prepare_vectors_for_next_timestep()
 {
-  if(this->param.convective_problem() and
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  if(needs_vector_convective_term)
   {
     if(this->param.ale_formulation == false)
     {
-      push_back(this->vec_convective_term);
+      swap_back_one_step(this->vec_convective_term);
       vec_convective_term[0].swap(convective_term_np);
     }
   }
 
   if(param.ale_formulation)
   {
-    push_back(vec_grid_coordinates);
+    swap_back_one_step(vec_grid_coordinates);
     vec_grid_coordinates[0].swap(grid_coordinates_np);
   }
 }
@@ -170,10 +174,32 @@ TimeIntBDF<dim, Number>::ale_update()
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::advance_one_timestep_partitioned_solve(bool const use_extrapolation)
+TimeIntBDF<dim, Number>::advance_one_timestep_partitioned_solve(bool const use_extrapolation,
+                                                                bool const update_velocity,
+                                                                bool const update_pressure)
 {
   this->use_extrapolation = use_extrapolation;
   this->store_solution    = true;
+  this->update_velocity   = update_velocity;
+  this->update_pressure   = update_pressure;
+
+  if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+  {
+    AssertThrow(this->update_velocity and this->update_pressure,
+                dealii::ExcMessage("TemporalDiscretization::BDFCoupledSolution cannot "
+                                   "recover velocity and pressure independently."));
+  }
+  else if(this->param.temporal_discretization == TemporalDiscretization::BDFConsistentSplitting)
+  {
+    AssertThrow(
+      not(this->param.temporal_discretization == TemporalDiscretization::BDFConsistentSplitting and
+          this->store_solution),
+      dealii::ExcMessage("Storing the previous solution in a partitioned scheme is not"
+                         "supported for TemporalDiscretization::BDFConsistentSplitting."));
+  }
+
+  AssertThrow(this->update_velocity or this->update_pressure,
+              dealii::ExcMessage("No update from fluid time stepper requested."));
 
   Base::advance_one_timestep_solve();
 }
@@ -252,29 +278,32 @@ TimeIntBDF<dim, Number>::initialize_vec_convective_term()
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::read_restart_vectors(boost::archive::binary_iarchive & ia)
+TimeIntBDF<dim, Number>::read_restart_vectors()
 {
+  // Setup vectors locally to read into.
+  std::vector<VectorType> vectors_velocity;
+  std::vector<VectorType> vectors_pressure;
   for(unsigned int i = 0; i < this->order; i++)
   {
-    VectorType tmp = get_velocity(i);
-    ia >> tmp;
-    set_velocity(tmp, i);
-  }
-  for(unsigned int i = 0; i < this->order; i++)
-  {
-    VectorType tmp = get_pressure(i);
-    ia >> tmp;
-    set_pressure(tmp, i);
+    vectors_velocity.push_back(get_velocity(i));
+    vectors_pressure.push_back(get_pressure(i));
   }
 
-  if(this->param.convective_problem() and
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  std::vector<VectorType *> vectors_velocity_ptr;
+  std::vector<VectorType *> vectors_pressure_ptr;
+  for(unsigned int i = 0; i < this->order; i++)
+  {
+    vectors_velocity_ptr.push_back(&vectors_velocity[i]);
+    vectors_pressure_ptr.push_back(&vectors_pressure[i]);
+  }
+
+  if(needs_vector_convective_term)
   {
     if(this->param.ale_formulation == false)
     {
       for(unsigned int i = 0; i < this->order; i++)
       {
-        ia >> vec_convective_term[i];
+        vectors_velocity_ptr.push_back(&vec_convective_term[i]);
       }
     }
   }
@@ -283,32 +312,70 @@ TimeIntBDF<dim, Number>::read_restart_vectors(boost::archive::binary_iarchive & 
   {
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
-      ia >> vec_grid_coordinates[i];
+      vectors_velocity_ptr.push_back(&vec_grid_coordinates[i]);
     }
   }
+
+  // Add vectors potentially defined in derived class.
+  std::vector<VectorType const *> vectors_velocity_add_ptr;
+  std::vector<VectorType const *> vectors_pressure_add_ptr;
+  this->get_vectors_serialization(vectors_velocity_add_ptr, vectors_pressure_add_ptr);
+  std::vector<VectorType> vectors_velocity_add;
+  std::vector<VectorType> vectors_pressure_add;
+  for(unsigned int i = 0; i < vectors_velocity_add_ptr.size(); ++i)
+  {
+    vectors_velocity_add.push_back(*vectors_velocity_add_ptr[i]);
+  }
+  for(unsigned int i = 0; i < vectors_pressure_add_ptr.size(); ++i)
+  {
+    vectors_pressure_add.push_back(*vectors_pressure_add_ptr[i]);
+  }
+  for(unsigned int i = 0; i < vectors_velocity_add.size(); ++i)
+  {
+    vectors_velocity_ptr.push_back(&vectors_velocity_add[i]);
+  }
+  for(unsigned int i = 0; i < vectors_pressure_add_ptr.size(); ++i)
+  {
+    vectors_pressure_ptr.push_back(&vectors_pressure_add[i]);
+  }
+
+  operator_base->deserialize_vectors(vectors_velocity_ptr, vectors_pressure_ptr);
+
+  // Copy contents from deserialized to used vectors.
+  for(unsigned int i = 0; i < this->order; i++)
+  {
+    set_velocity(vectors_velocity[i], i);
+  }
+  for(unsigned int i = 0; i < this->order; i++)
+  {
+    set_pressure(vectors_pressure[i], i);
+  }
+
+  this->set_vectors_deserialization(vectors_velocity_add, vectors_pressure_add);
+
+  this->update_after_deserialization();
 }
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::write_restart_vectors(boost::archive::binary_oarchive & oa) const
+TimeIntBDF<dim, Number>::write_restart_vectors() const
 {
+  std::vector<VectorType const *> vectors_velocity;
+  std::vector<VectorType const *> vectors_pressure;
+
   for(unsigned int i = 0; i < this->order; i++)
   {
-    oa << get_velocity(i);
-  }
-  for(unsigned int i = 0; i < this->order; i++)
-  {
-    oa << get_pressure(i);
+    vectors_velocity.push_back(&get_velocity(i));
+    vectors_pressure.push_back(&get_pressure(i));
   }
 
-  if(this->param.convective_problem() and
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  if(needs_vector_convective_term)
   {
     if(this->param.ale_formulation == false)
     {
       for(unsigned int i = 0; i < this->order; i++)
       {
-        oa << vec_convective_term[i];
+        vectors_velocity.push_back(&vec_convective_term[i]);
       }
     }
   }
@@ -317,9 +384,52 @@ TimeIntBDF<dim, Number>::write_restart_vectors(boost::archive::binary_oarchive &
   {
     for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
     {
-      oa << vec_grid_coordinates[i];
+      vectors_velocity.push_back(&vec_grid_coordinates[i]);
     }
   }
+
+  // Add vectors potentially defined in derived class.
+  std::vector<VectorType const *> vectors_velocity_add;
+  std::vector<VectorType const *> vectors_pressure_add;
+  this->get_vectors_serialization(vectors_velocity_add, vectors_pressure_add);
+  vectors_velocity.insert(vectors_velocity.end(),
+                          vectors_velocity_add.begin(),
+                          vectors_velocity_add.end());
+  vectors_pressure.insert(vectors_pressure.end(),
+                          vectors_pressure_add.begin(),
+                          vectors_pressure_add.end());
+
+  operator_base->serialize_vectors(vectors_velocity, vectors_pressure);
+}
+
+template<int dim, typename Number>
+void
+TimeIntBDF<dim, Number>::get_vectors_serialization(
+  std::vector<VectorType const *> & vectors_velocity,
+  std::vector<VectorType const *> & vectors_pressure) const
+{
+  // Overwrite this method in the derived class to attach additional vectors for serialization.
+  (void)vectors_velocity;
+  (void)vectors_pressure;
+}
+
+template<int dim, typename Number>
+void
+TimeIntBDF<dim, Number>::set_vectors_deserialization(
+  std::vector<VectorType> const & vectors_velocity,
+  std::vector<VectorType> const & vectors_pressure)
+{
+  // Overwrite this method in the derived class to process the attached vectors after
+  // deserialization.
+  (void)vectors_velocity;
+  (void)vectors_pressure;
+}
+
+template<int dim, typename Number>
+void
+TimeIntBDF<dim, Number>::update_after_deserialization()
+{
+  // Overwrite this method in the derived class to update data structures after deserialization.
 }
 
 template<int dim, typename Number>
@@ -492,13 +602,13 @@ TimeIntBDF<dim, Number>::postprocessing() const
   }
 
   // We need to distribute the dofs before computing the error since
-  // dealii::VectorTools::integrate_difference() does not take constraints into account
-  // like MatrixFree does, hence reading the wrong values. distribute_constraint_u()
-  // updates the constrained values for the velocity.
+  // `dealii::VectorTools::integrate_difference()` does not take constraints into account like
+  // `dealii::MatrixFree` does, hence reading the wrong values. `distribute_constraint_u()` updates
+  // the constrained values for the velocity.
   operator_base->distribute_constraint_u(const_cast<VectorType &>(get_velocity(0)));
 
-  bool const standard = true;
-  if(standard)
+  bool constexpr postprocess_solution_else_error = true;
+  if(postprocess_solution_else_error)
   {
     postprocessor->do_postprocessing(get_velocity(0),
                                      get_pressure(0),

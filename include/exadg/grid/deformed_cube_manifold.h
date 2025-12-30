@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef APPLICATIONS_GRID_TOOLS_DEFORMED_CUBE_MANIFOLD_H_
-#define APPLICATIONS_GRID_TOOLS_DEFORMED_CUBE_MANIFOLD_H_
+#ifndef EXADG_GRID_DEFORMED_CUBE_MANIFOLD_H_
+#define EXADG_GRID_DEFORMED_CUBE_MANIFOLD_H_
 
+// deal.II
 #include <deal.II/grid/manifold_lib.h>
 
 namespace ExaDG
@@ -157,4 +158,4 @@ apply_deformed_cube_manifold(dealii::Triangulation<dim> & triangulation,
 
 } // namespace ExaDG
 
-#endif /* APPLICATIONS_GRID_TOOLS_DEFORMED_CUBE_MANIFOLD_H_ */
+#endif /* EXADG_GRID_DEFORMED_CUBE_MANIFOLD_H_ */

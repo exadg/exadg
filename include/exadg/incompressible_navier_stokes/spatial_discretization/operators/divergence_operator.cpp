@@ -1,8 +1,22 @@
-/*
- * divergence_operator.cpp
+/*  ______________________________________________________________________
  *
- *  Created on: Nov 5, 2018
- *      Author: fehn
+ *  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
+ *
+ *  Copyright (C) 2021 by the ExaDG authors
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *  ______________________________________________________________________
  */
 
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/divergence_operator.h>
@@ -88,7 +102,7 @@ DivergenceOperator<dim, Number>::rhs_bc_from_dof_vector(VectorType &       dst,
                     src_dummy,
                     false /*zero_dst_vector = false*/);
 
-  // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
+  // multiply by -1.0 since the boundary face integrals have to be shifted to the right-hand side
   dst.add(-1.0, tmp);
 
   velocity_bc = nullptr;
@@ -111,7 +125,7 @@ DivergenceOperator<dim, Number>::rhs_add(VectorType & dst, Number const evaluati
                     tmp,
                     false /*zero_dst_vector = false*/);
 
-  // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
+  // multiply by -1.0 since the boundary face integrals have to be shifted to the right-hand side
   dst.add(-1.0, tmp);
 }
 
@@ -186,7 +200,7 @@ DivergenceOperator<dim, Number>::do_face_integral(FaceIntegratorU & velocity_m,
     vector flux = kernel.calculate_flux(value_m, value_p);
     if(data.formulation == FormulationVelocityDivergenceTerm::Weak)
     {
-      scalar flux_times_normal = flux * velocity_m.get_normal_vector(q);
+      scalar flux_times_normal = flux * velocity_m.normal_vector(q);
 
       pressure_m.submit_value(flux_times_normal, q);
       // minus sign since n⁺ = - n⁻
@@ -194,7 +208,7 @@ DivergenceOperator<dim, Number>::do_face_integral(FaceIntegratorU & velocity_m,
     }
     else if(data.formulation == FormulationVelocityDivergenceTerm::Strong)
     {
-      vector normal = velocity_m.get_normal_vector(q);
+      vector normal = velocity_m.normal_vector(q);
 
       pressure_m.submit_value((flux - value_m) * normal, q);
       // minus sign since n⁺ = - n⁻
@@ -232,7 +246,7 @@ DivergenceOperator<dim, Number>::do_boundary_integral(
     }
 
     vector flux   = kernel.calculate_flux(value_m, value_p);
-    vector normal = velocity.get_normal_vector(q);
+    vector normal = velocity.normal_vector(q);
     if(data.formulation == FormulationVelocityDivergenceTerm::Weak)
     {
       pressure.submit_value(flux * normal, q);
@@ -274,7 +288,7 @@ DivergenceOperator<dim, Number>::do_boundary_integral_from_dof_vector(
     }
 
     vector flux   = kernel.calculate_flux(value_m, value_p);
-    vector normal = velocity.get_normal_vector(q);
+    vector normal = velocity.normal_vector(q);
     if(data.formulation == FormulationVelocityDivergenceTerm::Weak)
     {
       pressure.submit_value(flux * normal, q);
@@ -303,7 +317,6 @@ DivergenceOperator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     pressure.reinit(cell);
-
     velocity.reinit(cell);
 
     if(data.integration_by_parts == true and

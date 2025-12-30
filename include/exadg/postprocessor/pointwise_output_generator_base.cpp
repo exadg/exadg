@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
@@ -176,8 +176,8 @@ template<int dim, typename Number>
 void
 PointwiseOutputGeneratorBase<dim, Number>::setup_remote_evaluator()
 {
-  remote_evaluator =
-    std::make_shared<dealii::Utilities::MPI::RemotePointEvaluation<dim>>(1e-6, false, 0);
+  remote_evaluator = std::make_shared<dealii::Utilities::MPI::RemotePointEvaluation<dim>>(
+    typename dealii::Utilities::MPI::RemotePointEvaluation<dim>::AdditionalData(1e-6, false, 0));
   reinit_remote_evaluator();
 }
 

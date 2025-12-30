@@ -15,13 +15,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef LAPLACE_OPERATOR_H
-#define LAPLACE_OPERATOR_H
+#ifndef EXADG_POISSON_SPATIAL_DISCRETIZATION_LAPLACE_OPERATOR_H_
+#define EXADG_POISSON_SPATIAL_DISCRETIZATION_LAPLACE_OPERATOR_H_
 
+// ExaDG
 #include <exadg/grid/grid_data.h>
 #include <exadg/operators/interior_penalty_parameter.h>
 #include <exadg/operators/operator_base.h>
@@ -249,7 +250,8 @@ public:
   void
   initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
              dealii::AffineConstraints<Number> const & affine_constraints,
-             LaplaceOperatorData<rank, dim> const &    data);
+             LaplaceOperatorData<rank, dim> const &    data,
+             bool const                                assemble_matrix);
 
   LaplaceOperatorData<rank, dim> const &
   get_data() const
@@ -265,9 +267,9 @@ public:
   update_penalty_parameter();
 
   // continuous FE: This function sets the inhomogeneous Dirichlet boundary values for Dirichlet
-  // degrees of freedom.
+  // degrees of freedom and optionally enforces hanging node and periodicity constraints.
   void
-  set_inhomogeneous_boundary_values(VectorType & solution) const final;
+  set_inhomogeneous_constrained_values(VectorType & solution) const final;
 
   // only relevant for discontinuous Galerkin discretization (DG):
   // Some more functionality on top of what is provided by the base class.
@@ -350,4 +352,4 @@ private:
 } // namespace Poisson
 } // namespace ExaDG
 
-#endif
+#endif /* EXADG_POISSON_SPATIAL_DISCRETIZATION_LAPLACE_OPERATOR_H_ */

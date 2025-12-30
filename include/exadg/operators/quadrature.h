@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_OPERATORS_QUADRATURE_H_
-#define INCLUDE_EXADG_OPERATORS_QUADRATURE_H_
+#ifndef EXADG_OPERATORS_QUADRATURE_H_
+#define EXADG_OPERATORS_QUADRATURE_H_
 
 // deal.II
 #include <deal.II/base/quadrature_lib.h>
@@ -58,4 +58,4 @@ create_quadrature(ElementType const & element_type, unsigned int const n_q_point
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_OPERATORS_QUADRATURE_H_ */
+#endif /* EXADG_OPERATORS_QUADRATURE_H_ */

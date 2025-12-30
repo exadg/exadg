@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_GENERATOR_H_
-#define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_GENERATOR_H_
+#ifndef EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_GENERATOR_H_
+#define EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_GENERATOR_H_
 
 // C/C++
 #include <fstream>
@@ -98,23 +98,23 @@ public:
         OutputData const &              output_data_in);
 
   void
-  evaluate(VectorType const &                                                    solution_conserved,
-           std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
-           double const                                                          time,
-           bool const                                                            unsteady);
+  evaluate(
+    VectorType const &                                                       solution_conserved,
+    std::vector<dealii::ObserverPointer<SolutionField<dim, Number>>> const & additional_fields,
+    double const                                                             time,
+    bool const                                                               unsteady);
 
   TimeControl time_control;
 
 private:
   MPI_Comm const mpi_comm;
 
-  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
-  dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;
-  OutputData                                          output_data;
+  dealii::ObserverPointer<dealii::DoFHandler<dim> const> dof_handler;
+  dealii::ObserverPointer<dealii::Mapping<dim> const>    mapping;
+  OutputData                                             output_data;
 };
 
 } // namespace CompNS
 } // namespace ExaDG
 
-
-#endif /* INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_GENERATOR_H_ */
+#endif /* EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_GENERATOR_H_ */

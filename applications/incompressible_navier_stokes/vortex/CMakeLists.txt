@@ -1,5 +1,5 @@
 #########################################################################
-# 
+#
 #                 #######               ######  #######
 #                 ##                    ##   ## ##
 #                 #####   ##  ## #####  ##   ## ## ####
@@ -21,7 +21,7 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#  along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #########################################################################
 
@@ -30,3 +30,6 @@ TARGETNAME(TARGET_NAME ${CMAKE_CURRENT_SOURCE_DIR})
 PROJECT(${TARGET_NAME})
 
 EXADG_PICKUP_EXE(solver.cpp ${TARGET_NAME} solver)
+
+ADD_SUBDIRECTORY(tests)
+

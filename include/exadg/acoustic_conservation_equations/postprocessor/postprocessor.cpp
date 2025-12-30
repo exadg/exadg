@@ -15,11 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
 #include <exadg/acoustic_conservation_equations/postprocessor/postprocessor.h>
+#include <exadg/utilities/evaluate_convergence_study.h>
 
 namespace ExaDG
 {
@@ -37,6 +38,19 @@ PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & postpro
     sound_energy_calculator(comm)
 
 {
+}
+
+template<int dim, typename Number>
+PostProcessor<dim, Number>::~PostProcessor()
+{
+  // Evaluate the convergence study.
+  std::vector<std::string> error_directories;
+  if(pp_data.error_data_u.compute_convergence_table)
+    error_directories.push_back(pp_data.error_data_u.directory);
+  if(pp_data.error_data_p.compute_convergence_table)
+    error_directories.push_back(pp_data.error_data_p.directory);
+
+  evaluate_convergence_study(mpi_comm, error_directories);
 }
 
 template<int dim, typename Number>

@@ -15,12 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_
+#ifndef EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_
+#define EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_
 
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
@@ -64,7 +64,7 @@ template<int dim, typename Number>
 class SpatialOperatorBase;
 
 template<int dim, typename Number>
-class SpatialOperatorBase : public dealii::Subscriptor
+class SpatialOperatorBase : public dealii::EnableObserverPointer
 {
 protected:
   typedef dealii::LinearAlgebra::distributed::Vector<Number>      VectorType;
@@ -156,7 +156,7 @@ public:
   get_dof_index_pressure() const;
 
   unsigned int
-  get_quad_index_velocity_linear() const;
+  get_quad_index_velocity_standard() const;
 
   unsigned int
   get_quad_index_pressure() const;
@@ -166,13 +166,13 @@ protected:
   get_dof_index_velocity_scalar() const;
 
   unsigned int
-  get_quad_index_velocity_nonlinear() const;
+  get_quad_index_velocity_overintegration() const;
 
   unsigned int
-  get_quad_index_velocity_gauss_lobatto() const;
+  get_quad_index_velocity_nodal_points() const;
 
   unsigned int
-  get_quad_index_pressure_gauss_lobatto() const;
+  get_quad_index_pressure_nodal_points() const;
 
   unsigned int
   get_quad_index_velocity_linearized() const;
@@ -238,6 +238,35 @@ public:
                                VectorType & pressure,
                                double const time) const;
 
+  /*
+   * De-/serialization of the solution components.
+   */
+  void
+  serialize_vectors(std::vector<VectorType const *> & vectors_velocity,
+                    std::vector<VectorType const *> & vectors_pressure) const;
+
+  void
+  deserialize_vectors(std::vector<VectorType *> & vectors_velocity,
+                      std::vector<VectorType *> & vectors_pressure);
+
+  /*
+   * Interpolate given functions to the corresponding vectors.
+   */
+  void
+  interpolate_functions(VectorType &                                   velocity,
+                        std::shared_ptr<dealii::Function<dim>> const & f_velocity,
+                        VectorType &                                   pressure,
+                        std::shared_ptr<dealii::Function<dim>> const & f_pressure,
+                        double const                                   time) const;
+
+  /*
+   * Interpolate analytical solution functions.
+   */
+  void
+  interpolate_analytical_solution(VectorType & velocity,
+                                  VectorType & pressure,
+                                  double const time) const;
+
   // FSI: coupling fluid -> structure
   // fills a DoF-vector (velocity) with values of traction on fluid-structure interface
   void
@@ -298,8 +327,8 @@ public:
   set_temperature(VectorType const & temperature);
 
   /*
-   * Computation of derived quantities which is needed for postprocessing but some of them are also
-   * needed, e.g., for special splitting-type time integration schemes.
+   * Computation of derived quantities needed for postprocessing but some of them are also needed,
+   * e.g., for special splitting-type time integration schemes.
    */
 
   // vorticity
@@ -329,6 +358,10 @@ public:
   // Q criterion
   void
   compute_q_criterion(VectorType & dst, VectorType const & src) const;
+
+  // get the current visosity field as vector
+  void
+  access_viscosity(VectorType & dst) const;
 
   /*
    * Operators.
@@ -492,10 +525,12 @@ private:
   std::shared_ptr<dealii::FiniteElement<dim>> fe_u;
   std::shared_ptr<dealii::FiniteElement<dim>> fe_p;
   std::shared_ptr<dealii::FiniteElement<dim>> fe_u_scalar;
+  std::shared_ptr<dealii::FiniteElement<dim>> fe_mapping;
 
-  dealii::DoFHandler<dim> dof_handler_u;
-  dealii::DoFHandler<dim> dof_handler_p;
-  dealii::DoFHandler<dim> dof_handler_u_scalar;
+  dealii::DoFHandler<dim>                  dof_handler_u;
+  dealii::DoFHandler<dim>                  dof_handler_p;
+  dealii::DoFHandler<dim>                  dof_handler_u_scalar;
+  std::shared_ptr<dealii::DoFHandler<dim>> dof_handler_mapping;
 
   dealii::AffineConstraints<Number> constraint_u, constraint_p, constraint_u_scalar;
 
@@ -503,11 +538,11 @@ private:
   std::string const dof_index_p        = "pressure";
   std::string const dof_index_u_scalar = "velocity_scalar";
 
-  std::string const quad_index_u               = "velocity";
-  std::string const quad_index_p               = "pressure";
-  std::string const quad_index_u_nonlinear     = "velocity_nonlinear";
-  std::string const quad_index_u_gauss_lobatto = "velocity_gauss_lobatto";
-  std::string const quad_index_p_gauss_lobatto = "pressure_gauss_lobatto";
+  std::string const quad_index_u                 = "velocity";
+  std::string const quad_index_p                 = "pressure";
+  std::string const quad_index_u_overintegration = "velocity_overintegration";
+  std::string const quad_index_u_nodal_points    = "velocity_nodal_points";
+  std::string const quad_index_p_nodal_points    = "pressure_nodal_points";
 
   std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data;
   std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free;
@@ -556,15 +591,10 @@ protected:
   mutable MomentumOperator<dim, Number> momentum_operator;
 
   /*
-   * Inverse mass operator (for L2 spaces)
+   * Inverse mass operator.
    */
   InverseMassOperator<dim, dim, Number> inverse_mass_velocity;
   InverseMassOperator<dim, 1, Number>   inverse_mass_velocity_scalar;
-
-  /*
-   * Inverse mass operator used in case of H(div)-conforming space
-   */
-  InverseMassOperatorHdiv<dim, dim, Number> inverse_mass_hdiv;
 
   /*
    * Projection operator.
@@ -578,12 +608,12 @@ protected:
 
   // Elementwise solver/preconditioner used in case that only the divergence penalty term is used
   // and the system of equations is block-diagonal.
-  typedef Elementwise::OperatorBase<dim, Number, ProjOperator> ELEMENTWISE_PROJ_OPERATOR;
-  std::shared_ptr<ELEMENTWISE_PROJ_OPERATOR>                   elementwise_projection_operator;
+  typedef Elementwise::OperatorBase<dim, Number, ProjOperator> ElementwiseProjOperator;
+  std::shared_ptr<ElementwiseProjOperator>                     elementwise_projection_operator;
 
   typedef Elementwise::PreconditionerBase<dealii::VectorizedArray<Number>>
-                                              ELEMENTWISE_PRECONDITIONER;
-  std::shared_ptr<ELEMENTWISE_PRECONDITIONER> elementwise_preconditioner_projection;
+                                                 ElementwisePreconditionerBase;
+  std::shared_ptr<ElementwisePreconditionerBase> elementwise_preconditioner_projection;
 
   // global solver/preconditioner to be used if the continuity penalty term is applied.
   std::shared_ptr<Krylov::SolverBase<VectorType>> projection_solver;
@@ -595,6 +625,7 @@ protected:
   VorticityCalculator<dim, Number>  vorticity_calculator;
   DivergenceCalculator<dim, Number> divergence_calculator;
   ShearRateCalculator<dim, Number>  shear_rate_calculator;
+  ViscosityCalculator<dim, Number>  viscosity_calculator;
   MagnitudeCalculator<dim, Number>  magnitude_calculator;
   QCriterionCalculator<dim, Number> q_criterion_calculator;
 
@@ -603,6 +634,11 @@ protected:
   dealii::ConditionalOStream pcout;
 
 private:
+  std::shared_ptr<dealii::FiniteElement<dim>>
+  setup_fe_u(SpatialDiscretization const spatial_discretization,
+             ElementType const           element_type,
+             unsigned int const          degree) const;
+
   // Minimum element length h_min required for global CFL condition.
   double
   calculate_minimum_element_length() const;
@@ -666,5 +702,5 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_ \
+#endif /* EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_ \
         */

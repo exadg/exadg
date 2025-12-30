@@ -15,20 +15,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  *  ______________________________________________________________________
  */
 
-// C/C++
-#include <fstream>
-
-// deal.II
-#include <deal.II/grid/grid_tools.h>
-#include <deal.II/numerics/data_out.h>
-
 // ExaDG
 #include <exadg/acoustic_conservation_equations/postprocessor/output_generator.h>
-#include <exadg/grid/grid_data.h>
 #include <exadg/postprocessor/write_output.h>
 #include <exadg/utilities/create_directories.h>
 
@@ -36,46 +28,6 @@ namespace ExaDG
 {
 namespace Acoustics
 {
-template<int dim, typename Number>
-void
-write_output(OutputData const &                                         output_data,
-             dealii::DoFHandler<dim> const &                            dof_handler_pressure,
-             dealii::DoFHandler<dim> const &                            dof_handler_velocity,
-             dealii::Mapping<dim> const &                               mapping,
-             dealii::LinearAlgebra::distributed::Vector<Number> const & pressure,
-             dealii::LinearAlgebra::distributed::Vector<Number> const & velocity,
-             unsigned int const                                         output_counter,
-             MPI_Comm const &                                           mpi_comm)
-{
-  std::string folder = output_data.directory, file = output_data.filename;
-
-  dealii::DataOutBase::VtkFlags flags;
-  flags.write_higher_order_cells = output_data.write_higher_order;
-
-  dealii::DataOut<dim> data_out;
-  data_out.set_flags(flags);
-
-  if(output_data.write_pressure)
-    data_out.add_data_vector(dof_handler_pressure, pressure, "p");
-
-  if(output_data.write_velocity)
-  {
-    std::vector<std::string> velocity_names(dim, "velocity_times_density");
-    std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
-      velocity_component_interpretation(
-        dim, dealii::DataComponentInterpretation::component_is_part_of_vector);
-
-    data_out.add_data_vector(dof_handler_velocity,
-                             velocity,
-                             velocity_names,
-                             velocity_component_interpretation);
-  }
-
-  data_out.build_patches(mapping, output_data.degree, dealii::DataOut<dim>::curved_inner_cells);
-
-  data_out.write_vtu_with_pvtu_record(folder, file, output_counter, mpi_comm, 4);
-}
-
 template<int dim, typename Number>
 OutputGenerator<dim, Number>::OutputGenerator(MPI_Comm const & comm) : mpi_comm(comm)
 {
@@ -155,14 +107,26 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & pressure,
 {
   print_write_output_time(time, time_control.get_counter(), unsteady, mpi_comm);
 
-  write_output<dim>(output_data,
-                    *dof_handler_pressure,
-                    *dof_handler_velocity,
-                    *mapping,
-                    pressure,
-                    velocity,
-                    time_control.get_counter(),
-                    mpi_comm);
+  VectorWriter<dim, Number> vector_writer(output_data, time_control.get_counter(), mpi_comm);
+
+  if(output_data.write_pressure)
+  {
+    vector_writer.add_data_vector(pressure, *dof_handler_pressure, {"pressure"});
+  }
+
+  if(output_data.write_velocity)
+  {
+    std::vector<std::string> component_names(dim, "velocity");
+    std::vector<bool>        component_is_part_of_vector(dim, true);
+    vector_writer.add_data_vector(velocity,
+                                  *dof_handler_velocity,
+                                  component_names,
+                                  component_is_part_of_vector);
+  }
+
+  vector_writer.write_aspect_ratio(*dof_handler_velocity, *mapping);
+
+  vector_writer.write_pvtu(&(*mapping));
 }
 
 template class OutputGenerator<2, float>;
