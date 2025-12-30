@@ -27,11 +27,9 @@ Mathematical model:
   Large deformation:                         true
   Pull back body force:                      false
   Pull back traction:                        false
-  Material type:                             StVenantKirchhoff
 
 Physical quantities:
   Density:                                   1.0000e-03
-  Weak damping coefficient:                  1.0000e+04
 
 Temporal discretization:
   Start time:                                0.0000e+00
@@ -48,12 +46,11 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Element type:                              Hypercube
-  Number of global refinements:              0
+  Number of global refinements:              1
   Create coarse triangulations:              false
   Mapping degree:                            1
   Mapping degree coarse grids:               1
-  Polynomial degree:                         1
-  Use matrix-based operator:                 false
+  Polynomial degree:                         2
 
 Solver:
 
@@ -63,48 +60,42 @@ Newton:
   Relative solver tolerance:                 1.0000e-09
 
 Linear solver:
-  Solver:                                    CG
+  Solver:                                    FGMRES
   Maximum number of iterations:              1000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-08
+  Maximum size of Krylov space:              100
   Preconditioner:                            Multigrid
   Multigrid type:                            phMG
-  p-sequence:                                DecreaseByOne
-  Min degree matrix-free:                    1
+  p-sequence:                                Bisect
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
-  Smoothing range:                           6.0000e+01
-  Iterations eigenvalue estimation:          60
-  Coarse grid solver:                        AMG
-  Coarse grid preconditioner:                None
-  Maximum number of iterations:              1000
+  Smoothing range:                           2.0000e+01
+  Iterations eigenvalue estimation:          20
+  Coarse grid solver:                        CG
+  Coarse grid preconditioner:                AMG
+  Maximum number of iterations:              10000
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-03
-  Maximum size of Krylov space:              100
+  Maximum size of Krylov space:              30
       AMG type:                              ML
-      Smoother sweeps:                       8
+      Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
 
 Generating grid for 3-dimensional problem:
 
-  Max. number of refinements:                0
-  Number of cells:                           4
+  Max. number of refinements:                1
+  Number of cells:                           32
 
 Construct elasticity operator ...
 
 Continuous Galerkin finite element discretization:
 
-  degree of 1D polynomials:                  1
-  number of dofs per cell:                   24
-  number of dofs (total):                    60
-
-Discontinuous Galerkin finite element discretization of scalar field:
-
-  degree of 1D polynomials:                  1
-  number of dofs per cell:                   8
-  number of dofs (total):                    32
+  degree of 1D polynomials:                  2
+  number of dofs per cell:                   81
+  number of dofs (total):                    1275
 
 ... done!
 
@@ -127,13 +118,13 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for all fields at time t = 2.5000e+01:
-  Relative error (L2-norm): 9.11314e-01
+  Relative error (L2-norm): 1.40907e-05
 
 Calculate error for all fields at time t = 5.0000e+01:
-  Relative error (L2-norm): 8.03837e-01
+  Relative error (L2-norm): 1.00002e+00
 
 Calculate error for all fields at time t = 7.5000e+01:
-  Relative error (L2-norm): 7.10108e-01
+  Relative error (L2-norm): 1.40902e-05
 
 ________________________________________________________________________________
 
@@ -141,4 +132,4 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for all fields at time t = 1.0000e+02:
-  Relative error (L2-norm): 6.27902e-01
+  Relative error (L2-norm): 1.00002e+00
