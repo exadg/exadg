@@ -16,3 +16,4 @@ jobs:
       with:
         path: 'include/exadg/'
         pattern: 'EXADG_{dirs}_{file}_'
+        
