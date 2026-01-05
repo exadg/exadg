@@ -139,7 +139,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="classExaDG_1_1Krylov_1_1SolverBase.html">   45</a></span><span class="keyword">class </span>SolverBase</div>
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>{</div>
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  SolverBase() : l2_0(1.0), l2_n(1.0), n(0), rho(0.0), n10(0)</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  SolverBase() : l2_0(1.0), l2_n(1.0), n(0), rho(0.0), n_10(0)</div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  {</div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    timer_tree = std::make_shared&lt;TimerTree&gt;();</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  }</div>
@@ -166,8 +166,8 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    <span class="comment">// compute some derived performance metrics</span></div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    <span class="keywordflow">if</span>(n &gt; 0)</div>
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    {</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>      this-&gt;rho = std::pow(l2_n / l2_0, 1.0 / n);</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>      this-&gt;n10 = -10.0 * std::log(10.0) / std::log(rho);</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>      this-&gt;rho  = std::pow(l2_n / l2_0, 1.0 / n);</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>      this-&gt;n_10 = -10.0 * std::log(10.0) / std::log(rho);</div>
 <div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>    }</div>
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  }</div>
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span> </div>
@@ -182,7 +182,7 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <span class="keyword">mutable</span> <span class="keywordtype">double</span>       l2_n; <span class="comment">// norm of final residual</span></div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  <span class="keyword">mutable</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n;    <span class="comment">// number of iterations</span></div>
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  <span class="keyword">mutable</span> <span class="keywordtype">double</span>       rho;  <span class="comment">// average convergence rate</span></div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  <span class="keyword">mutable</span> <span class="keywordtype">double</span>       n10;  <span class="comment">// number of iterations needed to reduce the residual by 1e10</span></div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  <span class="keyword">mutable</span> <span class="keywordtype">double</span>       n_10; <span class="comment">// number of iterations needed to reduce the residual by 1e10</span></div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span><span class="keyword">protected</span>:</div>
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  std::shared_ptr&lt;TimerTree&gt; timer_tree;</div>
