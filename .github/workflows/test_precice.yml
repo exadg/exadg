@@ -50,4 +50,3 @@ jobs:
           cd build
           cmake ../ -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DEXADG_WITH_PRECICE=${{ matrix.use_precice }}
           make -j${{ env.COMPILE_JOBS }}
-
