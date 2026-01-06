@@ -2,28 +2,28 @@
     "General": {
         "Precision": "double",
         "Dim": "2",
-        "IsTest": "false"
+        "IsTest": "true"
     },
     "SpatialResolution": {
-        "DegreeMin": "10",
-        "DegreeMax": "10",
+        "DegreeMin": "6",
+        "DegreeMax": "6",
         "RefineSpaceMin": "3",
         "RefineSpaceMax": "3"
     },
     "TemporalResolution": {
-        "RefineTimeMin": "0",
-        "RefineTimeMax": "0"
+        "RefineTimeMin": "2",
+        "RefineTimeMax": "2"
     },
     "Application": {
-        "TriangulationType": "Distributed",
-        "SpatialDiscretization": "L2",
+        "TriangulationType": "Serial",
+        "SpatialDiscretization": "HDIV",
         "MoveGrid": "false",
         "ReadRestart": "false",
-        "WriteRestart": "false",
+        "WriteRestart": "true",
         "IncludeConvectiveTerm": "true",
-        "BoundaryCondition": "PureDirichlet",
+        "BoundaryCondition": "Periodic",
         "StartTime": "0.0",
-        "EndTime": "0.1",
+        "EndTime": "0.025",
         "IntervalStart": "-3.14159265358979323846",
         "IntervalEnd": "3.14159265358979323846",
         "Density": "1000.0",
@@ -31,7 +31,7 @@
         "UseGeneralizedNewtonianModel": "true",
         "FormulationViscousTerm" : "DivergenceFormulation",
         "TemporalDiscretization" : "BDFDualSplitting",
-        "TreatmentOfConvectiveTerm" : "LinearlyImplicit",
+        "TreatmentOfConvectiveTerm" : "Explicit",
         "TreatmentOfVariableViscosity" : "Explicit",
         "GeneralizedNewtonianViscosityMargin": "49e-6",
         "GeneralizedNewtonianKappa": "1.0",
@@ -40,7 +40,7 @@
         "GeneralizedNewtonianN": "0.5"
     },
     "Output": {
-        "OutputDirectory": "output/",
+        "OutputDirectory": "output_test/",
         "OutputName": "test",
         "WriteOutput": "false"
     }
