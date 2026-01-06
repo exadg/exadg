@@ -1,0 +1,6 @@
+cells: fe_eval.fast_evaluation_supported(degree, n_q_points_1d) = 1
+faces: fe_face_eval.fast_evaluation_supported(degree, n_q_points_1d) = 1
+cells contribute
+inner faces contribute
+boundary faces contribute
+dst.l2_norm() = 9.23903
