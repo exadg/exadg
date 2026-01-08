@@ -33,6 +33,7 @@
 #include <exadg/postprocessor/error_calculation.h>
 #include <exadg/postprocessor/kinetic_energy_spectrum.h>
 #include <exadg/postprocessor/lift_and_drag_calculation.h>
+#include <exadg/postprocessor/particle_calculation.h>
 #include <exadg/postprocessor/pressure_difference_calculation.h>
 
 namespace ExaDG
@@ -54,6 +55,7 @@ struct PostProcessorData
   PressureDifferenceData<dim> pressure_difference_data;
   MassConservationData        mass_data;
   KineticEnergyData           kinetic_energy_data;
+  ParticleData                particle_data;
   KineticEnergySpectrumData   kinetic_energy_spectrum_data;
   LinePlotData<dim>           line_plot_data;
 };
@@ -141,6 +143,9 @@ private:
 
   // evaluate quantities along lines through the domain
   LinePlotCalculator<dim, Number> line_plot_calculator;
+
+  // evaluate particle transport
+  ParticleCalculator<dim, Number> particle_calculator;
 };
 
 } // namespace IncNS
