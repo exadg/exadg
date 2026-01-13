@@ -39,7 +39,8 @@ PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & postpro
     div_and_mass_error_calculator(comm),
     kinetic_energy_calculator(comm),
     kinetic_energy_spectrum_calculator(comm),
-    line_plot_calculator(comm)
+    line_plot_calculator(comm),
+    particle_calculator(comm)
 {
 }
 
@@ -101,6 +102,10 @@ PostProcessor<dim, Number>::setup(Operator const & pde_operator)
   kinetic_energy_spectrum_calculator.setup(navier_stokes_operator->get_matrix_free(),
                                            navier_stokes_operator->get_dof_handler_u(),
                                            pp_data.kinetic_energy_spectrum_data);
+
+  particle_calculator.setup(navier_stokes_operator->get_dof_handler_u(),
+                            *navier_stokes_operator->get_mapping(),
+                            pp_data.particle_data);
 
   line_plot_calculator.setup(navier_stokes_operator->get_dof_handler_u(),
                              navier_stokes_operator->get_dof_handler_p(),
@@ -252,6 +257,17 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     velocity,
     kinetic_energy_spectrum_calculator.evaluate(velocity,
                                                 time,
                                                 Utilities::is_unsteady_timestep(time_step_number));
+  }
+
+  /*
+   *  calculation of particle trajectory
+   *  `is_active` only controls output, particles are advanced every timestep but only printed
+   * sometimes
+   */
+  if(pp_data.particle_data.time_control_data.is_active)
+  {
+    particle_calculator.evaluate(
+      velocity, time, particle_calculator.time_control.needs_evaluation(time, time_step_number));
   }
 
   /*

@@ -665,6 +665,24 @@ private:
     pp_data.error_data_p.calculate_relative_errors = true;
     pp_data.error_data_p.name                      = "pressure";
 
+
+    // calculation of trace particles
+    pp_data.particle_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.particle_data.time_control_data.start_time       = start_time;
+    pp_data.particle_data.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
+    pp_data.particle_data.directory = this->output_parameters.directory + "vtu/";
+    pp_data.particle_data.filename  = this->output_parameters.filename;
+
+
+    std::vector<dealii::Point<2>> starting_points_2d(100);
+    for(unsigned int i = 0; i < starting_points_2d.size(); ++i)
+    {
+      double const     rad = 2 * dealii::numbers::PI * i / starting_points_2d.size();
+      dealii::Point<2> point(left + 0.3 + 0.25 * std::cos(rad), left + 0.5 + 0.25 * std::sin(rad));
+      starting_points_2d[i] = point;
+    }
+    pp_data.particle_data.starting_points_2d = starting_points_2d;
+
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
