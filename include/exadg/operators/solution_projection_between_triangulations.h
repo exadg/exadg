@@ -211,9 +211,16 @@ project_vectors(
   inverse_mass_operator_data.parameters.preconditioner = data.preconditioner;
   inverse_mass_operator_data.parameters.solver_data    = data.solver_data;
   inverse_mass_operator_data.parameters.amg_data       = data.amg_data;
+
+  const bool cartesian_or_affine_mapping =
+    std::all_of(target_matrix_free.get_mapping_info().cell_type.begin(),
+                target_matrix_free.get_mapping_info().cell_type.end(),
+                [](auto g) {
+                  return g <= dealii::internal::MatrixFreeFunctions::GeometryType::affine;
+                });
   inverse_mass_operator_data.parameters.implementation_type =
     InverseMassOperatorData<Number>::get_optimal_inverse_mass_type(
-      target_matrix_free.get_dof_handler(dof_index).get_fe());
+      target_matrix_free.get_dof_handler(dof_index).get_fe(), cartesian_or_affine_mapping);
 
   InverseMassOperator<dim, n_components, Number> inverse_mass_operator;
   inverse_mass_operator.initialize(target_matrix_free, inverse_mass_operator_data);

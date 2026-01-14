@@ -55,11 +55,12 @@ struct InverseMassOperatorData
   // operator depending on the approximation space.
   template<int dim>
   static InverseMassType
-  get_optimal_inverse_mass_type(dealii::FiniteElement<dim> const & fe)
+  get_optimal_inverse_mass_type(dealii::FiniteElement<dim> const & fe,
+                                bool const                         use_affine_mapping)
   {
     if(fe.conforms(dealii::FiniteElementData<dim>::L2))
     {
-      if(fe.reference_cell().is_hyper_cube())
+      if(fe.reference_cell().is_hyper_cube() || use_affine_mapping)
       {
         return InverseMassType::MatrixfreeOperator;
       }
@@ -141,9 +142,19 @@ private:
                                  VectorType const & src,
                                  Range const &      cell_range) const;
 
+  void
+  cell_loop_matrix_free_operator_simplex(dealii::MatrixFree<dim, Number> const &,
+                                         VectorType &       dst,
+                                         VectorType const & src,
+                                         Range const &      cell_range) const;
+
   dealii::MatrixFree<dim, Number> const * matrix_free;
 
   unsigned int dof_index, quad_index;
+
+  bool                is_hypercube_element;
+  std::vector<Number> inverse_mass_matrix;
+
 
   InverseMassParameters data;
 
