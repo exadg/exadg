@@ -19,6 +19,13 @@
  *  ______________________________________________________________________
  */
 
+// deal.II
+#include <deal.II/fe/fe_simplex_p.h>
+#include <deal.II/fe/mapping_fe.h>
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/lac/la_parallel_vector.h>
+#include <deal.II/matrix_free/operators.h>
+
 #include <exadg/operators/inverse_mass_operator.h>
 
 namespace ExaDG
@@ -65,19 +72,80 @@ InverseMassOperator<dim, n_components, Number>::initialize(
   if(data.implementation_type == InverseMassType::MatrixfreeOperator)
   {
     AssertThrow(
-      fe.base_element(0).dofs_per_cell == dealii::Utilities::pow(fe.degree + 1, dim),
-      dealii::ExcMessage(
-        "The matrix-free cell-wise inverse mass operator is currently only available for isotropic tensor-product elements."));
-
-    AssertThrow(
-      this->matrix_free->get_shape_info(0, quad_index).data[0].n_q_points_1d == fe.degree + 1,
-      dealii::ExcMessage(
-        "The matrix-free cell-wise inverse mass operator is currently only available if n_q_points_1d = n_nodes_1d."));
-
-    AssertThrow(
       fe.conforms(dealii::FiniteElementData<dim>::L2),
       dealii::ExcMessage(
         "The matrix-free cell-wise inverse mass operator is only available for L2-conforming elements."));
+
+    if(fe.reference_cell().is_hyper_cube())
+    {
+      AssertThrow(
+        fe.base_element(0).dofs_per_cell == dealii::Utilities::pow(fe.degree + 1, dim),
+        dealii::ExcMessage(
+          "The matrix-free cell-wise inverse mass operator is currently only available for isotropic tensor-product elements."));
+
+      AssertThrow(
+        this->matrix_free->get_shape_info(0, quad_index).data[0].n_q_points_1d == fe.degree + 1,
+        dealii::ExcMessage(
+          "The matrix-free cell-wise inverse mass operator is currently only available if n_q_points_1d = n_nodes_1d."));
+
+      is_hypercube_element = true;
+    }
+    else if(fe.reference_cell().is_simplex())
+    {
+      const bool cartesian_or_affine_mapping =
+        std::all_of(matrix_free->get_mapping_info().cell_type.begin(),
+                    matrix_free->get_mapping_info().cell_type.end(),
+                    [](auto g) {
+                      return g <= dealii::internal::MatrixFreeFunctions::GeometryType::affine;
+                    });
+      AssertThrow(cartesian_or_affine_mapping,
+                  dealii::ExcMessage(
+                    "The matrix-free cell-wise inverse mass operator can only be applied "
+                    "with affine mapping on non-hypercube elements."));
+
+      AssertThrow(
+        !coefficient_is_variable,
+        dealii::ExcMessage(
+          "The matrix-free cell-wise inverse mass operator can only be applied with constant "
+          "coefficients over a cell on non-hypercube elements, use apply_scale() in this case."));
+
+      is_hypercube_element = false;
+      // setup mass matrix on reference element
+      {
+        dealii::Triangulation<dim> triangulation;
+        dealii::GridGenerator::reference_cell(triangulation, fe.reference_cell());
+        const dealii::FE_SimplexDGP<dim> scalar_fe(fe.degree);
+
+        const unsigned int         dofs_per_cell = scalar_fe.n_dofs_per_cell();
+        dealii::FullMatrix<Number> mass_matrix(dofs_per_cell, dofs_per_cell);
+
+        const dealii::MappingFE<dim, dim> mapping_mass(scalar_fe);
+        const auto                        quadrature_mass =
+          scalar_fe.reference_cell().template get_gauss_type_quadrature<dim>(scalar_fe.degree + 1);
+
+        dealii::FEValues<dim> fe_values(mapping_mass,
+                                        scalar_fe,
+                                        quadrature_mass,
+                                        dealii::update_values | dealii::update_quadrature_points |
+                                          dealii::update_JxW_values);
+        fe_values.reinit(triangulation.begin_active());
+
+        mass_matrix = 0.;
+        for(unsigned int i = 0; i < dofs_per_cell; ++i)
+          for(unsigned int j = 0; j < dofs_per_cell; ++j)
+            for(unsigned int q = 0; q < quadrature_mass.size(); ++q)
+              mass_matrix(i, j) +=
+                fe_values.JxW(q) * fe_values.shape_value(i, q) * fe_values.shape_value(j, q);
+        mass_matrix.gauss_jordan();
+
+        this->inverse_mass_matrix.reserve(dofs_per_cell * dofs_per_cell);
+        for(unsigned int i = 0; i < dofs_per_cell; ++i)
+          for(unsigned int j = 0; j < dofs_per_cell; ++j)
+            this->inverse_mass_matrix.emplace_back(mass_matrix(i, j));
+      }
+    }
+    else
+      DEAL_II_NOT_IMPLEMENTED();
   }
   else
   {
@@ -229,9 +297,14 @@ InverseMassOperator<dim, n_components, Number>::apply(VectorType &       dst,
   {
     dst.zero_out_ghost_values();
 
-    if(data.implementation_type == InverseMassType::MatrixfreeOperator)
+    if(data.implementation_type == InverseMassType::MatrixfreeOperator && is_hypercube_element)
     {
       matrix_free->cell_loop(&This::cell_loop_matrix_free_operator, this, dst, src);
+    }
+    else if(data.implementation_type == InverseMassType::MatrixfreeOperator &&
+            !is_hypercube_element)
+    {
+      matrix_free->cell_loop(&This::cell_loop_matrix_free_operator_simplex, this, dst, src);
     }
     else // ElementwiseKrylovSolver or BlockMatrices
     {
@@ -249,7 +322,7 @@ InverseMassOperator<dim, n_components, Number>::apply_scale(VectorType &       d
                                                             double const       scaling_factor,
                                                             VectorType const & src) const
 {
-  if(data.implementation_type == InverseMassType::MatrixfreeOperator)
+  if(data.implementation_type == InverseMassType::MatrixfreeOperator && is_hypercube_element)
   {
     // In the InverseMassType::MatrixfreeOperator case we can avoid
     // streaming the vector from memory twice.
@@ -259,6 +332,26 @@ InverseMassOperator<dim, n_components, Number>::apply_scale(VectorType &       d
 
     matrix_free->cell_loop(
       &This::cell_loop_matrix_free_operator,
+      this,
+      dst,
+      src,
+      /*operation before cell operation*/ {}, /*operation after cell operation*/
+      [&](const unsigned int start_range, const unsigned int end_range) {
+        for(unsigned int i = start_range; i < end_range; ++i)
+          dst.local_element(i) *= scaling_factor;
+      },
+      dof_index);
+  }
+  else if(data.implementation_type == InverseMassType::MatrixfreeOperator && !is_hypercube_element)
+  {
+    // In the InverseMassType::MatrixfreeOperator case we can avoid
+    // streaming the vector from memory twice.
+
+    // ghost entries have to be zeroed out before `MatrixFree::cell_loop()`.
+    dst.zero_out_ghost_values();
+
+    matrix_free->cell_loop(
+      &This::cell_loop_matrix_free_operator_simplex,
       this,
       dst,
       src,
@@ -340,6 +433,55 @@ InverseMassOperator<dim, n_components, Number>::cell_loop_matrix_free_operator(
 
       integrator.set_dof_values(dst, 0);
     }
+  }
+}
+
+template<int dim, int n_components, typename Number>
+void
+InverseMassOperator<dim, n_components, Number>::cell_loop_matrix_free_operator_simplex(
+  dealii::MatrixFree<dim, Number> const &,
+  VectorType &       dst,
+  VectorType const & src,
+  Range const &      cell_range) const
+{
+  Integrator integrator(*matrix_free, dof_index, quad_index);
+
+  const unsigned int dofs_per_cell = integrator.dofs_per_component;
+  dealii::AlignedVector<dealii::VectorizedArray<Number>> values_dofs_inverse(dofs_per_cell *
+                                                                             n_components);
+
+  for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
+  {
+    integrator.reinit(cell);
+    integrator.read_dof_values(src);
+
+    // Apply inverse mass on components
+    for(unsigned int c = 0; c < n_components; ++c)
+    {
+      dealii::internal::apply_matrix_vector_product<
+        dealii::internal::EvaluatorVariant::evaluate_general,
+        dealii::internal::EvaluatorQuantity::value,
+        /*transpose_matrix*/ false,
+        /*add*/ false,
+        /*consider_strides*/ false>(inverse_mass_matrix.data(),
+                                    integrator.begin_dof_values() + c * dofs_per_cell,
+                                    &values_dofs_inverse[0] + c * dofs_per_cell,
+                                    dofs_per_cell,
+                                    dofs_per_cell,
+                                    1,
+                                    1);
+    }
+
+    // apply inverse jacobi matrix
+    const auto &       mapping_data = matrix_free->get_mapping_info().cell_data[quad_index];
+    const unsigned int offsets      = mapping_data.data_index_offsets[cell];
+    const dealii::VectorizedArray<Number> * j_value = &mapping_data.JxW_values[offsets];
+
+    const dealii::VectorizedArray<Number> j_inverse = 1. / j_value[0];
+    for(unsigned int i = 0; i < n_components * dofs_per_cell; ++i)
+      integrator.begin_dof_values()[i] = values_dofs_inverse[i] * j_inverse;
+
+    integrator.set_dof_values(dst);
   }
 }
 

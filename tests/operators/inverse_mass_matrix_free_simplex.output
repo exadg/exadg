@@ -1,0 +1,96 @@
+  dim          = 2
+  n_components = 1
+  fe degree    = 1
+  Number of degrees of freedom: 1536
+  ||ref||_infty = 0.999994
+  || vec1 - vec2||_infty = 9.99201e-16
+
+
+  dim          = 2
+  n_components = 2
+  fe degree    = 1
+  Number of degrees of freedom: 3072
+  ||ref||_infty = 0.99966
+  || vec1 - vec2||_infty = 9.99201e-16
+
+
+  dim          = 3
+  n_components = 1
+  fe degree    = 1
+  Number of degrees of freedom: 81920
+  ||ref||_infty = 0.999992
+  || vec1 - vec2||_infty = 1.77636e-15
+
+
+  dim          = 3
+  n_components = 3
+  fe degree    = 1
+  Number of degrees of freedom: 245760
+  ||ref||_infty = 0.999998
+  || vec1 - vec2||_infty = 1.66533e-15
+
+
+  dim          = 2
+  n_components = 1
+  fe degree    = 2
+  Number of degrees of freedom: 3072
+  ||ref||_infty = 0.99988
+  || vec1 - vec2||_infty = 1.55431e-15
+
+
+  dim          = 2
+  n_components = 2
+  fe degree    = 2
+  Number of degrees of freedom: 6144
+  ||ref||_infty = 0.999858
+  || vec1 - vec2||_infty = 1.88738e-15
+
+
+  dim          = 3
+  n_components = 1
+  fe degree    = 2
+  Number of degrees of freedom: 204800
+  ||ref||_infty = 0.999997
+  || vec1 - vec2||_infty = 8.98587e-15
+
+
+  dim          = 3
+  n_components = 3
+  fe degree    = 2
+  Number of degrees of freedom: 614400
+  ||ref||_infty = 0.999997
+  || vec1 - vec2||_infty = 8.52096e-15
+
+
+  dim          = 2
+  n_components = 1
+  fe degree    = 3
+  Number of degrees of freedom: 5120
+  ||ref||_infty = 0.999864
+  || vec1 - vec2||_infty = 2.66454e-15
+
+
+  dim          = 2
+  n_components = 2
+  fe degree    = 3
+  Number of degrees of freedom: 10240
+  ||ref||_infty = 0.999853
+  || vec1 - vec2||_infty = 2.55351e-15
+
+
+  dim          = 3
+  n_components = 1
+  fe degree    = 3
+  Number of degrees of freedom: 409600
+  ||ref||_infty = 0.999998
+  || vec1 - vec2||_infty = 1.63203e-14
+
+
+  dim          = 3
+  n_components = 3
+  fe degree    = 3
+  Number of degrees of freedom: 1228800
+  ||ref||_infty = 0.999999
+  || vec1 - vec2||_infty = 1.74305e-14
+
+

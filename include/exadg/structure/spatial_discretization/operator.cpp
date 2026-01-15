@@ -328,8 +328,15 @@ Operator<dim, Number>::setup_operators()
 
     // For a continuous Galerkin discretization a global Krylov solver is needed. The default
     // `PointJacobi` preconditioner is usually sufficient.
+    const bool cartesian_or_affine_mapping =
+      std::all_of(matrix_free->get_mapping_info().cell_type.begin(),
+                  matrix_free->get_mapping_info().cell_type.end(),
+                  [](auto g) {
+                    return g <= dealii::internal::MatrixFreeFunctions::GeometryType::affine;
+                  });
+
     inverse_mass_operator_data.parameters.implementation_type =
-      inverse_mass_operator_data.get_optimal_inverse_mass_type(*fe);
+      inverse_mass_operator_data.get_optimal_inverse_mass_type(*fe, cartesian_or_affine_mapping);
     inverse_mass_operator_data.parameters.preconditioner = PreconditionerMass::PointJacobi;
 
     inverse_mass.initialize(*matrix_free, inverse_mass_operator_data, &affine_constraints);
@@ -342,8 +349,16 @@ Operator<dim, Number>::setup_operators()
     inverse_mass_operator_data_scalar.parameters.solver_data = param.solver_data;
     inverse_mass_operator_data_scalar.dof_index              = get_dof_index_scalar();
     inverse_mass_operator_data_scalar.quad_index             = get_quad_index();
+    const bool cartesian_or_affine_mapping =
+      std::all_of(matrix_free->get_mapping_info().cell_type.begin(),
+                  matrix_free->get_mapping_info().cell_type.end(),
+                  [](auto g) {
+                    return g <= dealii::internal::MatrixFreeFunctions::GeometryType::affine;
+                  });
+
     inverse_mass_operator_data_scalar.parameters.implementation_type =
-      inverse_mass_operator_data_scalar.get_optimal_inverse_mass_type(*fe_scalar);
+      inverse_mass_operator_data_scalar.get_optimal_inverse_mass_type(*fe_scalar,
+                                                                      cartesian_or_affine_mapping);
 
     inverse_mass_scalar.initialize(*matrix_free,
                                    inverse_mass_operator_data_scalar,
