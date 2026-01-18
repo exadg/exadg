@@ -31,6 +31,7 @@
 #include <deal.II/lac/trilinos_precondition.h>
 
 // ExaDG
+#include <deal.II/lac/trilinos_solver.h>
 #include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
 #include <exadg/utilities/print_functions.h>
 
@@ -83,7 +84,8 @@ enum class MultigridCoarseGridSolver
   Chebyshev,
   CG,
   GMRES,
-  AMG
+  AMG,
+  SparseDirect
 };
 
 enum class MultigridCoarseGridPreconditioner
@@ -92,6 +94,11 @@ enum class MultigridCoarseGridPreconditioner
   PointJacobi,
   BlockJacobi,
   AMG
+};
+
+struct SparseDirectData
+{
+  dealii::TrilinosWrappers::SolverDirect::AdditionalData trilinos_data;
 };
 
 struct AMGData
@@ -252,6 +259,8 @@ struct CoarseGridData
 
   // Configuration of AMG settings
   AMGData amg_data;
+
+  SparseDirectData sparse_direct_data;
 };
 
 
