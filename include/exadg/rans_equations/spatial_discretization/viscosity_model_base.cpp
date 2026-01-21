@@ -33,15 +33,14 @@ ViscosityModelBase<dim, Number>::ViscosityModelBase()
 
 template<int dim, typename Number>
 void
-ViscosityModelBase<dim, Number>::initialize(
-  dealii::MatrixFree<dim, Number> const &                matrix_free_in,
-  unsigned int const                                     dof_index_in,
-  unsigned int const                                     quad_index_in)
+ViscosityModelBase<dim, Number>::initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+                                            unsigned int const                      dof_index_in,
+                                            unsigned int const                      quad_index_in)
 {
-  matrix_free    = &matrix_free_in;
+  matrix_free = &matrix_free_in;
 
-  dof_index= dof_index_in;
-  quad_index= quad_index_in;
+  dof_index  = dof_index_in;
+  quad_index = quad_index_in;
 }
 
 template class ViscosityModelBase<2, float>;
@@ -49,5 +48,5 @@ template class ViscosityModelBase<2, double>;
 template class ViscosityModelBase<3, float>;
 template class ViscosityModelBase<3, double>;
 
-} // namespace RANSEqns
+} // namespace RANS
 } // namespace ExaDG

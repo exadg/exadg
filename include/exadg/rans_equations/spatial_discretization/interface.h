@@ -119,7 +119,7 @@ public:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   OperatorExplRK(std::shared_ptr<RANS::Interface::Operator<Number>> operator_in,
-                 bool const                                             numerical_velocity_field_in)
+                 bool const                                         numerical_velocity_field_in)
     : pde_operator(operator_in), numerical_velocity_field(numerical_velocity_field_in)
   {
     if(numerical_velocity_field)

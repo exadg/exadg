@@ -30,8 +30,8 @@
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/finite_element.h>
 
-#include <exadg/incompressible_flow_with_rans/calculator/viscosity_calculator.h>
 #include <deal.II/lac/la_parallel_vector.h>
+#include <exadg/incompressible_flow_with_rans/calculator/viscosity_calculator.h>
 
 namespace ExaDG
 {
@@ -42,16 +42,16 @@ class ViscosityOperator : public dealii::Subscriptor
 {
 private:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+
 public:
-  ViscosityOperator(std::shared_ptr<Grid<dim> const> grid_in,
-                    unsigned int const fe_degree_in);
+  ViscosityOperator(std::shared_ptr<Grid<dim> const> grid_in, unsigned int const fe_degree_in);
 
   void
   fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
 
   void
   setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
-        std::shared_ptr<MatrixFreeData<dim, Number> const> matrix_free_data_in);
+        std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data_in);
 
   unsigned int
   get_dof_index() const;
@@ -72,23 +72,23 @@ public:
   set_tke_dissipation_rate(VectorType const & epsilon_in) const;
 
   void
-  extrapolate_eddy_viscosity_to_dof(VectorType & dst,
-                             unsigned int  const dst_dof_index) const;
+  extrapolate_eddy_viscosity_to_dof(VectorType & dst, unsigned int const dst_dof_index) const;
+
 private:
   std::shared_ptr<Grid<dim> const> grid;
-  unsigned int fe_degree;
+  unsigned int                     fe_degree;
 
   std::shared_ptr<dealii::FiniteElement<dim>> fe;
-  std::shared_ptr<dealii::DoFHandler<dim>> dof_handler;
+  std::shared_ptr<dealii::DoFHandler<dim>>    dof_handler;
 
   dealii::AffineConstraints<Number> affine_constraints;
 
   std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free;
-  std::shared_ptr<MatrixFreeData<dim, Number> const> matrix_free_data;
+  std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data;
 
   std::shared_ptr<ViscosityCalculator<dim, Number>> viscosity_calculator;
 
-  const std::string dof_name = "eddy_viscosity";
+  const std::string dof_name  = "eddy_viscosity";
   const std::string quad_name = "eddy_viscosity_quad";
 };
 
@@ -96,4 +96,3 @@ private:
 } // namespace ExaDG
 
 #endif
-

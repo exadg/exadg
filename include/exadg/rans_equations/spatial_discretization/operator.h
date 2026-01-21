@@ -27,21 +27,21 @@
 #include <deal.II/fe/fe_system.h>
 
 // ExaDG
+#include <exadg/grid/grid.h>
+#include <exadg/matrix_free/matrix_free_data.h>
+#include <exadg/operators/inverse_mass_operator.h>
+#include <exadg/operators/mass_operator.h>
+#include <exadg/operators/solution_transfer.h>
 #include <exadg/rans_equations/spatial_discretization/interface.h>
 #include <exadg/rans_equations/spatial_discretization/operators/combined_operator.h>
 #include <exadg/rans_equations/spatial_discretization/operators/rhs_operator.h>
 #include <exadg/rans_equations/user_interface/boundary_descriptor.h>
 #include <exadg/rans_equations/user_interface/field_functions.h>
 #include <exadg/rans_equations/user_interface/parameters.h>
-#include <exadg/grid/grid.h>
-#include <exadg/matrix_free/matrix_free_data.h>
-#include <exadg/operators/inverse_mass_operator.h>
-#include <exadg/operators/mass_operator.h>
-#include <exadg/operators/solution_transfer.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 
-#include <exadg/rans_equations/spatial_discretization/turbulence_model.h>
 #include <exadg/rans_equations/spatial_discretization/stability_filter/modal_filter.h>
+#include <exadg/rans_equations/spatial_discretization/turbulence_model.h>
 
 namespace ExaDG
 {
@@ -283,7 +283,7 @@ public:
   std::string
   get_dof_name_eddy_viscosity() const;
 
-  unsigned int 
+  unsigned int
   get_dof_index_eddy_viscosity() const;
 
   dealii::types::global_dof_index
@@ -320,8 +320,7 @@ public:
    * Access to modal filter operator for stabilization.
    */
   void
-  apply_modal_filter(VectorType const & src,
-                     VectorType & dst);
+  apply_modal_filter(VectorType const & src, VectorType & dst);
 
 private:
   void
@@ -431,8 +430,8 @@ private:
    */
   dealii::AffineConstraints<Number> affine_constraints;
 
-  std::string const dof_index_std      = "conv_diff";
-  std::string const dof_index_velocity = "conv_diff_velocity";
+  std::string const dof_index_std            = "conv_diff";
+  std::string const dof_index_velocity       = "conv_diff_velocity";
   std::string const dof_index_eddy_viscosity = "eddy_viscosity";
 
   std::string const quad_index_std             = "conv_diff";
@@ -456,7 +455,7 @@ private:
    */
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
   std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel;
-  std::shared_ptr<Operators::RHSKernel<dim, Number, 1>> rhs_kernel;
+  std::shared_ptr<Operators::RHSKernel<dim, Number, 1>>     rhs_kernel;
 
   MassOperator<dim, 1, Number>        mass_operator;
   InverseMassOperator<dim, 1, Number> inverse_mass_operator;
@@ -488,7 +487,8 @@ private:
   /*
    * Variable viscosity models.
    */
-  std::shared_ptr<TurbulenceModel<dim, Number>>  turbulence_model_ptr = std::make_shared<TurbulenceModel<dim, Number>>();
+  std::shared_ptr<TurbulenceModel<dim, Number>> turbulence_model_ptr =
+    std::make_shared<TurbulenceModel<dim, Number>>();
 
   ModalFilterOperator<dim, Number> modal_filter_operator;
 };

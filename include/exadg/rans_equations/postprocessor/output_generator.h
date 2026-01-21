@@ -42,8 +42,8 @@ struct OutputData : public OutputDataBase
 {
   OutputData()
     : write_eddy_viscosity(false),
-  write_modal_coefficients(false),
-  write_modal_coefficient_ratio(false)
+      write_modal_coefficients(false),
+      write_modal_coefficient_ratio(false)
   {
   }
 
@@ -76,13 +76,13 @@ public:
   void
   setup(dealii::DoFHandler<dim> const & dof_handler_in,
         dealii::Mapping<dim> const &    mapping_in,
-        OutputData const &          output_data_in);
+        OutputData const &              output_data_in);
 
   void
-  evaluate(VectorType const & solution,
+  evaluate(VectorType const &                                                    solution,
            std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
-           double const time,
-           bool const unsteady);
+           double const                                                          time,
+           bool const                                                            unsteady);
 
   TimeControl time_control;
 

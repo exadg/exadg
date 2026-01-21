@@ -56,7 +56,10 @@ CombinedOperator<dim, Number>::initialize(
   if(operator_data.diffusive_problem)
   {
     diffusive_kernel = std::make_shared<Operators::DiffusiveKernel<dim, Number>>();
-    diffusive_kernel->reinit(matrix_free, data.diffusive_kernel_data, data.dof_index, data.quad_index);
+    diffusive_kernel->reinit(matrix_free,
+                             data.diffusive_kernel_data,
+                             data.dof_index,
+                             data.quad_index);
   }
 
   // integrator flags
@@ -214,11 +217,8 @@ CombinedOperator<dim, Number>::reinit_face_cell_based_derived(
   if(operator_data.convective_problem)
     convective_kernel->reinit_face_cell_based(cell, face, boundary_id);
   if(operator_data.diffusive_problem)
-    diffusive_kernel->reinit_face_cell_based(boundary_id,
-                                             integrator_m,
-                                             integrator_p,
-                                             operator_data.dof_index,
-                                             face);
+    diffusive_kernel->reinit_face_cell_based(
+      boundary_id, integrator_m, integrator_p, operator_data.dof_index, face);
 }
 
 template<int dim, typename Number>
@@ -540,17 +540,20 @@ CombinedOperator<dim, Number>::do_boundary_integral(
                                                                     operator_data.bc,
                                                                     this->time);
 
-      scalar effective_viscosity_m = calculate_interior_value(q,
-                                                              *diffusive_kernel->integrator_face_eddy_viscosity_m,
-                                                              operator_type);
-      scalar effective_viscosity_p = calculate_exterior_value(effective_viscosity_m,
-                                                              q,
-                                                              *diffusive_kernel->integrator_face_eddy_viscosity_m,
-                                                              operator_type,
-                                                              boundary_type,
-                                                              boundary_id,
-                                                              operator_data.bc,
-                                                              this->time);
+      scalar effective_viscosity_m =
+        calculate_interior_value(q,
+                                 *diffusive_kernel->integrator_face_eddy_viscosity_m,
+                                 operator_type);
+      // scalar effective_viscosity_p =
+      //   calculate_exterior_value(effective_viscosity_m,
+      //                            q,
+      //                            *diffusive_kernel->integrator_face_eddy_viscosity_m,
+      //                            operator_type,
+      //                            boundary_type,
+      //                            boundary_id,
+      //                            operator_data.bc,
+      //                            this->time);
+      scalar effective_viscosity_p = effective_viscosity_m;
 
       value_flux += -diffusive_kernel->calculate_value_flux(normal_gradient_m,
                                                             normal_gradient_p,

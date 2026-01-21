@@ -87,4 +87,5 @@ create_time_integrator(std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_ope
 } // namespace IncRANS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_FOR_RANS_TIME_INTEGRATION_CREATE_TIME_INTEGRATOR_H_ */
+#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_FOR_RANS_TIME_INTEGRATION_CREATE_TIME_INTEGRATOR_H_ \
+        */

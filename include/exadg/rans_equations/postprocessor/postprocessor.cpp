@@ -71,16 +71,16 @@ PostProcessor<dim, Number>::do_postprocessing(VectorType const &     solution,
 {
   invalidate_additional_fields();
   std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> additional_fields_vtu;
-  if (pp_data.output_data.write_eddy_viscosity) {
-    eddy_viscosity.evaluate(nu_t);
-    additional_fields_vtu.push_back(&eddy_viscosity);
-  }
-
 
   if(error_calculator.time_control.needs_evaluation(time, time_step_number))
     error_calculator.evaluate(solution, time, Utilities::is_unsteady_timestep(time_step_number));
 
   if(output_generator.time_control.needs_evaluation(time, time_step_number))
+    if(pp_data.output_data.write_eddy_viscosity)
+    {
+      eddy_viscosity.evaluate(solution);
+      additional_fields_vtu.push_back(&eddy_viscosity);
+    }
     output_generator.evaluate(solution,
                               additional_fields_vtu,
                               time,
@@ -93,7 +93,7 @@ void
 PostProcessor<dim, Number>::initialize_additional_fields()
 {
   // eddy_viscosity
-  if(pp_data.output_data.write_eddy_viscosity )
+  if(pp_data.output_data.write_eddy_viscosity)
   {
     eddy_viscosity.type              = SolutionFieldType::scalar;
     eddy_viscosity.name              = "eddy_viscosity";

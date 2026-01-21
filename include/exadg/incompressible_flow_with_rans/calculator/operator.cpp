@@ -28,9 +28,8 @@ namespace NSRans
 {
 template<int dim, typename Number>
 ViscosityOperator<dim, Number>::ViscosityOperator(std::shared_ptr<Grid<dim> const> grid_in,
-                                                  unsigned int const fe_degree_in)
-  : grid(grid_in)
-  , fe_degree(fe_degree_in)
+                                                  unsigned int const               fe_degree_in)
+  : grid(grid_in), fe_degree(fe_degree_in)
 {
   // Use the factory function from finite_element.h
   // Arguments:
@@ -65,10 +64,11 @@ ViscosityOperator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number
 
 template<int dim, typename Number>
 void
-ViscosityOperator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
-      std::shared_ptr<MatrixFreeData<dim, Number> const> matrix_free_data_in)
+ViscosityOperator<dim, Number>::setup(
+  std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
+  std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data_in)
 {
-  matrix_free = matrix_free_in;
+  matrix_free      = matrix_free_in;
   matrix_free_data = matrix_free_data_in;
 }
 
@@ -88,7 +88,8 @@ ViscosityOperator<dim, Number>::get_quad_index() const
 
 template<int dim, typename Number>
 void
-ViscosityOperator<dim, Number>::initialize_viscosity_calculator(RANS::TurbulenceModelData const & turbulence_model_data)
+ViscosityOperator<dim, Number>::initialize_viscosity_calculator(
+  RANS::TurbulenceModelData const & turbulence_model_data)
 {
   viscosity_calculator = std::make_shared<ViscosityCalculator<dim, Number>>();
 
@@ -121,8 +122,9 @@ ViscosityOperator<dim, Number>::set_tke_dissipation_rate(VectorType const & epsi
 
 template<int dim, typename Number>
 void
-ViscosityOperator<dim, Number>::extrapolate_eddy_viscosity_to_dof(VectorType & dst,
-                                                             unsigned int const dst_dof_index) const
+ViscosityOperator<dim, Number>::extrapolate_eddy_viscosity_to_dof(
+  VectorType &       dst,
+  unsigned int const dst_dof_index) const
 {
   viscosity_calculator->extrapolate_eddy_viscosity_to_dof(dst, dst_dof_index);
 }

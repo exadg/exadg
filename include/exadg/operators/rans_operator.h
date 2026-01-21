@@ -164,9 +164,9 @@ public:
   ViscosityCalculator();
 
   void
-  initialize(dealii::MatrixFree<dim, Number> const &              matrix_free_in,
-             unsigned int const                                   dof_index_u_scalar_in,
-             unsigned int const                                   quad_index_in,
+  initialize(dealii::MatrixFree<dim, Number> const &                matrix_free_in,
+             unsigned int const                                     dof_index_u_scalar_in,
+             unsigned int const                                     quad_index_in,
              IncRANS::Operators::ViscousKernel<dim, Number> const & viscous_kernel_in);
 
   void

@@ -23,14 +23,14 @@
 #include <deal.II/fe/fe_values.h>
 
 // ExaDG
-#include <exadg/rans_equations/preconditioners/multigrid_preconditioner.h>
-#include <exadg/rans_equations/spatial_discretization/operator.h>
-#include <exadg/rans_equations/spatial_discretization/project_velocity.h>
 #include <exadg/functions_and_boundary_conditions/interpolate.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/operators/finite_element.h>
 #include <exadg/operators/grid_related_time_step_restrictions.h>
 #include <exadg/operators/quadrature.h>
+#include <exadg/rans_equations/preconditioners/multigrid_preconditioner.h>
+#include <exadg/rans_equations/spatial_discretization/operator.h>
+#include <exadg/rans_equations/spatial_discretization/project_velocity.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
@@ -111,8 +111,7 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
 
   if(param.right_hand_side)
   {
-    matrix_free_data.append_mapping_flags(
-      Operators::RHSKernel<dim, Number>::get_mapping_flags());
+    matrix_free_data.append_mapping_flags(Operators::RHSKernel<dim, Number>::get_mapping_flags());
   }
 
   if(param.convective_problem())
@@ -212,16 +211,16 @@ Operator<dim, Number>::setup_operators()
                                    convective_kernel);
   }
 
-  if (param.turbulence_model_data.is_active)
+  if(param.turbulence_model_data.is_active)
   {
-    turbulence_model_ptr->diffusivity = param.diffusivity;
+    turbulence_model_ptr->diffusivity              = param.diffusivity;
     turbulence_model_ptr->dof_index_eddy_viscosity = get_dof_index_eddy_viscosity();
-    turbulence_model_ptr->quad_index = get_quad_index();
+    turbulence_model_ptr->quad_index               = get_quad_index();
 
-    turbulence_model_ptr->initialize(*matrix_free,
-                                      param.turbulence_model_data);
+    turbulence_model_ptr->initialize(*matrix_free, param.turbulence_model_data);
     turbulence_model_ptr->scalar_type = param.scalar_type;
-    turbulence_model_ptr->model_coefficients = param.turbulence_model_data.turbulence_data_base->get_all_coefficients();
+    turbulence_model_ptr->model_coefficients =
+      param.turbulence_model_data.turbulence_data_base->get_all_coefficients();
   }
 
   // diffusive operator
@@ -229,16 +228,20 @@ Operator<dim, Number>::setup_operators()
 
   if(param.diffusive_problem())
   {
-    diffusive_kernel_data.IP_factor   = param.IP_factor;
-    diffusive_kernel_data.diffusivity = param.diffusivity;
+    diffusive_kernel_data.IP_factor                = param.IP_factor;
+    diffusive_kernel_data.diffusivity              = param.diffusivity;
     diffusive_kernel_data.turbulence_model_enabled = param.turbulence_model_data.is_active;
-    diffusive_kernel_data.positivity_preserving_limiter = param.turbulence_model_data.positivity_preserving_limiter;
-    diffusive_kernel_data.turbulence_model_data = param.turbulence_model_data;
-    diffusive_kernel_data.scalar_type = param.scalar_type;
+    diffusive_kernel_data.positivity_preserving_limiter =
+      param.turbulence_model_data.positivity_preserving_limiter;
+    diffusive_kernel_data.turbulence_model_data    = param.turbulence_model_data;
+    diffusive_kernel_data.scalar_type              = param.scalar_type;
     diffusive_kernel_data.dof_index_eddy_viscosity = get_dof_index_eddy_viscosity();
 
     diffusive_kernel = std::make_shared<Operators::DiffusiveKernel<dim, Number>>();
-    diffusive_kernel->reinit(*matrix_free, diffusive_kernel_data, get_dof_index(), get_quad_index());
+    diffusive_kernel->reinit(*matrix_free,
+                             diffusive_kernel_data,
+                             get_dof_index(),
+                             get_quad_index());
     if(param.turbulence_model_data.is_active)
     {
       diffusive_kernel->turbulence_model_ptr = turbulence_model_ptr;
@@ -261,19 +264,21 @@ Operator<dim, Number>::setup_operators()
 
   // rhs operator
   RHSOperatorData<dim> rhs_operator_data;
-  rhs_operator_data.dof_index     = get_dof_index();
-  rhs_operator_data.quad_index    = get_quad_index();
+  rhs_operator_data.dof_index  = get_dof_index();
+  rhs_operator_data.quad_index = get_quad_index();
 
   Operators::RHSKernelData<dim> rhs_kernel_data;
-  rhs_kernel_data.scalar_type        = param.scalar_type;
-  rhs_kernel_data.production_term    = param.turbulence_model_data.production_term;
-  rhs_kernel_data.dissipation_term   = param.turbulence_model_data.dissipation_term;
-  rhs_kernel_data.positivity_preserving_limiter = param.turbulence_model_data.positivity_preserving_limiter;
-  rhs_kernel_data.dof_index_velocity = get_dof_index_velocity();
-  rhs_kernel_data.dof_index          = get_dof_index();
+  rhs_kernel_data.scalar_type      = param.scalar_type;
+  rhs_kernel_data.production_term  = param.turbulence_model_data.production_term;
+  rhs_kernel_data.dissipation_term = param.turbulence_model_data.dissipation_term;
+  rhs_kernel_data.positivity_preserving_limiter =
+    param.turbulence_model_data.positivity_preserving_limiter;
+  rhs_kernel_data.dof_index_velocity       = get_dof_index_velocity();
+  rhs_kernel_data.dof_index                = get_dof_index();
   rhs_kernel_data.dof_index_eddy_viscosity = get_dof_index_eddy_viscosity();
-  rhs_kernel_data.f                  = field_functions->right_hand_side;
-  rhs_kernel_data.turbulence_model_data = param.turbulence_model_data;
+  rhs_kernel_data.f                        = field_functions->right_hand_side;
+  rhs_kernel_data.turbulence_model_data    = param.turbulence_model_data;
+  rhs_kernel_data.diffusivity              = param.diffusivity;
 
   rhs_kernel = std::make_shared<Operators::RHSKernel<dim, Number>>();
   rhs_kernel->reinit(*matrix_free, rhs_kernel_data, quad_index_convective);
@@ -346,15 +351,15 @@ Operator<dim, Number>::setup_operators()
                                  combined_operator_data,
                                  convective_kernel,
                                  diffusive_kernel);
-    if (param.turbulence_model_data.is_active) {
-    AssertThrow(combined_operator.diffusive_kernel->turbulence_model_ptr!=nullptr, dealii::ExcMessage("turbulence poniter not initialised from combined operator"));
+    if(param.turbulence_model_data.is_active)
+    {
+      AssertThrow(combined_operator.diffusive_kernel->turbulence_model_ptr != nullptr,
+                  dealii::ExcMessage("turbulence poniter not initialised from combined operator"));
     }
 
-    if (param.modal_filter) {
-      modal_filter_operator.initialize(matrix_free,
-                                       mapping,
-                                       get_dof_index(),
-                                       get_quad_index());
+    if(param.modal_filter)
+    {
+      modal_filter_operator.initialize(matrix_free, mapping, get_dof_index(), get_quad_index());
     }
   }
 }
@@ -644,7 +649,7 @@ Operator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
     if(param.diffusive_problem())
     {
       diffusive_operator.set_time(time);
-      if (param.turbulence_model_data.is_active)
+      if(param.turbulence_model_data.is_active)
       {
         diffusive_operator.set_eddy_viscosity_ptr(turbulence_model_ptr->eddy_viscosity);
       }
@@ -672,7 +677,7 @@ Operator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
     {
       rhs_operator.set_velocity_ptr(*velocity);
       rhs_operator.set_solution(src);
-      if (param.turbulence_model_data.is_active)
+      if(param.turbulence_model_data.is_active)
       {
         rhs_operator.set_eddy_viscosity_ptr(turbulence_model_ptr->eddy_viscosity);
       }
@@ -710,7 +715,7 @@ Operator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
     {
       rhs_operator.set_velocity_ptr(*velocity);
       rhs_operator.set_solution(src);
-      if (param.turbulence_model_data.is_active)
+      if(param.turbulence_model_data.is_active)
       {
         rhs_operator.set_eddy_viscosity_ptr(turbulence_model_ptr->eddy_viscosity);
       }
@@ -742,9 +747,9 @@ Operator<dim, Number>::evaluate_convective_term(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::rhs(VectorType & dst, 
+Operator<dim, Number>::rhs(VectorType &       dst,
                            VectorType const & src,
-                           double const time,
+                           double const       time,
                            VectorType const * velocity) const
 {
   // no need to set scaling_factor_mass because the mass operator does not contribute to rhs
@@ -767,7 +772,7 @@ Operator<dim, Number>::rhs(VectorType & dst,
   {
     rhs_operator.set_velocity_ptr(*velocity);
     rhs_operator.set_solution(src);
-    if (param.turbulence_model_data.is_active)
+    if(param.turbulence_model_data.is_active)
     {
       rhs_operator.set_eddy_viscosity_ptr(turbulence_model_ptr->eddy_viscosity);
     }
@@ -842,7 +847,7 @@ Operator<dim, Number>::update_conv_diff_operator(double const       time,
       combined_operator.set_velocity_ptr(*velocity);
     }
   }
-  if (param.turbulence_model_data.is_active)
+  if(param.turbulence_model_data.is_active)
   {
     combined_operator.set_eddy_viscosity_ptr(turbulence_model_ptr->eddy_viscosity);
   }
@@ -1107,7 +1112,7 @@ Operator<dim, Number>::get_dof_index_velocity() const
 }
 
 template<int dim, typename Number>
-unsigned int 
+unsigned int
 Operator<dim, Number>::get_dof_index_eddy_viscosity() const
 {
   return matrix_free_data->get_dof_index(get_dof_name_eddy_viscosity());
@@ -1159,7 +1164,8 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::update_viscosity(VectorType const & sol) const
 {
-  AssertThrow(param.diffusive_problem(), dealii::ExcMessage("Updating viscosity reasonable for diffusive problem"));  
+  AssertThrow(param.diffusive_problem(),
+              dealii::ExcMessage("Updating viscosity reasonable for diffusive problem"));
 
   // reset the viscosity stored with constant diffusivity value
   turbulence_model_ptr->set_constant_coefficient(diffusive_kernel->data.diffusivity);
@@ -1175,8 +1181,7 @@ Operator<dim, Number>::update_viscosity(VectorType const & sol) const
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::apply_modal_filter(VectorType const & src,
-                                          VectorType & dst)
+Operator<dim, Number>::apply_modal_filter(VectorType const & src, VectorType & dst)
 {
   modal_filter_operator.apply_modal_filter(src, dst);
 }

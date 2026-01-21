@@ -26,9 +26,9 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
+#include <exadg/matrix_free/integrators.h>
 #include <exadg/rans_equations/user_interface/parameters.h>
 #include <exadg/rans_equations/user_interface/viscosity_model_data.h>
-#include <exadg/matrix_free/integrators.h>
 
 namespace ExaDG
 {
@@ -58,9 +58,9 @@ public:
    * Initialization function of base class.
    */
   void
-  initialize(dealii::MatrixFree<dim, Number> const &                matrix_free_in,
-             unsigned int const                                     dof_index_in,
-             unsigned int const                                     quad_index_in);
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+             unsigned int const                      dof_index_in,
+             unsigned int const                      quad_index_in);
 
   /**
    * Pure virtual function for *setting* the viscosity to viscosity_newtonian_limit.
@@ -75,8 +75,9 @@ public:
   virtual void
   add_viscosity(VectorType const & solution) = 0;
 
-  double diffusivity;
+  double       diffusivity;
   unsigned int quad_index;
+
 protected:
   unsigned int dof_index;
 
@@ -85,7 +86,7 @@ protected:
   dealii::MatrixFree<dim, Number> const * matrix_free;
 };
 
-} // namespace RANSEqns
+} // namespace RANS
 } // namespace ExaDG
 
 #endif /* INCLUDE_EXADG_RANS_EQUATIONS_SPATIAL_DISCRETIZATION_VISCOSITY_MODEL_BASE_H_ \

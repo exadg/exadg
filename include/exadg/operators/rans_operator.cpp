@@ -153,9 +153,9 @@ ViscosityCalculator<dim, Number>::ViscosityCalculator()
 template<int dim, typename Number>
 void
 ViscosityCalculator<dim, Number>::initialize(
-  dealii::MatrixFree<dim, Number> const &              matrix_free_in,
-  unsigned int const                                   dof_index_u_scalar_in,
-  unsigned int const                                   quad_index_in,
+  dealii::MatrixFree<dim, Number> const &                matrix_free_in,
+  unsigned int const                                     dof_index_u_scalar_in,
+  unsigned int const                                     quad_index_in,
   IncRANS::Operators::ViscousKernel<dim, Number> const & viscous_kernel_in)
 {
   matrix_free        = &matrix_free_in;

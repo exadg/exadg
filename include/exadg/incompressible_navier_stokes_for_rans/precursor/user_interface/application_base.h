@@ -30,7 +30,6 @@
 #include <deal.II/grid/manifold_lib.h>
 
 // ExaDG
-#include <exadg/rans_equations/user_interface/boundary_descriptor.h>
 #include <exadg/grid/grid.h>
 #include <exadg/grid/grid_utilities.h>
 #include <exadg/incompressible_navier_stokes_for_rans/postprocessor/postprocessor.h>
@@ -39,6 +38,7 @@
 #include <exadg/incompressible_navier_stokes_for_rans/user_interface/parameters.h>
 #include <exadg/operators/resolution_parameters.h>
 #include <exadg/postprocessor/output_parameters.h>
+#include <exadg/rans_equations/user_interface/boundary_descriptor.h>
 
 namespace ExaDG
 {

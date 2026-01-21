@@ -32,44 +32,47 @@ namespace IncRANS
 struct TurbulenceDataBase
 {
   TurbulenceDataBase() : sigma_k(1.0)
-  {}
-  virtual ~TurbulenceDataBase() {}
+  {
+  }
+  virtual ~TurbulenceDataBase()
+  {
+  }
   double sigma_k;
 
-  virtual std::vector<double> get_all_coefficients() const = 0;
+  virtual std::vector<double>
+  get_all_coefficients() const = 0;
 };
 struct PrandtlMixingLengthData : public TurbulenceDataBase
 {
-  PrandtlMixingLengthData() : C_D(0.07),
-    turbulent_length_scale(1.0)
-  {}
+  PrandtlMixingLengthData() : C_D(0.07), turbulent_length_scale(1.0)
+  {
+  }
 
   double C_D;
   double turbulent_length_scale;
 
-  virtual std::vector<double> get_all_coefficients() const override
+  virtual std::vector<double>
+  get_all_coefficients() const override
   {
     return {sigma_k, C_D, turbulent_length_scale};
   }
 };
 struct StandardKEpsilonData : public TurbulenceDataBase
 {
-  StandardKEpsilonData() : C_epsilon_1(1.44),
-                  C_epsilon_2(1.92),
-                  C_mu(0.09),
-                  sigma_epsilon(1.3)
-  {}
+  StandardKEpsilonData() : C_epsilon_1(1.44), C_epsilon_2(1.92), C_mu(0.09), sigma_epsilon(1.3)
+  {
+  }
 
   double C_epsilon_1;
   double C_epsilon_2;
   double C_mu;
   double sigma_epsilon;
 
-  virtual std::vector<double> get_all_coefficients() const override
+  virtual std::vector<double>
+  get_all_coefficients() const override
   {
     return {sigma_k, C_epsilon_1, C_epsilon_2, C_mu, sigma_epsilon};
   }
-
 };
 /*
  *  Turbulence model.
@@ -90,8 +93,8 @@ private:
 
   typedef CellIntegrator<dim, dim, Number> CellIntegratorU;
   typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
-  typedef CellIntegrator<dim, 1, Number> CellIntegratorScalar;
-  typedef FaceIntegrator<dim, 1, Number> FaceIntegratorScalar;
+  typedef CellIntegrator<dim, 1, Number>   CellIntegratorScalar;
+  typedef FaceIntegrator<dim, 1, Number>   FaceIntegratorScalar;
 
 public:
   /*
@@ -141,6 +144,7 @@ public:
   get_eddy_viscosity(VectorType & dst) const;
 
   unsigned int dof_index_scalar;
+
 private:
   void
   cell_loop_set_coefficients(dealii::MatrixFree<dim, Number> const & data,
@@ -162,21 +166,21 @@ private:
 
   void
   cell_loop_set_coefficients_rans(dealii::MatrixFree<dim, Number> const & data,
-                             VectorType &,
-                             VectorType const & src,
-                             Range const &      cell_range) const;
+                                  VectorType &,
+                                  VectorType const & src,
+                                  Range const &      cell_range) const;
 
   void
   face_loop_set_coefficients_rans(dealii::MatrixFree<dim, Number> const & data,
-                             VectorType &,
-                             VectorType const & src,
-                             Range const &      face_range) const;
+                                  VectorType &,
+                                  VectorType const & src,
+                                  Range const &      face_range) const;
 
   void
   boundary_face_loop_set_coefficients_rans(dealii::MatrixFree<dim, Number> const & data,
-                                      VectorType &,
-                                      VectorType const & src,
-                                      Range const &      face_range) const;
+                                           VectorType &,
+                                           VectorType const & src,
+                                           Range const &      face_range) const;
 
   /**
    *  This function adds the turbulent eddy-viscosity to the laminar viscosity
@@ -307,4 +311,5 @@ public:
 } // namespace IncRANS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_FOR_RANS_SPATIAL_DISCRETIZATION_TURBULENCE_MODEL_H_ */
+#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_FOR_RANS_SPATIAL_DISCRETIZATION_TURBULENCE_MODEL_H_ \
+        */

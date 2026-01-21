@@ -260,4 +260,5 @@ verify_boundary_conditions(BoundaryDescriptor<dim> const & boundary_descriptor,
 } // namespace IncRANS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_FOR_RANS_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_ */
+#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_FOR_RANS_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_ \
+        */

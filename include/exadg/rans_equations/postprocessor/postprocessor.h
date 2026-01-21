@@ -32,8 +32,8 @@
 #include <exadg/rans_equations/postprocessor/postprocessor_base.h>
 #include <exadg/rans_equations/user_interface/analytical_solution.h>
 
-#include <exadg/rans_equations/spatial_discretization/turbulence_model.h>
 #include <exadg/rans_equations/spatial_discretization/operator.h>
+#include <exadg/rans_equations/spatial_discretization/turbulence_model.h>
 
 namespace ExaDG
 {

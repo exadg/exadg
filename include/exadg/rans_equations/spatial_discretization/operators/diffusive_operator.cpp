@@ -52,7 +52,7 @@ DiffusiveOperator<dim, Number>::update()
 
 template<int dim, typename Number>
 void
-DiffusiveOperator<dim, Number>::reinit_cell_derived(IntegratorCell & integrator,
+DiffusiveOperator<dim, Number>::reinit_cell_derived(IntegratorCell &   integrator,
                                                     unsigned int const cell) const
 {
   (void)integrator;
@@ -99,7 +99,8 @@ DiffusiveOperator<dim, Number>::reinit_face_cell_based_derived(
   (void)cell;
   current_face_index = face;
 
-  kernel->reinit_face_cell_based(boundary_id, integrator_m, integrator_p, operator_data.dof_index, face);
+  kernel->reinit_face_cell_based(
+    boundary_id, integrator_m, integrator_p, operator_data.dof_index, face);
 }
 
 template<int dim, typename Number>
@@ -123,17 +124,18 @@ DiffusiveOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
     scalar value_p = integrator_p.get_value(q);
 
     scalar normal_gradient_m = integrator_m.get_normal_derivative(q);
-    scalar normal_gradient_p = integrator_p.get_normal_derivative(q);
+    scalar normal_gradient_p = -integrator_p.get_normal_derivative(q);
 
     scalar effective_viscosity_m = kernel->get_int_face_eddy_viscosity(q);
     scalar effective_viscosity_p = kernel->get_ext_face_eddy_viscosity(q);
 
-    scalar value_flux = kernel->calculate_value_flux(normal_gradient_m,
-                                                     normal_gradient_p,
-                                                     value_m,
-                                                     value_p,
-                                                     effective_viscosity_m,
-                                                     effective_viscosity_p);
+    scalar value_flux = (kernel->calculate_value_flux_penalty(
+                           value_m, value_p, effective_viscosity_m, effective_viscosity_p) -
+                         kernel->calculate_value_flux_consistency(normal_gradient_m,
+                                                                  normal_gradient_p,
+                                                                  effective_viscosity_m,
+                                                                  effective_viscosity_p));
+
     scalar gradient_flux = kernel->calculate_gradient_flux(value_m,
                                                            value_p,
                                                            effective_viscosity_m,
@@ -167,12 +169,12 @@ DiffusiveOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator
     scalar effective_viscosity_m = kernel->get_int_face_eddy_viscosity(q);
     scalar effective_viscosity_p = dealii::make_vectorized_array<Number>(0.0);
 
-    scalar value_flux = kernel->calculate_value_flux(normal_gradient_m,
-                                                     normal_gradient_p,
-                                                     value_m,
-                                                     value_p,
-                                                     effective_viscosity_m,
-                                                     effective_viscosity_p);
+    scalar value_flux    = (kernel->calculate_value_flux_penalty(
+                           value_m, value_p, effective_viscosity_m, effective_viscosity_p) -
+                         kernel->calculate_value_flux_consistency(normal_gradient_m,
+                                                                  normal_gradient_p,
+                                                                  effective_viscosity_m,
+                                                                  effective_viscosity_p));
     scalar gradient_flux = kernel->calculate_gradient_flux(value_m,
                                                            value_p,
                                                            effective_viscosity_m,
@@ -204,12 +206,12 @@ DiffusiveOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator
     scalar effective_viscosity_m = dealii::make_vectorized_array<Number>(0.0);
     scalar effective_viscosity_p = kernel->get_int_face_eddy_viscosity(q);
 
-    scalar value_flux = kernel->calculate_value_flux(normal_gradient_m,
-                                                     normal_gradient_p,
-                                                     value_m,
-                                                     value_p,
-                                                     effective_viscosity_m,
-                                                     effective_viscosity_p);
+    scalar value_flux    = (kernel->calculate_value_flux_penalty(
+                           value_m, value_p, effective_viscosity_m, effective_viscosity_p) -
+                         kernel->calculate_value_flux_consistency(normal_gradient_m,
+                                                                  normal_gradient_p,
+                                                                  effective_viscosity_m,
+                                                                  effective_viscosity_p));
     scalar gradient_flux = kernel->calculate_gradient_flux(value_m,
                                                            value_p,
                                                            effective_viscosity_m,
@@ -253,24 +255,25 @@ DiffusiveOperator<dim, Number>::do_boundary_integral(
                                                                   operator_data.bc,
                                                                   this->time);
 
-    scalar effective_viscosity_m = calculate_interior_value(q,
-                                                            *kernel->integrator_face_eddy_viscosity_m,
-                                                            operator_type);
-    scalar effective_viscosity_p = calculate_exterior_value(effective_viscosity_m,
-                                                            q,
-                                                            *kernel->integrator_face_eddy_viscosity_m,
-                                                            operator_type,
-                                                            boundary_type,
-                                                            boundary_id,
-                                                            operator_data.bc,
-                                                            this->time);
+    scalar effective_viscosity_m =
+      calculate_interior_value(q, *kernel->integrator_face_eddy_viscosity_m, operator_type);
+    // scalar effective_viscosity_p =
+    //   calculate_exterior_value(effective_viscosity_m,
+    //                            q,
+    //                            *kernel->integrator_face_eddy_viscosity_m,
+    //                            operator_type,
+    //                            boundary_type,
+    //                            boundary_id,
+    //                            operator_data.bc,
+    //                            this->time);
+    scalar effective_viscosity_p = effective_viscosity_m;
 
-    scalar value_flux = kernel->calculate_value_flux(normal_gradient_m,
-                                                     normal_gradient_p,
-                                                     value_m,
-                                                     value_p,
-                                                     effective_viscosity_m,
-                                                     effective_viscosity_p);
+    scalar value_flux    = (kernel->calculate_value_flux_penalty(
+                           value_m, value_p, effective_viscosity_m, effective_viscosity_p) -
+                         kernel->calculate_value_flux_consistency(normal_gradient_m,
+                                                                  normal_gradient_p,
+                                                                  effective_viscosity_m,
+                                                                  effective_viscosity_p));
     scalar gradient_flux = kernel->calculate_gradient_flux(value_m,
                                                            value_p,
                                                            effective_viscosity_m,

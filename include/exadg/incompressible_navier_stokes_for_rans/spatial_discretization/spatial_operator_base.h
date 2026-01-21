@@ -120,6 +120,7 @@ public:
   setup(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free,
         std::shared_ptr<MatrixFreeData<dim, Number> const>     matrix_free_data,
         std::string const &                                    dof_index_scalar_one = "");
+
 protected:
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of

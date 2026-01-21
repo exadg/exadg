@@ -22,10 +22,10 @@
 #ifndef INCLUDE_EXADG_RANS_EQUATIONS_SPATIAL_DISCRETIZATION_OPERATORS_WEAK_BOUNDARY_CONDITIONS_H_
 #define INCLUDE_EXADG_RANS_EQUATIONS_SPATIAL_DISCRETIZATION_OPERATORS_WEAK_BOUNDARY_CONDITIONS_H_
 
-#include <exadg/rans_equations/user_interface/boundary_descriptor.h>
 #include <exadg/functions_and_boundary_conditions/evaluate_functions.h>
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/operator_type.h>
+#include <exadg/rans_equations/user_interface/boundary_descriptor.h>
 
 namespace ExaDG
 {

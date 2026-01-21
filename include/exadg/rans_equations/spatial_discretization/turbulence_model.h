@@ -23,8 +23,8 @@
 #define INCLUDE_EXADG_RANS_EQUATIONS_SPATIAL_DISCRETIZATION_TURBULENCE_MODEL_H_
 
 // ExaDG
-#include <exadg/rans_equations/spatial_discretization/viscosity_model_base.h>
 #include <exadg/operators/variable_coefficients.h>
+#include <exadg/rans_equations/spatial_discretization/viscosity_model_base.h>
 #include <iostream>
 #include <memory>
 #include "exadg/rans_equations/user_interface/enum_types.h"
@@ -69,8 +69,8 @@ public:
    * Initialization function.
    */
   void
-  initialize(dealii::MatrixFree<dim, Number> const &                matrix_free_in,
-             TurbulenceModelData const &                            turbulence_model_data_in);
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+             TurbulenceModelData const &             turbulence_model_data_in);
 
   /**
    * Function for *setting* the viscosity taking the viscosity stored in the viscous_kernel's data
@@ -115,13 +115,12 @@ public:
    *  by using one of the implemented models.
    */
   void
-  add_one_equation_turbulent_viscosity(scalar &       viscosity,
-                          scalar const & solution) const;
+  add_one_equation_turbulent_viscosity(scalar & viscosity, scalar const & solution) const;
 
   void
   add_two_equation_turbulent_viscosity(scalar &       viscosity,
-                          scalar const & tke,
-                          scalar const & epsilon) const;
+                                       scalar const & tke,
+                                       scalar const & epsilon) const;
 
   void
   set_coefficient(VariableCoefficients<dealii::VectorizedArray<Number>> src)
@@ -170,23 +169,29 @@ public:
   {
     viscosity_coefficients.set_coefficient_face_neighbor(face, q, value);
   }
-/*
- *  returns the value of viscosity for the cell as a scalar 
- */
+  /*
+   *  returns the value of viscosity for the cell as a scalar
+   */
   inline DEAL_II_ALWAYS_INLINE //
-  scalar
-  get_viscosity_cell(unsigned int const cell, unsigned int const q, VaryingViscosityType viscosity_type) const
+    scalar
+    get_viscosity_cell(unsigned int const   cell,
+                       unsigned int const   q,
+                       VaryingViscosityType viscosity_type) const
   {
     scalar viscosity;
     if(viscosity_type == VaryingViscosityType::CombinedViscosity)
     {
       viscosity = viscosity_coefficients.get_coefficient_cell(cell, q);
     }
-    else if (viscosity_type == VaryingViscosityType::EddyViscosity) {
+    else if(viscosity_type == VaryingViscosityType::EddyViscosity)
+    {
       viscosity = eddy_viscosity_coefficients.get_coefficient_cell(cell, q);
     }
-    else {
-      std::cerr << " Implementation only available for VaryingViscosity::CombinedViscosity and VaryingViscosity::EddyViscosity" << std::endl;
+    else
+    {
+      std::cerr
+        << " Implementation only available for VaryingViscosity::CombinedViscosity and VaryingViscosity::EddyViscosity"
+        << std::endl;
     }
     return viscosity;
   }
@@ -196,7 +201,9 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     scalar
-    get_viscosity_average_interior_face(unsigned int const face, unsigned int const q, VaryingViscosityType viscosity_type) const
+    get_viscosity_average_interior_face(unsigned int const   face,
+                                        unsigned int const   q,
+                                        VaryingViscosityType viscosity_type) const
   {
     scalar viscosity = calculate_average_viscosity(face, q, viscosity_type);
 
@@ -208,7 +215,9 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     scalar
-    get_viscosity_interior_face(unsigned int const face, unsigned int const q, VaryingViscosityType viscosity_type) const
+    get_viscosity_interior_face(unsigned int const   face,
+                                unsigned int const   q,
+                                VaryingViscosityType viscosity_type) const
   {
     scalar viscosity = viscosity_coefficients.get_coefficient_face(face, q);
 
@@ -220,7 +229,9 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     scalar
-    get_viscosity_interior_face_neighbor(unsigned int const face, unsigned int const q, VaryingViscosityType viscosity_type) const
+    get_viscosity_interior_face_neighbor(unsigned int const   face,
+                                         unsigned int const   q,
+                                         VaryingViscosityType viscosity_type) const
   {
     scalar viscosity = viscosity_coefficients.get_coefficient_face_neighbor(face, q);
 
@@ -232,7 +243,9 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     scalar
-    get_viscosity_boundary_face(unsigned int const face, unsigned int const q, VaryingViscosityType viscosity_type) const
+    get_viscosity_boundary_face(unsigned int const   face,
+                                unsigned int const   q,
+                                VaryingViscosityType viscosity_type) const
   {
     scalar viscosity;
 
@@ -240,11 +253,15 @@ public:
     {
       viscosity = viscosity_coefficients.get_coefficient_face(face, q);
     }
-    else if (viscosity_type == VaryingViscosityType::EddyViscosity) {
+    else if(viscosity_type == VaryingViscosityType::EddyViscosity)
+    {
       viscosity = eddy_viscosity_coefficients.get_coefficient_face(face, q);
     }
-    else {
-      std::cerr << " Implementation only available for VaryingViscosity::CombinedViscosity and VaryingViscosity::EddyViscosity" << std::endl;
+    else
+    {
+      std::cerr
+        << " Implementation only available for VaryingViscosity::CombinedViscosity and VaryingViscosity::EddyViscosity"
+        << std::endl;
     }
 
     return viscosity;
@@ -255,25 +272,31 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     scalar
-    calculate_average_viscosity(unsigned int const face, unsigned int const q, VaryingViscosityType viscosity_type) const
+    calculate_average_viscosity(unsigned int const   face,
+                                unsigned int const   q,
+                                VaryingViscosityType viscosity_type) const
   {
     scalar average_viscosity = dealii::make_vectorized_array<Number>(0.0);
 
     scalar coefficient_face;
     scalar coefficient_face_neighbor;
 
-    if(viscosity_type==VaryingViscosityType::CombinedViscosity)
+    if(viscosity_type == VaryingViscosityType::CombinedViscosity)
     {
-      coefficient_face = viscosity_coefficients.get_coefficient_face(face, q);
-      coefficient_face_neighbor =
-        viscosity_coefficients.get_coefficient_face_neighbor(face, q);
+      coefficient_face          = viscosity_coefficients.get_coefficient_face(face, q);
+      coefficient_face_neighbor = viscosity_coefficients.get_coefficient_face_neighbor(face, q);
     }
-    else if (viscosity_type==VaryingViscosityType::EddyViscosity) {
+    else if(viscosity_type == VaryingViscosityType::EddyViscosity)
+    {
       coefficient_face = eddy_viscosity_coefficients.get_coefficient_face(face, q);
-      coefficient_face_neighbor = eddy_viscosity_coefficients.get_coefficient_face_neighbor(face, q);
+      coefficient_face_neighbor =
+        eddy_viscosity_coefficients.get_coefficient_face_neighbor(face, q);
     }
-    else {
-      std::cerr << " Implementation only available for VaryingViscosity::CombinedViscosity and VaryingViscosity::EddyViscosity" << std::endl;
+    else
+    {
+      std::cerr
+        << " Implementation only available for VaryingViscosity::CombinedViscosity and VaryingViscosity::EddyViscosity"
+        << std::endl;
     }
 
     // harmonic mean (harmonic weighting according to Schott and Rasthofer et al. (2015))
@@ -289,21 +312,22 @@ public:
     return average_viscosity;
   }
 
-  TurbulenceModelData           turbulence_model_data;
+  TurbulenceModelData                                   turbulence_model_data;
   VariableCoefficients<dealii::VectorizedArray<Number>> viscosity_coefficients;
   VariableCoefficients<dealii::VectorizedArray<Number>> eddy_viscosity_coefficients;
 
   VectorType eddy_viscosity;
+  VectorType effective_viscosity;
 
 public:
   unsigned int dof_index_eddy_viscosity;
-  double diffusivity;
-  ScalarType scalar_type;
+  double       diffusivity;
+  ScalarType   scalar_type;
 
   std::vector<double> model_coefficients;
 };
 
-} // namespace RANSEqns
+} // namespace RANS
 } // namespace ExaDG
 
 #endif /* INCLUDE_EXADG_RANS_EQUATIONS_SPATIAL_DISCRETIZATION_TURBULENCE_MODEL_H_ */

@@ -518,4 +518,5 @@ public:
 
 #include <exadg/incompressible_flow_with_rans/user_interface/implement_get_application.h>
 
-#endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_WITH_RANS_TEST_CASES_CAVITY_NATURAL_CONVECTION_H_ */
+#endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_WITH_RANS_TEST_CASES_CAVITY_NATURAL_CONVECTION_H_ \
+        */

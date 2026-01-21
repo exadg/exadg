@@ -26,10 +26,10 @@
 #include <deal.II/base/exceptions.h>
 
 // ExaDG
-#include <exadg/rans_equations/user_interface/enum_types.h>
 #include <exadg/grid/grid_data.h>
 #include <exadg/operators/adaptive_mesh_refinement.h>
 #include <exadg/operators/inverse_mass_parameters.h>
+#include <exadg/rans_equations/user_interface/enum_types.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/enum_types.h>
 #include <exadg/solvers_and_preconditioners/solvers/enum_types.h>
@@ -102,7 +102,7 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  //description: see enum declaration
+  // description: see enum declaration
   ScalarType scalar_type;
 
   // description: see enum declaration
@@ -373,8 +373,8 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  TreatmentOfVariableViscosity  treatment_of_variable_viscosity;
-  TurbulenceModelData           turbulence_model_data;
+  TreatmentOfVariableViscosity treatment_of_variable_viscosity;
+  TurbulenceModelData          turbulence_model_data;
 };
 
 } // namespace RANS

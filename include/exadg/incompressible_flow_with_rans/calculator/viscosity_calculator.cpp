@@ -39,16 +39,16 @@ ViscosityCalculator<dim, Number>::~ViscosityCalculator()
 template<int dim, typename Number>
 void
 ViscosityCalculator<dim, Number>::initialize(
-  dealii::MatrixFree<dim, Number> const &                matrix_free_in,
-  RANS::TurbulenceModelData const &                      turbulence_model_data_in,
-  unsigned int const                                     dof_index_in,
-  unsigned int const                                     quad_index_in)
+  dealii::MatrixFree<dim, Number> const & matrix_free_in,
+  RANS::TurbulenceModelData const &       turbulence_model_data_in,
+  unsigned int const                      dof_index_in,
+  unsigned int const                      quad_index_in)
 {
   matrix_free = &matrix_free_in;
 
   turbulence_model_data = turbulence_model_data_in;
-  model_coefficients = turbulence_model_data_in.turbulence_data_base->get_all_coefficients();
-  
+  model_coefficients    = turbulence_model_data_in.turbulence_data_base->get_all_coefficients();
+
   dof_index = dof_index_in;
 
   quad_index = quad_index_in;
@@ -83,38 +83,32 @@ ViscosityCalculator<dim, Number>::calculate_eddy_viscosity()
 {
   VectorType dummy;
   eddy_viscosity.zero_out_ghost_values();
-  matrix_free->cell_loop(&This::cell_loop_set_viscosity,
-                          this,
-                          eddy_viscosity,
-                          dummy);
+  matrix_free->cell_loop(&This::cell_loop_set_viscosity, this, eddy_viscosity, dummy);
   eddy_viscosity.update_ghost_values();
 }
 
 template<int dim, typename Number>
 void
-ViscosityCalculator<dim, Number>::cell_loop_set_viscosity(dealii::MatrixFree<dim, Number> const & matrix_free,
-                                                          VectorType & dst,
-                                                          VectorType const &,
-                                                          Range const & cell_range) const
+ViscosityCalculator<dim, Number>::cell_loop_set_viscosity(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &,
+  Range const & cell_range) const
 {
-  IntegratorCell integrator_scalar_1(matrix_free,
-                                     dof_index,
-                                     quad_index);
-  IntegratorCell integrator_scalar_2(matrix_free,
-                                     dof_index,
-                                     quad_index);
-  IntegratorCell integrator_viscosity(matrix_free,
-                                      dof_index,
-                                      quad_index);
+  IntegratorCell integrator_scalar_1(matrix_free, dof_index, quad_index);
+  IntegratorCell integrator_scalar_2(matrix_free, dof_index, quad_index);
+  IntegratorCell integrator_viscosity(matrix_free, dof_index, quad_index);
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     integrator_viscosity.reinit(cell);
-    if(turbulence_model_data.turbulence_model==RANS::TurbulenceEddyViscosityModel::PrandtlMixingLength)
+    if(turbulence_model_data.turbulence_model ==
+       RANS::TurbulenceEddyViscosityModel::PrandtlMixingLength)
     {
       integrator_scalar_1.reinit(cell);
       integrator_scalar_1.read_dof_values(*turbulent_kinetic_energy);
     }
-    else if(turbulence_model_data.turbulence_model==RANS::TurbulenceEddyViscosityModel::StandardKEpsilon)
+    else if(turbulence_model_data.turbulence_model ==
+            RANS::TurbulenceEddyViscosityModel::StandardKEpsilon)
     {
       integrator_scalar_1.reinit(cell);
       integrator_scalar_1.read_dof_values(*turbulent_kinetic_energy);
@@ -123,26 +117,28 @@ ViscosityCalculator<dim, Number>::cell_loop_set_viscosity(dealii::MatrixFree<dim
       integrator_scalar_2.read_dof_values(*tke_dissipation_rate);
     }
     else
-  {
+    {
       AssertThrow(false, dealii::ExcMessage("RANS::TurbulenceEddyViscosityModel not specified"));
     }
 
     for(unsigned int dof = 0; dof < integrator_viscosity.dofs_per_cell; ++dof)
     {
       scalar viscosity = dealii::make_vectorized_array<Number>(0.0);
-      if(turbulence_model_data.turbulence_model==RANS::TurbulenceEddyViscosityModel::PrandtlMixingLength)
+      if(turbulence_model_data.turbulence_model ==
+         RANS::TurbulenceEddyViscosityModel::PrandtlMixingLength)
       {
         scalar tke = integrator_scalar_1.get_dof_value(dof);
         add_viscosity(tke, viscosity);
       }
-      else if(turbulence_model_data.turbulence_model==RANS::TurbulenceEddyViscosityModel::StandardKEpsilon)
+      else if(turbulence_model_data.turbulence_model ==
+              RANS::TurbulenceEddyViscosityModel::StandardKEpsilon)
       {
-        scalar tke = integrator_scalar_1.get_dof_value(dof);
+        scalar tke     = integrator_scalar_1.get_dof_value(dof);
         scalar epsilon = integrator_scalar_2.get_dof_value(dof);
         add_viscosity(tke, epsilon, viscosity);
       }
       else
-    {
+      {
         AssertThrow(false, dealii::ExcMessage("RANS::TurbulenceEddyViscosityModel not specified"));
       }
 
@@ -154,8 +150,7 @@ ViscosityCalculator<dim, Number>::cell_loop_set_viscosity(dealii::MatrixFree<dim
 
 template<int dim, typename Number>
 void
-ViscosityCalculator<dim, Number>::add_viscosity(scalar const & scalar_1,
-                                                scalar & viscosity) const
+ViscosityCalculator<dim, Number>::add_viscosity(scalar const & scalar_1, scalar & viscosity) const
 {
   switch(turbulence_model_data.turbulence_model)
   {
@@ -163,7 +158,8 @@ ViscosityCalculator<dim, Number>::add_viscosity(scalar const & scalar_1,
       prandtl_mixing_length_model(scalar_1, viscosity);
       break;
     case RANS::TurbulenceEddyViscosityModel::Undefined:
-      AssertThrow(false, dealii::ExcMessage("RANS::TurbulenceEddyViscosityModel must be specified"));
+      AssertThrow(false,
+                  dealii::ExcMessage("RANS::TurbulenceEddyViscosityModel must be specified"));
       break;
   }
 }
@@ -172,7 +168,7 @@ template<int dim, typename Number>
 void
 ViscosityCalculator<dim, Number>::add_viscosity(scalar const & scalar_1,
                                                 scalar const & scalar_2,
-                                                scalar & viscosity) const
+                                                scalar &       viscosity) const
 {
   switch(turbulence_model_data.turbulence_model)
   {
@@ -180,7 +176,8 @@ ViscosityCalculator<dim, Number>::add_viscosity(scalar const & scalar_1,
       standard_k_epsilon_model(scalar_1, scalar_2, viscosity);
       break;
     case RANS::TurbulenceEddyViscosityModel::Undefined:
-      AssertThrow(false, dealii::ExcMessage("RANS::TurbulenceEddyViscosityModel must be specified"));
+      AssertThrow(false,
+                  dealii::ExcMessage("RANS::TurbulenceEddyViscosityModel must be specified"));
       break;
   }
 }
@@ -188,43 +185,64 @@ ViscosityCalculator<dim, Number>::add_viscosity(scalar const & scalar_1,
 template<int dim, typename Number>
 void
 ViscosityCalculator<dim, Number>::prandtl_mixing_length_model(scalar const & tke,
-                                                              scalar & viscosity) const
+                                                              scalar &       viscosity) const
 {
   double length_scale = model_coefficients[2];
-  if (turbulence_model_data.positivity_preserving_limiter==RANS::PositivityPreservingLimiter::LogarithmicTransportVariable) {
+  if(turbulence_model_data.positivity_preserving_limiter ==
+     RANS::PositivityPreservingLimiter::LogarithmicTransportVariable)
+  {
     viscosity = std::exp(tke / dealii::make_vectorized_array<Number>(2.0)) * length_scale;
   }
-  else if (turbulence_model_data.positivity_preserving_limiter==RANS::PositivityPreservingLimiter::Clipper) {
-    viscosity = std::pow(tke, dealii::make_vectorized_array<Number>(1.0/2.0)) * length_scale;
+  else if(turbulence_model_data.positivity_preserving_limiter ==
+          RANS::PositivityPreservingLimiter::Clipper)
+  {
+    viscosity = std::pow(tke, dealii::make_vectorized_array<Number>(1.0 / 2.0)) * length_scale;
   }
-  else {
-    AssertThrow(false, dealii::ExcMessage("PositivityPreservingLimiter needs to be specified for  calculating viscosity"));
+  else
+  {
+    AssertThrow(false,
+                dealii::ExcMessage(
+                  "PositivityPreservingLimiter needs to be specified for  calculating viscosity"));
   }
 }
 
 template<int dim, typename Number>
 void
 ViscosityCalculator<dim, Number>::standard_k_epsilon_model(scalar const & tke,
-                                              scalar const & epsilon,
-                                              scalar & viscosity) const
+                                                           scalar const & epsilon,
+                                                           scalar &       viscosity) const
 {
   double C_mu = model_coefficients[3];
 
-  if (turbulence_model_data.positivity_preserving_limiter==RANS::PositivityPreservingLimiter::LogarithmicTransportVariable) {
-    viscosity = C_mu * std::exp((dealii::make_vectorized_array<Number>(2.0) * tke) - epsilon);
+  if(turbulence_model_data.positivity_preserving_limiter ==
+     RANS::PositivityPreservingLimiter::LogarithmicTransportVariable)
+  {
+    scalar log_terms = (dealii::make_vectorized_array<Number>(2.0) * tke) - epsilon;
+    scalar safe_log_term = std::min(log_terms,
+                                        dealii::make_vectorized_array<Number>(10.0));
+    scalar calculated_viscosity = C_mu * std::exp(safe_log_term);
+
+    viscosity = std::min(calculated_viscosity,
+                                dealii::make_vectorized_array<Number>(100.0));
   }
-  else if (turbulence_model_data.positivity_preserving_limiter==RANS::PositivityPreservingLimiter::Clipper) {
+  else if(turbulence_model_data.positivity_preserving_limiter ==
+          RANS::PositivityPreservingLimiter::Clipper)
+  {
     viscosity = C_mu * std::pow(tke, dealii::make_vectorized_array<Number>(2.0)) / epsilon;
   }
-  else {
-    AssertThrow(false, dealii::ExcMessage("PositivityPreservingLimiter needs to be specified for  calculating viscosity"));
+  else
+  {
+    AssertThrow(false,
+                dealii::ExcMessage(
+                  "PositivityPreservingLimiter needs to be specified for  calculating viscosity"));
   }
 }
 
 template<int dim, typename Number>
 void
-ViscosityCalculator<dim, Number>::extrapolate_eddy_viscosity_to_dof(VectorType & dst,
-                                                                    unsigned const & target_dof_index) const
+ViscosityCalculator<dim, Number>::extrapolate_eddy_viscosity_to_dof(
+  VectorType &     dst,
+  unsigned const & target_dof_index) const
 {
   if(target_dof_index == dof_index)
   {
@@ -238,9 +256,10 @@ ViscosityCalculator<dim, Number>::extrapolate_eddy_viscosity_to_dof(VectorType &
 
 template<int dim, typename Number>
 void
-ViscosityCalculator<dim, Number>::extrapolate_to_new_dof(VectorType const & src,
-                                                         VectorType & dst,
-                                                         unsigned int const & target_dof_index) const
+ViscosityCalculator<dim, Number>::extrapolate_to_new_dof(
+  VectorType const &   src,
+  VectorType &         dst,
+  unsigned int const & target_dof_index) const
 {
   // 1. Get the DoFHandlers for source and destination
   auto const & dof_handler_src = matrix_free->get_dof_handler(dof_index);

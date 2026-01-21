@@ -34,11 +34,11 @@
 #include <algorithm>
 #include <memory>
 // #include <exadg/utilities/lazy_ptr.h>
+#include <exadg/rans_equations/spatial_discretization/turbulence_model.h>
+#include <exadg/rans_equations/user_interface/viscosity_model_data.h>
 #include <cmath>
 #include "exadg/rans_equations/user_interface/enum_types.h"
 #include "exadg/utilities/lazy_ptr.h"
-#include <exadg/rans_equations/spatial_discretization/turbulence_model.h>
-#include <exadg/rans_equations/user_interface/viscosity_model_data.h>
 
 namespace ExaDG
 {
@@ -54,13 +54,14 @@ struct RHSKernelData
   }
   std::shared_ptr<dealii::Function<dim>> f;
 
-  ScalarType   scalar_type;
-  bool         production_term;
-  bool         dissipation_term;
-  unsigned int dof_index_eddy_viscosity;
-  unsigned int dof_index_velocity;
-  unsigned int dof_index;
-  TurbulenceModelData turbulence_model_data;
+  ScalarType                  scalar_type;
+  bool                        production_term;
+  bool                        dissipation_term;
+  unsigned int                dof_index_eddy_viscosity;
+  unsigned int                dof_index_velocity;
+  unsigned int                dof_index;
+  double                      diffusivity;
+  TurbulenceModelData         turbulence_model_data;
   PositivityPreservingLimiter positivity_preserving_limiter;
 };
 
@@ -154,18 +155,21 @@ public:
     integrator_velocity->reinit(cell);
     integrator_velocity->gather_evaluate(*velocity,
                                          dealii::EvaluationFlags::values |
-                                         dealii::EvaluationFlags::gradients);
+                                           dealii::EvaluationFlags::gradients);
   }
 
   void
   reinit_cell_solution(unsigned int const cell) const
   {
     integrator_solution->reinit(cell);
-    integrator_solution->gather_evaluate(*solution, dealii::EvaluationFlags::values);
+    integrator_solution->gather_evaluate(*solution,
+                                         dealii::EvaluationFlags::values |
+                                           dealii::EvaluationFlags::gradients);
 
-    if (turbulence_model_ptr->turbulence_model_data.is_active) {
-        integrator_eddy_viscosity->reinit(cell);
-        integrator_eddy_viscosity->gather_evaluate(*eddy_viscosity, dealii::EvaluationFlags::values);
+    if(turbulence_model_ptr->turbulence_model_data.is_active)
+    {
+      integrator_eddy_viscosity->reinit(cell);
+      integrator_eddy_viscosity->gather_evaluate(*eddy_viscosity, dealii::EvaluationFlags::values);
     }
   }
 
@@ -182,50 +186,99 @@ public:
 
     scalar f = FunctionEvaluator<rank, dim, Number>::value(*(data.f), q_points, time);
 
-    if((data.turbulence_model_data.turbulence_model == TurbulenceEddyViscosityModel::PrandtlMixingLength) || data.turbulence_model_data.turbulence_model == TurbulenceEddyViscosityModel::StandardKEpsilon)
+    if((data.turbulence_model_data.turbulence_model ==
+        TurbulenceEddyViscosityModel::PrandtlMixingLength) ||
+       data.turbulence_model_data.turbulence_model ==
+         TurbulenceEddyViscosityModel::StandardKEpsilon)
     {
-        scalar viscosity = integrator_eddy_viscosity->get_value(q);
-        scalar dissipation;
-        scalar production;
+      scalar viscosity = integrator_eddy_viscosity->get_value(q);
+      scalar dissipation;
+      scalar production;
       if(data.dissipation_term)
       {
-        if (data.scalar_type==ScalarType::TurbulentKineticEnergy) {
+        if(data.scalar_type == ScalarType::TurbulentKineticEnergy)
+        {
           dissipation = get_tke_dissipation_term(viscosity, q);
         }
-        else if (data.scalar_type==ScalarType::TKEDissipationRate) {
+        else if(data.scalar_type == ScalarType::TKEDissipationRate)
+        {
           dissipation = get_epsilon_dissipation_term(viscosity, q);
         }
-        else {
-          AssertThrow(false, dealii::ExcMessage("Dissipation term is only implemented for ScalarType::TurbulentKineticEnergy and ScalarType::TKEDissipationRate"));
+        else
+        {
+          AssertThrow(
+            false,
+            dealii::ExcMessage(
+              "Dissipation term is only implemented for ScalarType::TurbulentKineticEnergy and ScalarType::TKEDissipationRate"));
         }
         f -= dissipation;
       }
       if(data.production_term)
       {
-        AssertThrow(data.dissipation_term, dealii::ExcMessage("Production term only works with dissipation term"));
-        if (data.scalar_type==ScalarType::TurbulentKineticEnergy) {
+        AssertThrow(data.dissipation_term,
+                    dealii::ExcMessage("Production term only works with dissipation term"));
+        if(data.scalar_type == ScalarType::TurbulentKineticEnergy)
+        {
           production = get_tke_production_term(viscosity, q);
         }
-        else if (data.scalar_type==ScalarType::TKEDissipationRate) {
+        else if(data.scalar_type == ScalarType::TKEDissipationRate)
+        {
           production = get_epsilon_production_term(viscosity, q);
         }
-        else {
-          AssertThrow(false, dealii::ExcMessage("Production term is only implemented for ScalarType::TurbulentKineticEnergy and ScalarType::TKEDissipationRate"));
+        else
+        {
+          AssertThrow(
+            false,
+            dealii::ExcMessage(
+              "Production term is only implemented for ScalarType::TurbulentKineticEnergy and ScalarType::TKEDissipationRate"));
         }
-        production = std::min(production, dealii::make_vectorized_array<Number>(10.0) * dissipation);
+        production =
+          std::min(production, dealii::make_vectorized_array<Number>(10.0) * dissipation);
         f += production;
       }
+      scalar filter_term = dealii::make_vectorized_array<Number>(0.0);
+      if(data.positivity_preserving_limiter ==
+         PositivityPreservingLimiter::LogarithmicTransportVariable)
+      {
+        scalar sigma;
+        if(data.scalar_type == ScalarType::TurbulentKineticEnergy)
+        {
+          sigma =
+            dealii::make_vectorized_array<Number>(turbulence_model_ptr->model_coefficients[0]);
+        }
+        else if(data.scalar_type == ScalarType::TKEDissipationRate)
+        {
+          sigma =
+            dealii::make_vectorized_array<Number>(turbulence_model_ptr->model_coefficients[4]);
+        }
+        else
+        {
+          AssertThrow(
+            false,
+            dealii::ExcMessage(
+              "Production term is only implemented for ScalarType::TurbulentKineticEnergy and ScalarType::TKEDissipationRate"));
+        }
+        filter_term = get_filter_sum(viscosity, sigma, q);
+      }
+      f += filter_term;
     }
-
     return f;
+  }
+
+  scalar
+  get_filter_sum(scalar const & viscosity, scalar const & sigma, unsigned int const q) const
+  {
+    vector grad_k        = integrator_solution->get_gradient(q);
+    scalar grad_square   = grad_k.norm_square();
+    scalar eff_viscosity = data.diffusivity + (viscosity / sigma);
+    return (eff_viscosity)*grad_square;
   }
 
   /*
    * Production = 2 \nu_{T} S_{ij} S_{ij} / e^{\kappa}
    */
   scalar
-  get_tke_production_term(scalar const & viscosity,
-                          unsigned int const q) const
+  get_tke_production_term(scalar const & viscosity, unsigned int const q) const
   {
     scalar result;
 
@@ -234,16 +287,26 @@ public:
     tensor velocity_gradient_tensor = 0.5 * (velocity_gradient + transpose(velocity_gradient));
 
     scalar forb_norm_sqr = velocity_gradient_tensor.norm_square();
-    scalar sol = integrator_solution->get_value(q);
+    scalar sol           = integrator_solution->get_value(q);
 
-    if (data.positivity_preserving_limiter==PositivityPreservingLimiter::LogarithmicTransportVariable) {
-      result = dealii::make_vectorized_array<Number>(2.0) * viscosity * forb_norm_sqr / std::exp(sol);
+    if(data.positivity_preserving_limiter ==
+       PositivityPreservingLimiter::LogarithmicTransportVariable)
+    {
+      scalar physical_tke = std::exp(sol);
+      scalar safe_tke = std::max(physical_tke, dealii::make_vectorized_array<Number>(1e-12));
+      result =
+        dealii::make_vectorized_array<Number>(2.0) * viscosity * forb_norm_sqr / safe_tke;
     }
-    else if(data.positivity_preserving_limiter==PositivityPreservingLimiter::Clipper){
+    else if(data.positivity_preserving_limiter == PositivityPreservingLimiter::Clipper)
+    {
       result = dealii::make_vectorized_array<Number>(2.0) * viscosity * forb_norm_sqr;
     }
-    else {
-      AssertThrow(false, dealii::ExcMessage("PositivityPreservingLimiter needs to be specified for implementing tke production term"));
+    else
+    {
+      AssertThrow(
+        false,
+        dealii::ExcMessage(
+          "PositivityPreservingLimiter needs to be specified for implementing tke production term"));
     }
 
     /*std::cout << "TKE Production : " << result << std::endl;*/
@@ -255,8 +318,7 @@ public:
    * Production = 2 \nu_{T} S_{ij} S_{ij} / e^{\kappa}
    */
   scalar
-  get_epsilon_production_term(scalar const & viscosity,
-                                  unsigned int const q) const
+  get_epsilon_production_term(scalar const & viscosity, unsigned int const q) const
   {
     scalar result;
 
@@ -265,19 +327,32 @@ public:
     tensor velocity_gradient_tensor = 0.5 * (velocity_gradient + transpose(velocity_gradient));
 
     scalar forb_norm_sqr = velocity_gradient_tensor.norm_square();
-    scalar sol = integrator_solution->get_value(q);
+    scalar sol           = integrator_solution->get_value(q);
 
-    scalar C_mu = dealii::make_vectorized_array<Number>(turbulence_model_ptr->model_coefficients[3]);
-    scalar C_e1 = dealii::make_vectorized_array<Number>(turbulence_model_ptr->model_coefficients[1]);
+    scalar C_mu =
+      dealii::make_vectorized_array<Number>(turbulence_model_ptr->model_coefficients[3]);
+    scalar C_e1 =
+      dealii::make_vectorized_array<Number>(turbulence_model_ptr->model_coefficients[1]);
 
-    if (data.positivity_preserving_limiter==PositivityPreservingLimiter::LogarithmicTransportVariable) {
-      result = dealii::make_vectorized_array<Number>(2.0) * C_e1 * std::sqrt(C_mu * viscosity) * forb_norm_sqr / std::exp(sol/dealii::make_vectorized_array<Number>(2.0));
+    if(data.positivity_preserving_limiter ==
+       PositivityPreservingLimiter::LogarithmicTransportVariable)
+    {
+      scalar physical_sqrt_epsilon = std::exp(sol / dealii::make_vectorized_array<Number>(2.0));
+      scalar safe_sqrt_epsilon = std::max(physical_sqrt_epsilon, dealii::make_vectorized_array<Number>(1e-12));
+      result = dealii::make_vectorized_array<Number>(2.0) * C_e1 * std::sqrt(C_mu * viscosity) *
+               forb_norm_sqr / safe_sqrt_epsilon;
     }
-    else if(data.positivity_preserving_limiter==PositivityPreservingLimiter::Clipper) {
-      AssertThrow(false, dealii::ExcMessage("epsilon production term not implemented with clipper"));
+    else if(data.positivity_preserving_limiter == PositivityPreservingLimiter::Clipper)
+    {
+      AssertThrow(false,
+                  dealii::ExcMessage("epsilon production term not implemented with clipper"));
     }
-    else {
-      AssertThrow(false, dealii::ExcMessage("PositivityPreservingLimiter needs to be specified for implementing epsilon production term"));
+    else
+    {
+      AssertThrow(
+        false,
+        dealii::ExcMessage(
+          "PositivityPreservingLimiter needs to be specified for implementing epsilon production term"));
     }
 
     return result;
@@ -287,41 +362,64 @@ public:
    * \varepsilon = - C_{D} \frac{e^{\kappa / 2}{\ell}}
    */
   scalar
-  get_tke_dissipation_term(scalar const & viscosity,
-                           unsigned int const q) const
+  get_tke_dissipation_term(scalar const & viscosity, unsigned int const q) const
   {
     scalar result;
     scalar sol = integrator_solution->get_value(q);
-    if(turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::PrandtlMixingLength)
+    if(turbulence_model_ptr->turbulence_model_data.turbulence_model ==
+       TurbulenceEddyViscosityModel::PrandtlMixingLength)
     {
-    double coefficient  = turbulence_model_ptr->model_coefficients[1]; // C_D
-    double length_scale = turbulence_model_ptr->model_coefficients[2]; // turbulence length scale
-      if (data.positivity_preserving_limiter==PositivityPreservingLimiter::LogarithmicTransportVariable) {
-        result = dealii::make_vectorized_array<Number>(coefficient/length_scale) * std::exp(sol/2.0);
+      double coefficient  = turbulence_model_ptr->model_coefficients[1]; // C_D
+      double length_scale = turbulence_model_ptr->model_coefficients[2]; // turbulence length scale
+      if(data.positivity_preserving_limiter ==
+         PositivityPreservingLimiter::LogarithmicTransportVariable)
+      {
+        result =
+          dealii::make_vectorized_array<Number>(coefficient / length_scale) * std::exp(sol / 2.0);
       }
-      else if(data.positivity_preserving_limiter==PositivityPreservingLimiter::Clipper){
+      else if(data.positivity_preserving_limiter == PositivityPreservingLimiter::Clipper)
+      {
         scalar sol_max = dealii::make_vectorized_array<Number>(0.0);
-        sol_max = std::max(sol, sol_max);
-        result = dealii::make_vectorized_array<Number>(coefficient/length_scale) * std::pow(sol_max, dealii::make_vectorized_array<Number>(1.5));
+        sol_max        = std::max(sol, sol_max);
+        result         = dealii::make_vectorized_array<Number>(coefficient / length_scale) *
+                 std::pow(sol_max, dealii::make_vectorized_array<Number>(1.5));
       }
-      else {
-        AssertThrow(false, dealii::ExcMessage("PositivityPreservingLimiter needs to be defined for implementing tke dissipation term"));
+      else
+      {
+        AssertThrow(
+          false,
+          dealii::ExcMessage(
+            "PositivityPreservingLimiter needs to be defined for implementing tke dissipation term"));
       }
     }
-    else if (turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::StandardKEpsilon) {
+    else if(turbulence_model_ptr->turbulence_model_data.turbulence_model ==
+            TurbulenceEddyViscosityModel::StandardKEpsilon)
+    {
       double C_mu = turbulence_model_ptr->model_coefficients[3]; // C_mu
-      if (data.positivity_preserving_limiter==PositivityPreservingLimiter::LogarithmicTransportVariable) {
-        result = dealii::make_vectorized_array<Number>(C_mu) * std::exp(sol) / viscosity;
+      if(data.positivity_preserving_limiter ==
+         PositivityPreservingLimiter::LogarithmicTransportVariable)
+      {
+        scalar viscosity_limit = std::max(viscosity, dealii::make_vectorized_array<Number>(1e-12));
+        result = dealii::make_vectorized_array<Number>(C_mu) * std::exp(sol) / viscosity_limit;
       }
-      else if(data.positivity_preserving_limiter==PositivityPreservingLimiter::Clipper){
+      else if(data.positivity_preserving_limiter == PositivityPreservingLimiter::Clipper)
+      {
         result = dealii::make_vectorized_array<Number>(C_mu) * sol * sol / viscosity;
       }
-      else {
-        AssertThrow(false, dealii::ExcMessage("PositivityPreservingLimiter needs to be defined for implementing tke dissipation term"));
+      else
+      {
+        AssertThrow(
+          false,
+          dealii::ExcMessage(
+            "PositivityPreservingLimiter needs to be defined for implementing tke dissipation term"));
       }
     }
-    else {
-    AssertThrow(false, dealii::ExcMessage("Dissipation term is only implemented for TurbulenceEddyViscosityModel::PrandtlMixingLength"));
+    else
+    {
+      AssertThrow(
+        false,
+        dealii::ExcMessage(
+          "Dissipation term is only implemented for TurbulenceEddyViscosityModel::PrandtlMixingLength"));
     }
     /*std::cout << "TKE Dissipation : " << result << std::endl;*/
     return result;
@@ -331,27 +429,45 @@ public:
    * \varepsilon = - C_{D} \frac{e^{\kappa / 2}{\ell}}
    */
   scalar
-  get_epsilon_dissipation_term(scalar const & viscosity,
-                               unsigned int const q) const
+  get_epsilon_dissipation_term(scalar const & viscosity, unsigned int const q) const
   {
     scalar result;
     scalar sol = integrator_solution->get_value(q);
     /*scalar viscosity = integrator_eddy_viscosity->get_value(q);*/
-    if (turbulence_model_ptr->turbulence_model_data.turbulence_model==TurbulenceEddyViscosityModel::StandardKEpsilon) {
-      scalar C_mu = dealii::make_vectorized_array<Number>(turbulence_model_ptr->model_coefficients[3]);
-      scalar C_e2 = dealii::make_vectorized_array<Number>(turbulence_model_ptr->model_coefficients[2]);
-      if (data.positivity_preserving_limiter==PositivityPreservingLimiter::LogarithmicTransportVariable) {
-        result = C_e2 * std::sqrt(C_mu / viscosity) * std::exp(sol/dealii::make_vectorized_array<Number>(2.0));
+    if(turbulence_model_ptr->turbulence_model_data.turbulence_model ==
+       TurbulenceEddyViscosityModel::StandardKEpsilon)
+    {
+      scalar C_mu =
+        dealii::make_vectorized_array<Number>(turbulence_model_ptr->model_coefficients[3]);
+      scalar C_e2 =
+        dealii::make_vectorized_array<Number>(turbulence_model_ptr->model_coefficients[2]);
+      if(data.positivity_preserving_limiter ==
+         PositivityPreservingLimiter::LogarithmicTransportVariable)
+      {
+        scalar viscosity_limit = std::max(viscosity, dealii::make_vectorized_array<Number>(1e-12));
+        result = C_e2 * std::sqrt(C_mu / viscosity_limit) *
+                 std::exp(sol / dealii::make_vectorized_array<Number>(2.0));
       }
-      else if(data.positivity_preserving_limiter==PositivityPreservingLimiter::Clipper){
-        AssertThrow(false, dealii::ExcMessage("epsilon dissipation term with clippers is not implemented yet"));
+      else if(data.positivity_preserving_limiter == PositivityPreservingLimiter::Clipper)
+      {
+        AssertThrow(false,
+                    dealii::ExcMessage(
+                      "epsilon dissipation term with clippers is not implemented yet"));
       }
-      else {
-        AssertThrow(false, dealii::ExcMessage("PositivityPreservingLimiter needs to be defined for implementing epsilon dissipation term"));
+      else
+      {
+        AssertThrow(
+          false,
+          dealii::ExcMessage(
+            "PositivityPreservingLimiter needs to be defined for implementing epsilon dissipation term"));
       }
     }
-    else {
-      AssertThrow(false, dealii::ExcMessage("Dissipation term for epsilon is only implemented for TurbulenceEddyViscosityModel::StandardKEpsilon"));
+    else
+    {
+      AssertThrow(
+        false,
+        dealii::ExcMessage(
+          "Dissipation term for epsilon is only implemented for TurbulenceEddyViscosityModel::StandardKEpsilon"));
     }
     /*std::cout << "Epsilon Dissipation : " << result << std::endl;*/
     return result;

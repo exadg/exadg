@@ -23,8 +23,8 @@
 #include <deal.II/base/point.h>
 #include <deal.II/base/vectorization.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
-#include <exadg/rans_equations/spatial_discretization/turbulence_model.h>
 #include <exadg/operators/quadrature.h>
+#include <exadg/rans_equations/spatial_discretization/turbulence_model.h>
 #include <cmath>
 #include <memory>
 #include "exadg/rans_equations/user_interface/enum_types.h"
@@ -46,9 +46,8 @@ TurbulenceModel<dim, Number>::~TurbulenceModel()
 
 template<int dim, typename Number>
 void
-TurbulenceModel<dim, Number>::initialize(
-  dealii::MatrixFree<dim, Number> const &                matrix_free_in,
-  TurbulenceModelData const &                            turbulence_model_data_in)
+TurbulenceModel<dim, Number>::initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+                                         TurbulenceModelData const & turbulence_model_data_in)
 {
   Base::initialize(matrix_free_in, dof_index_eddy_viscosity, this->quad_index);
 
@@ -68,7 +67,7 @@ TurbulenceModel<dim, Number>::initialize(
 
 template<int dim, typename Number>
 void
-TurbulenceModel<dim, Number>::set_viscosity(VectorType const & solution) 
+TurbulenceModel<dim, Number>::set_viscosity(VectorType const & solution)
 {
   this->set_constant_coefficient(this->diffusivity);
 
@@ -77,7 +76,7 @@ TurbulenceModel<dim, Number>::set_viscosity(VectorType const & solution)
 
 template<int dim, typename Number>
 void
-TurbulenceModel<dim, Number>::add_viscosity(VectorType const & solution) 
+TurbulenceModel<dim, Number>::add_viscosity(VectorType const & solution)
 {
   VectorType dummy;
 
@@ -95,11 +94,9 @@ TurbulenceModel<dim, Number>::cell_loop_set_coefficients(
   dealii::MatrixFree<dim, Number> const & matrix_free,
   VectorType &,
   VectorType const & src,
-  Range const &      cell_range) 
+  Range const &      cell_range)
 {
-  IntegratorCell integrator(matrix_free,
-                            dof_index_eddy_viscosity,
-                            this->quad_index);
+  IntegratorCell integrator(matrix_free, dof_index_eddy_viscosity, this->quad_index);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
@@ -112,13 +109,15 @@ TurbulenceModel<dim, Number>::cell_loop_set_coefficients(
     {
       // get the current viscosity
       scalar current_viscosity = this->diffusivity;
-      scalar viscosity = integrator.get_value(q);
+      scalar viscosity         = integrator.get_value(q);
 
       eddy_viscosity_coefficients.set_coefficient_cell(cell, q, viscosity);
-      if (scalar_type==ScalarType::TurbulentKineticEnergy) {
+      if(scalar_type == ScalarType::TurbulentKineticEnergy)
+      {
         viscosity = current_viscosity + (viscosity / model_coefficients[0]);
       }
-      else if (scalar_type==ScalarType::TKEDissipationRate) {
+      else if(scalar_type == ScalarType::TKEDissipationRate)
+      {
         viscosity = current_viscosity + (viscosity / model_coefficients[4]);
       }
       // set the coefficients
@@ -133,16 +132,10 @@ TurbulenceModel<dim, Number>::face_loop_set_coefficients(
   dealii::MatrixFree<dim, Number> const & matrix_free,
   VectorType &,
   VectorType const & src,
-  Range const &      face_range) 
+  Range const &      face_range)
 {
-  IntegratorFace integrator_m(matrix_free,
-                              true,
-                              dof_index_eddy_viscosity,
-                              this->quad_index);
-  IntegratorFace integrator_p(matrix_free,
-                              false,
-                              dof_index_eddy_viscosity,
-                              this->quad_index);
+  IntegratorFace integrator_m(matrix_free, true, dof_index_eddy_viscosity, this->quad_index);
+  IntegratorFace integrator_p(matrix_free, false, dof_index_eddy_viscosity, this->quad_index);
   // loop over all interior faces
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
@@ -170,13 +163,17 @@ TurbulenceModel<dim, Number>::face_loop_set_coefficients(
       eddy_viscosity_coefficients.set_coefficient_face(face, q, viscosity);
       eddy_viscosity_coefficients.set_coefficient_face_neighbor(face, q, viscosity_neighbor);
 
-      if (scalar_type==ScalarType::TurbulentKineticEnergy) {
+      if(scalar_type == ScalarType::TurbulentKineticEnergy)
+      {
         viscosity = current_viscosity + (viscosity / model_coefficients[0]);
-        viscosity_neighbor = current_viscosity_neighbor + (viscosity_neighbor / model_coefficients[0]);
+        viscosity_neighbor =
+          current_viscosity_neighbor + (viscosity_neighbor / model_coefficients[0]);
       }
-      else if (scalar_type==ScalarType::TKEDissipationRate) {
+      else if(scalar_type == ScalarType::TKEDissipationRate)
+      {
         viscosity = current_viscosity + (viscosity / model_coefficients[4]);
-        viscosity_neighbor = current_viscosity_neighbor + (viscosity_neighbor / model_coefficients[4]);
+        viscosity_neighbor =
+          current_viscosity_neighbor + (viscosity_neighbor / model_coefficients[4]);
       }
     }
   }
@@ -188,12 +185,9 @@ TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients(
   dealii::MatrixFree<dim, Number> const & matrix_free,
   VectorType &,
   VectorType const & src,
-  Range const &      face_range) 
+  Range const &      face_range)
 {
-  IntegratorFace integrator(matrix_free,
-                            true,
-                            dof_index_eddy_viscosity,
-                            this->quad_index);
+  IntegratorFace integrator(matrix_free, true, dof_index_eddy_viscosity, this->quad_index);
   IntegratorFace integrator_secondary(matrix_free,
                                       true,
                                       dof_index_eddy_viscosity,
@@ -219,10 +213,12 @@ TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients(
 
       eddy_viscosity_coefficients.set_coefficient_face(face, q, viscosity);
 
-      if (scalar_type==ScalarType::TurbulentKineticEnergy) {
+      if(scalar_type == ScalarType::TurbulentKineticEnergy)
+      {
         viscosity = current_viscosity + (viscosity / model_coefficients[0]);
       }
-      else if (scalar_type==ScalarType::TKEDissipationRate) {
+      else if(scalar_type == ScalarType::TKEDissipationRate)
+      {
         viscosity = current_viscosity + (viscosity / model_coefficients[4]);
       }
     }
@@ -248,5 +244,5 @@ template class TurbulenceModel<2, double>;
 template class TurbulenceModel<3, float>;
 template class TurbulenceModel<3, double>;
 
-} // namespace RANSEqns
+} // namespace RANS
 } // namespace ExaDG

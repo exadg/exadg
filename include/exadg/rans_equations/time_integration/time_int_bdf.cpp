@@ -496,7 +496,7 @@ TimeIntBDF<dim, Number>::do_timestep_solve()
   /*
    * Apply modal filter to the solution at time t_{n+1}
    */
-  if (param.modal_filter)
+  if(param.modal_filter)
   {
     dealii::Timer timer_modal_filter;
     timer_modal_filter.restart();
@@ -598,7 +598,7 @@ TimeIntBDF<dim, Number>::do_timestep_solve()
   solution_np.equ(this->extra.get_beta(0), solution[0]);
   for(unsigned int i = 1; i < solution.size(); ++i)
     solution_np.add(this->extra.get_beta(i), solution[i]);
-  
+
 
   // solve the linear system of equations
   bool const update_preconditioner =

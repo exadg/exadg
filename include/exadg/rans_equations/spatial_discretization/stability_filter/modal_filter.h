@@ -32,82 +32,85 @@ template<int dim, typename Number>
 class ModalFilterOperator
 {
 private:
-	typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-	typedef dealii::VectorizedArray<Number>                         scalar;
-	typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> tensor;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> tensor;
 
-	typedef CellIntegrator<dim, 1, Number> IntegratorCell;
+  typedef CellIntegrator<dim, 1, Number> IntegratorCell;
 
-	typedef ModalFilterOperator<dim, Number> This;
+  typedef ModalFilterOperator<dim, Number> This;
 
-	typedef std::pair<unsigned int, unsigned int> Range;
+  typedef std::pair<unsigned int, unsigned int> Range;
 
 public:
+  ModalFilterOperator()
+    : maximum_gradient(0.0),
+      average_gradient(0.0),
+      local_maximum_gradient(0.0),
+      local_sum_gradient(0.0),
+      local_count_gradient(0.0)
+  {
+  }
 
-	ModalFilterOperator()
-	: maximum_gradient(0.0),
-	  average_gradient(0.0),
-	  local_maximum_gradient(0.0),
-	  local_sum_gradient(0.0),
-	  local_count_gradient(0.0)
-	{}
+  void
+  initialize(std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free_in,
+             std::shared_ptr<dealii::Mapping<dim> const>            mapping_in,
+             unsigned int                                           dof_index_in,
+             unsigned int                                           quad_index_in);
 
-	void initialize(std::shared_ptr<dealii::MatrixFree<dim, Number> const>	matrix_free_in,
-		    std::shared_ptr<dealii::Mapping<dim> const>			mapping_in,
-		    unsigned int						dof_index_in,
-		    unsigned int						quad_index_in);
-
-	void apply_modal_filter(VectorType const & src,
-				VectorType &       dst);
+  void
+  apply_modal_filter(VectorType const & src, VectorType & dst);
 
 private:
-	void evaluate_critical_gradients(VectorType const & src);
+  void
+  evaluate_critical_gradients(VectorType const & src);
 
-	void apply_weighted_relaxation(VectorType const & src,
-				VectorType & dst);
+  void
+  apply_weighted_relaxation(VectorType const & src, VectorType & dst);
 
-	void cell_loop_calculate_critical_gradients(dealii::MatrixFree<dim, Number> const &	matrix_free_in,
-						  VectorType &          dst,
-						  VectorType const &    src,
-						  Range const &         cell_range);
+  void
+  cell_loop_calculate_critical_gradients(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+                                         VectorType &                            dst,
+                                         VectorType const &                      src,
+                                         Range const &                           cell_range);
 
-	void cell_loop_apply_weighted_relaxation(dealii::MatrixFree<dim, Number> const &	matrix_free_in,
-					       VectorType &          dst,
-					       VectorType const &    src,
-					       Range const &         cell_range);
+  void
+  cell_loop_apply_weighted_relaxation(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+                                      VectorType &                            dst,
+                                      VectorType const &                      src,
+                                      Range const &                           cell_range);
 
-	dealii::VectorizedArray<Number>
-	weight_function(uint dof,
-		 uint dofs_per_cell);
+  dealii::VectorizedArray<Number>
+  weight_function(uint dof, uint dofs_per_cell);
 
-	void
-	convert_unit_cell_to_reference_cell(const std::vector<dealii::Point<dim>> & src,
-				     std::vector<dealii::Point<dim>> & dst);
+  void
+  convert_unit_cell_to_reference_cell(const std::vector<dealii::Point<dim>> & src,
+                                      std::vector<dealii::Point<dim>> &       dst);
 
-	void 
-	evaluate_vandermonde_matrix(IntegratorCell const & integrator,
-			     dealii::FullMatrix<Number> & V,
-			     dealii::FullMatrix<Number> & V_inv,
-			     uint cell_id);
+  void
+  evaluate_vandermonde_matrix(IntegratorCell const &       integrator,
+                              dealii::FullMatrix<Number> & V,
+                              dealii::FullMatrix<Number> & V_inv,
+                              uint                         cell_id);
 
-	std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free;
-	std::shared_ptr<dealii::Mapping<dim>const> mapping;
+  std::shared_ptr<dealii::MatrixFree<dim, Number> const> matrix_free;
+  std::shared_ptr<dealii::Mapping<dim> const>            mapping;
 
-	unsigned int dof_index;
-	unsigned int quad_index;
+  unsigned int dof_index;
+  unsigned int quad_index;
 
 public:
-	VectorType global_gradient_mag_vector;
+  VectorType global_gradient_mag_vector;
 
-	Number maximum_gradient;
-	Number average_gradient;
-	Number local_maximum_gradient;
-	Number local_sum_gradient;
-	Number local_count_gradient;
+  Number maximum_gradient;
+  Number average_gradient;
+  Number local_maximum_gradient;
+  Number local_sum_gradient;
+  Number local_count_gradient;
 };
 
-}
-}
+} // namespace RANS
+} // namespace ExaDG
 
 #endif

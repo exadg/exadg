@@ -19,23 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_FOR_RANS_USER_INTERFACE_DECLARE_GET_APPLICATION_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_FOR_RANS_USER_INTERFACE_DECLARE_GET_APPLICATION_H_
+// solver
+#include <exadg/incompressible_flow_with_rans/solver.h>
 
-
-#include <exadg/incompressible_navier_stokes_for_rans/user_interface/application_base.h>
-
-namespace ExaDG
-{
-namespace IncRANS
-{
-template<int dim, typename Number>
-std::shared_ptr<ApplicationBase<dim, Number>>
-get_application(std::string input_file, MPI_Comm const & comm);
-
-} // namespace IncRANS
-} // namespace ExaDG
-
-
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_FOR_RANS_USER_INTERFACE_DECLARE_GET_APPLICATION_H_ \
-        */
+// application
+#include "application.h"

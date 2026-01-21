@@ -31,6 +31,10 @@
 #include <deal.II/grid/manifold_lib.h>
 
 // ExaDG
+#include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
+#include <exadg/grid/mapping_deformation_function.h>
+#include <exadg/matrix_free/matrix_free_data.h>
+#include <exadg/operators/adaptive_mesh_refinement.h>
 #include <exadg/rans_equations/postprocessor/postprocessor_base.h>
 #include <exadg/rans_equations/spatial_discretization/interface.h>
 #include <exadg/rans_equations/spatial_discretization/operator.h>
@@ -42,10 +46,6 @@
 #include <exadg/rans_equations/user_interface/boundary_descriptor.h>
 #include <exadg/rans_equations/user_interface/field_functions.h>
 #include <exadg/rans_equations/user_interface/parameters.h>
-#include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
-#include <exadg/grid/mapping_deformation_function.h>
-#include <exadg/matrix_free/matrix_free_data.h>
-#include <exadg/operators/adaptive_mesh_refinement.h>
 #include <exadg/utilities/print_functions.h>
 #include <exadg/utilities/print_general_infos.h>
 

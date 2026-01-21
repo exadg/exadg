@@ -57,17 +57,17 @@ struct TurbulenceModelData
 
   TurbulenceEddyViscosityModel turbulence_model{TurbulenceEddyViscosityModel::Undefined};
   bool                         is_active{false};
-  bool                        rans_model{false};
+  bool                         rans_model{false};
   double                       constant{0.0}; // model constant
 
   void
   check() const
   {
     AssertThrow(is_active, dealii::ExcMessage("Turbulence model is inactive."));
-    if (turbulence_model == TurbulenceEddyViscosityModel::WALE ||
-        turbulence_model == TurbulenceEddyViscosityModel::Smagorinsky ||
-        turbulence_model == TurbulenceEddyViscosityModel::Vreman ||
-        turbulence_model == TurbulenceEddyViscosityModel::Sigma)
+    if(turbulence_model == TurbulenceEddyViscosityModel::WALE ||
+       turbulence_model == TurbulenceEddyViscosityModel::Smagorinsky ||
+       turbulence_model == TurbulenceEddyViscosityModel::Vreman ||
+       turbulence_model == TurbulenceEddyViscosityModel::Sigma)
     {
       AssertThrow(constant > 1e-20, dealii::ExcMessage("Parameter must be greater than zero."));
     }
@@ -83,13 +83,13 @@ struct TurbulenceModelData
     if(is_active)
     {
       print_parameter(pcout, "Turbulence model", turbulence_model);
-    if (turbulence_model == TurbulenceEddyViscosityModel::WALE ||
-        turbulence_model == TurbulenceEddyViscosityModel::Smagorinsky ||
-        turbulence_model == TurbulenceEddyViscosityModel::Vreman ||
-        turbulence_model == TurbulenceEddyViscosityModel::Sigma)
-    {
-      print_parameter(pcout, "Turbulence model constant", constant);
-    }
+      if(turbulence_model == TurbulenceEddyViscosityModel::WALE ||
+         turbulence_model == TurbulenceEddyViscosityModel::Smagorinsky ||
+         turbulence_model == TurbulenceEddyViscosityModel::Vreman ||
+         turbulence_model == TurbulenceEddyViscosityModel::Sigma)
+      {
+        print_parameter(pcout, "Turbulence model constant", constant);
+      }
     }
   }
 };
@@ -150,4 +150,5 @@ struct GeneralizedNewtonianModelData
 } // namespace IncRANS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_FOR_RANS_USER_INTERFACE_VISCOSITY_MODEL_DATA_H_ */
+#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_FOR_RANS_USER_INTERFACE_VISCOSITY_MODEL_DATA_H_ \
+        */

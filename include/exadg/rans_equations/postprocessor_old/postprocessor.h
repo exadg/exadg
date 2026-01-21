@@ -26,11 +26,11 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
-#include <exadg/rans_equations/postprocessor/postprocessor_base.h>
-#include <exadg/rans_equations/user_interface/analytical_solution.h>
 #include <exadg/postprocessor/error_calculation.h>
 #include <exadg/postprocessor/output_data_base.h>
 #include <exadg/rans_equations/postprocessor/output_generator.h>
+#include <exadg/rans_equations/postprocessor/postprocessor_base.h>
+#include <exadg/rans_equations/user_interface/analytical_solution.h>
 
 namespace ExaDG
 {

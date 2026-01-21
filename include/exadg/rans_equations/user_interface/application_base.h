@@ -27,13 +27,13 @@
 #include <deal.II/grid/grid_generator.h>
 
 // ExaDG
+#include <exadg/grid/grid.h>
+#include <exadg/grid/grid_utilities.h>
+#include <exadg/postprocessor/output_parameters.h>
 #include <exadg/rans_equations/postprocessor/postprocessor.h>
 #include <exadg/rans_equations/user_interface/boundary_descriptor.h>
 #include <exadg/rans_equations/user_interface/field_functions.h>
 #include <exadg/rans_equations/user_interface/parameters.h>
-#include <exadg/grid/grid.h>
-#include <exadg/grid/grid_utilities.h>
-#include <exadg/postprocessor/output_parameters.h>
 
 namespace ExaDG
 {

@@ -23,8 +23,8 @@
 #define INCLUDE_EXADG_INCOMPRESSIBLE_FLOW_WITH_RANS_DRIVER_H_
 
 // application
-#include <exadg/incompressible_flow_with_rans/user_interface/application_base.h>
 #include <exadg/incompressible_flow_with_rans/calculator/operator.h>
+#include <exadg/incompressible_flow_with_rans/user_interface/application_base.h>
 
 // utilities
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
@@ -38,7 +38,6 @@
 #include <exadg/rans_equations/time_integration/time_int_explicit_runge_kutta.h>
 
 // IncRANS
-#include <exadg/rans_equations/spatial_discretization/operator.h>
 #include <exadg/grid/mapping_deformation_function.h>
 #include <exadg/incompressible_navier_stokes_for_rans/spatial_discretization/operator_coupled.h>
 #include <exadg/incompressible_navier_stokes_for_rans/spatial_discretization/operator_dual_splitting.h>
@@ -47,6 +46,7 @@
 #include <exadg/incompressible_navier_stokes_for_rans/time_integration/time_int_bdf_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes_for_rans/time_integration/time_int_bdf_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes_for_rans/time_integration/time_int_bdf_pressure_correction.h>
+#include <exadg/rans_equations/spatial_discretization/operator.h>
 
 
 namespace ExaDG

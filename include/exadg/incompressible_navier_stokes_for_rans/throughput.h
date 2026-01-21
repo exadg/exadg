@@ -76,12 +76,12 @@ create_input_file(std::string const & input_file)
 template<int dim, typename Number>
 void
 run(ThroughputParameters<IncRANS::OperatorType> const & throughput,
-    std::string const &                               input_file,
-    unsigned int const                                degree,
-    unsigned int const                                refine_space,
-    unsigned int const                                n_cells_1d,
-    MPI_Comm const &                                  mpi_comm,
-    bool const                                        is_test)
+    std::string const &                                 input_file,
+    unsigned int const                                  degree,
+    unsigned int const                                  refine_space,
+    unsigned int const                                  n_cells_1d,
+    MPI_Comm const &                                    mpi_comm,
+    bool const                                          is_test)
 {
   std::shared_ptr<IncRANS::ApplicationBase<dim, Number>> application =
     IncRANS::get_application<dim, Number>(input_file, mpi_comm);
@@ -140,8 +140,8 @@ main(int argc, char ** argv)
     }
   }
 
-  ExaDG::GeneralParameters                                general(input_file);
-  ExaDG::HypercubeResolutionParameters                    resolution(input_file, general.dim);
+  ExaDG::GeneralParameters                                  general(input_file);
+  ExaDG::HypercubeResolutionParameters                      resolution(input_file, general.dim);
   ExaDG::ThroughputParameters<ExaDG::IncRANS::OperatorType> throughput(input_file);
 
   ExaDG::IncRANS::PressureDegree pressure_degree = ExaDG::IncRANS::PressureDegree::MixedOrder;

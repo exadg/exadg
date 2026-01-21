@@ -25,9 +25,9 @@
 #endif
 
 // ExaDG
+#include <exadg/operators/throughput_parameters.h>
 #include <exadg/rans_equations/driver.h>
 #include <exadg/rans_equations/time_integration/create_time_integrator.h>
-#include <exadg/operators/throughput_parameters.h>
 #include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG

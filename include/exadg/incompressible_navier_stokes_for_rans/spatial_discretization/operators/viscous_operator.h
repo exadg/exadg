@@ -252,10 +252,10 @@ public:
   {
     scalar viscosity = dealii::make_vectorized_array<Number>(data.viscosity);
 
-    if(data.viscosity_is_variable)
-    {
-      viscosity = viscosity_coefficients.get_coefficient_cell(cell, q);
-    }
+    // if(data.viscosity_is_variable)
+    // {
+    //   viscosity = viscosity_coefficients.get_coefficient_cell(cell, q);
+    // }
 
     return viscosity;
   }
@@ -274,11 +274,11 @@ public:
       viscosity_coefficients.get_coefficient_face_neighbor(face, q);
 
     // harmonic mean (harmonic weighting according to Schott and Rasthofer et al. (2015))
-    average_viscosity = 2.0 * coefficient_face * coefficient_face_neighbor /
-                        (coefficient_face + coefficient_face_neighbor);
+    // average_viscosity = 2.0 * coefficient_face * coefficient_face_neighbor /
+    //                     (coefficient_face + coefficient_face_neighbor);
 
     // arithmetic mean
-    // average_viscosity = 0.5 * (coefficient_face + coefficient_face_neighbor);
+    average_viscosity = 0.5 * (coefficient_face + coefficient_face_neighbor);
 
     // maximum value
     // average_viscosity = std::max(coefficient_face, coefficient_face_neighbor);
@@ -295,10 +295,10 @@ public:
   {
     scalar viscosity = dealii::make_vectorized_array<Number>(data.viscosity);
 
-    if(data.viscosity_is_variable)
-    {
-      viscosity = calculate_average_viscosity(face, q);
-    }
+    // if(data.viscosity_is_variable)
+    // {
+    //   viscosity = calculate_average_viscosity(face, q);
+    // }
 
     return viscosity;
   }
@@ -312,10 +312,10 @@ public:
   {
     scalar viscosity = dealii::make_vectorized_array<Number>(data.viscosity);
 
-    if(data.viscosity_is_variable)
-    {
-      viscosity = viscosity_coefficients.get_coefficient_face(face, q);
-    }
+    // if(data.viscosity_is_variable)
+    // {
+    //   viscosity = viscosity_coefficients.get_coefficient_face(face, q);
+    // }
 
     return viscosity;
   }

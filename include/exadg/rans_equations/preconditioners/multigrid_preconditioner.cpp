@@ -24,10 +24,10 @@
 #include <deal.II/fe/fe_system.h>
 
 // ExaDG
-#include <exadg/rans_equations/preconditioners/multigrid_preconditioner.h>
 #include <exadg/operators/finite_element.h>
 #include <exadg/operators/mapping_flags.h>
 #include <exadg/operators/quadrature.h>
+#include <exadg/rans_equations/preconditioners/multigrid_preconditioner.h>
 
 namespace ExaDG
 {

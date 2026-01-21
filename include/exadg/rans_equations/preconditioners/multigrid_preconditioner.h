@@ -22,8 +22,8 @@
 #ifndef INCLUDE_RANS_EQUATIONS_MULTIGRID_PRECONDITIONER_H_
 #define INCLUDE_RANS_EQUATIONS_MULTIGRID_PRECONDITIONER_H_
 
-#include <exadg/rans_equations/spatial_discretization/operators/combined_operator.h>
 #include <exadg/operators/multigrid_operator.h>
+#include <exadg/rans_equations/spatial_discretization/operators/combined_operator.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h>
 
 namespace ExaDG

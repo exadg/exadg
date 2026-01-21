@@ -346,7 +346,8 @@ Parameters::check() const
   // TURBULENCE
   if(turbulence_model_data.is_active)
   {
-    // AssertThrow(turbulence_model_data.turbulence_model != TurbulenceEddyViscosityModel::Undefined,
+    // AssertThrow(turbulence_model_data.turbulence_model !=
+    // TurbulenceEddyViscosityModel::Undefined,
     //             dealii::ExcMessage("Parameter must be defined."));
     AssertThrow(treatment_of_variable_viscosity != TreatmentOfVariableViscosity::Undefined,
                 dealii::ExcMessage("Parameter must be defined."));
@@ -433,7 +434,7 @@ Parameters::print(dealii::ConditionalOStream const & pcout, std::string const & 
   // TURBULENCE
   if(turbulence_model_data.is_active)
   {
-  turbulence_model_data.print(pcout);
+    turbulence_model_data.print(pcout);
   }
 
   // SOLVER

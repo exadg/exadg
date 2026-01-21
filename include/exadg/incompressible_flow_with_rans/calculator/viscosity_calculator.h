@@ -22,12 +22,12 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_FLOW_WITH_RANS_CALCULATOR_VISCOSITY_CALCULATOR_H
 #define INCLUDE_INCOMPRESSIBLE_FLOW_WITH_RANS_CALCULATOR_VISCOSITY_CALCULATOR_H
 
-#include <deal.II/matrix_free/matrix_free.h>
-#include <deal.II/matrix_free/fe_evaluation.h>
-#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/base/exceptions.h>
-#include <deal.II/numerics/vector_tools.h>
+#include <deal.II/lac/la_parallel_vector.h>
+#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/matrix_free.h>
 #include <deal.II/numerics/fe_field_function.h>
+#include <deal.II/numerics/vector_tools.h>
 
 #include <exadg/matrix_free/integrators.h>
 
@@ -59,9 +59,9 @@ public:
 
   void
   initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
-             RANS::TurbulenceModelData const & turbulence_model_data_in,
-             unsigned int const dof_index_in,
-             unsigned int const quad_index_in);
+             RANS::TurbulenceModelData const &       turbulence_model_data_in,
+             unsigned int const                      dof_index_in,
+             unsigned int const                      quad_index_in);
 
   void
   set_turbulent_kinetic_energy(VectorType const & tke_in);
@@ -76,49 +76,43 @@ public:
   get_eddy_viscosity() const;
 
   void
-  extrapolate_eddy_viscosity_to_dof(VectorType & dst,
-                                    unsigned int const & target_dof_index) const;
+  extrapolate_eddy_viscosity_to_dof(VectorType & dst, unsigned int const & target_dof_index) const;
+
 private:
   void
   cell_loop_set_viscosity(dealii::MatrixFree<dim, Number> const & data,
-                          VectorType & dst,
+                          VectorType &                            dst,
                           VectorType const &,
                           Range const & cell_range) const;
 
   void
-  prandtl_mixing_length_model(scalar const & tke,
-                              scalar & viscosity) const;
+  prandtl_mixing_length_model(scalar const & tke, scalar & viscosity) const;
 
   void
-  standard_k_epsilon_model(scalar const & tke,
-                  scalar const & epsilon,
-                  scalar & viscosity) const;
+  standard_k_epsilon_model(scalar const & tke, scalar const & epsilon, scalar & viscosity) const;
 
   void
-  add_viscosity(scalar const & scalar_1,
-                scalar const & scalar_2,
-                scalar & viscosity) const;
+  add_viscosity(scalar const & scalar_1, scalar const & scalar_2, scalar & viscosity) const;
 
   void
-  add_viscosity(scalar const & scalar_1,
-                scalar & viscosity) const;
+  add_viscosity(scalar const & scalar_1, scalar & viscosity) const;
 
   void
-  extrapolate_to_new_dof(VectorType const & src,
-                         VectorType & dst,
+  extrapolate_to_new_dof(VectorType const &   src,
+                         VectorType &         dst,
                          unsigned int const & target_dof_index) const;
 
 public:
-  VectorType const * turbulent_kinetic_energy;
-  VectorType const * tke_dissipation_rate;
-  VectorType eddy_viscosity;
+  VectorType const *        turbulent_kinetic_energy;
+  VectorType const *        tke_dissipation_rate;
+  VectorType                eddy_viscosity;
   RANS::TurbulenceModelData turbulence_model_data;
 
   std::vector<double> model_coefficients;
 
 protected:
-  unsigned int dof_index;
-  unsigned int quad_index;
+  unsigned int                            dof_index;
+  unsigned int                            quad_index;
   dealii::MatrixFree<dim, Number> const * matrix_free;
 };
 } // namespace NSRans

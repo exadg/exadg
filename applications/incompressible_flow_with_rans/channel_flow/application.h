@@ -26,15 +26,15 @@ namespace ExaDG
 {
 namespace NSRans
 {
-double channel_height = 1.0;
-double channel_length = 4.0;
-double bulk_velocity = 1.0;
+double channel_height      = 1.0;
+double channel_length      = 4.0;
+double bulk_velocity       = 1.0;
 double kinematic_viscosity = 1e-5;
 
 double start_time = 0.0;
-double end_time = 10.0;
+double end_time   = 10.0;
 
-bool const write_restart =false;
+bool const   write_restart         = false;
 double const restart_interval_time = 10.0;
 
 double const CFL                    = 0.3;
@@ -81,9 +81,9 @@ private:
 
 
     // PHYSICAL QUANTITIES
-    this->param.start_time                    = start_time;
-    this->param.end_time                      = end_time;
-    this->param.viscosity                     = kinematic_viscosity;
+    this->param.start_time = start_time;
+    this->param.end_time   = end_time;
+    this->param.viscosity  = kinematic_viscosity;
 
 
     // TEMPORAL DISCRETIZATION
@@ -237,8 +237,8 @@ private:
         (void)vector_local_refinements;
 
         unsigned int x_subdivisions = static_cast<unsigned int>(channel_length / channel_height);
-        std::vector<unsigned int> repetitions = { x_subdivisions, 1 };
-        dealii::Point<dim> bottom_left, top_right;
+        std::vector<unsigned int> repetitions = {x_subdivisions, 1};
+        dealii::Point<dim>        bottom_left, top_right;
 
         bottom_left[0] = 0.0;
         bottom_left[1] = 0.0;
@@ -246,28 +246,41 @@ private:
         top_right[0] = channel_length;
         top_right[1] = channel_height;
 
-        if (dim == 2) {
-          repetitions = { x_subdivisions, 1 };
-        } else if (dim == 3) {
+        if(dim == 2)
+        {
+          repetitions = {x_subdivisions, 1};
+        }
+        else if(dim == 3)
+        {
           AssertThrow(false, dealii::ExcMessage("Not implemented!"));
         }
 
         dealii::GridGenerator::subdivided_hyper_rectangle(tria,
-                                                  repetitions,
-                                                  bottom_left,
-                                                  top_right);
+                                                          repetitions,
+                                                          bottom_left,
+                                                          top_right);
 
-        for (auto cell : tria.cell_iterators()) {
-          for (auto const & f : cell->face_indices()) {
-            if (cell->face(f)->at_boundary()) {
-              if (std::fabs(cell->face(f)->center()(0) - 0.0) < 1e-12) {
+        for(auto cell : tria.cell_iterators())
+        {
+          for(auto const & f : cell->face_indices())
+          {
+            if(cell->face(f)->at_boundary())
+            {
+              if(std::fabs(cell->face(f)->center()(0) - 0.0) < 1e-12)
+              {
                 cell->face(f)->set_boundary_id(1); // inlet
-              } else if (std::fabs(cell->face(f)->center()(0) - channel_length) < 1e-12) {
+              }
+              else if(std::fabs(cell->face(f)->center()(0) - channel_length) < 1e-12)
+              {
                 cell->face(f)->set_boundary_id(2); // outlet
-              } else if (std::fabs(cell->face(f)->center()(1) - 0.0) < 1e-12) {
+              }
+              else if(std::fabs(cell->face(f)->center()(1) - 0.0) < 1e-12)
+              {
                 cell->face(f)->set_boundary_id(3); // bottom wall
-              } else if (std::fabs(cell->face(f)->center()(1) - channel_height) < 1e-12) {
-                cell->face(f)->set_boundary_id(3); //top_wall
+              }
+              else if(std::fabs(cell->face(f)->center()(1) - channel_height) < 1e-12)
+              {
+                cell->face(f)->set_boundary_id(3); // top_wall
               }
             }
           }
@@ -298,7 +311,7 @@ private:
       pair;
 
     std::vector<double> inlet_velocity = std::vector<double>(dim, 0.0);
-    inlet_velocity[0] = bulk_velocity;
+    inlet_velocity[0]                  = bulk_velocity;
 
     // velocity
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
@@ -319,7 +332,7 @@ private:
   set_field_functions() final
   {
     std::vector<double> inlet_velocity = std::vector<double>(dim, 0.0);
-    inlet_velocity[0] = bulk_velocity;
+    inlet_velocity[0]                  = bulk_velocity;
 
     this->field_functions->initial_solution_velocity.reset(
       new dealii::Functions::ConstantFunction<dim>(inlet_velocity));

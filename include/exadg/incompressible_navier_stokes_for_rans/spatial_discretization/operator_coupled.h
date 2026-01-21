@@ -22,8 +22,8 @@
 #ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_FOR_RANS_SPATIAL_DISCRETIZATION_OPERATOR_COUPLED_H_
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_FOR_RANS_SPATIAL_DISCRETIZATION_OPERATOR_COUPLED_H_
 
-#include <exadg/rans_equations/spatial_discretization/operators/combined_operator.h>
 #include <exadg/incompressible_navier_stokes_for_rans/spatial_discretization/spatial_operator_base.h>
+#include <exadg/rans_equations/spatial_discretization/operators/combined_operator.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver.h>
 
 namespace ExaDG

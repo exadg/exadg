@@ -22,9 +22,9 @@
 #ifndef INCLUDE_EXADG_RANS_EQUATIONS_SPATIAL_DISCRETIZATION_OPERATORS_COMBINED_OPERATOR_H_
 #define INCLUDE_EXADG_RANS_EQUATIONS_SPATIAL_DISCRETIZATION_OPERATORS_COMBINED_OPERATOR_H_
 
+#include <exadg/operators/mass_kernel.h>
 #include <exadg/rans_equations/spatial_discretization/operators/convective_operator.h>
 #include <exadg/rans_equations/spatial_discretization/operators/diffusive_operator.h>
-#include <exadg/operators/mass_kernel.h>
 
 namespace ExaDG
 {
@@ -161,10 +161,11 @@ private:
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
 
   double scaling_factor_mass;
-  
+
   mutable unsigned int current_face_index;
+
 public:
-  std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel;
+  std::shared_ptr<Operators::DiffusiveKernel<dim, Number>> diffusive_kernel;
 };
 
 } // namespace RANS

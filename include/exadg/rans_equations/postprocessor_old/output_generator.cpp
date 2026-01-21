@@ -27,8 +27,8 @@
 #include <deal.II/numerics/data_out.h>
 
 // ExaDG
-#include <exadg/rans_equations/postprocessor/output_generator.h>
 #include <exadg/postprocessor/write_output.h>
+#include <exadg/rans_equations/postprocessor/output_generator.h>
 #include <exadg/utilities/create_directories.h>
 
 namespace ExaDG
@@ -37,13 +37,14 @@ namespace RANS
 {
 template<int dim, typename Number>
 void
-write_output(OutputDataBase const &          output_data,
-             dealii::DoFHandler<dim> const & dof_handler,
-             dealii::Mapping<dim> const &    mapping,
-             dealii::LinearAlgebra::distributed::Vector<Number> const &              solution_vector,
-             std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
-             unsigned int const              output_counter,
-             MPI_Comm const &                mpi_comm)
+write_output(
+  OutputDataBase const &                                                output_data,
+  dealii::DoFHandler<dim> const &                                       dof_handler,
+  dealii::Mapping<dim> const &                                          mapping,
+  dealii::LinearAlgebra::distributed::Vector<Number> const &            solution_vector,
+  std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
+  unsigned int const                                                    output_counter,
+  MPI_Comm const &                                                      mpi_comm)
 {
   std::string folder = output_data.directory, file = output_data.filename;
 
@@ -53,10 +54,8 @@ write_output(OutputDataBase const &          output_data,
   dealii::DataOut<dim> data_out;
   data_out.set_flags(flags);
 
-  data_out.add_data_vector(dof_handler,
-                           solution_vector,
-                           "solution");
-  
+  data_out.add_data_vector(dof_handler, solution_vector, "solution");
+
   for(auto & additional_field : additional_fields)
   {
     if(additional_field->get_type() == SolutionFieldType::scalar)
@@ -101,7 +100,7 @@ template<int dim, typename Number>
 void
 OutputGenerator<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler_in,
                                     dealii::Mapping<dim> const &    mapping_in,
-                                    OutputData const &          output_data_in)
+                                    OutputData const &              output_data_in)
 {
   dof_handler = &dof_handler_in;
   mapping     = &mapping_in;
@@ -150,21 +149,21 @@ OutputGenerator<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler_
 
 template<int dim, typename Number>
 void
-OutputGenerator<dim, Number>::evaluate(VectorType const & solution,
-                                       std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
-                                       double const       time,
-                                       bool const         unsteady)
+OutputGenerator<dim, Number>::evaluate(
+  VectorType const &                                                    solution,
+  std::vector<dealii::SmartPointer<SolutionField<dim, Number>>> const & additional_fields,
+  double const                                                          time,
+  bool const                                                            unsteady)
 {
   print_write_output_time(time, time_control.get_counter(), unsteady, mpi_comm);
 
-  write_output<dim>(
-    output_data,
-    *dof_handler,
-    *mapping,
-    solution,
-    additional_fields,
-    time_control.get_counter(),
-    mpi_comm);
+  write_output<dim>(output_data,
+                    *dof_handler,
+                    *mapping,
+                    solution,
+                    additional_fields,
+                    time_control.get_counter(),
+                    mpi_comm);
 }
 
 template class OutputGenerator<2, float>;

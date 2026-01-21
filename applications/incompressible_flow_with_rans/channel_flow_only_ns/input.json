@@ -5,17 +5,19 @@
         "IsTest": "false"
     },
     "Application": {
-        "UBulk": "1.0",
-        "KinematicViscosity": "1.e-4",
+        "ReynoldsNumber": "1000.0",
+        "KinematicViscosity": "1.e-1",
         "TimeSampleCount": "50",
         "EndTime": "10.0",
-        "CFL": "0.1"
+        "CFL": "0.1",
+        "ProductionTerm": "true",
+        "DissipationTerm": "true"
     },
     "Geometry": {
         "ChannelHeight": "1.0",
         "ChannelLength": "4.0",
-        "TurbulentIntensity": "0.05",
-        "RefinementCycle": "5"
+        "TKEWall": "-1.0",
+        "TurbulentIntensity": "0.05"
     },
     "PrandtlMixingLengthModelCoefficients": {
         "SigmaK": "1.0",
@@ -32,10 +34,10 @@
     "Fluid": {
         "SpatialResolution": {
             "Degree": "3",
-            "RefineSpace": "5"
+            "RefineSpace": "4"
         },
         "Output": {
-            "OutputDirectory": "output/fluid/",
+            "OutputDirectory": "output/",
             "OutputName": "fluid",
             "WriteOutput": "true"
         }
@@ -45,16 +47,10 @@
             "Degree": "2"
         },
         "ModalFilter": "false",
-        "ProductionTerm": "true",
-        "DissipationTerm": "true",
         "Output": {
-            "OutputDirectory": "output/tke/",
-            "OutputName": "tke",
+            "OutputDirectory": "output/",
+            "OutputName": "scalar0",
             "WriteOutput": "true"
-        },
-        "Boundary": {
-            "TKEWall": "1e-6",
-            "TKEInit": "1.958e-3"
         }
     },
     "Scalar1": {
@@ -62,16 +58,10 @@
             "Degree": "2"
         },
         "ModalFilter": "false",
-        "ProductionTerm": "true",
-        "DissipationTerm": "true",
         "Output": {
-            "OutputDirectory": "output/epsilon/",
-            "OutputName": "epsilon",
+            "OutputDirectory": "output/",
+            "OutputName": "scalar1",
             "WriteOutput": "true"
-        },
-        "Boundary": {
-            "EpsilonWall": "1e-6",
-            "EpsilonInit": "2.5e-3"
         }
     }
 }

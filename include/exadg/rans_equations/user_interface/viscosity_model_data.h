@@ -61,37 +61,46 @@ enum class PositivityPreservingLimiter
 struct TurbulenceDataBase
 {
   TurbulenceDataBase() : sigma_k(1.0)
-  {}
-  virtual ~TurbulenceDataBase() {}
+  {
+  }
+  virtual ~TurbulenceDataBase()
+  {
+  }
   double sigma_k;
 
-  virtual void set_all_coefficients(std::vector<double> const & coefficients) = 0;
-  virtual std::vector<double> get_all_coefficients() const = 0;
+  virtual void
+  set_all_coefficients(std::vector<double> const & coefficients) = 0;
+  virtual std::vector<double>
+  get_all_coefficients() const = 0;
 
-  virtual void print_coefficients(dealii::ConditionalOStream const & pcout) const = 0;
+  virtual void
+  print_coefficients(dealii::ConditionalOStream const & pcout) const = 0;
 };
 struct PrandtlMixingLengthData : public TurbulenceDataBase
 {
-  PrandtlMixingLengthData() : C_D(0.07),
-    turbulent_length_scale(1.0)
-  {}
+  PrandtlMixingLengthData() : C_D(0.07), turbulent_length_scale(1.0)
+  {
+  }
 
   double C_D;
   double turbulent_length_scale;
 
-  virtual void set_all_coefficients(std::vector<double> const & coefficients) override
+  virtual void
+  set_all_coefficients(std::vector<double> const & coefficients) override
   {
-    sigma_k = coefficients[0];
-    C_D = coefficients[1];
+    sigma_k                = coefficients[0];
+    C_D                    = coefficients[1];
     turbulent_length_scale = coefficients[2];
   }
 
-  virtual std::vector<double> get_all_coefficients() const override
+  virtual std::vector<double>
+  get_all_coefficients() const override
   {
     return {sigma_k, C_D, turbulent_length_scale};
   }
 
-  virtual void print_coefficients(dealii::ConditionalOStream const & pcout) const override
+  virtual void
+  print_coefficients(dealii::ConditionalOStream const & pcout) const override
   {
     print_parameter(pcout, "sigma_k", sigma_k);
     print_parameter(pcout, "C_D", C_D);
@@ -100,32 +109,33 @@ struct PrandtlMixingLengthData : public TurbulenceDataBase
 };
 struct StandardKEpsilonData : public TurbulenceDataBase
 {
-  StandardKEpsilonData() : C_epsilon_1(1.44),
-                  C_epsilon_2(1.92),
-                  C_mu(0.09),
-                  sigma_epsilon(1.3)
-  {}
+  StandardKEpsilonData() : C_epsilon_1(1.44), C_epsilon_2(1.92), C_mu(0.09), sigma_epsilon(1.3)
+  {
+  }
 
   double C_epsilon_1;
   double C_epsilon_2;
   double C_mu;
   double sigma_epsilon;
 
-  virtual void set_all_coefficients(std::vector<double> const & coefficients) override
+  virtual void
+  set_all_coefficients(std::vector<double> const & coefficients) override
   {
-    sigma_k = coefficients[0];
-    C_epsilon_1 = coefficients[1];
-    C_epsilon_2 = coefficients[2];
-    C_mu = coefficients[3];
+    sigma_k       = coefficients[0];
+    C_epsilon_1   = coefficients[1];
+    C_epsilon_2   = coefficients[2];
+    C_mu          = coefficients[3];
     sigma_epsilon = coefficients[4];
   }
 
-  virtual std::vector<double> get_all_coefficients() const override
+  virtual std::vector<double>
+  get_all_coefficients() const override
   {
     return {sigma_k, C_epsilon_1, C_epsilon_2, C_mu, sigma_epsilon};
   }
 
-  virtual void print_coefficients(dealii::ConditionalOStream const & pcout) const override
+  virtual void
+  print_coefficients(dealii::ConditionalOStream const & pcout) const override
   {
     print_parameter(pcout, "sigma_k", sigma_k);
     print_parameter(pcout, "C_epsilon_1", C_epsilon_1);
@@ -145,7 +155,7 @@ struct TurbulenceModelData
   bool                         is_active{false};
   bool                         production_term{false};
   bool                         dissipation_term{false};
-  PositivityPreservingLimiter  positivity_preserving_limiter{PositivityPreservingLimiter::Undefined}; 
+  PositivityPreservingLimiter positivity_preserving_limiter{PositivityPreservingLimiter::Undefined};
   std::shared_ptr<TurbulenceDataBase> turbulence_data_base;
 
   void
@@ -173,7 +183,8 @@ struct TurbulenceModelData
 
     if(is_active)
     {
-      AssertThrow(turbulence_data_base != nullptr, dealii::ExcMessage("Turbulence data base not initialized."));
+      AssertThrow(turbulence_data_base != nullptr,
+                  dealii::ExcMessage("Turbulence data base not initialized."));
       print_parameter(pcout, "Turbulence model", turbulence_model);
       print_parameter(pcout, "Positivity preserving limiter", positivity_preserving_limiter);
       print_parameter(pcout, "Use production term", production_term);
@@ -182,7 +193,7 @@ struct TurbulenceModelData
     }
   }
 
-  std::shared_ptr<TurbulenceDataBase> 
+  std::shared_ptr<TurbulenceDataBase>
   create_turbulence_data()
   {
     switch(turbulence_model)
@@ -198,7 +209,7 @@ struct TurbulenceModelData
 };
 
 
-} // namespace RANSEqns
+} // namespace RANS
 } // namespace ExaDG
 
 #endif /* INCLUDE_EXADG_RANS_EQUATIONS_USER_INTERFACE_VISCOSITY_MODEL_DATA_H_ */
