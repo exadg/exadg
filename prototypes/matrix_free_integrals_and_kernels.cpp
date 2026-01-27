@@ -8,6 +8,8 @@
 #include <functional>
 #include <vector>
 
+#include <deal.II/base/tensor.h>
+
 struct FieldData
 {
   // think of dealii::Tensor here
@@ -17,6 +19,14 @@ struct FieldData
   Tensor gradient;
   Tensor submit_value;
   Tensor submit_gradient;
+};
+
+// use specific data types for a particular model problem, i.e. scalar Poisson
+template<int dim, typename NumberType>
+struct QuadraturePointDataScalarPoisson
+{
+  dealii::Tensor<1, dim, NumberType> gradient;
+  dealii::Tensor<1, dim, NumberType> gradient_flux;
 };
 
 class QuadraturePointData
@@ -229,34 +239,101 @@ generic_cell_integral_cpu_backend(std::vector<double> &                         
   }
 }
 
+/**
+ * This function is an intermediate step towards a kernel design and would use the existing
+ * dealii::FEEvaluation, but already use the "new" QuadraturePointDataScalarPoisson and a "new"
+ * kernel function.
+ */
+template<int dim, typename NumberType>
+void
+generic_cell_integral_cpu_backend_scalar_poisson(
+  std::vector<double> &                                                            dst,
+  std::vector<double> const &                                                      src,
+  std::vector<ConfigurationData> const &                                           config_data,
+  std::function<void(QuadraturePointDataScalarPoisson<dim, NumberType> &)> const & kernel)
+{
+  (void)dst;
+  (void)src;
+  (void)config_data;
+
+  // FEEvaluation fe_eval;
+
+  unsigned int const n_cells = 10;
+  for(unsigned int cell = 0; cell < n_cells; ++cell)
+  {
+    // fe_eval.reinit(cell);
+    // fe_eval.evaluate(src);
+
+    unsigned int const n_q_points = 10;
+    for(unsigned int q = 0; q < n_q_points; ++q)
+    {
+      QuadraturePointDataScalarPoisson<dim, NumberType> data;
+
+      // data.gradient = fe_eval.get_gradient(q);
+
+      kernel(data);
+
+      // fe_eval.submit_gradient(data.gradient_flux, q);
+    }
+
+    // fe_eval.integrate(dst);
+  }
+}
+
 void
 portable_cell_integral(std::vector<double> & dst, std::vector<double> const & src)
 {
-  unsigned int const velocity = 0;
-  unsigned int const pressure = velocity + 1;
+  // Navier-Stokes
+  {
+    unsigned int const velocity = 0;
+    unsigned int const pressure = velocity + 1;
 
-  std::vector<ConfigurationData> config_data;
-  config_data.resize(2);
-  config_data[velocity].dof_index       = 0;
-  config_data[velocity].quad_index      = 0;
-  config_data[velocity].needs_value     = true;
-  config_data[velocity].needs_gradient  = true;
-  config_data[velocity].submit_value    = true;
-  config_data[velocity].submit_gradient = true;
-  config_data[pressure].dof_index       = 1;
-  config_data[pressure].quad_index      = 0;
-  config_data[pressure].needs_gradient  = true;
-  config_data[pressure].submit_gradient = true;
+    std::vector<ConfigurationData> config_data;
+    config_data.resize(2);
+    config_data[velocity].dof_index       = 0;
+    config_data[velocity].quad_index      = 0;
+    config_data[velocity].needs_value     = true;
+    config_data[velocity].needs_gradient  = true;
+    config_data[velocity].submit_value    = true;
+    config_data[velocity].submit_gradient = true;
+    config_data[pressure].dof_index       = 1;
+    config_data[pressure].quad_index      = 0;
+    config_data[pressure].needs_gradient  = true;
+    config_data[pressure].submit_gradient = true;
 
-  auto const navier_stokes_kernel = [&](QuadraturePointData & data) {
-    double const dt_inv = 10.0, nu = 0.001;
+    auto const navier_stokes_kernel = [&](QuadraturePointData & data) {
+      double const dt_inv = 10.0, nu = 0.001;
 
-    data[velocity].submit_value    = dt_inv * data[velocity].value + data[pressure].gradient;
-    data[velocity].submit_gradient = nu * data[velocity].gradient;
-    data[pressure].submit_gradient = data[velocity].value;
-  };
+      data[velocity].submit_value    = dt_inv * data[velocity].value + data[pressure].gradient;
+      data[velocity].submit_gradient = nu * data[velocity].gradient;
+      data[pressure].submit_gradient = data[velocity].value;
+    };
 
-  generic_cell_integral_cpu_backend(dst, src, config_data, navier_stokes_kernel);
+    generic_cell_integral_cpu_backend(dst, src, config_data, navier_stokes_kernel);
+  }
+
+  // scalar Poisson problem
+  {
+    unsigned int const field_index = 0;
+    unsigned int const dim         = 3;
+
+    std::vector<ConfigurationData> config_data;
+    config_data.resize(1);
+    config_data[field_index].dof_index       = 0;
+    config_data[field_index].quad_index      = 0;
+    config_data[field_index].needs_gradient  = true;
+    config_data[field_index].submit_gradient = true;
+
+    auto const scalar_poisson_kernel = [&](QuadraturePointDataScalarPoisson<dim, double> & data) {
+      double const kappa = 0.1;
+      data.gradient_flux = kappa * data.gradient;
+    };
+
+    generic_cell_integral_cpu_backend_scalar_poisson<dim, double>(dst,
+                                                                  src,
+                                                                  config_data,
+                                                                  scalar_poisson_kernel);
+  }
 }
 
 int
