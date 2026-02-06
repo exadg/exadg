@@ -138,18 +138,18 @@ CombinedOperator<dim, Number>::set_velocity_copy(VectorType const & velocity) co
 
 template<int dim, typename Number>
 void
-CombinedOperator<dim, Number>::set_eddy_viscosity_ptr(VectorType const & eddy_viscosity_in) const
-{
-  if(operator_data.diffusive_problem)
-    diffusive_kernel->set_eddy_viscosity_ptr(eddy_viscosity_in);
-}
-
-template<int dim, typename Number>
-void
 CombinedOperator<dim, Number>::set_velocity_ptr(VectorType const & velocity) const
 {
   if(operator_data.convective_problem)
     convective_kernel->set_velocity_ptr(velocity);
+}
+
+template<int dim, typename Number>
+void
+CombinedOperator<dim, Number>::set_eddy_viscosity_ptr(VectorType const & eddy_viscosity_in) const
+{
+  if(operator_data.diffusive_problem)
+    diffusive_kernel->set_eddy_viscosity_ptr(eddy_viscosity_in);
 }
 
 template<int dim, typename Number>
@@ -185,7 +185,6 @@ CombinedOperator<dim, Number>::reinit_face_derived(IntegratorFace &   integrator
                                                    IntegratorFace &   integrator_p,
                                                    unsigned int const face) const
 {
-  current_face_index = face;
   if(operator_data.convective_problem)
     convective_kernel->reinit_face(face);
   if(operator_data.diffusive_problem)
@@ -197,7 +196,6 @@ void
 CombinedOperator<dim, Number>::reinit_boundary_face_derived(IntegratorFace &   integrator_m,
                                                             unsigned int const face) const
 {
-  current_face_index = face;
   if(operator_data.convective_problem)
     convective_kernel->reinit_boundary_face(face);
   if(operator_data.diffusive_problem)
@@ -213,12 +211,15 @@ CombinedOperator<dim, Number>::reinit_face_cell_based_derived(
   unsigned int const               face,
   dealii::types::boundary_id const boundary_id) const
 {
-  current_face_index = face;
   if(operator_data.convective_problem)
     convective_kernel->reinit_face_cell_based(cell, face, boundary_id);
   if(operator_data.diffusive_problem)
-    diffusive_kernel->reinit_face_cell_based(
-      boundary_id, integrator_m, integrator_p, operator_data.dof_index, face);
+    diffusive_kernel->reinit_face_cell_based(boundary_id,
+                                             integrator_m,
+                                             integrator_p,
+                                             operator_data.dof_index,
+                                             cell,
+                                             face);
 }
 
 template<int dim, typename Number>
@@ -304,30 +305,24 @@ CombinedOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
       scalar normal_gradient_m = integrator_m.get_normal_derivative(q);
       scalar normal_gradient_p = integrator_p.get_normal_derivative(q);
 
-      scalar effective_viscosity_m = diffusive_kernel->get_int_face_eddy_viscosity(q);
-      scalar effective_viscosity_p = diffusive_kernel->get_ext_face_eddy_viscosity(q);
-
       scalar value_flux = diffusive_kernel->calculate_value_flux(normal_gradient_m,
                                                                  normal_gradient_p,
                                                                  value_m,
-                                                                 value_p,
-                                                                 effective_viscosity_m,
-                                                                 effective_viscosity_p);
+                                                                 value_p);
 
       value_flux_m += -value_flux;
       value_flux_p += value_flux; // + sign since n⁺ = -n⁻
-
-      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m,
-                                                                       value_p,
-                                                                       effective_viscosity_m,
-                                                                       effective_viscosity_p);
-
-      integrator_m.submit_normal_derivative(gradient_flux, q);
-      integrator_p.submit_normal_derivative(gradient_flux, q);
     }
 
     integrator_m.submit_value(value_flux_m, q);
     integrator_p.submit_value(value_flux_p, q);
+
+    if(operator_data.diffusive_problem)
+    {
+      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m, value_p);
+      integrator_m.submit_normal_derivative(gradient_flux, q);
+      integrator_p.submit_normal_derivative(gradient_flux, q);
+    }
   }
 }
 
@@ -360,26 +355,19 @@ CombinedOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_
       scalar normal_gradient_m = integrator_m.get_normal_derivative(q);
       scalar normal_gradient_p = dealii::make_vectorized_array<Number>(0.0);
 
-      scalar effective_viscosity_m = diffusive_kernel->get_int_face_eddy_viscosity(q);
-      scalar effective_viscosity_p = dealii::make_vectorized_array<Number>(0.0);
-
-      //Value flux = Consistency - Penalty
-      value_flux -= diffusive_kernel->calculate_value_flux(normal_gradient_m,
+      value_flux += -diffusive_kernel->calculate_value_flux(normal_gradient_m,
                                                             normal_gradient_p,
                                                             value_m,
-                                                            value_p,
-                                                            effective_viscosity_m,
-                                                            effective_viscosity_p);
-
-      // Gradient flux = -Symmetry Term
-      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m,
-                                                                       value_p,
-                                                                       effective_viscosity_m,
-                                                                       effective_viscosity_p);
-      integrator_m.submit_normal_derivative(gradient_flux, q);
+                                                            value_p);
     }
 
     integrator_m.submit_value(value_flux, q);
+
+    if(operator_data.diffusive_problem)
+    {
+      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m, value_p);
+      integrator_m.submit_normal_derivative(gradient_flux, q);
+    }
   }
 }
 
@@ -422,26 +410,19 @@ CombinedOperator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & 
       scalar normal_gradient_m = integrator_m.get_normal_derivative(q);
       scalar normal_gradient_p = dealii::make_vectorized_array<Number>(0.0);
 
-      scalar effective_viscosity_m = diffusive_kernel->get_int_face_eddy_viscosity(q);
-      scalar effective_viscosity_p = dealii::make_vectorized_array<Number>(0.0);
-
-      //Value flux = Consistency - Penalty
-      value_flux -= diffusive_kernel->calculate_value_flux(normal_gradient_m,
+      value_flux += -diffusive_kernel->calculate_value_flux(normal_gradient_m,
                                                             normal_gradient_p,
                                                             value_m,
-                                                            value_p,
-                                                            effective_viscosity_m,
-                                                            effective_viscosity_p);
-
-      // Gradient flux = -Symmetry Term
-      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m,
-                                                                       value_p,
-                                                                       effective_viscosity_m,
-                                                                       effective_viscosity_p);
-      integrator_m.submit_normal_derivative(gradient_flux, q);
+                                                            value_p);
     }
 
     integrator_m.submit_value(value_flux, q);
+
+    if(operator_data.diffusive_problem)
+    {
+      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m, value_p);
+      integrator_m.submit_normal_derivative(gradient_flux, q);
+    }
   }
 }
 
@@ -476,27 +457,20 @@ CombinedOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_
       // minus sign to get the correct normal vector n⁺ = -n⁻
       scalar normal_gradient_p = -integrator_p.get_normal_derivative(q);
 
-      scalar effective_viscosity_m = dealii::make_vectorized_array<Number>(0.0);
-      scalar effective_viscosity_p = diffusive_kernel->get_int_face_eddy_viscosity(q);
-
-      //Value flux = Consistency - Penalty
-      value_flux += diffusive_kernel->calculate_value_flux(normal_gradient_m,
-                                                            normal_gradient_p,
-                                                            value_m,
+      value_flux += -diffusive_kernel->calculate_value_flux(normal_gradient_p,
+                                                            normal_gradient_m,
                                                             value_p,
-                                                            effective_viscosity_m,
-                                                            effective_viscosity_p);
-
-      // Gradient flux = -Symmetry Term
-      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m,
-                                                                       value_p,
-                                                                       effective_viscosity_m,
-                                                                       effective_viscosity_p);
-      // opposite sign since n⁺ = -n⁻
-      integrator_p.submit_normal_derivative(-gradient_flux, q);
+                                                            value_m);
     }
 
     integrator_p.submit_value(value_flux, q);
+
+    if(operator_data.diffusive_problem)
+    {
+      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_p, value_m);
+      // opposite sign since n⁺ = -n⁻
+      integrator_p.submit_normal_derivative(-gradient_flux, q);
+    }
   }
 }
 
@@ -546,31 +520,19 @@ CombinedOperator<dim, Number>::do_boundary_integral(
                                                                     operator_data.bc,
                                                                     this->time);
 
-      scalar effective_viscosity_m =
-        calculate_interior_value(q,
-                                 *diffusive_kernel->integrator_face_eddy_viscosity_m,
-                                 operator_type);
-      // For boundary faces, we use the interior eddy viscosity as exterior eddy viscosity
-      scalar effective_viscosity_p = effective_viscosity_m;
-
-      //Value flux = Consistency - Penalty
-      value_flux -= diffusive_kernel->calculate_value_flux(normal_gradient_m,
+      value_flux += -diffusive_kernel->calculate_value_flux(normal_gradient_m,
                                                             normal_gradient_p,
                                                             value_m,
-                                                            value_p,
-                                                            effective_viscosity_m,
-                                                            effective_viscosity_p);
-
-      // Gradient flux = -Symmetry Term
-      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m,
-                                                                       value_p,
-                                                                       effective_viscosity_m,
-                                                                       effective_viscosity_p);
-
-      integrator_m.submit_normal_derivative(gradient_flux, q);
+                                                            value_p);
     }
 
     integrator_m.submit_value(value_flux, q);
+
+    if(operator_data.diffusive_problem)
+    {
+      scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m, value_p);
+      integrator_m.submit_normal_derivative(gradient_flux, q);
+    }
   }
 }
 

@@ -35,6 +35,12 @@ namespace ExaDG
 namespace RANS
 {
 /*
+ * @brief Manager for turbulent eddy-viscosity.
+ * @details Implements cell and face loops to calculate and store 
+ * \f$ \nu_t \f$ and \f$ \nu_{eff} = \nu + \nu_t / \sigma \f$ 
+ * at all quadrature points across the triangulation.
+ */
+/*
  *  Turbulence model.
  */
 template<int dim, typename Number>

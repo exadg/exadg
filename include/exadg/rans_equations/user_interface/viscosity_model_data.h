@@ -30,18 +30,13 @@ namespace ExaDG
 namespace RANS
 {
 /**
- *  Algebraic subgrid-scale turbulence models for LES
+ *  RANS based turbulence models
  *
- *  Standard constants according to literature:
- *    Smagorinsky: 0.165
- *    Vreman: 0.28
- *    WALE: 0.50
- *    Sigma: 1.35
+ * Standard k-epsilon model
  */
 enum class TurbulenceEddyViscosityModel
 {
   Undefined,
-  PrandtlMixingLength,
   StandardKEpsilon
 };
 
@@ -51,6 +46,9 @@ enum class VaryingViscosityType
   EddyViscosity
 };
 
+/*
+ * Numerical limiters to ensure physical results (non-negative viscosity).
+ */
 enum class PositivityPreservingLimiter
 {
   Undefined,
@@ -76,37 +74,15 @@ struct TurbulenceDataBase
   virtual void
   print_coefficients(dealii::ConditionalOStream const & pcout) const = 0;
 };
-struct PrandtlMixingLengthData : public TurbulenceDataBase
-{
-  PrandtlMixingLengthData() : C_D(0.07), turbulent_length_scale(1.0)
-  {
-  }
 
-  double C_D;
-  double turbulent_length_scale;
-
-  virtual void
-  set_all_coefficients(std::vector<double> const & coefficients) override
-  {
-    sigma_k                = coefficients[0];
-    C_D                    = coefficients[1];
-    turbulent_length_scale = coefficients[2];
-  }
-
-  virtual std::vector<double>
-  get_all_coefficients() const override
-  {
-    return {sigma_k, C_D, turbulent_length_scale};
-  }
-
-  virtual void
-  print_coefficients(dealii::ConditionalOStream const & pcout) const override
-  {
-    print_parameter(pcout, "sigma_k", sigma_k);
-    print_parameter(pcout, "C_D", C_D);
-    print_parameter(pcout, "turbulent_length_scale", turbulent_length_scale);
-  }
-};
+/*
+ * @brief Parameters for the Standard k-epsilon model.
+ * @details Default values follow the standard model constants.
+ * Reference: https://www.cfd-online.com/Wiki/Standard_k-epsilon_model
+ * * The constants are:
+ * \f$ C_{\mu} = 0.09 \f$, \f$ C_{\epsilon 1} = 1.44 \f$, \f$ C_{\epsilon 2} = 1.92 \f$, 
+ * \f$ \sigma_k = 1.0 \f$, \f$ \sigma_{\epsilon} = 1.3 \f$.
+ */
 struct StandardKEpsilonData : public TurbulenceDataBase
 {
   StandardKEpsilonData() : C_epsilon_1(1.44), C_epsilon_2(1.92), C_mu(0.09), sigma_epsilon(1.3)
@@ -198,9 +174,6 @@ struct TurbulenceModelData
   {
     switch(turbulence_model)
     {
-      case TurbulenceEddyViscosityModel::PrandtlMixingLength:
-        return std::make_shared<PrandtlMixingLengthData>();
-        break;
       case TurbulenceEddyViscosityModel::StandardKEpsilon:
         return std::make_shared<StandardKEpsilonData>();
         break;

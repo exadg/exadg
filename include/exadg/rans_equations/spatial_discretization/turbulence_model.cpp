@@ -126,6 +126,12 @@ TurbulenceModel<dim, Number>::cell_loop_set_coefficients(
   }
 }
 
+/*
+ * The effective face viscosity is calculated using an arithmetic mean:
+ * \f[
+ * \nu_{face} = \frac{1}{2} (\nu_m + \nu_p)
+ * \f]
+ */
 template<int dim, typename Number>
 void
 TurbulenceModel<dim, Number>::face_loop_set_coefficients(
@@ -175,6 +181,8 @@ TurbulenceModel<dim, Number>::face_loop_set_coefficients(
         viscosity_neighbor =
           current_viscosity_neighbor + (viscosity_neighbor / model_coefficients[4]);
       }
+      viscosity_coefficients.set_coefficient_face(face, q, viscosity);
+      viscosity_coefficients.set_coefficient_face_neighbor(face, q, viscosity_neighbor);
     }
   }
 }
@@ -221,6 +229,7 @@ TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients(
       {
         viscosity = current_viscosity + (viscosity / model_coefficients[4]);
       }
+      viscosity_coefficients.set_coefficient_face(face, q, viscosity);
     }
   }
 }

@@ -242,29 +242,26 @@ public:
     eddy_viscosity->update_ghost_values();
   }
 
-  /**
-   * Volume integral for the diffusive term.
-   * \f[ Volume Integral = \left( \nabla \psi, \nu_{eff} \nabla Q \right)_{\Omega} \f]
+  /*
+   * Volume flux, i.e., the term occurring in the volume integral
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
     get_volume_flux(IntegratorCell & integrator, unsigned int const q) const
   {
-    scalar effective_viscosity = get_effective_cell_viscosity(q);
+    // scalar effective_viscosity = get_effective_cell_viscosity(q);
+    scalar effective_viscosity = data.diffusivity;
     return integrator.get_gradient(q) * effective_viscosity;
   }
 
-  /**
-   * Calculates symmertic term in SIPG
-   * \f[ SymmetricTerm = - \left( {\nabla \psi}, \nu_{eff} \llbracket Q \rrbracket \right)_{\Gamma} \f]
-   */
   inline DEAL_II_ALWAYS_INLINE scalar
   calculate_gradient_flux(scalar const & value_m,
                           scalar const & value_p,
                           scalar const & effective_viscosity_m,
                           scalar const & effective_viscosity_p) const
   {
-    scalar effective_viscosity = 0.5 * (effective_viscosity_m + effective_viscosity_p);
+    // scalar effective_viscosity = 0.5 * (effective_viscosity_m + effective_viscosity_p);
+    scalar effective_viscosity = data.diffusivity;
     return -0.5 * effective_viscosity * (value_m - value_p);
   }
 
@@ -282,39 +279,36 @@ public:
                          scalar const & effective_viscosity_m,
                          scalar const & effective_viscosity_p) const
   {
-    scalar consistency_term = calculate_consistency_term(normal_gradient_m,
-                                                        normal_gradient_p,
-                                                        effective_viscosity_m,
-                                                        effective_viscosity_p);
-    scalar penalty_term = calculate_penalty_term(value_m, value_p, effective_viscosity_m, effective_viscosity_p);
+    // scalar effective_viscosity = 0.5 * (effective_viscosity_m + effective_viscosity_p);
+    scalar effective_viscosity = data.diffusivity;
+    // scalar consistency_term =
+    //   0.5 * (normal_gradient_m * effective_viscosity_m + normal_gradient_p * effective_viscosity_p);
+    scalar consistency_term =
+      0.5 * (normal_gradient_m + normal_gradient_p);
+    scalar penalty_term = effective_viscosity * tau * (value_m - value_p);
     return consistency_term - penalty_term;
   }
 
-  /** Penalty term in SIPG
-  * \f[ PenaltyTerm = \left( \llbracket \psi \rrbracket, {\nu_{eff}} \llbracket Q \rrbracket \right)_{\Gamma} \f]
-  */
-  inline DEAL_II_ALWAYS_INLINE
+  inline DEAL_II_ALWAYS_INLINE //
     scalar
-  calculate_penalty_term(scalar const & value_m,
-                         scalar const & value_p,
-                         scalar const & effective_viscosity_m,
-                         scalar const & effective_viscosity_p) const
+    calculate_value_flux_penalty(scalar const & value_m,
+                                 scalar const & value_p,
+                                 scalar const & effective_viscosity_m,
+                                 scalar const & effective_viscosity_p) const
   {
     scalar effective_viscosity = 0.5 * (effective_viscosity_m + effective_viscosity_p);
     scalar penalty_term        = effective_viscosity * tau * (value_m - value_p);
     return penalty_term;
   }
 
-  /** Consistency term in SIPG
-  * \f[ ConsistencyTerm = \left( \llbracket \psi \rrbracket, {\nu_{eff} \mathbf{n} \nabla Q} \right)_{\Gamma} \f]
-  */
   inline DEAL_II_ALWAYS_INLINE //
     scalar
-  calculate_consistency_term(scalar const & normal_gradient_m,
-                             scalar const & normal_gradient_p,
-                             scalar const & effective_viscosity_m,
-                             scalar const & effective_viscosity_p) const
+    calculate_value_flux_consistency(scalar const & normal_gradient_m,
+                                     scalar const & normal_gradient_p,
+                                     scalar const & effective_viscosity_m,
+                                     scalar const & effective_viscosity_p) const
   {
+    scalar effective_viscosity = 0.5 * (effective_viscosity_m + effective_viscosity_p);
     scalar consistency_term =
       0.5 * (normal_gradient_m * effective_viscosity_m + normal_gradient_p * effective_viscosity_p);
     return consistency_term;

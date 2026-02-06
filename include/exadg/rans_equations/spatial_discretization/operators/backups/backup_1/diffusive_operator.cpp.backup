@@ -129,15 +129,13 @@ DiffusiveOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
     scalar effective_viscosity_m = kernel->get_int_face_eddy_viscosity(q);
     scalar effective_viscosity_p = kernel->get_ext_face_eddy_viscosity(q);
 
-    //Value flux = Consistency - Penalty
-    scalar value_flux = kernel->calculate_value_flux(normal_gradient_m,
-                                                     normal_gradient_p,
-                                                     value_m,
-                                                     value_p,
-                                                     effective_viscosity_m,
-                                                     effective_viscosity_p);
+    scalar value_flux = (kernel->calculate_value_flux_penalty(
+                           value_m, value_p, effective_viscosity_m, effective_viscosity_p) -
+                         kernel->calculate_value_flux_consistency(normal_gradient_m,
+                                                                  normal_gradient_p,
+                                                                  effective_viscosity_m,
+                                                                  effective_viscosity_p));
 
-    // Gradient flux = -Symmetry Term
     scalar gradient_flux = kernel->calculate_gradient_flux(value_m,
                                                            value_p,
                                                            effective_viscosity_m,
@@ -171,15 +169,12 @@ DiffusiveOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator
     scalar effective_viscosity_m = kernel->get_int_face_eddy_viscosity(q);
     scalar effective_viscosity_p = dealii::make_vectorized_array<Number>(0.0);
 
-    //Value flux = Consistency - Penalty
-    scalar value_flux = kernel->calculate_value_flux(normal_gradient_m,
-                                                     normal_gradient_p,
-                                                     value_m,
-                                                     value_p,
-                                                     effective_viscosity_m,
-                                                     effective_viscosity_p);
-    
-    // Gradient flux = -Symmetry Term
+    scalar value_flux    = (kernel->calculate_value_flux_penalty(
+                           value_m, value_p, effective_viscosity_m, effective_viscosity_p) -
+                         kernel->calculate_value_flux_consistency(normal_gradient_m,
+                                                                  normal_gradient_p,
+                                                                  effective_viscosity_m,
+                                                                  effective_viscosity_p));
     scalar gradient_flux = kernel->calculate_gradient_flux(value_m,
                                                            value_p,
                                                            effective_viscosity_m,
@@ -211,21 +206,18 @@ DiffusiveOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator
     scalar effective_viscosity_m = dealii::make_vectorized_array<Number>(0.0);
     scalar effective_viscosity_p = kernel->get_int_face_eddy_viscosity(q);
 
-    //Value flux = Consistency - Penalty
-    scalar value_flux = kernel->calculate_value_flux(normal_gradient_m,
-                                                     normal_gradient_p,
-                                                     value_m,
-                                                     value_p,
-                                                     effective_viscosity_m,
-                                                     effective_viscosity_p);
-
-    // Gradient flux = -Symmetry Term
+    scalar value_flux    = (kernel->calculate_value_flux_penalty(
+                           value_m, value_p, effective_viscosity_m, effective_viscosity_p) -
+                         kernel->calculate_value_flux_consistency(normal_gradient_m,
+                                                                  normal_gradient_p,
+                                                                  effective_viscosity_m,
+                                                                  effective_viscosity_p));
     scalar gradient_flux = kernel->calculate_gradient_flux(value_m,
                                                            value_p,
                                                            effective_viscosity_m,
                                                            effective_viscosity_p);
 
-    integrator_p.submit_normal_derivative(gradient_flux, q); // opposite sign since n⁺ = -n⁻
+    integrator_p.submit_normal_derivative(-gradient_flux, q); // opposite sign since n⁺ = -n⁻
     integrator_p.submit_value(-value_flux, q);
   }
 }
@@ -265,18 +257,22 @@ DiffusiveOperator<dim, Number>::do_boundary_integral(
 
     scalar effective_viscosity_m =
       calculate_interior_value(q, *kernel->integrator_face_eddy_viscosity_m, operator_type);
-    // Eddy viscosity on the exterior side is equal to the interior side
-    scalar effective_viscosity_p = effective_viscosity_m;
+    scalar effective_viscosity_p =
+      calculate_exterior_value(effective_viscosity_m,
+                               q,
+                               *kernel->integrator_face_eddy_viscosity_m,
+                               operator_type,
+                               boundary_type,
+                               boundary_id,
+                               operator_data.bc,
+                               this->time);
 
-    //Value flux = Consistency - Penalty
-    scalar value_flux = kernel->calculate_value_flux(normal_gradient_m,
-                                                     normal_gradient_p,
-                                                     value_m,
-                                                     value_p,
-                                                     effective_viscosity_m,
-                                                     effective_viscosity_p);
-
-    // Gradient flux = -Symmetry Term
+    scalar value_flux    = (kernel->calculate_value_flux_penalty(
+                           value_m, value_p, effective_viscosity_m, effective_viscosity_p) -
+                         kernel->calculate_value_flux_consistency(normal_gradient_m,
+                                                                  normal_gradient_p,
+                                                                  effective_viscosity_m,
+                                                                  effective_viscosity_p));
     scalar gradient_flux = kernel->calculate_gradient_flux(value_m,
                                                            value_p,
                                                            effective_viscosity_m,

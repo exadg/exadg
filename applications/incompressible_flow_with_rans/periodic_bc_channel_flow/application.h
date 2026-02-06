@@ -135,7 +135,7 @@ private:
     this->param.problem_type                = ProblemType::Unsteady;
     this->param.equation_type               = EquationType::NavierStokes;
     this->param.formulation_viscous_term    = FormulationViscousTerm::LaplaceFormulation;
-    this->param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
+    this->param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
     this->param.ale_formulation             = ALE;
     this->param.mesh_movement_type          = MeshMovementType::Function;
     this->param.right_hand_side             = false;
@@ -535,7 +535,7 @@ private:
     // MATHEMATICAL MODEL
     this->param.problem_type                = ProblemType::Unsteady;
     this->param.equation_type               = EquationType::ConvectionDiffusion;
-    this->param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
+    this->param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
     this->param.analytical_velocity_field   = false;
     this->param.right_hand_side             = true;
     this->param.modal_filter                = tke_modal_filter;
@@ -548,7 +548,7 @@ private:
 
     // TEMPORAL DISCRETIZATION
     this->param.temporal_discretization       = TemporalDiscretization::BDF;
-    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
+    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Implicit;
     this->param.adaptive_time_stepping        = adaptive_time_stepping;
     this->param.order_time_integrator         = 2;
     this->param.start_with_low_order          = true;
@@ -756,7 +756,7 @@ private:
 
     // TEMPORAL DISCRETIZATION
     this->param.temporal_discretization       = TemporalDiscretization::BDF;
-    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
+    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Implicit;
     this->param.adaptive_time_stepping        = adaptive_time_stepping;
     this->param.order_time_integrator         = 2;
     this->param.start_with_low_order          = true;

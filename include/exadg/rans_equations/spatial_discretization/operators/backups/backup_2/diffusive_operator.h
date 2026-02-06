@@ -19,16 +19,15 @@
  *  ______________________________________________________________________
  */
 
-#ifndef RANS_EQUATIONS_DIFFUSIVE_OPERATOR
-#define RANS_EQUATIONS_DIFFUSIVE_OPERATOR
+#ifndef CONV_DIFF_DIFFUSIVE_OPERATOR
+#define CONV_DIFF_DIFFUSIVE_OPERATOR
 
-#include <exadg/operators/interior_penalty_parameter.h>
-#include <exadg/operators/operator_base.h>
 #include <exadg/rans_equations/user_interface/boundary_descriptor.h>
 #include <exadg/rans_equations/user_interface/parameters.h>
+#include <exadg/operators/interior_penalty_parameter.h>
+#include <exadg/operators/operator_base.h>
 
 #include <exadg/rans_equations/spatial_discretization/turbulence_model.h>
-#include <exadg/rans_equations/user_interface/viscosity_model_data.h>
 
 namespace ExaDG
 {
@@ -38,17 +37,16 @@ namespace Operators
 {
 struct DiffusiveKernelData
 {
-  DiffusiveKernelData()
-    : IP_factor(1.0),
-      diffusivity(1.0),
-      turbulence_model_enabled(false),
-      scalar_type(ScalarType::Scalar),
-      positivity_preserving_limiter(PositivityPreservingLimiter::Undefined)
+  DiffusiveKernelData() : IP_factor(1.0),
+    diffusivity(1.0),
+    turbulence_model_enabled(false),
+    scalar_type(ScalarType::Scalar),
+    positivity_preserving_limiter(PositivityPreservingLimiter::Undefined)
   {
   }
 
-  double                      IP_factor;
-  double                      diffusivity;
+  double IP_factor;
+  double diffusivity;
   bool                        turbulence_model_enabled;
   ScalarType                  scalar_type;
   TurbulenceModelData         turbulence_model_data;
@@ -175,7 +173,7 @@ public:
   }
 
   void
-  reinit_boundary_face(IntegratorFace &   integrator_m,
+  reinit_boundary_face(IntegratorFace & integrator_m,
                        unsigned int const dof_index,
                        unsigned int const face) const
   {
@@ -198,6 +196,7 @@ public:
                          IntegratorFace &                 integrator_m,
                          IntegratorFace &                 integrator_p,
                          unsigned int const               dof_index,
+                         unsigned int const               cell,
                          unsigned int const               face) const
   {
     if(boundary_id == dealii::numbers::internal_face_boundary_id) // internal face
@@ -221,7 +220,7 @@ public:
     }
     if(data.turbulence_model_enabled)
     {
-      integrator_face_eddy_viscosity_m->reinit(face);
+      integrator_face_eddy_viscosity_m->reinit(cell, face);
       integrator_face_eddy_viscosity_m->gather_evaluate(*eddy_viscosity,
                                                         dealii::EvaluationFlags::values);
 
@@ -242,30 +241,15 @@ public:
     eddy_viscosity->update_ghost_values();
   }
 
-  /**
-   * Volume integral for the diffusive term.
-   * \f[ Volume Integral = \left( \nabla \psi, \nu_{eff} \nabla Q \right)_{\Omega} \f]
-   */
   inline DEAL_II_ALWAYS_INLINE //
-    vector
-    get_volume_flux(IntegratorCell & integrator, unsigned int const q) const
+    scalar
+    calculate_gradient_flux(scalar const & value_m,
+                            scalar const & value_p,
+                            unsigned int const q) const
   {
-    scalar effective_viscosity = get_effective_cell_viscosity(q);
-    return integrator.get_gradient(q) * effective_viscosity;
-  }
-
-  /**
-   * Calculates symmertic term in SIPG
-   * \f[ SymmetricTerm = - \left( {\nabla \psi}, \nu_{eff} \llbracket Q \rrbracket \right)_{\Gamma} \f]
-   */
-  inline DEAL_II_ALWAYS_INLINE scalar
-  calculate_gradient_flux(scalar const & value_m,
-                          scalar const & value_p,
-                          scalar const & effective_viscosity_m,
-                          scalar const & effective_viscosity_p) const
-  {
-    scalar effective_viscosity = 0.5 * (effective_viscosity_m + effective_viscosity_p);
-    return -0.5 * effective_viscosity * (value_m - value_p);
+    scalar effective_viscosity = 0.5 * (get_effective_face_viscosity(integrator_face_eddy_viscosity_m.get(), q) + get_effective_face_viscosity(integrator_face_eddy_viscosity_p.get(), q));
+    scalar symmetry_term = effective_viscosity * (value_m + value_p);
+    return -0.5 * symmetry_term;
   }
 
   /*
@@ -279,101 +263,97 @@ public:
                          scalar const & normal_gradient_p,
                          scalar const & value_m,
                          scalar const & value_p,
-                         scalar const & effective_viscosity_m,
-                         scalar const & effective_viscosity_p) const
+                         unsigned int const q) const
   {
-    scalar consistency_term = calculate_consistency_term(normal_gradient_m,
-                                                        normal_gradient_p,
-                                                        effective_viscosity_m,
-                                                        effective_viscosity_p);
-    scalar penalty_term = calculate_penalty_term(value_m, value_p, effective_viscosity_m, effective_viscosity_p);
+    scalar effective_viscosity = 0.5 * (get_effective_face_viscosity(integrator_face_eddy_viscosity_m.get(), q) + get_effective_face_viscosity(integrator_face_eddy_viscosity_p.get(), q));
+
+    scalar consistency_term = 0.5 * ( normal_gradient_m * get_effective_face_viscosity(integrator_face_eddy_viscosity_m.get(), q) + normal_gradient_p * get_effective_face_viscosity(integrator_face_eddy_viscosity_p.get(), q));
+
+    scalar penalty_term = effective_viscosity * tau * (value_m - value_p);
+
+    return penalty_term - consistency_term;
+  }
+
+  /*
+   * Volume flux, i.e., the term occurring in the volume integral
+   */
+  inline DEAL_II_ALWAYS_INLINE //
+    vector
+    get_volume_flux(IntegratorCell & integrator, unsigned int const q) const
+  {
+    scalar effective_viscosity = get_effective_cell_viscosity(integrator_cell_eddy_viscosity.get(), q);
+    return integrator.get_gradient(q) * effective_viscosity;
+  }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    scalar
+    calculate_boundary_gradient_flux(scalar const & value_m,
+                            scalar const & value_p,
+                            unsigned int const q) const
+  {
+    scalar effective_viscosity = get_effective_face_viscosity(integrator_face_eddy_viscosity_m.get(), q);
+    return -0.5 * effective_viscosity * (value_m - value_p);
+  }
+
+  /*
+   * Calculation of gradient flux. Strictly speaking, this value is not a numerical flux since the
+   * flux is multiplied by the normal vector, i.e., "gradient_flux" = numerical_flux * normal, where
+   * normal denotes the normal vector of element e⁻.
+   */
+  inline DEAL_II_ALWAYS_INLINE //
+    scalar
+    calculate_boundary_value_flux(scalar const & normal_gradient_m,
+                         scalar const & normal_gradient_p,
+                         scalar const & value_m,
+                         scalar const & value_p,
+                         unsigned int const q) const
+  {
+    scalar effective_viscosity = get_effective_face_viscosity(integrator_face_eddy_viscosity_m.get(), q);
+
+    scalar consistency_term = 0.5 * effective_viscosity * (normal_gradient_m + normal_gradient_p);
+
+    scalar penalty_term = effective_viscosity * tau * (value_m - value_p);
+
     return consistency_term - penalty_term;
   }
 
-  /** Penalty term in SIPG
-  * \f[ PenaltyTerm = \left( \llbracket \psi \rrbracket, {\nu_{eff}} \llbracket Q \rrbracket \right)_{\Gamma} \f]
-  */
-  inline DEAL_II_ALWAYS_INLINE
-    scalar
-  calculate_penalty_term(scalar const & value_m,
-                         scalar const & value_p,
-                         scalar const & effective_viscosity_m,
-                         scalar const & effective_viscosity_p) const
-  {
-    scalar effective_viscosity = 0.5 * (effective_viscosity_m + effective_viscosity_p);
-    scalar penalty_term        = effective_viscosity * tau * (value_m - value_p);
-    return penalty_term;
-  }
-
-  /** Consistency term in SIPG
-  * \f[ ConsistencyTerm = \left( \llbracket \psi \rrbracket, {\nu_{eff} \mathbf{n} \nabla Q} \right)_{\Gamma} \f]
-  */
-  inline DEAL_II_ALWAYS_INLINE //
-    scalar
-  calculate_consistency_term(scalar const & normal_gradient_m,
-                             scalar const & normal_gradient_p,
-                             scalar const & effective_viscosity_m,
-                             scalar const & effective_viscosity_p) const
-  {
-    scalar consistency_term =
-      0.5 * (normal_gradient_m * effective_viscosity_m + normal_gradient_p * effective_viscosity_p);
-    return consistency_term;
-  }
-
   scalar
-  get_effective_cell_viscosity(unsigned const int q) const
+  get_effective_cell_viscosity(IntegratorCell *integrator,
+                               unsigned const int q) const
   {
     scalar nu_t = data.diffusivity;
-    if(data.scalar_type == ScalarType::TurbulentKineticEnergy)
-    {
-      nu_t +=
-        integrator_cell_eddy_viscosity->get_value(q) *
-        dealii::make_vectorized_array<Number>(1.0 / turbulence_model_ptr->model_coefficients[0]);
-    }
-    else if(data.scalar_type == ScalarType::TKEDissipationRate)
-    {
-      nu_t +=
-        integrator_cell_eddy_viscosity->get_value(q) *
-        dealii::make_vectorized_array<Number>(1.0 / turbulence_model_ptr->model_coefficients[4]);
-    }
+    /*if(data.scalar_type == ScalarType::TurbulentKineticEnergy)*/
+    /*{*/
+    /*  nu_t +=*/
+    /*    integrator->get_value(q) **/
+    /*    dealii::make_vectorized_array<Number>(1.0 / turbulence_model_ptr->model_coefficients[0]);*/
+    /*}*/
+    /*else if(data.scalar_type == ScalarType::TKEDissipationRate)*/
+    /*{*/
+    /*  nu_t +=*/
+    /*    integrator->get_value(q) **/
+    /*    dealii::make_vectorized_array<Number>(1.0 / turbulence_model_ptr->model_coefficients[4]);*/
+    /*}*/
     return nu_t;
   }
 
   scalar
-  get_int_face_eddy_viscosity(unsigned const int q) const
+  get_effective_face_viscosity(IntegratorFace *integrator_face,
+                               unsigned const int q) const
   {
     scalar nu = data.diffusivity;
-    if(data.scalar_type == ScalarType::TurbulentKineticEnergy)
-    {
-      scalar inverse_sigma =
-        dealii::make_vectorized_array<Number>(1.0 / turbulence_model_ptr->model_coefficients[0]);
-      nu += integrator_face_eddy_viscosity_m->get_value(q) * inverse_sigma;
-    }
-    else if(data.scalar_type == ScalarType::TKEDissipationRate)
-    {
-      scalar inverse_sigma =
-        dealii::make_vectorized_array<Number>(1.0 / turbulence_model_ptr->model_coefficients[4]);
-      nu += integrator_face_eddy_viscosity_m->get_value(q) * inverse_sigma;
-    }
-    return nu;
-  }
-
-  scalar
-  get_ext_face_eddy_viscosity(unsigned const int q) const
-  {
-    scalar nu = data.diffusivity;
-    if(data.scalar_type == ScalarType::TurbulentKineticEnergy)
-    {
-      scalar inverse_sigma =
-        dealii::make_vectorized_array<Number>(1.0 / turbulence_model_ptr->model_coefficients[0]);
-      nu += integrator_face_eddy_viscosity_p->get_value(q) * inverse_sigma;
-    }
-    else if(data.scalar_type == ScalarType::TKEDissipationRate)
-    {
-      scalar inverse_sigma =
-        dealii::make_vectorized_array<Number>(1.0 / turbulence_model_ptr->model_coefficients[4]);
-      nu += integrator_face_eddy_viscosity_p->get_value(q) * inverse_sigma;
-    }
+    /*if(data.scalar_type == ScalarType::TurbulentKineticEnergy)*/
+    /*{*/
+    /*  scalar inverse_sigma =*/
+    /*    dealii::make_vectorized_array<Number>(1.0 / turbulence_model_ptr->model_coefficients[0]);*/
+    /*  nu += integrator_face->get_value(q) * inverse_sigma;*/
+    /*}*/
+    /*else if(data.scalar_type == ScalarType::TKEDissipationRate)*/
+    /*{*/
+    /*  scalar inverse_sigma =*/
+    /*    dealii::make_vectorized_array<Number>(1.0 / turbulence_model_ptr->model_coefficients[4]);*/
+    /*  nu += integrator_face->get_value(q) * inverse_sigma;*/
+    /*}*/
     return nu;
   }
 
@@ -419,8 +399,6 @@ class DiffusiveOperator : public OperatorBase<dim, Number, 1>
 private:
   typedef OperatorBase<dim, Number, 1> Base;
 
-  typedef DiffusiveOperator<dim, Number> This;
-
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
 
@@ -429,7 +407,6 @@ private:
 
   typedef typename Base::VectorType VectorType;
   typedef typename Base::Range      Range;
-
 public:
   void
   initialize(dealii::MatrixFree<dim, Number> const &                  matrix_free,
@@ -442,7 +419,6 @@ public:
 
   void
   set_eddy_viscosity_ptr(VectorType const & eddy_viscosity_in) const;
-
 private:
   void
   reinit_cell_derived(IntegratorCell & integrator, unsigned int const cell) const final;
@@ -482,8 +458,6 @@ private:
   DiffusiveOperatorData<dim> operator_data;
 
   std::shared_ptr<Operators::DiffusiveKernel<dim, Number>> kernel;
-
-  mutable unsigned int current_face_index;
 };
 } // namespace RANS
 } // namespace ExaDG

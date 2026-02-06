@@ -1470,6 +1470,9 @@ SpatialOperatorBase<dim, Number>::evaluate_velocity_divergence_term(VectorType &
   divergence_operator.evaluate(dst, src, time);
 }
 
+/**
+* Update the viscosity field based on the current RANS scalar fields.
+*/
 template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::update_viscosity(VectorType const & velocity) const

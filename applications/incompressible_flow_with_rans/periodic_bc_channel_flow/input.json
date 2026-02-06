@@ -6,14 +6,14 @@
     },
     "Application": {
         "UBulk": "1.0",
-        "KinematicViscosity": "1.e-4",
+        "KinematicViscosity": "3.e-4",
         "TimeSampleCount": "50",
         "EndTime": "10.0",
-        "CFL": "0.1"
+        "CFL": "0.3"
     },
     "Geometry": {
-        "ChannelHeight": "1.0",
-        "ChannelLength": "4.0",
+        "ChannelHeight": "2.0",
+        "ChannelLength": "12.0",
         "TurbulentIntensity": "0.05",
         "RefinementCycle": "5"
     },
@@ -54,7 +54,7 @@
         },
         "Boundary": {
             "TKEWall": "1e-6",
-            "TKEInit": "1.958e-3"
+            "TKEInit": "1.788"
         }
     },
     "Scalar1": {
@@ -71,7 +71,7 @@
         },
         "Boundary": {
             "EpsilonWall": "1e-6",
-            "EpsilonInit": "2.5e-3"
+            "EpsilonInit": "5.93e-2"
         }
     }
 }

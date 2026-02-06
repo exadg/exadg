@@ -28,6 +28,13 @@ namespace ExaDG
 {
 namespace RANS
 {
+/**
+ * This class implements a modal filtering strategy to suppress 
+ * high-frequency oscillations. The process involves:
+ * 1. Identifying "critical" cells where gradient magnitudes exceed a global threshold.
+ * 2. Transforming nodal values to modal space via a Vandermonde matrix.
+ * 3. Applying a relaxation weight to high-order modes.
+ */
 template<int dim, typename Number>
 class ModalFilterOperator
 {

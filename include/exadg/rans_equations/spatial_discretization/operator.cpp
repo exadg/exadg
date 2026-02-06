@@ -1160,6 +1160,9 @@ Operator<dim, Number>::get_eddy_viscosity(VectorType & dst) const
   turbulence_model_ptr->get_eddy_viscosity(dst);
 }
 
+/*
+* Updates the effective viscosity field by adding the turbulent contribution from the RANS scalars to the base laminar diffusivity.
+*/
 template<int dim, typename Number>
 void
 Operator<dim, Number>::update_viscosity(VectorType const & sol) const

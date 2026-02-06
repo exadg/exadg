@@ -23,7 +23,7 @@
 #define INCLUDE_EXADG_INCOMPRESSIBLE_FLOW_WITH_RANS_DRIVER_H_
 
 // application
-#include <exadg/incompressible_flow_with_rans/calculator/operator.h>
+#include <exadg/incompressible_flow_with_rans/spatial_discretization/operator.h>
 #include <exadg/incompressible_flow_with_rans/user_interface/application_base.h>
 
 // utilities
@@ -76,15 +76,24 @@ private:
   void
   ale_update() const;
 
+  /*
+   * Extract turbulence(RANS) scalar values from the time integrator for eddy viscosity calculation.
+   */
   void
   get_rans_scalars() const;
 
+  /*
+   * Update turbulence(RANS) scalar fields in the viscosity operator.
+   */
   void
   update_scalars() const;
 
   void
   communicate_scalar_to_fluid() const;
 
+  /*
+   * Communicate the updated eddy viscosity to fluid and all relevant scalar transport operators.
+   */
   void
   communicate_eddy_viscosity_to_all() const;
 

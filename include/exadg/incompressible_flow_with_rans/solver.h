@@ -16,7 +16,12 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
  *  ______________________________________________________________________
+ */
+
+/*
+ *  @brief Solver for coupling incompressible_navier_stokes_for_rans with rans_equations
  */
 
 #ifndef INCLUDE_EXADG_INCOMPRESSIBLE_FLOW_WITH_RANS_SOLVER_H_

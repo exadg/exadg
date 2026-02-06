@@ -175,6 +175,8 @@ Driver<dim, Number>::setup()
 
   if(application->fluid->get_parameters().turbulence_model_data.rans_model)
   {
+    // Temperature is always index 0 if present; 
+    // eddy_viscosity_index points to the first turbulence scalar.
     if(application->fluid->get_parameters().boussinesq_term)
     {
       eddy_viscosity_index = 1;
@@ -250,11 +252,6 @@ Driver<dim, Number>::setup()
     // now the second scalar quantity with index 1 can be assumed to turbulent kinetic energy that
     // is coupled to the incompressible Navier-Stokes equations via eddy viscosity
     if(application->fluid->get_parameters().turbulence_model_data.turbulence_model ==
-       IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength)
-    {
-      scalar_operator[1]->initialize_dof_vector(turbulent_kinetic_energy);
-    }
-    else if(application->fluid->get_parameters().turbulence_model_data.turbulence_model ==
             IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon)
     {
       scalar_operator[1]->initialize_dof_vector(turbulent_kinetic_energy);
@@ -269,11 +266,6 @@ Driver<dim, Number>::setup()
   else if(application->fluid->get_parameters().turbulence_model_data.rans_model)
   {
     if(application->fluid->get_parameters().turbulence_model_data.turbulence_model ==
-       IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength)
-    {
-      scalar_operator[0]->initialize_dof_vector(turbulent_kinetic_energy);
-    }
-    else if(application->fluid->get_parameters().turbulence_model_data.turbulence_model ==
             IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon)
     {
       scalar_operator[0]->initialize_dof_vector(turbulent_kinetic_energy);
@@ -541,14 +533,6 @@ Driver<dim, Number>::communicate_eddy_viscosity_to_all() const
         scalar_operator[1]->update_eddy_viscosity(scalar_1_eddy_viscosity);
         scalar_operator[2]->update_eddy_viscosity(scalar_2_eddy_viscosity);
       }
-      else if(application->fluid->get_parameters().turbulence_model_data.turbulence_model ==
-              IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength)
-      {
-        VectorType scalar_eddy_viscosity;
-        viscosity_operator->extrapolate_eddy_viscosity_to_dof(scalar_eddy_viscosity,
-                                                              viscosity_operator->get_dof_index());
-        scalar_operator[1]->update_eddy_viscosity(scalar_eddy_viscosity);
-      }
     }
     else if(application->fluid->get_parameters().turbulence_model_data.rans_model)
     {
@@ -563,14 +547,6 @@ Driver<dim, Number>::communicate_eddy_viscosity_to_all() const
                                                               viscosity_operator->get_dof_index());
         scalar_operator[0]->update_eddy_viscosity(scalar_0_eddy_viscosity);
         scalar_operator[1]->update_eddy_viscosity(scalar_1_eddy_viscosity);
-      }
-      else if(application->fluid->get_parameters().turbulence_model_data.turbulence_model ==
-              IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength)
-      {
-        VectorType scalar_eddy_viscosity;
-        viscosity_operator->extrapolate_eddy_viscosity_to_dof(scalar_eddy_viscosity,
-                                                              viscosity_operator->get_dof_index());
-        scalar_operator[0]->update_eddy_viscosity(scalar_eddy_viscosity);
       }
     }
     fluid_operator->set_eddy_viscosity(fluid_eddy_viscosity);
@@ -611,13 +587,6 @@ Driver<dim, Number>::get_rans_scalars() const
 
         // set these values for viscosity_calculator
       }
-      else if(application->fluid->get_parameters().turbulence_model_data.turbulence_model ==
-              IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength)
-      {
-        std::shared_ptr<RANS::TimeIntExplRK<Number>> time_int_scalar_tke =
-          std::dynamic_pointer_cast<RANS::TimeIntExplRK<Number>>(scalar_time_integrator[1]);
-        time_int_scalar_tke->extrapolate_solution(turbulent_kinetic_energy);
-      }
     }
     else if(application->scalars[0]->get_parameters().temporal_discretization ==
             RANS::TemporalDiscretization::BDF)
@@ -643,13 +612,6 @@ Driver<dim, Number>::get_rans_scalars() const
         std::shared_ptr<RANS::TimeIntBDF<dim, Number>> time_int_scalar_epsilon =
           std::dynamic_pointer_cast<RANS::TimeIntBDF<dim, Number>>(scalar_time_integrator[2]);
         time_int_scalar_epsilon->extrapolate_solution(turbulent_dissipation_rate);
-      }
-      else if(application->fluid->get_parameters().turbulence_model_data.turbulence_model ==
-              IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength)
-      {
-        std::shared_ptr<RANS::TimeIntExplRK<Number>> time_int_scalar_tke =
-          std::dynamic_pointer_cast<RANS::TimeIntExplRK<Number>>(scalar_time_integrator[1]);
-        time_int_scalar_tke->extrapolate_solution(turbulent_kinetic_energy);
       }
     }
     else
@@ -678,13 +640,6 @@ Driver<dim, Number>::get_rans_scalars() const
           std::dynamic_pointer_cast<RANS::TimeIntExplRK<Number>>(scalar_time_integrator[1]);
         time_int_scalar_epsilon->extrapolate_solution(turbulent_dissipation_rate);
       }
-      else if(application->fluid->get_parameters().turbulence_model_data.turbulence_model ==
-              IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength)
-      {
-        std::shared_ptr<RANS::TimeIntExplRK<Number>> time_int_scalar_tke =
-          std::dynamic_pointer_cast<RANS::TimeIntExplRK<Number>>(scalar_time_integrator[0]);
-        time_int_scalar_tke->extrapolate_solution(turbulent_kinetic_energy);
-      }
     }
     else if(application->scalars[0]->get_parameters().temporal_discretization ==
             RANS::TemporalDiscretization::BDF)
@@ -705,13 +660,6 @@ Driver<dim, Number>::get_rans_scalars() const
           std::dynamic_pointer_cast<RANS::TimeIntBDF<dim, Number>>(scalar_time_integrator[1]);
         time_int_scalar_epsilon->extrapolate_solution(turbulent_dissipation_rate);
       }
-      else if(application->fluid->get_parameters().turbulence_model_data.turbulence_model ==
-              IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength)
-      {
-        std::shared_ptr<RANS::TimeIntExplRK<Number>> time_int_scalar_tke =
-          std::dynamic_pointer_cast<RANS::TimeIntExplRK<Number>>(scalar_time_integrator[0]);
-        time_int_scalar_tke->extrapolate_solution(turbulent_kinetic_energy);
-      }
     }
     else
     {
@@ -729,11 +677,6 @@ Driver<dim, Number>::update_scalars() const
   {
     viscosity_operator->set_turbulent_kinetic_energy(turbulent_kinetic_energy);
     viscosity_operator->set_tke_dissipation_rate(turbulent_dissipation_rate);
-  }
-  else if(application->fluid->get_parameters().turbulence_model_data.turbulence_model ==
-          IncRANS::TurbulenceEddyViscosityModel::PrandtlMixingLength)
-  {
-    viscosity_operator->set_turbulent_kinetic_energy(turbulent_kinetic_energy);
   }
 }
 
