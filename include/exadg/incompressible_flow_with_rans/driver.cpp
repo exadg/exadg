@@ -149,7 +149,7 @@ Driver<dim, Number>::setup()
   scalar_postprocessor.resize(n_scalars);
   scalar_time_integrator.resize(n_scalars);
 
-  // initialize convection-diffusion operator
+  // initialize rans scalar operator
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     scalar_operator[i] = std::make_shared<RANS::Operator<dim, Number>>(
@@ -176,7 +176,7 @@ Driver<dim, Number>::setup()
   if(application->fluid->get_parameters().turbulence_model_data.rans_model)
   {
     // Temperature is always index 0 if present; 
-    // eddy_viscosity_index points to the first turbulence scalar.
+    // eddy_viscosity_index points to the first turbulence scalar(tke).
     if(application->fluid->get_parameters().boussinesq_term)
     {
       eddy_viscosity_index = 1;
@@ -227,7 +227,7 @@ Driver<dim, Number>::setup()
     fluid_operator->setup(matrix_free, matrix_free_data);
   }
 
-  // setup convection-diffusion operator
+  // setup rans scalar operator
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     scalar_operator[i]->setup(matrix_free,
@@ -518,8 +518,7 @@ Driver<dim, Number>::communicate_eddy_viscosity_to_all() const
     VectorType fluid_eddy_viscosity;
     viscosity_operator->extrapolate_eddy_viscosity_to_dof(fluid_eddy_viscosity,
                                                           viscosity_operator->get_dof_index());
-    if(application->fluid->get_parameters().boussinesq_term &&
-       application->fluid->get_parameters().turbulence_model_data.rans_model)
+    if(application->fluid->get_parameters().boussinesq_term)
     {
       if(application->fluid->get_parameters().turbulence_model_data.turbulence_model ==
          IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon)
@@ -534,7 +533,7 @@ Driver<dim, Number>::communicate_eddy_viscosity_to_all() const
         scalar_operator[2]->update_eddy_viscosity(scalar_2_eddy_viscosity);
       }
     }
-    else if(application->fluid->get_parameters().turbulence_model_data.rans_model)
+    else
     {
       if(application->fluid->get_parameters().turbulence_model_data.turbulence_model ==
          IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon)
@@ -557,6 +556,7 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::get_rans_scalars() const
 {
+  // Extrapolated the values of rans solution scalars into scalar variables in driver class
   if(application->fluid->get_parameters().boussinesq_term &&
      application->fluid->get_parameters().turbulence_model_data.rans_model)
   {
@@ -584,8 +584,6 @@ Driver<dim, Number>::get_rans_scalars() const
         std::shared_ptr<RANS::TimeIntExplRK<Number>> time_int_scalar_epsilon =
           std::dynamic_pointer_cast<RANS::TimeIntExplRK<Number>>(scalar_time_integrator[2]);
         time_int_scalar_epsilon->extrapolate_solution(turbulent_dissipation_rate);
-
-        // set these values for viscosity_calculator
       }
     }
     else if(application->scalars[0]->get_parameters().temporal_discretization ==
@@ -796,9 +794,13 @@ Driver<dim, Number>::solve() const
     // Communicate scalar -> fluid
     if(application->fluid->get_parameters().turbulence_model_data.rans_model)
     {
+      // extrapolates the rans scalars values to scalar variables in driver class
       get_rans_scalars();
+      // communicates the scalar variables to viscosity operator class
       update_scalars();
+      // compute the values of eddy viscosity and store it in ViscosityOperator class
       viscosity_operator->calculate_eddy_viscosity();
+      // Communicate the value of eddy viscosity to all rans scalar and fluid operators
       communicate_eddy_viscosity_to_all();
     }
     communicate_scalar_to_fluid();

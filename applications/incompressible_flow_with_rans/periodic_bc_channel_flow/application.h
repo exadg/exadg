@@ -135,7 +135,7 @@ private:
     this->param.problem_type                = ProblemType::Unsteady;
     this->param.equation_type               = EquationType::NavierStokes;
     this->param.formulation_viscous_term    = FormulationViscousTerm::LaplaceFormulation;
-    this->param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
+    this->param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
     this->param.ale_formulation             = ALE;
     this->param.mesh_movement_type          = MeshMovementType::Function;
     this->param.right_hand_side             = false;
@@ -547,8 +547,9 @@ private:
     this->param.diffusivity = kinematic_viscosity;
 
     // TEMPORAL DISCRETIZATION
-    this->param.temporal_discretization       = TemporalDiscretization::BDF;
-    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Implicit;
+    this->param.temporal_discretization       = TemporalDiscretization::ExplRK;
+    this->param.time_integrator_rk            = TimeIntegratorRK::ExplRK4Stage4;
+    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
     this->param.adaptive_time_stepping        = adaptive_time_stepping;
     this->param.order_time_integrator         = 2;
     this->param.start_with_low_order          = true;
@@ -743,7 +744,7 @@ private:
     // MATHEMATICAL MODEL
     this->param.problem_type                = ProblemType::Unsteady;
     this->param.equation_type               = EquationType::ConvectionDiffusion;
-    this->param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
+    this->param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
     this->param.analytical_velocity_field   = false;
     this->param.right_hand_side             = true;
     this->param.modal_filter                = tke_modal_filter;
@@ -755,8 +756,9 @@ private:
     this->param.diffusivity = kinematic_viscosity;
 
     // TEMPORAL DISCRETIZATION
-    this->param.temporal_discretization       = TemporalDiscretization::BDF;
-    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Implicit;
+    this->param.temporal_discretization       = TemporalDiscretization::ExplRK;
+    this->param.time_integrator_rk            = TimeIntegratorRK::ExplRK4Stage4;
+    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
     this->param.adaptive_time_stepping        = adaptive_time_stepping;
     this->param.order_time_integrator         = 2;
     this->param.start_with_low_order          = true;

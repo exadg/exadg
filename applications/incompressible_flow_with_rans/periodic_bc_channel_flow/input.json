@@ -31,7 +31,7 @@
     },
     "Fluid": {
         "SpatialResolution": {
-            "Degree": "3",
+            "Degree": "2",
             "RefineSpace": "5"
         },
         "Output": {
