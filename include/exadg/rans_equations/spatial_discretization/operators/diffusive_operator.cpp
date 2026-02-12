@@ -110,6 +110,10 @@ DiffusiveOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) co
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
     integrator.submit_gradient(kernel->get_volume_flux(integrator, q), q);
+    if(kernel->data.positivity_preserving_limiter == PositivityPreservingLimiter::LogarithmicTransportVariable)
+    {
+      integrator.submit_value(kernel->get_value_volume_flux(integrator, q), q);
+    }
   }
 }
 

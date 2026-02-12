@@ -197,36 +197,11 @@ public:
       }
       if(data.production_term)
       {
-        AssertThrow(data.dissipation_term,
-                    dealii::ExcMessage("Production term only works with dissipation term"));
-        production =  std::min(get_production_scalar(viscosity, q), dealii::make_vectorized_array<Number>(10.0) * dissipation);
-        f += production;
+        // AssertThrow(data.dissipation_term,
+        //             dealii::ExcMessage("Production term only works with dissipation term"));
+        // production =  std::min(get_production_scalar(viscosity, q), dealii::make_vectorized_array<Number>(10.0) * dissipation);
+        f += get_production_scalar(viscosity, q);
       }
-      scalar filter_term = dealii::make_vectorized_array<Number>(0.0);
-      if(data.positivity_preserving_limiter ==
-         PositivityPreservingLimiter::LogarithmicTransportVariable)
-      {
-        scalar sigma;
-        if(data.scalar_type == ScalarType::TurbulentKineticEnergy)
-        {
-          sigma =
-            dealii::make_vectorized_array<Number>(turbulence_model_ptr->model_coefficients[0]);
-        }
-        else if(data.scalar_type == ScalarType::TKEDissipationRate)
-        {
-          sigma =
-            dealii::make_vectorized_array<Number>(turbulence_model_ptr->model_coefficients[4]);
-        }
-        else
-        {
-          AssertThrow(
-            false,
-            dealii::ExcMessage(
-              "Production term is only implemented for ScalarType::TurbulentKineticEnergy and ScalarType::TKEDissipationRate"));
-        }
-        filter_term = get_filter_sum(viscosity, sigma, q);
-      }
-      f += filter_term;
     }
     return f;
   }
@@ -276,18 +251,6 @@ public:
     return dissipation;
   }
 
-  /*
-   * \f[ FilterTerm = \left( \nu + \frac{\nu_{T}}{\sigma} \right) \nabla \phi \cdot \nabla \phi \f]
-   */
-  scalar
-  get_filter_sum(scalar const & viscosity, scalar const & sigma, unsigned int const q) const
-  {
-    vector grad_k        = integrator_solution->get_gradient(q);
-    scalar grad_square   = grad_k.norm_square();
-    scalar eff_viscosity = data.diffusivity + (viscosity / sigma);
-    return (eff_viscosity)*grad_square;
-  }
-
   /**
    * 
    * \f[ Production = 2 \nu_{T} S_{ij} S_{ij} \f]
@@ -301,22 +264,20 @@ public:
 
     tensor velocity_gradient = integrator_velocity->get_gradient(q);
 
-    tensor velocity_gradient_tensor = 0.5 * (velocity_gradient + transpose(velocity_gradient));
+    tensor symmetric_velocity_gradient = (velocity_gradient + transpose(velocity_gradient));
 
-    scalar forb_norm_sqr = velocity_gradient_tensor.norm_square();
+    scalar gradient_product = scalar_product(symmetric_velocity_gradient, velocity_gradient);
     scalar sol           = integrator_solution->get_value(q);
 
     if(data.positivity_preserving_limiter ==
        PositivityPreservingLimiter::LogarithmicTransportVariable)
     {
-      scalar physical_tke = std::exp(sol);
-      scalar safe_tke = std::max(physical_tke, dealii::make_vectorized_array<Number>(1e-12));
-      result =
-        dealii::make_vectorized_array<Number>(2.0) * viscosity * forb_norm_sqr / safe_tke;
+      scalar tke = std::exp(sol);
+      result = dealii::make_vectorized_array<Number>(2.0) * viscosity * gradient_product / tke;
     }
     else if(data.positivity_preserving_limiter == PositivityPreservingLimiter::Clipper)
     {
-      result = dealii::make_vectorized_array<Number>(2.0) * viscosity * forb_norm_sqr;
+      result = dealii::make_vectorized_array<Number>(2.0) * viscosity * gradient_product;
     }
     else
     {
@@ -339,16 +300,14 @@ public:
     scalar result;
 
     tensor velocity_gradient = integrator_velocity->get_gradient(q);
+    tensor symmetric_velocity_gradient = (velocity_gradient + transpose(velocity_gradient));
 
-    tensor velocity_gradient_tensor = 0.5 * (velocity_gradient + transpose(velocity_gradient));
+    scalar gradient_product = scalar_product(symmetric_velocity_gradient, velocity_gradient);
 
-    scalar forb_norm_sqr = velocity_gradient_tensor.norm_square();
     scalar sol           = integrator_solution->get_value(q);
 
-    scalar C_mu =
-      dealii::make_vectorized_array<Number>(turbulence_model_ptr->model_coefficients[3]);
-    scalar C_e1 =
-      dealii::make_vectorized_array<Number>(turbulence_model_ptr->model_coefficients[1]);
+    scalar C_mu = dealii::make_vectorized_array<Number>(turbulence_model_ptr->model_coefficients[3]);
+    scalar C_e1 = dealii::make_vectorized_array<Number>(turbulence_model_ptr->model_coefficients[1]);
 
     if(data.positivity_preserving_limiter ==
        PositivityPreservingLimiter::LogarithmicTransportVariable)
@@ -356,7 +315,7 @@ public:
       scalar physical_sqrt_epsilon = std::exp(sol / dealii::make_vectorized_array<Number>(2.0));
       scalar safe_sqrt_epsilon = std::max(physical_sqrt_epsilon, dealii::make_vectorized_array<Number>(1e-12));
       result = dealii::make_vectorized_array<Number>(2.0) * C_e1 * std::sqrt(C_mu * viscosity) *
-               forb_norm_sqr / safe_sqrt_epsilon;
+               gradient_product / safe_sqrt_epsilon;
     }
     else if(data.positivity_preserving_limiter == PositivityPreservingLimiter::Clipper)
     {

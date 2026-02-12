@@ -32,7 +32,7 @@
     "Fluid": {
         "SpatialResolution": {
             "Degree": "2",
-            "RefineSpace": "5"
+            "RefineSpace": "4"
         },
         "Output": {
             "OutputDirectory": "output/fluid/",
@@ -45,15 +45,15 @@
             "Degree": "2"
         },
         "ModalFilter": "false",
-        "ProductionTerm": "true",
-        "DissipationTerm": "true",
+        "ProductionTerm": "false",
+        "DissipationTerm": "false",
         "Output": {
             "OutputDirectory": "output/tke/",
             "OutputName": "tke",
             "WriteOutput": "true"
         },
         "Boundary": {
-            "TKEWall": "1e-6",
+            "TKEWall": "1e-0",
             "TKEInit": "1.788"
         }
     },
@@ -62,15 +62,15 @@
             "Degree": "2"
         },
         "ModalFilter": "false",
-        "ProductionTerm": "true",
-        "DissipationTerm": "true",
+        "ProductionTerm": "false",
+        "DissipationTerm": "false",
         "Output": {
             "OutputDirectory": "output/epsilon/",
             "OutputName": "epsilon",
             "WriteOutput": "true"
         },
         "Boundary": {
-            "EpsilonWall": "1e-6",
+            "EpsilonWall": "5.93e-3",
             "EpsilonInit": "5.93e-2"
         }
     }

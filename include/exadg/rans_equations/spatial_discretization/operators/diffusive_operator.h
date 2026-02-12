@@ -254,6 +254,37 @@ public:
     return integrator.get_gradient(q) * effective_viscosity;
   }
 
+  /*
+   * \f[ FilterTerm = \left( \nu + \frac{\nu_{T}}{\sigma} \right) \nabla \phi \cdot \nabla \phi \f]
+   */
+  inline DEAL_II_ALWAYS_INLINE
+  scalar
+  get_value_volume_flux(IntegratorCell & integrator, unsigned int const q) const
+  {
+    scalar sigma;
+    if(data.scalar_type == ScalarType::TurbulentKineticEnergy)
+    {
+      sigma =
+        dealii::make_vectorized_array<Number>(turbulence_model_ptr->model_coefficients[0]);
+    }
+    else if(data.scalar_type == ScalarType::TKEDissipationRate)
+    {
+      sigma =
+        dealii::make_vectorized_array<Number>(turbulence_model_ptr->model_coefficients[4]);
+    }
+    else
+  {
+      AssertThrow(
+        false,
+        dealii::ExcMessage(
+          "Production term is only implemented for ScalarType::TurbulentKineticEnergy and ScalarType::TKEDissipationRate"));
+    }
+    scalar effective_viscosity = get_effective_cell_viscosity(q);
+    vector grad_solution       = integrator.get_gradient(q);
+    scalar grad_square   = grad_solution.norm_square();
+    return (effective_viscosity) * grad_square;
+  }
+
   /**
    * Calculates symmertic term in SIPG
    * \f[ SymmetricTerm = - \left( {\nabla \psi}, \nu_{eff} \llbracket Q \rrbracket \right)_{\Gamma} \f]

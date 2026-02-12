@@ -169,7 +169,7 @@ ViscosityCalculator<dim, Number>::standard_k_epsilon_model(scalar const & tke,
      RANS::PositivityPreservingLimiter::LogarithmicTransportVariable)
   {
     scalar log_terms = (dealii::make_vectorized_array<Number>(2.0) * tke) - epsilon;
-    scalar viscosity = C_mu * std::exp(log_terms);
+    viscosity = C_mu * std::exp(log_terms);
   }
   else if(turbulence_model_data.positivity_preserving_limiter ==
           RANS::PositivityPreservingLimiter::Clipper)
@@ -185,7 +185,10 @@ ViscosityCalculator<dim, Number>::standard_k_epsilon_model(scalar const & tke,
   for (unsigned int v = 0; v < dealii::VectorizedArray<Number>::size(); ++v)
   {
     AssertThrow(viscosity[v] >= 0.0,
-                dealii::ExcMessage("Unphysical negative eddy viscosity detected in RANS model."));
+                dealii::ExcMessage("Unphysical negative eddy viscosity detected in RANS model."
+                                   "Value : " + std::to_string(viscosity[v]) +
+                                   ", TKE : " + std::to_string(tke[v]) +
+                                   ", Epsilon : " + std::to_string(epsilon[v])));
   }
 }
 

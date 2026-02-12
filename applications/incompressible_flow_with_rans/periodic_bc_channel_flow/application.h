@@ -44,14 +44,14 @@ double              C_epsilon_2             = 1.92;
 double              C_mu                    = 0.09;
 double              sigma_epsilon           = 1.3;
 double              turbulent_intensity     = 0.05;
-double              tke              = 1.5 * std::pow(bulk_velocity * turbulent_intensity, 2);
+double              tke              = -6;
 bool                tke_production_term  = false;
 bool                tke_dissipation_term = false;
 bool                epsilon_production_term  = false;
 bool                epsilon_dissipation_term = false;
 double              tke_wall         = -6;
 std::vector<double> turbulence_model_coefficients = {sigma_k, C_D, turbulence_length_scale};
-double              tke_dissipation = 0.09 * std::pow(tke, 1.5) / (0.05 * channel_height);
+double              tke_dissipation = -6;
 double              tke_diss_wall   = -6;
 
 bool tke_modal_filter = false;
@@ -178,7 +178,7 @@ private:
     this->param.quad_rule_linearization     = QuadratureRuleLinearization::Standard;
 
     // TURBULENCE
-    this->param.turbulence_model_data.is_active = false;
+    this->param.turbulence_model_data.is_active = true;
     this->param.turbulence_model_data.turbulence_model =
       IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon;
     this->param.treatment_of_variable_viscosity  = TreatmentOfVariableViscosity::Explicit;
@@ -547,8 +547,9 @@ private:
     this->param.diffusivity = kinematic_viscosity;
 
     // TEMPORAL DISCRETIZATION
-    this->param.temporal_discretization       = TemporalDiscretization::ExplRK;
-    this->param.time_integrator_rk            = TimeIntegratorRK::ExplRK4Stage4;
+    this->param.temporal_discretization       = TemporalDiscretization::BDF;
+    // this->param.temporal_discretization       = TemporalDiscretization::ExplRK;
+    // this->param.time_integrator_rk            = TimeIntegratorRK::ExplRK4Stage4;
     this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
     this->param.adaptive_time_stepping        = adaptive_time_stepping;
     this->param.order_time_integrator         = 2;
@@ -756,8 +757,9 @@ private:
     this->param.diffusivity = kinematic_viscosity;
 
     // TEMPORAL DISCRETIZATION
-    this->param.temporal_discretization       = TemporalDiscretization::ExplRK;
-    this->param.time_integrator_rk            = TimeIntegratorRK::ExplRK4Stage4;
+    this->param.temporal_discretization       = TemporalDiscretization::BDF;
+    // this->param.temporal_discretization       = TemporalDiscretization::ExplRK;
+    // this->param.time_integrator_rk            = TimeIntegratorRK::ExplRK4Stage4;
     this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
     this->param.adaptive_time_stepping        = adaptive_time_stepping;
     this->param.order_time_integrator         = 2;
