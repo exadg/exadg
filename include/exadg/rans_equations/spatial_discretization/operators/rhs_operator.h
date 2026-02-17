@@ -273,7 +273,7 @@ public:
        PositivityPreservingLimiter::LogarithmicTransportVariable)
     {
       scalar tke = std::exp(sol);
-      result = dealii::make_vectorized_array<Number>(2.0) * viscosity * gradient_product / tke;
+      result = viscosity * gradient_product / tke;
     }
     else if(data.positivity_preserving_limiter == PositivityPreservingLimiter::Clipper)
     {
@@ -312,10 +312,9 @@ public:
     if(data.positivity_preserving_limiter ==
        PositivityPreservingLimiter::LogarithmicTransportVariable)
     {
-      scalar physical_sqrt_epsilon = std::exp(sol / dealii::make_vectorized_array<Number>(2.0));
-      scalar safe_sqrt_epsilon = std::max(physical_sqrt_epsilon, dealii::make_vectorized_array<Number>(1e-12));
-      result = dealii::make_vectorized_array<Number>(2.0) * C_e1 * std::sqrt(C_mu * viscosity) *
-               gradient_product / safe_sqrt_epsilon;
+      scalar epsilon = std::exp(sol);
+      scalar tke = std::sqrt(viscosity * epsilon / C_mu);
+      result = C_e1 * viscosity * gradient_product / tke;
     }
     else if(data.positivity_preserving_limiter == PositivityPreservingLimiter::Clipper)
     {
@@ -398,9 +397,9 @@ public:
       if(data.positivity_preserving_limiter ==
          PositivityPreservingLimiter::LogarithmicTransportVariable)
       {
-        scalar viscosity_limit = std::max(viscosity, dealii::make_vectorized_array<Number>(1e-12));
-        result = C_e2 * std::sqrt(C_mu / viscosity_limit) *
-                 std::exp(sol / dealii::make_vectorized_array<Number>(2.0));
+        scalar epsilon = std::exp(sol);
+        scalar tke = std::sqrt(viscosity * epsilon / C_mu);
+        result = C_e2 * std::exp(sol) / tke;
       }
       else if(data.positivity_preserving_limiter == PositivityPreservingLimiter::Clipper)
       {

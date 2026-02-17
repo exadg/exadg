@@ -5,8 +5,8 @@
         "IsTest": "false"
     },
     "Application": {
-        "UBulk": "1.0",
-        "KinematicViscosity": "3.e-4",
+        "UBulk": "3.3",
+        "KinematicViscosity": "1.e-3",
         "TimeSampleCount": "50",
         "EndTime": "10.0",
         "CFL": "0.3"
@@ -45,15 +45,15 @@
             "Degree": "2"
         },
         "ModalFilter": "false",
-        "ProductionTerm": "false",
-        "DissipationTerm": "false",
+        "ProductionTerm": "true",
+        "DissipationTerm": "true",
         "Output": {
             "OutputDirectory": "output/tke/",
             "OutputName": "tke",
             "WriteOutput": "true"
         },
         "Boundary": {
-            "TKEWall": "1e-0",
+            "TKEWall": "1e-12",
             "TKEInit": "1.788"
         }
     },
@@ -62,15 +62,15 @@
             "Degree": "2"
         },
         "ModalFilter": "false",
-        "ProductionTerm": "false",
-        "DissipationTerm": "false",
+        "ProductionTerm": "true",
+        "DissipationTerm": "true",
         "Output": {
             "OutputDirectory": "output/epsilon/",
             "OutputName": "epsilon",
             "WriteOutput": "true"
         },
         "Boundary": {
-            "EpsilonWall": "5.93e-3",
+            "EpsilonWall": "1.0e-12",
             "EpsilonInit": "5.93e-2"
         }
     }
