@@ -22,11 +22,14 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_WITH_RANS_TEST_CASES_TEMPLATE_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_WITH_RANS_TEST_CASES_TEMPLATE_H_
 
+#include "include/boundary_conditions.h"
+
 namespace ExaDG
 {
 namespace NSRans
 {
-double channel_height      = 1.0;
+double half_width          = 1.0;
+double channel_height      = 2.0 * half_width;
 double channel_length      = 4.0;
 double bulk_velocity       = 1.0;
 double kinematic_viscosity = 1e-5;
@@ -64,7 +67,7 @@ double     max_velocity           = 2.0 * bulk_velocity;
 bool const adaptive_time_stepping = true;
 
 // vtu output
-double output_interval_time = (end_time - start_time) / number_of_outputs;
+double output_interval_time = 1.0e-12;
 
 // moving mesh (ALE)
 bool const ALE = false;
@@ -75,6 +78,8 @@ double const REL_TOL = 1.e-6;
 
 double const ABS_TOL_LINEAR = 1.e-12;
 double const REL_TOL_LINEAR = 1.e-2;
+
+InletVelocityProfileType inlet_velocity_profile_type = InletVelocityProfileType::PowerLaw;
 
 template<int dim, typename Number>
 class Fluid : public FluidBase<dim, Number>
@@ -105,7 +110,7 @@ public:
 
     prm.enter_subsection("Geometry");
     {
-      prm.add_parameter("ChannelHeight", channel_height, "Height of the channel");
+      prm.add_parameter("HalfWidth", half_width, "Half Width of the channel");
       prm.add_parameter("ChannelLength", channel_length, "Length of the channel");
       prm.add_parameter("RefinementCycle", refinement_cycle, "Number of refinements towards the walls");
     }
@@ -122,6 +127,7 @@ private:
     end_time      = (channel_length / bulk_velocity) * 5.0;
     ;
 
+    channel_height = 2.0 * half_width;
     output_interval_time = 1e-12;
     turbulence_model_coefficients = {sigma_k, C_epsilon_1, C_epsilon_2, C_mu, sigma_epsilon};
   }
@@ -308,10 +314,10 @@ private:
         dealii::Point<dim>        bottom_left, top_right;
 
         bottom_left[0] = 0.0;
-        bottom_left[1] = 0.0;
+        bottom_left[1] = -1.0 * half_width;
 
         top_right[0] = channel_length;
-        top_right[1] = channel_height;
+        top_right[1] = half_width;
 
         if(dim == 2)
         {
@@ -332,19 +338,19 @@ private:
           {
             if(cell->face(f)->at_boundary())
             {
-              if(std::fabs(cell->face(f)->center()(0) - 0.0) < 1e-12)
+              if(std::fabs(cell->face(f)->center()(0) - bottom_left[0]) < 1e-12)
               {
                 cell->face(f)->set_boundary_id(1); // inlet
               }
-              else if(std::fabs(cell->face(f)->center()(0) - channel_length) < 1e-12)
+              else if(std::fabs(cell->face(f)->center()(0) - top_right[0]) < 1e-12)
               {
                 cell->face(f)->set_boundary_id(2); // outlet
               }
-              else if(std::fabs(cell->face(f)->center()(1) - 0.0) < 1e-12)
+              else if(std::fabs(cell->face(f)->center()(1) - bottom_left[1]) < 1e-12)
               {
                 cell->face(f)->set_boundary_id(3); // bottom wall
               }
-              else if(std::fabs(cell->face(f)->center()(1) - channel_height) < 1e-12)
+              else if(std::fabs(cell->face(f)->center()(1) - top_right[1]) < 1e-12)
               {
                 cell->face(f)->set_boundary_id(3); // top_wall
               }
@@ -364,13 +370,13 @@ private:
             double beta = 2.0; 
 
             // 1. Normalize y from [0, H] to [-1, 1]
-            double y_norm = 2.0 * (in[1] / channel_height) - 1.0;
+            double y_norm = in[1];
 
             // 2. Apply Hyperbolic Tangent (clusters points near -1 and 1)
             double y_trans = std::tanh(beta * y_norm) / std::tanh(beta);
 
             // 3. Map back to [0, H]
-            out[1] = channel_height * (y_trans + 1.0) / 2.0;
+            out[1] = y_trans;
 
             return out;
           },
@@ -420,8 +426,10 @@ private:
     std::vector<double> inlet_velocity = std::vector<double>(dim, 0.0);
     inlet_velocity[0]                  = bulk_velocity;
 
+    // this->field_functions->initial_solution_velocity.reset(
+    //   new dealii::Functions::ConstantFunction<dim>(inlet_velocity));
     this->field_functions->initial_solution_velocity.reset(
-      new dealii::Functions::ConstantFunction<dim>(inlet_velocity));
+      new InletVelocityProfile<dim>(bulk_velocity, half_width, inlet_velocity_profile_type));
     this->field_functions->initial_solution_pressure.reset(
       new dealii::Functions::ZeroFunction<dim>(1));
     this->field_functions->analytical_solution_pressure.reset(
@@ -473,12 +481,13 @@ public:
       prm.add_parameter("TimeSampleCount", number_of_outputs, "Number of output time steps");
       prm.add_parameter("EndTime", end_time, "End time of the simulation");
       prm.add_parameter("CFL", CFL, "Courant Number");
+      prm.add_parameter("OutputInterval", output_interval_time, "Interval between output");
     }
     prm.leave_subsection();
 
     prm.enter_subsection("Geometry");
     {
-      prm.add_parameter("ChannelHeight", channel_height, "Height of the channel");
+      prm.add_parameter("HalfWidth", half_width, "Half Width of the channel");
       prm.add_parameter("ChannelLength", channel_length, "Length of the channel");
       prm.add_parameter("TKEWall", tke_wall, "Turbulent kinetic energy at the wall");
       prm.add_parameter("TurbulentIntensity", turbulent_intensity, "Turbulent intensity");
@@ -524,6 +533,7 @@ private:
     end_time      = (channel_length / bulk_velocity) * 5.0;
     ;
 
+    channel_height = half_width;
     output_interval_time = 1e-12;
     turbulence_model_coefficients = {sigma_k, C_epsilon_1, C_epsilon_2, C_mu, sigma_epsilon};
   }
@@ -576,7 +586,7 @@ private:
       TurbulenceEddyViscosityModel::StandardKEpsilon;
     this->param.treatment_of_variable_viscosity = TreatmentOfVariableViscosity::Explicit;
     this->param.turbulence_model_data.positivity_preserving_limiter =
-      RANS::PositivityPreservingLimiter::LogarithmicTransportVariable;
+      RANS::PositivityPreservingLimiter::Clipper;
     this->param.turbulence_model_data.production_term  = tke_production_term;
     this->param.turbulence_model_data.dissipation_term = tke_dissipation_term;
     this->param.turbulence_model_data.initialize_and_set_turbulence_coefficients(
@@ -621,7 +631,7 @@ private:
 
     // double ln_tke_wall = std::log(std::max(tke_wall, 1e-12));
     double ln_tke_wall = std::log(tke_wall);
-    this->boundary_descriptor->dirichlet_bc.insert(pair(3, new dealii::Functions::ConstantFunction<dim>(ln_tke_wall)));
+    this->boundary_descriptor->dirichlet_bc.insert(pair(3, new dealii::Functions::ConstantFunction<dim>(tke_wall)));
     /*this->boundary_descriptor->neumann_bc.insert(pair(3, new dealii::Functions::ZeroFunction<dim>(1)));*/
   }
 
@@ -632,7 +642,7 @@ private:
     std::cout << "Initial TKE: " << tke << std::endl;
     // double ln_tke = std::log(std::max(tke, 1e-6));
     double ln_tke = std::log(tke);
-    this->field_functions->initial_solution.reset(new dealii::Functions::ConstantFunction<dim>(ln_tke));
+    this->field_functions->initial_solution.reset(new dealii::Functions::ConstantFunction<dim>(tke));
     this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(1));
     this->field_functions->velocity.reset(new dealii::Functions::ZeroFunction<dim>(1));
   }
@@ -686,7 +696,7 @@ public:
 
     prm.enter_subsection("Geometry");
     {
-      prm.add_parameter("ChannelHeight", channel_height, "Height of the channel");
+      prm.add_parameter("HalfWidth", half_width, "Half Width of the channel");
       prm.add_parameter("ChannelLength", channel_length, "Length of the channel");
       prm.add_parameter("TKEWall", tke_wall, "Turbulent kinetic energy at the wall");
       prm.add_parameter("TurbulentIntensity", turbulent_intensity, "Turbulent intensity");
@@ -734,6 +744,7 @@ private:
     end_time      = (channel_length / bulk_velocity) * 5.0;
     ;
 
+    channel_height = half_width;
     output_interval_time = 1e-12;
     turbulence_model_coefficients = {sigma_k, C_epsilon_1, C_epsilon_2, C_mu, sigma_epsilon};
   }
@@ -786,7 +797,7 @@ private:
       TurbulenceEddyViscosityModel::StandardKEpsilon;
     this->param.treatment_of_variable_viscosity = TreatmentOfVariableViscosity::Explicit;
     this->param.turbulence_model_data.positivity_preserving_limiter =
-      RANS::PositivityPreservingLimiter::LogarithmicTransportVariable;
+      RANS::PositivityPreservingLimiter::Clipper;
     this->param.turbulence_model_data.production_term  = epsilon_production_term;
     this->param.turbulence_model_data.dissipation_term = epsilon_dissipation_term;
     this->param.turbulence_model_data.initialize_and_set_turbulence_coefficients(
@@ -831,7 +842,7 @@ private:
 
     // double ln_tke_diss_wall = std::log(std::max(tke_diss_wall, 1e-12));
     double ln_tke_diss_wall = std::log(tke_diss_wall);
-    this->boundary_descriptor->dirichlet_bc.insert(pair(3, new dealii::Functions::ConstantFunction<dim>(ln_tke_diss_wall)));
+    this->boundary_descriptor->dirichlet_bc.insert(pair(3, new dealii::Functions::ConstantFunction<dim>(tke_diss_wall)));
     /*this->boundary_descriptor->neumann_bc.insert(pair(3, new dealii::Functions::ZeroFunction<dim>(1)));*/
   }
 
@@ -841,7 +852,7 @@ private:
   {
     // double ln_tke_dissipation = std::log(std::max(tke_dissipation, 1e-6));
     double ln_tke_dissipation = std::log(tke_dissipation);
-    this->field_functions->initial_solution.reset(new dealii::Functions::ConstantFunction<dim>(ln_tke_dissipation));
+    this->field_functions->initial_solution.reset(new dealii::Functions::ConstantFunction<dim>(tke_dissipation));
     this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(1));
     this->field_functions->velocity.reset(new dealii::Functions::ZeroFunction<dim>(1));
   }

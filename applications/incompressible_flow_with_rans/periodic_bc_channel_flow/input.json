@@ -9,10 +9,11 @@
         "KinematicViscosity": "1.e-3",
         "TimeSampleCount": "50",
         "EndTime": "10.0",
-        "CFL": "0.3"
+        "CFL": "0.3",
+        "OutputInterval": "1e-12"
     },
     "Geometry": {
-        "ChannelHeight": "2.0",
+        "HalfWidth": "1.0",
         "ChannelLength": "12.0",
         "TurbulentIntensity": "0.05",
         "RefinementCycle": "5"
@@ -32,7 +33,7 @@
     "Fluid": {
         "SpatialResolution": {
             "Degree": "2",
-            "RefineSpace": "4"
+            "RefineSpace": "6"
         },
         "Output": {
             "OutputDirectory": "output/fluid/",
@@ -42,7 +43,7 @@
     },
     "Scalar0": {
         "SpatialResolution": {
-            "Degree": "2"
+            "Degree": "1"
         },
         "ModalFilter": "false",
         "ProductionTerm": "true",
@@ -53,13 +54,13 @@
             "WriteOutput": "true"
         },
         "Boundary": {
-            "TKEWall": "1e-12",
-            "TKEInit": "1.788"
+            "TKEWall": "0.0",
+            "TKEInit": "4.08e-2"
         }
     },
     "Scalar1": {
         "SpatialResolution": {
-            "Degree": "2"
+            "Degree": "1"
         },
         "ModalFilter": "false",
         "ProductionTerm": "true",
@@ -70,8 +71,8 @@
             "WriteOutput": "true"
         },
         "Boundary": {
-            "EpsilonWall": "1.0e-12",
-            "EpsilonInit": "5.93e-2"
+            "EpsilonWall": "0.0",
+            "EpsilonInit": "3.654e-4"
         }
     }
 }

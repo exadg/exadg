@@ -277,7 +277,7 @@ public:
     }
     else if(data.positivity_preserving_limiter == PositivityPreservingLimiter::Clipper)
     {
-      result = dealii::make_vectorized_array<Number>(2.0) * viscosity * gradient_product;
+      result = viscosity * gradient_product;
     }
     else
     {
@@ -318,8 +318,8 @@ public:
     }
     else if(data.positivity_preserving_limiter == PositivityPreservingLimiter::Clipper)
     {
-      AssertThrow(false,
-                  dealii::ExcMessage("epsilon production term not implemented with clipper"));
+      scalar tke = std::sqrt(viscosity * sol / C_mu);
+      result = C_e1 * viscosity * gradient_product;
     }
     else
     {
@@ -355,7 +355,7 @@ public:
       }
       else if(data.positivity_preserving_limiter == PositivityPreservingLimiter::Clipper)
       {
-        result = dealii::make_vectorized_array<Number>(C_mu) * sol * sol / viscosity;
+        result = dealii::make_vectorized_array<Number>(C_mu) * std::pow(sol, dealii::make_vectorized_array<Number>(2.0)) / viscosity;
       }
       else
       {
@@ -403,9 +403,8 @@ public:
       }
       else if(data.positivity_preserving_limiter == PositivityPreservingLimiter::Clipper)
       {
-        AssertThrow(false,
-                    dealii::ExcMessage(
-                      "epsilon dissipation term with clippers is not implemented yet"));
+        scalar tke = std::sqrt(viscosity * sol / C_mu);
+        result = C_e2 * std::pow(sol, dealii::make_vectorized_array<Number>(2.0)) / std::max(dealii::make_vectorized_array<Number>(1e-6), tke);
       }
       else
       {

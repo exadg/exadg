@@ -266,6 +266,10 @@ CombinedOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
     if(operator_data.diffusive_problem)
     {
       gradient_flux += diffusive_kernel->get_volume_flux(integrator, q);
+      if(diffusive_kernel->data.positivity_preserving_limiter == PositivityPreservingLimiter::LogarithmicTransportVariable)
+      {
+        value_flux = diffusive_kernel->get_value_volume_flux(integrator, q);
+      }
     }
 
     if(this->integrator_flags.cell_integrate & dealii::EvaluationFlags::values)

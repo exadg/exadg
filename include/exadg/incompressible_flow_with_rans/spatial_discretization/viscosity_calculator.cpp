@@ -174,7 +174,7 @@ ViscosityCalculator<dim, Number>::standard_k_epsilon_model(scalar const & tke,
   else if(turbulence_model_data.positivity_preserving_limiter ==
           RANS::PositivityPreservingLimiter::Clipper)
   {
-    viscosity = C_mu * std::pow(tke, dealii::make_vectorized_array<Number>(2.0)) / epsilon;
+    viscosity = C_mu * std::pow(tke, dealii::make_vectorized_array<Number>(2.0)) / std::max(epsilon, dealii::make_vectorized_array<Number>(1.e-6));
   }
   else
   {

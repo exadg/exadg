@@ -22,27 +22,52 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_WITH_RANS_TEST_CASES_TEMPLATE_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_WITH_RANS_TEST_CASES_TEMPLATE_H_
 
+#include "include/boundary_conditions.h"
+
 namespace ExaDG
 {
 namespace NSRans
 {
-double channel_height      = 1.0;
+double half_width          = 1.0;
+double channel_height      = 2.0 * half_width;
 double channel_length      = 4.0;
 double bulk_velocity       = 1.0;
 double kinematic_viscosity = 1e-5;
+unsigned int refinement_cycle = 4;
 
-double start_time = 0.0;
-double end_time   = 10.0;
+double start_time        = 0.0;
+double end_time          = 10.0;
+double number_of_outputs = 10.0;
+
+double              turbulence_length_scale = 1.0;
+double              sigma_k                 = 1.0;
+double              C_D                     = 0.07;
+double              C_epsilon_1             = 1.44;
+double              C_epsilon_2             = 1.92;
+double              C_mu                    = 0.09;
+double              sigma_epsilon           = 1.3;
+double              turbulent_intensity     = 0.05;
+double              tke              = -6;
+bool                tke_production_term  = false;
+bool                tke_dissipation_term = false;
+bool                epsilon_production_term  = false;
+bool                epsilon_dissipation_term = false;
+double              tke_wall         = -6;
+std::vector<double> turbulence_model_coefficients = {sigma_k, C_D, turbulence_length_scale};
+double              tke_dissipation = -6;
+double              tke_diss_wall   = -6;
+
+bool tke_modal_filter = false;
 
 bool const   write_restart         = false;
 double const restart_interval_time = 10.0;
 
-double const CFL                    = 0.3;
-double const max_velocity           = 2.0 * bulk_velocity;
-bool const   adaptive_time_stepping = true;
+double     CFL                    = 0.3;
+double     max_velocity           = 2.0 * bulk_velocity;
+bool const adaptive_time_stepping = true;
 
 // vtu output
-double const output_interval_time = (end_time - start_time) / 10.0;
+double output_interval_time = (end_time - start_time) / number_of_outputs;
 
 // moving mesh (ALE)
 bool const ALE = false;
@@ -54,6 +79,8 @@ double const REL_TOL = 1.e-6;
 double const ABS_TOL_LINEAR = 1.e-12;
 double const REL_TOL_LINEAR = 1.e-2;
 
+InletVelocityProfileType inlet_velocity_profile_type = InletVelocityProfileType::PowerLaw;
+
 template<int dim, typename Number>
 class Fluid : public FluidBase<dim, Number>
 {
@@ -63,7 +90,48 @@ public:
   {
   }
 
+  void
+  add_parameters(dealii::ParameterHandler &       prm,
+                 std::vector<std::string> const & subsection_names) final
+  {
+    FluidBase<dim, Number>::add_parameters(prm, subsection_names);
+
+    prm.enter_subsection("Application");
+    {
+      prm.add_parameter("UBulk", bulk_velocity, "Bulk velocity of the fluid");
+      prm.add_parameter("KinematicViscosity",
+                        kinematic_viscosity,
+                        "Kinematic viscosity of the fluid");
+      prm.add_parameter("TimeSampleCount", number_of_outputs, "Number of output time steps");
+      prm.add_parameter("EndTime", end_time, "End time of the simulation");
+      prm.add_parameter("CFL", CFL, "Courant Number");
+    }
+    prm.leave_subsection();
+
+    prm.enter_subsection("Geometry");
+    {
+      prm.add_parameter("HalfWidth", half_width, "Half Width of the channel");
+      prm.add_parameter("ChannelLength", channel_length, "Length of the channel");
+      prm.add_parameter("RefinementCycle", refinement_cycle, "Number of refinements towards the walls");
+    }
+    prm.leave_subsection();
+  }
+
 private:
+  void
+  parse_parameters(std::vector<std::string> const & subsection_names) final
+  {
+    FluidBase<dim, Number>::parse_parameters(subsection_names);
+
+    max_velocity  = 2.0 * bulk_velocity;
+    end_time      = (channel_length / bulk_velocity) * 5.0;
+    ;
+
+    channel_height = 2.0 * half_width;
+    output_interval_time = 1e-12;
+    turbulence_model_coefficients = {sigma_k, C_epsilon_1, C_epsilon_2, C_mu, sigma_epsilon};
+  }
+
   void
   set_parameters() final
   {
@@ -76,7 +144,7 @@ private:
     this->param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
     this->param.ale_formulation             = ALE;
     this->param.mesh_movement_type          = MeshMovementType::Function;
-    this->param.right_hand_side             = true;
+    this->param.right_hand_side             = false;
     this->param.boussinesq_term             = false;
 
 
@@ -88,7 +156,7 @@ private:
 
     // TEMPORAL DISCRETIZATION
     this->param.solver_type                     = SolverType::Unsteady;
-    this->param.temporal_discretization         = TemporalDiscretization::BDFCoupledSolution;
+    this->param.temporal_discretization         = TemporalDiscretization::BDFPressureCorrection;
     this->param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     this->param.adaptive_time_stepping          = adaptive_time_stepping;
     this->param.order_time_integrator           = 2;
@@ -100,7 +168,7 @@ private:
     this->param.time_step_size                  = 1.0e-1;
 
     // output of solver information
-    this->param.solver_info_data.interval_time = (end_time - start_time) / 10.;
+    this->param.solver_info_data.interval_time = output_interval_time * 5;
 
     // restart
     this->param.restart_data.write_restart = write_restart;
@@ -113,6 +181,14 @@ private:
     this->param.mapping_degree              = 1;
     this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
     this->param.degree_p                    = DegreePressure::MixedOrder;
+    this->param.quad_rule_linearization     = QuadratureRuleLinearization::Standard;
+
+    // TURBULENCE
+    this->param.turbulence_model_data.is_active = true;
+    this->param.turbulence_model_data.turbulence_model =
+      IncRANS::TurbulenceEddyViscosityModel::StandardKEpsilon;
+    this->param.treatment_of_variable_viscosity  = TreatmentOfVariableViscosity::Explicit;
+    this->param.turbulence_model_data.rans_model = true;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -165,10 +241,9 @@ private:
     if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
       this->param.solver_momentum         = SolverMomentum::CG;
-      this->param.solver_data_momentum    = SolverData(1000, ABS_TOL, REL_TOL);
+      this->param.solver_data_momentum    = SolverData(1000, 1.e-12, 1.e-6);
       this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
     }
-
 
     // PRESSURE-CORRECTION SCHEME
 
@@ -177,20 +252,18 @@ private:
     this->param.rotational_formulation       = true;
 
     // momentum step
-    if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-    {
-      // Newton solver
-      this->param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
-      // linear solver
-      this->param.solver_momentum = SolverMomentum::GMRES;
-      if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-        this->param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
-      else
-        this->param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+    // Newton solver
+    this->param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
-      this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
-    }
+    // linear solver
+    this->param.solver_momentum = SolverMomentum::GMRES;
+    if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+      this->param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
+    else
+      this->param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+
+    this->param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
 
 
     // COUPLED NAVIER-STOKES SOLVER
@@ -232,7 +305,7 @@ private:
           std::vector<unsigned int> const &                        vector_local_refinements) {
         // create triangulation and perform local/global refinements
         /*(void)tria;*/
-        (void)periodic_face_pairs;
+        /*(void)periodic_face_pairs;*/
         (void)global_refinements;
         (void)vector_local_refinements;
 
@@ -241,10 +314,10 @@ private:
         dealii::Point<dim>        bottom_left, top_right;
 
         bottom_left[0] = 0.0;
-        bottom_left[1] = 0.0;
+        bottom_left[1] = -1.0 * half_width;
 
         top_right[0] = channel_length;
-        top_right[1] = channel_height;
+        top_right[1] = half_width;
 
         if(dim == 2)
         {
@@ -259,7 +332,6 @@ private:
                                                           repetitions,
                                                           bottom_left,
                                                           top_right);
-
         for(auto cell : tria.cell_iterators())
         {
           for(auto const & f : cell->face_indices())
@@ -285,7 +357,30 @@ private:
             }
           }
         }
+        // dealii::GridTools::collect_periodic_faces(tria, 1, 2, 0, periodic_face_pairs);
+        // tria.add_periodicity(periodic_face_pairs);
+
         tria.refine_global(global_refinements);
+
+        dealii::GridTools::transform(
+          [&](const dealii::Point<dim> &in) {
+            dealii::Point<dim> out = in;
+            // Apply stretching only in Y-direction (height)
+            // beta controls strength: 1.5 = mild, 2.5 = strong clustering
+            double beta = 2.0; 
+
+            // 1. Normalize y from [0, H] to [-1, 1]
+            double y_norm = 2.0 * (in[1] / channel_height) - 1.0;
+
+            // 2. Apply Hyperbolic Tangent (clusters points near -1 and 1)
+            double y_trans = std::tanh(beta * y_norm) / std::tanh(beta);
+
+            // 3. Map back to [0, H]
+            out[1] = channel_height * (y_trans + 1.0) / 2.0;
+
+            return out;
+          },
+          tria);
       };
 
     GridUtilities::create_triangulation_with_multigrid<dim>(grid,
@@ -314,17 +409,13 @@ private:
     inlet_velocity[0]                  = bulk_velocity;
 
     // velocity
-    this->boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(1, new dealii::Functions::ConstantFunction<dim>(inlet_velocity)));
-    this->boundary_descriptor->velocity->neumann_bc.insert(
-      pair(2, new dealii::Functions::ZeroFunction<dim>(dim)));
-    this->boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->velocity->dirichlet_bc.insert(pair(1, new InletVelocityProfile<dim>(bulk_velocity, half_width, inlet_velocity_profile_type)));
+    this->boundary_descriptor->velocity->neumann_bc.insert(pair(2, new dealii::Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->velocity->dirichlet_bc.insert(pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // pressure
     this->boundary_descriptor->pressure->neumann_bc.insert(1);
-    this->boundary_descriptor->pressure->dirichlet_bc.insert(
-      pair(2, new dealii::Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->pressure->dirichlet_bc.insert(pair(2, new dealii::Functions::ZeroFunction<dim>(1)));
     this->boundary_descriptor->pressure->neumann_bc.insert(3);
   }
 
@@ -332,10 +423,12 @@ private:
   set_field_functions() final
   {
     std::vector<double> inlet_velocity = std::vector<double>(dim, 0.0);
-    inlet_velocity[0]                  = bulk_velocity;
+    inlet_velocity[0]                  = 0.0;
 
+    // this->field_functions->initial_solution_velocity.reset(
+    //   new dealii::Functions::ConstantFunction<dim>(inlet_velocity));
     this->field_functions->initial_solution_velocity.reset(
-      new dealii::Functions::ConstantFunction<dim>(inlet_velocity));
+      new InletVelocityProfile<dim>(bulk_velocity, half_width, inlet_velocity_profile_type));
     this->field_functions->initial_solution_pressure.reset(
       new dealii::Functions::ZeroFunction<dim>(1));
     this->field_functions->analytical_solution_pressure.reset(
@@ -365,19 +458,165 @@ private:
 };
 
 template<int dim, typename Number>
-class Scalar : public ScalarBase<dim, Number>
+class Scalar0 : public ScalarBase<dim, Number>
 {
 public:
-  Scalar(std::string parameter_file, MPI_Comm const & comm)
+  Scalar0(std::string parameter_file, MPI_Comm const & comm)
     : ScalarBase<dim, Number>(parameter_file, comm)
   {
+  }
+  void
+  add_parameters(dealii::ParameterHandler &       prm,
+                 std::vector<std::string> const & subsection_names) final
+  {
+    ScalarBase<dim, Number>::add_parameters(prm, subsection_names);
+
+    prm.enter_subsection("Application");
+    {
+      prm.add_parameter("UBulk", bulk_velocity, "Bulk velocity of the fluid");
+      prm.add_parameter("KinematicViscosity",
+                        kinematic_viscosity,
+                        "Kinematic viscosity of the fluid");
+      prm.add_parameter("TimeSampleCount", number_of_outputs, "Number of output time steps");
+      prm.add_parameter("EndTime", end_time, "End time of the simulation");
+      prm.add_parameter("CFL", CFL, "Courant Number");
+    }
+    prm.leave_subsection();
+
+    prm.enter_subsection("Geometry");
+    {
+      prm.add_parameter("HalfWidth", half_width, "Half Width of the channel");
+      prm.add_parameter("ChannelLength", channel_length, "Length of the channel");
+      prm.add_parameter("TKEWall", tke_wall, "Turbulent kinetic energy at the wall");
+      prm.add_parameter("TurbulentIntensity", turbulent_intensity, "Turbulent intensity");
+    }
+    prm.leave_subsection();
+    prm.enter_subsection("StandardKEpsilonModelCoefficients");
+    {
+      prm.add_parameter("SigmaK", sigma_k, "Turbulent Prandtl number for turbulent kinetic energy");
+      prm.add_parameter("CEpsilon1", C_epsilon_1, "Dissipation coefficient");
+      prm.add_parameter("CEpsilon2", C_epsilon_2, "Dissipation coefficient");
+      prm.add_parameter("CMu", C_mu, "Dissipation coefficient");
+      prm.add_parameter("SigmaEpsilon", sigma_epsilon, "Turbulence length scale");
+    }
+    prm.leave_subsection();
+    prm.enter_subsection("Scalar0");
+    {
+      prm.add_parameter("ModalFilter",
+                        tke_modal_filter,
+                        "Apply modal filter to turbulent kinetic energy field");
+      prm.add_parameter("ProductionTerm",
+                        tke_production_term,
+                        "Include production term in transport equation");
+      prm.add_parameter("DissipationTerm",
+                        tke_dissipation_term,
+                        "Include dissipation term in transport equation");
+      prm.enter_subsection("Boundary");
+      {
+        prm.add_parameter("TKEWall", tke_wall, "Turbulent kinetic energy at the wall");
+        prm.add_parameter("TKEInit", tke, "Initial turbulent kinetic energy");
+      }
+      prm.leave_subsection();
+    }
+    prm.leave_subsection();
   }
 
 private:
   void
+  parse_parameters(std::vector<std::string> const & subsection_names) final
+  {
+    ScalarBase<dim, Number>::parse_parameters(subsection_names);
+
+    max_velocity  = 2.0 * bulk_velocity;
+    end_time      = (channel_length / bulk_velocity) * 5.0;
+    ;
+
+    channel_height = half_width;
+    output_interval_time = 1e-12;
+    turbulence_model_coefficients = {sigma_k, C_epsilon_1, C_epsilon_2, C_mu, sigma_epsilon};
+  }
+
+  void
   set_parameters() final
   {
     using namespace RANS;
+    // MATHEMATICAL MODEL
+    this->param.problem_type                = ProblemType::Unsteady;
+    this->param.equation_type               = EquationType::ConvectionDiffusion;
+    this->param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
+    this->param.analytical_velocity_field   = false;
+    this->param.right_hand_side             = true;
+    this->param.modal_filter                = tke_modal_filter;
+    this->param.scalar_type                 = ScalarType::TurbulentKineticEnergy;
+
+    // PHYSICAL QUANTITIES
+    this->param.start_time  = start_time;
+    this->param.end_time    = end_time;
+    this->param.diffusivity = kinematic_viscosity;
+
+    // TEMPORAL DISCRETIZATION
+    this->param.temporal_discretization       = TemporalDiscretization::BDF;
+    // this->param.temporal_discretization       = TemporalDiscretization::ExplRK;
+    // this->param.time_integrator_rk            = TimeIntegratorRK::ExplRK4Stage4;
+    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
+    this->param.adaptive_time_stepping        = adaptive_time_stepping;
+    this->param.order_time_integrator         = 2;
+    this->param.start_with_low_order          = true;
+    this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+    this->param.time_step_size                = 1.0e-2;
+    this->param.cfl                           = CFL;
+    this->param.max_velocity                  = max_velocity;
+    this->param.exponent_fe_degree_convection = 1.5;
+    this->param.exponent_fe_degree_diffusion  = 4.0;
+    this->param.diffusion_number              = 0.0001;
+
+    // output of solver information
+    this->param.solver_info_data.interval_time = (end_time - start_time) / 10.;
+
+    // SPATIAL DISCRETIZATION
+    this->param.grid.triangulation_type     = TriangulationType::Distributed;
+    this->param.mapping_degree              = 1;
+    this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
+
+    // TURBULENCE
+    this->param.turbulence_model_data.is_active = true;
+    this->param.turbulence_model_data.turbulence_model =
+      TurbulenceEddyViscosityModel::StandardKEpsilon;
+    this->param.treatment_of_variable_viscosity = TreatmentOfVariableViscosity::Explicit;
+    this->param.turbulence_model_data.positivity_preserving_limiter =
+      RANS::PositivityPreservingLimiter::LogarithmicTransportVariable;
+    this->param.turbulence_model_data.production_term  = tke_production_term;
+    this->param.turbulence_model_data.dissipation_term = tke_dissipation_term;
+    this->param.turbulence_model_data.initialize_and_set_turbulence_coefficients(
+      turbulence_model_coefficients);
+
+    // convective term
+    this->param.numerical_flux_convective_operator =
+      NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
+
+    // viscous term
+    this->param.IP_factor = 1.0;
+
+    // NUMERICAL PARAMETERS
+    this->param.implement_block_diagonal_preconditioner_matrix_free = false;
+    this->param.use_cell_based_face_loops                           = false;
+    /*this->param.solver_block_diagonal                               =
+     * Elementwise::Solver::GMRES;*/
+
+    // SOLVER
+    this->param.solver                    = RANS::Solver::GMRES;
+    this->param.solver_data               = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    this->param.preconditioner            = Preconditioner::InverseMassMatrix;
+    this->param.multigrid_data.type       = MultigridType::pMG;
+    this->param.multigrid_data.p_sequence = PSequenceType::Bisect;
+    this->param.mg_operator_type          = MultigridOperatorType::ReactionDiffusion;
+    this->param.update_preconditioner     = false;
+
+    // output of solver information
+    this->param.solver_info_data.interval_time = output_interval_time;
+
+    // NUMERICAL PARAMETERS
+    this->param.use_combined_operator = true;
   }
 
   void
@@ -385,18 +624,26 @@ private:
   {
     typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
       pair;
+    double ln_tke = std::log(tke);
+    this->boundary_descriptor->dirichlet_bc.insert(pair(1, new dealii::Functions::ConstantFunction<dim>(ln_tke)));
+    // this->boundary_descriptor->neumann_bc.insert(pair(1, new dealii::Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->neumann_bc.insert(pair(2, new dealii::Functions::ZeroFunction<dim>(1)));
 
-    this->boundary_descriptor->dirichlet_bc.insert(
-      pair(0, new dealii::Functions::ZeroFunction<dim>(1)));
-    this->boundary_descriptor->neumann_bc.insert(
-      pair(1, new dealii::Functions::ZeroFunction<dim>(1)));
+    // double ln_tke_wall = std::log(std::max(tke_wall, 1e-12));
+    double ln_tke_wall = std::log(tke_wall);
+    this->boundary_descriptor->dirichlet_bc.insert(pair(3, new dealii::Functions::ConstantFunction<dim>(ln_tke_wall)));
+    /*this->boundary_descriptor->neumann_bc.insert(pair(3, new dealii::Functions::ZeroFunction<dim>(1)));*/
   }
 
 
   void
   set_field_functions() final
   {
-    this->field_functions->initial_solution.reset(new dealii::Functions::ZeroFunction<dim>(1));
+    std::cout << "Initial TKE: " << tke << std::endl;
+    // double ln_tke = std::log(std::max(tke, 1e-6));
+    double ln_tke = std::log(tke);
+    double ln_tke_wall = std::log(tke_wall);
+    this->field_functions->initial_solution.reset(new dealii::Functions::ConstantFunction<dim>(ln_tke_wall));
     this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(1));
     this->field_functions->velocity.reset(new dealii::Functions::ZeroFunction<dim>(1));
   }
@@ -405,6 +652,228 @@ private:
   create_postprocessor() final
   {
     RANS::PostProcessorData<dim> pp_data;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = start_time;
+    pp_data.output_data.time_control_data.trigger_interval = output_interval_time;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename;
+    pp_data.output_data.degree             = this->param.degree;
+    pp_data.output_data.write_higher_order = true;
+    if(this->param.turbulence_model_data.is_active)
+      pp_data.output_data.write_eddy_viscosity = true;
+
+    std::shared_ptr<RANS::PostProcessorBase<dim, Number>> pp;
+    pp.reset(new RANS::PostProcessor<dim, Number>(pp_data, this->mpi_comm));
+
+    return pp;
+  }
+};
+
+template<int dim, typename Number>
+class Scalar1 : public ScalarBase<dim, Number>
+{
+public:
+  Scalar1(std::string parameter_file, MPI_Comm const & comm)
+    : ScalarBase<dim, Number>(parameter_file, comm)
+  {
+  }
+  void
+  add_parameters(dealii::ParameterHandler &       prm,
+                 std::vector<std::string> const & subsection_names) final
+  {
+    ScalarBase<dim, Number>::add_parameters(prm, subsection_names);
+
+    prm.enter_subsection("Application");
+    {
+      prm.add_parameter("UBulk", bulk_velocity, "Bulk velocity of the fluid");
+      prm.add_parameter("KinematicViscosity",
+                        kinematic_viscosity,
+                        "Kinematic viscosity of the fluid");
+      prm.add_parameter("TimeSampleCount", number_of_outputs, "Number of output time steps");
+      prm.add_parameter("EndTime", end_time, "End time of the simulation");
+      prm.add_parameter("CFL", CFL, "Courant Number");
+    }
+    prm.leave_subsection();
+
+    prm.enter_subsection("Geometry");
+    {
+      prm.add_parameter("HalfWidth", half_width, "Half Width of the channel");
+      prm.add_parameter("ChannelLength", channel_length, "Length of the channel");
+      prm.add_parameter("TKEWall", tke_wall, "Turbulent kinetic energy at the wall");
+      prm.add_parameter("TurbulentIntensity", turbulent_intensity, "Turbulent intensity");
+    }
+    prm.leave_subsection();
+    prm.enter_subsection("PrandtlMixingLengthModelCoefficients");
+    prm.enter_subsection("StandardKEpsilonModelCoefficients");
+    {
+      prm.add_parameter("SigmaK", sigma_k, "Turbulent Prandtl number for turbulent kinetic energy");
+      prm.add_parameter("CEpsilon1", C_epsilon_1, "Dissipation coefficient");
+      prm.add_parameter("CEpsilon2", C_epsilon_2, "Dissipation coefficient");
+      prm.add_parameter("CMu", C_mu, "Dissipation coefficient");
+      prm.add_parameter("SigmaEpsilon", sigma_epsilon, "Turbulence length scale");
+    }
+    prm.leave_subsection();
+    prm.leave_subsection();
+    prm.enter_subsection("Scalar1");
+    {
+      prm.add_parameter("ModalFilter",
+                        tke_modal_filter,
+                        "Apply modal filter to turbulent kinetic energy field");
+      prm.add_parameter("ProductionTerm",
+                        epsilon_production_term,
+                        "Include production term in transport equation");
+      prm.add_parameter("DissipationTerm",
+                        epsilon_dissipation_term,
+                        "Include dissipation term in transport equation");
+      prm.enter_subsection("Boundary");
+      {
+        prm.add_parameter("EpsilonWall", tke_diss_wall, "TKE dissipation at the wall");
+        prm.add_parameter("EpsilonInit", tke_dissipation, "Initial TKE dissipation");
+      }
+      prm.leave_subsection();
+    }
+    prm.leave_subsection();
+  }
+
+private:
+  void
+  parse_parameters(std::vector<std::string> const & subsection_names) final
+  {
+    ScalarBase<dim, Number>::parse_parameters(subsection_names);
+
+    max_velocity  = 2.0 * bulk_velocity;
+    end_time      = (channel_length / bulk_velocity) * 5.0;
+    ;
+
+    channel_height = half_width;
+    output_interval_time = 1e-12;
+    turbulence_model_coefficients = {sigma_k, C_epsilon_1, C_epsilon_2, C_mu, sigma_epsilon};
+  }
+
+  void
+  set_parameters() final
+  {
+    using namespace RANS;
+    // MATHEMATICAL MODEL
+    this->param.problem_type                = ProblemType::Unsteady;
+    this->param.equation_type               = EquationType::ConvectionDiffusion;
+    this->param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
+    this->param.analytical_velocity_field   = false;
+    this->param.right_hand_side             = true;
+    this->param.modal_filter                = tke_modal_filter;
+    this->param.scalar_type                 = ScalarType::TKEDissipationRate;
+
+    // PHYSICAL QUANTITIES
+    this->param.start_time  = start_time;
+    this->param.end_time    = end_time;
+    this->param.diffusivity = kinematic_viscosity;
+
+    // TEMPORAL DISCRETIZATION
+    this->param.temporal_discretization       = TemporalDiscretization::BDF;
+    // this->param.temporal_discretization       = TemporalDiscretization::ExplRK;
+    // this->param.time_integrator_rk            = TimeIntegratorRK::ExplRK4Stage4;
+    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
+    this->param.adaptive_time_stepping        = adaptive_time_stepping;
+    this->param.order_time_integrator         = 2;
+    this->param.start_with_low_order          = true;
+    this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+    this->param.time_step_size                = 1.0e-2;
+    this->param.cfl                           = CFL;
+    this->param.max_velocity                  = max_velocity;
+    this->param.exponent_fe_degree_convection = 1.5;
+    this->param.exponent_fe_degree_diffusion  = 4.0;
+    this->param.diffusion_number              = 0.0001;
+
+    // output of solver information
+    this->param.solver_info_data.interval_time = (end_time - start_time) / 10.;
+
+    // SPATIAL DISCRETIZATION
+    this->param.grid.triangulation_type     = TriangulationType::Distributed;
+    this->param.mapping_degree              = 1;
+    this->param.mapping_degree_coarse_grids = this->param.mapping_degree;
+
+    // TURBULENCE
+    this->param.turbulence_model_data.is_active = true;
+    this->param.turbulence_model_data.turbulence_model =
+      TurbulenceEddyViscosityModel::StandardKEpsilon;
+    this->param.treatment_of_variable_viscosity = TreatmentOfVariableViscosity::Explicit;
+    this->param.turbulence_model_data.positivity_preserving_limiter =
+      RANS::PositivityPreservingLimiter::LogarithmicTransportVariable;
+    this->param.turbulence_model_data.production_term  = epsilon_production_term;
+    this->param.turbulence_model_data.dissipation_term = epsilon_dissipation_term;
+    this->param.turbulence_model_data.initialize_and_set_turbulence_coefficients(
+      turbulence_model_coefficients);
+
+    // convective term
+    this->param.numerical_flux_convective_operator =
+      NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
+
+    // viscous term
+    this->param.IP_factor = 1.0;
+
+    // NUMERICAL PARAMETERS
+    this->param.implement_block_diagonal_preconditioner_matrix_free = false;
+    this->param.use_cell_based_face_loops                           = false;
+    /*this->param.solver_block_diagonal                               =
+     * Elementwise::Solver::GMRES;*/
+
+    // SOLVER
+    this->param.solver                    = RANS::Solver::GMRES;
+    this->param.solver_data               = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    this->param.preconditioner            = Preconditioner::InverseMassMatrix;
+    this->param.multigrid_data.type       = MultigridType::pMG;
+    this->param.multigrid_data.p_sequence = PSequenceType::Bisect;
+    this->param.mg_operator_type          = MultigridOperatorType::ReactionDiffusion;
+    this->param.update_preconditioner     = false;
+
+    // output of solver information
+    this->param.solver_info_data.interval_time = output_interval_time;
+
+    // NUMERICAL PARAMETERS
+    this->param.use_combined_operator = true;
+  }
+
+  void
+  set_boundary_descriptor() final
+  {
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
+    double ln_tke_dissipation = std::log(tke_dissipation);
+    this->boundary_descriptor->dirichlet_bc.insert(pair(1, new dealii::Functions::ConstantFunction<dim>(ln_tke_dissipation)));
+    // this->boundary_descriptor->neumann_bc.insert(pair(1, new dealii::Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->neumann_bc.insert(pair(2, new dealii::Functions::ZeroFunction<dim>(1)));
+
+    // double ln_tke_diss_wall = std::log(std::max(tke_diss_wall, 1e-12));
+    double ln_tke_diss_wall = std::log(tke_diss_wall);
+    this->boundary_descriptor->dirichlet_bc.insert(pair(3, new dealii::Functions::ConstantFunction<dim>(ln_tke_diss_wall)));
+    /*this->boundary_descriptor->neumann_bc.insert(pair(3, new dealii::Functions::ZeroFunction<dim>(1)));*/
+  }
+
+
+  void
+  set_field_functions() final
+  {
+    // double ln_tke_dissipation = std::log(std::max(tke_dissipation, 1e-6));
+    double ln_tke_dissipation = std::log(tke_dissipation);
+    double ln_tke_diss_wall = std::log(tke_diss_wall);
+    this->field_functions->initial_solution.reset(new dealii::Functions::ConstantFunction<dim>(ln_tke_diss_wall));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->velocity.reset(new dealii::Functions::ZeroFunction<dim>(1));
+  }
+
+  std::shared_ptr<RANS::PostProcessorBase<dim, Number>>
+  create_postprocessor() final
+  {
+    RANS::PostProcessorData<dim> pp_data;
+    pp_data.output_data.time_control_data.is_active        = this->output_parameters.write;
+    pp_data.output_data.time_control_data.start_time       = start_time;
+    pp_data.output_data.time_control_data.trigger_interval = output_interval_time;
+    pp_data.output_data.directory          = this->output_parameters.directory + "vtu/";
+    pp_data.output_data.filename           = this->output_parameters.filename;
+    pp_data.output_data.degree             = this->param.degree;
+    pp_data.output_data.write_higher_order = true;
+    if(this->param.turbulence_model_data.is_active)
+      pp_data.output_data.write_eddy_viscosity = true;
 
     std::shared_ptr<RANS::PostProcessorBase<dim, Number>> pp;
     pp.reset(new RANS::PostProcessor<dim, Number>(pp_data, this->mpi_comm));
@@ -423,8 +892,9 @@ public:
     this->fluid = std::make_shared<Fluid<dim, Number>>(input_file, comm);
 
     // create one (or even more) scalar fields
-    this->scalars.resize(0);
-    /*this->scalars[0] = std::make_shared<Scalar<dim, Number>>(input_file, comm);*/
+    this->scalars.resize(2);
+    this->scalars[0] = std::make_shared<Scalar0<dim, Number>>(input_file, comm);
+    this->scalars[1] = std::make_shared<Scalar1<dim, Number>>(input_file, comm);
   }
 };
 
