@@ -163,18 +163,17 @@ private:
           std::vector<dealii::GridTools::PeriodicFacePair<
             typename dealii::Triangulation<dim>::cell_iterator>> & /*periodic_face_pairs*/,
           unsigned int const global_refinements,
-          std::vector<unsigned int> const & /* vector_local_refinements*/)
-    {
-      dealii::GridGenerator::hyper_ball(tria, {0.0, 0.0}, domain_radius);
+          std::vector<unsigned int> const & /* vector_local_refinements*/) {
+        dealii::GridGenerator::hyper_ball(tria, {0.0, 0.0}, domain_radius);
 
-      for(const auto & face : tria.active_face_iterators())
-        if(face->at_boundary())
-          face->set_boundary_id(1);
+        for(const auto & face : tria.active_face_iterators())
+          if(face->at_boundary())
+            face->set_boundary_id(1);
 
-      tria.refine_global(global_refinements);
+        tria.refine_global(global_refinements);
 
-      refine_triangulation_around_center(tria, additional_refinements_around_source, 1.5 * r_0);
-    };
+        refine_triangulation_around_center(tria, additional_refinements_around_source, 1.5 * r_0);
+      };
 
     GridUtilities::create_triangulation<dim>(
       grid, this->mpi_comm, this->param.grid, lambda_create_triangulation, {});
@@ -586,21 +585,20 @@ public:
           std::vector<dealii::GridTools::PeriodicFacePair<
             typename dealii::Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
           unsigned int const                                       global_refinements,
-          std::vector<unsigned int> const &                        vector_local_refinements)
-    {
-      (void)periodic_face_pairs;
-      (void)vector_local_refinements;
+          std::vector<unsigned int> const &                        vector_local_refinements) {
+        (void)periodic_face_pairs;
+        (void)vector_local_refinements;
 
-      dealii::GridGenerator::hyper_ball_balanced(tria, {0., 0.}, domain_radius);
+        dealii::GridGenerator::hyper_ball_balanced(tria, {0., 0.}, domain_radius);
 
-      for(const auto & face : tria.active_face_iterators())
-        if(face->at_boundary())
-          face->set_boundary_id(1);
+        for(const auto & face : tria.active_face_iterators())
+          if(face->at_boundary())
+              face->set_boundary_id(1);
 
-      tria.refine_global(global_refinements);
+        tria.refine_global(global_refinements);
 
-      refine_triangulation_around_center(tria, additional_refinements_around_source, 1.5 * r_0);
-    };
+        refine_triangulation_around_center(tria, additional_refinements_around_source, 1.5 * r_0);
+      };
 
     GridUtilities::create_triangulation_with_multigrid<dim>(grid,
                                                             this->mpi_comm,
@@ -847,10 +845,10 @@ private:
   void
   set_field_functions() final
   {
-    this->field_functions->source_term_blend_in =
-      std::make_shared<BlendInFunction<dim>>(this->acoustic->get_parameters().start_time,
-                                             this->acoustic->get_parameters().start_time +
-                                               0.5 * CoRotVortexPair::compute_rotation_period(intensity, r_0));
+    this->field_functions->source_term_blend_in = std::make_shared<BlendInFunction<dim>>(
+      this->acoustic->get_parameters().start_time,
+      this->acoustic->get_parameters().start_time +
+        0.5 * CoRotVortexPair::compute_rotation_period(intensity, r_0));
 
     this->field_functions->analytical_aero_acoustic_source_term =
       std::make_shared<AnalyticalSourceTerm<dim>>(source_term_with_convection,
