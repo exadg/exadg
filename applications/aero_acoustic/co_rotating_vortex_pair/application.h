@@ -593,7 +593,7 @@ public:
 
         for(const auto & face : tria.active_face_iterators())
           if(face->at_boundary())
-              face->set_boundary_id(1);
+            face->set_boundary_id(1);
 
         tria.refine_global(global_refinements);
 
