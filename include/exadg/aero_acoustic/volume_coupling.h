@@ -43,6 +43,7 @@ class VolumeCoupling
 public:
   void
   setup(Parameters const &                           parameters_in,
+        double const                                 speed_of_sound,
         std::shared_ptr<SolverAcoustic<dim, Number>> acoustic_solver_in,
         std::shared_ptr<SolverFluid<dim, Number>>    fluid_solver_in,
         std::shared_ptr<FieldFunctions<dim>>         field_functions_in)
@@ -74,6 +75,7 @@ public:
     data.dof_index_pressure  = fluid_solver_in->pde_operator->get_dof_index_pressure();
     data.dof_index_velocity  = fluid_solver_in->pde_operator->get_dof_index_velocity();
     data.quad_index          = fluid_solver_in->pde_operator->get_quad_index_pressure();
+    data.speed_of_sound      = speed_of_sound;
     data.density             = parameters_in.density;
     data.consider_convection = parameters_in.source_term_with_convection;
     data.blend_in            = parameters.blend_in_source_term;
@@ -110,6 +112,7 @@ public:
         AssertThrow(false, dealii::ExcMessage("AcousticSourceTermComputation not implemented."));
       }
 
+      source_term_acoustic = 0.0;
       non_nested_grid_transfer.restrict_and_add(source_term_acoustic, source_term_fluid);
     }
     else

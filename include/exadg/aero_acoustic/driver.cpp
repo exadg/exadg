@@ -97,7 +97,11 @@ Driver<dim, Number>::setup_volume_coupling()
           "Computing source term from analytical solution requires IncNS::TemporalDiscretization::InterpolateAnalyticalSolution"));
     }
 
-    volume_coupling.setup(application->parameters, acoustic, fluid, application->field_functions);
+    volume_coupling.setup(application->parameters,
+                          application->acoustic->get_parameters().speed_of_sound,
+                          acoustic,
+                          fluid,
+                          application->field_functions);
 
     pcout << std::endl << "... done!" << std::endl;
 
