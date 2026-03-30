@@ -58,12 +58,11 @@ calculate_penalty_parameter(
     matrix_free.get_dof_handler(dof_index).get_triangulation().get_reference_cells();
   AssertThrow(reference_cells.size() == 1, dealii::ExcMessage("No mixed meshes allowed."));
 
-  auto const quadrature = reference_cells[0].template get_gauss_type_quadrature<dim>(degree + 1);
+  auto const            quadrature = reference_cells[0].get_gauss_type_quadrature(degree + 1);
   dealii::FEValues<dim> fe_values(mapping, fe, quadrature, dealii::update_JxW_values);
 
   auto const face_quadrature =
-    reference_cells[0].face_reference_cell(0).template get_gauss_type_quadrature<dim - 1>(degree +
-                                                                                          1);
+    reference_cells[0].face_reference_cell(0).get_gauss_type_quadrature(degree + 1);
   dealii::FEFaceValues<dim> fe_face_values(mapping, fe, face_quadrature, dealii::update_JxW_values);
 
   for(unsigned int i = 0; i < n_cells; ++i)
