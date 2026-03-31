@@ -15,7 +15,7 @@
     "FSI" : {
         "AccelerationMethod": "IQN_ILS",
         "AbsTol": "1.e-8",
-        "RelTol": "1.e-3", 
+        "RelTol": "1.e-3",
         "OmegaInit": "0.3",
         "ReusedTimeSteps": "8",
         "PartitionedIterMax": "100"

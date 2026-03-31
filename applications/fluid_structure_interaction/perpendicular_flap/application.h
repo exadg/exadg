@@ -533,6 +533,7 @@ private:
     param.pull_back_body_force = false;
     param.large_deformation    = false;
     param.pull_back_traction   = false;
+    param.material_type        = MaterialType::StVenantKirchhoff;
 
     param.degree = this->param.mapping_degree;
 
@@ -600,6 +601,9 @@ private:
 
     typedef std::pair<dealii::types::material_id, std::shared_ptr<MaterialData>> Pair;
 
+    AssertThrow(this->ale_elasticity_param.material_type == MaterialType::StVenantKirchhoff,
+                dealii::ExcMessage("Material parameters for ALE elasticity problem not defined."));
+
     MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlaneStrain;
 
@@ -650,6 +654,7 @@ public:
     param.pull_back_body_force = false;
     param.large_deformation    = true;
     param.pull_back_traction   = true;
+    param.material_type        = MaterialType::StVenantKirchhoff;
 
     param.density = DENSITY_STRUCTURE;
 
@@ -804,6 +809,9 @@ public:
     using namespace Structure;
 
     typedef std::pair<dealii::types::material_id, std::shared_ptr<MaterialData>> Pair;
+
+    AssertThrow(this->param.material_type == MaterialType::StVenantKirchhoff,
+                dealii::ExcMessage("Material parameters for elasticity problem not defined."));
 
     MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlaneStrain;
