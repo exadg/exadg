@@ -121,7 +121,7 @@ InverseMassOperator<dim, n_components, Number>::initialize(
 
         const dealii::MappingFE<dim, dim> mapping_mass(scalar_fe);
         const auto                        quadrature_mass =
-          scalar_fe.reference_cell().template get_gauss_type_quadrature<dim>(scalar_fe.degree + 1);
+          scalar_fe.reference_cell().get_gauss_type_quadrature(scalar_fe.degree + 1);
 
         dealii::FEValues<dim> fe_values(mapping_mass,
                                         scalar_fe,

@@ -112,8 +112,7 @@ public:
       auto const reference_cells = grid->triangulation->get_reference_cells();
       AssertThrow(reference_cells.size() == 1, dealii::ExcMessage("No mixed meshes allowed"));
 
-      auto const quad =
-        reference_cells[0].template get_gauss_type_quadrature<dim>(param.degree + 1);
+      auto const quad = reference_cells[0].get_gauss_type_quadrature(param.degree + 1);
 
       double const aspect_ratio =
         dealii::GridTools::compute_maximum_aspect_ratio(*mapping, *grid->triangulation, quad);
