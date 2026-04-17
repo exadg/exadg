@@ -80,8 +80,6 @@ template<int dim, typename Number>
 class KineticEnergyCalculator
 {
 public:
-  static unsigned int const number_vorticity_components = (dim == 2) ? 1 : dim;
-
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef dealii::VectorizedArray<Number>                         scalar;

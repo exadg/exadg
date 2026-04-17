@@ -155,8 +155,6 @@ template<int dim, typename Number>
 class VorticityCalculator
 {
 public:
-  static unsigned int const number_vorticity_components = (dim == 2) ? 1 : dim;
-
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef VorticityCalculator<dim, Number> This;
