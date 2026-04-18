@@ -245,16 +245,19 @@ VorticityCalculator<dim, Number>::cell_loop(
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      dealii::Tensor<1, number_vorticity_components, dealii::VectorizedArray<Number>> omega =
-        integrator.get_curl(q);
+      auto const omega = integrator.get_curl(q);
 
       // omega_vector is a vector with dim components
       // for dim=3: omega_vector[i] = omega[i], i=1,...,dim
       // for dim=2: omega_vector[0] = omega,
       //            omega_vector[1] = 0
       vector omega_vector;
-      for(unsigned int d = 0; d < number_vorticity_components; ++d)
-        omega_vector[d] = omega[d];
+      if constexpr(dim == 3)
+        omega_vector = omega;
+      else if constexpr(dim == 2)
+        omega_vector[0] = omega;
+      else
+        AssertThrow(dim == 3 or dim == 2, dealii::ExcMessage("Curl only defined for 2D and 3D."));
 
       integrator.submit_value(omega_vector, q);
     }

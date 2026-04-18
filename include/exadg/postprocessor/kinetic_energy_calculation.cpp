@@ -187,9 +187,9 @@ KineticEnergyCalculator<dim, Number>::cell_loop(
                          dealii::make_vectorized_array<Number>(this->data.viscosity) *
                          scalar_product(velocity_gradient, velocity_gradient);
 
-      dealii::Tensor<1, number_vorticity_components, scalar> omega = fe_eval.get_curl(q);
+      auto const omega = fe_eval.get_curl(q);
 
-      scalar norm_omega = omega * omega;
+      scalar const norm_omega = omega * omega;
 
       enstrophy_vec += fe_eval.JxW(q) * dealii::make_vectorized_array<Number>(0.5) * norm_omega;
 
