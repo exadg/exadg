@@ -216,6 +216,10 @@ public:
   {
   }
 
+  /**
+   * Solve function. This function may be called with solution and rhs
+   * pointing to the same data.
+   */
   virtual void
   solve(Matrix const *         matrix,
         value_type *           solution,
@@ -245,6 +249,8 @@ private:
   unsigned int const                MAX_ITER;
   dealii::AlignedVector<value_type> storage;
   value_type *                      p, *r, *v;
+
+  dealii::AlignedVector<value_type> rhs_copy;
 };
 
 /*
@@ -262,6 +268,8 @@ SolverCG<value_type, Matrix, Preconditioner>::SolverCG(unsigned int const unknow
   p = storage.begin();
   r = storage.begin() + M;
   v = storage.begin() + 2 * M;
+
+  rhs_copy = dealii::AlignedVector<value_type>(M);
 }
 
 template<typename value_type, typename Matrix, typename Preconditioner>
@@ -274,6 +282,11 @@ SolverCG<value_type, Matrix, Preconditioner>::solve(Matrix const *         matri
   value_type one;
   one = 1.0;
 
+  // copy rhs-vector since solution and rhs might point to the same data, in which
+  // case we want to guarantee that the result is still correct.
+  value_type * rhs_ptr = rhs_copy.begin();
+  equ(rhs_ptr, one, rhs, M);
+
   // guess initial solution
   vector_init(solution, M);
 
@@ -281,7 +294,7 @@ SolverCG<value_type, Matrix, Preconditioner>::solve(Matrix const *         matri
   matrix->vmult(v, solution);
 
   // compute residual: r = rhs-A*solution
-  equ(r, one, rhs, -one, v, M);
+  equ(r, one, rhs_ptr, -one, v, M);
   value_type norm_r0 = l2_norm(r, M);
 
   // precondition
@@ -397,6 +410,7 @@ private:
 
   // temporary vector
   dealii::AlignedVector<value_type> temp;
+  dealii::AlignedVector<value_type> b_copy;
 
   // vectors of variable size
   dealii::AlignedVector<value_type> res;
@@ -455,6 +469,8 @@ SolverGMRES<value_type, Matrix, Preconditioner>::SolverGMRES(unsigned int const 
   convergence_status = -1.0;
 
   temp = dealii::AlignedVector<value_type>(M);
+
+  b_copy = dealii::AlignedVector<value_type>(M);
 
   one = 1.0;
 }
@@ -647,6 +663,11 @@ SolverGMRES<value_type, Matrix, Preconditioner>::solve(Matrix const *         A,
 {
   iterations = 0;
 
+  // copy rhs-vector b since x and b might point to the same data, in which
+  // case we want to guarantee that the result is still correct.
+  value_type * b_ptr = b_copy.begin();
+  equ(b_ptr, one, b, M);
+
   // restarted GMRES
   do
   {
@@ -660,7 +681,7 @@ SolverGMRES<value_type, Matrix, Preconditioner>::solve(Matrix const *         A,
     // apply GMRES solver where the
     // maximum number of iterations is set
     // to the maximum size of the Krylov subspace
-    do_solve(A, x, b, P);
+    do_solve(A, x, b_ptr, P);
 
     iterations += k;
 
