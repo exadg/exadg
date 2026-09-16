@@ -57,7 +57,7 @@ public:
 private:
   dealii::MGLevelObject<dealii::MGTwoLevelTransfer<dim, VectorType>> transfers;
 
-  std::unique_ptr<dealii::MGTransferGlobalCoarsening<dim, VectorType>> mg_transfer;
+  std::unique_ptr<dealii::MGTransferMatrixFree<dim, Number>> mg_transfer;
 };
 
 } // namespace ExaDG
