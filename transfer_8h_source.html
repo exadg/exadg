@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="keyword">private</span>:</div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  dealii::MGLevelObject&lt;dealii::MGTwoLevelTransfer&lt;dim, VectorType&gt;&gt; transfers;</div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  std::unique_ptr&lt;dealii::MGTransferGlobalCoarsening&lt;dim, VectorType&gt;&gt; mg_transfer;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  std::unique_ptr&lt;dealii::MGTransferMatrixFree&lt;dim, Number&gt;&gt; mg_transfer;</div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>};</div>
 </div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
