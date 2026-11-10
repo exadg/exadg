@@ -1298,17 +1298,20 @@ SpatialOperatorBase<dim, Number>::calculate_time_step_cfl(VectorType const & vel
   if(param.spatial_discretization == SpatialDiscretization::HDIV)
     velocity.update_ghost_values();
 
-  return calculate_time_step_cfl_local<dim, Number>(*matrix_free,
-                                                    get_dof_index_velocity(),
-                                                    get_quad_index_velocity_standard(),
-                                                    velocity,
-                                                    param.degree_u,
-                                                    param.cfl_exponent_fe_degree_velocity,
-                                                    param.adaptive_time_stepping_cfl_type,
-                                                    mpi_comm);
+  double const time_step_size =
+    calculate_time_step_cfl_local<dim, Number>(*matrix_free,
+                                               get_dof_index_velocity(),
+                                               get_quad_index_velocity_standard(),
+                                               velocity,
+                                               param.degree_u,
+                                               param.cfl_exponent_fe_degree_velocity,
+                                               param.adaptive_time_stepping_cfl_type,
+                                               mpi_comm);
 
   if(param.spatial_discretization == SpatialDiscretization::HDIV)
     velocity.zero_out_ghost_values();
+
+  return time_step_size;
 }
 
 template<int dim, typename Number>
@@ -1317,6 +1320,10 @@ SpatialOperatorBase<dim, Number>::calculate_cfl_from_time_step(VectorType &     
                                                                VectorType const & velocity,
                                                                double const time_step_size) const
 {
+  // Need to update ghost values in the case of continuity constraints.
+  if(param.spatial_discretization == SpatialDiscretization::HDIV)
+    velocity.update_ghost_values();
+
   calculate_cfl<dim, Number>(cfl,
                              *grid->triangulation,
                              *matrix_free,
@@ -1326,6 +1333,9 @@ SpatialOperatorBase<dim, Number>::calculate_cfl_from_time_step(VectorType &     
                              time_step_size,
                              param.degree_u,
                              param.cfl_exponent_fe_degree_velocity);
+
+  if(param.spatial_discretization == SpatialDiscretization::HDIV)
+    velocity.zero_out_ghost_values();
 }
 
 template<int dim, typename Number>
