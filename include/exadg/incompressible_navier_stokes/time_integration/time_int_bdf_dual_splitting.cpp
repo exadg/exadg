@@ -210,7 +210,10 @@ TimeIntBDFDualSplitting<dim, Number>::initialize_velocity_dbc()
   }
   else if(this->param.spatial_discretization == SpatialDiscretization::HDIV)
   {
-    // Currently, only zero Dirichlet BCs are supported for `SpatialDiscretization::HDIV`.
+    // Velocity Dirichlet BCs are not supported for
+    // `SpatialDiscretization::HDIV`, see the AssertThrow in
+    // initialize_dof_handler_and_constraints(). Hence, velocity_dbc remains
+    // zero.
   }
 }
 
@@ -346,7 +349,10 @@ TimeIntBDFDualSplitting<dim, Number>::do_timestep_solve()
   }
   else if(this->param.spatial_discretization == SpatialDiscretization::HDIV)
   {
-    // Currently, only zero Dirichlet BCs are supported for `SpatialDiscretization::HDIV`.
+    // Velocity Dirichlet BCs are not supported for
+    // `SpatialDiscretization::HDIV`, see the AssertThrow in
+    // initialize_dof_handler_and_constraints(). Hence, velocity_dbc remains
+    // zero.
   }
 
   // perform the sub-steps of the dual-splitting method
