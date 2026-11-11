@@ -152,6 +152,21 @@ SpatialOperatorBase<dim, Number>::initialize_dof_handler_and_constraints()
       // dealii::VectorTools::project_boundary_values
       // dealii::DoFTools::make_zero_boundary_constraints
     }
+
+    // DirichletCached boundaries (e.g. FSI interface)
+    AssertThrow(boundary_descriptor->velocity->dirichlet_cached_bc.empty(),
+                dealii::ExcMessage("DirichletCached BCs are not implemented for HDIV."));
+
+    // The operators and time integrators treat constraint_u as homogeneous,
+    // i.e., they assume a zero normal velocity on symmetry boundaries. A
+    // nonzero function in symmetry_bc would result in inhomogeneous
+    // constraints, which are not taken into account.
+    AssertThrow(not dealii::Utilities::MPI::logical_or(constraint_u.has_inhomogeneities(),
+                                                       mpi_comm),
+                dealii::ExcMessage("Inhomogeneous velocity constraints, i.e., a nonzero "
+                                   "normal velocity on symmetry boundaries, are not "
+                                   "implemented for HDIV. Use a ZeroFunction in "
+                                   "symmetry_bc."));
   }
 
   constraint_u.close();
