@@ -140,46 +140,41 @@ SpatialOperatorBase<dim, Number>::initialize_dof_handler_and_constraints()
     }
 
     // Dirichlet boundaries
-    // The normal component is imposed strongly, as for symmetry boundaries,
-    // which is only implemented for a zero normal component g * n = 0. The
-    // tangential component is imposed weakly via the boundary face integrals
-    // of the operators, as for L2.
-    // Only the coupled solver evaluates the Dirichlet data in the operators,
-    // the dual splitting scheme interpolates it assuming L2-conforming nodal
-    // elements.
+    // The normal component is imposed strongly. The corresponding DoFs are not
+    // added to constraint_u, so that all operators read the actual boundary
+    // values. Instead, the coupled solver replaces their rows by identity rows,
+    // see set_velocity_dirichlet_normal_values(). The tangential component is
+    // imposed weakly via the boundary face integrals of the operators, as for
+    // L2. Only the coupled solver evaluates the Dirichlet data in the
+    // operators, the dual splitting scheme interpolates it assuming
+    // L2-conforming nodal elements.
     if(not(boundary_descriptor->velocity->dirichlet_bc.empty()))
     {
       AssertThrow(param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution,
                   dealii::ExcMessage("Velocity Dirichlet BCs are only implemented for "
                                      "HDIV in combination with the coupled solver."));
 
-      for(auto const & bc : boundary_descriptor->velocity->dirichlet_bc)
-      {
-        // Check that g * n = 0 by projecting g into separate constraints. The
-        // check uses the time the Dirichlet function is set to here, and an
-        // absolute tolerance to allow for round-off.
-        dealii::AffineConstraints<double> constraint_g(dof_handler_u.locally_owned_dofs(),
-                                                       relevant_dofs);
-        dealii::VectorTools::project_boundary_values_div_conforming(
-          dof_handler_u, 0, *(bc.second), bc.first, constraint_g, *get_mapping());
+      // Collect the DoFs on Dirichlet boundary faces, which are the normal
+      // DoFs for Raviart-Thomas elements. These DoFs belong to the adjacent
+      // cell only, hence they are locally owned.
+      std::vector<dealii::types::global_dof_index> face_dof_indices(
+        dof_handler_u.get_fe().n_dofs_per_face());
+      for(auto const & cell : dof_handler_u.active_cell_iterators())
+        if(cell->is_locally_owned() and cell->at_boundary())
+          for(unsigned int const face : cell->face_indices())
+            if(cell->face(face)->at_boundary() and
+               boundary_descriptor->velocity->dirichlet_bc.count(cell->face(face)->boundary_id()))
+            {
+              cell->face(face)->get_dof_indices(face_dof_indices);
+              for(auto const dof : face_dof_indices)
+                if(dof_handler_u.locally_owned_dofs().is_element(dof))
+                  dirichlet_normal_dofs_u.push_back(dof);
+            }
 
-        double max_normal_component = 0.0;
-        for(auto const & line : constraint_g.get_lines())
-          max_normal_component = std::max(max_normal_component, std::abs(line.inhomogeneity));
-        max_normal_component = dealii::Utilities::MPI::max(max_normal_component, mpi_comm);
-
-        AssertThrow(max_normal_component < 1.0e-12,
-                    dealii::ExcMessage("Velocity Dirichlet BCs with a nonzero normal component "
-                                       "are not implemented for HDIV."));
-
-        dealii::VectorTools::project_boundary_values_div_conforming(
-          dof_handler_u,
-          0,
-          dealii::Functions::ZeroFunction<dim>(dim),
-          bc.first,
-          constraint_u,
-          *get_mapping());
-      }
+      std::sort(dirichlet_normal_dofs_u.begin(), dirichlet_normal_dofs_u.end());
+      dirichlet_normal_dofs_u.erase(std::unique(dirichlet_normal_dofs_u.begin(),
+                                                dirichlet_normal_dofs_u.end()),
+                                    dirichlet_normal_dofs_u.end());
     }
 
     // DirichletCached boundaries (e.g. FSI interface)
@@ -1039,6 +1034,9 @@ SpatialOperatorBase<dim, Number>::prescribe_initial_conditions(VectorType & velo
                         pressure,
                         field_functions->initial_solution_pressure,
                         time);
+
+  // HDIV: use the same normal velocity on Dirichlet boundaries as the solver.
+  set_velocity_dirichlet_normal_values(velocity, time);
 
   // Compute initial variable viscosity using the initial velocity field.
   if(this->param.viscous_problem() and this->param.viscosity_is_variable())
@@ -2145,6 +2143,140 @@ SpatialOperatorBase<dim, Number>::distribute_constraint_u(VectorType & velocity)
   {
     AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
+}
+
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::project_velocity_dirichlet_normal_values(double const time) const
+{
+  if(time == dirichlet_normal_values_time)
+    return;
+
+  // L2 projection of g * n onto the normal traces of the shape functions on
+  // each Dirichlet boundary face. Note that
+  // dealii::VectorTools::project_boundary_values_div_conforming() only
+  // computes the moments (g * n, phi_i * n) without inverting the face mass
+  // matrix, which are not the DoF values of FE_RaviartThomasNodal.
+  dealii::FiniteElement<dim> const &       fe = dof_handler_u.get_fe();
+  dealii::QGauss<dim - 1> const            quadrature(fe.degree + 1);
+  dealii::FEFaceValues<dim>                fe_face_values(*get_mapping(),
+                                           fe,
+                                           quadrature,
+                                           dealii::update_values | dealii::update_normal_vectors |
+                                             dealii::update_quadrature_points |
+                                             dealii::update_JxW_values);
+  dealii::FEValuesExtractors::Vector const velocity(0);
+
+  unsigned int const                  n_face_dofs = fe.n_dofs_per_face();
+  dealii::FullMatrix<double>          face_mass(n_face_dofs, n_face_dofs);
+  dealii::Vector<double>              face_rhs(n_face_dofs), face_values(n_face_dofs);
+  std::vector<unsigned int>           cell_index(n_face_dofs);
+  std::vector<double>                 phi_n(n_face_dofs);
+  std::vector<dealii::Vector<double>> g_values(quadrature.size(), dealii::Vector<double>(dim));
+  std::vector<dealii::types::global_dof_index> dof_indices(fe.n_dofs_per_cell());
+
+  dirichlet_normal_values_u.assign(dirichlet_normal_dofs_u.size(), 0.0);
+
+  for(auto const & cell : dof_handler_u.active_cell_iterators())
+  {
+    if(not(cell->is_locally_owned() and cell->at_boundary()))
+      continue;
+
+    for(unsigned int const face : cell->face_indices())
+    {
+      if(not cell->face(face)->at_boundary())
+        continue;
+
+      auto const bc =
+        boundary_descriptor->velocity->dirichlet_bc.find(cell->face(face)->boundary_id());
+      if(bc == boundary_descriptor->velocity->dirichlet_bc.end())
+        continue;
+
+      fe_face_values.reinit(cell, face);
+      bc->second->set_time(time);
+      bc->second->vector_value_list(fe_face_values.get_quadrature_points(), g_values);
+      cell->get_dof_indices(dof_indices);
+
+      for(unsigned int i = 0; i < n_face_dofs; ++i)
+        cell_index[i] = fe.face_to_cell_index(i, face, cell->combined_face_orientation(face));
+
+      face_mass = 0.0;
+      face_rhs  = 0.0;
+      for(unsigned int q = 0; q < quadrature.size(); ++q)
+      {
+        dealii::Tensor<1, dim> const normal = fe_face_values.normal_vector(q);
+
+        double g_n = 0.0;
+        for(unsigned int d = 0; d < dim; ++d)
+          g_n += g_values[q](d) * normal[d];
+
+        for(unsigned int i = 0; i < n_face_dofs; ++i)
+          phi_n[i] = fe_face_values[velocity].value(cell_index[i], q) * normal;
+
+        for(unsigned int i = 0; i < n_face_dofs; ++i)
+        {
+          face_rhs(i) += g_n * phi_n[i] * fe_face_values.JxW(q);
+          for(unsigned int j = 0; j < n_face_dofs; ++j)
+            face_mass(i, j) += phi_n[i] * phi_n[j] * fe_face_values.JxW(q);
+        }
+      }
+
+      face_mass.gauss_jordan();
+      face_mass.vmult(face_values, face_rhs);
+
+      for(unsigned int i = 0; i < n_face_dofs; ++i)
+      {
+        auto const it = std::lower_bound(dirichlet_normal_dofs_u.begin(),
+                                         dirichlet_normal_dofs_u.end(),
+                                         dof_indices[cell_index[i]]);
+        if(it != dirichlet_normal_dofs_u.end() and *it == dof_indices[cell_index[i]])
+          dirichlet_normal_values_u[it - dirichlet_normal_dofs_u.begin()] = face_values(i);
+      }
+    }
+  }
+
+  dirichlet_normal_values_time = time;
+}
+
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::set_velocity_dirichlet_normal_values(VectorType & velocity,
+                                                                       double const time) const
+{
+  // The same condition on all processes, see update_ghost_values() below.
+  if(param.spatial_discretization != SpatialDiscretization::HDIV or
+     boundary_descriptor->velocity->dirichlet_bc.empty())
+    return;
+
+  project_velocity_dirichlet_normal_values(time);
+
+  for(unsigned int i = 0; i < dirichlet_normal_dofs_u.size(); ++i)
+    velocity(dirichlet_normal_dofs_u[i]) = dirichlet_normal_values_u[i];
+
+  // These DoFs might be ghosts on other processes, since face integrals read
+  // the DoFs of the neighboring cell.
+  if(velocity.has_ghost_elements())
+    velocity.update_ghost_values();
+}
+
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::copy_velocity_dirichlet_normal_values(
+  VectorType &       dst,
+  VectorType const & src) const
+{
+  // The same condition on all processes, see update_ghost_values() below.
+  if(param.spatial_discretization != SpatialDiscretization::HDIV or
+     boundary_descriptor->velocity->dirichlet_bc.empty())
+    return;
+
+  for(auto const dof : dirichlet_normal_dofs_u)
+    dst(dof) = src(dof);
+
+  // These DoFs might be ghosts on other processes, since face integrals read
+  // the DoFs of the neighboring cell.
+  if(dst.has_ghost_elements())
+    dst.update_ghost_values();
 }
 
 template class SpatialOperatorBase<2, float>;

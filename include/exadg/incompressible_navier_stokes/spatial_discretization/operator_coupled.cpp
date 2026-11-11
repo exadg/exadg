@@ -156,10 +156,20 @@ OperatorCoupled<dim, Number>::solve_linear_problem(BlockVectorType &       dst,
   if(this->param.convective_problem() and
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
   {
+    // The operators only store a pointer to the transport velocity and read
+    // it in face integrals, hence its ghost values need to be up to date.
+    // This matters for HDIV with nonzero normal Dirichlet data, which is set
+    // in the locally owned DoFs only.
+    transport_velocity.update_ghost_values();
     this->momentum_operator.set_solution_linearization(transport_velocity);
   }
 
   linear_solver->update_preconditioner(update_preconditioner);
+
+  // HDIV: The rows of the normal velocity DoFs on Dirichlet boundaries are
+  // identity rows, and src holds the Dirichlet data in these rows. Using these
+  // values as initial guess, the Krylov solver does not change them.
+  this->copy_velocity_dirichlet_normal_values(dst.block(0), src.block(0));
 
   return linear_solver->solve(dst, src);
 }
@@ -183,6 +193,8 @@ OperatorCoupled<dim, Number>::rhs_linear_problem(BlockVectorType &  dst,
   if(this->param.convective_problem() and
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::LinearlyImplicit)
   {
+    // See solve_linear_problem() for the ghost values.
+    transport_velocity.update_ghost_values();
     this->convective_operator.set_velocity_ptr(transport_velocity);
     this->convective_operator.set_time(time);
     this->convective_operator.rhs_add(dst.block(0));
@@ -227,6 +239,9 @@ OperatorCoupled<dim, Number>::apply_linearized_problem(BlockVectorType &       d
   this->gradient_operator.apply(temp_vector, src.block(1));
   dst.block(0).add(scaling_factor_continuity, temp_vector);
 
+  // HDIV: identity rows for the normal velocity DoFs on Dirichlet boundaries
+  this->copy_velocity_dirichlet_normal_values(dst.block(0), src.block(0));
+
   // (2,1) block of saddle point matrix
   // divergence operator: dst = pressure, src = velocity
   this->divergence_operator.apply(dst.block(1), src.block(0));
@@ -250,6 +265,10 @@ OperatorCoupled<dim, Number>::solve_nonlinear_problem(BlockVectorType &  dst,
   // Update linearized momentum operator
   this->momentum_operator.set_time(time);
   this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
+
+  // HDIV: rhs_vector holds the Dirichlet data in the rows of the normal
+  // velocity DoFs on Dirichlet boundaries, which are identity rows.
+  this->copy_velocity_dirichlet_normal_values(dst.block(0), rhs_vector);
 
   // Solve nonlinear problem
   Newton::UpdateData update;
@@ -305,6 +324,9 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &     
   // gradient operator scaled by scaling_factor_continuity
   this->gradient_operator.evaluate(temp_vector, src.block(1), time);
   dst.block(0).add(scaling_factor_continuity, temp_vector);
+
+  // HDIV: identity rows for the normal velocity DoFs on Dirichlet boundaries
+  this->copy_velocity_dirichlet_normal_values(dst.block(0), src.block(0));
 
   // constant right-hand side vector (body force, sum_alphai_ui and explicit convective terms)
   dst.block(0).add(-1.0, *rhs_vector);
@@ -372,6 +394,9 @@ OperatorCoupled<dim, Number>::evaluate_linearized_residual(BlockVectorType &    
   // gradient operator scaled by scaling_factor_continuity
   this->gradient_operator.evaluate(temp_vector, src.block(1), time);
   dst.block(0).add(scaling_factor_continuity, temp_vector);
+
+  // HDIV: identity rows for the normal velocity DoFs on Dirichlet boundaries
+  this->copy_velocity_dirichlet_normal_values(dst.block(0), src.block(0));
 
   // constant right-hand side vector (body force, sum_alphai_ui and explicit convective terms)
   dst.block(0).add(-1.0, rhs_vector.block(0));
@@ -450,6 +475,11 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVectorType
   // gradient operator scaled by scaling_factor_continuity
   this->gradient_operator.evaluate(temp_vector, src.block(1), time);
   dst.block(0).add(scaling_factor_continuity, temp_vector);
+
+  // HDIV: The rows of the normal velocity DoFs on Dirichlet boundaries are
+  // replaced by the Dirichlet data, which the solution satisfies exactly.
+  temp_vector = 0.0;
+  this->copy_velocity_dirichlet_normal_values(dst.block(0), temp_vector);
 
 
   // pressure-block
@@ -1122,6 +1152,10 @@ OperatorCoupled<dim, Number>::apply_block_preconditioner(BlockVectorType &      
   {
     AssertThrow(false, dealii::ExcNotImplemented());
   }
+
+  // HDIV: The rows of the normal velocity DoFs on Dirichlet boundaries are
+  // identity rows, which the preconditioner inverts exactly.
+  this->copy_velocity_dirichlet_normal_values(dst.block(0), src.block(0));
 }
 
 template<int dim, typename Number>

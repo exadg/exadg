@@ -451,6 +451,23 @@ public:
   void
   distribute_constraint_u(VectorType & velocity) const;
 
+  /*
+   * HDIV: The normal velocity components on Dirichlet boundaries are imposed strongly. These
+   * DoFs are not constrained in the matrix-free framework. Instead, the coupled solver replaces
+   * their rows by identity rows with the projected Dirichlet data on the right-hand side. For
+   * other discretizations or without Dirichlet boundaries, the following functions do nothing.
+   *
+   * Sets the normal velocity DoFs on Dirichlet boundaries to the Dirichlet data at the given time.
+   */
+  void
+  set_velocity_dirichlet_normal_values(VectorType & velocity, double const time) const;
+
+  /*
+   * Copies the normal velocity DoFs on Dirichlet boundaries from src to dst.
+   */
+  void
+  copy_velocity_dirichlet_normal_values(VectorType & dst, VectorType const & src) const;
+
 protected:
   /*
    * Projection step.
@@ -533,6 +550,17 @@ private:
   std::shared_ptr<dealii::DoFHandler<dim>> dof_handler_mapping;
 
   dealii::AffineConstraints<Number> constraint_u, constraint_p, constraint_u_scalar;
+
+  /*
+   * HDIV: Locally owned normal velocity DoFs on Dirichlet boundaries, together with the projected
+   * Dirichlet data, which is cached for the time dirichlet_normal_values_time.
+   */
+  std::vector<dealii::types::global_dof_index> dirichlet_normal_dofs_u;
+  mutable std::vector<double>                  dirichlet_normal_values_u;
+  mutable double dirichlet_normal_values_time = std::numeric_limits<double>::quiet_NaN();
+
+  void
+  project_velocity_dirichlet_normal_values(double const time) const;
 
   std::string const dof_index_u        = "velocity";
   std::string const dof_index_p        = "pressure";
