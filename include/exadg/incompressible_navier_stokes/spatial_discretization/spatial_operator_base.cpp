@@ -140,17 +140,46 @@ SpatialOperatorBase<dim, Number>::initialize_dof_handler_and_constraints()
     }
 
     // Dirichlet boundaries
+    // The normal component is imposed strongly, as for symmetry boundaries,
+    // which is only implemented for a zero normal component g * n = 0. The
+    // tangential component is imposed weakly via the boundary face integrals
+    // of the operators, as for L2.
+    // Only the coupled solver evaluates the Dirichlet data in the operators,
+    // the dual splitting scheme interpolates it assuming L2-conforming nodal
+    // elements.
     if(not(boundary_descriptor->velocity->dirichlet_bc.empty()))
     {
-      AssertThrow(
-        false,
-        dealii::ExcMessage(
-          "Dirichlet BCs are not properly implemented for HDIV. The normal component of the velocity field needs to be strongly applied."));
-      // We would like to do something similar to above. Probably would work with the same function
-      // i.e dealii::VectorTools::project_boundary_values_div_conforming(). Otherwise one might want
-      // to look into: dealii::VectorTools::interpolate_boundary_values
-      // dealii::VectorTools::project_boundary_values
-      // dealii::DoFTools::make_zero_boundary_constraints
+      AssertThrow(param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution,
+                  dealii::ExcMessage("Velocity Dirichlet BCs are only implemented for "
+                                     "HDIV in combination with the coupled solver."));
+
+      for(auto const & bc : boundary_descriptor->velocity->dirichlet_bc)
+      {
+        // Check that g * n = 0 by projecting g into separate constraints. The
+        // check uses the time the Dirichlet function is set to here, and an
+        // absolute tolerance to allow for round-off.
+        dealii::AffineConstraints<double> constraint_g(dof_handler_u.locally_owned_dofs(),
+                                                       relevant_dofs);
+        dealii::VectorTools::project_boundary_values_div_conforming(
+          dof_handler_u, 0, *(bc.second), bc.first, constraint_g, *get_mapping());
+
+        double max_normal_component = 0.0;
+        for(auto const & line : constraint_g.get_lines())
+          max_normal_component = std::max(max_normal_component, std::abs(line.inhomogeneity));
+        max_normal_component = dealii::Utilities::MPI::max(max_normal_component, mpi_comm);
+
+        AssertThrow(max_normal_component < 1.0e-12,
+                    dealii::ExcMessage("Velocity Dirichlet BCs with a nonzero normal component "
+                                       "are not implemented for HDIV."));
+
+        dealii::VectorTools::project_boundary_values_div_conforming(
+          dof_handler_u,
+          0,
+          dealii::Functions::ZeroFunction<dim>(dim),
+          bc.first,
+          constraint_u,
+          *get_mapping());
+      }
     }
 
     // DirichletCached boundaries (e.g. FSI interface)
