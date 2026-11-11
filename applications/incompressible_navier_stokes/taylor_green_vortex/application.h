@@ -35,12 +35,15 @@ enum class MeshType
   Curvilinear
 };
 
+// In 2D, the Taylor-Green vortex is an exact solution of the Navier-Stokes
+// equations for all times, decaying with the viscosity nu. In 3D, it is the
+// exact solution only at the initial time.
 template<int dim>
 class InitialSolutionVelocity : public dealii::Function<dim>
 {
 public:
-  InitialSolutionVelocity(double const V_0, double const L)
-    : dealii::Function<dim>(dim, 0.0), V_0(V_0), L(L)
+  InitialSolutionVelocity(double const V_0, double const L, double const nu)
+    : dealii::Function<dim>(dim, 0.0), V_0(V_0), L(L), nu(nu)
   {
   }
 
@@ -49,10 +52,19 @@ public:
   {
     double result = 0.0;
 
+    // The factor in z-direction only exists in 3D. The decay in time only
+    // exists in 2D, see above.
+    double factor_z = 1.0;
+    double factor_t = 1.0;
+    if constexpr(dim == 3)
+      factor_z = std::cos(p[2] / L);
+    else
+      factor_t = std::exp(-2.0 * nu * this->get_time() / (L * L));
+
     if(component == 0)
-      result = V_0 * std::sin(p[0] / L) * std::cos(p[1] / L) * std::cos(p[2] / L);
+      result = V_0 * std::sin(p[0] / L) * std::cos(p[1] / L) * factor_z * factor_t;
     else if(component == 1)
-      result = -V_0 * std::cos(p[0] / L) * std::sin(p[1] / L) * std::cos(p[2] / L);
+      result = -V_0 * std::cos(p[0] / L) * std::sin(p[1] / L) * factor_z * factor_t;
     else if(component == 2)
       result = 0.0;
 
@@ -60,30 +72,35 @@ public:
   }
 
 private:
-  double const V_0, L;
+  double const V_0, L, nu;
 };
 
 template<int dim>
 class InitialSolutionPressure : public dealii::Function<dim>
 {
 public:
-  InitialSolutionPressure(double const V_0, double const L, double const p_0)
-    : dealii::Function<dim>(1 /*n_components*/, 0.0), V_0(V_0), L(L), p_0(p_0)
+  InitialSolutionPressure(double const V_0, double const L, double const p_0, double const nu)
+    : dealii::Function<dim>(1 /*n_components*/, 0.0), V_0(V_0), L(L), p_0(p_0), nu(nu)
   {
   }
 
   double
   value(dealii::Point<dim> const & p, unsigned int const /*component*/) const final
   {
-    double const result = p_0 + V_0 * V_0 / 16.0 *
-                                  (std::cos(2.0 * p[0] / L) + std::cos(2.0 * p[1] / L)) *
-                                  (std::cos(2.0 * p[2] / L) + 2.0);
+    double const sum_xy = std::cos(2.0 * p[0] / L) + std::cos(2.0 * p[1] / L);
+
+    // The 2D and 3D Taylor-Green vortices have different pressure fields.
+    double result = 0.0;
+    if constexpr(dim == 3)
+      result = p_0 + V_0 * V_0 / 16.0 * sum_xy * (std::cos(2.0 * p[2] / L) + 2.0);
+    else
+      result = p_0 + V_0 * V_0 / 4.0 * sum_xy * std::exp(-4.0 * nu * this->get_time() / (L * L));
 
     return result;
   }
 
 private:
-  double const V_0, L, p_0;
+  double const V_0, L, p_0, nu;
 };
 
 template<int dim, typename Number>
@@ -394,7 +411,7 @@ private:
     data.shape                          = MeshMovementShape::Sin;
     data.dimensions[0]                  = std::abs(right - left);
     data.dimensions[1]                  = std::abs(right - left);
-    data.dimensions[2]                  = std::abs(right - left);
+    data.dimensions[dim - 1]            = std::abs(right - left);
     data.amplitude                      = right / 6.0; // use a value <= right/4.0
     data.period                         = 20.0 * characteristic_time;
     data.t_start                        = 0.0;
@@ -429,9 +446,9 @@ private:
   set_field_functions() final
   {
     this->field_functions->initial_solution_velocity.reset(
-      new InitialSolutionVelocity<dim>(V_0, L));
+      new InitialSolutionVelocity<dim>(V_0, L, viscosity));
     this->field_functions->initial_solution_pressure.reset(
-      new InitialSolutionPressure<dim>(V_0, L, p_0));
+      new InitialSolutionPressure<dim>(V_0, L, p_0, viscosity));
     this->field_functions->analytical_solution_pressure.reset(
       new dealii::Functions::ZeroFunction<dim>(1));
     this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
@@ -468,6 +485,28 @@ private:
     pp_data.mass_data.directory              = this->output_parameters.directory;
     pp_data.mass_data.filename               = name;
     pp_data.mass_data.reference_length_scale = 1.0;
+
+    // calculate errors (2D only, where the analytical solution is known for
+    // all times)
+    pp_data.error_data_u.time_control_data.is_active        = (dim == 2);
+    pp_data.error_data_u.time_control_data.start_time       = start_time;
+    pp_data.error_data_u.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
+    pp_data.error_data_u.analytical_solution.reset(
+      new InitialSolutionVelocity<dim>(V_0, L, viscosity));
+    pp_data.error_data_u.calculate_relative_errors = true;
+    pp_data.error_data_u.write_errors_to_file      = true;
+    pp_data.error_data_u.directory                 = this->output_parameters.directory;
+    pp_data.error_data_u.name                      = "velocity";
+
+    pp_data.error_data_p.time_control_data.is_active        = (dim == 2);
+    pp_data.error_data_p.time_control_data.start_time       = start_time;
+    pp_data.error_data_p.time_control_data.trigger_interval = (end_time - start_time) / 20.0;
+    pp_data.error_data_p.analytical_solution.reset(
+      new InitialSolutionPressure<dim>(V_0, L, p_0, viscosity));
+    pp_data.error_data_p.calculate_relative_errors = true;
+    pp_data.error_data_p.write_errors_to_file      = true;
+    pp_data.error_data_p.directory                 = this->output_parameters.directory;
+    pp_data.error_data_p.name                      = "pressure";
 
     // kinetic energy
     pp_data.kinetic_energy_data.time_control_data.is_active                = true;
