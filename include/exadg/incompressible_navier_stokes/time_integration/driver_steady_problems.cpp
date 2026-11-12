@@ -164,6 +164,9 @@ DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_pro
     if(this->param.right_hand_side)
       pde_operator->evaluate_add_body_force_term(rhs, time);
 
+    // HDIV: Dirichlet data in the identity rows of the normal velocity DoFs
+    pde_operator->set_velocity_dirichlet_normal_values(rhs, time);
+
     // Newton solver
     auto const iter = pde_operator->solve_nonlinear_problem(
       solution, rhs, this->param.update_preconditioner_coupled, time);
@@ -183,6 +186,9 @@ DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_pro
 
     // calculate rhs vector
     pde_operator->rhs_linear_problem(rhs_vector, transport_velocity, time);
+
+    // HDIV: Dirichlet data in the identity rows of the normal velocity DoFs
+    pde_operator->set_velocity_dirichlet_normal_values(rhs_vector.block(0), time);
 
     // solve coupled system of equations
     unsigned int const n_iter = pde_operator->solve_linear_problem(

@@ -190,6 +190,10 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
     solution_np = solution_last_iter;
   }
 
+  // HDIV: impose the Dirichlet data of the normal velocity at t_{n+1} on the
+  // initial guess, which is also used as transport velocity
+  pde_operator->set_velocity_dirichlet_normal_values(solution_np.block(0), this->get_next_time());
+
   // explicit viscosity update or initial guess for viscosity
   if(this->param.viscous_problem() and this->param.viscosity_is_variable())
   {
@@ -284,6 +288,9 @@ TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
       for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
         rhs.add(-this->extra.get_beta(i), this->vec_convective_term[i]);
     }
+
+    // HDIV: Dirichlet data in the identity rows of the normal velocity DoFs
+    pde_operator->set_velocity_dirichlet_normal_values(rhs, this->get_next_time());
 
     // Newton solver
     auto const iter =
@@ -525,6 +532,9 @@ TimeIntBDFCoupled<dim, Number>::evaluate_right_hand_side(BlockVectorType & rhs,
 
   // apply mass operator to sum_alphai_ui and add to rhs vector
   pde_operator->apply_mass_operator_add(rhs.block(0), sum_alphai_ui);
+
+  // HDIV: Dirichlet data in the identity rows of the normal velocity DoFs
+  pde_operator->set_velocity_dirichlet_normal_values(rhs.block(0), this->get_next_time());
 }
 
 template<int dim, typename Number>
